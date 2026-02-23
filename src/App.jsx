@@ -27,9 +27,19 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
       <motion.div className="auth-modal contact-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
         <button className="close-btn" onClick={onClose}><X size={20} /></button>
         <h2>{t.title}</h2>
-        <form name="contact" method="POST" data-netlify="true" className="auth-form" onSubmit={(e) => {
-          // We let the browser handle the POST to Netlify, but we can show an alert
-          setTimeout(() => alert(t.success), 500);
+        <form name="contact" method="POST" className="auth-form" onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData).toString(),
+          })
+            .then(() => {
+              alert(t.success);
+              onClose();
+            })
+            .catch((error) => alert(error));
         }}>
           <input type="hidden" name="form-name" value="contact" />
           <div className="input-group">
