@@ -305,17 +305,25 @@ const StudiosPro = () => {
     const channel = new BroadcastChannel('studios_pro_channel');
 
     channel.onmessage = (event) => {
-      if (event.data.type === 'TRIGGER_PAYMENT_MODAL') {
+      const { type, payload } = event.data;
+
+      if (type === 'TRIGGER_PAYMENT_MODAL') {
         if (isPremium || isAdmin) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
         } else {
-          setShowPaymentRequest(true);
+          // Tell the sub-app to show its own local modal
+          channel.postMessage({
+            type: 'SHOW_LOCAL_MODAL',
+            payload: { lang }
+          });
         }
+      } else if (type === 'START_STRIPE_PAYMENT') {
+        redirectToStripe(payload); // payload will be 'single' or 'premium'
       }
     };
 
     return () => channel.close();
-  }, [isPremium, isAdmin]);
+  }, [isPremium, isAdmin, lang]);
 
   const redirectToStripe = async (type) => {
     try {

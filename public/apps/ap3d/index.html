@@ -40,6 +40,94 @@
       background: #3b82f6;
       transform: translateY(-2px);
     }
+
+    /* Modal Local Styles */
+    #local-payment-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      color: white;
+    }
+
+    .local-modal-content {
+      background: #0f172a;
+      padding: 40px;
+      border-radius: 40px;
+      width: 90%;
+      max-width: 450px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .local-modal-content h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    .local-modal-content p {
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pay-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .premium-btn {
+      background: #d97706;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pay-btn:hover,
+    .premium-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .close-local-modal {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 20px;
+    }
   </style>
   <a href="/" class="back-to-studios">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -48,6 +136,21 @@
     </svg>
     <span>Retour / Back</span>
   </a>
+
+  <div id="local-payment-modal">
+    <div class="local-modal-content">
+      <button class="close-local-modal" id="modal-close-btn">&times;</button>
+      <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
+      <h2 id="modal-title">Paiement requis</h2>
+      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export sau devenir Premium ?
+      </p>
+      <div class="btn-group">
+        <button class="pay-btn" id="pay-single-btn">Payer 2$</button>
+        <button class="premium-btn" id="pay-premium-btn">Devenir Premium ($35)</button>
+      </div>
+    </div>
+  </div>
+
   <div id="root"></div>
   <!-- Payment Interceptor -->
   <script>
@@ -56,41 +159,66 @@
       let isVerified = false;
       let pendingEvent = null;
 
-      channel.onmessage = (event) => {
-        if (event.data.type === 'EXPORT_ALLOWED' && pendingEvent) {
-          isVerified = true;
-          pendingEvent.target.click();
+      const modal = document.getElementById('local-payment-modal');
+      const title = document.getElementById('modal-title');
+      const desc = document.getElementById('modal-desc');
+      const paySingle = document.getElementById('pay-single-btn');
+      const payPremium = document.getElementById('pay-premium-btn');
+      const closeBtn = document.getElementById('modal-close-btn');
+
+      const translations = {
+        fr: {
+          title: "Paiement requis pour l'export",
+          desc: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?",
+          pay: "Payer 2$",
+          premium: "Devenir Premium ($35)"
+        },
+        en: {
+          title: "Payment required for export",
+          desc: "You don't have a Premium account. Do you want to pay $2 for this export or go Premium?",
+          pay: "Pay $2",
+          premium: "Go Premium ($35)"
         }
       };
 
+      channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+
+        if (type === 'EXPORT_ALLOWED' && pendingEvent) {
+          isVerified = true;
+          modal.style.display = 'none';
+          pendingEvent.target.click();
+        } else if (type === 'SHOW_LOCAL_MODAL') {
+          const t = translations[payload.lang] || translations.fr;
+          title.innerText = t.title;
+          desc.innerText = t.desc;
+          paySingle.innerText = t.pay;
+          payPremium.innerText = t.premium;
+          modal.style.display = 'flex';
+        }
+      };
+
+      paySingle.onclick = () => channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'single' });
+      payPremium.onclick = () => channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'premium' });
+      closeBtn.onclick = () => modal.style.display = 'none';
+
       document.addEventListener('click', function (e) {
         if (isVerified) {
-          // Reset verification after a successful trigger
           setTimeout(() => { isVerified = false; }, 1000);
           return;
         }
 
         const target = e.target.closest('button') || e.target.closest('a') || e.target;
         const text = (target.innerText || target.textContent || "").toLowerCase();
-        const title = (target.getAttribute('title') || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
         const aria = (target.getAttribute('aria-label') || "").toLowerCase();
 
-        // Very broad list of keywords for 3D and 2D exports
-        const keywords = [
-          'export', 'download', 'telecharger', 'salveaza', 'save',
-          'bmp', 'vector', 'svg', 'obj', 'stl', 'glb', 'gltf', 'ply',
-          '3d', 'model', 'mesh', 'snapshot', 'capture', 'g-code', 'gcode'
-        ];
-
-        const isExport = keywords.some(k =>
-          text.includes(k) || title.includes(k) || aria.includes(k)
-        );
+        const keywords = ['export', 'download', 'telecharger', 'salveaza', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k));
 
         if (isExport) {
-          console.log("Intercepted export click:", text || title || aria);
           e.stopImmediatePropagation();
           e.preventDefault();
-
           pendingEvent = { target: target };
           channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' });
         }
