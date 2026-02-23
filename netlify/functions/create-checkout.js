@@ -13,8 +13,8 @@ exports.handler = async (event) => {
             customer_email: email,
             line_items: [],
             mode: '',
-            success_url: `${process.env.URL}/?payment_success=true`,
-            cancel_url: `${process.env.URL}/?payment_cancel=true`,
+            success_url: `${process.env.SITE_URL}/?payment_success=true`,
+            cancel_url: `${process.env.SITE_URL}/?payment_cancel=true`,
         };
 
         if (priceType === 'premium') {
