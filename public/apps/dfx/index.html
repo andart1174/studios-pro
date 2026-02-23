@@ -73,14 +73,22 @@
           return;
         }
 
-        const target = e.target.closest('button') || e.target;
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
         const text = (target.innerText || target.textContent || "").toLowerCase();
+        const title = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
 
-        const keywords = ['export', 'download', 'telecharger', 'salveaza', 'bmp', 'vector', 'svg', 'live vector preview'];
-        const isExport = keywords.some(k => text.includes(k) && !text.includes('live'));
+        const keywords = [
+          'export', 'download', 'telecharger', 'salveaza', 'save',
+          'bmp', 'vector', 'svg', 'dxf', 'plt', 'cnc', 'snapshot'
+        ];
+
+        const isExport = keywords.some(k =>
+          (text.includes(k) || title.includes(k) || aria.includes(k)) && !text.includes('live')
+        );
 
         if (isExport) {
-          console.log("Intercepted export click:", text);
+          console.log("Intercepted export click:", text || title || aria);
           e.stopImmediatePropagation();
           e.preventDefault();
 

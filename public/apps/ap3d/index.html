@@ -70,26 +70,33 @@
 
       document.addEventListener('click', function (e) {
         if (isVerified) {
-          // Reset verification after a successful trigger to protect future exports
+          // Reset verification after a successful trigger
           setTimeout(() => { isVerified = false; }, 1000);
           return;
         }
 
-        const target = e.target.closest('button') || e.target;
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
         const text = (target.innerText || target.textContent || "").toLowerCase();
+        const title = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
 
-        // Comprehensive list of export/download keywords for these apps
-        const keywords = ['export', 'download', 'telecharger', 'salveaza', 'bmp', 'vector', 'svg', 'obj', 'stl'];
-        const isExport = keywords.some(k => text.includes(k));
+        // Very broad list of keywords for 3D and 2D exports
+        const keywords = [
+          'export', 'download', 'telecharger', 'salveaza', 'save',
+          'bmp', 'vector', 'svg', 'obj', 'stl', 'glb', 'gltf', 'ply',
+          '3d', 'model', 'mesh', 'snapshot', 'capture', 'g-code', 'gcode'
+        ];
+
+        const isExport = keywords.some(k =>
+          text.includes(k) || title.includes(k) || aria.includes(k)
+        );
 
         if (isExport) {
-          console.log("Intercepted export click:", text);
+          console.log("Intercepted export click:", text || title || aria);
           e.stopImmediatePropagation();
           e.preventDefault();
 
           pendingEvent = { target: target };
-
-          // Notify main app
           window.parent.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' }, '*');
         }
       }, true);
