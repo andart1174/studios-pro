@@ -16,7 +16,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
       email: "Email",
       message: "Message",
       send: "Envoyer",
-      success: "Message envoyé ! Nous vă vom răspunde în cel mai scurt timp.",
+      success: "Message envoyé ! Nous vous répondrons bientôt.",
     },
     en: {
       title: "Contact Us",
@@ -110,6 +110,27 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
     }
   };
 
+  const t = {
+    fr: {
+      title: "Panneau d'administration",
+      loading: "Chargement...",
+      email: "Email",
+      status: "Statut",
+      action: "Action",
+      revoke: "Révoquer",
+      makePremium: "Rendre Premium"
+    },
+    en: {
+      title: "Admin Dashboard",
+      loading: "Loading...",
+      email: "Email",
+      status: "Status",
+      action: "Action",
+      revoke: "Revoke",
+      makePremium: "Make Premium"
+    }
+  }[lang];
+
   if (!isOpen) return null;
 
   return (
@@ -118,19 +139,19 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         <button className="close-btn" onClick={onClose}><X size={20} /></button>
         <div className="admin-header">
           <Settings size={24} />
-          <h2>Admin Dashboard</h2>
+          <h2>{t.title}</h2>
         </div>
 
         <div className="admin-content">
           {loading ? (
-            <div className="admin-loading">Chargement...</div>
+            <div className="admin-loading">{t.loading}</div>
           ) : (
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t.email}</th>
+                  <th>{t.status}</th>
+                  <th>{t.action}</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,7 +168,7 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                         className="admin-action-btn"
                         onClick={() => togglePremium(u.id, u.isPremium)}
                       >
-                        {u.isPremium ? 'Revoke' : 'Make Premium'}
+                        {u.isPremium ? t.revoke : t.makePremium}
                       </button>
                     </td>
                   </tr>
@@ -366,7 +387,7 @@ const StudiosPro = () => {
       premiumActive: "Premium Actif",
       premiumDesc: "Accès illimité - 35$/mois",
       payRequest: "Paiement requis pour l'export",
-      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pentru cet export ou devenir Premium ?",
+      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?",
       payBtn: "Payer 2$",
       cancel: "Annuler",
       contact: "Contact",

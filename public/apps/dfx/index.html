@@ -142,7 +142,7 @@
       <button class="close-local-modal" id="modal-close-btn">&times;</button>
       <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
       <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export sau devenir Premium ?
+      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?
       </p>
       <div class="btn-group">
         <button class="pay-btn" id="pay-single-btn">Payer 2$</button>
@@ -213,7 +213,7 @@
         const titleAttr = (target.getAttribute('title') || "").toLowerCase();
         const aria = (target.getAttribute('aria-label') || "").toLowerCase();
 
-        const keywords = ['export', 'download', 'telecharger', 'salveaza', 'save', 'bmp', 'vector', 'svg', 'dxf', 'plt', 'cnc', 'snapshot'];
+        const keywords = ['export', 'download', 'telecharger', 'save', 'bmp', 'vector', 'svg', 'dxf', 'plt', 'cnc', 'snapshot'];
         const isExport = keywords.some(k => (text.includes(k) || titleAttr.includes(k) || aria.includes(k)) && !text.includes('live'));
 
         if (isExport) {
