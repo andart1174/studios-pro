@@ -336,7 +336,7 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Auth Modal Styles */
+/* Auth / Payment Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -364,6 +364,10 @@ body {
   text-align: center;
 }
 
+.payment-modal {
+  max-width: 500px;
+}
+
 .close-btn {
   position: absolute;
   top: 20px;
@@ -378,6 +382,27 @@ body {
   font-size: 1.75rem;
   font-weight: 800;
   margin-bottom: 24px;
+}
+
+.payment-desc {
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 32px;
+  font-size: 1rem;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-options .auth-submit,
+.payment-options .premium-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 16px;
+  font-size: 1rem;
 }
 
 .auth-form {

@@ -63,6 +63,36 @@ const StudiosPro = () => {
   const [user, setUser] = useState(null); // Mocked user state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [showPaymentRequest, setShowPaymentRequest] = useState(false);
+  const [pendingExport, setPendingExport] = useState(null);
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data.type === 'TRIGGER_PAYMENT_MODAL') {
+        if (isPremium) {
+          // If premium, allow immediately
+          event.source.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
+        } else {
+          // If not premium, show payment request
+          setShowPaymentRequest(true);
+          setPendingExport(event.source);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [isPremium]);
+
+  const handlePayForExport = () => {
+    // Mock payment success for $2
+    if (pendingExport) {
+      pendingExport.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
+      setShowPaymentRequest(false);
+      setPendingExport(null);
+      alert(lang === 'fr' ? "Paiement de 2$ réussi ! Votre export va commencer." : "2$ Payment successful! Your export will begin.");
+    }
+  };
 
   const t = {
     fr: {
@@ -77,6 +107,10 @@ const StudiosPro = () => {
       getPremium: "Devenir Premium",
       premiumActive: "Premium Actif",
       premiumDesc: "Accès illimité - 35$/mois",
+      payRequest: "Paiement requis pour l'export",
+      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pentru cet export ou devenir Premium ?",
+      payBtn: "Payer 2$",
+      cancel: "Annuler",
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -90,6 +124,10 @@ const StudiosPro = () => {
       getPremium: "Go Premium",
       premiumActive: "Premium Active",
       premiumDesc: "Unlimited access - 35$/mo",
+      payRequest: "Payment required for export",
+      payMessage: "You don't have a Premium account. Would you like to pay $2 for this export or go Premium?",
+      payBtn: "Pay $2",
+      cancel: "Cancel",
     }
   };
 
@@ -97,6 +135,23 @@ const StudiosPro = () => {
 
   return (
     <div className="main-container">
+      {/* Payment Request Modal */}
+      <AnimatePresence>
+        {showPaymentRequest && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="auth-modal payment-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+              <button className="close-btn" onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
+              <CreditCard size={48} color="#f59e0b" style={{ marginBottom: 20 }} />
+              <h2>{currentT.payRequest}</h2>
+              <p className="payment-desc">{currentT.payMessage}</p>
+              <div className="payment-options">
+                <button className="auth-submit" onClick={handlePayForExport}>{currentT.payBtn}</button>
+                <button className="premium-btn" onClick={() => { setIsPremium(true); setShowPaymentRequest(false); }}>{currentT.getPremium} ($35)</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Navigation Top Bar */}
       <nav className="nav-bar">
         <div className="nav-left">

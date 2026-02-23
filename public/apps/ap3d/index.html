@@ -49,6 +49,52 @@
     <span>Retour / Back</span>
   </a>
   <div id="root"></div>
+  <!-- Payment Interceptor -->
+  <script>
+    (function () {
+      let isVerified = false;
+      let pendingEvent = null;
+
+      window.addEventListener('message', (event) => {
+        if (event.data.type === 'EXPORT_ALLOWED') {
+          console.log("Export allowed by parent app.");
+          isVerified = true;
+          if (pendingEvent) {
+            const target = pendingEvent.target;
+            pendingEvent = null;
+            // Re-trigger the click on the same element
+            target.click();
+          }
+        }
+      });
+
+      document.addEventListener('click', function (e) {
+        if (isVerified) {
+          // Reset verification after a successful trigger to protect future exports
+          setTimeout(() => { isVerified = false; }, 1000);
+          return;
+        }
+
+        const target = e.target.closest('button') || e.target;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+
+        // Comprehensive list of export/download keywords for these apps
+        const keywords = ['export', 'download', 'telecharger', 'salveaza', 'bmp', 'vector', 'svg', 'obj', 'stl'];
+        const isExport = keywords.some(k => text.includes(k));
+
+        if (isExport) {
+          console.log("Intercepted export click:", text);
+          e.stopImmediatePropagation();
+          e.preventDefault();
+
+          pendingEvent = { target: target };
+
+          // Notify main app
+          window.parent.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' }, '*');
+        }
+      }, true);
+    })();
+  </script>
 </body>
 
 </html>
