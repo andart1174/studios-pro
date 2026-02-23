@@ -93,7 +93,13 @@
           e.preventDefault();
 
           pendingEvent = { target: target };
-          window.parent.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' }, '*');
+          const targetWin = window.opener || window.parent;
+          if (targetWin && targetWin !== window) {
+            targetWin.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' }, '*');
+          } else {
+            console.error("Parent/Opener window not found!");
+            alert("Error: Main application window not found. Please keep the main site open.");
+          }
         }
       }, true);
     })();
