@@ -52,21 +52,16 @@
   <!-- Payment Interceptor -->
   <script>
     (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
       let isVerified = false;
       let pendingEvent = null;
 
-      window.addEventListener('message', (event) => {
-        if (event.data.type === 'EXPORT_ALLOWED') {
-          console.log("Export allowed by parent app.");
+      channel.onmessage = (event) => {
+        if (event.data.type === 'EXPORT_ALLOWED' && pendingEvent) {
           isVerified = true;
-          if (pendingEvent) {
-            const target = pendingEvent.target;
-            pendingEvent = null;
-            // Re-trigger the click on the same element
-            target.click();
-          }
+          pendingEvent.target.click();
         }
-      });
+      };
 
       document.addEventListener('click', function (e) {
         if (isVerified) {
@@ -97,15 +92,7 @@
           e.preventDefault();
 
           pendingEvent = { target: target };
-          const targetWin = window.opener || window.parent;
-          if (targetWin && targetWin !== window) {
-            targetWin.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' }, '*');
-          } else {
-            console.error("Parent/Opener window not found!");
-            // Fallback: if we can't talk to parent, maybe just allow? 
-            // Better to show an alert to the user.
-            alert("Error: Main application window not found. Please keep the main site open.");
-          }
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' });
         }
       }, true);
     })();

@@ -145,19 +145,19 @@ const StudiosPro = () => {
   }, [lang]);
 
   useEffect(() => {
-    const handleMessage = (event) => {
+    const channel = new BroadcastChannel('studios_pro_channel');
+
+    channel.onmessage = (event) => {
       if (event.data.type === 'TRIGGER_PAYMENT_MODAL') {
         if (isPremium) {
-          event.source.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
+          channel.postMessage({ type: 'EXPORT_ALLOWED' });
         } else {
           setShowPaymentRequest(true);
-          setPendingExport(event.source);
         }
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    return () => channel.close();
   }, [isPremium]);
 
   const redirectToStripe = async (type) => {
