@@ -306,7 +306,7 @@ const StudiosPro = () => {
 
     channel.onmessage = (event) => {
       if (event.data.type === 'TRIGGER_PAYMENT_MODAL') {
-        if (isPremium) {
+        if (isPremium || isAdmin) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
         } else {
           setShowPaymentRequest(true);
@@ -315,7 +315,7 @@ const StudiosPro = () => {
     };
 
     return () => channel.close();
-  }, [isPremium]);
+  }, [isPremium, isAdmin]);
 
   const redirectToStripe = async (type) => {
     try {
