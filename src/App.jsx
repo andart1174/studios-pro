@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const t = {
     fr: {
@@ -69,8 +69,97 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
   );
 };
 
-import { Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock, ShieldCheck, MessageSquare } from 'lucide-react';
+import {
+  Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
+  ShieldCheck, MessageSquare, Settings, Users, Star, Trash2
+} from 'lucide-react';
 import './App.css';
+
+const ADMIN_EMAIL = 'andart1174@gmail.com';
+
+const AdminModal = ({ isOpen, onClose, lang }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        // Note: In a real app with many users, you'd want pagination
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const usersList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setUsers(usersList);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+      setLoading(false);
+    };
+    fetchUsers();
+  }, [isOpen]);
+
+  const togglePremium = async (userId, currentStatus) => {
+    try {
+      await setDoc(doc(db, "users", userId), { isPremium: !currentStatus }, { merge: true });
+      setUsers(users.map(u => u.id === userId ? { ...u, isPremium: !currentStatus } : u));
+    } catch (error) {
+      alert("Error updating user: " + error.message);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <motion.div className="modal-overlay admin-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="auth-modal admin-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+        <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        <div className="admin-header">
+          <Settings size={24} />
+          <h2>Admin Dashboard</h2>
+        </div>
+
+        <div className="admin-content">
+          {loading ? (
+            <div className="admin-loading">Chargement...</div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td>{u.email}</td>
+                    <td>
+                      <span className={`status-badge ${u.isPremium ? 'premium' : 'free'}`}>
+                        {u.isPremium ? 'PREMIUM' : 'FREE'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="admin-action-btn"
+                        onClick={() => togglePremium(u.id, u.isPremium)}
+                      >
+                        {u.isPremium ? 'Revoke' : 'Make Premium'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const AuthModal = ({ isOpen, onClose, lang }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -171,9 +260,12 @@ const StudiosPro = () => {
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
+
+  const isAdmin = user && user.email === ADMIN_EMAIL;
 
   // Listen to Auth changes
   useEffect(() => {
@@ -344,6 +436,12 @@ const StudiosPro = () => {
                 </div>
               )}
               <div className="user-profile">
+                {isAdmin && (
+                  <button className="admin-nav-btn" onClick={() => setIsAdminOpen(true)} title="Admin">
+                    <Settings size={18} />
+                    <span>Admin</span>
+                  </button>
+                )}
                 <div className="user-icon"><User size={20} /></div>
                 <span className="user-email">{user.email}</span>
                 <button className="logout-btn" onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={18} /></button>
@@ -435,6 +533,13 @@ const StudiosPro = () => {
           <ContactModal
             isOpen={isContactOpen}
             onClose={() => setIsContactOpen(false)}
+            lang={lang}
+          />
+        )}
+        {isAdminOpen && (
+          <AdminModal
+            isOpen={isAdminOpen}
+            onClose={() => setIsAdminOpen(false)}
             lang={lang}
           />
         )}

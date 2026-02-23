@@ -557,3 +557,106 @@ body {
     margin-top: 80px;
   }
 }
+
+/* Admin Dashboard Styles */
+.admin-modal {
+  max-width: 800px !important;
+  width: 90% !important;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  color: var(--primary);
+  justify-content: center;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-table th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.status-badge.premium {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--primary);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.status-badge.free {
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+
+.admin-action-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+}
+
+.admin-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--primary);
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-right: 15px;
+}
+
+.admin-nav-btn:hover {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+.admin-loading {
+  padding: 40px;
+  color: var(--text-muted);
+}
