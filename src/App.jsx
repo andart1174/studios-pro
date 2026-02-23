@@ -1,6 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock, ShieldCheck } from 'lucide-react';
+const ContactModal = ({ isOpen, onClose, lang }) => {
+  const t = {
+    fr: {
+      title: "Contactez-nous",
+      name: "Nom",
+      email: "Email",
+      message: "Message",
+      send: "Envoyer",
+      success: "Message envoyé ! Nous vă vom răspunde în cel mai scurt timp.",
+    },
+    en: {
+      title: "Contact Us",
+      name: "Name",
+      email: "Email",
+      message: "Message",
+      send: "Send",
+      success: "Message sent! We will get back to you soon.",
+    }
+  }[lang];
+
+  if (!isOpen) return null;
+
+  return (
+    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="auth-modal contact-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+        <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        <h2>{t.title}</h2>
+        <form name="contact" method="POST" data-netlify="true" className="auth-form" onSubmit={(e) => {
+          // We let the browser handle the POST to Netlify, but we can show an alert
+          setTimeout(() => alert(t.success), 500);
+        }}>
+          <input type="hidden" name="form-name" value="contact" />
+          <div className="input-group">
+            <User size={18} className="input-icon" />
+            <input type="text" name="name" placeholder={t.name} required />
+          </div>
+          <div className="input-group">
+            <Mail size={18} className="input-icon" />
+            <input type="email" name="email" placeholder={t.email} required />
+          </div>
+          <div className="input-group">
+            <MessageSquare size={18} className="input-icon" style={{ top: '15px' }} />
+            <textarea name="message" placeholder={t.message} required className="contact-textarea"></textarea>
+          </div>
+          <button type="submit" className="auth-submit">{t.send}</button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+import { Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock, ShieldCheck, MessageSquare } from 'lucide-react';
 import './App.css';
 
 const AuthModal = ({ isOpen, onClose, lang }) => {
@@ -66,6 +117,7 @@ const StudiosPro = () => {
   const [lang, setLang] = useState('fr');
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
@@ -142,6 +194,7 @@ const StudiosPro = () => {
       payMessage: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pentru cet export ou devenir Premium ?",
       payBtn: "Payer 2$",
       cancel: "Annuler",
+      contact: "Contact",
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -159,6 +212,7 @@ const StudiosPro = () => {
       payMessage: "You don't have a Premium account. Would you like to pay $2 for this export or go Premium?",
       payBtn: "Pay $2",
       cancel: "Cancel",
+      contact: "Contact",
     }
   };
 
@@ -190,6 +244,10 @@ const StudiosPro = () => {
             <button className={`lang-btn ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
             <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
           </div>
+          <button className="contact-btn-nav" onClick={() => setIsContactOpen(true)}>
+            <MessageSquare size={18} />
+            <span>{currentT.contact}</span>
+          </button>
         </div>
 
         <div className="nav-right">
@@ -298,6 +356,13 @@ const StudiosPro = () => {
               setIsAuthOpen(false);
               setUser({ email: 'user@example.com' }); // Mock login
             }}
+            lang={lang}
+          />
+        )}
+        {isContactOpen && (
+          <ContactModal
+            isOpen={isContactOpen}
+            onClose={() => setIsContactOpen(false)}
             lang={lang}
           />
         )}
