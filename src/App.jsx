@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { auth, db } from './firebase.js';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const t = {
     fr: {
@@ -85,6 +93,30 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
     }
   }[lang];
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleAuth = async () => {
+    setError('');
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Initialize user profile in Firestore
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          email: userCredential.user.email,
+          isPremium: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -102,16 +134,27 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       >
         <button className="close-btn" onClick={onClose}><X size={20} /></button>
         <h2>{isLogin ? t.login : t.register}</h2>
+        {error && <p style={{ color: '#ff4444', fontSize: '0.8rem', marginBottom: '10px' }}>{error}</p>}
         <div className="auth-form">
           <div className="input-group">
             <Mail size={18} className="input-icon" />
-            <input type="email" placeholder={t.email} />
+            <input
+              type="email"
+              placeholder={t.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="input-group">
             <Lock size={18} className="input-icon" />
-            <input type="password" placeholder={t.password} />
+            <input
+              type="password"
+              placeholder={t.password}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
-          <button className="auth-submit" onClick={onClose}>{t.submit}</button>
+          <button className="auth-submit" onClick={handleAuth}>{t.submit}</button>
           <p className="auth-switch" onClick={() => setIsLogin(!isLogin)}>{t.switch}</p>
         </div>
       </motion.div>
@@ -132,17 +175,39 @@ const StudiosPro = () => {
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
 
+  // Listen to Auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        setUser(authUser);
+        // Check premium status in Firestore
+        const userDoc = await getDoc(doc(db, "users", authUser.uid));
+        if (userDoc.exists()) {
+          setIsPremium(userDoc.data().isPremium || false);
+        }
+      } else {
+        setUser(null);
+        setIsPremium(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Handle URL redirects after payment
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
-      // For now we trust the URL for simulation, real implementation would use webhooks/backend verification
+      // If payment successful, we should probably update Firestore here too
+      // But for now, we simulate and let the user know. 
+      // Real implementation would use Stripe Webhooks to update Firestore.
       setIsPremium(true);
+      if (user) {
+        setDoc(doc(db, "users", user.uid), { isPremium: true }, { merge: true });
+      }
       alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif." : "Payment successful! Your subscription is active.");
-      // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [lang]);
+  }, [lang, user]);
 
   useEffect(() => {
     const channel = new BroadcastChannel('studios_pro_channel');
@@ -281,7 +346,7 @@ const StudiosPro = () => {
               <div className="user-profile">
                 <div className="user-icon"><User size={20} /></div>
                 <span className="user-email">{user.email}</span>
-                <button className="logout-btn" onClick={() => setUser(null)} title={currentT.logout}><LogOut size={18} /></button>
+                <button className="logout-btn" onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={18} /></button>
               </div>
             </div>
           ) : (
@@ -362,10 +427,7 @@ const StudiosPro = () => {
         {isAuthOpen && (
           <AuthModal
             isOpen={isAuthOpen}
-            onClose={() => {
-              setIsAuthOpen(false);
-              setUser({ email: 'user@example.com' }); // Mock login
-            }}
+            onClose={() => setIsAuthOpen(false)}
             lang={lang}
           />
         )}
