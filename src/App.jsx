@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const t = {
     fr: {
@@ -43,7 +43,19 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams(formData).toString(),
           })
-            .then(() => {
+            .then(async () => {
+              // Also save to Firebase
+              try {
+                await addDoc(collection(db, "messages"), {
+                  name: formData.get('name'),
+                  email: formData.get('email'),
+                  message: formData.get('message'),
+                  timestamp: new Date().toISOString(),
+                  read: false
+                });
+              } catch (err) {
+                console.error("Firebase save error:", err);
+              }
               alert(t.success);
               onClose();
             })
@@ -79,27 +91,38 @@ const ADMIN_EMAIL = 'andart1174@gmail.com';
 
 const AdminModal = ({ isOpen, onClose, lang }) => {
   const [users, setUsers] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'messages'
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        // Note: In a real app with many users, you'd want pagination
-        const querySnapshot = await getDocs(collection(db, "users"));
-        const usersList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUsers(usersList);
+        if (activeTab === 'users') {
+          const querySnapshot = await getDocs(collection(db, "users"));
+          const usersList = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setUsers(usersList);
+        } else {
+          const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+          const querySnapshot = await getDocs(q);
+          const messagesList = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setMessages(messagesList);
+        }
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching data:", error);
       }
       setLoading(false);
     };
-    fetchUsers();
-  }, [isOpen]);
+    fetchData();
+  }, [isOpen, activeTab]);
 
   const togglePremium = async (userId, currentStatus) => {
     try {
@@ -107,6 +130,16 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       setUsers(users.map(u => u.id === userId ? { ...u, isPremium: !currentStatus } : u));
     } catch (error) {
       alert("Error updating user: " + error.message);
+    }
+  };
+
+  const deleteMessage = async (msgId) => {
+    if (!window.confirm("Supprimer ce message ?")) return;
+    try {
+      await deleteDoc(doc(db, "messages", msgId));
+      setMessages(messages.filter(m => m.id !== msgId));
+    } catch (error) {
+      alert("Error deleting message: " + error.message);
     }
   };
 
@@ -142,10 +175,21 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           <h2>{t.title}</h2>
         </div>
 
+        <div className="admin-tabs">
+          <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+            <Users size={18} />
+            <span>{lang === 'fr' ? 'Utilisateurs' : 'Users'}</span>
+          </button>
+          <button className={`admin-tab-btn ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>
+            <MessageSquare size={18} />
+            <span>{lang === 'fr' ? 'Messages' : 'Messages'}</span>
+          </button>
+        </div>
+
         <div className="admin-content">
           {loading ? (
             <div className="admin-loading">{t.loading}</div>
-          ) : (
+          ) : activeTab === 'users' ? (
             <table className="admin-table">
               <thead>
                 <tr>
@@ -175,6 +219,24 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                 ))}
               </tbody>
             </table>
+          ) : (
+            <div className="admin-messages-list">
+              {messages.length === 0 ? (
+                <p className="no-messages">{lang === 'fr' ? 'Aucun message.' : 'No messages.'}</p>
+              ) : messages.map(m => (
+                <div key={m.id} className="admin-message-card">
+                  <div className="message-header">
+                    <strong>{m.name}</strong>
+                    <span className="message-email">{m.email}</span>
+                    <button className="delete-msg-btn" onClick={() => deleteMessage(m.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <p className="message-text">{m.message}</p>
+                  <small className="message-date">{new Date(m.timestamp).toLocaleString()}</small>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </motion.div>

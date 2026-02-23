@@ -660,3 +660,122 @@ body {
   padding: 40px;
   color: var(--text-muted);
 }
+
+/* Admin Dashboard Tabs */
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.admin-tab-btn.active {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.admin-tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+/* Admin Messages List */
+.admin-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.admin-message-card {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s;
+  text-align: left;
+}
+
+.admin-message-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.message-email {
+  color: #3b82f6;
+  font-size: 0.85rem;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.message-text {
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  white-space: pre-wrap;
+}
+
+.message-date {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.delete-msg-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-msg-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+.no-messages {
+  text-align: center;
+  color: #64748b;
+  padding: 40px;
+}
