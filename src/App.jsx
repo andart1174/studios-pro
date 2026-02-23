@@ -395,24 +395,23 @@ const StudiosPro = () => {
   useEffect(() => {
     const channel = new BroadcastChannel('studios_pro_channel');
 
-    channel.onmessage = (event) => {
-      const { type, payload } = event.data;
+    const handleMessage = (data) => {
+      const { type, payload } = data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
         if (isPremium || isAdmin || hasExportCredit) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
+          window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
         } else {
-          // Tell the sub-app to show its own local modal
           channel.postMessage({
             type: 'SHOW_LOCAL_MODAL',
             payload: { lang }
           });
         }
       } else if (type === 'START_STRIPE_PAYMENT') {
-        console.log("Starting Stripe Payment:", payload);
-        redirectToStripe(payload); // payload will be 'single' or 'premium'
+        console.log("Payment request received:", payload);
+        redirectToStripe(payload);
       } else if (type === 'EXPORT_COMPLETED') {
-        // Consume export credit if not premium/admin
         if (hasExportCredit && !isPremium && !isAdmin) {
           setHasExportCredit(false);
           if (user) {
@@ -422,8 +421,20 @@ const StudiosPro = () => {
       }
     };
 
-    return () => channel.close();
-  }, [isPremium, isAdmin, lang]);
+    channel.onmessage = (event) => handleMessage(event.data);
+
+    const windowListener = (event) => {
+      if (event.data && typeof event.data === 'object' && event.data.type) {
+        handleMessage(event.data);
+      }
+    };
+    window.addEventListener('message', windowListener);
+
+    return () => {
+      channel.close();
+      window.removeEventListener('message', windowListener);
+    };
+  }, [isPremium, isAdmin, lang, hasExportCredit, user]);
 
   const redirectToStripe = async (type) => {
     try {

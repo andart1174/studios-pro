@@ -165,6 +165,7 @@
       const paySingle = document.getElementById('pay-single-btn');
       const payPremium = document.getElementById('pay-premium-btn');
       const closeBtn = document.getElementById('modal-close-btn');
+      let currentLang = 'fr';
 
       const translations = {
         fr: {
@@ -189,7 +190,8 @@
           modal.style.display = 'none';
           pendingEvent.target.click();
         } else if (type === 'SHOW_LOCAL_MODAL') {
-          const t = translations[payload.lang] || translations.fr;
+          currentLang = payload.lang || 'fr';
+          const t = translations[currentLang] || translations.fr;
           title.innerText = t.title;
           desc.innerText = t.desc;
           paySingle.innerText = t.pay;
@@ -200,11 +202,19 @@
 
       paySingle.onclick = () => {
         console.log("Local Modal: Pay Single clicked");
-        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'single' });
+        paySingle.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
+        paySingle.disabled = true;
+        const msg = { type: 'START_STRIPE_PAYMENT', payload: 'single' };
+        channel.postMessage(msg);
+        window.parent.postMessage(msg, '*');
       };
       payPremium.onclick = () => {
         console.log("Local Modal: Pay Premium clicked");
-        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'premium' });
+        payPremium.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
+        payPremium.disabled = true;
+        const msg = { type: 'START_STRIPE_PAYMENT', payload: 'premium' };
+        channel.postMessage(msg);
+        window.parent.postMessage(msg, '*');
       };
       closeBtn.onclick = () => modal.style.display = 'none';
 
