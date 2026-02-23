@@ -345,6 +345,7 @@ const StudiosPro = () => {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [hasExportCredit, setHasExportCredit] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
 
@@ -356,9 +357,10 @@ const StudiosPro = () => {
       if (authUser) {
         setUser(authUser);
         // Check premium status in Firestore
-        const userDoc = await getDoc(doc(db, "users", authUser.uid));
         if (userDoc.exists()) {
-          setIsPremium(userDoc.data().isPremium || false);
+          const data = userDoc.data();
+          setIsPremium(data.isPremium || false);
+          setHasExportCredit(data.hasExportCredit || false);
         }
       } else {
         setUser(null);
@@ -372,14 +374,20 @@ const StudiosPro = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
-      // If payment successful, we should probably update Firestore here too
-      // But for now, we simulate and let the user know. 
-      // Real implementation would use Stripe Webhooks to update Firestore.
-      setIsPremium(true);
-      if (user) {
-        setDoc(doc(db, "users", user.uid), { isPremium: true }, { merge: true });
+      const type = params.get('type');
+      if (type === 'premium') {
+        setIsPremium(true);
+        if (user) {
+          setDoc(doc(db, "users", user.uid), { isPremium: true }, { merge: true });
+        }
+        alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif." : "Payment successful! Your subscription is active.");
+      } else if (type === 'single') {
+        setHasExportCredit(true);
+        if (user) {
+          setDoc(doc(db, "users", user.uid), { hasExportCredit: true }, { merge: true });
+        }
+        alert(lang === 'fr' ? "Paiement réussi ! Vous pouvez maintenant exporter votre modèle." : "Payment successful! You can now export your model.");
       }
-      alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif." : "Payment successful! Your subscription is active.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [lang, user]);
@@ -391,7 +399,7 @@ const StudiosPro = () => {
       const { type, payload } = event.data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
-        if (isPremium || isAdmin) {
+        if (isPremium || isAdmin || hasExportCredit) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
         } else {
           // Tell the sub-app to show its own local modal
@@ -401,7 +409,16 @@ const StudiosPro = () => {
           });
         }
       } else if (type === 'START_STRIPE_PAYMENT') {
+        console.log("Starting Stripe Payment:", payload);
         redirectToStripe(payload); // payload will be 'single' or 'premium'
+      } else if (type === 'EXPORT_COMPLETED') {
+        // Consume export credit if not premium/admin
+        if (hasExportCredit && !isPremium && !isAdmin) {
+          setHasExportCredit(false);
+          if (user) {
+            setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
+          }
+        }
       }
     };
 

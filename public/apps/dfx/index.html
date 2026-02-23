@@ -198,12 +198,21 @@
         }
       };
 
-      paySingle.onclick = () => channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'single' });
-      payPremium.onclick = () => channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'premium' });
+      paySingle.onclick = () => {
+        console.log("Local Modal: Pay Single clicked");
+        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'single' });
+      };
+      payPremium.onclick = () => {
+        console.log("Local Modal: Pay Premium clicked");
+        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: 'premium' });
+      };
       closeBtn.onclick = () => modal.style.display = 'none';
 
       document.addEventListener('click', function (e) {
         if (isVerified) {
+          console.log("Export verified, allowing click");
+          // Notify main app to consume credit
+          channel.postMessage({ type: 'EXPORT_COMPLETED' });
           setTimeout(() => { isVerified = false; }, 1000);
           return;
         }
