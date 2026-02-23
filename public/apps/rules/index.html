@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Règles du Site - Studios-Pro</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            color: white;
+            padding: 40px;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #3b82f6;
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            letter-spacing: -0.04em;
+        }
+
+        section {
+            margin-bottom: 40px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        section:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        h2 {
+            color: #60a5fa;
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .point-number {
+            background: #3b82f6;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .highlight {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .lang-switch {
+            text-align: right;
+            margin-bottom: 30px;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 8px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s;
+            font-weight: 700;
+        }
+
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .content-en {
+            display: none;
+        }
+
+        /* Back Button Same Style */
+        .back-to-studios {
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-to-studios:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 1100px) {
+            .back-to-studios {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+            }
+
+            .container {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="back-to-studios">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+        <span>Retour / Back</span>
+    </a>
+
+    <div class="lang-switch">
+        <button id="btn-fr" class="lang-btn active" onclick="showLang('fr')">Français</button>
+        <button id="btn-en" class="lang-btn" onclick="showLang('en')">English</button>
+    </div>
+
+    <div class="container">
+        <div id="content-fr" class="content-fr">
+            <h1>Règles du Studio</h1>
+
+            <section>
+                <h2><span class="point-number">1</span> Confidentialité</h2>
+                <p>Le site <span class="highlight">ne demande aucune donnée personnelle</span>. Vous vous inscrivez avec
+                    votre e-mail et vous payez lors de l'exportation du modèle. Vous pouvez créer un compte premium et
+                    payer une fois par mois pour avoir un accès illimité à l'exportation.</p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">2</span> Paiements Sécurisés</h2>
+                <p>Les paiements sont traités via <span class="highlight">-STRIPE-</span>, un système hautement sécurisé
+                    utilisé par les plus grandes entreprises mondiales. Le site ne voit jamais les coordonnées de votre
+                    carte ; Stripe traite la transaction en toute sécurité et transfère les fonds directement au
+                    propriétaire.</p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">3</span> Persistance des Données</h2>
+                <p>Le site <span class="highlight">ne conserve aucun modèle</span>. Une fois que vous quittez la page ou
+                    que vous la rechargez, votre modèle est définitivement supprimé pour garantir votre confidentialité.
+                </p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">4</span> Qualité d'Exportation</h2>
+                <p>Vérifiez soigneusement votre modèle avant de l'exporter. L'application automatise la majorité du
+                    processus, mais met à votre disposition de nombreux outils de personnalisation. <span
+                        class="highlight">La qualité du résultat final dépend directement de la qualité de l'image
+                        originale chargée.</span></p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">5</span> Guide Compartiment 2 (DFX)</h2>
+                <p>Dans le Compartiment 2, lors du chargement d'une photo, il est normal que le modèle ne soit pas
+                    visible immédiatement. Vous devez aller dans la fonction <span class="highlight">-MODE-</span> et
+                    passer au deuxième mode : <span class="highlight">Threshold(B&W)</span>.
+                    <br><br>• Pour un <span class="highlight">Vecteur</span> : Activez "Live vector preview" et ajustez
+                    selon vos besoins.
+                    <br>• Pour un <span class="highlight">BMP</span> : Choisissez le mode souhaité et utilisez les
+                    outils de réglage.
+                </p>
+            </section>
+        </div>
+
+        <div id="content-en" class="content-en">
+            <h1>Studio Rules</h1>
+
+            <section>
+                <h2><span class="point-number">1</span> Data Privacy</h2>
+                <p>The site <span class="highlight">does not request any personal data</span>. You register with your
+                    email and pay when exporting the model. You can create a premium account and pay once a month to
+                    have unlimited access to exports.</p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">2</span> Secure Payments</h2>
+                <p>Payments are processed via <span class="highlight">-STRIPE-</span>, a highly secure system used by
+                    the world's leading companies. The site never sees your card details; Stripe handles the transaction
+                    securely and transfers the funds directly to the owner.</p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">3</span> Data Persistence</h2>
+                <p>The site <span class="highlight">does not store any models</span>. Once you exit the page or reload
+                    it, your model is permanently deleted to ensure your privacy.</p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">4</span> Export Quality</h2>
+                <p>Review your model carefully before exporting. While the application automates most of the process, it
+                    provides numerous tools for customization. <span class="highlight">The quality of the final result
+                        depends directly on the quality of the original image uploaded.</span></p>
+            </section>
+
+            <section>
+                <h2><span class="point-number">5</span> Compartment 2 (DFX) Guide</h2>
+                <p>In Compartment 2, when uploading a photo, the model may not be visible initially. You must navigate
+                    to the <span class="highlight">-MODE-</span> function and switch to the second mode: <span
+                        class="highlight">Threshold(B&W)</span>.
+                    <br><br>• For <span class="highlight">Vectors</span>: Enable "Live vector preview" and adjust as
+                    needed.
+                    <br>• For <span class="highlight">BMP</span>: Choose your preferred mode and use the adjustment
+                    tools.
+                </p>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function showLang(lang) {
+            document.getElementById('content-fr').style.display = lang === 'fr' ? 'block' : 'none';
+            document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+        }
+    </script>
+</body>
+
+</html>
