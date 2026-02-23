@@ -58,22 +58,36 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
   );
 };
 
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
 const StudiosPro = () => {
   const [lang, setLang] = useState('fr');
-  const [user, setUser] = useState(null); // Mocked user state
+  const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
 
+  // Handle URL redirects after payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_success')) {
+      // For now we trust the URL for simulation, real implementation would use webhooks/backend verification
+      setIsPremium(true);
+      alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif." : "Payment successful! Your subscription is active.");
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [lang]);
+
   useEffect(() => {
     const handleMessage = (event) => {
       if (event.data.type === 'TRIGGER_PAYMENT_MODAL') {
         if (isPremium) {
-          // If premium, allow immediately
           event.source.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
         } else {
-          // If not premium, show payment request
           setShowPaymentRequest(true);
           setPendingExport(event.source);
         }
@@ -84,18 +98,35 @@ const StudiosPro = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, [isPremium]);
 
-  const handlePayForExport = () => {
-    // Mock payment success for $2
-    if (pendingExport) {
-      pendingExport.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
-      setShowPaymentRequest(false);
-      setPendingExport(null);
-      alert(lang === 'fr' ? "Paiement de 2$ réussi ! Votre export va commencer." : "2$ Payment successful! Your export will begin.");
+  const redirectToStripe = async (type) => {
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceType: type,
+          email: user?.email || 'customer@example.com'
+        }),
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url; // Redirect to Stripe
+      }
+    } catch (error) {
+      console.error("Stripe Redirect Error:", error);
+      alert("Error starting checkout. Please try again.");
     }
+  };
+
+  const handlePayForExport = () => {
+    // Single export payment $2
+    redirectToStripe('single');
   };
 
   const t = {
     fr: {
+      // ... existing translations ...
       welcome: "Bienvenue sur Studios-Pro",
       subtitle: "Votre hub créatif professionnel",
       message: "Nous espérons que vous réaliserez votre modèle à la qualité souhaitée et que vous reviendrez sur notre site.",
@@ -146,7 +177,7 @@ const StudiosPro = () => {
               <p className="payment-desc">{currentT.payMessage}</p>
               <div className="payment-options">
                 <button className="auth-submit" onClick={handlePayForExport}>{currentT.payBtn}</button>
-                <button className="premium-btn" onClick={() => { setIsPremium(true); setShowPaymentRequest(false); }}>{currentT.getPremium} ($35)</button>
+                <button className="premium-btn" onClick={() => redirectToStripe('premium')}>{currentT.getPremium} ($35)</button>
               </div>
             </motion.div>
           </motion.div>
@@ -164,13 +195,21 @@ const StudiosPro = () => {
         <div className="nav-right">
           {user ? (
             <div className="user-controls">
-              <button
-                className={`premium-btn ${isPremium ? 'active' : ''}`}
-                onClick={() => setIsPremium(!isPremium)}
-              >
-                {isPremium ? <ShieldCheck size={18} /> : <CreditCard size={18} />}
-                <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
-              </button>
+              {!isPremium && (
+                <button
+                  className="premium-btn"
+                  onClick={() => redirectToStripe('premium')}
+                >
+                  <CreditCard size={18} />
+                  <span>{currentT.getPremium}</span>
+                </button>
+              )}
+              {isPremium && (
+                <div className="premium-btn active">
+                  <ShieldCheck size={18} />
+                  <span>{currentT.premiumActive}</span>
+                </div>
+              )}
               <div className="user-profile">
                 <div className="user-icon"><User size={20} /></div>
                 <span className="user-email">{user.email}</span>
