@@ -27,3 +27,73 @@ html,
   border: none;
   display: block;
 }
+
+/* Pricing / Freemium Modal Styles */
+.pricing-modal {
+  display: flex !important;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pricing-icon {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.pricing-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s;
+  cursor: pointer;
+  text-align: center;
+}
+
+.pricing-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-5px);
+}
+
+.pricing-card.featured {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  position: relative;
+}
+
+.pricing-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.pricing-price {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #3b82f6;
+}
+
+.pricing-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 500px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}

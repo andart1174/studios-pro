@@ -156,12 +156,48 @@
   <script>
     (function () {
       const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+
       const backBtn = document.getElementById('back-btn');
-      backBtn.onclick = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        channel.postMessage({ type: 'CLOSE_STUDIO' });
-        window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
       };
+
+      document.addEventListener('click', (e) => {
+        if (isAllowed) {
+          isAllowed = false;
+          pendingTarget = null;
+          return;
+        }
+
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+
+        // Detect export actions
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k));
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'ap3d' } });
+        }
+      }, true);
     })();
   </script>
 </body>

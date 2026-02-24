@@ -386,6 +386,21 @@ const StudiosPro = () => {
     return parseInt(localStorage.getItem('freeExportsUsed')) || 0;
   });
 
+  // Refs for stable monitoring in BroadcastChannel without re-triggering effect
+  const premiumRef = useRef(isPremium);
+  const adminRef = useRef(isAdmin);
+  const creditRef = useRef(hasExportCredit);
+  const freeUsedRef = useRef(freeExportsUsed);
+  const langRef = useRef(lang);
+
+  useEffect(() => {
+    premiumRef.current = isPremium;
+    adminRef.current = isAdmin;
+    creditRef.current = hasExportCredit;
+    freeUsedRef.current = freeExportsUsed;
+    langRef.current = lang;
+  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang]);
+
   // Listen to Auth changes
   useEffect(() => {
     if (!auth) {
@@ -477,30 +492,32 @@ const StudiosPro = () => {
       const { type, payload } = data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
-        if (isPremium || isAdmin || hasExportCredit) {
+        const isPrem = premiumRef.current;
+        const isAdm = adminRef.current;
+        const hasCred = creditRef.current;
+        const used = freeUsedRef.current;
+
+        if (isPrem || isAdm || hasCred) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
-          window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
-        } else if (freeExportsUsed < 2) {
+        } else if (used < 2) {
           // Use one free credit
-          setFreeExportsUsed(prev => prev + 1);
+          setFreeExportsUsed(prev => {
+            const newVal = prev + 1;
+            localStorage.setItem('freeExportsUsed', newVal);
+            return newVal;
+          });
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
-          window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
-          alert(lang === 'fr'
-            ? `Export autorisé ! Il vous reste ${1 - freeExportsUsed} export(s) gratuit(s).`
-            : `Export granted! You have ${1 - freeExportsUsed} free export(s) left.`);
         } else {
           setShowPaymentRequest(true);
         }
       } else if (type === 'START_STRIPE_PAYMENT') {
-        console.log("Payment request received:", payload);
-        // Payload can be a string or an object { type, ref }
         if (typeof payload === 'object') {
           redirectToStripe(payload.type, payload.ref);
         } else {
           redirectToStripe(payload);
         }
       } else if (type === 'EXPORT_COMPLETED') {
-        if (hasExportCredit && !isPremium && !isAdmin) {
+        if (creditRef.current && !premiumRef.current && !adminRef.current) {
           setHasExportCredit(false);
           if (user) {
             setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
@@ -511,10 +528,8 @@ const StudiosPro = () => {
         setIsDFXOpen(false);
         setIsRulesOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
-        console.log("Internal payment success received:", payload.type);
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
-        // Automatically allow the export in the current session
         channel.postMessage({ type: 'EXPORT_ALLOWED' });
       }
     };
@@ -532,7 +547,7 @@ const StudiosPro = () => {
       channel.close();
       window.removeEventListener('message', windowListener);
     };
-  }, [isPremium, isAdmin, lang, hasExportCredit, user]);
+  }, [user]);
 
   const redirectToStripe = async (type, refStudio = null) => {
     try {
@@ -814,23 +829,21 @@ const StudiosPro = () => {
       </AnimatePresence>
 
       {/* Full-screen Studio Overlays */}
-      <AnimatePresence>
-        {is3DOpen && (
-          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
-          </motion.div>
-        )}
-        {isDFXOpen && (
-          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
-          </motion.div>
-        )}
-        {isRulesOpen && (
-          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {is3DOpen && (
+        <div className="studio-overlay">
+          <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
+        </div>
+      )}
+      {isDFXOpen && (
+        <div className="studio-overlay">
+          <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
+        </div>
+      )}
+      {isRulesOpen && (
+        <div className="studio-overlay">
+          <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
+        </div>
+      )}
     </div>
   );
 };
