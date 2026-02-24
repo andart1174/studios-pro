@@ -621,7 +621,7 @@ const StudiosPro = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          Studios-Pro
+          Studios-Pro <span style={{ fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle' }}>(v2.0 - Single Page)</span>
         </motion.h1>
 
         <motion.div
