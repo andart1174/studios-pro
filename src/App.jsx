@@ -400,6 +400,11 @@ const StudiosPro = () => {
       setTimeout(() => channel.close(), 1000);
 
       window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Auto-open studio if ref is present
+      const ref = params.get('ref');
+      if (ref === 'ap3d') setIs3DOpen(true);
+      if (ref === 'dfx') setIsDFXOpen(true);
     }
   }, [lang, user]);
 
@@ -414,14 +419,21 @@ const StudiosPro = () => {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
           window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
         } else {
+          // Identify which studio requested this
+          const ref = payload?.ref || 'site';
           channel.postMessage({
             type: 'SHOW_LOCAL_MODAL',
-            payload: { lang }
+            payload: { lang, ref }
           });
         }
       } else if (type === 'START_STRIPE_PAYMENT') {
         console.log("Payment request received:", payload);
-        redirectToStripe(payload);
+        // Payload can be a string or an object { type, ref }
+        if (typeof payload === 'object') {
+          redirectToStripe(payload.type, payload.ref);
+        } else {
+          redirectToStripe(payload);
+        }
       } else if (type === 'EXPORT_COMPLETED') {
         if (hasExportCredit && !isPremium && !isAdmin) {
           setHasExportCredit(false);
@@ -453,14 +465,16 @@ const StudiosPro = () => {
     };
   }, [isPremium, isAdmin, lang, hasExportCredit, user]);
 
-  const redirectToStripe = async (type) => {
+  const redirectToStripe = async (type, refStudio = null) => {
     try {
       const response = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceType: type,
-          email: user?.email || 'customer@example.com'
+          email: user?.email || 'customer@example.com',
+          origin: window.location.origin,
+          refStudio: refStudio
         }),
       });
 

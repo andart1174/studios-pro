@@ -166,6 +166,7 @@
       const payPremium = document.getElementById('pay-premium-btn');
       const closeBtn = document.getElementById('modal-close-btn');
       let currentLang = 'fr';
+      let currentRef = 'dfx';
 
       const translations = {
         fr: {
@@ -191,6 +192,7 @@
           pendingEvent.target.click();
         } else if (type === 'SHOW_LOCAL_MODAL') {
           currentLang = payload.lang || 'fr';
+          currentRef = payload.ref || 'dfx';
           const t = translations[currentLang] || translations.fr;
           title.innerText = t.title;
           desc.innerText = t.desc;
@@ -205,7 +207,7 @@
         console.log("Local Modal: Pay Single clicked");
         paySingle.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
         paySingle.disabled = true;
-        const msg = { type: 'START_STRIPE_PAYMENT', payload: 'single' };
+        const msg = { type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: currentRef } };
         channel.postMessage(msg);
         window.parent.postMessage(msg, '*');
       };
@@ -214,7 +216,7 @@
         console.log("Local Modal: Pay Premium clicked");
         payPremium.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
         payPremium.disabled = true;
-        const msg = { type: 'START_STRIPE_PAYMENT', payload: 'premium' };
+        const msg = { type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: currentRef } };
         channel.postMessage(msg);
         window.parent.postMessage(msg, '*');
       };
@@ -241,7 +243,7 @@
           e.stopImmediatePropagation();
           e.preventDefault();
           pendingEvent = { target: target };
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL' });
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
         }
       }, true);
     })();

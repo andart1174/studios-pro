@@ -6,15 +6,19 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { priceType, email } = JSON.parse(event.body);
+        const { priceType, email, origin, refStudio } = JSON.parse(event.body);
+
+        let baseUrl = origin || process.env.SITE_URL;
+        let successParams = `?payment_success=true&type=${priceType}`;
+        if (refStudio) successParams += `&ref=${refStudio}`;
 
         let sessionConfig = {
             payment_method_types: ['card'],
             customer_email: email,
             line_items: [],
             mode: '',
-            success_url: `${process.env.SITE_URL}/?payment_success=true&type=${priceType}`,
-            cancel_url: `${process.env.SITE_URL}/?payment_cancel=true`,
+            success_url: `${baseUrl}/${successParams}`,
+            cancel_url: `${baseUrl}/?payment_cancel=true`,
         };
 
         if (priceType === 'premium') {
