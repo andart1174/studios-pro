@@ -188,8 +188,8 @@
         const aria = (target.getAttribute('aria-label') || "").toLowerCase();
 
         // Detect export actions
-        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k));
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || target.id.toLowerCase().includes(k) || target.className.toLowerCase().includes(k));
 
         if (isExport) {
           e.stopImmediatePropagation();

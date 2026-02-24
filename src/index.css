@@ -21,6 +21,19 @@ html,
   background: black;
 }
 
+/* Performance Isolation: Hide background elements when studio is active */
+.studio-active>nav,
+.studio-active>header,
+.studio-active>.compartments-grid,
+.studio-active>footer {
+  display: none !important;
+}
+
+.studio-active {
+  background: black !important;
+  overflow: hidden !important;
+}
+
 .studio-iframe {
   width: 100%;
   height: 100%;

@@ -507,6 +507,9 @@ const StudiosPro = () => {
             return newVal;
           });
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
+          alert(langRef.current === 'fr'
+            ? `Export autorisé ! Il vous reste ${1 - used} export(s) gratuit(s).`
+            : `Export granted! You have ${1 - used} free export(s) left.`);
         } else {
           setShowPaymentRequest(true);
         }
@@ -635,7 +638,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className="main-container">
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -657,7 +660,7 @@ const StudiosPro = () => {
                   style={{ marginBottom: '20px', background: '#3b82f6' }}
                   onClick={() => {
                     setShowPaymentRequest(false);
-                    setShowAuthModal(true);
+                    setIsAuthOpen(true);
                   }}
                 >
                   <User size={18} style={{ marginRight: '8px' }} />
@@ -829,21 +832,23 @@ const StudiosPro = () => {
       </AnimatePresence>
 
       {/* Full-screen Studio Overlays */}
-      {is3DOpen && (
-        <div className="studio-overlay">
-          <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
-        </div>
-      )}
-      {isDFXOpen && (
-        <div className="studio-overlay">
-          <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
-        </div>
-      )}
-      {isRulesOpen && (
-        <div className="studio-overlay">
-          <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
-        </div>
-      )}
+      <AnimatePresence>
+        {is3DOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
+          </motion.div>
+        )}
+        {isDFXOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
+          </motion.div>
+        )}
+        {isRulesOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
