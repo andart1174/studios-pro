@@ -382,6 +382,10 @@ const StudiosPro = () => {
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
+  const [freeExportsUsed, setFreeExportsUsed] = useState(() => {
+    return parseInt(localStorage.getItem('freeExportsUsed')) || 0;
+  });
+
   // Listen to Auth changes
   useEffect(() => {
     if (!auth) {
@@ -391,13 +395,27 @@ const StudiosPro = () => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
-        // Check premium status in Firestore
+        // Check premium status and sync free exports in Firestore
         try {
-          const userDoc = await getDoc(doc(db, "users", authUser.uid));
+          const userDocRef = doc(db, "users", authUser.uid);
+          const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             const data = userDoc.data();
             setIsPremium(data.isPremium || false);
             setHasExportCredit(data.hasExportCredit || false);
+            // Sync free exports from cloud if available, otherwise use local
+            if (data.freeExportsUsed !== undefined) {
+              setFreeExportsUsed(data.freeExportsUsed);
+              localStorage.setItem('freeExportsUsed', data.freeExportsUsed);
+            }
+          } else {
+            // New user, sync local to cloud
+            await setDoc(userDocRef, {
+              email: authUser.email,
+              isPremium: false,
+              isAdmin: false,
+              freeExportsUsed: freeExportsUsed
+            }, { merge: true });
           }
         } catch (err) {
           console.error("Error fetching user data:", err);
@@ -409,6 +427,15 @@ const StudiosPro = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Save free exports to localStorage and sync to Cloud when changed
+  useEffect(() => {
+    localStorage.setItem('freeExportsUsed', freeExportsUsed);
+    if (user && db) {
+      setDoc(doc(db, "users", user.uid), { freeExportsUsed }, { merge: true })
+        .catch(err => console.error("Cloud sync error:", err));
+    }
+  }, [freeExportsUsed, user]);
 
   // Handle URL redirects after payment
   useEffect(() => {
@@ -453,13 +480,16 @@ const StudiosPro = () => {
         if (isPremium || isAdmin || hasExportCredit) {
           channel.postMessage({ type: 'EXPORT_ALLOWED' });
           window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
+        } else if (freeExportsUsed < 2) {
+          // Use one free credit
+          setFreeExportsUsed(prev => prev + 1);
+          channel.postMessage({ type: 'EXPORT_ALLOWED' });
+          window.postMessage({ type: 'EXPORT_ALLOWED' }, '*');
+          alert(lang === 'fr'
+            ? `Export autorisé ! Il vous reste ${1 - freeExportsUsed} export(s) gratuit(s).`
+            : `Export granted! You have ${1 - freeExportsUsed} free export(s) left.`);
         } else {
-          // Identify which studio requested this
-          const ref = payload?.ref || 'site';
-          channel.postMessage({
-            type: 'SHOW_LOCAL_MODAL',
-            payload: { lang, ref }
-          });
+          setShowPaymentRequest(true);
         }
       } else if (type === 'START_STRIPE_PAYMENT') {
         console.log("Payment request received:", payload);
@@ -552,6 +582,13 @@ const StudiosPro = () => {
       payBtn: "Payer 2$",
       cancel: "Annuler",
       contact: "Contact",
+      freeLimitTitle: "Limite gratuite atteinte",
+      freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
+      loginNow: "Se connecter / S'inscrire",
+      unlimitedTitle: "Illimité",
+      unlimitedPrice: "35$ / mois",
+      singleTitle: "Séquence unique",
+      singlePrice: "2$ / export"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -570,6 +607,13 @@ const StudiosPro = () => {
       payBtn: "Pay $2",
       cancel: "Cancel",
       contact: "Contact",
+      freeLimitTitle: "Free limit reached",
+      freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
+      loginNow: "Login / Register",
+      unlimitedTitle: "Unlimited",
+      unlimitedPrice: "$35 / month",
+      singleTitle: "Single Sequence",
+      singlePrice: "$2 / export"
     }
   };
 
@@ -578,17 +622,51 @@ const StudiosPro = () => {
   return (
     <div className="main-container">
       {/* Payment Request Modal */}
+      {/* Pricing / Freemium Modal */}
       <AnimatePresence>
         {showPaymentRequest && (
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="auth-modal payment-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+            <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '500px' }}>
               <button className="close-btn" onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
-              <CreditCard size={48} color="#f59e0b" style={{ marginBottom: 20 }} />
-              <h2>{currentT.payRequest}</h2>
-              <p className="payment-desc">{currentT.payMessage}</p>
-              <div className="payment-options">
-                <button className="auth-submit" onClick={handlePayForExport}>{currentT.payBtn}</button>
-                <button className="premium-btn" onClick={() => redirectToStripe('premium')}>{currentT.getPremium} ($35)</button>
+
+              <div className="pricing-icon">
+                <Box size={48} color="#3b82f6" />
+              </div>
+
+              <h2>{currentT.freeLimitTitle}</h2>
+              <p className="payment-desc">{currentT.freeLimitMsg}</p>
+
+              {!user && (
+                <button
+                  className="auth-submit"
+                  style={{ marginBottom: '20px', background: '#3b82f6' }}
+                  onClick={() => {
+                    setShowPaymentRequest(false);
+                    setShowAuthModal(true);
+                  }}
+                >
+                  <User size={18} style={{ marginRight: '8px' }} />
+                  {currentT.loginNow}
+                </button>
+              )}
+
+              <div className="pricing-grid">
+                <div className="pricing-card">
+                  <h3>{currentT.singleTitle}</h3>
+                  <div className="price">{currentT.singlePrice}</div>
+                  <button className="pricing-select" onClick={handlePayForExport}>
+                    {currentT.payBtn}
+                  </button>
+                </div>
+
+                <div className="pricing-card highlighted">
+                  <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
+                  <h3>{currentT.unlimitedTitle}</h3>
+                  <div className="price">{currentT.unlimitedPrice}</div>
+                  <button className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
+                    {currentT.getPremium}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
