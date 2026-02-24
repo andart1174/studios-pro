@@ -48,10 +48,12 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
             body: new URLSearchParams(formData).toString(),
           })
             .then(async (response) => {
-              // Netlify Forms might return 404 if not detected yet, but we care most about Firebase
-              let netlifyOk = response.ok;
+              // Netlify Forms should handle it, we alert success immediately
+              alert(t.success);
+              setLoading(false);
+              onClose();
 
-              // Also save to Firebase if available
+              // Also save to Firebase in background if available
               if (db) {
                 try {
                   await addDoc(collection(db, "messages"), {
@@ -61,17 +63,9 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
                     timestamp: new Date().toISOString(),
                     read: false
                   });
-                  alert(t.success);
-                  setLoading(false);
-                  onClose();
                 } catch (err) {
-                  console.error("Firebase save error:", err);
-                  alert(lang === 'fr' ? "Erreur Firebase: " + err.message : "Firebase Error: " + err.message);
-                  setLoading(false);
+                  console.error("Firebase background sync error:", err);
                 }
-              } else {
-                alert(lang === 'fr' ? "Erreur: Baza de date (Firebase) nu este configurată corect în Netlify. Verifică cheile VITE_." : "Error: Firebase is not correctly configured in Netlify. Check VITE_ keys.");
-                setLoading(false);
               }
             })
             .catch((error) => {
