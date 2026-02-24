@@ -47,7 +47,10 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams(formData).toString(),
           })
-            .then(async () => {
+            .then(async (response) => {
+              // Netlify Forms might return 404 if not detected yet, but we care most about Firebase
+              let netlifyOk = response.ok;
+
               // Also save to Firebase if available
               if (db) {
                 try {
@@ -58,17 +61,22 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
                     timestamp: new Date().toISOString(),
                     read: false
                   });
+                  alert(t.success);
+                  setLoading(false);
+                  onClose();
                 } catch (err) {
                   console.error("Firebase save error:", err);
+                  alert(lang === 'fr' ? "Erreur Firebase: " + err.message : "Firebase Error: " + err.message);
+                  setLoading(false);
                 }
+              } else {
+                alert(lang === 'fr' ? "Erreur: Baza de date (Firebase) nu este configurată corect în Netlify. Verifică cheile VITE_." : "Error: Firebase is not correctly configured in Netlify. Check VITE_ keys.");
+                setLoading(false);
               }
-              alert(t.success);
-              setLoading(false);
-              onClose();
             })
             .catch((error) => {
               console.error("Form submission error:", error);
-              alert(lang === 'fr' ? "Erreur lors de l'envoi." : "Error sending message.");
+              alert(lang === 'fr' ? "Erreur de connexion: " + error.message : "Connection Error: " + error.message);
               setLoading(false);
             });
         }}>
@@ -135,6 +143,7 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        alert(lang === 'fr' ? "Erreur Admin (Firestore): " + error.message : "Admin Error (Firestore): " + error.message);
       }
       setLoading(false);
     };
@@ -201,6 +210,10 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
             <MessageSquare size={18} />
             <span>{lang === 'fr' ? 'Messages' : 'Messages'}</span>
           </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', fontSize: '12px', alignItems: 'center' }}>
+            <span title="Firebase Status">DB: {db ? '✅' : '❌'}</span>
+            <span title="Auth Status">Auth: {auth ? '✅' : '❌'}</span>
+          </div>
         </div>
 
         <div className="admin-content">
