@@ -620,7 +620,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen) ? 'studio-active' : ''}`}>
+    <div className="main-container">
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>

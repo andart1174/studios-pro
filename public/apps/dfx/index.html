@@ -9,30 +9,6 @@
   <script>document.title = "Studio DFX | Studios-Pro";</script>
   <script type="module" crossorigin src="./assets/index-BubpDXVr.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-Chp1DZXB.css">
-
-  <!-- WebGL Stability Patch -->
-  <script>
-    (function () {
-      // Fix for "Black Screen" on High-Res / Max Quality
-      // Limit pixel ratio to 1.5 to prevent GPU overflow while keeping sharpness
-      const originalDPR = window.devicePixelRatio;
-      Object.defineProperty(window, 'devicePixelRatio', {
-        get: function () { return Math.min(originalDPR, 1.5); }
-      });
-
-      // Catch context loss to prevent complete freeze
-      window.addEventListener('load', () => {
-        const canvases = document.getElementsByTagName('canvas');
-        for (let canvas of canvases) {
-          canvas.addEventListener('webglcontextlost', (e) => {
-            e.preventDefault();
-            console.warn('WebGL context lost. Attempting to restore performance...');
-            setTimeout(() => { window.location.reload(); }, 1000);
-          }, false);
-        }
-      });
-    })();
-  </script>
 </head>
 
 <body>
@@ -177,109 +153,15 @@
   </div>
 
   <div id="root"></div>
-  <!-- Payment Interceptor -->
   <script>
     (function () {
       const channel = new BroadcastChannel('studios_pro_channel');
-      let isVerified = false;
-      let pendingEvent = null;
-
-      const modal = document.getElementById('local-payment-modal');
-      const title = document.getElementById('modal-title');
-      const desc = document.getElementById('modal-desc');
-      const paySingle = document.getElementById('pay-single-btn');
-      const payPremium = document.getElementById('pay-premium-btn');
-      const closeBtn = document.getElementById('modal-close-btn');
       const backBtn = document.getElementById('back-btn');
-      let currentLang = 'fr';
-      let currentRef = 'dfx';
-
-      const translations = {
-        fr: {
-          title: "Paiement requis pour l'export",
-          desc: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?",
-          pay: "Payer 2$",
-          premium: "Devenir Premium ($35)"
-        },
-        en: {
-          title: "Payment required for export",
-          desc: "You don't have a Premium account. Do you want to pay $2 for this export or go Premium?",
-          pay: "Pay $2",
-          premium: "Go Premium ($35)"
-        }
-      };
-
-      channel.onmessage = (event) => {
-        const { type, payload } = event.data;
-
-        if (type === 'EXPORT_ALLOWED' && pendingEvent) {
-          isVerified = true;
-          modal.style.display = 'none';
-          pendingEvent.target.click();
-        } else if (type === 'SHOW_LOCAL_MODAL') {
-          currentLang = payload.lang || 'fr';
-          currentRef = payload.ref || 'dfx';
-          const t = translations[currentLang] || translations.fr;
-          title.innerText = t.title;
-          desc.innerText = t.desc;
-          paySingle.innerText = t.pay;
-          payPremium.innerText = t.premium;
-          modal.style.display = 'flex';
-        }
-      };
-
-      paySingle.onclick = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        console.log("Local Modal: Pay Single clicked");
-        paySingle.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
-        paySingle.disabled = true;
-        const msg = { type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: currentRef } };
-        channel.postMessage(msg);
-        window.parent.postMessage(msg, '*');
-      };
-      payPremium.onclick = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        console.log("Local Modal: Pay Premium clicked");
-        payPremium.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
-        payPremium.disabled = true;
-        const msg = { type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: currentRef } };
-        channel.postMessage(msg);
-        window.parent.postMessage(msg, '*');
-      };
-
       backBtn.onclick = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        const msg = { type: 'CLOSE_STUDIO' };
-        channel.postMessage(msg);
-        window.parent.postMessage(msg, '*');
+        channel.postMessage({ type: 'CLOSE_STUDIO' });
+        window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
       };
-
-      closeBtn.onclick = () => modal.style.display = 'none';
-
-      document.addEventListener('click', function (e) {
-        if (isVerified) {
-          console.log("Export verified, allowing click");
-          // Notify main app to consume credit
-          channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          setTimeout(() => { isVerified = false; }, 1000);
-          return;
-        }
-
-        const target = e.target.closest('button') || e.target.closest('a') || e.target;
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-
-        const keywords = ['export', 'download', 'telecharger', 'save', 'bmp', 'vector', 'svg', 'dxf', 'plt', 'cnc', 'snapshot'];
-        const isExport = keywords.some(k => (text.includes(k) || titleAttr.includes(k) || aria.includes(k)) && !text.includes('live'));
-
-        if (isExport) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingEvent = { target: target };
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-        }
-      }, true);
     })();
   </script>
 </body>
