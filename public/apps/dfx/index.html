@@ -9,6 +9,30 @@
   <script>document.title = "Studio DFX | Studios-Pro";</script>
   <script type="module" crossorigin src="./assets/index-BubpDXVr.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-Chp1DZXB.css">
+
+  <!-- WebGL Stability Patch -->
+  <script>
+    (function () {
+      // Fix for "Black Screen" on High-Res / Max Quality
+      // Limit pixel ratio to 1.5 to prevent GPU overflow while keeping sharpness
+      const originalDPR = window.devicePixelRatio;
+      Object.defineProperty(window, 'devicePixelRatio', {
+        get: function () { return Math.min(originalDPR, 1.5); }
+      });
+
+      // Catch context loss to prevent complete freeze
+      window.addEventListener('load', () => {
+        const canvases = document.getElementsByTagName('canvas');
+        for (let canvas of canvases) {
+          canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('WebGL context lost. Attempting to restore performance...');
+            setTimeout(() => { window.location.reload(); }, 1000);
+          }, false);
+        }
+      });
+    })();
+  </script>
 </head>
 
 <body>
