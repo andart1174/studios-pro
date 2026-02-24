@@ -348,6 +348,9 @@ const StudiosPro = () => {
   const [hasExportCredit, setHasExportCredit] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
+  const [is3DOpen, setIs3DOpen] = useState(false);
+  const [isDFXOpen, setIsDFXOpen] = useState(false);
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -441,6 +444,10 @@ const StudiosPro = () => {
             setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
           }
         }
+      } else if (type === 'CLOSE_STUDIO') {
+        setIs3DOpen(false);
+        setIsDFXOpen(false);
+        setIsRulesOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         console.log("Internal payment success received:", payload.type);
         if (payload.type === 'premium') setIsPremium(true);
@@ -638,7 +645,7 @@ const StudiosPro = () => {
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => window.open('/apps/ap3d/index.html', '_blank')}
+          onClick={() => setIs3DOpen(true)}
         >
           <div className="shape-wrapper">
             <div className="shape-1" />
@@ -650,7 +657,7 @@ const StudiosPro = () => {
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => window.open('/apps/dfx/index.html', '_blank')}
+          onClick={() => setIsDFXOpen(true)}
         >
           <div className="shape-wrapper">
             <div className="shape-2" />
@@ -662,7 +669,7 @@ const StudiosPro = () => {
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => window.open('/apps/rules/index.html', '_blank')}
+          onClick={() => setIsRulesOpen(true)}
         >
           <div className="shape-wrapper">
             <div className="shape-3" />
@@ -693,6 +700,25 @@ const StudiosPro = () => {
             onClose={() => setIsAdminOpen(false)}
             lang={lang}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Full-screen Studio Overlays */}
+      <AnimatePresence>
+        {is3DOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
+          </motion.div>
+        )}
+        {isDFXOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
+          </motion.div>
+        )}
+        {isRulesOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

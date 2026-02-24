@@ -130,13 +130,13 @@
       font-size: 20px;
     }
   </style>
-  <a href="/" class="back-to-studios">
+  <button id="back-btn" class="back-to-studios">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round">
       <path d="m15 18-6-6 6-6" />
     </svg>
     <span>Retour / Back</span>
-  </a>
+  </button>
 
   <div id="local-payment-modal">
     <div class="local-modal-content">
@@ -166,6 +166,7 @@
       const paySingle = document.getElementById('pay-single-btn');
       const payPremium = document.getElementById('pay-premium-btn');
       const closeBtn = document.getElementById('modal-close-btn');
+      const backBtn = document.getElementById('back-btn');
       let currentLang = 'fr';
       let currentRef = 'dfx';
 
@@ -221,6 +222,14 @@
         channel.postMessage(msg);
         window.parent.postMessage(msg, '*');
       };
+
+      backBtn.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        const msg = { type: 'CLOSE_STUDIO' };
+        channel.postMessage(msg);
+        window.parent.postMessage(msg, '*');
+      };
+
       closeBtn.onclick = () => modal.style.display = 'none';
 
       document.addEventListener('click', function (e) {
