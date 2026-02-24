@@ -357,10 +357,15 @@ const StudiosPro = () => {
       if (authUser) {
         setUser(authUser);
         // Check premium status in Firestore
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setIsPremium(data.isPremium || false);
-          setHasExportCredit(data.hasExportCredit || false);
+        try {
+          const userDoc = await getDoc(doc(db, "users", authUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setIsPremium(data.isPremium || false);
+            setHasExportCredit(data.hasExportCredit || false);
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
         }
       } else {
         setUser(null);
@@ -388,6 +393,12 @@ const StudiosPro = () => {
         }
         alert(lang === 'fr' ? "Paiement réussi ! Vous pouvez maintenant exporter votre modèle." : "Payment successful! You can now export your model.");
       }
+
+      // Notify other tabs (like the studio one) that the payment is done
+      const channel = new BroadcastChannel('studios_pro_channel');
+      channel.postMessage({ type: 'PAYMENT_SUCCESS_INTERNAL', payload: { type } });
+      setTimeout(() => channel.close(), 1000);
+
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [lang, user]);
@@ -418,6 +429,12 @@ const StudiosPro = () => {
             setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
           }
         }
+      } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
+        console.log("Internal payment success received:", payload.type);
+        if (payload.type === 'premium') setIsPremium(true);
+        if (payload.type === 'single') setHasExportCredit(true);
+        // Automatically allow the export in the current session
+        channel.postMessage({ type: 'EXPORT_ALLOWED' });
       }
     };
 
@@ -449,7 +466,8 @@ const StudiosPro = () => {
 
       const { url } = await response.json();
       if (url) {
-        window.location.href = url; // Redirect to Stripe
+        window.open(url, '_blank');
+        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement în noua fereastră și reveniți aici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
       }
     } catch (error) {
       console.error("Stripe Redirect Error:", error);

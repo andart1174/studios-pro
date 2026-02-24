@@ -200,7 +200,8 @@
         }
       };
 
-      paySingle.onclick = () => {
+      paySingle.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         console.log("Local Modal: Pay Single clicked");
         paySingle.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
         paySingle.disabled = true;
@@ -208,7 +209,8 @@
         channel.postMessage(msg);
         window.parent.postMessage(msg, '*');
       };
-      payPremium.onclick = () => {
+      payPremium.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         console.log("Local Modal: Pay Premium clicked");
         payPremium.innerText = (currentLang === 'en' ? "Loading..." : "Chargement...");
         payPremium.disabled = true;
