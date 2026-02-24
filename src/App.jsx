@@ -500,7 +500,7 @@ const StudiosPro = () => {
       const { url } = await response.json();
       if (url) {
         window.open(url, '_blank');
-        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement în noua fereastră și reveniți aici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
+        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement dans la nouvelle fenêtre et revenir ici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
       }
     } catch (error) {
       console.error("Stripe Redirect Error:", error);
