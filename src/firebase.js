@@ -13,7 +13,21 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let app;
+let auth;
+let db;
+
+try {
+    if (firebaseConfig.apiKey) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+    } else {
+        console.warn("Firebase API Key missing. Some features may not work.");
+    }
+} catch (error) {
+    console.error("Firebase Initialization Error:", error);
+}
+
+export { auth, db };
 export default app;

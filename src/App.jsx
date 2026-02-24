@@ -98,6 +98,10 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
   useEffect(() => {
     if (!isOpen) return;
     const fetchData = async () => {
+      if (!db) {
+        console.warn("Database not initialized.");
+        return;
+      }
       setLoading(true);
       try {
         if (activeTab === 'users') {
@@ -270,6 +274,10 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
   const [error, setError] = useState('');
 
   const handleAuth = async () => {
+    if (!auth) {
+      setError(lang === 'fr' ? "Le système d'authentification n'est pas configuré." : "Authentication system not configured.");
+      return;
+    }
     setError('');
     try {
       if (isLogin) {
@@ -356,6 +364,10 @@ const StudiosPro = () => {
 
   // Listen to Auth changes
   useEffect(() => {
+    if (!auth) {
+      console.warn("Auth not initialized.");
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
