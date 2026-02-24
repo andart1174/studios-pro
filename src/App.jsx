@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
+  const [loading, setLoading] = useState(false);
   const t = {
     fr: {
       title: "Contactez-nous",
@@ -16,6 +17,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
       email: "Email",
       message: "Message",
       send: "Envoyer",
+      sending: "Envoi...",
       success: "Message envoyé ! Nous vous répondrons bientôt.",
     },
     en: {
@@ -24,6 +26,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
       email: "Email",
       message: "Message",
       send: "Send",
+      sending: "Sending...",
       success: "Message sent! We will get back to you soon.",
     }
   }[lang];
@@ -37,6 +40,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
         <h2>{t.title}</h2>
         <form name="contact" method="POST" className="auth-form" onSubmit={(e) => {
           e.preventDefault();
+          setLoading(true);
           const formData = new FormData(e.target);
           fetch("/", {
             method: "POST",
@@ -44,22 +48,29 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
             body: new URLSearchParams(formData).toString(),
           })
             .then(async () => {
-              // Also save to Firebase
-              try {
-                await addDoc(collection(db, "messages"), {
-                  name: formData.get('name'),
-                  email: formData.get('email'),
-                  message: formData.get('message'),
-                  timestamp: new Date().toISOString(),
-                  read: false
-                });
-              } catch (err) {
-                console.error("Firebase save error:", err);
+              // Also save to Firebase if available
+              if (db) {
+                try {
+                  await addDoc(collection(db, "messages"), {
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    message: formData.get('message'),
+                    timestamp: new Date().toISOString(),
+                    read: false
+                  });
+                } catch (err) {
+                  console.error("Firebase save error:", err);
+                }
               }
               alert(t.success);
+              setLoading(false);
               onClose();
             })
-            .catch((error) => alert(error));
+            .catch((error) => {
+              console.error("Form submission error:", error);
+              alert(lang === 'fr' ? "Erreur lors de l'envoi." : "Error sending message.");
+              setLoading(false);
+            });
         }}>
           <input type="hidden" name="form-name" value="contact" />
           <div className="input-group">
@@ -74,7 +85,9 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
             <MessageSquare size={18} className="input-icon" style={{ top: '15px' }} />
             <textarea name="message" placeholder={t.message} required className="contact-textarea"></textarea>
           </div>
-          <button type="submit" className="auth-submit">{t.send}</button>
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? t.sending : t.send}
+          </button>
         </form>
       </motion.div>
     </motion.div>
