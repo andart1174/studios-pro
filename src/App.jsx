@@ -96,6 +96,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
   );
 };
 
+import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu
