@@ -1904,7 +1904,7 @@ const App = (() => {
         btn.style.background = '#ef4444';
         btn.style.color = '#ffffff';
         cv.style.cursor = 'crosshair';
-        toast('Eraser Tool active. Click a path on the right to remove it.', 'info');
+        toast(currentLang === 'fr' ? 'Outil Gomme actif. Cliquez sur un tracé pour le supprimer.' : 'Eraser Tool active. Click a path on the right to remove it.', 'info');
       } else {
         btn.style.background = 'var(--surface2)';
         btn.style.color = '#ef4444';
@@ -2009,11 +2009,17 @@ const App = (() => {
     const list = $('layersList');
     if (!list) return;
     list.innerHTML = '';
-    if (!paths.length) { list.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No vectors. Vectorize an image first.</p>'; return; }
+    if (!paths.length) { 
+      list.innerHTML = `<p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">
+        <span data-en>No vectors. Vectorize an image first.</span>
+        <span data-fr>Aucun vecteur. Vectorisez d'abord une image.</span>
+      </p>`; 
+      return; 
+    }
     const avgLen = paths.reduce((s, p) => s + p.length, 0) / paths.length;
     const items = [
-      { color: '#4f8eff', name: 'Main Cut Layer', count: paths.length + ' paths' },
-      { color: '#06d6a0', name: 'Engraving Contour', count: Math.round(avgLen) + ' nodes/path avg.' },
+      { color: '#4f8eff', name: currentLang === 'fr' ? 'Tracé principal' : 'Main Cut Layer', count: paths.length + (currentLang === 'fr' ? ' tracés' : ' paths') },
+      { color: '#06d6a0', name: currentLang === 'fr' ? 'Contour gravure' : 'Engraving Contour', count: Math.round(avgLen) + (currentLang === 'fr' ? ' noeuds/tracé moy.' : ' nodes/path avg.') },
     ];
     items.forEach(it => {
       const div = document.createElement('div');

@@ -183,19 +183,22 @@
       stroke-linecap="round" stroke-linejoin="round">
       <path d="m15 18-6-6 6-6" />
     </svg>
-    <span>Retour / Back</span>
+    <span><span data-fr>Retour aux Studios</span><span data-en>Back to Studios</span></span>
   </button>
 
   <div id="local-payment-modal">
     <div class="local-modal-content">
       <button class="close-local-modal" id="modal-close-btn">&times;</button>
       <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
-      <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pentru acest export sau deveni Premium ?
+      <h2 id="modal-title"><span data-en="Payment Required" data-fr="Paiement Requis">Payment Required</span></h2>
+      <p id="modal-desc">
+        <span data-en>You don't have a Premium account. Do you want to pay $2 for this export or become Premium?</span>
+        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?</span>
       </p>
       <div class="btn-group">
-        <button class="pay-btn" id="pay-single-btn">Payer 2$</button>
-        <button class="premium-btn" id="pay-premium-btn">Devenir Premium ($35)</button>
+        <button class="pay-btn" id="pay-single-btn"><span data-en="Pay $2" data-fr="Payer 2$">Pay $2</span></button>
+        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($35)"
+            data-fr="Devenir Premium ($35)">Become Premium ($35)</span></button>
       </div>
     </div>
   </div>

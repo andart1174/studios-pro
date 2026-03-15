@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 //  CNC VECTOR STUDIO — Extra Features (features.js)
-//  Toate funcțiile sunt NOI — nicio funcție existentă nu e modificată
+//  All functions are NEW — no existing functions modified
 // ═══════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════════════
 function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-        // Nu activăm shortcut-uri când utilizatorul scrie într-un input
+        // Disable shortcuts when typing in an input
         const tag = document.activeElement.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
@@ -73,23 +73,23 @@ function initKeyboardShortcuts() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 2. PROFIL SETĂRI (Save / Load cu localStorage)
+// 2. SETTINGS PROFILE (Save / Load with localStorage)
 // ═══════════════════════════════════════════════════════
 const PROFILE_KEY = 'cncvs_profile';
 
 function initSettingsProfile() {
-    // Butoanele sunt injectate în sidebar-actions
+    // Buttons are injected in sidebar-actions
     const actions = document.querySelector('.sidebar-actions');
     if (!actions) return;
 
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:6px;margin-top:6px;';
     row.innerHTML = `
-    <button id="btnSaveProfile" class="btn btn-secondary" style="flex:1;font-size:11px;" title="Salvează toate setările curente (localStorage)">
-      💾 Salvează profil
+    <button id="btnSaveProfile" class="btn btn-secondary" style="flex:1;font-size:11px;" title="Save all current settings (localStorage)">
+      💾 <span data-en>Save profile</span><span data-fr>Sauver profil</span>
     </button>
-    <button id="btnLoadProfile" class="btn btn-secondary" style="flex:1;font-size:11px;" title="Reîncarcă ultimul profil salvat">
-      📂 Încarcă profil
+    <button id="btnLoadProfile" class="btn btn-secondary" style="flex:1;font-size:11px;" title="Reload last saved profile">
+      📂 <span data-en>Load profile</span><span data-fr>Charger profil</span>
     </button>
   `;
     actions.appendChild(row);
@@ -100,19 +100,19 @@ function initSettingsProfile() {
 
 function saveProfile() {
     const profile = {};
-    // Colectăm toate input-urile cu range/checkbox/select din sidebar
+    // Collect all inputs with range/checkbox/select from sidebar
     document.querySelectorAll('.sidebar input[type=range], .sidebar input[type=checkbox], .sidebar select').forEach(el => {
         if (el.id) {
             profile[el.id] = el.type === 'checkbox' ? el.checked : el.value;
         }
     });
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    showFeatureToast('✅ Profil salvat!', 'success');
+    showFeatureToast(currentLang === 'fr' ? '✅ Profil sauvé!' : '✅ Profile saved!', 'success');
 }
 
 function loadProfile() {
     const raw = localStorage.getItem(PROFILE_KEY);
-    if (!raw) { showFeatureToast('⚠️ Niciun profil salvat.', 'info'); return; }
+    if (!raw) { showFeatureToast(currentLang === 'fr' ? '⚠️ Aucun profil sauvé.' : '⚠️ No profile saved.', 'info'); return; }
 
     try {
         const profile = JSON.parse(raw);
@@ -128,9 +128,9 @@ function loadProfile() {
             el.dispatchEvent(new Event('input', { bubbles: true }));
             el.dispatchEvent(new Event('change', { bubbles: true }));
         });
-        showFeatureToast('📂 Profil încărcat!', 'success');
+        showFeatureToast(currentLang === 'fr' ? '📂 Profil chargé!' : '📂 Profile loaded!', 'success');
     } catch (e) {
-        showFeatureToast('❌ Eroare la încărcare profil.', 'error');
+        showFeatureToast(currentLang === 'fr' ? '❌ Erreur de chargement.' : '❌ Loading error.', 'error');
     }
 }
 
@@ -141,26 +141,26 @@ const HISTORY_KEY = 'cncvs_history';
 const HISTORY_MAX = 5;
 
 function initThumbnailHistory() {
-    // Container pentru miniaturi — adăugat în tab-upload
+    // Thumbnail container — added in tab-upload
     const uploadTab = document.getElementById('tab-upload');
     if (!uploadTab) return;
 
     const histContainer = document.createElement('div');
     histContainer.id = 'historyContainer';
     histContainer.innerHTML = `
-    <div class="section-label" style="margin-bottom:8px;">🕑 Istoricul imaginilor</div>
+    <div class="section-label" style="margin-bottom:8px;">🕑 <span data-en>Image History</span><span data-fr>Historique</span></div>
     <div id="historyThumbs" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
   `;
     uploadTab.appendChild(histContainer);
 
     renderHistoryThumbs();
 
-    // Ascultăm încărcarea imaginilor prin MutationObserver pe fileInfo
+    // Listen for image load via MutationObserver on fileInfo
     const fileInfo = document.getElementById('fileInfo');
     if (fileInfo) {
         const obs = new MutationObserver(() => {
             if (fileInfo.style.display !== 'none') {
-                // Imaginea a fost încărcată — capturăm thumbnail-ul din canvasOrig
+                // Image loaded — capture thumbnail from canvasOrig
                 setTimeout(() => captureAndSaveThumb(), 300);
             }
         });
@@ -170,11 +170,11 @@ function initThumbnailHistory() {
 
 function captureAndSaveThumb() {
     const canvas = document.getElementById('canvasOrig');
-    const fileName = document.getElementById('fileName')?.textContent || 'imagine';
+    const fileName = document.getElementById('fileName')?.textContent || 'image';
     if (!canvas || canvas.style.display === 'none') return;
 
     try {
-        // Creăm un thumb mic (120x80)
+        // Create small thumb (120x80)
         const thumbCv = document.createElement('canvas');
         const ratio = canvas.height / canvas.width;
         thumbCv.width = 120; thumbCv.height = Math.round(120 * ratio);
@@ -182,14 +182,14 @@ function captureAndSaveThumb() {
         const dataUrl = thumbCv.toDataURL('image/jpeg', 0.7);
 
         let history = getHistory();
-        // Evităm duplicatele (același fișier)
+        // Avoid duplicates (same file)
         history = history.filter(h => h.name !== fileName);
         history.unshift({ name: fileName, dataUrl, time: Date.now() });
         if (history.length > HISTORY_MAX) history = history.slice(0, HISTORY_MAX);
 
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
         renderHistoryThumbs();
-    } catch (e) { /* canvas cross-origin sau eroare */ }
+    } catch (e) { /* canvas cross-origin or error */ }
 }
 
 function getHistory() {
@@ -202,7 +202,9 @@ function renderHistoryThumbs() {
 
     const history = getHistory();
     if (!history.length) {
-        container.innerHTML = '<p style="color:var(--muted);font-size:11px;text-align:center;width:100%;padding:8px 0;">Nicio imagine în istoric</p>';
+        container.innerHTML = `<p style="color:var(--muted);font-size:11px;text-align:center;width:100%;padding:8px 0;">
+            <span data-en>No images in history</span><span data-fr>Aucune image</span>
+        </p>`;
         return;
     }
 
@@ -228,10 +230,10 @@ function loadThumbAsImage(idx) {
     if (!history[idx]) return;
     const { dataUrl, name } = history[idx];
 
-    // Convertim dataURL -> Blob -> File -> FileList fake
+    // Convert dataURL -> Blob -> File -> Fake FileList
     fetch(dataUrl).then(r => r.blob()).then(blob => {
         const file = new File([blob], name, { type: blob.type });
-        // Injectăm în fileInput și triggeram change
+        // Inject in fileInput and trigger change
         const dt = new DataTransfer();
         dt.items.add(file);
         const input = document.getElementById('fileInput');
@@ -243,10 +245,10 @@ function loadThumbAsImage(idx) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 4. ROTAȚIE ȘI FLIP CANVAS
+// 4. CANVAS ROTATION & FLIP
 // ═══════════════════════════════════════════════════════
 function initCanvasTransform() {
-    // Adăugăm butoanele de transformare în preview-header
+    // Add transform buttons to preview-header
     const previewActions = document.querySelector('.preview-actions');
     if (!previewActions) return;
 
@@ -254,9 +256,9 @@ function initCanvasTransform() {
     transformGroup.style.cssText = 'display:flex;gap:4px;align-items:center;';
     transformGroup.innerHTML = `
     <span style="font-size:10px;color:var(--muted);margin-right:4px;letter-spacing:.5px;font-weight:600;">TRANSF:</span>
-    <button class="feat-btn" id="btnRotLeft"  title="Rotație stânga 90° (R)">↩</button>
-    <button class="feat-btn" id="btnRotRight" title="Rotație dreapta 90°">↪</button>
-    <button class="feat-btn" id="btnFlipH"    title="Flip Orizontal">⇄</button>
+    <button class="feat-btn" id="btnRotLeft"  title="Rotate Left 90° (R)">↩</button>
+    <button class="feat-btn" id="btnRotRight" title="Rotate Right 90°">↪</button>
+    <button class="feat-btn" id="btnFlipH"    title="Flip Horizontal">⇄</button>
     <button class="feat-btn" id="btnFlipV"    title="Flip Vertical">⇅</button>
   `;
     // Inserăm înaintea butonului de eraser
@@ -291,7 +293,7 @@ function rotateTransformCanvas(canvasId, deg) {
 
     const w = cv.width, h = cv.height;
     const tmp = document.createElement('canvas');
-    // La 90°/270° dimensiunile se schimbă
+    // Swap dimensions for 90°/270°
     tmp.width = Math.abs(deg) === 90 ? h : w;
     tmp.height = Math.abs(deg) === 90 ? w : h;
 
@@ -328,7 +330,7 @@ function flipTransformCanvas(canvasId, axis) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 5. MOD COMPARARE (slider before/after)
+// 5. COMPARE MODE (slider before/after)
 // ═══════════════════════════════════════════════════════
 let compareActive = false;
 
@@ -341,7 +343,7 @@ function initCompareMode() {
     compareBtn.id = 'btnCompare';
     compareBtn.className = 'btn btn-secondary pro-feature';
     compareBtn.style.cssText = 'padding:4px 8px;font-size:12px;color:#a855f7;border-color:#a855f7;';
-    compareBtn.title = 'Compară originalul cu vectorii (slider)';
+    compareBtn.title = 'Compare original with vectors (slider)';
     compareBtn.textContent = '🔀 Compare';
     previewActions.prepend(compareBtn);
 
@@ -399,11 +401,11 @@ function toggleCompareMode() {
     compareActive = !compareActive;
 
     if (compareActive) {
-        // Verificăm că avem ambele canvas-uri
+        // Check for both canvases
         const orig = document.getElementById('canvasOrig');
         const vec = document.getElementById('canvasVec');
         if (!orig || orig.style.display === 'none' || !vec || vec.style.display === 'none') {
-            showFeatureToast('⚠️ Vectorizează mai întâi imaginea!', 'info');
+            showFeatureToast(currentLang === 'fr' ? '⚠️ Vectorisez d\'abord!' : '⚠️ Vectorize image first!', 'info');
             compareActive = false;
             return;
         }
@@ -447,7 +449,7 @@ function drawCompareCanvas(percentLeft) {
     ctx.drawImage(vec, 0, 0, W, H);
     ctx.restore();
 
-    // Actualizăm linia
+    // Update split line
     if (divider) divider.style.left = splitX + 'px';
 }
 
@@ -491,7 +493,7 @@ function initZoomFit() {
     fitBtn.textContent = '⊡';
     fitBtn.style.cssText = 'font-size:14px;';
 
-    // Inserăm după butonul + din zoom-controls
+    // Insert after the + button in zoom-controls
     const resetBtn = document.getElementById('btnResetZoom');
     if (resetBtn) resetBtn.insertAdjacentElement('beforebegin', fitBtn);
     else zoomControls.appendChild(fitBtn);
@@ -503,14 +505,14 @@ function doZoomFit() {
     const canvas = document.getElementById('canvasVec');
     const wrap = canvas?.closest('.preview-canvas-wrap');
     if (!canvas || !wrap || canvas.style.display === 'none') {
-        // Folosim canvasOrig dacă vecPanel nu e vizibil
+        // Use canvasOrig if vecPanel is not visible
         const orig = document.getElementById('canvasOrig');
         const origWrap = orig?.closest('.preview-canvas-wrap');
         if (!orig || !origWrap) return;
         const scaleX = origWrap.clientWidth / orig.width;
         const scaleY = origWrap.clientHeight / orig.height;
         const fit = Math.min(scaleX, scaleY, 1) * 0.9;
-        // Simulăm click pe zoomIn/Out sau resetăm direct
+        // Simulate click on zoomIn/Out or reset directly
         document.getElementById('btnResetZoom')?.click();
         return;
     }
@@ -521,8 +523,7 @@ function doZoomFit() {
     const scaleY = wrapH / canvas.height;
     const fit = Math.max(0.2, Math.min(scaleX, scaleY, 2));
 
-    // Aplicăm zoom fit via clicuri repetate pe +/-
-    // Mai simplu: setăm transform direct pe canvas-uri (același stil ca în app.js)
+    // Apply zoom fit (same style as in app.js)
     ['canvasOrig', 'canvasVec'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -537,7 +538,7 @@ function doZoomFit() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 7. RIGLĂ (Ruler toggle)
+// 7. RULER (Toggle)
 // ═══════════════════════════════════════════════════════
 let rulerActive = false;
 
@@ -549,8 +550,8 @@ function initRuler() {
     rulerBtn.id = 'btnRuler';
     rulerBtn.className = 'btn btn-secondary';
     rulerBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
-    rulerBtn.title = 'Toggle riglă pe canvas';
-    rulerBtn.textContent = '📏 Riglă';
+    rulerBtn.title = 'Toggle Ruler';
+    rulerBtn.innerHTML = `📏 <span data-en>Ruler</span><span data-fr>Règle</span>`;
     previewActions.prepend(rulerBtn);
 
     rulerBtn.addEventListener('click', toggleRuler);
@@ -586,24 +587,24 @@ function createRulerOverlays() {
         wrap.style.position = 'relative';
         wrap.appendChild(ruler);
 
-        // Desenăm rigla
+        // Draw ruler
         const W = wrap.clientWidth;
         const H = wrap.clientHeight;
         ruler.width = W; ruler.height = H;
         const ctx = ruler.getContext('2d');
         const RULER_SIZE = 20;
 
-        // Fond riglă
+        // Ruler BG
         ctx.fillStyle = 'rgba(14,21,37,0.85)';
-        ctx.fillRect(0, 0, W, RULER_SIZE); // sus
-        ctx.fillRect(0, 0, RULER_SIZE, H); // stânga
+        ctx.fillRect(0, 0, W, RULER_SIZE); // top
+        ctx.fillRect(0, 0, RULER_SIZE, H); // left
 
         ctx.strokeStyle = 'rgba(99,160,255,0.6)';
         ctx.fillStyle = 'rgba(99,160,255,0.8)';
         ctx.font = '8px Inter, sans-serif';
         ctx.lineWidth = 0.5;
 
-        // Riglă orizontală (sus)
+        // Horizontal Ruler (Top)
         const stepPx = 50;
         for (let x = RULER_SIZE; x < W; x += stepPx) {
             const label = Math.round(x - RULER_SIZE);
@@ -614,7 +615,7 @@ function createRulerOverlays() {
             if (x % 100 === 0) ctx.fillText(label + 'px', x + 2, 10);
         }
 
-        // Riglă verticală (stânga)
+        // Vertical Ruler (Left)
         for (let y = RULER_SIZE; y < H; y += stepPx) {
             const label = Math.round(y - RULER_SIZE);
             ctx.save();
@@ -631,7 +632,7 @@ function createRulerOverlays() {
             ctx.restore();
         }
 
-        // Colț stânga-sus
+        // Top-left corner
         ctx.fillStyle = 'rgba(79,142,255,0.3)';
         ctx.fillRect(0, 0, RULER_SIZE, RULER_SIZE);
         ctx.fillStyle = 'rgba(99,160,255,0.9)';
@@ -661,7 +662,7 @@ function initShortcutsModal() {
         <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;
           background:linear-gradient(90deg,#e2e8f0,var(--accent));
           -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">
-          ⌨️ Taste rapide
+          ⌨️ <span data-en>Shortcuts</span><span data-fr>Raccourcis</span>
         </div>
         <button onclick="document.getElementById('shortcutsModal').style.display='none'"
           style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;
@@ -669,14 +670,14 @@ function initShortcutsModal() {
       </div>
       <table style="width:100%;border-collapse:collapse;">
         ${[
-            ['V', 'Vectorizează imaginea'],
-            ['C', 'Curăță workspace-ul'],
-            ['S', 'Export SVG rapid'],
+            ['V', currentLang === 'fr' ? 'Vectoriser l\'image' : 'Vectorize image'],
+            ['C', currentLang === 'fr' ? 'Effacer tout' : 'Clear workspace'],
+            ['S', currentLang === 'fr' ? 'Export SVG rapide' : 'Quick SVG export'],
             ['Z', 'Reset zoom (100%)'],
-            ['F', 'Zoom Fit în ecran'],
-            ['R', 'Rotație 90° dreapta'],
-            ['?', 'Afișează această fereastră'],
-            ['Esc', 'Închide ferestre / moduri'],
+            ['F', currentLang === 'fr' ? 'Adapter à l\'écran' : 'Zoom Fit to screen'],
+            ['R', currentLang === 'fr' ? 'Rotation 90° droite' : 'Rotate 90° right'],
+            ['?', currentLang === 'fr' ? 'Afficher cette fenêtre' : 'Show this window'],
+            ['Esc', currentLang === 'fr' ? 'Fermer les fenêtres' : 'Close windows / modes'],
         ].map(([key, desc]) => `
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:10px 0;width:60px;">
@@ -692,7 +693,8 @@ function initShortcutsModal() {
         `).join('')}
       </table>
       <p style="margin-top:16px;font-size:11px;color:var(--muted);text-align:center;">
-        Shortcut-urile nu funcționează când ești focusat pe un câmp de input
+        <span data-en>Shortcuts don't work when typing in an input field</span>
+        <span data-fr>Les raccourcis ne fonctionnent pas dans les champs de texte</span>
       </p>
     </div>
   `;
@@ -708,7 +710,7 @@ function initShortcutsModal() {
       border:1px solid rgba(79,142,255,.25); color:var(--accent);
       font-weight:700; font-size:13px; padding:4px 10px;
     `;
-        shortcutBadge.title = 'Taste rapide (?)';
+        shortcutBadge.title = 'Shortcuts (?)';
         shortcutBadge.textContent = '?';
         shortcutBadge.addEventListener('click', toggleShortcutsModal);
         headerBadges.prepend(shortcutBadge);
@@ -725,7 +727,7 @@ function toggleShortcutsModal() {
 function closeAllModals() {
     const modal = document.getElementById('shortcutsModal');
     if (modal) modal.style.display = 'none';
-    // Dezactivăm și modul compare dacă e activ
+    // Deactivate compare mode if active
     if (compareActive) {
         compareActive = false;
         const overlay = document.getElementById('compareOverlay');
@@ -736,10 +738,10 @@ function closeAllModals() {
 }
 
 // ═══════════════════════════════════════════════════════
-// UTILITAR: Toast specific pentru features (nu folosim App.toast internă)
+// UTILS: Feature Toast
 // ═══════════════════════════════════════════════════════
 function showFeatureToast(msg, type = 'info') {
-    // Refolosim containerul de toast existent dacă există
+    // Reuse existing toast container if possible
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');

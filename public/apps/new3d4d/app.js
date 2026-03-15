@@ -55,7 +55,7 @@ function initLang() {
 }
 
 function applyLang(lang) {
-    $$('[data-en],[data-fr],[data-ro]').forEach(el => {
+    $$('[data-en],[data-fr]').forEach(el => {
         const text = el.dataset[lang] || el.dataset.en;
         if (text) el.textContent = text;
     });
