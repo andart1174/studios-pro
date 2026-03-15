@@ -768,6 +768,12 @@ const StudiosPro = () => {
           Studios-Pro <span style={{ fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle' }}>(v2.0 - Single Page)</span>
         </motion.h1>
 
+        {/* Semantic SEO Description (Hidden) */}
+        <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
+          <h3>AI Design Tools: 3D Modeling, Depth Map Generation, CNC Vector Conversion, and DFX Sequences</h3>
+          <p>Professional creative hub for high-fidelity rendering, photo to 3D, and technical vector exports for laser and router CNC machines.</p>
+        </div>
+
         <motion.div
           className="hero-section"
           initial={{ opacity: 0 }}
@@ -793,7 +799,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-1" />
-            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Modeling Icon" />
           </div>
           <div className="card-label">{currentT.app3d}</div>
         </motion.div>
@@ -805,7 +811,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-2" />
-            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="DFX Animation Icon" />
           </div>
           <div className="card-label">{currentT.appdfx}</div>
         </motion.div>
@@ -817,7 +823,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-3" />
-            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Rules Icon" />
           </div>
            <div className="card-label">{currentT.rules}</div>
         </motion.div>
@@ -829,7 +835,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-4" />
-            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Depth Maps Icon" />
           </div>
           <div className="card-label">{currentT.depthMaps}</div>
         </motion.div>
@@ -841,7 +847,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-5" />
-            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="New 3D Icon" />
           </div>
           <div className="card-label">{currentT.new3d4d}</div>
         </motion.div>
@@ -853,7 +859,7 @@ const StudiosPro = () => {
         >
           <div className="shape-wrapper">
             <div className="shape-6" />
-            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Vector CNC Icon" />
           </div>
           <div className="card-label">{currentT.vectorCnc}</div>
         </motion.div>
