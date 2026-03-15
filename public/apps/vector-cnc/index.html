@@ -1,0 +1,816 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>CNC Vector Studio — Photo to DXF / SVG / G-code</title>
+  <meta name="description"
+    content="Professional photo to vector conversion app (SVG, DXF, G-code, PNG, PDF) for CNC laser and router machines." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+  <style>
+    /* Language toggle */
+    .lang-toggle {
+      display: flex;
+      gap: 4px;
+      align-items: center
+    }
+
+    .lang-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .5px;
+      font-family: 'Inter', sans-serif
+    }
+
+    .lang-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff
+    }
+
+    .lang-btn:hover:not(.active) {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    /* EN text hidden when FR active, FR text hidden by default */
+    [data-fr] {
+      display: none
+    }
+
+    html.fr [data-en] {
+      display: none
+    }
+
+    html.fr [data-fr] {
+      display: inline
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">CNC Vector Studio</div>
+        <div class="logo-sub">Photo → DXF · SVG · G-code · CNC Pro</div>
+      </div>
+    </div>
+    <div class="header-badges" style="display:flex;align-items:center;gap:12px">
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+      </div>
+      <span class="badge badge-blue">SVG</span>
+      <span class="badge"
+        style="color:#f59e0b;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3)">DXF</span>
+      <span class="badge badge-green">G-code</span>
+      <span class="badge"
+        style="color:var(--accent2);background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3)">PDF</span>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="app-wrap">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+
+      <!-- SIDEBAR TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="upload" title="Load Image">
+          <span class="ti">📁</span>
+          <span data-en>Upload</span><span data-fr>Charger</span>
+        </button>
+        <button class="tab-btn" data-tab="adjust" title="Image Adjustments">
+          <span class="ti">🎛️</span>
+          <span data-en>Adjust</span><span data-fr>Réglages</span>
+        </button>
+        <button class="tab-btn" data-tab="vector" title="Vectorize">
+          <span class="ti">✏️</span>Vector
+        </button>
+        <button class="tab-btn" data-tab="cnc" title="CNC Settings">
+          <span class="ti">⚙️</span>CNC
+        </button>
+        <button class="tab-btn" data-tab="export" title="Export Files">
+          <span class="ti">💾</span>Export
+        </button>
+      </div>
+
+      <!-- SIDEBAR INTERNAL WRAPPER FOR SCROLL -->
+      <div class="tabs-content">
+
+        <!-- ── TAB: UPLOAD ── -->
+        <div class="tab-panel active" id="tab-upload">
+          <div class="upload-zone" id="uploadZone">
+            <span class="upload-icon">🖼️</span>
+            <h3><span data-en>Drag image here</span><span data-fr>Glissez l'image ici</span></h3>
+            <p>JPG · PNG · BMP · WebP · TIFF · GIF<br />
+              <span data-en>or click to browse</span>
+              <span data-fr>ou cliquez pour parcourir</span>
+            </p>
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+              📂 <span data-en>Choose File</span><span data-fr>Choisir fichier</span>
+            </button>
+            <input type="file" id="fileInput" accept="image/*" aria-label="Image file input" />
+          </div>
+
+          <div id="fileInfo" style="display:none">
+            <div class="section-label"><span data-en>Loaded File</span><span data-fr>Fichier chargé</span></div>
+            <div class="stat-chip" style="width:100%">
+              <div class="sc-label"><span data-en>Filename</span><span data-fr>Nom du fichier</span></div>
+              <div id="fileName" class="sc-val" style="font-size:13px;word-break:break-all">—</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <div class="stat-chip" style="flex:1">
+                <div class="sc-label"><span data-en>Size</span><span data-fr>Taille</span></div>
+                <div id="fileSize" class="sc-val" style="font-size:16px">—</div>
+              </div>
+              <div class="stat-chip" style="flex:1">
+                <div class="sc-label"><span data-en>Pixels</span><span data-fr>Pixels</span></div>
+                <div id="fileDims" class="sc-val" style="font-size:14px">—</div>
+                <span id="statWidth" style="display:none"></span><span id="statHeight" style="display:none"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong><span data-en>CNC Tip</span><span data-fr>Conseil CNC</span>:</strong>
+            <span data-en>Use high-contrast images (drawings, logos, sketches) for best vectorization results.</span>
+            <span data-fr>Utilisez des images à fort contraste (dessins, logos, croquis) pour de meilleurs
+              résultats.</span>
+          </div>
+        </div>
+
+        <!-- ── TAB: ADJUST ── -->
+        <div class="tab-panel" id="tab-adjust">
+          <div class="section-label"><span data-en>Brightness &amp; Contrast</span><span data-fr>Luminosité &amp;
+              Contraste</span></div>
+          <div class="ctrl-row">
+            <label for="brightness">
+              <span data-en>Brightness</span><span data-fr>Luminosité</span>
+              <span id="brightnessVal">0</span>
+            </label>
+            <input type="range" id="brightness" min="-100" max="100" value="0" step="1" title="Brightness" />
+          </div>
+          <div class="ctrl-row">
+            <label for="contrast">
+              <span data-en>Contrast</span><span data-fr>Contraste</span>
+              <span id="contrastVal">0</span>
+            </label>
+            <input type="range" id="contrast" min="-100" max="100" value="0" step="1" title="Contrast" />
+          </div>
+
+          <div class="section-label"><span data-en>Filters</span><span data-fr>Filtres</span></div>
+          <div class="ctrl-row">
+            <label for="blur">
+              <span data-en>Blur</span><span data-fr>Flou</span>
+              <span id="blurVal">0</span>
+            </label>
+            <input type="range" id="blur" min="0" max="10" value="0" step="1" title="Blur" />
+          </div>
+          <div class="ctrl-row">
+            <label for="threshold">
+              <span data-en>B&amp;W Threshold</span><span data-fr>Seuil N&amp;B</span>
+              <span id="thresholdVal">128</span>
+            </label>
+            <input type="range" id="threshold" min="0" max="255" value="128" step="1" title="Black & White Threshold" />
+          </div>
+
+          <div class="section-label"><span data-en>Options</span><span data-fr>Options</span></div>
+          <div class="toggle-row">
+            <div class="toggle-label">
+              <span data-en>Grayscale</span><span data-fr>Niveaux de gris</span>
+              <small><span data-en>Convert to grayscale</span><span data-fr>Conversion niveaux de gris</span></small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="grayscaleToggle" checked aria-label="Grayscale" />
+              <span class="slider-sw"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">
+              <span data-en>Invert Colors</span><span data-fr>Inverser couleurs</span>
+              <small><span data-en>Photo negative</span><span data-fr>Négatif photo</span></small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="invertToggle" aria-label="Invert colors" />
+              <span class="slider-sw"></span>
+            </label>
+          </div>
+
+          <div class="info-box">
+            <span data-en>Adjust the <strong>B&amp;W Threshold</strong> to control which details are vectorized.
+              <strong>Lower values</strong> = more detail.</span>
+            <span data-fr>Ajustez le <strong>Seuil N&amp;B</strong> pour contrôler les détails vectorisés.
+              <strong>Valeurs
+                basses</strong> = plus de détails.</span>
+          </div>
+        </div>
+
+        <!-- ── TAB: VECTOR ── -->
+        <div class="tab-panel" id="tab-vector">
+          <div class="section-label"><span data-en>Vectorization Mode</span><span data-fr>Mode de vectorisation</span>
+          </div>
+          <div class="mode-chips">
+            <button class="mode-chip active" data-mode="edge">🔍 <span data-en>Edges</span><span
+                data-fr>Contours</span></button>
+            <button class="mode-chip" data-mode="contour">📐 <span data-en>Contour</span><span
+                data-fr>Tracé</span></button>
+            <button class="mode-chip" data-mode="centerline">〰️ Centerline</button>
+            <button class="mode-chip" data-mode="halftone">⚫ Halftone</button>
+            <button class="mode-chip pro-feature" data-mode="color"
+              style="border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.1);">🎨 Color Trace</button>
+          </div>
+
+          <div id="colorOptions"
+            style="display:none; margin-top:15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+            <div class="section-label" style="font-size: 0.85rem; color: var(--accent2); margin-top:0;">Color
+              Quantization</div>
+            <div class="ctrl-row">
+              <label for="colorCount">
+                Max Colors
+                <span id="colorCountVal">3</span>
+              </label>
+              <input type="range" id="colorCount" min="2" max="16" value="3" step="1" title="Number of color layers" />
+            </div>
+          </div>
+
+          <div class="section-label"><span data-en>Path Quality</span><span data-fr>Qualité des tracés</span></div>
+          <div class="ctrl-row">
+            <label for="detail">
+              <span data-en>Detail Level</span><span data-fr>Niveau de détail</span>
+              <span id="detailVal">1.5</span>
+            </label>
+            <input type="range" id="detail" min="0.1" max="8" value="1.5" step="0.1" title="Detail level" />
+          </div>
+          <div class="ctrl-row">
+            <label for="smoothing">
+              <span data-en>Smoothing</span><span data-fr>Lissage</span>
+              <span id="smoothingVal">2</span>
+            </label>
+            <input type="range" id="smoothing" min="0" max="10" value="2" step="1" title="Smoothing" />
+          </div>
+
+          <div class="section-label"><span data-en>Size Filter</span><span data-fr>Filtre de taille</span></div>
+          <div class="ctrl-row">
+            <label for="minArea">
+              <span data-en>Min. Area (px²)</span><span data-fr>Surface min. (px²)</span>
+              <span id="minAreaVal">20</span>
+            </label>
+            <input type="range" id="minArea" min="0" max="500" value="20" step="5" title="Minimum feature area" />
+          </div>
+
+          <div class="toggle-row" style="margin-top:10px;margin-bottom:10px">
+            <div class="toggle-label">
+              <span data-en>Smooth Curves</span><span data-fr>Courbes lisses</span>
+              <small style="display:block;color:var(--accent2);margin-top:2px"><span data-en>Ultra Quality Bezier
+                  (SVG/PDF)</span><span data-fr>Qualité Ultra Bézier</span></small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="bezierToggle" aria-label="Smooth curves" />
+              <span class="slider-sw"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row pro-feature"
+            style="margin-top:10px;margin-bottom:10px; border: 1px solid var(--primary); padding: 10px; border-radius: 8px; background: rgba(56, 189, 248, 0.05);">
+            <div style="flex:1;">
+              <div class="toggle-label" style="display:flex; justify-content:space-between; width:100%;">
+                <span>🔥 Hatch Fill</span>
+                <label class="switch">
+                  <input type="checkbox" id="hatchToggle" aria-label="Hatch Fill" />
+                  <span class="slider-sw"></span>
+                </label>
+              </div>
+              <small style="display:block;color:var(--accent2);margin-top:4px">Generate zig-zag lines to engrave vehicle
+                interiors.</small>
+              <div class="ctrl-row" style="margin-top:8px; display:none;" id="hatchOptions">
+                <label for="hatchSpacing" style="font-size:0.8rem;">
+                  Spacing (px)
+                  <span id="hatchSpacingVal">2.0</span>
+                </label>
+                <input type="range" id="hatchSpacing" min="0.5" max="10" value="2.0" step="0.5" />
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <span data-en><strong>Detail Level:</strong> Low = more points (high fidelity). High = simplified paths
+              (ideal
+              for CNC).</span>
+            <span data-fr><strong>Niveau de détail:</strong> Bas = plus de points. Élevé = tracés simplifiés (idéal
+              CNC).</span>
+          </div>
+        </div>
+
+        <!-- ── TAB: CNC ── -->
+        <div class="tab-panel" id="tab-cnc">
+          <div class="section-label"><span data-en>Material</span><span data-fr>Matériau</span></div>
+          <div class="material-grid">
+            <div class="material-card active" data-material="wood">
+              <div class="mc-icon">🪵</div>
+              <div class="mc-name"><span data-en>Wood</span><span data-fr>Bois</span></div>
+            </div>
+            <div class="material-card" data-material="acrylic">
+              <div class="mc-icon">🔷</div>
+              <div class="mc-name">Acrylic</div>
+            </div>
+            <div class="material-card" data-material="metal">
+              <div class="mc-icon">⚙️</div>
+              <div class="mc-name"><span data-en>Metal</span><span data-fr>Métal</span></div>
+            </div>
+            <div class="material-card" data-material="leather">
+              <div class="mc-icon">🟫</div>
+              <div class="mc-name"><span data-en>Leather</span><span data-fr>Cuir</span></div>
+            </div>
+            <div class="material-card" data-material="foam">
+              <div class="mc-icon">🧽</div>
+              <div class="mc-name"><span data-en>Foam</span><span data-fr>Mousse</span></div>
+            </div>
+            <div class="material-card" data-material="paper">
+              <div class="mc-icon">📄</div>
+              <div class="mc-name"><span data-en>Paper</span><span data-fr>Papier</span></div>
+            </div>
+          </div>
+
+          <div class="section-label"><span data-en>Laser Parameters</span><span data-fr>Paramètres laser</span></div>
+          <div class="ctrl-row">
+            <label for="laserPower">
+              <span data-en>Laser Power (%)</span><span data-fr>Puissance laser (%)</span>
+              <span id="laserPowerVal">80</span>
+            </label>
+            <input type="range" id="laserPower" min="1" max="100" value="80" step="1" title="Laser power" />
+          </div>
+          <div class="ctrl-row">
+            <label for="speed">
+              <span data-en>Speed (mm/min)</span><span data-fr>Vitesse (mm/min)</span>
+              <span id="speedVal">1000</span>
+            </label>
+            <input type="range" id="speed" min="100" max="6000" value="1000" step="100" title="Speed" />
+          </div>
+          <div class="ctrl-row">
+            <label for="passes">
+              <span data-en>Passes</span><span data-fr>Passes</span>
+              <span id="passesVal">1</span>
+            </label>
+            <input type="range" id="passes" min="1" max="10" value="1" step="1" title="Number of passes" />
+          </div>
+          <div class="ctrl-row">
+            <label for="kerf">
+              <span data-en>Kerf Compensation (mm)</span><span data-fr>Compensation kerf (mm)</span>
+              <span id="kerfVal">0</span>
+            </label>
+            <input type="range" id="kerf" min="0" max="1" value="0" step="0.05" title="Kerf compensation" />
+          </div>
+
+          <div class="section-label"><span data-en>Export Units</span><span data-fr>Unités d'export</span></div>
+          <label for="exportUnits" class="section-label" style="display:none">Export Units</label>
+          <select id="exportUnits" title="Export units">
+            <option value="mm"><span data-en>Millimeters (mm)</span><span data-fr>Millimètres (mm)</span></option>
+            <option value="inch">Inches (in)</option>
+            <option value="px">Pixels (px)</option>
+          </select>
+        </div>
+
+        <!-- ── TAB: EXPORT ── -->
+        <div class="tab-panel" id="tab-export">
+
+          <!-- ══ LASER MACHINE PRESETS (Feature 10) ══ -->
+          <div class="section-label" style="color:#f59e0b">🔧 <span data-en>Laser Machine Preset</span><span
+              data-fr>Profil machine laser</span></div>
+          <div class="machine-grid" id="machineGrid">
+            <div class="machine-chip active" data-machine="generic" title="Generic Laser">⚡ Generic</div>
+            <div class="machine-chip" data-machine="k40" title="K40 40W CO2">K40</div>
+            <div class="machine-chip" data-machine="ortur" title="Ortur Laser Master">Ortur</div>
+            <div class="machine-chip" data-machine="xtool" title="xTool D1 / D1 Pro">xTool</div>
+            <div class="machine-chip" data-machine="sculpfun" title="Sculpfun S9/S30">Sculpfun</div>
+            <div class="machine-chip" data-machine="lightburn" title="LightBurn compatible">LightBurn</div>
+          </div>
+
+          <!-- ══ RESIZE AT EXPORT (Feature 3) ══ -->
+          <div class="section-label" style="margin-top:10px">📐 <span data-en>Output Size</span><span data-fr>Taille de
+              sortie</span></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <input type="number" id="exportWidth" placeholder="W" min="1" max="9999"
+              style="width:64px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px"
+              title="Export width">
+            <span style="color:var(--muted);font-size:12px">×</span>
+            <input type="number" id="exportHeight" placeholder="H" min="1" max="9999"
+              style="width:64px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px"
+              title="Export height">
+            <select id="exportSizeUnit"
+              style="flex:1;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px"
+              title="Size unit">
+              <option value="px">px</option>
+              <option value="mm">mm</option>
+              <option value="inch">inch</option>
+            </select>
+            <button id="btnLockAspect" title="Lock aspect ratio"
+              style="padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:13px;cursor:pointer">🔒</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px"><span data-en>Leave blank to keep original
+              size</span><span data-fr>Vide = taille originale</span></div>
+
+          <!-- ══ GRID ARRAY (Feature 3) ══ -->
+          <div class="section-label pro-feature"
+            style="margin-top:15px; border-top: 1px solid var(--border); padding-top:10px;">
+            🔲 <span data-en>Grid Array (Mass Production)</span><span data-fr>Multiplication en Grille</span>
+          </div>
+          <div class="ctrl-row">
+            <label style="flex:1">Cols <input type="number" id="gridCols" min="1" max="20" value="1"
+                style="width:40px; margin-left:4px"></label>
+            <label style="flex:1">Rows <input type="number" id="gridRows" min="1" max="20" value="1"
+                style="width:40px; margin-left:4px"></label>
+          </div>
+          <div class="ctrl-row">
+            <label style="flex:1">X Spacing <input type="number" id="gridSpaceX" min="0" max="100" value="2" step="0.5"
+                style="width:40px; margin-left:4px"></label>
+            <label style="flex:1">Y Spacing <input type="number" id="gridSpaceY" min="0" max="100" value="2" step="0.5"
+                style="width:40px; margin-left:4px"></label>
+          </div>
+
+          <!-- ══ EXPORT ADJUSTMENTS (Feature 6) ══ -->
+          <div class="section-label">🎨 <span data-en>Export Adjustments</span><span data-fr>Ajustements export</span>
+          </div>
+          <div class="ctrl-row">
+            <label for="expBrightness"><span data-en>Brightness</span><span data-fr>Luminosité</span> <span
+                id="expBrightnessVal">0</span></label>
+            <input type="range" id="expBrightness" min="-100" max="100" value="0" step="1" title="Export brightness">
+          </div>
+          <div class="ctrl-row">
+            <label for="expContrast"><span data-en>Contrast</span><span data-fr>Contraste</span> <span
+                id="expContrastVal">0</span></label>
+            <input type="range" id="expContrast" min="-100" max="100" value="0" step="1" title="Export contrast">
+          </div>
+
+          <!-- ══ PNG / BMP OPTIONS (Feature 5, 9) ══ -->
+          <div class="section-label">⚙️ <span data-en>Raster Options</span><span data-fr>Options raster</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer">
+              <input type="checkbox" id="exportTransparent" title="Transparent background"> <span data-en>Transparent
+                BG</span><span data-fr>Fond transparent</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer">
+              <input type="checkbox" id="exportWatermark" title="Add DPI watermark"> <span data-en>DPI
+                watermark</span><span data-fr>Filigrane DPI</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text);cursor:pointer">
+              <input type="checkbox" id="exportBMP8bit" title="8-bit grayscale BMP"> BMP 8-bit gray
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
+            <label for="exportDPI" style="font-size:12px;font-weight:600;color:#94a3b8">DPI:</label>
+            <select id="exportDPI" title="Export DPI" style="flex:1">
+              <option value="72">72 DPI</option>
+              <option value="150">150 DPI</option>
+              <option value="300" selected>300 DPI</option>
+              <option value="600">600 DPI</option>
+            </select>
+            <label for="exportJpegQ" style="font-size:12px;font-weight:600;color:#94a3b8">JPEG Q:</label>
+            <select id="exportJpegQ" title="JPEG quality" style="flex:1">
+              <option value="0.6">60%</option>
+              <option value="0.75">75%</option>
+              <option value="0.9" selected>90%</option>
+              <option value="1.0">100%</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+            <label for="exportDither" style="font-size:12px;font-weight:600;color:#f59e0b">Dithering:</label>
+            <select id="exportDither" title="Dithering Algorithm" style="flex:1;border-color:rgba(245,158,11,0.3)">
+              <option value="none" selected>None (Grayscale)</option>
+              <option value="floyd">Floyd-Steinberg (1-bit)</option>
+              <option value="atkinson">Atkinson (1-bit)</option>
+            </select>
+          </div>
+
+          <!-- ══ FROM IMAGE ══ -->
+          <div class="section-label" style="color:#06d6a0;margin-top:10px">🖼️ <span data-en>From Image</span><span
+              data-fr>Depuis l'image</span></div>
+          <div class="export-grid">
+            <div class="export-card img-export-card disabled" data-export="img-png">
+              <div class="export-icon">🟢</div>
+              <div class="export-name">PNG</div>
+              <div class="export-desc"><span data-en>With adjustments</span><span data-fr>Avec ajustements</span></div>
+              <span class="export-badge eb-png">IMAGE</span>
+            </div>
+            <div class="export-card img-export-card disabled" data-export="img-jpeg">
+              <div class="export-icon">🟠</div>
+              <div class="export-name">JPEG</div>
+              <div class="export-desc"><span data-en>Configurable quality</span><span data-fr>Qualité variable</span>
+              </div>
+              <span class="export-badge" style="background:rgba(251,146,60,.2);color:#fb923c">IMAGE</span>
+            </div>
+            <div class="export-card img-export-card disabled" data-export="img-tiff">
+              <div class="export-icon">🔷</div>
+              <div class="export-name">TIFF</div>
+              <div class="export-desc"><span data-en>Lossless print quality</span><span data-fr>Sans perte</span></div>
+              <span class="export-badge" style="background:rgba(56,189,248,.2);color:#38bdf8">IMAGE</span>
+            </div>
+            <div class="export-card img-export-card disabled" data-export="img-svg">
+              <div class="export-icon">🔵</div>
+              <div class="export-name">SVG</div>
+              <div class="export-desc"><span data-en>Image in SVG</span><span data-fr>Image dans SVG</span></div>
+              <span class="export-badge eb-svg">IMAGE</span>
+            </div>
+            <div class="export-card img-export-card disabled" data-export="img-pdf">
+              <div class="export-icon">🟣</div>
+              <div class="export-name">PDF</div>
+              <div class="export-desc"><span data-en>Image in PDF</span><span data-fr>Image dans PDF</span></div>
+              <span class="export-badge eb-pdf">IMAGE</span>
+            </div>
+            <div class="export-card img-export-card disabled" data-export="img-bmp">
+              <div class="export-icon">🔶</div>
+              <div class="export-name">BMP</div>
+              <div class="export-desc">LightBurn, LaserGRBL</div>
+              <span class="export-badge" style="background:rgba(245,158,11,.2);color:#fbbf24">LASER</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+            <button id="btnImgExportPNG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ PNG</button>
+            <button id="btnImgExportJPEG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇
+              JPEG</button>
+            <button id="btnImgExportTIFF" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇
+              TIFF</button>
+            <button id="btnImgExportSVG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ SVG</button>
+            <button id="btnImgExportPDF" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ PDF</button>
+            <button id="btnImgExportBMP" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ BMP</button>
+          </div>
+          <!-- Preview + Batch for image -->
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button id="btnImgPreview" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>👁️ <span
+                data-en>Preview</span><span data-fr>Aperçu</span></button>
+            <button id="btnImgBatchZip" class="btn btn-secondary"
+              style="flex:1;font-size:11px;color:#06d6a0;border-color:#06d6a0" disabled>📦 <span data-en>Batch
+                ZIP</span><span data-fr>ZIP tout</span></button>
+          </div>
+
+          <!-- ══ FROM VECTOR ══ -->
+          <div class="section-label" style="color:#4f8eff;margin-top:14px">✏️ <span data-en>From Vector</span><span
+              data-fr>Depuis le vecteur</span></div>
+          <div class="export-grid">
+            <div class="export-card disabled" data-export="vec-svg">
+              <div class="export-icon">🔵</div>
+              <div class="export-name">SVG</div>
+              <div class="export-desc">Inkscape, LightBurn</div>
+              <span class="export-badge eb-svg">VECTOR</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-dxf">
+              <div class="export-icon">🟡</div>
+              <div class="export-name">DXF</div>
+              <div class="export-desc">AutoCAD, FreeCAD</div>
+              <span class="export-badge eb-dxf">CAD</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-gcode">
+              <div class="export-icon">🔴</div>
+              <div class="export-name">G-code</div>
+              <div class="export-desc">CNC laser / router</div>
+              <span class="export-badge" style="background:rgba(239,68,68,.2);color:#f87171">CNC</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-nc">
+              <div class="export-icon">⚫</div>
+              <div class="export-name">.NC</div>
+              <div class="export-desc">Mach3 / Mach4</div>
+              <span class="export-badge eb-nc">NC</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-png">
+              <div class="export-icon">🟢</div>
+              <div class="export-name">PNG</div>
+              <div class="export-desc"><span data-en>Vector shapes</span><span data-fr>Formes vectorisées</span></div>
+              <span class="export-badge eb-png">RASTER</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-jpeg">
+              <div class="export-icon">🟠</div>
+              <div class="export-name">JPEG</div>
+              <div class="export-desc"><span data-en>Vector as JPEG</span><span data-fr>Vecteur en JPEG</span></div>
+              <span class="export-badge" style="background:rgba(251,146,60,.2);color:#fb923c">RASTER</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-tiff">
+              <div class="export-icon">🔷</div>
+              <div class="export-name">TIFF</div>
+              <div class="export-desc"><span data-en>Lossless vector</span><span data-fr>Sans perte</span></div>
+              <span class="export-badge" style="background:rgba(56,189,248,.2);color:#38bdf8">RASTER</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-pdf">
+              <div class="export-icon">🟣</div>
+              <div class="export-name">PDF</div>
+              <div class="export-desc"><span data-en>Vector in PDF</span><span data-fr>Tracés en PDF</span></div>
+              <span class="export-badge eb-pdf">PRINT</span>
+            </div>
+            <div class="export-card disabled" data-export="vec-bmp">
+              <div class="export-icon">🔶</div>
+              <div class="export-name">BMP</div>
+              <div class="export-desc">LightBurn, LaserGRBL</div>
+              <span class="export-badge" style="background:rgba(245,158,11,.2);color:#fbbf24">LASER</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+            <button id="btnExportSVG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ SVG</button>
+            <button id="btnExportDXF" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ DXF</button>
+            <button id="btnExportGcode" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇
+              GCode</button>
+            <button id="btnExportNC" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ NC</button>
+            <button id="btnExportPNG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ PNG</button>
+            <button id="btnExportJPEG" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ JPG</button>
+            <button id="btnExportTIFF" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ TIFF</button>
+            <button id="btnExportPDF" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ PDF</button>
+            <button id="btnExportBMP" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>⬇ BMP</button>
+          </div>
+          <!-- Preview + Batch + Sim for vector -->
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button id="btnVecPreview" class="btn btn-secondary" style="flex:1;font-size:11px" disabled>👁️ <span
+                data-en>Preview</span><span data-fr>Aperçu</span></button>
+            <button id="btnVecBatchZip" class="btn btn-secondary"
+              style="flex:1;font-size:11px;color:#4f8eff;border-color:#4f8eff" disabled>📦 <span data-en>Batch
+                ZIP</span><span data-fr>ZIP tout</span></button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button id="btnSimulate" class="btn btn-secondary pro-feature"
+              style="flex:1;font-size:11px;color:#f59e0b;border-color:#f59e0b" disabled>⏱️ <span data-en>Simulate
+                Time</span><span data-fr>Estimer le temps</span></button>
+          </div>
+        </div>
+      </div> <!-- End of tabs-content -->
+
+      <div class="sidebar-actions">
+        <button id="btnVectorize" class="btn btn-primary"
+          style="width:100%;padding:12px;font-weight:700;font-size:14px">
+          ⚡ <span data-en>Vectorize Now</span><span data-fr>Vectoriser</span>
+        </button>
+        <button id="btnClear" class="btn btn-secondary" style="width:100%;font-size:12px" disabled>
+          🗑️ <span data-en>Clear Workspace</span><span data-fr>Effacer tout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── PREVIEW AREA (RESTORED) ── -->
+    <main class="preview-wrap">
+      <div class="preview-header">
+        <div class="preview-title">
+          <div class="dot"></div>
+          <span data-en>Workspace Preview</span><span data-fr>Espace de travail</span>
+        </div>
+        <div class="preview-actions">
+          <button id="btnEraser" class="btn btn-secondary pro-feature"
+            style="padding:4px 8px;font-size:12px;margin-right:8px;color:#ef4444;border-color:#ef4444"
+            title="Erase unwanted paths" disabled>
+            🩹 <span data-en>Eraser Tool</span><span data-fr>Gomme D'outil</span>
+          </button>
+          <div class="zoom-controls">
+            <button class="zoom-btn" id="btnZoomOut" title="Zoom Out">−</button>
+            <span class="zoom-val" id="zoomVal">100%</span>
+            <button class="zoom-btn" id="btnZoomIn" title="Zoom In">+</button>
+            <button id="btnResetZoom" class="btn btn-secondary" style="padding:4px 8px;font-size:11px">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-panels">
+        <!-- ORIGINAL IMAGE PANEL -->
+        <div class="preview-panel">
+          <div class="preview-panel-head">
+            <div class="ph-title">🖼️ <span data-en>Original Image</span><span data-fr>Image originale</span></div>
+            <div class="ph-badge ph-orig">SOURCE</div>
+          </div>
+          <div class="preview-canvas-wrap" style="position:relative">
+            <div id="uploadPlaceholder" class="placeholder-msg">
+              <div class="pm-icon">🖼️</div>
+              <p><span data-en>Drop image or click to upload</span><span data-fr>Glissez une image ou cliquez</span>
+              </p>
+            </div>
+            <!-- Original hidden, overlay visible when loaded -->
+            <canvas id="canvasOrig" style="display:none"></canvas>
+            <img id="imgOverlay" alt="" style="display:none" />
+          </div>
+        </div>
+
+        <!-- VECTOR PREVIEW PANEL -->
+        <div class="preview-panel" id="vecPanel" style="display:none">
+          <div class="preview-panel-head">
+            <div class="ph-title">✏️ <span data-en>Vector Preview</span><span data-fr>Aperçu vecteur</span></div>
+            <div class="ph-badge ph-vec">VECTOR</div>
+          </div>
+          <div class="preview-canvas-wrap" style="position:relative">
+            <div id="vecPlaceholder" class="placeholder-msg">
+              <div class="pm-icon">✏️</div>
+              <p><span data-en>No vectors yet</span><span data-fr>Aucun vecteur</span></p>
+            </div>
+            <canvas id="canvasVec" style="display:none"></canvas>
+
+            <div id="simOverlay"
+              style="display:none; position:absolute; top:20px; left:20px; z-index:50; background:rgba(0,0,0,0.8); border:1px solid #f59e0b; border-radius:8px; padding:12px; color:white; font-family:monospace; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+              <div style="color:#f59e0b; font-weight:bold; margin-bottom:8px;">⏱️ LASER SIMULATION</div>
+              <div style="display:grid; grid-template-columns:1fr auto; gap:8px 16px;">
+                <span>Estimated Time:</span><span id="simTimeEst" style="color:#06d6a0">-</span>
+                <span>Total Cut Dist:</span><span id="simCutDist">-</span>
+                <span>Total Travel:</span><span id="simTravelDist">-</span>
+              </div>
+              <div style="margin-top:12px; border-top:1px solid #333; padding-top:8px;">
+                <div style="background:#222; height:6px; border-radius:3px; overflow:hidden;">
+                  <div id="simProgressBar" style="background:#f59e0b; height:100%; width:0%;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:#aaa;">
+                  <span id="simProgressPct">0%</span>
+                  <button id="btnStopSim"
+                    style="background:none; border:none; color:#f87171; cursor:pointer; font-size:11px;">Stop
+                    [x]</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ PROCESSING OVERLAY (Restored) ══ -->
+            <div id="processingOverlay" class="processing-overlay">
+              <div class="spinner"></div>
+              <div id="procText" class="proc-text">Processing...</div>
+              <div class="progress-bar" style="width:120px;margin-top:10px">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS BAR -->
+      <div class="stats-bar">
+        <div class="stat-chip" style="flex:1">
+          <div class="sc-label"><span data-en>Paths</span><span data-fr>Tracés</span></div>
+          <div class="sc-val" id="statPaths">0</div>
+        </div>
+        <div class="stat-chip" style="flex:1">
+          <div class="sc-label"><span data-en>Nodes</span><span data-fr>Nœuds</span></div>
+          <div class="sc-val" id="statNodes">0</div>
+        </div>
+        <div class="stat-chip" style="flex:1.5">
+          <div class="sc-label"><span data-en>Dimensions (mm)</span><span data-fr>Dimensions (mm)</span></div>
+          <div class="sc-val"><span id="statW">0</span> × <span id="statH">0</span> <span class="sc-unit">mm</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATH LAYERS BOX -->
+      <div class="preview-panel" style="flex:none;min-height:auto;margin-top:10px">
+        <div class="preview-panel-head">
+          <div class="ph-title">📦 <span data-en>Path Layers</span><span data-fr>Calques de tracé</span></div>
+        </div>
+        <div class="layers-list" id="layersList" style="padding:10px">
+          <p style="color:var(--muted);font-size:12px;text-align:center;padding:12px">No vectors. Vectorize an image
+            first.</p>
+        </div>
+      </div>
+    </main>
+  </div> <!-- Closing app-wrap -->
+
+  <!-- ══ EXPORT PREVIEW MODAL (Feature 4) ══ -->
+  <div class="modal-overlay" id="exportPreviewModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">💾 <span data-en>Export Preview</span><span data-fr>Aperçu de l'export</span></div>
+        <div class="modal-close" id="btnClosePreview">&times;</div>
+      </div>
+      <div class="modal-body">
+        <div class="preview-info" id="previewInfo">
+          <span data-en>Format:</span><span data-fr>Format :</span> <b id="previewFormat">—</b> |
+          <span data-en>Size:</span><span data-fr>Taille :</span> <b id="previewSize">—</b> |
+          <span data-en>DPI:</span> <b><span id="previewDPI">—</span></b>
+        </div>
+        <!-- This canvas will show the final processed image with all adjustments/resizing -->
+        <canvas id="canvasExportPreview" class="modal-preview-canvas"></canvas>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancelExport"><span data-en>Cancel</span><span
+            data-fr>Annuler</span></button>
+        <button class="btn btn-primary" id="btnConfirmExport">🚀 <span data-en>Download Now</span><span
+            data-fr>Télécharger</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSZip for Batch Export (Feature 7) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="app.js"></script>
+  <script src="features.js"></script>
+
+  <!-- ══ TOAST NOTIFICATIONS (Stability Fix) ══ -->
+  <div id="toastContainer" class="toast-container"></div>
+</body>
+
+</html>

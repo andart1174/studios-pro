@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Depth Map Generator | AI-Powered</title>
+    <meta name="description"
+        content="Generate stunning depth maps from any image using AI. Visualize depth with multiple color maps and 3D view." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #070b14;
+            --surface: #0e1525;
+            --surface2: #141d30;
+            --border: rgba(99, 160, 255, .12);
+            --accent: #4f8eff;
+            --accent2: #a855f7;
+            --accent3: #06d6a0;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --glow: rgba(79, 142, 255, .35);
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(79, 142, 255, .04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79, 142, 255, .04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 24px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(14, 21, 37, .7);
+            backdrop-filter: blur(20px)
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 20px var(--glow)
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #e2e8f0, #4f8eff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(79, 142, 255, .2), rgba(168, 85, 247, .2));
+            border: 1px solid rgba(79, 142, 255, .3);
+            color: var(--accent);
+            letter-spacing: .5px
+        }
+
+        .app {
+            position: relative;
+            z-index: 5;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 32px
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 48px
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 700;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #e2e8f0 0%, #4f8eff 50%, #a855f7 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: var(--muted);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.7
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(79, 142, 255, .3);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .3s;
+            background: rgba(14, 21, 37, .5);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 32px
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50%, rgba(79, 142, 255, .05), transparent 70%)
+        }
+
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(79, 142, 255, .07);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(79, 142, 255, .15)
+        }
+
+        .upload-icon {
+            font-size: 52px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 20px rgba(79, 142, 255, .5));
+            display: block
+        }
+
+        .upload-zone h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px
+        }
+
+        .upload-zone p {
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        #fileInput {
+            display: none
+        }
+
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .3s;
+            box-shadow: 0 4px 20px rgba(79, 142, 255, .35)
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(79, 142, 255, .5)
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-weight: 600;
+            font-size: 15px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Preset Buttons ── */
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            margin-top: -10px;
+        }
+
+        .preset-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary);
+            background: rgba(var(--primary-rgb), 0.1);
+            transform: translateY(-2px);
+        }
+
+        .preset-icon {
+            font-size: 18px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px
+        }
+
+        .control-group select,
+        .control-group input[type="range"] {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif
+        }
+
+        .control-group select {
+            padding: 10px 14px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px
+        }
+
+        .control-group select:focus,
+        .control-group input[type="range"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 142, 255, .2)
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--surface2);
+            cursor: pointer;
+            border: none !important
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            cursor: pointer;
+            box-shadow: 0 0 0 3px rgba(79, 142, 255, .2), 0 2px 8px rgba(0, 0, 0, .4)
+        }
+
+        .range-value {
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+            text-align: right
+        }
+
+        .btn-generate {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .3s;
+            box-shadow: 0 4px 20px rgba(79, 142, 255, .35);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            white-space: nowrap
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(79, 142, 255, .5)
+        }
+
+        .btn-generate:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .progress-container {
+            display: none;
+            margin-bottom: 24px
+        }
+
+        .progress-container.active {
+            display: block
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px
+        }
+
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--surface2);
+            overflow: hidden
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            width: 0%;
+            transition: width .4s;
+            box-shadow: 0 0 12px rgba(79, 142, 255, .5)
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px
+        }
+
+        @media(max-width:768px) {
+            .panels {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, .02)
+        }
+
+        .panel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%
+        }
+
+        .panel-header span {
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8
+        }
+
+        .panel-body {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            position: relative
+        }
+
+        .panel-body canvas,
+        .panel-body img {
+            max-width: 100%;
+            max-height: 420px;
+            border-radius: 8px;
+            object-fit: contain
+        }
+
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted)
+        }
+
+        .placeholder .icon {
+            font-size: 40px;
+            opacity: .4
+        }
+
+        .placeholder p {
+            font-size: 13px
+        }
+
+        .panel-3d .panel-body {
+            min-height: 360px;
+            padding: 0;
+            overflow: hidden
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 360px;
+            display: block
+        }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 140px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px
+        }
+
+        .stat-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif
+        }
+
+        .colormap-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px
+        }
+
+        .cm-btn {
+            flex: 1;
+            min-width: 80px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all .2s;
+            background: none;
+            display: flex;
+            flex-direction: column
+        }
+
+        .cm-btn.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(79, 142, 255, .4)
+        }
+
+        .cm-bar {
+            height: 24px;
+            width: 100%
+        }
+
+        .cm-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--muted);
+            padding: 6px 4px;
+            background: var(--surface2)
+        }
+
+        .cm-btn.active .cm-label {
+            color: var(--accent)
+        }
+
+        .export-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .btn-export {
+            padding: 10px 22px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .btn-export:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(79, 142, 255, .08)
+        }
+
+        .btn-export:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 1000;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .4s cubic-bezier(.34, 1.56, .64, 1);
+            pointer-events: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4)
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(79, 142, 255, .2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(7, 11, 20, .8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+            border-radius: 8px
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        /* ── Comparison Slider ── */
+        .compare-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: col-resize;
+            user-select: none
+        }
+
+        .compare-wrap img,
+        .compare-wrap canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 420px;
+            object-fit: contain;
+            border-radius: 8px
+        }
+
+        .compare-depth {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden
+        }
+
+        .compare-depth canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover
+        }
+
+        .compare-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent);
+            cursor: col-resize;
+            transform: translateX(-50%);
+            z-index: 5
+        }
+
+        .compare-handle::before {
+            content: '⇔';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--accent);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .4)
+        }
+
+        /* ── Histogram ── */
+        .histogram-wrap {
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            display: none
+        }
+
+        .histogram-wrap h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        #histCanvas {
+            width: 100%;
+            height: 120px;
+            display: block;
+            border-radius: 8px
+        }
+
+        /* ── Bokeh Simulator ── */
+        .bokeh-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            display: none
+        }
+
+        .bokeh-body {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            position: relative
+        }
+
+        .bokeh-body canvas {
+            max-width: 100%;
+            max-height: 420px;
+            border-radius: 8px
+        }
+
+        .bokeh-controls {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        /* ── Depth Mask ── */
+        .mask-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            display: none
+        }
+
+        .mask-body {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px
+        }
+
+        .mask-body canvas {
+            max-width: 100%;
+            max-height: 360px;
+            border-radius: 8px
+        }
+
+        .mask-controls {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .dual-range {
+            position: relative;
+            height: 24px
+        }
+
+        /* ── Toggle btn ── */
+        .btn-toggle {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .2s;
+            margin-left: auto
+        }
+
+        .btn-toggle.on {
+            border-color: var(--accent3);
+            color: var(--accent3);
+            background: rgba(6, 214, 160, .1)
+        }
+
+        /* ── Section title bar ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px
+        }
+
+        .section-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #94a3b8
+        }
+
+        .header {
+            font-size: 15px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            margin-top: 32px;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+
+<body>
+    <div class="bg-grid"></div>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🌊</div>
+            <span class="logo-text">DepthMap AI</span>
+        </div>
+        <div class="badge">✨ AI POWERED</div>
+    </header>
+
+    <main class="app">
+        <div class="hero">
+            <h1>Generate Depth Maps<br>from Any Image</h1>
+            <p>Transform flat photos into rich depth visualizations using AI-powered monocular depth estimation.
+                Multiple color maps, real-time 3D preview, and export support.</p>
+        </div>
+
+        <div class="upload-zone" id="uploadZone">
+            <span class="upload-icon">🖼️</span>
+            <h3>Drop an image here</h3>
+            <p>PNG, JPG, WEBP supported · Max 10MB</p>
+            <button class="btn-upload" id="uploadBtn">📁 Choose Image</button>
+            <input type="file" id="fileInput" accept="image/*" />
+        </div>
+
+        <div class="colormap-options" id="colorMapOptions"></div>
+
+        <div class="header">Material Presets</div>
+        <div class="presets-grid">
+            <button class="preset-btn" onclick="applyPreset('wood')"><span class="preset-icon">🪵</span>Laser
+                Wood</button>
+            <button class="preset-btn" onclick="applyPreset('acrylic')"><span class="preset-icon">🧊</span>Acrylic
+                Etch</button>
+            <button class="preset-btn" onclick="applyPreset('mold')"><span
+                    class="preset-icon">📥</span>Stamp/Mold</button>
+            <button class="preset-btn" onclick="applyPreset('print')"><span class="preset-icon">🖨️</span>3D
+                Print</button>
+        </div>
+
+        <div class="header">Depth Controls</div>
+        <div class="controls">
+            <div class="control-group" style="min-width:160px">
+                <label>Model Quality</label>
+                <select id="modelSelect">
+                    <option value="onnx-community/depth-anything-v2-small">Fast (Small)</option>
+                    <option value="onnx-community/depth-anything-v2-base">High Quality (Base)</option>
+                </select>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>AI Resolution</label>
+                <select id="resSelect">
+                    <option value="518">Standard (518px)</option>
+                    <option value="756">High (756px)</option>
+                    <option value="1008" selected>Ultra (1008px)</option>
+                </select>
+            </div>
+            <div class="control-group" style="min-width:140px; justify-content:center; gap:4px">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="padCheckbox" checked style="width:14px;height:14px;" />
+                    <span>Preserve Aspect Ratio</span>
+                </label>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Blur / Smoothing</label>
+                <input type="range" id="blurSlider" min="0" max="20" value="0" />
+                <div class="range-value" id="blurVal">0px</div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Contrast Boost</label>
+                <input type="range" id="contrastSlider" min="50" max="200" value="100" />
+                <div class="range-value" id="contrastVal">100%</div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Brightness</label>
+                <input type="range" id="brightnessSlider" min="-100" max="100" value="0" />
+                <div class="range-value" id="brightnessVal">0%</div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Gamma (Midtones)</label>
+                <input type="range" id="gammaSlider" min="10" max="300" value="100" />
+                <div class="range-value" id="gammaVal">1.00</div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Edge Fade (Bevel)</label>
+                <div class="slider-container" style="display:flex; align-items:center; gap:8px;">
+                    <input type="range" id="bevelSlider" min="0" max="50" value="0"
+                        title="Smoothly fade edges into the base">
+                    <span id="bevelVal" class="range-value" style="margin-top:0">0%</span>
+                </div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Contour Steps</label>
+                <div class="slider-container" style="display:flex; align-items:center; gap:8px;">
+                    <input type="range" id="contourSlider" min="0" max="50" value="0"
+                        title="Slice depth into rigid topographic layers (0 = disable)">
+                    <span id="contourVal" class="range-value" style="margin-top:0">Off</span>
+                </div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Invert Depth</label>
+                <select id="invertSelect">
+                    <option value="0">Normal</option>
+                    <option value="1">Inverted</option>
+                </select>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Micro-Details (Laser)</label>
+                <div class="slider-container" style="display:flex; align-items:center; gap:8px;">
+                    <input type="range" id="detailSlider" min="0" max="5" step="0.1" value="0"
+                        title="Enhance micro-details for laser engraving">
+                    <span id="detailVal" class="range-value" style="margin-top:0">0.0</span>
+                </div>
+            </div>
+            <div class="control-group" style="min-width:140px">
+                <label>Image Texture Bump</label>
+                <div class="slider-container" style="display:flex; align-items:center; gap:8px;">
+                    <input type="range" id="textureSlider" min="0" max="2" step="0.05" value="0"
+                        title="Inject original photo textures into the 3D depth map">
+                    <span id="textureVal" class="range-value" style="margin-top:0">0.00</span>
+                </div>
+            </div>
+            <button class="btn-generate" id="generateBtn" disabled>
+                <span id="generateIcon">⚡</span> Generate Depth Map
+            </button>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-label">
+                <span id="progressLabel">Initializing AI model…</span>
+                <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        <div class="stats" id="stats" style="display:none">
+            <div class="stat-card">
+                <div class="label">Image Size</div>
+                <div class="value" id="imgSize">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Min Depth</div>
+                <div class="value" id="minDepth" style="color:var(--accent3)">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Max Depth</div>
+                <div class="value" id="maxDepth" style="color:var(--accent)">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Avg Depth</div>
+                <div class="value" id="avgDepth" style="color:var(--accent2)">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Processing Time</div>
+                <div class="value" id="procTime" style="color:#fbbf24">—</div>
+            </div>
+        </div>
+
+        <!-- Comparison Slider -->
+        <div class="panel" id="comparePanel" style="margin-bottom:24px;display:none">
+            <div class="panel-header">
+                <div class="panel-dot" style="background:#4f8eff"></div>
+                <span>Compare: Original vs Depth Map</span>
+                <span style="margin-left:auto;font-size:12px;color:var(--muted)">← Drag to compare →</span>
+            </div>
+            <div class="panel-body" style="padding:16px">
+                <div class="compare-wrap" id="compareWrap">
+                    <img id="compareOrigImg"
+                        style="display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:8px"
+                        src="" alt="Original" />
+                    <div class="compare-depth" id="compareDepth" style="clip-path:inset(0 50% 0 0)">
+                        <canvas id="compareDepthCanvas"></canvas>
+                    </div>
+                    <div class="compare-handle" id="compareHandle" style="left:50%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-dot" style="background:#4f8eff"></div><span>Original Image</span>
+                </div>
+                <div class="panel-body" id="originalPanel">
+                    <div class="placeholder">
+                        <div class="icon">🖼️</div>
+                        <p>No image loaded</p>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-dot" style="background:#a855f7"></div><span>Depth Map</span>
+                </div>
+                <div class="panel-body" id="depthPanel">
+                    <div class="placeholder">
+                        <div class="icon">🌊</div>
+                        <p>Depth map will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Depth Histogram -->
+        <div class="histogram-wrap" id="histWrap">
+            <h3>📊 Depth Distribution Histogram</h3>
+            <canvas id="histCanvas" height="120"></canvas>
+        </div>
+
+        <!-- 3D Point Cloud -->
+        <div class="panel panel-3d" id="panel3dContainer" style="margin-bottom:24px;display:none">
+            <div class="panel-header">
+                <div class="panel-dot" style="background:#06d6a0"></div>
+                <span>3D Point Cloud Preview</span>
+                <span style="font-size:12px;color:var(--muted)">Drag to rotate · Scroll to zoom</span>
+                <button class="btn-toggle" id="autoRotateBtn" title="Auto Rotate">↻ Auto Rotate</button>
+            </div>
+            <div class="panel-body" style="padding:0"><canvas id="canvas3d"></canvas></div>
+        </div>
+
+        <!-- Bokeh Simulator -->
+        <div class="bokeh-wrap" id="bokehWrap">
+            <div class="panel-header" style="border-bottom:1px solid var(--border)">
+                <div class="panel-dot" style="background:#f59e0b"></div>
+                <span>🎭 Bokeh / Depth-of-Field Simulator</span>
+            </div>
+            <div class="bokeh-body"><canvas id="bokehCanvas"></canvas></div>
+            <div class="bokeh-controls">
+                <div class="control-group" style="min-width:180px">
+                    <label>Focus Depth</label>
+                    <input type="range" id="bokehFocus" min="0" max="100" value="50" />
+                    <div class="range-value" id="bokehFocusVal">50%</div>
+                </div>
+                <div class="control-group" style="min-width:180px">
+                    <label>Blur Intensity</label>
+                    <input type="range" id="bokehBlur" min="1" max="20" value="8" />
+                    <div class="range-value" id="bokehBlurVal">8px</div>
+                </div>
+                <div class="control-group" style="min-width:160px">
+                    <label>Focus Mode</label>
+                    <select id="bokehMode">
+                        <option value="near">Near Sharp (portrait)</option>
+                        <option value="far">Far Sharp (landscape)</option>
+                    </select>
+                </div>
+                <button class="btn-export" id="exportBokeh" style="margin-left:auto">💾 Save Bokeh</button>
+            </div>
+        </div>
+
+        <!-- Depth Mask -->
+        <div class="mask-wrap" id="maskWrap">
+            <div class="panel-header" style="border-bottom:1px solid var(--border)">
+                <div class="panel-dot" style="background:#ec4899"></div>
+                <span>✂️ Depth Range Mask</span>
+                <span style="margin-left:auto;font-size:12px;color:var(--muted)">Isolate objects by depth</span>
+            </div>
+            <div class="mask-body"><canvas id="maskCanvas"></canvas></div>
+            <div class="mask-controls">
+                <div class="control-group" style="min-width:200px">
+                    <label>Min Depth (near)</label>
+                    <input type="range" id="maskMin" min="0" max="100" value="0" />
+                    <div class="range-value" id="maskMinVal">0%</div>
+                </div>
+                <div class="control-group" style="min-width:200px">
+                    <label>Max Depth (far)</label>
+                    <input type="range" id="maskMax" min="0" max="100" value="100" />
+                    <div class="range-value" id="maskMaxVal">100%</div>
+                </div>
+                <div class="control-group" style="min-width:140px">
+                    <label>Invert Mask</label>
+                    <select id="maskInvert">
+                        <option value="0">Normal</option>
+                        <option value="1">Inverted</option>
+                    </select>
+                </div>
+                <button class="btn-export" id="exportMask" style="margin-left:auto">💾 Save Mask</button>
+            </div>
+        </div>
+
+
+        <div class="export-row">
+            <button class="btn-export" id="exportDepth" disabled>💾 Export Depth Map (PNG)</button>
+            <button class="btn-export" id="exportGrayscale" disabled>⬛ Export Grayscale</button>
+            <button class="btn-export" id="exportSideBySide" disabled>🖼️ Export Side-by-Side</button>
+            <button class="btn-export" id="exportOBJ" disabled>📦 Export 3D (.obj)</button>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastMsg">Done!</span></div>
+
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers';
+        env.allowLocalModels = false;
+
+        // ── Color Maps ──────────────────────────────────────────────────────
+        const COLOR_MAPS = {
+            Turbo: t => {
+                const r = Math.round(255 * Math.max(0, Math.min(1, 0.1357 + 4.5974 * t - 9.0576 * t * t + 4.4619 * t * t * t)));
+                const g = Math.round(255 * Math.max(0, Math.min(1, 0.0914 + 2.28 * t - 3.472 * t * t + 0.7764 * t * t * t)));
+                const b = Math.round(255 * Math.max(0, Math.min(1, 0.105 + 3.33 * t - 15 * t * t + 21 * t * t * t - 10.2 * t * t * t * t)));
+                return [r, g, b];
+            },
+            Plasma: t => [
+                Math.round(255 * Math.max(0, Math.min(1, .05 + .898 * t + .052 * t * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .03 - .15 * t + 1.12 * t * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .53 + .9 * t - 1.43 * t * t)))],
+            Inferno: t => [
+                Math.round(255 * Math.max(0, Math.min(1, t < .5 ? 2 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2))),
+                Math.round(255 * Math.max(0, Math.min(1, t < .5 ? 0 : (2 * t - 1) * .7))),
+                Math.round(255 * Math.max(0, Math.min(1, t < .5 ? .5 + t * .5 * 2 : .9 * (1 - t) * 2)))],
+            Viridis: t => [
+                Math.round(255 * Math.max(0, Math.min(1, .27 + .49 * t + .265 * t * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .004 + .955 * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .33 + .85 * t * (1 - t) * 2.5)))],
+            Magma: t => [
+                Math.round(255 * Math.max(0, Math.min(1, t * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .02 + .7 * t + .28 * t * t))),
+                Math.round(255 * Math.max(0, Math.min(1, .38 + .62 * t)))],
+            Grayscale: t => { const v = Math.round(255 * t); return [v, v, v]; },
+            'Heat Map': t => {
+                if (t < .33) return [Math.round(255 * t * 3), 0, 0];
+                if (t < .66) return [255, Math.round(255 * (t - .33) * 3), 0];
+                return [255, 255, Math.round(255 * (t - .66) * 3)];
+            },
+            'Cool-Warm': t => [Math.round(255 * t), Math.round(255 * (1 - Math.abs(2 * t - 1))), Math.round(255 * (1 - t))],
+        };
+
+        // ── State ────────────────────────────────────────────────────────────
+        let selectedCM = 'Turbo';
+        let inferencer = null;
+        let rawDepth = null;
+        let originalImageEl = null;
+        let currentModel = 'onnx-community/depth-anything-v2-small';
+
+        // Persistent WebGL state — initialized once, reused across images
+        let _rafId = null;
+        let _gl = null, _prog = null, _posBuf = null, _colBuf = null, _uMVP = null;
+        let _rot = { x: 0.3, y: 0, zoom: 1.8, dr: false, lx: 0, ly: 0 };
+        let _npts = 0;
+
+        // ── Color map UI ─────────────────────────────────────────────────────
+        function buildColorMapUI() {
+            const c = document.getElementById('colorMapOptions');
+            Object.keys(COLOR_MAPS).forEach(name => {
+                const btn = document.createElement('button');
+                btn.className = 'cm-btn' + (name === selectedCM ? ' active' : '');
+                btn.dataset.cm = name;
+                const bar = document.createElement('canvas');
+                bar.className = 'cm-bar'; bar.width = 120; bar.height = 24;
+                const ctx = bar.getContext('2d');
+                for (let x = 0; x < 120; x++) { const [r, g, b] = COLOR_MAPS[name](x / 119); ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fillRect(x, 0, 1, 24); }
+                const lbl = document.createElement('div');
+                lbl.className = 'cm-label'; lbl.textContent = name;
+                btn.appendChild(bar); btn.appendChild(lbl);
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.cm-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active'); selectedCM = name;
+                    if (rawDepth) applyColorMap();
+                });
+                c.appendChild(btn);
+            });
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────────
+        function setProgress(pct, label) {
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressPct').textContent = pct + '%';
+            if (label) document.getElementById('progressLabel').textContent = label;
+        }
+        function showProgress(v) { document.getElementById('progressContainer').classList.toggle('active', v); }
+        function showToast(msg, icon = '✅') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            document.getElementById('toastIcon').textContent = icon;
+            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        function showLoading(id, text = 'Processing…') {
+            const p = document.getElementById(id);
+            const ex = p.querySelector('.loading-overlay'); if (ex) ex.remove();
+            const ov = document.createElement('div'); ov.className = 'loading-overlay';
+            ov.innerHTML = `<div class="spinner"></div><div class="loading-text">${text}</div>`;
+            p.appendChild(ov);
+        }
+        function hideLoading(id) { const ov = document.getElementById(id).querySelector('.loading-overlay'); if (ov) ov.remove(); }
+
+        function fastBoxBlur(src, w, h, r) {
+            if (r < 1) return src;
+            const temp = new Float32Array(src.length);
+            const dst = new Float32Array(src.length);
+            // Horizontal pass
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    let sum = 0, count = 0;
+                    for (let dx = -r; dx <= r; dx++) {
+                        const nx = x + dx;
+                        if (nx >= 0 && nx < w) { sum += src[y * w + nx]; count++; }
+                    }
+                    temp[y * w + x] = sum / count;
+                }
+            }
+            // Vertical pass
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    let sum = 0, count = 0;
+                    for (let dy = -r; dy <= r; dy++) {
+                        const ny = y + dy;
+                        if (ny >= 0 && ny < h) { sum += temp[ny * w + x]; count++; }
+                    }
+                    dst[y * w + x] = sum / count;
+                }
+            }
+            return dst;
+        }
+
+        // ── Apply Color & Features ───────────────────────────────────────────
+        function applyColorMap() {
+            if (!rawDepth) return;
+            const { data, width, height } = rawDepth;
+            const contrast = parseFloat(document.getElementById('contrastSlider').value) / 100;
+            const brightness = parseFloat(document.getElementById('brightnessSlider').value) / 100;
+            const gamma = parseFloat(document.getElementById('gammaSlider').value) / 100; // Gamma is 0.1 to 3.0, so divide by 100
+            const blur = parseInt(document.getElementById('blurSlider').value);
+            const detailAmount = parseFloat(document.getElementById('detailSlider').value);
+            const textureAmount = parseFloat(document.getElementById('textureSlider').value);
+            const bevelAmount = parseInt(document.getElementById('bevelSlider').value) / 100;
+            const contourSteps = parseInt(document.getElementById('contourSlider').value);
+
+            let mn = Infinity, mx = -Infinity;
+            for (const v of data) { if (v < mn) mn = v; if (v > mx) mx = v; }
+            let range = mx - mn || 1;
+            const inv = document.getElementById('invertSelect').value === '1';
+
+            // Base normalization array
+            let processedData = new Float32Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                let t = (data[i] - mn) / range;
+                if (inv) t = 1 - t;
+                processedData[i] = t;
+            }
+
+            // Apply Micro-Details via Unsharp Mask
+            if (detailAmount > 0) {
+                const radius = Math.max(1, Math.round(width * 0.005)); // scales with resolution
+                const blurred = fastBoxBlur(processedData, width, height, radius);
+                for (let i = 0; i < processedData.length; i++) {
+                    const diff = processedData[i] - blurred[i];
+                    // Enhance the high-frequency differences and add them back
+                    processedData[i] = Math.max(0, Math.min(1, processedData[i] + diff * detailAmount));
+                }
+            }
+
+            // Apply Image Texture Luminance Bump (High-Pass)
+            if (textureAmount > 0 && Number.isFinite(textureAmount) && window._luminanceMap && window._luminanceMap.length === processedData.length) {
+                // Fast box blur the luminance to create a low-pass map
+                const radius = Math.max(1, Math.round(width * 0.005));
+                const lowPassLum = fastBoxBlur(window._luminanceMap, width, height, radius);
+
+                for (let i = 0; i < processedData.length; i++) {
+                    // High-pass = Original - Blurred (this isolates wrinkles, lines, edges)
+                    // Then we add that high-frequency detail directly into the AI Depth Map!
+                    const highPass = window._luminanceMap[i] - lowPassLum[i];
+                    processedData[i] = Math.max(0, Math.min(1, processedData[i] + (highPass * textureAmount)));
+                }
+            }
+
+            // Apply Edge Fade (Bevel Curve)
+            if (bevelAmount > 0) {
+                // Determine maximum pixel fade distance based on exact image size
+                // Example: 20% bevel = fade happens over the outer 20% distance to the center
+                const maxFadeDistX = Math.floor(width * 0.5 * bevelAmount);
+                const maxFadeDistY = Math.floor(height * 0.5 * bevelAmount);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        // calculate closest distance to any edge
+                        const distToLeft = x;
+                        const distToRight = width - 1 - x;
+                        const distToTop = y;
+                        const distToBottom = height - 1 - y;
+
+                        const distX = Math.min(distToLeft, distToRight);
+                        const distY = Math.min(distToTop, distToBottom);
+
+                        let multX = 1.0;
+                        if (distX < maxFadeDistX) {
+                            // Sine ease in-out curve
+                            const percent = distX / maxFadeDistX;
+                            multX = Math.sin((percent * Math.PI) / 2);
+                        }
+                        let multY = 1.0;
+                        if (distY < maxFadeDistY) {
+                            const percent = distY / maxFadeDistY;
+                            multY = Math.sin((percent * Math.PI) / 2);
+                        }
+
+                        // Combine 2D masking fade
+                        const falloff = multX * multY;
+                        processedData[y * width + x] *= falloff;
+                    }
+                }
+            }
+
+            // Apply Topographic Contours
+            if (contourSteps > 0) {
+                for (let i = 0; i < processedData.length; i++) {
+                    // Quantize the normalized 0-1 value into discrete steps
+                    processedData[i] = Math.floor(processedData[i] * contourSteps) / contourSteps;
+                }
+            }
+
+            document.getElementById('minDepth').textContent = mn.toFixed(3);
+            document.getElementById('maxDepth').textContent = mx.toFixed(3);
+            document.getElementById('avgDepth').textContent = (processedData.reduce((a, b) => a + b, 0) / processedData.length).toFixed(3); // Avg of processed data
+            document.getElementById('imgSize').textContent = `${width}×${height}`;
+            document.getElementById('stats').style.display = 'flex';
+
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = width; offscreenCanvas.height = height;
+            const offCtx = offscreenCanvas.getContext('2d');
+            const id = offCtx.createImageData(width, height);
+
+            for (let i = 0; i < processedData.length; i++) {
+                let t = processedData[i];
+                t = Math.pow(Math.max(0, t), gamma);
+                t = Math.max(0, Math.min(1, (t - .5) * contrast + .5 + brightness));
+                const [r, g, b] = COLOR_MAPS[selectedCM](t);
+                id.data[i * 4] = r; id.data[i * 4 + 1] = g; id.data[i * 4 + 2] = b; id.data[i * 4 + 3] = 255;
+            }
+            offCtx.putImageData(id, 0, 0);
+
+            // Upscale the output tensor back to the true original image resolution
+            let finalWidth = width;
+            let finalHeight = height;
+            if (originalImageEl) {
+                finalWidth = originalImageEl.naturalWidth || originalImageEl.width || width;
+                finalHeight = originalImageEl.naturalHeight || originalImageEl.height || height;
+            }
+
+            const fc = document.createElement('canvas'); fc.width = finalWidth; fc.height = finalHeight;
+            const fctx = fc.getContext('2d');
+
+            fctx.imageSmoothingEnabled = true;
+            fctx.imageSmoothingQuality = 'high';
+            fctx.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            fctx.drawImage(offscreenCanvas, 0, 0, finalWidth, finalHeight);
+
+            const dp = document.getElementById('depthPanel'); dp.innerHTML = '';
+            fc.style.maxWidth = '100%'; fc.style.maxHeight = '420px'; fc.style.borderRadius = '8px';
+            dp.appendChild(fc);
+            window._depthCanvas = fc; window._rawGrayData = { data, width: finalWidth, height: finalHeight, inv };
+            document.getElementById('exportDepth').disabled = false;
+            document.getElementById('exportGrayscale').disabled = false;
+            document.getElementById('exportSideBySide').disabled = false;
+            document.getElementById('exportOBJ').disabled = false;
+
+            render3D(fc, finalWidth, finalHeight, data, mn, range, width, height);
+
+            // ── Update new feature panels ──────────────────────────────────
+            if (window._currentObjectURL) URL.revokeObjectURL(window._currentObjectURL);
+            window._currentObjectURL = URL.createObjectURL(window._currentFile);
+            updateCompare(window._currentObjectURL, fc);
+            drawHistogram(data, mn, range);
+            document.getElementById('bokehWrap').style.display = 'block';
+            document.getElementById('maskWrap').style.display = 'block';
+            renderBokeh();
+            renderMask();
+        }
+
+        // ── 3D Point Cloud — persistent WebGL context ────────────────────────
+        function render3D(depthCanvas, w, h, rawData, mn, range, rawWidth, rawHeight) {
+            // Stop previous loop
+            if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
+
+            document.getElementById('panel3dContainer').style.display = 'block';
+
+            // Build point cloud data
+            const step = Math.max(1, Math.floor(Math.sqrt(w * h / 40000)));
+            const pts = [], cols = [];
+            const depCtx = depthCanvas.getContext('2d');
+            const px = depCtx.getImageData(0, 0, w, h).data;
+
+            for (let y = 0; y < h; y += step) {
+                for (let x = 0; x < w; x += step) {
+                    const rawX = Math.min(Math.floor((x / w) * rawWidth), rawWidth - 1);
+                    const rawY = Math.min(Math.floor((y / h) * rawHeight), rawHeight - 1);
+                    const i_raw = rawY * rawWidth + rawX;
+
+                    const z = (rawData[i_raw] - mn) / range;
+
+                    pts.push((x / w) * 2 - 1, -((y / h) * 2 - 1), (z - .5) * 1.5);
+                    const pi = (y * w + x) * 4;
+                    cols.push(px[pi] / 255, px[pi + 1] / 255, px[pi + 2] / 255);
+                }
+            }
+            _npts = pts.length / 3;
+            const ptsF = new Float32Array(pts), colsF = new Float32Array(cols);
+
+            requestAnimationFrame(() => {
+                const cv = document.getElementById('canvas3d');
+
+                // ── Init GL once ──────────────────────────────────────────────
+                if (!_gl) {
+                    cv.width = cv.offsetWidth || cv.parentElement.clientWidth || 800;
+                    cv.height = cv.offsetHeight || 360;
+                    _gl = cv.getContext('webgl');
+                    if (!_gl) { console.warn('No WebGL'); return; }
+                    _gl.viewport(0, 0, cv.width, cv.height);
+
+                    function mkS(type, src) {
+                        const s = _gl.createShader(type);
+                        _gl.shaderSource(s, src); _gl.compileShader(s); return s;
+                    }
+                    _prog = _gl.createProgram();
+                    _gl.attachShader(_prog, mkS(_gl.VERTEX_SHADER,
+                        'attribute vec3 a_pos,a_col;uniform mat4 u_mvp;varying vec3 v_col;void main(){gl_Position=u_mvp*vec4(a_pos,1.0);gl_PointSize=2.0;v_col=a_col;}'));
+                    _gl.attachShader(_prog, mkS(_gl.FRAGMENT_SHADER,
+                        'precision mediump float;varying vec3 v_col;void main(){gl_FragColor=vec4(v_col,1.0);}'));
+                    _gl.linkProgram(_prog);
+                    _posBuf = _gl.createBuffer();
+                    _colBuf = _gl.createBuffer();
+                    _uMVP = _gl.getUniformLocation(_prog, 'u_mvp');
+
+                    // Mouse/touch events – registered once
+                    cv.onmousedown = e => { _rot.dr = true; _rot.lx = e.clientX; _rot.ly = e.clientY; };
+                    window.addEventListener('mouseup', () => _rot.dr = false);
+                    cv.onmousemove = e => {
+                        if (!_rot.dr) return;
+                        _rot.y += (e.clientX - _rot.lx) * .01; _rot.x += (e.clientY - _rot.ly) * .01;
+                        _rot.lx = e.clientX; _rot.ly = e.clientY;
+                    };
+                    cv.onwheel = e => { _rot.zoom = Math.max(.5, Math.min(5, _rot.zoom - e.deltaY * .002)); e.preventDefault(); };
+                    let t0 = null;
+                    cv.ontouchstart = e => { t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+                    cv.ontouchmove = e => {
+                        if (!t0) return;
+                        _rot.y += (e.touches[0].clientX - t0.x) * .01; _rot.x += (e.touches[0].clientY - t0.y) * .01;
+                        t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; e.preventDefault();
+                    };
+                    cv.ontouchend = () => t0 = null;
+                }
+
+                const gl = _gl;
+                gl.useProgram(_prog);
+
+                // Upload position data for this image
+                const aPos = gl.getAttribLocation(_prog, 'a_pos');
+                gl.bindBuffer(gl.ARRAY_BUFFER, _posBuf);
+                gl.bufferData(gl.ARRAY_BUFFER, ptsF, gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+
+                // Upload color data
+                const aCol = gl.getAttribLocation(_prog, 'a_col');
+                gl.bindBuffer(gl.ARRAY_BUFFER, _colBuf);
+                gl.bufferData(gl.ARRAY_BUFFER, colsF, gl.DYNAMIC_DRAW);
+                gl.enableVertexAttribArray(aCol);
+                gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0);
+
+                // Reset camera for each new image
+                _rot.x = 0.3; _rot.y = 0; _rot.zoom = 1.8;
+
+                // Math helpers
+                const W = cv.width, H = cv.height;
+                function m4(a, b) { const r = new Float32Array(16); for (let i = 0; i < 4; i++)for (let j = 0; j < 4; j++)for (let k = 0; k < 4; k++)r[i * 4 + j] += a[i * 4 + k] * b[k * 4 + j]; return r; }
+                function rX(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]); }
+                function rY(a) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]); }
+                function per(f, a, n, fa) { const t = Math.tan(f / 2), x = 1 / t, d = fa - n; return new Float32Array([x / a, 0, 0, 0, 0, x, 0, 0, 0, 0, -(fa + n) / d, -1, 0, 0, -2 * fa * n / d, 0]); }
+                function tr(x, y, z) { const m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); m[12] = x; m[13] = y; m[14] = z; return m; }
+
+                function draw() {
+                    if (_autoRotate) _rot.y += 0.008;
+                    gl.clearColor(.027, .043, .078, 1);
+                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                    gl.enable(gl.DEPTH_TEST);
+                    const MVP = m4(per(Math.PI / 4, W / H, .01, 100), m4(tr(0, 0, -_rot.zoom), m4(rX(_rot.x), rY(_rot.y))));
+                    gl.uniformMatrix4fv(_uMVP, false, MVP);
+                    gl.drawArrays(gl.POINTS, 0, _npts);
+                    _rafId = requestAnimationFrame(draw);
+                }
+                draw();
+            });
+        }
+
+        // ── Generate ─────────────────────────────────────────────────────────
+        async function generate() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true; document.getElementById('generateIcon').textContent = '⏳';
+            showProgress(true); setProgress(5, 'Loading depth estimation model…');
+            try {
+                const t0 = performance.now();
+                const selectedModel = document.getElementById('modelSelect').value;
+                if (!inferencer || currentModel !== selectedModel) {
+                    currentModel = selectedModel;
+                    setProgress(10, 'Downloading AI model (first time can take a while)…');
+                    inferencer = await pipeline('depth-estimation', currentModel, {
+                        progress_callback: p => {
+                            if (p.status === 'downloading') {
+                                const pct = Math.round(10 + (p.progress || 0) * .6);
+                                setProgress(pct, `Downloading model: ${p.name || '…'} (${Math.round(p.progress || 0)}%)`);
+                            }
+                        }
+                    });
+                    setProgress(72, 'Model ready!');
+                } else { setProgress(72, 'Using cached model…'); }
+
+                setProgress(78, 'Running depth estimation…');
+                showLoading('depthPanel', 'Running AI inference…');
+
+                const url = URL.createObjectURL(window._currentFile);
+
+                // Configure advanced preprocessing options
+                const maxRes = parseInt(document.getElementById('resSelect').value);
+                const preserveAspectRatio = document.getElementById('padCheckbox').checked;
+
+                let procWidth = maxRes;
+                let procHeight = maxRes;
+
+                if (preserveAspectRatio && originalImageEl) {
+                    const ow = originalImageEl.naturalWidth;
+                    const oh = originalImageEl.naturalHeight;
+                    const ratio = ow / oh;
+                    if (ow > oh) {
+                        procWidth = maxRes;
+                        procHeight = Math.max(14, Math.round((maxRes / ratio) / 14) * 14);
+                    } else {
+                        procHeight = maxRes;
+                        procWidth = Math.max(14, Math.round((maxRes * ratio) / 14) * 14);
+                    }
+                }
+
+                const options = {
+                    image_processor: {
+                        size: { height: procHeight, width: procWidth },
+                        do_resize: true,
+                        keep_aspect_ratio: false, // Force exact output tensor size to our perfectly proportional calculated dimensions
+                        do_pad: false             // No solid color padding (which causes edge blurring and blob effect)
+                    }
+                };
+
+                const result = await inferencer(url, options);
+                URL.revokeObjectURL(url); // clear out original file url
+
+                setProgress(95, 'Applying color map…');
+
+                const tensor = result.predicted_depth;
+                const data = tensor.data; // TypedArray — NOT a function
+
+                // Fix: V3 tensors might expose dimensions directly or via ort_tensor
+                let height, width;
+                if (tensor.dims) {
+                    height = tensor.dims[tensor.dims.length - 2];
+                    width = tensor.dims[tensor.dims.length - 1];
+                } else if (tensor.ort_tensor && tensor.ort_tensor.dims) {
+                    height = tensor.ort_tensor.dims[tensor.ort_tensor.dims.length - 2];
+                    width = tensor.ort_tensor.dims[tensor.ort_tensor.dims.length - 1];
+                } else {
+                    // Fallback to image size or guess from length if missing
+                    throw new Error("Could not determine depth map dimensions from AI output.");
+                }
+
+                // --- Extract luminance map from original image at processing resolution ---
+                if (originalImageEl) {
+                    const lumCanvas = document.createElement('canvas');
+                    lumCanvas.width = width;
+                    lumCanvas.height = height;
+                    const lCtx = lumCanvas.getContext('2d', { willReadFrequently: true });
+                    // Draw image scaled to fit the exact AI tensor width/height
+                    lCtx.drawImage(originalImageEl, 0, 0, width, height);
+                    const lData = lCtx.getImageData(0, 0, width, height).data;
+                    window._luminanceMap = new Float32Array(width * height);
+                    for (let i = 0; i < window._luminanceMap.length; i++) {
+                        // Perceived brightness formula (Luma) mapped 0..1
+                        const r = lData[i * 4];
+                        const g = lData[i * 4 + 1];
+                        const b = lData[i * 4 + 2];
+                        window._luminanceMap[i] = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                    }
+                } else {
+                    window._luminanceMap = null;
+                }
+                // -------------------------------------------------------------------------
+
+                window._debugTensorDims = tensor.dims || (tensor.ort_tensor && tensor.ort_tensor.dims) || 'Unknown';
+
+                rawDepth = { data, width, height };
+
+                hideLoading('depthPanel');
+                applyColorMap();
+
+                const t1 = performance.now();
+                document.getElementById('procTime').textContent = ((t1 - t0) / 1000).toFixed(1) + 's';
+                setProgress(100, 'Done! ✨');
+                setTimeout(() => showProgress(false), 1200);
+                showToast('Depth map generated successfully!', '✅');
+            } catch (err) {
+                console.error(err);
+                hideLoading('depthPanel');
+                showProgress(false);
+                showToast('Error: ' + err.message, '❌');
+            }
+            btn.disabled = false; document.getElementById('generateIcon').textContent = '⚡';
+        }
+
+        // ── Export ───────────────────────────────────────────────────────────
+        function dl(canvas, name) {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png'); a.download = name; a.click();
+            showToast(`Exported ${name}`, '💾');
+        }
+        document.getElementById('exportDepth').addEventListener('click', () => { if (window._depthCanvas) dl(window._depthCanvas, 'depth_map.png'); });
+        document.getElementById('exportGrayscale').addEventListener('click', () => {
+            if (!rawDepth || !window._depthCanvas) return;
+            const { data, width: smallWidth, height: smallHeight } = rawDepth;
+            const finalWidth = window._depthCanvas.width;
+            const finalHeight = window._depthCanvas.height;
+
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = smallWidth; offscreenCanvas.height = smallHeight;
+            const offCtx = offscreenCanvas.getContext('2d');
+            const id = offCtx.createImageData(smallWidth, smallHeight);
+
+            let mn = Infinity, mx = -Infinity;
+            for (const v of data) { if (v < mn) mn = v; if (v > mx) mx = v; }
+            const range = mx - mn || 1;
+            const inv = document.getElementById('invertSelect').value === '1';
+
+            // Copy same logic from applyColorMap for grayscale
+            let processedData = new Float32Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                let t = (data[i] - mn) / range;
+                if (inv) t = 1 - t;
+                processedData[i] = t;
+            }
+
+            const detailAmount = parseFloat(document.getElementById('detailSlider').value);
+            if (detailAmount > 0) {
+                const radius = Math.max(1, Math.round(smallWidth * 0.005));
+                const blurred = fastBoxBlur(processedData, smallWidth, smallHeight, radius);
+                for (let i = 0; i < processedData.length; i++) {
+                    const diff = processedData[i] - blurred[i];
+                    processedData[i] = Math.max(0, Math.min(1, processedData[i] + diff * detailAmount));
+                }
+            }
+
+            const textureAmount = parseFloat(document.getElementById('textureSlider').value);
+            if (textureAmount > 0 && Number.isFinite(textureAmount) && window._luminanceMap && window._luminanceMap.length === processedData.length) {
+                const radius = Math.max(1, Math.round(smallWidth * 0.005));
+                const lowPassLum = fastBoxBlur(window._luminanceMap, smallWidth, smallHeight, radius);
+                for (let i = 0; i < processedData.length; i++) {
+                    const highPass = window._luminanceMap[i] - lowPassLum[i];
+                    processedData[i] = Math.max(0, Math.min(1, processedData[i] + (highPass * textureAmount)));
+                }
+            }
+
+            for (let i = 0; i < processedData.length; i++) {
+                let t = processedData[i];
+                t = Math.pow(Math.max(0, t), parseFloat(document.getElementById('gammaSlider').value) / 100);
+                const contrast = parseFloat(document.getElementById('contrastSlider').value) / 100;
+                const brightness = parseFloat(document.getElementById('brightnessSlider').value) / 100;
+                t = Math.max(0, Math.min(1, (t - .5) * contrast + .5 + brightness));
+
+                const v = Math.round(t * 255);
+                id.data[i * 4] = v; id.data[i * 4 + 1] = v; id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = 255;
+            }
+            offCtx.putImageData(id, 0, 0);
+
+            // Upscale to final export dimensions
+            const gc = document.createElement('canvas'); gc.width = finalWidth; gc.height = finalHeight;
+            const gctx = gc.getContext('2d');
+            gctx.imageSmoothingEnabled = true;
+            gctx.imageSmoothingQuality = 'high';
+            gctx.drawImage(offscreenCanvas, 0, 0, finalWidth, finalHeight);
+
+            dl(gc, 'depth_grayscale.png');
+        });
+        document.getElementById('exportSideBySide').addEventListener('click', () => {
+            if (!originalImageEl || !window._depthCanvas) return;
+            const dw = window._depthCanvas.width, dh = window._depthCanvas.height;
+            const ow = originalImageEl.naturalWidth || originalImageEl.width, oh = originalImageEl.naturalHeight || originalImageEl.height;
+            const maxH = Math.max(dh, oh);
+            const sc = document.createElement('canvas'); sc.width = dw + ow; sc.height = maxH;
+            const sctx = sc.getContext('2d');
+            sctx.fillStyle = '#070b14'; sctx.fillRect(0, 0, sc.width, sc.height);
+            sctx.drawImage(originalImageEl, 0, (maxH - oh) / 2, ow, oh);
+            sctx.drawImage(window._depthCanvas, ow, (maxH - dh) / 2, dw, dh);
+            dl(sc, 'depth_sidebyside.png');
+        });
+
+        // ── File input ───────────────────────────────────────────────────────
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) { showToast('Please upload a valid image file', '⚠️'); return; }
+            if (file.size > 10 * 1024 * 1024) { showToast('File too large (max 10MB)', '⚠️'); return; }
+            window._currentFile = file;
+            const url = URL.createObjectURL(file);
+            const op = document.getElementById('originalPanel'); op.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = url; img.style.maxWidth = '100%'; img.style.maxHeight = '420px'; img.style.borderRadius = '8px';
+            img.onload = () => { originalImageEl = img; URL.revokeObjectURL(url); };
+            op.appendChild(img); originalImageEl = img;
+            document.getElementById('depthPanel').innerHTML = '<div class="placeholder"><div class="icon">🌊</div><p>Click Generate to process</p></div>';
+            document.getElementById('generateBtn').disabled = false;
+            rawDepth = null;
+            ['exportDepth', 'exportGrayscale', 'exportSideBySide', 'exportOBJ'].forEach(id => document.getElementById(id).disabled = true);
+
+            // Show that the new options are available
+            document.getElementById('resSelect').disabled = false;
+            document.getElementById('padCheckbox').disabled = false;
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('panel3dContainer').style.display = 'none';
+            document.getElementById('comparePanel').style.display = 'none';
+            document.getElementById('histWrap').style.display = 'none';
+            document.getElementById('bokehWrap').style.display = 'none';
+            document.getElementById('maskWrap').style.display = 'none';
+            showToast('Image loaded! Ready to generate.', '🖼️');
+        }
+
+        const fi = document.getElementById('fileInput');
+        document.getElementById('uploadBtn').addEventListener('click', () => fi.click());
+        fi.addEventListener('change', e => handleFile(e.target.files[0]));
+        const zone = document.getElementById('uploadZone');
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+        zone.addEventListener('click', e => { if (e.target !== document.getElementById('uploadBtn')) fi.click(); });
+        document.getElementById('generateBtn').addEventListener('click', generate);
+        // ── Sliders & Options Events ─────────────────────────────────────────
+        function updateSliderVal(id, val, textNode, formatFunc) {
+            document.getElementById(id).value = val;
+            document.getElementById(textNode).textContent = formatFunc(val);
+        }
+
+        window.applyPreset = function (type) {
+            if (type === 'wood') {
+                updateSliderVal('contrastSlider', 120, 'contrastVal', v => v + '%');
+                updateSliderVal('brightnessSlider', 5, 'brightnessVal', v => '+' + v + '%');
+                updateSliderVal('gammaSlider', 120, 'gammaVal', v => (v / 100).toFixed(2));
+                updateSliderVal('detailSlider', 2.0, 'detailVal', v => Number(v).toFixed(1));
+                updateSliderVal('textureSlider', 1.0, 'textureVal', v => Number(v).toFixed(2));
+                updateSliderVal('bevelSlider', 5, 'bevelVal', v => v + '%');
+                updateSliderVal('contourSlider', 0, 'contourVal', v => 'Off');
+                document.getElementById('invertSelect').value = '0';
+            } else if (type === 'acrylic') {
+                updateSliderVal('contrastSlider', 100, 'contrastVal', v => v + '%');
+                updateSliderVal('brightnessSlider', -5, 'brightnessVal', v => v + '%');
+                updateSliderVal('gammaSlider', 150, 'gammaVal', v => (v / 100).toFixed(2));
+                updateSliderVal('detailSlider', 0.5, 'detailVal', v => Number(v).toFixed(1));
+                updateSliderVal('textureSlider', 0.2, 'textureVal', v => Number(v).toFixed(2));
+                updateSliderVal('bevelSlider', 0, 'bevelVal', v => '0%');
+                updateSliderVal('contourSlider', 0, 'contourVal', v => 'Off');
+                document.getElementById('invertSelect').value = '0';
+            } else if (type === 'mold') {
+                updateSliderVal('contrastSlider', 110, 'contrastVal', v => v + '%');
+                updateSliderVal('brightnessSlider', 0, 'brightnessVal', v => v + '%');
+                updateSliderVal('gammaSlider', 100, 'gammaVal', v => (v / 100).toFixed(2));
+                updateSliderVal('detailSlider', 1.0, 'detailVal', v => Number(v).toFixed(1));
+                updateSliderVal('textureSlider', 0.5, 'textureVal', v => Number(v).toFixed(2));
+                updateSliderVal('bevelSlider', 10, 'bevelVal', v => v + '%');
+                updateSliderVal('contourSlider', 0, 'contourVal', v => 'Off');
+                document.getElementById('invertSelect').value = '1'; // Mold is usually inverted
+            } else if (type === 'print') {
+                updateSliderVal('contrastSlider', 100, 'contrastVal', v => v + '%');
+                updateSliderVal('brightnessSlider', 10, 'brightnessVal', v => '+' + v + '%');
+                updateSliderVal('gammaSlider', 80, 'gammaVal', v => (v / 100).toFixed(2));
+                updateSliderVal('detailSlider', 3.0, 'detailVal', v => Number(v).toFixed(1));
+                updateSliderVal('textureSlider', 0.0, 'textureVal', v => Number(v).toFixed(2));
+                updateSliderVal('bevelSlider', 0, 'bevelVal', v => '0%');
+                updateSliderVal('contourSlider', 0, 'contourVal', v => 'Off');
+                document.getElementById('invertSelect').value = '0';
+            }
+            if (rawDepth) applyColorMap();
+        };
+
+        document.getElementById('blurSlider').addEventListener('input', e => { document.getElementById('blurVal').textContent = e.target.value + 'px'; if (rawDepth) applyColorMap(); });
+        document.getElementById('contrastSlider').addEventListener('input', e => { document.getElementById('contrastVal').textContent = e.target.value + '%'; if (rawDepth) applyColorMap(); });
+        document.getElementById('brightnessSlider').addEventListener('input', e => { document.getElementById('brightnessVal').textContent = (e.target.value > 0 ? '+' : '') + e.target.value + '%'; if (rawDepth) applyColorMap(); });
+        document.getElementById('gammaSlider').addEventListener('input', e => { document.getElementById('gammaVal').textContent = parseFloat(e.target.value / 100).toFixed(2); if (rawDepth) applyColorMap(); });
+        document.getElementById('detailSlider').addEventListener('input', e => { document.getElementById('detailVal').textContent = parseFloat(e.target.value).toFixed(1); if (rawDepth) applyColorMap(); });
+        document.getElementById('textureSlider').addEventListener('input', e => { document.getElementById('textureVal').textContent = parseFloat(e.target.value).toFixed(2); if (rawDepth) applyColorMap(); });
+        document.getElementById('bevelSlider').addEventListener('input', e => { document.getElementById('bevelVal').textContent = e.target.value + '%'; if (rawDepth) applyColorMap(); });
+        document.getElementById('contourSlider').addEventListener('input', e => { document.getElementById('contourVal').textContent = e.target.value == 0 ? 'Off' : e.target.value; if (rawDepth) applyColorMap(); });
+        document.getElementById('invertSelect').addEventListener('change', () => { if (rawDepth) applyColorMap(); });
+
+        // ── Comparison Slider ────────────────────────────────────────────────
+        function initCompareSlider() {
+            const wrap = document.getElementById('compareWrap');
+            const handle = document.getElementById('compareHandle');
+            const depth = document.getElementById('compareDepth');
+            if (!wrap) return;
+            let dragging = false;
+            const move = e => {
+                if (!dragging) return;
+                const rect = wrap.getBoundingClientRect();
+                const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                let pct = Math.max(0, Math.min(100, (cx - rect.left) / rect.width * 100));
+                handle.style.left = pct + '%';
+                depth.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+            };
+            handle.addEventListener('mousedown', () => dragging = true);
+            handle.addEventListener('touchstart', () => dragging = true, { passive: true });
+            window.addEventListener('mouseup', () => dragging = false);
+            window.addEventListener('touchend', () => dragging = false);
+            wrap.addEventListener('mousemove', move);
+            wrap.addEventListener('touchmove', move, { passive: true });
+        }
+        initCompareSlider();
+
+        function updateCompare(origImgSrc, depthCanvas) {
+            const panel = document.getElementById('comparePanel');
+            const origImg = document.getElementById('compareOrigImg');
+            const dc = document.getElementById('compareDepthCanvas');
+            panel.style.display = 'block';
+            origImg.src = origImgSrc;
+            // Copy depth canvas to the compare canvas
+            dc.width = depthCanvas.width; dc.height = depthCanvas.height;
+            dc.style.width = '100%'; dc.style.height = '100%';
+            dc.getContext('2d').drawImage(depthCanvas, 0, 0);
+            // Reset handle to center
+            document.getElementById('compareHandle').style.left = '50%';
+            document.getElementById('compareDepth').style.clipPath = 'inset(0 50% 0 0)';
+        }
+
+        // ── Depth Histogram ──────────────────────────────────────────────────
+        function drawHistogram(data, mn, range) {
+            const wrap = document.getElementById('histWrap');
+            const cv = document.getElementById('histCanvas');
+            wrap.style.display = 'block';
+            const W = cv.offsetWidth || 600, H = 120;
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+            const BINS = 64;
+            const counts = new Array(BINS).fill(0);
+            for (const v of data) counts[Math.min(BINS - 1, Math.floor((v - mn) / range * BINS))]++;
+            const maxC = Math.max(...counts);
+            ctx.clearRect(0, 0, W, H);
+            const bw = W / BINS;
+            for (let i = 0; i < BINS; i++) {
+                const t = i / (BINS - 1);
+                const [r, g, b] = COLOR_MAPS[selectedCM](t);
+                const bh = Math.round((counts[i] / maxC) * (H - 4));
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(i * bw, H - bh, bw - 1, bh);
+            }
+        }
+
+        // ── Auto Rotate 3D ───────────────────────────────────────────────────
+        let _autoRotate = false;
+        document.getElementById('autoRotateBtn').addEventListener('click', function () {
+            _autoRotate = !_autoRotate;
+            this.classList.toggle('on', _autoRotate);
+            this.textContent = _autoRotate ? '⏸ Auto Rotate' : '↻ Auto Rotate';
+        });
+        // Modify draw loop externally via a global flag — _rot.autoY
+        // The 3D draw function reads _autoRotate and increments _rot.y if true
+
+        // ── OBJ Export ───────────────────────────────────────────────────────
+        function exportOBJ() {
+            if (!rawDepth) return;
+            const { data, width, height } = rawDepth;
+            let mn = Infinity, mx = -Infinity;
+            for (const v of data) { if (v < mn) mn = v; if (v > mx) mx = v; }
+            const range = mx - mn || 1;
+            const step = Math.max(1, Math.floor(Math.sqrt(width * height / 40000)));
+            let obj = '# Depth Map Point Cloud\n# Generated by DepthMap AI\n';
+            for (let y = 0; y < height; y += step) {
+                for (let x = 0; x < width; x += step) {
+                    const i = y * width + x;
+                    const vx = ((x / width) * 2 - 1).toFixed(4);
+                    const vy = (-((y / height) * 2 - 1)).toFixed(4);
+                    const vz = (((data[i] - mn) / range - 0.5) * 1.5).toFixed(4);
+                    obj += `v ${vx} ${vy} ${vz}\n`;
+                }
+            }
+            const blob = new Blob([obj], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'depth_cloud.obj'; a.click();
+            showToast('Exported depth_cloud.obj', '📦');
+        }
+        document.getElementById('exportOBJ').addEventListener('click', exportOBJ);
+
+        // ── Bokeh Simulator ──────────────────────────────────────────────────
+        function renderBokeh() {
+            if (!rawDepth || !originalImageEl) return;
+            const { data, width, height } = rawDepth;
+            let mn = Infinity, mx = -Infinity;
+            for (const v of data) { if (v < mn) mn = v; if (v > mx) mx = v; }
+            const range = mx - mn || 1;
+
+            const focus = parseInt(document.getElementById('bokehFocus').value) / 100;
+            const maxBlur = parseInt(document.getElementById('bokehBlur').value);
+            const mode = document.getElementById('bokehMode').value;
+            const inv = document.getElementById('invertSelect').value === '1';
+
+            const cv = document.getElementById('bokehCanvas');
+            cv.width = width; cv.height = height;
+            const ctx = cv.getContext('2d');
+
+            // Draw layers with increasing blur
+            const LAYERS = 6;
+            for (let l = LAYERS; l >= 0; l--) {
+                const layerFocus = l / LAYERS;
+                const blur = Math.round(Math.abs(layerFocus - focus) * maxBlur);
+                const tmp = document.createElement('canvas'); tmp.width = width; tmp.height = height;
+                const tc = tmp.getContext('2d');
+                tc.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+                tc.drawImage(originalImageEl, 0, 0, width, height);
+                tc.filter = 'none';
+                // Mask: draw only pixels at this depth layer
+                const mask = tc.getImageData(0, 0, width, height);
+                const imgD = mask.data;
+                for (let i = 0; i < data.length; i++) {
+                    let t = (data[i] - mn) / range;
+                    if (inv) t = 1 - t;
+                    const depthLayer = mode === 'near' ? t : 1 - t;
+                    const inLayer = Math.abs(depthLayer - layerFocus) < 1 / LAYERS;
+                    if (!inLayer) imgD[i * 4 + 3] = 0;
+                }
+                tc.putImageData(mask, 0, 0);
+                ctx.drawImage(tmp, 0, 0);
+            }
+        }
+
+        document.getElementById('bokehFocus').addEventListener('input', e => {
+            document.getElementById('bokehFocusVal').textContent = e.target.value + '%';
+            renderBokeh();
+        });
+        document.getElementById('bokehBlur').addEventListener('input', e => {
+            document.getElementById('bokehBlurVal').textContent = e.target.value + 'px';
+            renderBokeh();
+        });
+        document.getElementById('bokehMode').addEventListener('change', renderBokeh);
+        document.getElementById('exportBokeh').addEventListener('click', () => {
+            const cv = document.getElementById('bokehCanvas');
+            if (cv.width === 0) return;
+            dl(cv, 'bokeh_effect.png');
+        });
+
+        // ── Depth Mask ───────────────────────────────────────────────────────
+        function renderMask() {
+            if (!rawDepth) return;
+            const { data, width, height } = rawDepth;
+            let mn = Infinity, mx = -Infinity;
+            for (const v of data) { if (v < mn) mn = v; if (v > mx) mx = v; }
+            const range = mx - mn || 1;
+            const minT = parseInt(document.getElementById('maskMin').value) / 100;
+            const maxT = parseInt(document.getElementById('maskMax').value) / 100;
+            const maskInv = document.getElementById('maskInvert').value === '1';
+            const inv = document.getElementById('invertSelect').value === '1';
+
+            const cv = document.getElementById('maskCanvas');
+            cv.width = width; cv.height = height;
+            const ctx = cv.getContext('2d');
+            const id = ctx.createImageData(width, height);
+            for (let i = 0; i < data.length; i++) {
+                let t = (data[i] - mn) / range;
+                if (inv) t = 1 - t;
+                let inRange = t >= minT && t <= maxT;
+                if (maskInv) inRange = !inRange;
+                const v = inRange ? 255 : 0;
+                id.data[i * 4] = v; id.data[i * 4 + 1] = v; id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = 255;
+            }
+            ctx.putImageData(id, 0, 0);
+        }
+
+        document.getElementById('maskMin').addEventListener('input', e => {
+            document.getElementById('maskMinVal').textContent = e.target.value + '%';
+            renderMask();
+        });
+        document.getElementById('maskMax').addEventListener('input', e => {
+            document.getElementById('maskMaxVal').textContent = e.target.value + '%';
+            renderMask();
+        });
+        document.getElementById('maskInvert').addEventListener('change', renderMask);
+        document.getElementById('exportMask').addEventListener('click', () => {
+            const cv = document.getElementById('maskCanvas');
+            if (cv.width === 0) return;
+            dl(cv, 'depth_mask.png');
+        });
+
+        buildColorMapUI();
+
+    </script>
+</body>
+
+</html>

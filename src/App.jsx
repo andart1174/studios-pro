@@ -96,9 +96,9 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
   );
 };
 
-import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
-  ShieldCheck, MessageSquare, Settings, Users, Star, Trash2
+  ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
+  Layers, Component, Cpu
 } from 'lucide-react';
 import './App.css';
 
@@ -379,6 +379,9 @@ const StudiosPro = () => {
   const [is3DOpen, setIs3DOpen] = useState(false);
   const [isDFXOpen, setIsDFXOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isDepthOpen, setIsDepthOpen] = useState(false);
+  const [isNew3DOpen, setIsNew3DOpen] = useState(false);
+  const [isVectorOpen, setIsVectorOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -530,6 +533,9 @@ const StudiosPro = () => {
         setIs3DOpen(false);
         setIsDFXOpen(false);
         setIsRulesOpen(false);
+        setIsDepthOpen(false);
+        setIsNew3DOpen(false);
+        setIsVectorOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
@@ -606,7 +612,10 @@ const StudiosPro = () => {
       unlimitedTitle: "Illimité",
       unlimitedPrice: "35$ / mois",
       singleTitle: "Séquence unique",
-      singlePrice: "2$ / export"
+      singlePrice: "2$ / export",
+      depthMaps: "Depth Maps",
+      new3d4d: "New 3D 4D",
+      vectorCnc: "Vector CNC"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -631,14 +640,17 @@ const StudiosPro = () => {
       unlimitedTitle: "Unlimited",
       unlimitedPrice: "$35 / month",
       singleTitle: "Single Sequence",
-      singlePrice: "$2 / export"
+      singlePrice: "$2 / export",
+      depthMaps: "Depth Maps",
+      new3d4d: "New 3D 4D",
+      vectorCnc: "Vector CNC"
     }
   };
 
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -803,7 +815,43 @@ const StudiosPro = () => {
             <div className="shape-3" />
             <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
           </div>
-          <div className="card-label">{currentT.rules}</div>
+           <div className="card-label">{currentT.rules}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsDepthOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+          </div>
+          <div className="card-label">{currentT.depthMaps}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsNew3DOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-5" />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+          </div>
+          <div className="card-label">{currentT.new3d4d}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsVectorOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-6" />
+            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} />
+          </div>
+          <div className="card-label">{currentT.vectorCnc}</div>
         </motion.div>
       </div>
 
@@ -843,9 +891,24 @@ const StudiosPro = () => {
             <iframe src="/apps/dfx/index.html" className="studio-iframe" title="Studio DFX" />
           </motion.div>
         )}
-        {isRulesOpen && (
+         {isRulesOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
+          </motion.div>
+        )}
+        {isDepthOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/depth-maps/index.html" className="studio-iframe" title="Depth Maps" />
+          </motion.div>
+        )}
+        {isNew3DOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/new3d4d/index.html" className="studio-iframe" title="New 3D 4D" />
+          </motion.div>
+        )}
+        {isVectorOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/vector-cnc/index.html" className="studio-iframe" title="Vector CNC" />
           </motion.div>
         )}
       </AnimatePresence>
