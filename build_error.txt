@@ -1,0 +1,103 @@
+﻿
+> site-web@0.0.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 3 modules transformed.
+node.exe : 
+[31mΓ£ù[39m Build 
+failed in 66ms
+Au caractère Ligne:1 : 
+1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ([31mΓ£ù[39m   
+  Build failed in 6    
+6ms:String) [], Re    
+moteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+[31merror during 
+build:
+[31m[vite:esbuild] 
+Transform failed with 
+1 error:
+C:/Users/Andrei/Desktop
+/SITE 
+WEB/src/App.jsx:102:0: 
+ERROR: Unexpected 
+"}"[31m
+file: [36mC:/Users/And
+rei/Desktop/SITE WEB/sr
+c/App.jsx:102:0[31m
+[33m
+[33mUnexpected 
+"}"[33m
+100 |    ShieldCheck, 
+MessageSquare, 
+Settings, Users, Star, 
+Trash2,
+101 |    Layers, 
+Component, Cpu
+102 |  } from 
+'lucide-react';
+    |  ^
+103 |  import 
+'./App.css';
+104 |  
+[31m
+    at 
+failureErrorWithLog (C:
+\Users\Andrei\Desktop\S
+ITE WEB\node_modules\es
+build\lib\main.js:1467:
+15)
+    at C:\Users\Andrei\
+Desktop\SITE WEB\node_m
+odules\esbuild\lib\main
+.js:736:50
+    at responseCallback
+s.<computed> (C:\Users\
+Andrei\Desktop\SITE WEB
+\node_modules\esbuild\l
+ib\main.js:603:9)
+    at 
+handleIncomingPacket (C
+:\Users\Andrei\Desktop\
+SITE WEB\node_modules\e
+sbuild\lib\main.js:658:
+12)
+    at 
+Socket.readFromStdout (
+C:\Users\Andrei\Desktop
+\SITE WEB\node_modules\
+esbuild\lib\main.js:581
+:7)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:i
+nternal/streams/readabl
+e:559:12)
+    at readableAddChunk
+PushByteMode (node:inte
+rnal/streams/readable:5
+10:3)
+    at Readable.push (n
+ode:internal/streams/re
+adable:390:5)
+    at 
+Pipe.onStreamRead (node
+:internal/stream_base_c
+ommons:189:23)[39m

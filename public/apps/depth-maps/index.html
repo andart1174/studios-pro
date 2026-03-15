@@ -12,6 +12,122 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet" />
     <style>
+    .back-to-studios {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      font-family: sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .back-to-studios:hover {
+      background: #3b82f6;
+      transform: translateY(-2px);
+    }
+
+    /* Modal Local Styles */
+    #local-payment-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      color: white;
+    }
+
+    .local-modal-content {
+      background: #0f172a;
+      padding: 40px;
+      border-radius: 40px;
+      width: 90%;
+      max-width: 450px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .local-modal-content h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    .local-modal-content p {
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pay-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .premium-btn {
+      background: #d97706;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pay-btn:hover,
+    .premium-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .close-local-modal {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
         *,
         *::before,
         *::after {
@@ -858,6 +974,28 @@
 
 <body>
     <div class="bg-grid"></div>
+    <button id="back-btn" class="back-to-studios">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+        <span>Retour / Back</span>
+    </button>
+
+    <div id="local-payment-modal">
+        <div class="local-modal-content">
+            <button class="close-local-modal" id="modal-close-btn">&times;</button>
+            <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
+            <h2 id="modal-title">Paiement requis</h2>
+            <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?
+            </p>
+            <div class="btn-group">
+                <button class="pay-btn" id="pay-single-btn">Payer 2$</button>
+                <button class="premium-btn" id="pay-premium-btn">Devenir Premium ($35)</button>
+            </div>
+        </div>
+    </div>
+
     <header>
         <div class="logo">
             <div class="logo-icon">🌊</div>
@@ -2035,6 +2173,76 @@
 
         buildColorMapUI();
 
+    </script>
+    <script>
+        (function () {
+            const channel = new BroadcastChannel('studios_pro_channel');
+            let isAllowed = false;
+            let pendingTarget = null;
+
+            const backBtn = document.getElementById('back-btn');
+            if (backBtn) {
+                backBtn.onclick = (e) => {
+                    if (e) { e.preventDefault(); e.stopPropagation(); }
+                    channel.postMessage({ type: 'CLOSE_STUDIO' });
+                    window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+                };
+            }
+
+            const modal = document.getElementById('local-payment-modal');
+            const closeBtn = document.getElementById('modal-close-btn');
+            const paySingleBtn = document.getElementById('pay-single-btn');
+            const payPremiumBtn = document.getElementById('pay-premium-btn');
+
+            if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
+            if (paySingleBtn) paySingleBtn.onclick = () => {
+                channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'depth' } });
+                modal.style.display = 'none';
+            };
+            if (payPremiumBtn) payPremiumBtn.onclick = () => {
+                channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'depth' } });
+                modal.style.display = 'none';
+            };
+
+            channel.onmessage = (e) => {
+                if (e.data.type === 'EXPORT_ALLOWED') {
+                    modal.style.display = 'none';
+                    if (pendingTarget) {
+                        isAllowed = true;
+                        pendingTarget.click();
+                    }
+                }
+            };
+
+            document.addEventListener('click', (e) => {
+                if (isAllowed) {
+                    isAllowed = false;
+                    pendingTarget = null;
+                    return;
+                }
+
+                const target = e.target.closest('button') || e.target.closest('a') || e.target;
+                const text = (target.innerText || target.textContent || "").toLowerCase();
+                const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+                const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+
+                // Detect export actions
+                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+                const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || target.id.toLowerCase().includes(k) || target.className.toLowerCase().includes(k));
+
+                if (isExport) {
+                    if (target.id === 'pay-single-btn' || target.id === 'pay-premium-btn' || target.id === 'modal-close-btn' || target.id === 'back-btn') return;
+
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    pendingTarget = target;
+
+                    // Show local modal first for visual feedback, then trigger main logic
+                    modal.style.display = 'flex';
+                    channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'depth' } });
+                }
+            }, true);
+        })();
     </script>
 </body>
 

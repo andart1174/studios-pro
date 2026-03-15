@@ -486,6 +486,9 @@ const StudiosPro = () => {
       const ref = params.get('ref');
       if (ref === 'ap3d') setIs3DOpen(true);
       if (ref === 'dfx') setIsDFXOpen(true);
+      if (ref === 'depth') setIsDepthOpen(true);
+      if (ref === 'n3d') setIsNew3DOpen(true);
+      if (ref === 'vcnc') setIsVectorOpen(true);
     }
   }, [lang, user]);
 
