@@ -758,8 +758,14 @@ const StudiosPro = () => {
 
         {/* Semantic SEO Description (Hidden) */}
         <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
-          <h3>AI Design Tools: 3D Modeling, Depth Map Generation, CNC Vector Conversion, and DFX Sequences</h3>
-          <p>Professional creative hub for high-fidelity rendering, photo to 3D, and technical vector exports for laser and router CNC machines.</p>
+          <h3>AI Design & CNC Tools: 3D Modeling, Depth Map Generation, and Vector Conversion</h3>
+          <p>Studios-Pro is a professional creative hub specializing in high-fidelity 3D rendering, AI monocular depth estimation, and technical vector exports. </p>
+          <ul>
+            <li><strong>3D Studio & New 3D 4D:</strong> Convert images to STL, OBJ, and GLB for 3D printing and animation.</li>
+            <li><strong>AI Depth Maps:</strong> Generate accurate depth maps from single photos for lithophanes and CNC relief carving.</li>
+            <li><strong>Vector CNC:</strong> Professional photo-to-vector conversion for SVG, DXF, and G-code, optimized for laser and router CNC machines.</li>
+            <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
+          </ul>
         </div>
 
         <motion.div
