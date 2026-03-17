@@ -192,13 +192,12 @@
       <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
       <h2 id="modal-title"><span data-en="Payment Required" data-fr="Paiement Requis">Payment Required</span></h2>
       <p id="modal-desc">
-        <span data-en>You don't have a Premium account. Do you want to pay $2 for this export or become Premium?</span>
-        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?</span>
+        <span data-en>You don't have a Premium account. Would you like to become Premium?</span>
+        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</span>
       </p>
       <div class="btn-group">
-        <button class="pay-btn" id="pay-single-btn"><span data-en="Pay $2" data-fr="Payer 2$">Pay $2</span></button>
-        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($35)"
-            data-fr="Devenir Premium ($35)">Become Premium ($35)</span></button>
+        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($20)"
+            data-fr="Devenir Premium ($20)">Become Premium ($20)</span></button>
       </div>
     </div>
   </div>
@@ -973,10 +972,6 @@
       const payPremiumBtn = document.getElementById('pay-premium-btn');
 
       if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
-      if (paySingleBtn) paySingleBtn.onclick = () => {
-        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'vcnc' } });
-        modal.style.display = 'none';
-      };
       if (payPremiumBtn) payPremiumBtn.onclick = () => {
         channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'vcnc' } });
         modal.style.display = 'none';

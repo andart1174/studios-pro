@@ -28,7 +28,7 @@ exports.handler = async (event) => {
                 price_data: {
                     currency: 'usd',
                     product_data: { name: 'Studios-Pro Premium' },
-                    unit_amount: 3500,
+                    unit_amount: 2000,
                     recurring: { interval: 'month' },
                 },
                 quantity: 1,

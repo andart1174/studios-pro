@@ -604,19 +604,17 @@ const StudiosPro = () => {
       logout: "Déconnexion",
       getPremium: "Devenir Premium",
       premiumActive: "Premium Actif",
-      premiumDesc: "Accès illimité - 35$/mois",
+      premiumDesc: "Accès illimité - 20$/mois",
       payRequest: "Paiement requis pour l'export",
-      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?",
-      payBtn: "Payer 2$",
+      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?",
+      payBtn: "Devenir Premium",
       cancel: "Annuler",
       contact: "Contact",
       freeLimitTitle: "Limite gratuite atteinte",
       freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
-      unlimitedPrice: "35$ / mois",
-      singleTitle: "Séquence unique",
-      singlePrice: "2$ / export",
+      unlimitedPrice: "20$ / mois",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC"
@@ -632,19 +630,17 @@ const StudiosPro = () => {
       logout: "Logout",
       getPremium: "Go Premium",
       premiumActive: "Premium Active",
-      premiumDesc: "Unlimited access - 35$/mo",
+      premiumDesc: "Unlimited access - 20$/mo",
       payRequest: "Payment required for export",
-      payMessage: "You don't have a Premium account. Would you like to pay $2 for this export or go Premium?",
-      payBtn: "Pay $2",
+      payMessage: "You don't have a Premium account. Would you like to go Premium?",
+      payBtn: "Go Premium",
       cancel: "Cancel",
       contact: "Contact",
       freeLimitTitle: "Free limit reached",
       freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
-      unlimitedPrice: "$35 / month",
-      singleTitle: "Single Sequence",
-      singlePrice: "$2 / export",
+      unlimitedPrice: "$20 / month",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC"
@@ -684,15 +680,7 @@ const StudiosPro = () => {
                 </button>
               )}
 
-              <div className="pricing-grid">
-                <div className="pricing-card">
-                  <h3>{currentT.singleTitle}</h3>
-                  <div className="price">{currentT.singlePrice}</div>
-                  <button className="pricing-select" onClick={handlePayForExport}>
-                    {currentT.payBtn}
-                  </button>
-                </div>
-
+              <div className="pricing-grid" style={{ display: 'flex', justifyContent: 'center' }}>
                 <div className="pricing-card highlighted">
                   <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
                   <h3>{currentT.unlimitedTitle}</h3>

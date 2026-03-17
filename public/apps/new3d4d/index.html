@@ -147,12 +147,12 @@
       <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
       <h2 id="modal-title">Paiement requis</h2>
       <p id="modal-desc">
-        <span data-en>You don't have a Premium account. Do you want to pay $2 for this export or become Premium?</span>
-        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous payer 2$ pour cet export ou devenir Premium ?</span>
+        <span data-en>You don't have a Premium account. Would you like to become Premium?</span>
+        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</span>
       </p>
       <div class="btn-group">
-        <button class="pay-btn" id="pay-single-btn">Payer 2$</button>
-        <button class="premium-btn" id="pay-premium-btn">Devenir Premium ($35)</button>
+        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($20)"
+            data-fr="Devenir Premium ($20)">Become Premium ($20)</span></button>
       </div>
     </div>
   </div>
@@ -768,10 +768,6 @@
       const payPremiumBtn = document.getElementById('pay-premium-btn');
 
       if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
-      if (paySingleBtn) paySingleBtn.onclick = () => {
-        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'n3d' } });
-        modal.style.display = 'none';
-      };
       if (payPremiumBtn) payPremiumBtn.onclick = () => {
         channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'n3d' } });
         modal.style.display = 'none';
