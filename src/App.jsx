@@ -766,31 +766,23 @@ const StudiosPro = () => {
         <div className="nav-right">
           {user ? (
             <div className="user-controls">
-              {!isPremium && (
-                <button
-                  className="premium-btn"
-                  onClick={() => redirectToStripe('premium')}
-                >
-                  <CreditCard size={18} />
-                  <span>{currentT.getPremium}</span>
-                </button>
-              )}
-              {isPremium && (
-                <div className="premium-btn active" style={{ display: 'flex', flexDirection: 'column', height: 'auto', padding: '5px 15px', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <ShieldCheck size={16} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{currentT.premiumActive}</span>
-                  </div>
-                  {premiumUntil && (
-                    <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                      {(() => {
-                        const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
-                        return days > 0 
-                          ? `${days} ${days === 1 ? currentT.oneDayLeft : currentT.daysLeft}` 
-                          : currentT.expired;
-                      })()}
-                    </span>
-                  )}
+              <button
+                className={`premium-btn ${isPremium ? 'active-status' : ''}`}
+                onClick={() => redirectToStripe('premium')}
+              >
+                <CreditCard size={18} />
+                <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
+              </button>
+              {isPremium && premiumUntil && (
+                <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
+                    {(() => {
+                      const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
+                      return days > 0 
+                        ? `${days} ${days === 1 ? currentT.oneDayLeft : currentT.daysLeft}` 
+                        : currentT.expired;
+                    })()}
+                  </span>
                 </div>
               )}
               <div className="user-profile">
@@ -844,10 +836,16 @@ const StudiosPro = () => {
         >
           <h2 className="subtitle">{currentT.subtitle}</h2>
           <p className="main-message">{currentT.message}</p>
-          {user && !isPremium && (
-            <motion.div className="premium-promo" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          {user && (
+            <motion.div 
+              className={`premium-promo ${isPremium ? 'is-premium' : ''}`} 
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={() => redirectToStripe('premium')}
+              style={{ cursor: 'pointer' }}
+            >
               <span className="promo-tag">PRO</span>
-              <p>{currentT.premiumDesc}</p>
+              <p>{isPremium ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` : currentT.premiumDesc}</p>
             </motion.div>
           )}
         </motion.div>
