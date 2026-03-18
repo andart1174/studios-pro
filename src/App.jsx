@@ -374,6 +374,7 @@ const StudiosPro = () => {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [premiumUntil, setPremiumUntil] = useState(null);
   const [hasExportCredit, setHasExportCredit] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
@@ -405,7 +406,6 @@ const StudiosPro = () => {
     langRef.current = lang;
   }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang]);
 
-  // Listen to Auth changes
   useEffect(() => {
     if (!auth) {
       console.warn("Auth not initialized.");
@@ -418,23 +418,58 @@ const StudiosPro = () => {
         try {
           const userDocRef = doc(db, "users", authUser.uid);
           const userDoc = await getDoc(userDocRef);
+          
+          let userData = {
+            email: authUser.email,
+            isPremium: false,
+            freeExportsUsed: freeExportsUsed
+          };
+
           if (userDoc.exists()) {
             const data = userDoc.data();
-            setIsPremium(data.isPremium || false);
+            userData = { ...userData, ...data };
+            
+            // Check if premium is still valid
+            if (data.premiumUntil) {
+              const now = new Date();
+              const expires = new Date(data.premiumUntil);
+              if (expires > now) {
+                setIsPremium(true);
+                setPremiumUntil(data.premiumUntil);
+              } else {
+                setIsPremium(false);
+                setPremiumUntil(null);
+              }
+            } else {
+              setIsPremium(data.isPremium || false);
+            }
+
             setHasExportCredit(data.hasExportCredit || false);
-            // Sync free exports from cloud if available, otherwise use local
             if (data.freeExportsUsed !== undefined) {
               setFreeExportsUsed(data.freeExportsUsed);
               localStorage.setItem('freeExportsUsed', data.freeExportsUsed);
             }
-          } else {
-            // New user, sync local to cloud
-            await setDoc(userDocRef, {
-              email: authUser.email,
-              isPremium: false,
-              isAdmin: false,
-              freeExportsUsed: freeExportsUsed
+          }
+
+          // Check if there's a pending premium from localStorage (redirect happened while not logged in)
+          const pendingPremium = localStorage.getItem('pendingPremiumActivation');
+          if (pendingPremium) {
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+            const expirationString = thirtyDaysFromNow.toISOString();
+            
+            await setDoc(userDocRef, { 
+              isPremium: true, 
+              premiumUntil: expirationString,
+              lastPaymentDate: new Date().toISOString()
             }, { merge: true });
+            
+            setIsPremium(true);
+            setPremiumUntil(expirationString);
+            localStorage.removeItem('pendingPremiumActivation');
+          } else if (!userDoc.exists()) {
+            // New user, sync local to cloud
+            await setDoc(userDocRef, userData, { merge: true });
           }
         } catch (err) {
           console.error("Error fetching user data:", err);
@@ -442,6 +477,7 @@ const StudiosPro = () => {
       } else {
         setUser(null);
         setIsPremium(false);
+        setPremiumUntil(null);
       }
     });
     return () => unsubscribe();
@@ -456,17 +492,29 @@ const StudiosPro = () => {
     }
   }, [freeExportsUsed, user]);
 
-  // Handle URL redirects after payment
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
       const type = params.get('type');
       if (type === 'premium') {
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        const expirationString = thirtyDaysFromNow.toISOString();
+
         setIsPremium(true);
+        setPremiumUntil(expirationString);
+
         if (user) {
-          setDoc(doc(db, "users", user.uid), { isPremium: true }, { merge: true });
+          setDoc(doc(db, "users", user.uid), { 
+            isPremium: true, 
+            premiumUntil: expirationString,
+            lastPaymentDate: new Date().toISOString()
+          }, { merge: true });
+        } else {
+          // Store in localStorage if user is not logged in yet
+          localStorage.setItem('pendingPremiumActivation', 'true');
         }
-        alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif." : "Payment successful! Your subscription is active.");
+        alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif pour 30 jours." : "Payment successful! Your subscription is active for 30 days.");
       } else if (type === 'single') {
         setHasExportCredit(true);
         if (user) {
@@ -615,6 +663,10 @@ const StudiosPro = () => {
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
       unlimitedPrice: "20$ / mois",
+      daysLeft: "jours restants",
+      oneDayLeft: "jour restant",
+      expired: "Expiré",
+      manageSubscription: "Gérer",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC"
@@ -641,6 +693,10 @@ const StudiosPro = () => {
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
       unlimitedPrice: "$20 / month",
+      daysLeft: "days remaining",
+      oneDayLeft: "day remaining",
+      expired: "Expired",
+      manageSubscription: "Manage",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC"
@@ -720,9 +776,21 @@ const StudiosPro = () => {
                 </button>
               )}
               {isPremium && (
-                <div className="premium-btn active">
-                  <ShieldCheck size={18} />
-                  <span>{currentT.premiumActive}</span>
+                <div className="premium-btn active" style={{ display: 'flex', flexDirection: 'column', height: 'auto', padding: '5px 15px', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <ShieldCheck size={16} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{currentT.premiumActive}</span>
+                  </div>
+                  {premiumUntil && (
+                    <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                      {(() => {
+                        const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
+                        return days > 0 
+                          ? `${days} ${days === 1 ? currentT.oneDayLeft : currentT.daysLeft}` 
+                          : currentT.expired;
+                      })()}
+                    </span>
+                  )}
                 </div>
               )}
               <div className="user-profile">
