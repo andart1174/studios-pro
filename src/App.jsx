@@ -99,7 +99,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu
+  Layers, Component, Cpu, Reply
 } from 'lucide-react';
 import './App.css';
 
@@ -172,7 +172,8 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       status: "Statut",
       action: "Action",
       revoke: "Révoquer",
-      makePremium: "Rendre Premium"
+      makePremium: "Rendre Premium",
+      reply: "Répondre"
     },
     en: {
       title: "Admin Dashboard",
@@ -181,7 +182,8 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       status: "Status",
       action: "Action",
       revoke: "Revoke",
-      makePremium: "Make Premium"
+      makePremium: "Make Premium",
+      reply: "Reply"
     }
   }[lang];
 
@@ -253,9 +255,18 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                   <div className="message-header">
                     <strong>{m.name}</strong>
                     <span className="message-email">{m.email}</span>
-                    <button className="delete-msg-btn" onClick={() => deleteMessage(m.id)}>
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="message-actions">
+                      <a 
+                        href={`mailto:${m.email}?subject=Studios-Pro: Re: ${m.name}`} 
+                        className="reply-btn"
+                        title={t.reply}
+                      >
+                        <Reply size={16} />
+                      </a>
+                      <button className="delete-msg-btn" onClick={() => deleteMessage(m.id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   <p className="message-text">{m.message}</p>
                   <small className="message-date">{new Date(m.timestamp).toLocaleString()}</small>
