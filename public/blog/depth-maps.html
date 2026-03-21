@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Depth Maps for 3D Reliefs | Studios-Pro</title>
+    <meta name="description" content="Generate 3D depth maps from simple photographs using Artificial Intelligence for advanced 3D printing and router carvings.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #a855f7, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #fff; }
+        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(168,85,247,0.1); border-radius: 20px; border: 1px solid rgba(168,85,247,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(168,85,247,0.3); }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(168,85,247,0.5); }
+        
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>Generating 3D Depth Maps using AI for 3D Printing & Relief Models</span>
+            <span data-fr>Générer des cartes de profondeur 3D à l'aide de l'IA pour l'impression 3D et les reliefs</span>
+        </h1>
+        
+        <p>
+            <span data-en>Have you ever wanted to carve a realistic face or object onto a wood panel using your CNC machine, but you started with a completely flat 2D photograph? Modern artificial intelligence algorithms have solved the Z-axis calculation gap through Monocular Depth Estimation.</span>
+            <span data-fr>Avez-vous déjà voulu sculpter un visage ou un objet de façon réaliste sur un panneau de bois à l'aide de votre machine CNC, alors que vous ne partiez que d'une photo 2D complètement plate ? Les algorithmes modernes d'intelligence artificielle ont résolu le manque de calcul de l'axe Z grâce à l'estimation monoculaire de profondeur.</span>
+        </p>
+
+        <h2>
+            <span data-en>How Monocular Depth Works</span>
+            <span data-fr>Comment fonctionne la profondeur monoculaire</span>
+        </h2>
+        <p>
+            <span data-en>Depth mapping takes a flat, two-dimensional image and analyzes visual cues—shadows, shading patterns, perspective shifts—to calculate the theoretical depth of each pixel. The result is a grayscale "Displacement Map". Pure white pixels denote the tallest peaks (closest to the camera), while black pixels represent the deepest valleys (furthest from the camera).</span>
+            <span data-fr>Le mappage de profondeur prend une image plate en 2 dimensions et analyse les repères visuels (ombres, modèles d'ombrage, changements de perspective) pour calculer la profondeur théorique de chaque pixel. Le résultat est une "carte de déplacement" en niveaux de gris. Les pixels d'un blanc pur indiquent les pics les plus hauts (les plus proches de la caméra), tandis que les noirs représentent les vallées les plus profondes.</span>
+        </p>
+
+        <h2>
+            <span data-en>Applications in the Real World</span>
+            <span data-fr>Applications dans le monde réel</span>
+        </h2>
+        <ul>
+            <li><span data-en><strong>Wood CNC Carving:</strong> Use the generated depth map in CAD/CAM software to toolpath organic 3D relief structures seamlessly.</span><span data-fr><strong>Sculpture CNC sur bois :</strong> Utilisez la carte de profondeur générée dans votre logiciel de CAO pour guider la machine et usiner des structures en relief organique 3D.</span></li>
+            <li><span data-en><strong>3D Printing Lithophanes:</strong> Convert high-accuracy depth data into stunning physical objects that reveal an image when placed in front of a light.</span><span data-fr><strong>Lithophanies d'impression 3D :</strong> Convertissez des données de profondeur très précises en objets physiques époustouflants qui révèlent une image lorsqu'ils sont placés à la lumière.</span></li>
+        </ul>
+
+        <h2>
+            <span data-en>Create Yours Instantly</span>
+            <span data-fr>Créez le vôtre instantanément</span>
+        </h2>
+        <p>
+            <span data-en>With the Depth Maps Studio, there is absolutely no need to manually sculpt meshes or guess relief depths. Drop your photograph, wait a few seconds, and download the highly-detailed map directly in the browser.</span>
+            <span data-fr>Avec le Depth Maps Studio, il n'y a absolument aucun besoin de sculpter manuellement des maillages ou de deviner les profondeurs de relief. Déposez votre photo, attendez quelques secondes et téléchargez la carte très détaillée directement dans le navigateur.</span>
+        </p>
+
+        <div class="cta-container">
+            <a href="/?ref=depth" class="cta-btn">
+                <span data-en>Open Depth Maps Studio</span>
+                <span data-fr>Ouvrir le Depth Maps Studio</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>

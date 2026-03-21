@@ -99,7 +99,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply, Boxes
+  Layers, Component, Cpu, Reply, Boxes, BookOpen
 } from 'lucide-react';
 import './App.css';
 
@@ -672,6 +672,7 @@ const StudiosPro = () => {
       payBtn: "Devenir Premium",
       cancel: "Annuler",
       contact: "Contact",
+      blogBtn: "Tutoriels",
       freeLimitTitle: "Limite gratuite atteinte",
       freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
       loginNow: "Se connecter / S'inscrire",
@@ -703,6 +704,7 @@ const StudiosPro = () => {
       payBtn: "Go Premium",
       cancel: "Cancel",
       contact: "Contact",
+      blogBtn: "Tutorials",
       freeLimitTitle: "Free limit reached",
       freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
       loginNow: "Login / Register",
@@ -777,6 +779,10 @@ const StudiosPro = () => {
             <MessageSquare size={18} />
             <span>{currentT.contact}</span>
           </button>
+          <a href="/blog/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BookOpen size={18} />
+            <span>{currentT.blogBtn}</span>
+          </a>
         </div>
 
         <div className="nav-right">

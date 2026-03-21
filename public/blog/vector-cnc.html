@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Converting Photos to Vector CNC | Studios-Pro</title>
+    <meta name="description" content="A complete guide on converting images to SVG, DXF, and G-Code for Laser Cutters and Router CNC machines natively in your browser.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #fff; }
+        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(245,158,11,0.1); border-radius: 20px; border: 1px solid rgba(245,158,11,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(245,158,11,0.3); }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(245,158,11,0.5); }
+        
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>How to Convert Any Photo into Vector CNC (DXF & SVG): A Step-by-Step Guide</span>
+            <span data-fr>Comment convertir n'importe quelle photo en vecteur CNC (DXF et SVG) : Guide étape par étape</span>
+        </h1>
+        
+        <p>
+            <span data-en>Laser cutting and CNC routing rely entirely on clean, scalable math: vectors. But what happens when your client gives you a deeply compressed, pixelated JPG logo or a complex photograph? Instead of manually tracing the image for hours in desktop CAD software, you can use automated tracing algorithms within Vector CNC Studio.</span>
+            <span data-fr>La découpe laser et le fraisage CNC reposent entièrement sur des mathématiques propres et évolutives : les vecteurs. Mais que se passe-t-il lorsque votre client vous donne un logo JPG pixelisé fortement compressé ou une photographie complexe ? Au lieu de tracer manuellement l'image pendant des heures dans un logiciel de CAO de bureau, vous pouvez utiliser des algorithmes de traçage automatisés dans Vector CNC Studio.</span>
+        </p>
+
+        <h2>
+            <span data-en>The Problem with Raster Images</span>
+            <span data-fr>Le problème avec les images matricielles (Raster)</span>
+        </h2>
+        <p>
+            <span data-en>Photos function on tiny squares of color called pixels. A CNC machine toolhead operates in coordinates (X/Y axes). Without converting those tiny squares into structural paths, your machine simply doesn't know where to move. This is where the translation process to SVG or DXF becomes crucial.</span>
+            <span data-fr>Les photos fonctionnent sur de minuscules carrés de couleur appelés pixels. Une tête d'outil de machine CNC fonctionne en coordonnées (axes X/Y). Sans convertir ces petits carrés en chemins structurels, votre machine ne sait tout simplement pas où se déplacer. C'est là que le processus de traduction en SVG ou DXF devient crucial.</span>
+        </p>
+
+        <h2>
+            <span data-en>The Automated Solution</span>
+            <span data-fr>La solution automatisée</span>
+        </h2>
+        <ul>
+            <li><span data-en><strong>Auto-Thresholding:</strong> The engine analyzes the dark and light spots of your image to cleanly detect edges.</span><span data-fr><strong>Seuillage automatique :</strong> Le moteur analyse les points sombres et clairs de votre image pour détecter proprement les contours.</span></li>
+            <li><span data-en><strong>SVG Export:</strong> Best for laser cutters (e.g., LightBurn layer mappings).</span><span data-fr><strong>L'exportation SVG :</strong> Idéal pour les découpeuses laser (par ex. pour LightBurn).</span></li>
+            <li><span data-en><strong>DXF Export:</strong> Best for industrial routers, milling machines, and AutoCAD integration.</span><span data-fr><strong>L'exportation DXF :</strong> Meilleur pour les routeurs industriels, les fraiseuses et l'intégration AutoCAD.</span></li>
+        </ul>
+
+        <h2>
+            <span data-en>Test the Converter Natively</span>
+            <span data-fr>Testez le convertisseur nativement</span>
+        </h2>
+        <p>
+            <span data-en>Forget software licenses and heavy installations. Using Vector CNC Studio, you drag and drop your image directly in the browser, tweak the threshold slider, and let the processor calculate the math. The integrated Eraser tool even lets you remove unwanted paths dynamically before saving.</span>
+            <span data-fr>Oubliez les licences et les installations de logiciels lourds. Avec Vector CNC Studio, vous glissez et déposez votre image directement dans le navigateur, ajustez le curseur de seuil et laissez le processeur calculer les mathématiques. Son petit plus : l'outil Gomme intégré.</span>
+        </p>
+
+        <div class="cta-container">
+            <a href="/?ref=vcnc" class="cta-btn">
+                <span data-en>Open Vector CNC Studio</span>
+                <span data-fr>Ouvrir Vector CNC Studio</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>
