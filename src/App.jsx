@@ -99,7 +99,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply
+  Layers, Component, Cpu, Reply, Boxes
 } from 'lucide-react';
 import './App.css';
 
@@ -395,6 +395,7 @@ const StudiosPro = () => {
   const [isDepthOpen, setIsDepthOpen] = useState(false);
   const [isNew3DOpen, setIsNew3DOpen] = useState(false);
   const [isVectorOpen, setIsVectorOpen] = useState(false);
+  const [isStudioProOpen, setIsStudioProOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -548,6 +549,7 @@ const StudiosPro = () => {
       if (ref === 'depth') setIsDepthOpen(true);
       if (ref === 'n3d') setIsNew3DOpen(true);
       if (ref === 'vcnc') setIsVectorOpen(true);
+      if (ref === 'spro') setIsStudioProOpen(true);
     }
   }, [lang, user]);
 
@@ -599,6 +601,7 @@ const StudiosPro = () => {
         setIsDepthOpen(false);
         setIsNew3DOpen(false);
         setIsVectorOpen(false);
+        setIsStudioProOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
@@ -680,7 +683,8 @@ const StudiosPro = () => {
       manageSubscription: "Gérer",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
-      vectorCnc: "Vector CNC"
+      vectorCnc: "Vector CNC",
+      studioPro: "Studio Pro 4D"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -710,14 +714,15 @@ const StudiosPro = () => {
       manageSubscription: "Manage",
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
-      vectorCnc: "Vector CNC"
+      vectorCnc: "Vector CNC",
+      studioPro: "Studio Pro 4D"
     }
   };
 
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -934,6 +939,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.vectorCnc}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsStudioProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 4D Icon" />
+          </div>
+          <div className="card-label">{currentT.studioPro}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -990,6 +1007,11 @@ const StudiosPro = () => {
         {isVectorOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/vector-cnc/index.html" className="studio-iframe" title="Vector CNC" />
+          </motion.div>
+        )}
+        {isStudioProOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/studio-pro/index.html" className="studio-iframe" title="Studio Pro 4D" />
           </motion.div>
         )}
       </AnimatePresence>

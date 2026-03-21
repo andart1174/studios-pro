@@ -1,0 +1,2541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Pro Studios — Ultimate 3D Converter</title>
+    <script src="https://unpkg.com/three@0.145.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/OBJExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/RGBELoader.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/utils/BufferGeometryUtils.js"></script>
+    <style>
+        :root {
+            --bg: #05070a;
+            --surface: #0f172a;
+            --surface-glass: rgba(15, 23, 42, 0.7);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --panel-width: 380px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* Animated Background Orbs */
+        .bg-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.15; pointer-events: none; animation: move 20s infinite alternate; }
+        .orb-1 { top: -200px; left: -200px; background: var(--accent); }
+        .orb-2 { bottom: -200px; right: -200px; background: #6366f1; animation-delay: -5s; }
+        @keyframes move { 0% { transform: translate(0,0); } 100% { transform: translate(100px, 100px); } }
+
+        header { 
+            padding: 0.75rem 1.5rem; background: var(--surface-glass); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
+
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--neon-blue), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; box-shadow: 0 0 20px var(--accent-glow); }
+        .logo-text h1 { font-size: 1.25rem; font-weight: 700; background: linear-gradient(to right, #fff, var(--text-muted)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .studio-nav { display: flex; gap: 4px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid var(--border); flex-wrap: wrap; justify-content: center; max-width: 600px; }
+        .nav-item { 
+            width: 32px; height: 32px; border: none; background: none; color: var(--text-muted); cursor: pointer; border-radius: 8px; 
+            transition: all 0.3s; display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-item:hover::after { 
+            content: attr(title); position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); 
+            background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; white-space: nowrap; z-index: 1000;
+        }
+        .nav-item.active { background: var(--accent); color: white; box-shadow: 0 2px 8px var(--accent-glow); }
+        .nav-item svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-item span { display: none; }
+
+        main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* Sidebar Tabs */
+        aside { 
+            width: var(--panel-width); background: var(--surface-glass); backdrop-filter: blur(25px); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 10; overflow: hidden;
+        }
+
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+        .tab-btn { 
+            flex: 1; padding: 12px; border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; 
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.03); }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: rgba(59, 130, 246, 0.05); }
+
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        .tab-panel { display: none; flex-direction: column; gap: 1.5rem; animation: fadeIn 0.3s ease-out; }
+        .tab-panel.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .upload-section { 
+            border: 2px dashed var(--border); border-radius: 20px; padding: 1.5rem; text-align: center; transition: all 0.3s; cursor: pointer;
+            background: rgba(255,255,255,0.02);
+        }
+        .upload-section:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.08); }
+        .upload-icon { font-size: 2rem; display: block; filter: drop-shadow(0 0 10px var(--accent-glow)); margin-bottom: 10px; }
+
+        .control-group { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+        .group-title { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        
+        .ctrl-item { display: flex; flex-direction: column; gap: 8px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .ctrl-val { color: var(--accent); font-family: monospace; }
+
+        input[type="range"] { 
+            width: 100%; height: 6px; border-radius: 10px; background: #1e293b; appearance: none; outline: none; transition: 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb { 
+            appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); box-shadow: 0 0 15px var(--accent-glow); }
+
+        .btn-action { width: 100%; padding: 1rem; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 8px 20px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 12px 25px var(--accent-glow); }
+
+        /* Viewport & HUD */
+        .viewport-container { flex: 1; position: relative; background: radial-gradient(circle at center, #0f172a 0%, #05070a 100%); }
+        #canvas3d { width: 100%; height: 100%; cursor: grab; }
+        #canvas3d:active { cursor: grabbing; }
+
+        .hud-overlay { position: absolute; pointer-events: none; }
+        .badge-engine { bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); border: 1px solid var(--border); padding: 8px 16px; border-radius: 30px; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+        .dot-live { width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        .monitor-panel { top: 2rem; right: 2rem; background: var(--surface-glass); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; min-width: 180px; }
+        .monitor-item { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; }
+        .monitor-label { color: var(--text-muted); }
+        .monitor-val { font-weight: 700; color: #fff; }
+
+        .loading-overlay { position: absolute; inset: 0; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; z-index: 200; }
+        .loading-overlay.active { display: flex; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        select { background: #1e293b; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 10px; outline: none; width: 100%; cursor: pointer; }
+        
+        [data-lang-en], [data-lang-fr] { display: none; }
+        body.lang-en [data-lang-en] { display: inline; }
+        body.lang-fr [data-lang-fr] { display: inline; }
+        .hidden { display: none !important; }
+
+        .btn-export-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .btn-export-grid .btn-action { padding: 0.5rem; font-size: 0.75rem; }
+        .btn-preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-preset-grid .btn-action { padding: 0.5rem; font-size: 0.75rem; }
+        .color-input-custom { width:100%; height:40px; border:none; background:none; cursor:pointer; padding:0; border-radius: 8px; overflow: hidden; }
+
+        .back-to-studios {
+          position: fixed; top: 20px; left: 20px; z-index: 9999;
+          background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); color: white;
+          padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+          cursor: pointer; font-family: sans-serif; font-size: 14px; font-weight: 600;
+          text-decoration: none; display: flex; align-items: center; gap: 8px;
+          transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+
+        #local-payment-modal {
+          display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); z-index: 10000;
+          align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; color: white;
+        }
+        .local-modal-content {
+          background: #0f172a; padding: 40px; border-radius: 40px; width: 90%; max-width: 450px;
+          text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); position: relative;
+        }
+        .local-modal-content h2 { margin-top: 0; font-size: 1.5rem; margin-bottom: 15px; }
+        .local-modal-content p { color: #94a3b8; line-height: 1.5; margin-bottom: 25px; }
+        .btn-group { display: flex; flex-direction: column; gap: 12px; }
+        .premium-btn {
+          background: #d97706; color: white; border: none; padding: 14px; border-radius: 14px;
+          font-weight: 800; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+        }
+        .premium-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .close-local-modal {
+          position: absolute; top: 20px; right: 20px; background: none; border: none;
+          color: #64748b; cursor: pointer; font-size: 20px;
+        }
+    </style>
+</head>
+<body class="lang-en" id="root">
+    <button id="back-btn" class="back-to-studios">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        <span><span data-lang-fr>Retour aux Studios</span><span data-lang-en>Back to Studios</span></span>
+    </button>
+    <div id="local-payment-modal">
+        <div class="local-modal-content">
+            <button class="close-local-modal" id="modal-close-btn">&times;</button>
+            <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
+            <h2 id="modal-title"><span data-lang-en>Payment Required</span><span data-lang-fr>Paiement Requis</span></h2>
+            <p id="modal-desc">
+                <span data-lang-en>You don't have a Premium account. Would you like to become Premium?</span>
+                <span data-lang-fr>Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</span>
+            </p>
+            <div class="btn-group">
+                <button class="premium-btn" id="pay-premium-btn"><span data-lang-en>Become Premium ($20)</span><span data-lang-fr>Devenir Premium ($20)</span></button>
+            </div>
+        </div>
+    </div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">4D</div>
+            <div class="logo-text"><h1>STUDIO PRO 4D</h1></div>
+        </div>
+
+        <nav class="studio-nav">
+            <button id="litho-toggle" class="nav-item active" onclick="switchStudio('litho')" title="Lithophane">
+                <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z"/></svg>
+            </button>
+            <button id="voxel-toggle" class="nav-item" onclick="switchStudio('voxel')" title="Voxel Art">
+                <svg viewBox="0 0 24 24"><path d="M4 4H10V10H4V4M14 4H20V10H14V4M4 14H10V20H4V14M14 14H20V20H14V14Z"/></svg>
+            </button>
+            <button id="logo-toggle" class="nav-item" onclick="switchStudio('logo')" title="3D Logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z"/></svg>
+            </button>
+            <button id="terrain-toggle" class="nav-item" onclick="switchStudio('terrain')" title="Terrain">
+                <svg viewBox="0 0 24 24"><path d="M14 6L10.25 11L13.12 11.66L11 14L15 19H5L9 13L11 15L14 6Z"/></svg>
+            </button>
+            <button id="crystal-toggle" class="nav-item" onclick="switchStudio('crystal')" title="Crystal Sculptor">
+                <svg viewBox="0 0 24 24"><path d="M12 2L1 21H23L12 2M12 5.98L19.53 19H4.47L12 5.98Z"/></svg>
+            </button>
+            <button id="jewelry-toggle" class="nav-item" onclick="switchStudio('jewelry')" title="Jewelry Maker">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4C14.76 4 17 6.24 17 9C17 11.76 14.76 14 12 14C9.24 14 7 11.76 7 9C7 6.24 9.24 4 12 4ZM12 18C10.9 18 10 17.1 10 16C10 14.9 10.9 14 12 14C13.1 14 14 14.9 14 16C14 17.1 13.1 18 12 18Z"/></svg>
+            </button>
+            <button id="abstract-toggle" class="nav-item" onclick="switchStudio('abstract')" title="Abstract">
+                <svg viewBox="0 0 24 24"><path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.57 21.82C12.41 21.94 12.21 22 12 22C11.79 22 11.59 21.94 11.43 21.82L3.53 17.38C3.21 17.21 3 16.88 3 16.5V7.5C3 7.12 3.21 6.79 3.53 6.62L11.43 2.18C11.59 2.06 11.79 2 12 2C12.21 2 12.41 2.06 12.57 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5Z"/></svg>
+            </button>
+            <button id="mandala-toggle" class="nav-item" onclick="switchStudio('mandala')" title="3D Mandala">
+                <svg viewBox="0 0 24 24"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20Z"/></svg>
+            </button>
+            <button id="vase-toggle" class="nav-item" onclick="switchStudio('vase')" title="3D Vase">
+                <svg viewBox="0 0 24 24"><path d="M12 22C15.3137 22 18 19.3137 18 16V8L12 2L6 8V16C6 19.3137 8.68629 22 12 22Z"/></svg>
+            </button>
+            <button id="wire-toggle" class="nav-item" onclick="switchStudio('wire')" title="Wireframe">
+                <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z"/></svg>
+            </button>
+            <button id="ascii-toggle" class="nav-item" onclick="switchStudio('ascii')" title="ASCII Tech">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 11H13V13H11V11ZM11 7H13V9H11V7ZM11 15H13V17H11V15Z"/></svg>
+            </button>
+            <button id="fluid-toggle" class="nav-item" onclick="switchStudio('fluid')" title="Fluid Sculptor">
+                <svg viewBox="0 0 24 24"><path d="M12 2C7.03 2 3 6.03 3 11V18C3 20.21 4.79 22 7 22H17C19.21 22 21 20.21 21 18V11C21 6.03 16.97 2 12 2Z"/></svg>
+            </button>
+            <button id="points-toggle" class="nav-item" onclick="switchStudio('points')" title="Pixel Cloud">
+                <svg viewBox="0 0 24 24"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z"/></svg>
+            </button>
+            <button id="hologram-toggle" class="nav-item" onclick="switchStudio('hologram')" title="Hologram SF">
+                <svg viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/><path d="M12,22V12L21,7.5V16.5L12,22Z" opacity="0.3"/></svg>
+            </button>
+            <button id="origami-toggle" class="nav-item" onclick="switchStudio('origami')" title="Origami Pro">
+                <svg viewBox="0 0 24 24"><path d="M3,3L21,3L12,21L3,3M12,6V15L18,6H12Z"/></svg>
+            </button>
+            <button id="lego-toggle" class="nav-item" onclick="switchStudio('lego')" title="Lego Brick Art">
+                <svg viewBox="0 0 24 24"><path d="M5,3V5H19V3H5M5,6V18H19V6H5M5,19V21H19V19H5Z"/></svg>
+            </button>
+            <button id="voronoi-toggle" class="nav-item" onclick="switchStudio('voronoi')" title="Voronoi Bio-Cell">
+                <svg viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/></svg>
+            </button>
+            <button id="neon-toggle" class="nav-item" onclick="switchStudio('neon')" title="Neon Circuit">
+                <svg viewBox="0 0 24 24"><path d="M12,2L1,21H23L12,2M12,5.98L19.53,19H4.47L12,5.98Z"/></svg>
+            </button>
+            <button id="glass-toggle" class="nav-item" onclick="switchStudio('glass')" title="Stained Glass Mosaic">
+                <svg viewBox="0 0 24 24"><path d="M12,2L4,11L12,20L20,11L12,2M12,5L17,11L12,17L7,11L12,5Z"/></svg>
+            </button>
+            <button id="quantum-toggle" class="nav-item" onclick="switchStudio('quantum')" title="Quantum Energy">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="1 3"/></svg>
+            </button>
+            <button id="fusion-toggle" class="nav-item" onclick="switchStudio('fusion')" title="Organic Fusion">
+                <svg viewBox="0 0 24 24"><path d="M12,2C10.5,2 9.2,3 8.5,4.2C7.8,3 6.5,2 5,2C2.8,2 1,3.8 1,6C1,10.5 12,18 12,18C12,18 23,10.5 23,6C23,3.8 21.2,2 19,2C17.5,2 16.2,3 15.5,4.2C14.8,3 13.5,2 12,2Z"/></svg>
+            </button>
+            <button id="blueprint-toggle" class="nav-item" onclick="switchStudio('blueprint')" title="Technical Blueprint">
+                <svg viewBox="0 0 24 24"><path d="M3,3H21V21H3V3M5,5V19H19V5H5M7,7H17V9H7V7M7,11H17V13H7V11M7,15H13V17H7V15Z"/></svg>
+            </button>
+            <button id="carbon-toggle" class="nav-item" onclick="switchStudio('carbon')" title="Carbon Fiber Pro">
+                <svg viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12,2V12M12,12L21,7.5M12,12L3,7.5" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+            </button>
+            <button id="diamond-toggle" class="nav-item" onclick="switchStudio('diamond')" title="Diamond Cut">
+                <svg viewBox="0 0 24 24"><path d="M16,2H8L2,8L12,22L22,8L16,2M12,18.5L5.5,8L12,3.5L18.5,8L12,18.5Z"/></svg>
+            </button>
+            <button id="pearl-toggle" class="nav-item" onclick="switchStudio('pearl')" title="Pearl & Beaded">
+                <svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="17" cy="17" r="3"/><circle cx="17" cy="7" r="3"/><circle cx="7" cy="17" r="3"/></svg>
+            </button>
+            <button id="filigree-toggle" class="nav-item" onclick="switchStudio('filigree')" title="Golden Filigree">
+                <svg viewBox="0 0 24 24"><path d="M12,2C6.47,2 2,6.47 2,12C2,17.53 6.47,22 12,22C17.53,22 22,17.53 22,12C22,6.47 17.53,2 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20Z"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor"/></svg>
+            </button>
+            <button id="amulet-toggle" class="nav-item" onclick="switchStudio('amulet')" title="Royal Amulet">
+                <svg viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/><circle cx="12" cy="12" r="4" opacity="0.5"/></svg>
+            </button>
+            <button id="enamel-toggle" class="nav-item" onclick="switchStudio('enamel')" title="Cloisonné Enamel">
+                <svg viewBox="0 0 24 24"><path d="M12,2L2,12L12,22L22,12L12,2ZM12,5L19,12L12,19L5,12L12,5Z"/><path d="M12,8L16,12L12,16L8,12L12,8Z" opacity="0.3"/></svg>
+            </button>
+        </nav>
+
+        <div class="lang-switch">
+            <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+        </div>
+    </header>
+
+    <main>
+        <aside>
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" onclick="switchTab('project')">Project</button>
+                <button class="tab-btn" onclick="switchTab('studio')">Studio</button>
+                <button class="tab-btn" onclick="switchTab('camera')">Camera</button>
+                <button class="tab-btn" onclick="switchTab('material')">Material</button>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Project Tab -->
+                <div id="tab-project" class="tab-panel active">
+                    <div class="upload-section" onclick="document.getElementById('file-input').click()">
+                        <span class="upload-icon">✨</span>
+                        <p style="font-weight:700;"><span data-lang-en>Import Asset</span><span data-lang-fr>Importer Asset</span></p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">PNG, JPG, SVG up to 10MB</p>
+                        <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)">
+                    </div>
+
+                    <div id="litho-controls" class="control-group">
+                        <div class="group-title">Lithophane Settings</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Thickness</span> <span class="ctrl-val" id="thickness-val">3.0mm</span></div>
+                            <input type="range" id="thickness" min="1" max="15" step="0.1" value="3" oninput="debouncedProcess()" title="Lithophane Thickness">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Precision</span> <span class="ctrl-val" id="detail-val">1.0</span></div>
+                            <input type="range" id="detail" min="0.5" max="2.5" step="0.1" value="1.0" oninput="debouncedProcess()" title="Lithophane Precision">
+                        </div>
+                    </div>
+
+                    <div id="voxel-controls" class="control-group hidden">
+                        <div class="group-title">Voxel Art Settings</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Voxel Size</span> <span class="ctrl-val" id="box-size-val">2px</span></div>
+                            <input type="range" id="box-size" min="2" max="15" step="1" value="2" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Relief Power</span> <span class="ctrl-val" id="h-scale-val">1.0</span></div>
+                            <input type="range" id="h-scale" min="0.1" max="4" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="logo-controls" class="control-group hidden">
+                        <div class="group-title">3D Logo Settings</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Extrude Depth</span> <span class="ctrl-val" id="extrude-val">5mm</span></div>
+                            <input type="range" id="extrude" min="1" max="20" step="1" value="5" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Color Threshold</span> <span class="ctrl-val" id="thresh-val">128</span></div>
+                            <input type="range" id="thresh" min="10" max="240" step="1" value="128" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="terrain-controls" class="control-group hidden">
+                        <div class="group-title">Terrain Settings</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Mountain Peak</span> <span class="ctrl-val" id="peak-val">15.0mm</span></div>
+                            <input type="range" id="peak" min="5" max="50" step="1" value="15" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Smoothing</span> <span class="ctrl-val" id="smooth-val">0</span></div>
+                            <input type="range" id="terrain-smooth" min="0" max="5" step="1" value="0" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                        <div class="group-title"><span data-lang-en>Crystal Sculptor Settings</span><span data-lang-fr>Paramètres Sculptură Cristal</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Refraction Power</span><span data-lang-fr>Putere Refracție</span></span> <span class="ctrl-val" id="refr-val">1.5</span></div>
+                            <input type="range" id="refr-power" min="1" max="2.5" step="0.01" value="1.5" oninput="debouncedProcess(); updateStudio();">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Facet Detail</span><span data-lang-fr>Detalii Fațetă</span></span> <span class="ctrl-val" id="facet-val">1.0</span></div>
+                            <input type="range" id="facet-detail" min="0.5" max="2.0" step="0.1" value="1.0" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="jewelry-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Jewelry Maker Settings</span><span data-lang-fr>Paramètres Bijuterii</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Loop Size</span><span data-lang-fr>Mărime Inel</span></span> <span class="ctrl-val" id="loop-val">5mm</span></div>
+                            <input type="range" id="loop-size" min="2" max="10" step="0.5" value="5" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Pendant Depth</span><span data-lang-fr>Grosime Pandantiv</span></span> <span class="ctrl-val" id="pend-val">3mm</span></div>
+                            <input type="range" id="pendant-depth" min="1" max="10" step="1" value="3" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="abstract-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Abstract Low-Poly Settings</span><span data-lang-fr>Paramètres Abstract</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Simplification</span><span data-lang-fr>Simplificare</span></span> <span class="ctrl-val" id="poly-val">10</span></div>
+                            <input type="range" id="poly-reduce" min="2" max="20" step="1" value="10" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Chaos Jitter</span><span data-lang-fr>Haos / Jitter</span></span> <span class="ctrl-val" id="jitter-val">0.5</span></div>
+                            <input type="range" id="jitter" min="0" max="2" step="0.1" value="0.5" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="mandala-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>3D Mandala Settings</span><span data-lang-fr>Paramètres Mandala</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Symmetry (Repeats)</span><span data-lang-fr>Simetrie (Repetări)</span></span> <span class="ctrl-val" id="mand-val">8</span></div>
+                            <input type="range" id="mandala-repeats" min="3" max="24" step="1" value="8" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Circle Radius</span><span data-lang-fr>Rază Cerc</span></span> <span class="ctrl-val" id="radius-val">400</span></div>
+                            <input type="range" id="mandala-radius" min="50" max="800" step="10" value="400" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="vase-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>3D Vase Settings</span><span data-lang-fr>Paramètres Vază</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Lathe Segments</span><span data-lang-fr>Segmente Rotație</span></span> <span class="ctrl-val" id="vase-seg-val">64</span></div>
+                            <input type="range" id="vase-segments" min="8" max="128" step="1" value="64" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Vase Width</span><span data-lang-fr>Lățime Vază</span></span> <span class="ctrl-val" id="vase-width-val">300.0</span></div>
+                            <input type="range" id="vase-width" min="50" max="600" step="10" value="300" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="wire-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Wireframe Settings</span><span data-lang-fr>Paramètres Wireframe</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Tube Thickness</span><span data-lang-fr>Grosime Tub</span></span> <span class="ctrl-val" id="wire-thick-val">1.0mm</span></div>
+                            <input type="range" id="wire-thickness" min="0.1" max="5" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Complexity</span><span data-lang-fr>Complexitate</span></span> <span class="ctrl-val" id="wire-comp-val">20</span></div>
+                            <input type="range" id="wire-complexity" min="5" max="150" step="1" value="100" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="ascii-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>ASCII Tech Settings</span><span data-lang-fr>Paramètres ASCII</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Block Size</span><span data-lang-fr>Mărime Bloc</span></span> <span class="ctrl-val" id="ascii-size-val">5px</span></div>
+                            <input type="range" id="ascii-size" min="2" max="20" step="1" value="5" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="fluid-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Fluid Sculptor Settings</span><span data-lang-fr>Paramètres Fluidă</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Flow Strength</span><span data-lang-fr>Putere Flux</span></span> <span class="ctrl-val" id="fluid-power-val">10</span></div>
+                            <input type="range" id="fluid-power" min="1" max="50" step="1" value="10" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Viscosity (Smooth)</span><span data-lang-fr>Vîscozitate</span></span> <span class="ctrl-val" id="fluid-smooth-val">5</span></div>
+                            <input type="range" id="fluid-smooth" min="1" max="40" step="1" value="10" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="points-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Pixel Cloud Settings</span><span data-lang-fr>Paramètres Nor de Pixeli</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span><span data-lang-en>Point Size</span><span data-lang-fr>Mărime Punct</span></span> <span class="ctrl-val" id="point-size-val">2.0</span></div>
+                            <input type="range" id="point-size" min="0.1" max="10" step="0.1" value="2" oninput="debouncedProcess(); updateStudio();">
+                        </div>
+                    </div>
+                    
+                    <div id="hologram-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Hologram Settings</span><span data-lang-fr>Paramètres Hologramă</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Scan Intensity</span> <span class="ctrl-val" id="holo-scan-val">1.0</span></div>
+                            <input type="range" id="holo-scan" min="0" max="2" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Glow Power</span> <span class="ctrl-val" id="holo-glow-val">1.0</span></div>
+                            <input type="range" id="holo-glow" min="0" max="3" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="origami-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Origami Settings</span><span data-lang-fr>Paramètres Origami</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Facet Size</span> <span class="ctrl-val" id="ori-facet-val">10</span></div>
+                            <input type="range" id="ori-facet" min="2" max="30" step="1" value="10" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Fold Sharpness</span> <span class="ctrl-val" id="ori-sharp-val">1.0</span></div>
+                            <input type="range" id="ori-sharp" min="0.1" max="5" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="lego-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Lego Art Settings</span><span data-lang-fr>Paramètres Lego</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Brick Size</span> <span class="ctrl-val" id="lego-size-val">5</span></div>
+                            <input type="range" id="lego-size" min="2" max="20" step="1" value="5" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="voronoi-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Voronoi Settings</span><span data-lang-fr>Paramètres Voronoi</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Cell Density</span> <span class="ctrl-val" id="vor-density-val">10</span></div>
+                            <input type="range" id="vor-density" min="2" max="50" step="1" value="10" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="neon-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Neon Settings</span><span data-lang-fr>Paramètres Neon</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Neon Glow</span> <span class="ctrl-val" id="neon-glow-val">1.0</span></div>
+                            <input type="range" id="neon-glow-intensity" min="0.1" max="5" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="glass-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Stained Glass Settings</span><span data-lang-fr>Paramètres Vitraliu</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Shard Size</span> <span class="ctrl-val" id="glass-shard-val">8</span></div>
+                            <input type="range" id="glass-shard-size" min="2" max="20" step="1" value="8" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Opacity</span> <span class="ctrl-val" id="glass-opac-val">0.7</span></div>
+                            <input type="range" id="glass-opacity" min="0.1" max="1" step="0.1" value="0.7" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="quantum-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Quantum Settings</span><span data-lang-fr>Paramètres Cuantice</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Vibration</span> <span class="ctrl-val" id="quant-vib-val">1.0</span></div>
+                            <input type="range" id="quant-vibration" min="0" max="5" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="fusion-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Organic Fusion Settings</span><span data-lang-fr>Paramètres Fuziune</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Blob Factor</span> <span class="ctrl-val" id="fuse-blob-val">1.0</span></div>
+                            <input type="range" id="fuse-blob" min="0.1" max="3" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="blueprint-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Blueprint Settings</span><span data-lang-fr>Paramètres Blueprint</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Line Weight</span> <span class="ctrl-val" id="blue-line-val">1.0</span></div>
+                            <input type="range" id="blue-line-weight" min="0.5" max="3" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="carbon-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Carbon Fiber Settings</span><span data-lang-fr>Paramètres Carbon</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Glossiness</span> <span class="ctrl-val" id="carbon-gloss-val">1.0</span></div>
+                            <input type="range" id="carbon-gloss" min="0" max="2" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="diamond-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Diamond Settings</span><span data-lang-fr>Paramètres Diamant</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Brilliance</span> <span class="ctrl-val" id="dia-bril-val">2.4</span></div>
+                            <input type="range" id="dia-brilliance" min="1" max="5" step="0.1" value="2.4" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="pearl-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Pearl Settings</span><span data-lang-fr>Paramètres Perle</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Pearl Size</span> <span class="ctrl-val" id="pearl-size-val">6</span></div>
+                            <input type="range" id="pearl-size" min="2" max="15" step="1" value="6" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="filigree-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Filigree Settings</span><span data-lang-fr>Paramètres Filigran</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Thickness</span> <span class="ctrl-val" id="fili-thick-val">1.0</span></div>
+                            <input type="range" id="fili-thickness" min="0.1" max="3" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="amulet-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Amulet Settings</span><span data-lang-fr>Paramètres Medalion</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Relief</span> <span class="ctrl-val" id="amu-relief-val">1.0</span></div>
+                            <input type="range" id="amu-relief" min="0.5" max="5" step="0.5" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+
+                    <div id="enamel-controls" class="control-group hidden">
+                        <div class="group-title"><span data-lang-en>Enamel Settings</span><span data-lang-fr>Paramètres Email</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Gloss</span> <span class="ctrl-val" id="ena-gloss-val">1.0</span></div>
+                            <input type="range" id="ena-gloss" min="0.1" max="2" step="0.1" value="1" oninput="debouncedProcess()">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="group-title"><span data-lang-en>Studio Quality Toolbox</span><span data-lang-fr>Boite à Outils Qualité</span></div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Contrast</span> <span class="ctrl-val" id="contrast-val">1.0</span></div>
+                            <input type="range" id="img-contrast" min="0.5" max="2.0" step="0.1" value="1.0" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Brightness</span> <span class="ctrl-val" id="brightness-val">1.0</span></div>
+                            <input type="range" id="img-brightness" min="0.5" max="2.0" step="0.1" value="1.0" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Sharpness</span> <span class="ctrl-val" id="sharpness-val">0.0</span></div>
+                            <input type="range" id="img-sharpness" min="0" max="5" step="0.1" value="0" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Noise Floor</span> <span class="ctrl-val" id="noise-val">5%</span></div>
+                            <input type="range" id="noise-floor" min="0" max="0.2" step="0.01" value="0.05" oninput="debouncedProcess()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Geo-Smooth</span> <span class="ctrl-val" id="smooth-geo-val">0</span></div>
+                            <input type="range" id="smooth-geo" min="0" max="5" step="1" value="0" oninput="debouncedProcess()">
+                        </div>
+                        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="autoLevel()">✨ Auto-Level Histogram</button>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="group-title">Global Adjustments</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Invert Relief</span></div>
+                            <label class="switch" style="margin-top:5px;">
+                                <input type="checkbox" id="invert-toggle" onchange="debouncedProcess()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="group-title">Export Options</div>
+                        <div class="btn-export-grid">
+                            <button class="btn-action btn-primary" onclick="exportSTL()">STL</button>
+                            <button class="btn-action btn-primary" onclick="exportGLB()">GLB</button>
+                            <button class="btn-action btn-primary" onclick="exportOBJ()">OBJ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Studio Tab -->
+                <div id="tab-studio" class="tab-panel">
+                    <div class="control-group">
+                        <div class="group-title">Lighting Rig</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Key Light</span> <span class="ctrl-val" id="key-val">1.0</span></div>
+                            <input type="range" id="key-light" min="0" max="2" step="0.1" value="1" oninput="updateStudio()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Fill Light</span> <span class="ctrl-val" id="fill-val">0.5</span></div>
+                            <input type="range" id="fill-light" min="0" max="2" step="0.1" value="0.5" oninput="updateStudio()">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Back Light</span> <span class="ctrl-val" id="back-val">0.7</span></div>
+                            <input type="range" id="back-light" min="0" max="2" step="0.1" value="0.7" oninput="updateStudio()">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="group-title">Environment (HDRI)</div>
+                        <select id="env-select" onchange="updateStudio()">
+                            <option value="none">Solid Color (Transparent)</option>
+                            <option value="city">Urban Studio</option>
+                            <option value="studio">Neutral Studio</option>
+                            <option value="night">Cyberpunk Night</option>
+                            <option value="park">Natural Light</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <div class="group-title">Engine Quality</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Resolution</span> <span class="ctrl-val" id="quality-val">High</span></div>
+                            <input type="range" id="engine-quality" min="0.4" max="1.0" step="0.1" value="1.0" oninput="updateStudio(); debouncedProcess();">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Tab -->
+                <div id="tab-camera" class="tab-panel">
+                    <div class="control-group">
+                        <div class="group-title">Optics</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Field of View</span> <span class="ctrl-val" id="fov-val">45°</span></div>
+                            <input type="range" id="fov" min="20" max="90" step="1" value="45" oninput="updateStudio()">
+                        </div>
+                        <button class="btn-action btn-primary" onclick="resetView()" style="margin-top: 10px;">🎯 Reset View</button>
+                    </div>
+                    <div class="control-group">
+                        <div class="group-title">Animation</div>
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Turntable Speed</span> <span class="ctrl-val" id="spin-val">0</span></div>
+                            <input type="range" id="spin" min="0" max="5" step="0.1" value="0" oninput="updateStudio()">
+                        </div>
+                        <button class="btn-action btn-primary" id="cinematic-btn" onclick="toggleCinematic()" style="margin-top: 10px; background: linear-gradient(135deg, var(--neon-blue), var(--accent));">🎥 Cinematic Mode</button>
+                    </div>
+                </div>
+
+                <!-- Material Tab -->
+                <div id="tab-material" class="tab-panel">
+                        <div class="ctrl-item">
+                            <div class="ctrl-label"><span>Model Color</span> <span class="ctrl-val" id="color-val">#f8fafc</span></div>
+                            <input type="color" id="model-color" value="#f8fafc" oninput="updateMaterial()" class="color-input-custom">
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="group-title">Material Presets</div>
+                            <div class="btn-preset-grid">
+                                <button class="btn-action btn-primary" onclick="applyPreset('gold')" style="background: #fbbf24;">Gold</button>
+                                <button class="btn-action btn-primary" onclick="applyPreset('glass')" style="background: #60a5fa;">Glass</button>
+                                <button class="btn-action btn-primary" onclick="applyPreset('neon')" style="background: #f472b6;">Neon</button>
+                                <button class="btn-action btn-primary" onclick="applyPreset('matte')" style="background: #94a3b8;">Matte</button>
+                            </div>
+                        </div>
+                        <div class="ctrl-item">
+                            <div class="group-title">Studio Floor</div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="floor-toggle" class="btn-action btn-primary active" onclick="toggleFloor()" style="padding: 0.5rem; font-size: 0.75rem; background: #10b981;">Floor ON</button>
+                                <button id="shadow-toggle" class="btn-action btn-primary active" onclick="toggleShadows()" style="padding: 0.5rem; font-size: 0.75rem; background: #10b981;">Shadows ON</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 1rem; border-top: 1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; font-size: 0.65rem; color: var(--text-muted);">
+                    <span>ENGINE: STUDIO PRO 4D</span>
+                    <span>STATUS: READY</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="viewport-container">
+            <div class="monitor-panel hud-overlay">
+                <div class="monitor-item"><span class="monitor-label">Polygons</span> <span class="monitor-val" id="stat-poly">0</span></div>
+                <div class="monitor-item"><span class="monitor-label">Voxels</span> <span class="monitor-val" id="stat-voxel">0</span></div>
+                <div class="monitor-item"><span class="monitor-label">FPS</span> <span class="monitor-val" id="stat-fps">60</span></div>
+            </div>
+            
+            <div class="badge-engine hud-overlay"><div class="dot-live"></div> LIVE PREVIEW ENGINE v5.0</div>
+            
+            <canvas id="canvas3d"></canvas>
+            
+            <div id="loading" class="loading-overlay">
+                <div class="spinner"></div>
+                <p id="loading-txt"><span data-lang-en>Processing Geometry...</span><span data-lang-fr>Traitement Géométrie...</span></p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Core Variables ---
+        let originalImg = null;
+        let currentMesh = null;
+        let currentStudio = 'litho';
+        let debounceTimer = null;
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        // --- Three.js Setup ---
+        const canvas = document.getElementById('canvas3d');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 10000);
+        camera.position.set(0, 50, 200);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting Rig ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        keyLight.position.set(150, 200, 150);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 4096; // High res shadows
+        keyLight.shadow.mapSize.height = 4096;
+        keyLight.shadow.camera.near = 0.5;
+        keyLight.shadow.camera.far = 1000;
+        keyLight.shadow.camera.left = -1000; // Wide frustum
+        keyLight.shadow.camera.right = 1000;
+        keyLight.shadow.camera.top = 1000;
+        keyLight.shadow.camera.bottom = -1000;
+        keyLight.shadow.bias = -0.0005; // Fix shadow acne
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        fillLight.position.set(-100, 50, 50);
+        scene.add(fillLight);
+
+        const backLight = new THREE.PointLight(0x3b82f6, 0.7);
+        backLight.position.set(0, 100, -100);
+        scene.add(backLight);
+
+        // --- Studio Floor ---
+        let floor = null;
+        function initFloor() {
+            const geometry = new THREE.PlaneGeometry(2000, 2000);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x0a101f,
+                metalness: 0.1,
+                roughness: 0.8,
+                transparent: true,
+                opacity: 0.8
+            });
+            floor = new THREE.Mesh(geometry, material);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Add Grid
+            const grid = new THREE.GridHelper(2000, 40, 0x3b82f6, 0x1e293b);
+            grid.position.y = 0.1;
+            grid.material.opacity = 0.15;
+            grid.material.transparent = true;
+            scene.add(grid);
+            floor.userData.grid = grid;
+        }
+        initFloor();
+
+        function toggleFloor() {
+            if (!floor) return;
+            floor.visible = !floor.visible;
+            if (floor.userData.grid) floor.userData.grid.visible = floor.visible;
+            const btn = document.getElementById('floor-toggle');
+            btn.classList.toggle('active', floor.visible);
+            btn.textContent = floor.visible ? 'Floor ON' : 'Floor OFF';
+            btn.style.background = floor.visible ? '#10b981' : '#ef4444';
+        }
+
+        // --- Studio Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === tabId));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tabId));
+        }
+
+        function switchStudio(mode) {
+            currentStudio = mode;
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.id === mode + '-toggle'));
+            
+            // Show/Hide specific mode controls in Project tab
+            ['litho', 'voxel', 'logo', 'terrain', 'crystal', 'jewelry', 'abstract', 'mandala', 'vase', 'wire', 'ascii', 'fluid', 'points', 'hologram', 'origami', 'lego', 'voronoi', 'neon', 'glass', 'quantum', 'fusion', 'blueprint', 'carbon', 'diamond', 'pearl', 'filigree', 'amulet', 'enamel'].forEach(m => {
+                const ctrl = document.getElementById(m + '-controls');
+                if (ctrl) ctrl.classList.toggle('hidden', m !== mode);
+            });
+
+            if (originalImg) processImage();
+        }
+
+        function updateStudio() {
+            // Lighting
+            keyLight.intensity = parseFloat(document.getElementById('key-light').value);
+            fillLight.intensity = parseFloat(document.getElementById('fill-light').value);
+            backLight.intensity = parseFloat(document.getElementById('back-light').value);
+            
+            document.getElementById('key-val').textContent = keyLight.intensity.toFixed(1);
+            document.getElementById('fill-val').textContent = fillLight.intensity.toFixed(1);
+            document.getElementById('back-val').textContent = backLight.intensity.toFixed(1);
+
+            // Optics
+            camera.fov = parseInt(document.getElementById('fov').value);
+            camera.updateProjectionMatrix();
+            document.getElementById('fov-val').textContent = camera.fov + '°';
+
+            // Environment
+            const env = document.getElementById('env-select').value;
+            if (env === 'none') {
+                scene.background = null;
+                scene.environment = null;
+            } else {
+                const colors = { city: 0x1e293b, studio: 0x0f172a, night: 0x020617, park: 0x064e3b };
+                scene.background = new THREE.Color(colors[env]);
+                // In a real app we'd load an HDR here. For single-file we simulate with ambient color boost.
+                ambientLight.intensity = env === 'park' ? 0.8 : 0.4;
+            }
+
+            // Quality
+            const quality = parseFloat(document.getElementById('engine-quality').value);
+            document.getElementById('quality-val').textContent = quality >= 1.0 ? 'High' : quality >= 0.7 ? 'Medium' : 'Low';
+
+            // Animation
+            const spin = parseFloat(document.getElementById('spin').value);
+            document.getElementById('spin-val').textContent = spin.toFixed(1);
+        }
+
+        function updateMaterial() {
+            if (!currentMesh) return;
+            const mat = currentMesh.material;
+            const modelColor = document.getElementById('model-color').value;
+            const values = {
+                metalness: parseFloat(document.getElementById('metalness') ? document.getElementById('metalness').value : 0),
+                roughness: parseFloat(document.getElementById('roughness') ? document.getElementById('roughness').value : 0.5),
+                transmission: parseFloat(document.getElementById('transmission') ? document.getElementById('transmission').value : 0),
+                color: new THREE.Color(modelColor)
+            };
+
+            document.getElementById('color-val').textContent = modelColor.toUpperCase();
+
+            if (currentMesh.isInstancedMesh) {
+                mat.metalness = values.metalness;
+                mat.roughness = values.roughness;
+                mat.color.copy(values.color);
+            } else {
+                currentMesh.traverse(child => {
+                    if (child.material) {
+                        child.material.metalness = currentStudio === 'crystal' ? 0.2 : values.metalness;
+                        child.material.roughness = currentStudio === 'crystal' ? 0 : values.roughness;
+                        child.material.color.copy(values.color);
+                        if (currentStudio === 'crystal') {
+                            child.material.transmission = 0.95;
+                            child.material.thickness = 2.0;
+                            child.material.ior = parseFloat(document.getElementById('refr-power').value) || 1.5;
+                        } else if (values.transmission > 0) {
+                            child.material.transmission = values.transmission;
+                            child.material.thickness = 0.5;
+                        } else {
+                            child.material.transmission = 0;
+                        }
+                    }
+                });
+            }
+
+            if(document.getElementById('metal-val')) document.getElementById('metal-val').textContent = values.metalness.toFixed(2);
+            if(document.getElementById('rough-val')) document.getElementById('rough-val').textContent = values.roughness.toFixed(2);
+            if(document.getElementById('trans-val')) document.getElementById('trans-val').textContent = values.transmission.toFixed(2);
+        }
+
+        function applyPreset(type) {
+            const color = document.getElementById('model-color');
+            const metal = document.getElementById('metalness');
+            const rough = document.getElementById('roughness');
+            const trans = document.getElementById('transmission');
+
+            if (type === 'gold') {
+                color.value = '#fbbf24';
+                if(metal) metal.value = 0.9;
+                if(rough) rough.value = 0.1;
+                if(trans) trans.value = 0;
+            } else if (type === 'glass') {
+                color.value = '#ffffff';
+                if(metal) metal.value = 0;
+                if(rough) rough.value = 0;
+                if(trans) trans.value = 0.9;
+            } else if (type === 'neon') {
+                color.value = '#f472b6';
+                if(metal) metal.value = 0.5;
+                if(rough) rough.value = 0.2;
+                if(trans) trans.value = 0;
+            } else if (type === 'matte') {
+                color.value = '#94a3b8';
+                if(metal) metal.value = 0;
+                if(rough) rough.value = 1.0;
+                if(trans) trans.value = 0;
+            }
+            updateMaterial();
+        }
+
+        function toggleFloor() {
+            // Handled above in new Studio Floor section
+        }
+
+        function toggleShadows() {
+            renderer.shadowMap.enabled = !renderer.shadowMap.enabled;
+            scene.traverse(node => {
+                if (node.material) node.material.needsUpdate = true;
+            });
+            const btn = document.getElementById('shadow-toggle');
+            btn.classList.toggle('active', renderer.shadowMap.enabled);
+            btn.textContent = renderer.shadowMap.enabled ? 'Shadows ON' : 'Shadows OFF';
+            btn.style.background = renderer.shadowMap.enabled ? '#10b981' : '#ef4444';
+        }
+
+        let isCinematic = false;
+        function toggleCinematic() {
+            isCinematic = !isCinematic;
+            const btn = document.getElementById('cinematic-btn');
+            btn.style.filter = isCinematic ? 'hue-rotate(90deg) brightness(1.2)' : 'none';
+            btn.textContent = isCinematic ? '⏹ Stop Cinematic' : '🎥 Cinematic Mode';
+            
+            if (isCinematic) {
+                // Smoothly zoom in a bit
+                const box = new THREE.Box3().setFromObject(currentMesh);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                
+                // Set a nice cinematic angle
+                camera.position.set(maxDim, maxDim, maxDim * 1.2);
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 2.0;
+            } else {
+                controls.autoRotate = false;
+            }
+        }
+
+        function resetView() {
+            if (!currentMesh) return;
+            const box = new THREE.Box3().setFromObject(currentMesh);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            camera.position.set(0, maxDim, maxDim * 1.5);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // --- Processing Engine ---
+        function handleFileUpload(e) {
+            const f = e.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = ev => {
+                const img = new Image();
+                img.onload = () => { originalImg = img; processImage(); };
+                img.src = ev.target.result;
+            };
+            r.readAsDataURL(f);
+        }
+
+        function debouncedProcess() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(processImage, 250);
+            updateControlLabels();
+        }
+
+        function updateControlLabels() {
+            if (currentStudio === 'litho') {
+                document.getElementById('thickness-val').textContent = parseFloat(document.getElementById('thickness').value).toFixed(1) + 'mm';
+                document.getElementById('detail-val').textContent = document.getElementById('detail').value;
+            } else if (currentStudio === 'voxel') {
+                document.getElementById('box-size-val').textContent = document.getElementById('box-size').value + 'px';
+                document.getElementById('h-scale-val').textContent = document.getElementById('h-scale').value;
+            } else if (currentStudio === 'logo') {
+                document.getElementById('extrude-val').textContent = document.getElementById('extrude').value + 'mm';
+                document.getElementById('thresh-val').textContent = document.getElementById('thresh').value;
+            } else if (currentStudio === 'terrain') {
+                document.getElementById('peak-val').textContent = parseFloat(document.getElementById('peak').value).toFixed(1) + 'mm';
+                document.getElementById('smooth-val').textContent = document.getElementById('terrain-smooth').value;
+            } else if (currentStudio === 'crystal') {
+                document.getElementById('refr-val').textContent = document.getElementById('refr-power').value;
+                document.getElementById('facet-val').textContent = document.getElementById('facet-detail').value;
+            } else if (currentStudio === 'jewelry') {
+                document.getElementById('loop-val').textContent = document.getElementById('loop-size').value + 'mm';
+                document.getElementById('pend-val').textContent = document.getElementById('pendant-depth').value + 'mm';
+            } else if (currentStudio === 'abstract') {
+                document.getElementById('poly-val').textContent = document.getElementById('poly-reduce').value;
+                document.getElementById('jitter-val').textContent = document.getElementById('jitter').value;
+            } else if (currentStudio === 'mandala') {
+                document.getElementById('mand-val').textContent = document.getElementById('mandala-repeats').value;
+                document.getElementById('radius-val').textContent = document.getElementById('mandala-radius').value;
+            } else if (currentStudio === 'vase') {
+                document.getElementById('vase-seg-val').textContent = document.getElementById('vase-segments').value;
+                document.getElementById('vase-width-val').textContent = parseFloat(document.getElementById('vase-width').value).toFixed(1);
+            } else if (currentStudio === 'wire') {
+                document.getElementById('wire-thick-val').textContent = document.getElementById('wire-thickness').value + 'mm';
+                document.getElementById('wire-comp-val').textContent = document.getElementById('wire-complexity').value;
+            } else if (currentStudio === 'ascii') {
+                document.getElementById('ascii-size-val').textContent = document.getElementById('ascii-size').value + 'px';
+            } else if (currentStudio === 'fluid') {
+                document.getElementById('fluid-power-val').textContent = document.getElementById('fluid-power').value;
+                document.getElementById('fluid-smooth-val').textContent = document.getElementById('fluid-smooth').value;
+            } else if (currentStudio === 'points') {
+                document.getElementById('point-size-val').textContent = parseFloat(document.getElementById('point-size').value).toFixed(1);
+            } else if (currentStudio === 'hologram') {
+                document.getElementById('holo-scan-val').textContent = document.getElementById('holo-scan').value;
+                document.getElementById('holo-glow-val').textContent = document.getElementById('holo-glow').value;
+            } else if (currentStudio === 'origami') {
+                document.getElementById('ori-facet-val').textContent = document.getElementById('ori-facet').value;
+                document.getElementById('ori-sharp-val').textContent = document.getElementById('ori-sharp').value;
+            } else if (currentStudio === 'lego') {
+                document.getElementById('lego-size-val').textContent = document.getElementById('lego-size').value;
+            } else if (currentStudio === 'voronoi') {
+                document.getElementById('vor-density-val').textContent = document.getElementById('vor-density').value;
+            } else if (currentStudio === 'neon') {
+                document.getElementById('neon-glow-val').textContent = document.getElementById('neon-glow-intensity').value;
+            } else if (currentStudio === 'glass') {
+                document.getElementById('glass-shard-val').textContent = document.getElementById('glass-shard-size').value;
+                document.getElementById('glass-opac-val').textContent = document.getElementById('glass-opacity').value;
+            } else if (currentStudio === 'quantum') {
+                document.getElementById('quant-vib-val').textContent = document.getElementById('quant-vibration').value;
+            } else if (currentStudio === 'fusion') {
+                document.getElementById('fuse-blob-val').textContent = document.getElementById('fuse-blob').value;
+            } else if (currentStudio === 'blueprint') {
+                document.getElementById('blue-line-val').textContent = document.getElementById('blue-line-weight').value;
+            } else if (currentStudio === 'carbon') {
+                document.getElementById('carbon-gloss-val').textContent = document.getElementById('carbon-gloss').value;
+            } else if (currentStudio === 'diamond') {
+                document.getElementById('dia-bril-val').textContent = document.getElementById('dia-brilliance').value;
+            } else if (currentStudio === 'pearl') {
+                document.getElementById('pearl-size-val').textContent = document.getElementById('pearl-size').value;
+            } else if (currentStudio === 'filigree') {
+                document.getElementById('fili-thick-val').textContent = document.getElementById('fili-thickness').value;
+            } else if (currentStudio === 'amulet') {
+                document.getElementById('amu-relief-val').textContent = document.getElementById('amu-relief').value;
+            } else if (currentStudio === 'enamel') {
+                document.getElementById('ena-gloss-val').textContent = document.getElementById('ena-gloss').value;
+            }
+            
+            // Quality Toolbox
+            document.getElementById('contrast-val').textContent = document.getElementById('img-contrast').value;
+            document.getElementById('brightness-val').textContent = document.getElementById('img-brightness').value;
+            document.getElementById('sharpness-val').textContent = document.getElementById('img-sharpness').value;
+            document.getElementById('noise-val').textContent = Math.round(parseFloat(document.getElementById('noise-floor').value) * 100) + '%';
+            document.getElementById('smooth-geo-val').textContent = document.getElementById('smooth-geo').value;
+        }
+
+        async function autoLevel() {
+            if (!originalImg) return;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 100; canvas.height = 100; // Small sample
+            ctx.drawImage(originalImg, 0, 0, 100, 100);
+            const data = ctx.getImageData(0, 0, 100, 100).data;
+            let min = 255, max = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+                if (data[i+3] < 50) continue;
+                min = Math.min(min, avg);
+                max = Math.max(max, avg);
+            }
+            // Stretch histogram by adjusting brightness/contrast
+            const range = max - min;
+            if (range > 0) {
+                const contrast = 255 / range;
+                const brightness = (128 - (min + max) / 2 * contrast) / 128 + 1;
+                document.getElementById('img-contrast').value = Math.min(2, Math.max(0.5, contrast.toFixed(1)));
+                document.getElementById('img-brightness').value = Math.min(2, Math.max(0.5, brightness.toFixed(1)));
+                debouncedProcess();
+            }
+        }
+
+        function applySmoothing(geometry, iterations) {
+            if (iterations <= 0) return;
+            const pos = geometry.attributes.position.array;
+            const w = geometry.parameters.widthSegments + 1;
+            const h = geometry.parameters.heightSegments + 1;
+            
+            for (let iter = 0; iter < iterations; iter++) {
+                const newZ = new Float32Array(pos.length / 3);
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const i = y * w + x;
+                        let sum = 0, count = 0;
+                        // 4-neighbor average
+                        if (x > 0) { sum += pos[((y) * w + (x-1)) * 3 + 2]; count++; }
+                        if (x < w-1) { sum += pos[((y) * w + (x+1)) * 3 + 2]; count++; }
+                        if (y > 0) { sum += pos[((y-1) * w + (x)) * 3 + 2]; count++; }
+                        if (y < h-1) { sum += pos[((y+1) * w + (x)) * 3 + 2]; count++; }
+                        newZ[i] = (pos[i * 3 + 2] + sum / count) / 2;
+                    }
+                }
+                for (let i = 0; i < newZ.length; i++) pos[i * 3 + 2] = newZ[i];
+            }
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }
+
+        function cleanup() {
+            if (currentMesh) {
+                scene.remove(currentMesh);
+                [currentMesh.geometry, currentMesh.material].forEach(r => { if(r) r.dispose(); });
+            }
+        }
+
+        async function processImage(isExport = false) {
+            if (!originalImg) return;
+            document.getElementById('loading').classList.add('active');
+            await new Promise(r => setTimeout(r, 50));
+            
+            cleanup();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Quality Control
+            const quality = parseFloat(document.getElementById('engine-quality').value);
+            const scale = isExport ? 1.0 : quality;
+            
+            // Ultra Resolution - Increased to 1280 for maximum detail
+            const qualityTarget = 1280;
+            let w = originalImg.width;
+            let h = originalImg.height;
+            const resFactor = Math.min(qualityTarget / w, qualityTarget / h);
+            w *= resFactor;
+            h *= resFactor;
+            
+            canvas.width = Math.floor(w);
+            canvas.height = Math.floor(h);
+
+            // --- Image Pre-processing (Toolbox) ---
+            const contrast = document.getElementById('img-contrast').value;
+            const brightness = document.getElementById('img-brightness').value;
+            const sharp = parseFloat(document.getElementById('img-sharpness').value);
+            
+            ctx.filter = `brightness(${brightness}) contrast(${contrast})`;
+            ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+
+            // Manual Sharpen (Convolution)
+            if (sharp > 0) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const d = imageData.data;
+                const copy = new Uint8ClampedArray(d);
+                const cw = canvas.width, ch = canvas.height;
+                for (let y = 1; y < ch - 1; y++) {
+                    for (let x = 1; x < cw - 1; x++) {
+                        const i = (y * cw + x) * 4;
+                        for (let c = 0; c < 3; c++) {
+                            const val = copy[i+c] * (1 + 4*sharp) - (copy[i-4+c] + copy[i+4+c] + copy[i-cw*4+c] + copy[i+cw*4+c]) * sharp;
+                            d[i+c] = Math.min(255, Math.max(0, val));
+                        }
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            
+            // Hard Alpha Masking - ONLY for Jewelry mode
+            if (currentStudio === 'jewelry') {
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.ellipse(canvas.width/2, canvas.height/2, canvas.width/2, canvas.height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const invert = document.getElementById('invert-toggle').checked;
+            const nFloor = parseFloat(document.getElementById('noise-floor').value);
+            const gSmooth = parseInt(document.getElementById('smooth-geo').value);
+
+            if (currentStudio === 'litho' || currentStudio === 'terrain' || currentStudio === 'logo' || currentStudio === 'crystal' || currentStudio === 'jewelry') {
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, canvas.width - 1, canvas.height - 1);
+                const pos = geometry.attributes.position.array;
+                
+                const factor = currentStudio === 'litho' ? parseFloat(document.getElementById('thickness').value) : 
+                              currentStudio === 'terrain' ? parseFloat(document.getElementById('peak').value) : 
+                              currentStudio === 'crystal' ? parseFloat(document.getElementById('facet-detail').value) * 10 :
+                              currentStudio === 'jewelry' ? parseFloat(document.getElementById('pendant-depth').value) :
+                              parseFloat(document.getElementById('extrude').value);
+                
+                const thresh = (currentStudio === 'logo' || currentStudio === 'jewelry') ? parseInt(document.getElementById('thresh').value || 128) : 0;
+
+                for (let i = 0; i < data.length / 4; i++) {
+                    const row = Math.floor(i / canvas.width);
+                    const col = i % canvas.width;
+                    const dx = (col / canvas.width - 0.5) * 2;
+                    const dy = (row / canvas.height - 0.5) * 2;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    let avg = (data[i * 4] + data[i * 4 + 1] + data[i * 4 + 2]) / 3;
+                    if (invert) avg = 255 - avg;
+                    
+                    let z = 0;
+                    if (currentStudio === 'jewelry') {
+                        // Circular Masking Logic for Jewelry
+                        if (dist <= 1.0) {
+                            const baseHeight = 2.5;
+                            const isBorder = dist > 0.94;
+                            if (isBorder) {
+                                z = baseHeight + 1.5;
+                            } else {
+                                let hVal = 1 - avg / 255;
+                                // Subtle Floor Cutoff (5%) to prevent background noise
+                            if (hVal < nFloor) hVal = 0;
+                                z = baseHeight + hVal * factor;
+                            }
+                        } else {
+                            // NO lateral collapse (prevents vertical spikes)
+                            // Just set height to zero for background
+                            z = 0; 
+                        }
+                    } else if (currentStudio === 'crystal' || currentStudio === 'terrain') {
+                        let hVal = (currentStudio === 'terrain') ? (avg/255) : (1 - avg/255);
+                        // Subtle Noise floor for all premium modes
+                        if (hVal < nFloor) hVal = 0;
+                        z = hVal * factor;
+                    } else if (currentStudio === 'litho') {
+                        z = (1 - avg / 255) * factor;
+                    } else if (currentStudio === 'logo') {
+                        z = avg < thresh ? factor : 0;
+                    }
+                    pos[i * 3 + 2] = z;
+                }
+                
+                geometry.computeVertexNormals();
+                geometry.center();
+                
+                // Normalization
+                const maxUnits = 200;
+                const finalScale = Math.min(maxUnits / canvas.width, maxUnits / canvas.height);
+                geometry.scale(finalScale, finalScale, 1.0);
+                
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value), 
+                    metalness: (currentStudio === 'crystal' || currentStudio === 'jewelry') ? 0.6 : 0,
+                    roughness: (currentStudio === 'crystal' || currentStudio === 'jewelry') ? 0.1 : 0.5,
+                    transmission: currentStudio === 'crystal' ? 0.9 : 0,
+                    thickness: currentStudio === 'crystal' ? 1.0 : 0,
+                    side: THREE.DoubleSide,
+                    transparent: currentStudio === 'jewelry',
+                    opacity: 1.0
+                });
+                
+                const mainMesh = new THREE.Mesh(geometry, material);
+                mainMesh.rotation.x = -Math.PI / 2;
+                mainMesh.castShadow = true;
+                mainMesh.receiveShadow = true;
+
+                if (currentStudio === 'jewelry') {
+                    const group = new THREE.Group();
+                    group.add(mainMesh);
+                    
+                    // Add Ring/Loop
+                    const loopSize = parseFloat(document.getElementById('loop-size').value);
+                    const loopGeom = new THREE.TorusGeometry(loopSize, loopSize/4, 16, 32);
+                    const loopMesh = new THREE.Mesh(loopGeom, material.clone());
+                    
+                    // Position loop at the "TOP" of the locket
+                    // After -PI/2 rotation, the top of the image (Y+) moved to Z-
+                    const box = new THREE.Box3().setFromObject(mainMesh);
+                    loopMesh.position.set(0, 0, box.min.z - loopSize/4);
+                    loopMesh.rotation.x = Math.PI / 2;
+                    group.add(loopMesh);
+                    currentMesh = group;
+                } else {
+                    currentMesh = mainMesh;
+                }
+                
+                if (gSmooth > 0) applySmoothing(geometry, gSmooth);
+                scene.add(currentMesh);
+                document.getElementById('stat-voxel').textContent = 'N/A';
+            } else if (currentStudio === 'abstract') {
+                const reduce = parseInt(document.getElementById('poly-reduce').value);
+                const jitter = parseFloat(document.getElementById('jitter').value);
+                const w = Math.floor(canvas.width / reduce);
+                const h = Math.floor(canvas.height / reduce);
+                
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, w, h);
+                const pos = geometry.attributes.position.array;
+                
+                for (let i = 0; i <= h; i++) {
+                    for (let j = 0; j <= w; j++) {
+                        const px = Math.min(canvas.width - 1, Math.floor(j * reduce));
+                        const py = Math.min(canvas.height - 1, Math.floor(i * reduce));
+                        
+                        const dx = (px / canvas.width - 0.5) * 2;
+                        const dy = (py / canvas.height - 0.5) * 2;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        const idx = (py * canvas.width + px) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        
+                        const vIdx = (i * (w + 1) + j) * 3;
+                        let hVal = (avg / 255);
+                        if (hVal < nFloor) hVal = 0;
+                        pos[vIdx + 2] = hVal * 20; 
+                        
+                        // Apply Jitter
+                        if (jitter > 0) {
+                            pos[vIdx] += (Math.random() - 0.5) * jitter * reduce;
+                            pos[vIdx + 1] += (Math.random() - 0.5) * jitter * reduce;
+                        }
+                    }
+                }
+                
+                geometry.computeVertexNormals();
+                geometry.center();
+                const maxUnits = 200;
+                const finalScale = Math.min(maxUnits / canvas.width, maxUnits / canvas.height);
+                geometry.scale(finalScale, finalScale, 1.0);
+
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value),
+                    roughness: 0.6, metalness: 0.2, flatShading: true 
+                });
+                currentMesh = new THREE.Mesh(geometry, material);
+                if (gSmooth > 0) applySmoothing(geometry, gSmooth);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'mandala') {
+                const repeats = parseInt(document.getElementById('mandala-repeats').value);
+                const radius = parseFloat(document.getElementById('mandala-radius').value);
+                
+                // Create one "petal"
+                const petalGeom = new THREE.PlaneGeometry(canvas.width/4, canvas.height, 10, 40);
+                const pos = petalGeom.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = Math.floor(((pos[i*3] / (canvas.width/4)) + 0.5) * canvas.width);
+                    const y = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, Math.max(0, y)) * canvas.width + Math.min(canvas.width-1, Math.max(0, x))) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    if (invert) avg = 255 - avg;
+                    pos[i*3+2] = (avg/255) * 50;
+                }
+                petalGeom.computeVertexNormals();
+                petalGeom.translate(0, radius, 0);
+
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value),
+                    side: THREE.DoubleSide
+                });
+                const group = new THREE.Group();
+                for (let i = 0; i < repeats; i++) {
+                    const petal = new THREE.Mesh(petalGeom, material);
+                    petal.rotation.z = (i / repeats) * Math.PI * 2;
+                    group.add(petal);
+                }
+                currentMesh = group;
+                
+                // Normalization to prevent giant bounding boxes
+                const maxDim = (canvas.height/2 + radius) * 2;
+                const finalScale = 200 / maxDim;
+                currentMesh.scale.set(finalScale, finalScale, finalScale);
+                
+                currentMesh.rotation.x = -Math.PI / 2;
+                currentMesh.position.y = 10;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'voxel') {
+                const size = parseInt(document.getElementById('box-size').value);
+                const hScale = parseFloat(document.getElementById('h-scale').value);
+                const vWidth = Math.floor(canvas.width / size);
+                const vHeight = Math.floor(canvas.height / size);
+                
+                const geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+                const material = new THREE.MeshStandardMaterial({ 
+                    metalness: parseFloat(document.getElementById('metalness') ? document.getElementById('metalness').value : 0),
+                    roughness: parseFloat(document.getElementById('roughness') ? document.getElementById('roughness').value : 0.5)
+                });
+                
+                const count = vWidth * vHeight;
+                currentMesh = new THREE.InstancedMesh(geometry, material, count);
+                const matrix = new THREE.Matrix4();
+                const color = new THREE.Color();
+                let valid = 0;
+
+                for (let y = 0; y < vHeight; y++) {
+                    for (let x = 0; x < vWidth; x++) {
+                        const idx = (Math.floor(y * size) * canvas.width + Math.floor(x * size)) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        if (data[idx + 3] < 50 || avg < nFloor * 255) continue;
+
+                        const h = (avg / 255) * 10 * hScale;
+                        matrix.makeScale(1, 1, Math.max(0.1, h));
+                        matrix.setPosition(x - vWidth/2, -(y - vHeight/2), h/2);
+                        currentMesh.setMatrixAt(valid, matrix);
+                        color.setRGB(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                        currentMesh.setColorAt(valid, color);
+                        valid++;
+                    }
+                }
+                currentMesh.count = valid;
+                currentMesh.instanceMatrix.needsUpdate = true;
+                if (currentMesh.instanceColor) currentMesh.instanceColor.needsUpdate = true;
+                
+                // Grounding & Scale for Voxel
+                const maxUnits = 200;
+                const vScale = maxUnits / Math.max(vWidth, vHeight);
+                currentMesh.scale.set(vScale, vScale, vScale);
+                
+                currentMesh.rotation.x = -Math.PI / 2;
+                currentMesh.castShadow = true;
+                currentMesh.receiveShadow = true;
+                scene.add(currentMesh);
+                document.getElementById('stat-voxel').textContent = valid.toLocaleString();
+            } else if (currentStudio === 'vase') {
+                const segments = parseInt(document.getElementById('vase-segments').value);
+                const width = parseFloat(document.getElementById('vase-width').value);
+
+                const points = [];
+                const stepY = Math.max(1, Math.floor(canvas.height / 150));
+                for (let i = 0; i < canvas.height; i += stepY) {
+                    let rowSum = 0;
+                    let count = 0;
+                    for (let col = 0; col < canvas.width; col += 2) { // Step X by 2 for performance
+                        const idx = (i * canvas.width + col) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        rowSum += avg; count++;
+                    }
+                    let avgRow = rowSum / count;
+                    if (avgRow < nFloor * 255) avgRow = 0;
+                    
+                    const r = Math.max(0.1, (avgRow / 255) * width);
+                    points.push(new THREE.Vector2(r, (canvas.height/2 - i)));
+                }
+                const geometry = new THREE.LatheGeometry(points, segments);
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value), 
+                    side: THREE.DoubleSide,
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+                currentMesh = new THREE.Mesh(geometry, material);
+                
+                // Normalization to prevent huge meshes
+                const finalScale = 200 / canvas.height;
+                currentMesh.scale.set(finalScale, finalScale, finalScale);
+                currentMesh.position.y = 20;
+
+                scene.add(currentMesh);
+            } else if (currentStudio === 'wire') {
+                const thick = parseFloat(document.getElementById('wire-thickness').value);
+                const comp = parseInt(document.getElementById('wire-complexity').value);
+                const geometry = new THREE.PlaneGeometry(200, 200, comp, comp);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = Math.floor(((pos[i*3] / 200) + 0.5) * canvas.width);
+                    const y = Math.floor(((0.5 - pos[i*3+1] / 200)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, y) * canvas.width + Math.min(canvas.width-1, x)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    if (invert) avg = 255 - avg;
+                    if (avg < nFloor * 255) avg = 0;
+                    pos[i*3+2] = (avg/255) * 40;
+                }
+                geometry.computeVertexNormals();
+                const wireframe = new THREE.WireframeGeometry(geometry);
+                const material = new THREE.LineBasicMaterial({ color: new THREE.Color(document.getElementById('model-color').value), linewidth: thick });
+                currentMesh = new THREE.LineSegments(wireframe, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'ascii') {
+                const size = parseInt(document.getElementById('ascii-size').value);
+                const vWidth = Math.floor(canvas.width / size);
+                const vHeight = Math.floor(canvas.height / size);
+                const geometry = new THREE.BoxGeometry(0.8, 0.8, 1.0); 
+                const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(document.getElementById('model-color').value) });
+                const count = vWidth * vHeight;
+                currentMesh = new THREE.InstancedMesh(geometry, material, count);
+                const matrix = new THREE.Matrix4();
+                let valid = 0;
+                for (let y = 0; y < vHeight; y++) {
+                    for (let x = 0; x < vWidth; x++) {
+                        const idx = (Math.floor(y * size) * canvas.width + Math.floor(x * size)) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg; if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        const h = (avg / 255) * 20;
+                        matrix.makeScale(1, 1, Math.max(0.1, h));
+                        matrix.setPosition(x - vWidth/2, -(y - vHeight/2), h/2);
+                        currentMesh.setMatrixAt(valid++, matrix);
+                    }
+                }
+                currentMesh.count = valid;
+                currentMesh.instanceMatrix.needsUpdate = true;
+                const unitScale = 200 / Math.max(vWidth, vHeight);
+                currentMesh.scale.set(unitScale, unitScale, unitScale);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'fluid') {
+                const power = parseFloat(document.getElementById('fluid-power').value);
+                const smooth = parseInt(document.getElementById('fluid-smooth').value);
+                const geometry = new THREE.PlaneGeometry(200, 200, 250, 250);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = Math.floor(((pos[i*3] / 200) + 0.5) * canvas.width);
+                    const y = Math.floor(((0.5 - pos[i*3+1] / 200)) * canvas.height);
+                    let sum = 0, count = 0;
+                    for(let oy = -smooth; oy <= smooth; oy++){
+                        for(let ox = -smooth; ox <= smooth; ox++){
+                            const px = Math.min(canvas.width-1, Math.max(0, x + ox));
+                            const py = Math.min(canvas.height-1, Math.max(0, y + oy));
+                            const idx = (py * canvas.width + px) * 4;
+                            let val = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                            if (invert) val = 255 - val;
+                            if (val < nFloor * 255) val = 0;
+                            sum += val; count++;
+                        }
+                    }
+                    pos[i*3+2] = (sum/count/255) * power;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(document.getElementById('model-color').value), roughness: 0.1, metalness: 0.3 });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'points') {
+                const pSize = parseFloat(document.getElementById('point-size').value);
+                const positions = [], colors = [];
+                const step = 1;
+                for (let y = 0; y < canvas.height; y += step) {
+                    for (let x = 0; x < canvas.width; x += step) {
+                        const idx = (y * canvas.width + x) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg; if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        positions.push((x - canvas.width/2) * 0.5, (canvas.height/2 - y) * 0.5, (avg/255) * 50);
+                        colors.push(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                    }
+                }
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                const material = new THREE.PointsMaterial({ size: pSize, vertexColors: true });
+                currentMesh = new THREE.Points(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'hologram') {
+                const scan = parseFloat(document.getElementById('holo-scan').value);
+                const glow = parseFloat(document.getElementById('holo-glow').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 128, 128);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const y = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, y) * canvas.width + Math.min(canvas.width-1, x)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    if (invert) avg = 255 - avg;
+                    // Simulate scanlines
+                    const scanline = Math.sin(y * scan * 0.5) * 2;
+                    pos[i*3+2] = (avg/255) * 30 + scanline;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0x00f3ff, 
+                    emissive: 0x00f3ff, 
+                    emissiveIntensity: glow, 
+                    transparent: true, 
+                    opacity: 0.6, 
+                    wireframe: true 
+                });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'origami') {
+                const reduce = parseInt(document.getElementById('ori-facet').value);
+                const sharp = parseFloat(document.getElementById('ori-sharp').value);
+                const w = Math.floor(canvas.width / reduce);
+                const h = Math.floor(canvas.height / reduce);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, w, h);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    if (invert) avg = 255 - avg;
+                    pos[i*3+2] = (avg/255) * 25 * sharp;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value), 
+                    flatShading: true, 
+                    roughness: 1, 
+                    metalness: 0 
+                });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'lego') {
+                const size = parseInt(document.getElementById('lego-size').value);
+                const vWidth = Math.floor(canvas.width / size);
+                const vHeight = Math.floor(canvas.height / size);
+                
+                // Merge box + small cylinder for Lego brick
+                const boxGeom = new THREE.BoxGeometry(0.9, 0.9, 0.8);
+                const studGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.2, 12);
+                studGeom.translate(0, 0.5, 0); // Put stud on top
+                studGeom.rotateX(Math.PI/2);
+                const combinedGeom = THREE.BufferGeometryUtils.mergeBufferGeometries([boxGeom, studGeom]);
+                
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value),
+                    roughness: 0.2, 
+                    metalness: 0.1 
+                });
+                
+                const count = vWidth * vHeight;
+                currentMesh = new THREE.InstancedMesh(combinedGeom, material, count);
+                const matrix = new THREE.Matrix4();
+                const color = new THREE.Color();
+                let valid = 0;
+
+                for (let y = 0; y < vHeight; y++) {
+                    for (let x = 0; x < vWidth; x++) {
+                        const idx = (Math.floor(y * size) * canvas.width + Math.floor(x * size)) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+
+                        const h = Math.max(1, Math.round((avg/255) * 5));
+                        matrix.makeScale(1, 1, h);
+                        matrix.setPosition(x - vWidth/2, -(y - vHeight/2), h * 0.4);
+                        currentMesh.setMatrixAt(valid, matrix);
+                        color.setRGB(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                        currentMesh.setColorAt(valid, color);
+                        valid++;
+                    }
+                }
+                currentMesh.count = valid;
+                currentMesh.instanceMatrix.needsUpdate = true;
+                if (currentMesh.instanceColor) currentMesh.instanceColor.needsUpdate = true;
+                const unitScale = 200 / Math.max(vWidth, vHeight);
+                currentMesh.scale.set(unitScale, unitScale, unitScale);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'voronoi') {
+                const density = parseInt(document.getElementById('vor-density').value);
+                const cellSize = Math.max(5, 60 - density); 
+                const cols = Math.floor(canvas.width / (cellSize * 0.866)); 
+                const rows = Math.floor(canvas.height / (cellSize * 0.75));
+                
+                const cellGeo = new THREE.SphereGeometry(cellSize * 0.55, 16, 12, 0, Math.PI*2, 0, Math.PI/2); 
+                cellGeo.rotateX(Math.PI/2);
+                
+                const cellMat = new THREE.MeshPhysicalMaterial({ 
+                    color: new THREE.Color(document.getElementById('model-color').value),
+                    roughness: 0.1, 
+                    metalness: 0.1,
+                    clearcoat: 0.9,
+                    clearcoatRoughness: 0.1
+                });
+                
+                const instMesh = new THREE.InstancedMesh(cellGeo, cellMat, (cols+2)*(rows+2));
+                const matrix = new THREE.Matrix4();
+                const color = new THREE.Color();
+                let valid = 0;
+                
+                for (let r=0; r<=rows; r++) {
+                    for (let c=0; c<=cols; c++) {
+                        const xOffset = (r % 2 === 0) ? 0 : (cellSize * 0.433);
+                        let x = c * cellSize * 0.866 + xOffset;
+                        let y = r * cellSize * 0.75;
+                        
+                        x += (Math.random() - 0.5) * cellSize * 0.4;
+                        y += (Math.random() - 0.5) * cellSize * 0.4;
+                        
+                        const px = Math.floor(Math.max(0, Math.min(canvas.width-1, x)));
+                        const py = Math.floor(Math.max(0, Math.min(canvas.height-1, y)));
+                        const idx = (py * canvas.width + px) * 4;
+                        
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        
+                        const h = Math.max(0.2, (avg/255) * 15);
+                        const mx = x - canvas.width/2;
+                        const my = canvas.height/2 - y;
+                        
+                        matrix.makeScale(1, 1, h + Math.random()*1.5); 
+                        matrix.setPosition(new THREE.Vector3(mx, my, 0));
+                        
+                        instMesh.setMatrixAt(valid, matrix);
+                        color.setRGB(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                        color.multiplyScalar(0.7 + Math.random() * 0.3);
+                        instMesh.setColorAt(valid, color);
+                        valid++;
+                    }
+                }
+                
+                instMesh.count = valid;
+                instMesh.instanceMatrix.needsUpdate = true;
+                if (instMesh.instanceColor) instMesh.instanceColor.needsUpdate = true;
+                
+                const baseGeo = new THREE.PlaneGeometry(canvas.width, canvas.height);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x050510, roughness: 0.9 });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                base.position.z = -0.5;
+                
+                const group = new THREE.Group();
+                group.add(instMesh, base);
+                
+                const finalScale = 200 / Math.max(canvas.width, canvas.height);
+                group.scale.set(finalScale, finalScale, finalScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'neon') {
+                const intensity = parseFloat(document.getElementById('neon-glow-intensity').value);
+                const resW = Math.min(80, Math.floor(canvas.width / 15));
+                const resH = Math.min(80, Math.floor(canvas.height / 15));
+                const stepX = canvas.width / resW;
+                const stepY = canvas.height / resH;
+                
+                const gridZ = new Float32Array((resW+1) * (resH+1));
+                const points = [];
+                for (let r=0; r<=resH; r++) {
+                    for (let c=0; c<=resW; c++) {
+                        const px = Math.min(canvas.width-1, Math.floor(c * stepX));
+                        const py = Math.min(canvas.height-1, Math.floor(r * stepY));
+                        const idx = (py * canvas.width + px) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        let h = (avg/255) * 40;
+                        if (h < nFloor * 255 * 40 / 255) h = 0;
+                        gridZ[r*(resW+1)+c] = h;
+                    }
+                }
+                
+                for (let r=0; r<=resH; r++) {
+                    for (let c=0; c<=resW; c++) {
+                        const z = gridZ[r*(resW+1)+c];
+                        if (z === 0) continue;
+                        const x = (c * stepX) - canvas.width/2;
+                        const y = canvas.height/2 - (r * stepY);
+                        
+                        if (c < resW) {
+                            const nz = gridZ[r*(resW+1)+c+1];
+                            if (nz > 0) points.push(x, y, z, x + stepX, y, nz);
+                        }
+                        if (r < resH) {
+                            const nz = gridZ[(r+1)*(resW+1)+c];
+                            if (nz > 0) points.push(x, y, z, x, y - stepY, nz);
+                        }
+                    }
+                }
+                
+                const lineGeo = new THREE.BufferGeometry();
+                lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0x00f3ff, linewidth: 2, transparent: true, opacity: 0.9 
+                });
+                const routes = new THREE.LineSegments(lineGeo, lineMat);
+                
+                const pointGeo = new THREE.BufferGeometry();
+                const nodePoints = [];
+                for (let i=0; i<points.length; i+=6) nodePoints.push(points[i], points[i+1], points[i+2]);
+                pointGeo.setAttribute('position', new THREE.Float32BufferAttribute(nodePoints, 3));
+                const pointMat = new THREE.PointsMaterial({ color: 0xffffff, size: 3, transparent: true, opacity: 0.9 });
+                const nodes = new THREE.Points(pointGeo, pointMat);
+                
+                const boardGeo = new THREE.PlaneGeometry(canvas.width, canvas.height);
+                const boardMat = new THREE.MeshStandardMaterial({ color: 0x050510, roughness: 0.1, metalness: 0.9, transparent: true, opacity:0.95 });
+                const board = new THREE.Mesh(boardGeo, boardMat);
+                board.position.z = -2;
+                
+                const glowGeo = new THREE.PlaneGeometry(canvas.width, canvas.height, resW, resH);
+                const pos = glowGeo.attributes.position.array;
+                for (let r=0; r<=resH; r++) {
+                    for (let c=0; c<=resW; c++) {
+                        pos[(r*(resW+1)+c)*3+2] = gridZ[r*(resW+1)+c];
+                    }
+                }
+                const glowMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.15 * intensity, blending: THREE.AdditiveBlending, depthWrite: false });
+                const glowPlane = new THREE.Mesh(glowGeo, glowMat);
+
+                const group = new THREE.Group();
+                group.add(board, routes, nodes, glowPlane);
+                
+                const finalScale = 200 / Math.max(canvas.width, canvas.height);
+                group.scale.set(finalScale, finalScale, finalScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'glass') {
+                const opac = parseFloat(document.getElementById('glass-opacity').value);
+                const shard = parseInt(document.getElementById('glass-shard-size').value);
+                const tSize = Math.max(5, shard * 2);
+                const cols = Math.floor(canvas.width / tSize);
+                const rows = Math.floor(canvas.height / tSize);
+                
+                const tileGeo = new THREE.BoxGeometry(tSize * 0.92, tSize * 0.92, 1.0);
+                tileGeo.translate(0, 0, 0.5); 
+                
+                const tileMat = new THREE.MeshPhysicalMaterial({ 
+                    transparent: true, 
+                    opacity: opac, 
+                    roughness: 0.1, 
+                    metalness: 0.1,
+                    transmission: 0.9,
+                    thickness: 1.0
+                });
+                
+                const instMesh = new THREE.InstancedMesh(tileGeo, tileMat, cols * rows);
+                const matrix = new THREE.Matrix4();
+                const color = new THREE.Color();
+                let valid = 0;
+                
+                for(let r=0; r<rows; r++) {
+                    for(let c=0; c<cols; c++) {
+                        const px = Math.floor((c + 0.5) * tSize);
+                        const py = Math.floor((r + 0.5) * tSize);
+                        const idx = (py * canvas.width + px) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                        if (invert) avg = 255 - avg;
+                        if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        
+                        const h = Math.max(0.5, (avg/255) * 15);
+                        const jx = (Math.random() - 0.5) * tSize * 0.1;
+                        const jy = (Math.random() - 0.5) * tSize * 0.1;
+                        const rotZ = (Math.random() - 0.5) * 0.1;
+                        
+                        matrix.makeRotationZ(rotZ);
+                        const mx = (c * tSize) - canvas.width/2 + tSize/2 + jx;
+                        const my = canvas.height/2 - (r * tSize) - tSize/2 + jy;
+                        matrix.setPosition(new THREE.Vector3(mx, my, 0));
+                        
+                        const scaleMat = new THREE.Matrix4().makeScale(1, 1, h + Math.random()*2);
+                        matrix.multiply(scaleMat);
+                        
+                        instMesh.setMatrixAt(valid, matrix);
+                        color.setRGB(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                        color.offsetHSL(0, 0.2, 0); 
+                        instMesh.setColorAt(valid, color);
+                        valid++;
+                    }
+                }
+                instMesh.count = valid;
+                instMesh.instanceMatrix.needsUpdate = true;
+                if (instMesh.instanceColor) instMesh.instanceColor.needsUpdate = true;
+                
+                const backGeo = new THREE.PlaneGeometry(cols * tSize, rows * tSize);
+                const backMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9, metalness: 0.5 });
+                const back = new THREE.Mesh(backGeo, backMat);
+                back.position.z = -0.1;
+                
+                const group = new THREE.Group();
+                group.add(instMesh, back);
+                
+                const finalScale = 200 / Math.max(canvas.width, canvas.height);
+                group.scale.set(finalScale, finalScale, finalScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'quantum') {
+                const vib = parseFloat(document.getElementById('quant-vibration').value);
+                const positions = [], colors = [];
+                const step = 2;
+                for (let y = 0; y < canvas.height; y += step) {
+                    for (let x = 0; x < canvas.width; x += step) {
+                        const idx = (y * canvas.width + x) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg; if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        positions.push((x - canvas.width/2) * 0.5, (canvas.height/2 - y) * 0.5, (avg/255) * 40);
+                        colors.push(data[idx]/255, data[idx+1]/255, data[idx+2]/255);
+                    }
+                }
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                geometry.userData = { origPos: new Float32Array(positions) };
+                const material = new THREE.PointsMaterial({ size: 2, vertexColors: true, transparent: true, opacity: 0.8 });
+                currentMesh = new THREE.Points(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'fusion') {
+                const blob = parseFloat(document.getElementById('fuse-blob').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 100, 100);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    let sum = 0, count = 0;
+                    const r = Math.floor(6 * blob);
+                    for(let oy = -r; oy <= r; oy++){
+                        for(let ox = -r; ox <= r; ox++){
+                            const px = Math.min(canvas.width-1, Math.max(0, vx + ox));
+                            const py = Math.min(canvas.height-1, Math.max(0, vy + oy));
+                            const idx = (py * canvas.width + px) * 4;
+                            let val = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) val = 255 - val; if (val < nFloor * 255) val = 0;
+                            sum += val; count++;
+                        }
+                    }
+                    pos[i*3+2] = (sum/count/255) * 40;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(document.getElementById('model-color').value), roughness: 0, metalness: 0.5 });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'blueprint') {
+                const weight = parseFloat(document.getElementById('blue-line-weight').value);
+                const resW = Math.min(256, Math.floor(canvas.width / 4));
+                const resH = Math.min(256, Math.floor(canvas.height / 4));
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, resW, resH);
+                const pos = geometry.attributes.position.array;
+                
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; 
+                    if (invert) avg = 255 - avg;
+                    
+                    // Topographic constraint: Step heights to extract architectural contour lines
+                    const steps = Math.max(2, 25);
+                    let h = Math.floor((avg / 255) * steps) / steps;
+                    if (h < 0.05) h = 0;
+                    
+                    pos[i*3+2] = h * 30;
+                }
+                geometry.computeVertexNormals();
+                
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0x002244, 
+                    flatShading: true,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                const mainMesh = new THREE.Mesh(geometry, material);
+                
+                // Only extract high-angle edges -> Contour Map effect
+                const edges = new THREE.EdgesGeometry(geometry, 2); 
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: weight, transparent: true, opacity: 0.8 });
+                const lineMesh = new THREE.LineSegments(edges, edgeMat);
+                
+                // Blueprint base block
+                const baseGeo = new THREE.BoxGeometry(canvas.width, canvas.height, 2);
+                baseGeo.translate(0, 0, -1);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x001a33, roughness: 0.9, flatShading: true });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                
+                const baseEdges = new THREE.EdgesGeometry(baseGeo);
+                const baseLine = new THREE.LineSegments(baseEdges, edgeMat);
+                base.add(baseLine);
+                
+                const group = new THREE.Group();
+                group.add(mainMesh, lineMesh, base);
+                
+                const finalScale = 200 / Math.max(canvas.width, canvas.height);
+                group.scale.set(finalScale, finalScale, finalScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'carbon') {
+                const gloss = parseFloat(document.getElementById('carbon-gloss').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 150, 150);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                    const pattern = (Math.floor(vx/2)%2 === Math.floor(vy/2)%2) ? 0.5 : 0;
+                    pos[i*3+2] = (avg/255) * 30 + pattern;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 / (gloss + 0.1), metalness: 0.9 * gloss });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'diamond') {
+                const brilliance = parseFloat(document.getElementById('dia-brilliance').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 80, 80);
+                const pos = geometry.attributes.position.array;
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                    pos[i*3+2] = (avg/255) * 35;
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshPhysicalMaterial({ 
+                    color: 0xffffff,
+                    metalness: 0,
+                    roughness: 0,
+                    transmission: 0.95,
+                    thickness: 3,
+                    ior: brilliance,
+                    flatShading: true,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const mainMesh = new THREE.Mesh(geometry, material);
+                
+                // Protective Bezel (Platinum)
+                const bezelGeo = new THREE.PlaneGeometry(canvas.width + 4, canvas.height + 4, 1, 1);
+                const bezelMat = new THREE.MeshStandardMaterial({ color: 0xe5e4e2, metalness: 1, roughness: 0.1 });
+                const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+                bezel.position.z = -1;
+                
+                const group = new THREE.Group();
+                group.add(bezel); group.add(mainMesh);
+                currentMesh = group;
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'pearl') {
+                const pSize = parseInt(document.getElementById('pearl-size').value);
+                const vWidth = Math.floor(canvas.width / pSize);
+                const vHeight = Math.floor(canvas.height / pSize);
+                const geometry = new THREE.SphereGeometry(0.45, 12, 10);
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0xfffdfa, 
+                    roughness: 0.05, 
+                    metalness: 0.3,
+                    emissive: 0x333333
+                });
+                const count = vWidth * vHeight;
+                const instMesh = new THREE.InstancedMesh(geometry, material, count);
+                const matrix = new THREE.Matrix4();
+                
+                // Connecting String (Wire)
+                const stringPoints = [];
+                let valid = 0;
+                for (let y = 0; y < vHeight; y++) {
+                    for (let x = 0; x < vWidth; x++) {
+                        const idx = (Math.floor(y * pSize) * canvas.width + Math.floor(x * pSize)) * 4;
+                        let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                        if (data[idx+3] < 50 || avg < nFloor * 255) continue;
+                        const h = (avg/255) * 20;
+                        const px = x - vWidth/2, py = -(y - vHeight/2);
+                        matrix.setPosition(px, py, h);
+                        instMesh.setMatrixAt(valid++, matrix);
+                        if (x % 2 === 0) stringPoints.push(new THREE.Vector3(px, py, h));
+                    }
+                }
+                instMesh.count = valid;
+                instMesh.instanceMatrix.needsUpdate = true;
+                
+                const group = new THREE.Group();
+                group.add(instMesh);
+                if (stringPoints.length > 1) {
+                    const stringGeo = new THREE.BufferGeometry().setFromPoints(stringPoints);
+                    const stringMat = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.5 });
+                    const string = new THREE.Line(stringGeo, stringMat);
+                    group.add(string);
+                }
+                
+                const unitScale = 200 / Math.max(vWidth, vHeight);
+                group.scale.set(unitScale, unitScale, unitScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'filigree') {
+                const thick = parseFloat(document.getElementById('fili-thickness').value);
+                const resW = Math.min(150, Math.floor(canvas.width / 5));
+                const resH = Math.min(150, Math.floor(canvas.height / 5));
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, resW, resH);
+                const pos = geometry.attributes.position.array;
+                
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; 
+                    if (invert) avg = 255 - avg;
+                    
+                    // Smooth topographical steps for filigree loops
+                    const steps = Math.max(3, 15);
+                    let h = Math.round((avg / 255) * steps) / steps;
+                    if (h < 0.1) h = 0;
+                    
+                    pos[i*3+2] = h * 45;
+                }
+                
+                const edgesGeo = new THREE.EdgesGeometry(geometry, 3); // crisp 3 degree 
+                const edgePos = edgesGeo.attributes.position.array;
+                const numPairs = edgePos.length / 6;
+                
+                const cylRadius = Math.max(0.2, thick * 1.5);
+                const cylGeo = new THREE.CylinderGeometry(cylRadius, cylRadius, 1.0, 5);
+                cylGeo.rotateX(Math.PI/2);
+                
+                const sphereGeo = new THREE.SphereGeometry(cylRadius, 5, 5);
+                
+                const goldMat = new THREE.MeshPhysicalMaterial({ 
+                    color: 0xffd700, 
+                    metalness: 1.0, 
+                    roughness: 0.15,
+                    clearcoat: 0.8,
+                    clearcoatRoughness: 0.1,
+                    envMapIntensity: 2.0
+                });
+                
+                const instMesh = new THREE.InstancedMesh(cylGeo, goldMat, numPairs);
+                const jointMesh = new THREE.InstancedMesh(sphereGeo, goldMat, numPairs * 2);
+                
+                const posVec = new THREE.Vector3();
+                const targetVec = new THREE.Vector3();
+                const dummy = new THREE.Object3D();
+                
+                let jointIdx = 0;
+                for (let i = 0; i < numPairs; i++) {
+                    posVec.set(edgePos[i*6], edgePos[i*6+1], edgePos[i*6+2]);
+                    targetVec.set(edgePos[i*6+3], edgePos[i*6+4], edgePos[i*6+5]);
+                    
+                    const dist = posVec.distanceTo(targetVec);
+                    if (dist > 0.001) {
+                        dummy.position.copy(posVec).lerp(targetVec, 0.5);
+                        dummy.lookAt(targetVec);
+                        dummy.scale.set(1, 1, dist);
+                        dummy.updateMatrix();
+                        instMesh.setMatrixAt(i, dummy.matrix);
+                    }
+                    
+                    // Add seamless joints
+                    dummy.position.copy(posVec);
+                    dummy.scale.set(1, 1, 1);
+                    dummy.rotation.set(0, 0, 0);
+                    dummy.updateMatrix();
+                    jointMesh.setMatrixAt(jointIdx++, dummy.matrix);
+                    
+                    dummy.position.copy(targetVec);
+                    dummy.updateMatrix();
+                    jointMesh.setMatrixAt(jointIdx++, dummy.matrix);
+                }
+                
+                instMesh.instanceMatrix.needsUpdate = true;
+                jointMesh.instanceMatrix.needsUpdate = true;
+                
+                // Dark velvet backing to make gold pop
+                const backGeo = new THREE.PlaneGeometry(canvas.width, canvas.height);
+                const backMat = new THREE.MeshStandardMaterial({ color: 0x110505, roughness: 0.9, metalness: 0.2 });
+                const back = new THREE.Mesh(backGeo, backMat);
+                back.position.z = -1;
+
+                const group = new THREE.Group();
+                group.add(instMesh, jointMesh, back);
+                
+                const finalScale = 200 / Math.max(canvas.width, canvas.height);
+                group.scale.set(finalScale, finalScale, finalScale);
+                group.rotation.x = -Math.PI / 2;
+                currentMesh = group;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'enamel') {
+                const gloss = parseFloat(document.getElementById('ena-gloss').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 110, 110);
+                const pos = geometry.attributes.position.array;
+                const colors = new Float32Array(pos.length);
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                    pos[i*3+2] = (avg/255) * 15;
+                    colors[i*3] = data[idx]/255; colors[i*3+1] = data[idx+1]/255; colors[i*3+2] = data[idx+2]/255;
+                }
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    vertexColors: true, 
+                    roughness: 0.05 / gloss, 
+                    metalness: 0.6,
+                    emissive: 0x222222
+                });
+                const mainMesh = new THREE.Mesh(geometry, material);
+                
+                const edges = new THREE.EdgesGeometry(geometry, 25);
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0xffd700, linewidth: 3 });
+                const lineMesh = new THREE.LineSegments(edges, edgeMat);
+                
+                const group = new THREE.Group();
+                group.add(mainMesh); group.add(lineMesh);
+                currentMesh = group;
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'amulet') {
+                const relief = parseFloat(document.getElementById('amu-relief').value);
+                const res = 120;
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, res, res);
+                const pos = geometry.attributes.position.array;
+                const radius = canvas.width / 2;
+                
+                // Create a circular alpha mask
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = 256; maskCanvas.height = 256;
+                const mctx = maskCanvas.getContext('2d');
+                mctx.fillStyle = 'black'; mctx.fillRect(0,0,256,256);
+                mctx.fillStyle = 'white'; mctx.beginPath(); mctx.arc(128,128,120,0,Math.PI*2); mctx.fill();
+                const alphaTex = new THREE.CanvasTexture(maskCanvas);
+                
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const x = pos[i*3];
+                    const y = pos[i*3+1];
+                    const dist = Math.sqrt(x*x + y*y);
+                    const vx = Math.floor(((x / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - y / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                    
+                    if (dist > radius - 8) {
+                        pos[i*3+2] = (dist > radius) ? 0 : 6 * relief; // Rim or flat
+                    } else {
+                        pos[i*3+2] = (avg/255) * 12 * relief + 1; // Relief + base
+                    }
+                }
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0xccaa00, 
+                    metalness: 1, 
+                    roughness: 0.2,
+                    flatShading: true,
+                    alphaMap: alphaTex,
+                    transparent: true,
+                    alphaTest: 0.5,
+                    envMapIntensity: 1.5
+                });
+                currentMesh = new THREE.Mesh(geometry, material);
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            } else if (currentStudio === 'enamel') {
+                const gloss = parseFloat(document.getElementById('ena-gloss').value);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height, 100, 100);
+                const pos = geometry.attributes.position.array;
+                const colors = new Float32Array(pos.length);
+                for (let i = 0; i < pos.length / 3; i++) {
+                    const vx = Math.floor(((pos[i*3] / canvas.width) + 0.5) * canvas.width);
+                    const vy = Math.floor(((0.5 - pos[i*3+1] / canvas.height)) * canvas.height);
+                    const idx = (Math.min(canvas.height-1, vy) * canvas.width + Math.min(canvas.width-1, vx)) * 4;
+                    let avg = (data[idx] + data[idx+1] + data[idx+2]) / 3; if (invert) avg = 255 - avg;
+                    pos[i*3+2] = (avg/255) * 15;
+                    colors[i*3] = data[idx]/255; colors[i*3+1] = data[idx+1]/255; colors[i*3+2] = data[idx+2]/255;
+                }
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ 
+                    vertexColors: true, 
+                    roughness: 0.1 / gloss, 
+                    metalness: 0.5,
+                    emissive: 0x111111
+                });
+                const mainMesh = new THREE.Mesh(geometry, material);
+                const edges = new THREE.EdgesGeometry(geometry, 20);
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0xffd700, linewidth: 2 });
+                const lineMesh = new THREE.LineSegments(edges, edgeMat);
+                const group = new THREE.Group();
+                group.add(mainMesh);
+                group.add(lineMesh);
+                currentMesh = group;
+                currentMesh.rotation.x = -Math.PI / 2;
+                scene.add(currentMesh);
+            }
+
+            updateControlLabels();
+
+            // Framing & Grounding
+            if (!currentMesh) return;
+            currentMesh.updateMatrixWorld();
+            let minY = 0;
+            const box = new THREE.Box3();
+            
+            if (currentMesh.isInstancedMesh) {
+                const matrix = new THREE.Matrix4();
+                for (let i = 0; i < currentMesh.count; i++) {
+                    currentMesh.getMatrixAt(i, matrix);
+                    const position = new THREE.Vector3().setFromMatrixPosition(matrix);
+                    if (i === 0) minY = position.z - matrix.elements[10]/2;
+                    else minY = Math.min(minY, position.z - matrix.elements[10]/2);
+                }
+            } else {
+                box.setFromObject(currentMesh);
+                minY = box.min.y;
+            }
+            
+            const fScale = currentMesh.scale.y; 
+            currentMesh.position.y -= (minY * fScale - 0.5); 
+            
+            const finalBox = new THREE.Box3().setFromObject(currentMesh);
+            const center = finalBox.getCenter(new THREE.Vector3());
+            const size = finalBox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            camera.position.set(0, maxDim * 0.8, maxDim * 1.5);
+            controls.target.copy(center);
+            controls.update();
+            
+            let totalPoly = 0;
+            currentMesh.traverse(child => {
+                if (child.isMesh || child.isInstancedMesh || child.isPoints) {
+                    const count = child.geometry ? (child.geometry.attributes.position.count / 3) : 0;
+                    totalPoly += count * (child.count || 1);
+                }
+            });
+            document.getElementById('stat-poly').textContent = Math.floor(totalPoly).toLocaleString();
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        // --- Exports ---
+        function getExportObject() {
+            if (!currentMesh) return null;
+            if (currentMesh.isInstancedMesh) {
+                const geometries = [];
+                const matrix = new THREE.Matrix4();
+                const color = new THREE.Color();
+                for (let i = 0; i < currentMesh.count; i++) {
+                    currentMesh.getMatrixAt(i, matrix);
+                    const geom = currentMesh.geometry.clone();
+                    geom.applyMatrix4(matrix);
+                    if (currentMesh.instanceColor) {
+                        currentMesh.getColorAt(i, color);
+                        const count = geom.attributes.position.count;
+                        const colors = new Float32Array(count * 3);
+                        for (let j = 0; j < count; j++) {
+                            colors[j*3] = color.r; colors[j*3+1] = color.g; colors[j*3+2] = color.b;
+                        }
+                        geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                    }
+                    geometries.push(geom);
+                }
+                const mergedGeometry = THREE.BufferGeometryUtils.mergeBufferGeometries(geometries);
+                const mat = currentMesh.material.clone();
+                if (currentMesh.instanceColor) mat.vertexColors = true;
+                const mesh = new THREE.Mesh(mergedGeometry, mat);
+                mesh.position.copy(currentMesh.position);
+                mesh.rotation.copy(currentMesh.rotation);
+                mesh.scale.copy(currentMesh.scale);
+                geometries.forEach(g => g.dispose());
+                return mesh;
+            }
+            return currentMesh;
+        }
+
+        function exportSTL() {
+            const obj = getExportObject();
+            if (!obj) return;
+            try {
+                const exporter = new THREE.STLExporter();
+                const result = exporter.parse(obj, { binary: true });
+                saveFile(new Blob([result], { type: 'application/octet-stream' }), currentStudio + '_pro.stl');
+            } catch (e) { alert("Export failed: " + e.message); }
+        }
+
+        function exportGLB() {
+            const obj = getExportObject();
+            if (!obj) return;
+            const exporter = new THREE.GLTFExporter();
+            exporter.parse(obj, (result) => {
+                if (result instanceof ArrayBuffer) saveFile(new Blob([result], { type: 'application/octet-stream' }), currentStudio + '_pro.glb');
+                else saveFile(new Blob([JSON.stringify(result)], { type: 'application/json' }), currentStudio + '_pro.gltf');
+            }, { binary: true });
+        }
+
+        function exportOBJ() {
+            const obj = getExportObject();
+            if (!obj) return;
+            try {
+                const exporter = new THREE.OBJExporter();
+                const result = exporter.parse(obj);
+                saveFile(new Blob([result], { type: 'text/plain' }), currentStudio + '_pro.obj');
+            } catch (e) { alert("Export failed: " + e.message); }
+        }
+
+        function saveFile(blob, filename) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = performance.now();
+            frameCount++;
+            if (time > lastTime + 1000) {
+                document.getElementById('stat-fps').textContent = Math.round((frameCount * 1000) / (time - lastTime));
+                frameCount = 0;
+                lastTime = time;
+            }
+            const spin = parseFloat(document.getElementById('spin').value);
+            if (spin > 0 && currentMesh) currentMesh.rotation.z += spin * 0.01;
+            
+            // Interaction: Quantum Vibration
+            if (currentStudio === 'quantum' && currentMesh && currentMesh.geometry && currentMesh.geometry.userData.origPos) {
+                const vib = parseFloat(document.getElementById('quant-vibration').value);
+                if (vib > 0) {
+                    const pos = currentMesh.geometry.attributes.position.array;
+                    const orig = currentMesh.geometry.userData.origPos;
+                    for (let i = 0; i < pos.length; i++) {
+                        pos[i] = orig[i] + (Math.random() - 0.5) * vib;
+                    }
+                    currentMesh.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function setLanguage(l) {
+            document.body.className = 'lang-' + l;
+            document.getElementById('btn-en').classList.toggle('active', l === 'en');
+            document.getElementById('btn-fr').classList.toggle('active', l === 'fr');
+        }
+
+        updateStudio();
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        });
+    </script>
+    <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+
+      const modal = document.getElementById('local-payment-modal');
+      const closeBtn = document.getElementById('modal-close-btn');
+      const payPremiumBtn = document.getElementById('pay-premium-btn');
+
+      if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
+      if (payPremiumBtn) payPremiumBtn.onclick = () => {
+        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'spro' } });
+        modal.style.display = 'none';
+      };
+
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED') {
+          modal.style.display = 'none';
+          if (pendingTarget) {
+            isAllowed = true;
+            pendingTarget.click();
+          }
+        }
+      };
+
+      document.addEventListener('click', (e) => {
+        if (isAllowed) {
+          isAllowed = false;
+          pendingTarget = null;
+          return;
+        }
+
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || (target.id && target.id.toLowerCase().includes(k)));
+
+        if (isExport) {
+          if (target.id === 'pay-single-btn' || target.id === 'pay-premium-btn' || target.id === 'modal-close-btn' || target.id === 'back-btn') return;
+
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+
+          modal.style.display = 'flex';
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro' } });
+        }
+      }, true);
+    })();
+    </script>
+</body>
+</html>
