@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maker Studio 7 | Studios-Pro</title>
+    <meta name="description" content="A complete guide to using Maker Studio 7 for generating Box Templates, Lithophanes, Halftones, and AI patterns directly in your browser.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #f43f5e, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #fff; }
+        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(244,63,94,0.1); border-radius: 20px; border: 1px solid rgba(244,63,94,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #f43f5e, #fb923c); color: #fff; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(244,63,94,0.3); }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(244,63,94,0.5); }
+        
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>Maker Studio 7: All-in-One Generator for Makers & CNC</span>
+            <span data-fr>Maker Studio 7 : Le générateur universel pour les makers et la CNC</span>
+        </h1>
+        
+        <p>
+            <span data-en>Welcome to the ultimate hub for digital craftsmen and 3D printing enthusiasts. Maker Studio 7 brings together seven robust applications under one roof, specifically engineered to streamline your digital-to-physical fabrication workflow. From advanced 3D textures to parametric designs, everything you need is natively available in your browser without requiring external software installations.</span>
+            <span data-fr>Bienvenue dans le hub ultime pour les artisans numériques et les passionnés d'impression 3D. Maker Studio 7 rassemble sept applications robustes sous le même toit, spécialement conçues pour rationaliser votre flux de fabrication du numérique vers le physique. Des textures 3D avancées aux conceptions paramétriques, tout ce dont vous avez besoin est disponible de manière native dans votre navigateur sans nécessiter l'installation de logiciels externes.</span>
+        </p>
+
+        <h2>
+            <span data-en>The 7 Tools Provided</span>
+            <span data-fr>Les 7 outils disponibles</span>
+        </h2>
+        <ul>
+            <li><span data-en><strong>AI PBR Texture Generator:</strong> Generate realistic physics-based rendering textures using AI directly out of a single prompt or image.</span><span data-fr><strong>Générateur de textures PBR IA :</strong> Générez des textures réalistes de rendu basé sur la physique à l'aide de l'IA directement à partir d'une invite ou d'une image.</span></li>
+            <li><span data-en><strong>Parametric Box Maker:</strong> Design and export laser-ready, customized SVG enclosures and slotted boxes without complex math.</span><span data-fr><strong>Parametric Box Maker :</strong> Concevez et exportez des boîtiers et des boîtes à encoches paramétrables prêts pour le laser, sans mathématiques complexes.</span></li>
+            <li><span data-en><strong>Spherical / Cylinder Lithophanes:</strong> Convert 2D photos into breathtaking curved lithophanes, ready to be 3D printed and backlit.</span><span data-fr><strong>Lithophanies Sphériques / Cylindriques :</strong> Convertissez des photos 2D en lithophanies courbes époustouflantes, prêtes à être imprimées en 3D et rétroéclairées.</span></li>
+            <li><span data-en><strong>Advanced Halftone & Voronoi:</strong> Apply dot-gradient halftone effects or naturally-occuring voronoi cellular structures to 3D meshes and 2D vectors.</span><span data-fr><strong>Halftone et Voronoi avancés :</strong> Appliquez des effets de demi-teintes en points ou des structures cellulaires de voronoï d'origine naturelle sur des maillages 3D et des vecteurs 2D.</span></li>
+            <li><span data-en><strong>Other Generators:</strong> Map topographies, gear systems, and other procedural algorithms with ease.</span><span data-fr><strong>Autres générateurs :</strong> Cartographiez des topographies, des systèmes d'engrenages et d'autres algorithmes procéduraux avec une grande facilité.</span></li>
+        </ul>
+
+        <h2>
+            <span data-en>Why Maker Studio 7 Accelerates Fabrication</span>
+            <span data-fr>Pourquoi Maker Studio 7 accélère votre fabrication</span>
+        </h2>
+        <p>
+            <span data-en>Previously, achieving these varied capabilities required switching between complex software suites. Maker Studio 7 ties them together in a unified, lightweight WebGL-powered workspace. Every model or vector you generate can be exported instantly to DXF, SVG, STL, or GLB formats, perfectly compatible with standard slicers (Cura, PrusaSlicer) and lightburn software.</span>
+            <span data-fr>Auparavant, l'obtention de ces différentes capacités nécessitait de passer d'une suite logicielle complexe à une autre. Maker Studio 7 les réunit dans un espace de travail WebGL unifié et léger. Chaque modèle ou vecteur généré peut être exporté instantanément aux formats DXF, SVG, STL ou GLB, parfaitement compatibles avec les trancheurs standards et les logiciels de découpe laser.</span>
+        </p>
+
+        <div class="cta-container">
+            <a href="/?ref=mkr7" class="cta-btn">
+                <span data-en>Launch Maker Studio 7</span>
+                <span data-fr>Lancer Maker Studio 7</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>

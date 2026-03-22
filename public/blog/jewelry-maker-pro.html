@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewelry Maker Pro | Studios-Pro</title>
+    <meta name="description" content="A complete guide to using Jewelry Maker Pro for designing custom 3D printable rings, necklaces, and jewelry accessories in your browser.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #fff; }
+        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(245,158,11,0.1); border-radius: 20px; border: 1px solid rgba(245,158,11,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(245,158,11,0.3); }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(245,158,11,0.5); }
+        
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>Design Custom 3D Printable Jewelry with Jewelry Maker Pro</span>
+            <span data-fr>Concevez des bijoux imprimables en 3D avec Jewelry Maker Pro</span>
+        </h1>
+        
+        <p>
+            <span data-en>Whether you are a professional goldsmith looking to print wax casts for investment casting, or a hobbyist wishing to design unique accessories, Jewelry Maker Pro shifts the paradigm of CAD software. By simplifying complex 3D rendering down to intuitive sliders, creating custom rings, bracelets, and necklaces is now achievable entirely within your web browser.</span>
+            <span data-fr>Que vous soyez un orfèvre professionnel cherchant à imprimer des moulages en cire pour la fonte à cire perdue, ou un amateur souhaitant concevoir des accessoires uniques, Jewelry Maker Pro change la donne des logiciels CAO. En simplifiant les rendus 3D complexes en curseurs intuitifs, la création de bagues, bracelets et colliers personnalisés est désormais réalisable entièrement dans votre navigateur.</span>
+        </p>
+
+        <h2>
+            <span data-en>Visual CAD Analysis and Engravings</span>
+            <span data-fr>Analyse CAO Visuelle et Gravures</span>
+        </h2>
+        <p>
+            <span data-en>The studio is completely fitted with analytical tools. The integrated CAD analyzer dynamically estimates your metal weight directly based on your selected metal type (24k Gold, Silver, Rose Gold, Platinum) and volumetric dimensions seamlessly. Furthermore, procedural engravings allow you to stamp text or symbols precisely across the inner or outer bands.</span>
+            <span data-fr>Le studio est entièrement équipé d'outils analytiques. L'analyseur CAO intégré estime dynamiquement le poids de votre métal directement en fonction de votre type de métal sélectionné et des dimensions volumétriques. De plus, les gravures procédurales vous permettent d'estamper du texte ou des symboles avec précision sur les bandes intérieures ou extérieures.</span>
+        </p>
+
+        <h2>
+            <span data-en>Gemstone and Parameter Setting</span>
+            <span data-fr>Sertissages et diamants</span>
+        </h2>
+        <ul>
+            <li><span data-en><strong>Pysical Rendering Materials:</strong> Adjust the inner band, outer finishes (hammered, brushed, sandblasted) and visualize them entirely with Photorealistic PBR maps.</span><span data-fr><strong>Matériaux de Rendu Physique :</strong> Ajustez la bande intérieure, les finitions extérieures (martelé, brossé) et visualisez le tout avec un réalisme physique (PBR).</span></li>
+            <li><span data-en><strong>Gemstone Laying:</strong> Quickly deploy precise diamond layouts (Single, Eternity Band) alongside stone cut shapes (Princess, Emerald, Pear, Oval) with custom Carat adjustments.</span><span data-fr><strong>Sertissage :</strong> Déployez rapidement des dispositions de diamants précises ainsi que des formes de coupe (Princesse, Émeraude) avec ajustements de taille en Carats.</span></li>
+            <li><span data-en><strong>Photo Import Texturing:</strong> Need a floral relief? Just upload an image and have it wrapped around a ring using our 2D to 3D Relief converter.</span><span data-fr><strong>Textures par Importation de Photos :</strong> Besoin d'un relief floral ? Téléchargez simplement une image et enroulez-la autour d'une bague grâce à notre convertisseur.</span></li>
+            <li><span data-en><strong>Precise Dimensional Export:</strong> Select global ring sizes easily (Standard US and EU millimeter radii).</span><span data-fr><strong>Exportation Dimensionnelle Précise :</strong> Sélectionnez facilement les tailles de bagues globales.</span></li>
+        </ul>
+
+        <div class="cta-container">
+            <a href="/?ref=jwly" class="cta-btn">
+                <span data-en>Open Jewelry Maker Pro</span>
+                <span data-fr>Ouvrir Jewelry Maker Pro</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>
