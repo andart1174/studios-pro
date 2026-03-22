@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maker Studio 7 — All-in-One Generator</title>
+    <!-- Three.js from CDN as requested in standard structures -->
+    <script src="https://unpkg.com/three@0.145.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/geometries/TextGeometry.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #05070a;
+            --surface: #0f172a;
+            --surface-glass: rgba(15, 23, 42, 0.75);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.6);
+            --neon-blue: #00f3ff;
+            --neon-purple: #c026d3;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --panel-width: 400px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* Background Effects */
+        .bg-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.15; pointer-events: none; animation: move 20s infinite alternate; }
+        .orb-1 { top: -200px; left: -200px; background: var(--neon-blue); }
+        .orb-2 { bottom: -200px; right: -200px; background: var(--neon-purple); animation-delay: -5s; }
+        @keyframes move { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(150px, 100px) scale(1.1); } }
+
+        /* Header & Navigation */
+        header { 
+            padding: 0.8rem 1.5rem; background: var(--surface-glass); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+
+        .logo { display: flex; align-items: center; gap: 1rem; }
+        .logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--neon-blue), var(--accent), var(--neon-purple)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: white; box-shadow: 0 0 20px var(--accent-glow); }
+        .logo-text h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(to right, #fff, var(--text-muted)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+
+        .studio-nav { display: flex; gap: 6px; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 14px; border: 1px solid var(--border); }
+        
+        .nav-item { 
+            width: 40px; height: 40px; border: none; background: none; color: var(--text-muted); cursor: pointer; border-radius: 10px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .nav-item::after { 
+            content: attr(title); position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%) translateY(10px); 
+            background: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; z-index: 1000;
+            opacity: 0; pointer-events: none; transition: all 0.2s; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .nav-item:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .nav-item.active { background: var(--accent); color: white; box-shadow: 0 4px 15px var(--accent-glow); transform: translateY(-2px); }
+        .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+
+        /* Layout */
+        main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* Sidebar */
+        aside { 
+            width: var(--panel-width); background: var(--surface-glass); backdrop-filter: blur(30px); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 10; overflow: hidden; box-shadow: 5px 0 30px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.25); }
+        .tab-btn { 
+            flex: 1; padding: 16px 10px; border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; 
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: var(--neon-blue); border-bottom: 3px solid var(--neon-blue); background: rgba(0, 243, 255, 0.05); }
+
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .tab-panel { display: none; flex-direction: column; gap: 1.5rem; animation: slideIn 0.3s ease-out; }
+        .tab-panel.active { display: flex; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Controls */
+        .control-group { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; transition: border 0.3s; }
+        .control-group:hover { border-color: rgba(255,255,255,0.2); }
+        .group-title { font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 5px; }
+        .group-title i { color: var(--accent); }
+
+        .ctrl-item { display: flex; flex-direction: column; gap: 8px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .ctrl-val { color: var(--neon-blue); font-family: monospace; font-weight: 700; background: rgba(0, 243, 255, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+        input[type="range"] { width: 100%; height: 6px; border-radius: 10px; background: #1e293b; appearance: none; outline: none; transition: 0.2s; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); cursor: pointer; transition: 0.2s; }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 0 15px var(--accent-glow); border-color: var(--neon-blue); }
+
+        input[type="text"] { width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-family: 'Outfit'; font-size: 0.9rem; outline: none; transition: border 0.3s; }
+        input[type="text"]:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+
+        .btn-action { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #2563eb); color: white; box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.15); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.6); }
+
+        /* Specific Inputs */
+        .color-input-custom { width:100%; height:45px; border:none; background:none; cursor:pointer; padding:0; border-radius: 10px; overflow: hidden; }
+        
+        .upload-section { border: 2px dashed rgba(255,255,255,0.2); border-radius: 16px; padding: 2rem 1.5rem; text-align: center; transition: all 0.3s; cursor: pointer; background: rgba(255,255,255,0.02); }
+        .upload-section:hover { border-color: var(--neon-blue); background: rgba(0, 243, 255, 0.05); }
+        .upload-icon { font-size: 2.5rem; display: block; filter: drop-shadow(0 0 15px var(--accent-glow)); margin-bottom: 12px; }
+
+        /* Bilingual Toggle */
+        .lang-switch { display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+        .lang-btn { background: none; border: none; color: var(--text-muted); font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 0.8rem; }
+        .lang-btn.active { background: var(--surface); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+        /* Viewport */
+        .viewport-container { flex: 1; position: relative; background: radial-gradient(circle at center, #111827 0%, #030712 100%); }
+        #canvas3d { width: 100%; height: 100%; cursor: grab; }
+        #canvas3d:active { cursor: grabbing; }
+
+        /* HUD */
+        .hud-overlay { position: absolute; pointer-events: none; }
+        .badge-status { top: 1.5rem; left: 1.5rem; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid var(--border); padding: 10px 18px; border-radius: 30px; font-size: 0.8rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .dot-live { width: 10px; height: 10px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        /* Bilingual attribute hiding */
+        [data-lang-en], [data-lang-fr] { display: none; }
+        body.lang-en [data-lang-en] { display: inline; }
+        body.lang-fr [data-lang-fr] { display: inline; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="lang-fr" id="root">
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'mkr7' } });
+        }
+      }, true);
+    })();
+  </script>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">M7</div>
+            <div class="logo-text"><h1>MAKER STUDIO 7</h1></div>
+        </div>
+
+        <nav class="studio-nav">
+            <!-- 1. PBR Texture Generator -->
+            <button id="nav-texture" class="nav-item active" onclick="switchCompartment('texture')" title="AI PBR Texture">
+                <svg viewBox="0 0 24 24"><path d="M19,3H5C3.9,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.9 20.1,3 19,3M19,19H5V5H19V19M13.96,12.29L11.21,15.83L9.25,13.47L6.5,17H17.5L13.96,12.29Z"/></svg>
+            </button>
+            <!-- 2. Lithophane Creator -->
+            <button id="nav-litho" class="nav-item" onclick="switchCompartment('litho')" title="Lithophane Creator">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5C21 3.9 20.1 3 19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19ZM8.5 13.5L11 16.5L14.5 12L19 18H5L8.5 13.5ZM12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" fill-rule="evenodd" opacity="0.8"/></svg>
+            </button>
+            <!-- 3. Parametric Box -->
+            <button id="nav-box" class="nav-item" onclick="switchCompartment('box')" title="Parametric Box">
+                <svg viewBox="0 0 24 24"><path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.57 21.82C12.41 21.94 12.21 22 12 22C11.79 22 11.59 21.94 11.43 21.82L3.53 17.38C3.21 17.21 3 16.88 3 16.5V7.5C3 7.12 3.21 6.79 3.53 6.62L11.43 2.18C11.59 2.06 11.79 2 12 2C12.21 2 12.41 2.06 12.57 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5M12 4.15L6.04 7.5L12 10.85L17.96 7.5L12 4.15M5 14.91L11 18.26V11.5L5 8.15V14.91M19 14.91V8.15L13 11.5V18.26L19 14.91Z"/></svg>
+            </button>
+            <!-- 4. Halftone / Dot Art -->
+            <button id="nav-halftone" class="nav-item" onclick="switchCompartment('halftone')" title="Halftone Dot Art">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="16" cy="16" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="16" cy="8" r="1.5"/><circle cx="8" cy="16" r="1.5"/></svg>
+            </button>
+            <!-- 5. 3D Text & Logo -->
+            <button id="nav-text" class="nav-item" onclick="switchCompartment('text')" title="3D Text Extruder">
+                <svg viewBox="0 0 24 24"><path d="M9,4V7H13.5V19H16.5V7H21V4H9M11,10L5.5,19H7.5L8.5,16H13.5L14.5,19H16.5L11,10M9.5,13.5L11,9L12.5,13.5H9.5Z"/></svg>
+            </button>
+            <!-- 6. Mandala Generator -->
+            <button id="nav-mandala" class="nav-item" onclick="switchCompartment('mandala')" title="Procedural Mandala">
+                <svg viewBox="0 0 24 24"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4"/><path d="M12 2L12 8M12 16L12 22M2 12L8 12M16 12L22 12M5 5L9 9M15 15L19 19M5 19L9 15M15 9L19 5" stroke="currentColor" stroke-width="2"/></svg>
+            </button>
+            <!-- 7. G-Code Visualizer -->
+            <button id="nav-gcode" class="nav-item" onclick="switchCompartment('gcode')" title="G-Code Simulator">
+                <svg viewBox="0 0 24 24"><path d="M14 6L10.25 11L13.12 11.66L11 14L15 19H5L9 13L11 15L14 6Z" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 3L3 21" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/></svg>
+            </button>
+            <!-- 8. Vase / Pottery -->
+            <button id="nav-vase" class="nav-item" onclick="switchCompartment('vase')" title="Lathe Pottery">
+                <svg viewBox="0 0 24 24"><path d="M19 10H22L19 22H5L2 10H5V8H19V10ZM12 2L15 5H9L12 2Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 9. Gear Maker -->
+            <button id="nav-gear" class="nav-item" onclick="switchCompartment('gear')" title="Mechanical Gear">
+                <svg viewBox="0 0 24 24"><path d="M12 2C10.9 2 10 2.9 10 4V6C7.3 6.4 5.2 8.4 4.8 11H2V13H4.8C5.2 15.6 7.3 17.6 10 18V20C10 21.1 10.9 22 12 22C13.1 22 14 21.1 14 20V18C16.7 17.6 18.8 15.6 19.2 13H22V11H19.2C18.8 8.4 16.7 6.4 14 6V4C14 2.9 13.1 2 12 2ZM12 16C9.8 16 8 14.2 8 12C8 9.8 9.8 8 12 8C14.2 8 16 9.8 16 12C16 14.2 14.2 16 12 16Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 10. Globe Litho -->
+            <button id="nav-globe" class="nav-item" onclick="switchCompartment('globe')" title="Spherical Litho">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 19.93C7.05 19.44 4 16.08 4 12C4 11.38 4.08 10.79 4.21 10.21L11 10.21V19.93ZM13 19.93V10.21L19.79 10.21C19.92 10.79 20 11.38 20 12C20 16.08 16.95 19.44 13 19.93ZM11 4.07V9.21H4.21C4.08 8.62 4 8.02 4 7.41C4 5.93 4.5 4.59 5.33 3.5L11 4.07ZM13 4.07L18.67 3.5C19.5 4.59 20 5.93 20 7.41C20 8.02 19.92 8.62 19.79 9.21H13V4.07Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 11. Topo Map -->
+            <button id="nav-topo" class="nav-item" onclick="switchCompartment('topo')" title="Stepped Topography">
+                <svg viewBox="0 0 24 24"><path d="M12 3L2 12H4.5L12 5.5L19.5 12H22L12 3ZM2 15H4.5L12 8.5L19.5 15H22L12 6L2 15ZM2 18H4.5L12 11.5L19.5 18H22L12 9L2 18Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 12. Voronoi Bio-Mesh -->
+            <button id="nav-voronoi" class="nav-item" onclick="switchCompartment('voronoi')" title="Bio-Cellular Mesh">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4ZM12 6C9.79 6 8 7.79 8 10C8 12.21 9.79 14 12 14C14.21 14 16 12.21 16 10C16 7.79 14.21 6 12 6ZM12 8C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12C10.9 12 10 11.1 10 10C10 8.9 10.9 8 12 8Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 13. QR Code Maker -->
+            <button id="nav-qrcode" class="nav-item" onclick="switchCompartment('qrcode')" title="3D QR Code">
+                <svg viewBox="0 0 24 24"><path d="M3 3H11V11H3V3M5 5V9H9V5H5M13 3H21V11H13V3M15 5V9H19V5H15M3 13H11V21H3V13M5 15V19H9V15H5M18 13H21V16H18V13M13 13H16V16H13V13M13 18H16V21H13V18M18 18H21V21H18V18Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 14. Cookie Cutter -->
+            <button id="nav-cookie" class="nav-item" onclick="switchCompartment('cookie')" title="Cookie Cutter">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,10.5A1.5,1.5 0 0,1 13.5,12A1.5,1.5 0 0,1 12,13.5A1.5,1.5 0 0,1 10.5,12A1.5,1.5 0 0,1 12,10.5M7.5,10.5A1.5,1.5 0 0,1 9,12A1.5,1.5 0 0,1 7.5,13.5A1.5,1.5 0 0,1 6,12A1.5,1.5 0 0,1 7.5,10.5M16.5,10.5A1.5,1.5 0 0,1 18,12A1.5,1.5 0 0,1 16.5,13.5A1.5,1.5 0 0,1 15,12A1.5,1.5 0 0,1 16.5,10.5Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 15. Phone Stand -->
+            <button id="nav-stand" class="nav-item" onclick="switchCompartment('stand')" title="Phone Stand">
+                <svg viewBox="0 0 24 24"><path d="M17 19H7V5H17M17 1H7C5.89 1 5 1.89 5 3V21C5 22.1 5.9 23 7 23H17C18.1 23 19 22.1 19 21V3C19 1.89 18.1 1 17 1Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 16. Maze Generator -->
+            <button id="nav-maze" class="nav-item" onclick="switchCompartment('maze')" title="Labyrinth Maker">
+                <svg viewBox="0 0 24 24"><path d="M3 3V21H21V3H3M19 19H5V5H19V19M8 8V11H11V8H8M8 13V16H11V13H8M13 8V11H16V8H13M13 13V16H16V13H13Z" fill="currentColor"/></svg>
+            </button>
+            <!-- 17. Keychain Maker -->
+            <button id="nav-keychain" class="nav-item" onclick="switchCompartment('keychain')" title="Custom Tag">
+                <svg viewBox="0 0 24 24"><path d="M12.6,3C11.5,3 10.5,3.6 10,4.5L3,16L7.1,20.1L18.6,13.1C19.5,12.6 20.1,11.6 20.1,10.5V5.4C20.1,4.1 19.1,3 17.7,3H12.6M16.5,6A1.5,1.5 0 0,1 18,7.5A1.5,1.5 0 0,1 16.5,9A1.5,1.5 0 0,1 15,7.5A1.5,1.5 0 0,1 16.5,6" fill="currentColor"/></svg>
+            </button>
+        </nav>
+
+        <div class="lang-switch">
+            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn active" id="btn-fr" onclick="setLanguage('fr')">FR</button>
+        </div>
+    </header>
+
+    <main>
+        <aside>
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" onclick="switchTab('project')"><span data-lang-en>Workspace</span><span data-lang-fr>Espace de travail</span></button>
+                <button class="tab-btn" onclick="switchTab('export')"><span data-lang-en>Export</span><span data-lang-fr>Exporter</span></button>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Tab: Workspace -->
+                <div id="tab-project" class="tab-panel active">
+                    
+                    <!-- Compartment 1: AI PBR Texture -->
+                    <div id="comp-texture" class="compartment-ui">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>AI Texture Generator</span><span data-lang-fr>Générateur de Texture IA</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span data-lang-en>Text Prompt</span><span data-lang-fr>Texte Descriptif</span></div>
+                                <input type="text" placeholder="ex: old distressed leather...">
+                            </div>
+                            <button class="btn-action btn-primary" onclick="generateSimulatedTexture()">✨ <span data-lang-en>Generate Maps</span><span data-lang-fr>Générer les Cartes</span></button>
+                        </div>
+                        <!-- Material Image Prompt Source -->
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Material Source</span><span data-lang-fr>Source Matériel</span></div>
+                            <p style="font-size: 0.75rem; color: #10b981; margin-bottom:10px;">Upload an image (e.g., wood, brick, fabric) using the main Upload button, then 'Generate Maps' to extract 3D depth geometry!</p>
+                        </div>
+                        
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Material Tweaks</span><span data-lang-fr>Ajustements Matériel</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Tint / Color</span><span data-lang-fr>Couleur / Teinte</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-texture" value="#ffffff" oninput="updateColor('texture', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Roughness</span><span data-lang-fr>Rugosité</span></span> <span class="ctrl-val" id="val-tex-rough">0.5</span></div>
+                                <input type="range" id="tex-roughness" min="0" max="1" step="0.05" value="0.5" oninput="updateVal('val-tex-rough', this.value); updateTextureMaterial();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Normal Depth</span><span data-lang-fr>Profondeur Normale</span></span> <span class="ctrl-val" id="val-tex-norm">1.0</span></div>
+                                <input type="range" id="tex-normal" min="0" max="3" step="0.1" value="1.0" oninput="updateVal('val-tex-norm', this.value); updateTextureMaterial();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 2: Lithophane Creator -->
+                    <div id="comp-litho" class="compartment-ui hidden">
+                        <div class="upload-section" onclick="triggerFile()">
+                            <span class="upload-icon">📷</span>
+                            <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload Photo</span><span data-lang-fr>Importer une Photo</span></p>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:5px;">JPG/PNG Max 10MB</p>
+                        </div>
+                        <div class="control-group" style="margin-top: 15px;">
+                            <div class="group-title"><span data-lang-en>Lithophane Settings</span><span data-lang-fr>Paramètres Lithophanie</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Color</span><span data-lang-fr>Couleur de Base</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-litho" value="#ffffff" oninput="updateColor('litho', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Max Thickness</span><span data-lang-fr>Épaisseur Max</span></span> <span class="ctrl-val" id="val-litho-thick">3.2mm</span></div>
+                                <input type="range" id="litho-thick" min="1" max="10" step="0.1" value="3.2" oninput="updateVal('val-litho-thick', this.value+'mm'); buildLitho();">
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Invert Relief</span><span data-lang-fr>Inverser le Relief</span></span></div>
+                                <label style="display:flex; align-items:center; cursor:pointer;">
+                                    <input type="checkbox" id="litho-inv" onchange="buildLitho()" style="width:16px; height:16px; margin-right: 8px;">
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosité</span></span>
+                                </label>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>Résolution</span></span> <span class="ctrl-val" id="val-litho-res">2</span></div>
+                                <input type="range" id="litho-res" min="1" max="4" step="1" value="2" oninput="updateVal('val-litho-res', this.value); buildLitho();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Contrast Curve</span><span data-lang-fr>Contraste</span></span> <span class="ctrl-val" id="val-litho-cont">1.0</span></div>
+                                <input type="range" id="litho-cont" min="0.5" max="3" step="0.1" value="1.0" oninput="updateVal('val-litho-cont', this.value); buildLitho();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Layer</span><span data-lang-fr>Couche de Base</span></span> <span class="ctrl-val" id="val-litho-base">0.8mm</span></div>
+                                <input type="range" id="litho-base" min="0.2" max="2" step="0.1" value="0.8" oninput="updateVal('val-litho-base', this.value+'mm'); buildLitho();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 3: Box Maker -->
+                    <div id="comp-box" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Parametric Box</span><span data-lang-fr>Boîte Paramétrique</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur du Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-box" value="#d97706" oninput="updateColor('box', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Width (X)</span><span data-lang-fr>Largeur (X)</span></span> <span class="ctrl-val" id="val-box-w">100mm</span></div>
+                                <input type="range" id="box-w" min="20" max="300" step="5" value="100" oninput="updateVal('val-box-w', this.value+'mm'); buildBox();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Height (Y)</span><span data-lang-fr>Hauteur (Y)</span></span> <span class="ctrl-val" id="val-box-h">50mm</span></div>
+                                <input type="range" id="box-h" min="20" max="300" step="5" value="50" oninput="updateVal('val-box-h', this.value+'mm'); buildBox();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Depth (Z)</span><span data-lang-fr>Profondeur (Z)</span></span> <span class="ctrl-val" id="val-box-d">80mm</span></div>
+                                <input type="range" id="box-d" min="20" max="300" step="5" value="80" oninput="updateVal('val-box-d', this.value+'mm'); buildBox();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Thickness</span><span data-lang-fr>Épaisseur Matériau</span></span> <span class="ctrl-val" id="val-box-thick">3.0mm</span></div>
+                                <input type="range" id="box-thick" min="1" max="10" step="0.5" value="3" oninput="updateVal('val-box-thick', this.value+'mm'); buildBox();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 4: Halftone Art -->
+                    <div id="comp-halftone" class="compartment-ui hidden">
+                        <div class="upload-section" onclick="triggerFile()">
+                            <span class="upload-icon">🔆</span>
+                            <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload Photo</span><span data-lang-fr>Importer une Photo</span></p>
+                        </div>
+                        <div class="control-group" style="margin-top: 15px;">
+                            <div class="group-title"><span data-lang-en>Dot Raster Matrix</span><span data-lang-fr>Matrice de Points</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Dot Color</span><span data-lang-fr>Couleur des Points</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-halftone" value="#ffffff" oninput="updateColor('halftone', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Dot Size Max</span><span data-lang-fr>Taille Max Point</span></span> <span class="ctrl-val" id="val-half-size">5.0</span></div>
+                                <input type="range" id="half-size" min="1" max="15" step="0.5" value="5" oninput="updateVal('val-half-size', this.value); buildHalftone();">
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Invert Pattern</span><span data-lang-fr>Inverser le Motif</span></span></div>
+                                <label style="display:flex; align-items:center; cursor:pointer;">
+                                    <input type="checkbox" id="half-inv" onchange="buildHalftone()" style="width:16px; height:16px; margin-right: 8px;">
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Dark=Big, Light=Small</span><span data-lang-fr>Sombre=Gros</span></span>
+                                </label>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Grid Density (Quality)</span><span data-lang-fr>Densité</span></span> <span class="ctrl-val" id="val-half-grid">2.0</span></div>
+                                <input type="range" id="half-grid" min="1.5" max="5" step="0.5" value="2.0" oninput="updateVal('val-half-grid', this.value); buildHalftone();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>3D Extrusion (Z-Depth)</span><span data-lang-fr>Profondeur 3D</span></span> <span class="ctrl-val" id="val-half-depth">10</span></div>
+                                <input type="range" id="half-depth" min="1" max="50" step="1" value="10" oninput="updateVal('val-half-depth', this.value); buildHalftone();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Spacing Grid</span><span data-lang-fr>Grille d'Espacement</span></span> <span class="ctrl-val" id="val-half-grid">8.0</span></div>
+                                <input type="range" id="half-grid" min="2" max="25" step="1" value="8" oninput="updateVal('val-half-grid', this.value); buildHalftone();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 5: 3D Text & Logo -->
+                    <div id="comp-text" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Typography & Extrusion</span><span data-lang-fr>Typographie et Extrusion</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Text Color</span><span data-lang-fr>Couleur du Texte</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-text" value="#00f3ff" oninput="updateColor('text', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span data-lang-en>Text Input</span><span data-lang-fr>Texte Source</span></div>
+                                <input type="text" id="text-input" value="MAKER 7" onkeyup="buildText3D()">
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 10px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Extrude Depth</span><span data-lang-fr>Profondeur Extrusion</span></span> <span class="ctrl-val" id="val-text-depth">10</span></div>
+                                <input type="range" id="text-depth" min="1" max="50" step="1" value="10" oninput="updateVal('val-text-depth', this.value); buildText3D();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Bevel Angle</span><span data-lang-fr>Angle de Biseau</span></span> <span class="ctrl-val" id="val-text-bevel">2</span></div>
+                                <input type="range" id="text-bevel" min="0" max="10" step="0.5" value="2" oninput="updateVal('val-text-bevel', this.value); buildText3D();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 6: Mandala Generator -->
+                    <div id="comp-mandala" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Procedural Geometry</span><span data-lang-fr>Géométrie Procédurale</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Combine Shapes</span><span data-lang-fr>Combiner Formes</span></span></div>
+                                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-star" checked onchange="buildMandala()"> Star
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-flower" onchange="buildMandala()"> Flower
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-circle" onchange="buildMandala()"> Circles
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-square" onchange="buildMandala()"> Diamonds
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-hexa" onchange="buildMandala()"> Hexagons
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="shp-spiral" onchange="buildMandala()"> Spirals
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Geometry Color</span><span data-lang-fr>Couleur de la Géométrie</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-mandala" value="#c026d3" oninput="updateColor('mandala', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Elements / Symmetry</span><span data-lang-fr>Éléments / Symétrie</span></span> <span class="ctrl-val" id="val-man-sym">8</span></div>
+                                <input type="range" id="man-sym" min="3" max="32" step="1" value="8" oninput="updateVal('val-man-sym', this.value); buildMandala();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Layers Complexity</span><span data-lang-fr>Complexité Couches</span></span> <span class="ctrl-val" id="val-man-layers">5</span></div>
+                                <input type="range" id="man-layers" min="1" max="10" step="1" value="5" oninput="updateVal('val-man-layers', this.value); buildMandala();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Radius Spread</span><span data-lang-fr>Rayon Global</span></span> <span class="ctrl-val" id="val-man-radius">100</span></div>
+                                <input type="range" id="man-radius" min="20" max="250" step="5" value="100" oninput="updateVal('val-man-radius', this.value); buildMandala();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 7: G-Code Visualizer -->
+                    <div id="comp-gcode" class="compartment-ui hidden">
+                        <div class="upload-section" onclick="triggerFile()">
+                            <span class="upload-icon">⚙️</span>
+                            <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload .gcode</span><span data-lang-fr>Importer .gcode</span></p>
+                        </div>
+                        <div class="control-group" style="margin-top: 15px;">
+                            <div class="group-title"><span data-lang-en>Simulation Display</span><span data-lang-fr>Affichage Simulation</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Toolpath Color</span><span data-lang-fr>Couleur de Trajet</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-gcode" value="#10b981" oninput="updateColor('gcode', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Playback Speed</span><span data-lang-fr>Vitesse de Lecture</span></span> <span class="ctrl-val" id="val-gc-speed">1x</span></div>
+                                <input type="range" id="gc-speed" min="0" max="5" step="0.5" value="1" oninput="updateVal('val-gc-speed', this.value+'x');">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 8: Vase / Pottery -->
+                    <div id="comp-vase" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Vase Profile</span><span data-lang-fr>Profil du Vase</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-vase" value="#14b8a6" oninput="updateColor('vase', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Height</span><span data-lang-fr>Hauteur</span></span> <span class="ctrl-val" id="val-vase-h">100</span></div>
+                                <input type="range" id="vase-h" min="20" max="250" step="5" value="100" oninput="updateVal('val-vase-h', this.value); buildVase();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Width</span><span data-lang-fr>Largeur Base</span></span> <span class="ctrl-val" id="val-vase-b">30</span></div>
+                                <input type="range" id="vase-b" min="5" max="100" step="1" value="30" oninput="updateVal('val-vase-b', this.value); buildVase();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Neck Width</span><span data-lang-fr>Largeur Cou</span></span> <span class="ctrl-val" id="val-vase-n">15</span></div>
+                                <input type="range" id="vase-n" min="5" max="80" step="1" value="15" oninput="updateVal('val-vase-n', this.value); buildVase();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Belly Width</span><span data-lang-fr>Largeur Ventre</span></span> <span class="ctrl-val" id="val-vase-m">45</span></div>
+                                <input type="range" id="vase-m" min="10" max="150" step="1" value="45" oninput="updateVal('val-vase-m', this.value); buildVase();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution (Faces)</span><span data-lang-fr>Façettes</span></span> <span class="ctrl-val" id="val-vase-res">32</span></div>
+                                <input type="range" id="vase-res" min="4" max="128" step="1" value="32" oninput="updateVal('val-vase-res', this.value); buildVase();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 9: Gear Maker -->
+                    <div id="comp-gear" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Gear Parameters</span><span data-lang-fr>Paramètres Engrenage</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-gear" value="#64748b" oninput="updateColor('gear', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Teeth Count</span><span data-lang-fr>Nombre Dents</span></span> <span class="ctrl-val" id="val-gear-t">20</span></div>
+                                <input type="range" id="gear-t" min="6" max="100" step="1" value="20" oninput="updateVal('val-gear-t', this.value); buildGear();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Diameter</span><span data-lang-fr>Diamètre</span></span> <span class="ctrl-val" id="val-gear-r">50</span></div>
+                                <input type="range" id="gear-r" min="10" max="150" step="1" value="50" oninput="updateVal('val-gear-r', this.value); buildGear();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Axis Hole</span><span data-lang-fr>Trou Axe</span></span> <span class="ctrl-val" id="val-gear-h">10</span></div>
+                                <input type="range" id="gear-h" min="0" max="60" step="1" value="10" oninput="updateVal('val-gear-h', this.value); buildGear();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span> <span class="ctrl-val" id="val-gear-d">10</span></div>
+                                <input type="range" id="gear-d" min="1" max="50" step="1" value="10" oninput="updateVal('val-gear-d', this.value); buildGear();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 10: Globe Litho -->
+                    <div id="comp-globe" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Globe Shape</span><span data-lang-fr>Forme du Globe</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-globe" value="#ffffff" oninput="updateColor('globe', this.value);">
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Invert Relief</span><span data-lang-fr>Inverser le Relief</span></span></div>
+                                <label style="display:flex; align-items:center; cursor:pointer;">
+                                    <input type="checkbox" id="globe-inv" onchange="buildGlobe()" style="width:16px; height:16px; margin-right: 8px;">
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosité</span></span>
+                                </label>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Radius</span><span data-lang-fr>Rayon</span></span> <span class="ctrl-val" id="val-globe-r">60</span></div>
+                                <input type="range" id="globe-r" min="20" max="150" step="1" value="60" oninput="updateVal('val-globe-r', this.value); buildGlobe();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Depth Map Scale</span><span data-lang-fr>Hauteur Carte</span></span> <span class="ctrl-val" id="val-globe-t">4</span></div>
+                                <input type="range" id="globe-t" min="1" max="25" step="0.5" value="4" oninput="updateVal('val-globe-t', this.value); buildGlobe();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>Résolution</span></span> <span class="ctrl-val" id="val-globe-res">128</span></div>
+                                <input type="range" id="globe-res" min="32" max="256" step="16" value="128" oninput="updateVal('val-globe-res', this.value); buildGlobe();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 11: Topo Map -->
+                    <div id="comp-topo" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Terrace Levels</span><span data-lang-fr>Niveaux de Terrasse</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-topo" value="#8b5cf6" oninput="updateColor('topo', this.value);">
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Invert Relief</span><span data-lang-fr>Inverser le Relief</span></span></div>
+                                <label style="display:flex; align-items:center; cursor:pointer;">
+                                    <input type="checkbox" id="topo-inv" onchange="buildTopo()" style="width:16px; height:16px; margin-right: 8px;">
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>High Terrain=Bright</span><span data-lang-fr>Terrain Haut=Clair</span></span>
+                                </label>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Altitudes (Steps)</span><span data-lang-fr>Altitudes (Marches)</span></span> <span class="ctrl-val" id="val-topo-s">10</span></div>
+                                <input type="range" id="topo-s" min="2" max="40" step="1" value="10" oninput="updateVal('val-topo-s', this.value); buildTopo();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Z-Thickness</span><span data-lang-fr>Épaisseur Z</span></span> <span class="ctrl-val" id="val-topo-t">20</span></div>
+                                <input type="range" id="topo-t" min="1" max="100" step="1" value="20" oninput="updateVal('val-topo-t', this.value); buildTopo();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Precision Quality</span><span data-lang-fr>Précision</span></span> <span class="ctrl-val" id="val-topo-res">2</span></div>
+                                <input type="range" id="topo-res" min="1" max="4" step="1" value="2" oninput="updateVal('val-topo-res', this.value); buildTopo();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 12: Voronoi Bio-Mesh -->
+                    <div id="comp-voronoi" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Organic Structure</span><span data-lang-fr>Structure Organique</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-voronoi" value="#e2e8f0" oninput="updateColor('voronoi', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Combine Shapes</span><span data-lang-fr>Combiner Formes</span></span></div>
+                                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="v-shp-hex" checked onchange="buildVoronoi()"> Hexagon
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="v-shp-sq" onchange="buildVoronoi()"> Square
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="v-shp-tri" onchange="buildVoronoi()"> Triangle
+                                    </label>
+                                    <label style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; cursor: pointer; user-select:none; border: 1px solid rgba(255,255,255,0.1);">
+                                        <input type="checkbox" id="v-shp-circ" onchange="buildVoronoi()"> Circle
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Cell Density</span><span data-lang-fr>Densité Cellules</span></span> <span class="ctrl-val" id="val-voro-c">8</span></div>
+                                <input type="range" id="voro-c" min="3" max="25" step="1" value="8" oninput="updateVal('val-voro-c', this.value); buildVoronoi();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Organic Noise</span><span data-lang-fr>Bruit Organique</span></span> <span class="ctrl-val" id="val-voro-n">0.5</span></div>
+                                <input type="range" id="voro-n" min="0" max="1" step="0.05" value="0.5" oninput="updateVal('val-voro-n', this.value); buildVoronoi();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Web Thickness</span><span data-lang-fr>Épaisseur Toile</span></span> <span class="ctrl-val" id="val-voro-t">5</span></div>
+                                <input type="range" id="voro-t" min="1" max="20" step="0.5" value="5" oninput="updateVal('val-voro-t', this.value); buildVoronoi();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 13: 3D QR Code -->
+                    <div id="comp-qrcode" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>QR Settings</span><span data-lang-fr>Paramètres QR</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Color</span><span data-lang-fr>Couleur Base</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-qr-base" value="#f8fafc" oninput="buildQR();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Pixel Color</span><span data-lang-fr>Couleur Pixeli</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-qr-dot" value="#05070a" oninput="buildQR();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span data-lang-en>QR Text/Link</span><span data-lang-fr>Texte/Lien QR</span></div>
+                                <input type="text" id="qr-input" value="https://maker7.com" onkeyup="buildQR()">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Thickness</span><span data-lang-fr>Épaisseur Base</span></span> <span class="ctrl-val" id="val-qr-b">2.0</span></div>
+                                <input type="range" id="qr-base" min="1" max="10" step="0.5" value="2.0" oninput="updateVal('val-qr-b', this.value); buildQR();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Code Height</span><span data-lang-fr>Hauteur Code</span></span> <span class="ctrl-val" id="val-qr-t">1.0</span></div>
+                                <input type="range" id="qr-thick" min="0.2" max="5" step="0.2" value="1.0" oninput="updateVal('val-qr-t', this.value); buildQR();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 14: Cookie Cutter -->
+                    <div id="comp-cookie" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Cutter Shape</span><span data-lang-fr>Forme Emporte-Pièce</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Type</span><span data-lang-fr>Type</span></span></div>
+                                <select id="cookie-shape" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; outline: none;" onchange="buildCookie()">
+                                    <option value="heart">Heart / Coeur</option>
+                                    <option value="star">Star / Étoile</option>
+                                    <option value="circle">Circle / Cercle</option>
+                                    <option value="rect">Square / Carré</option>
+                                    <option value="hex">Hexagon / Hexagone</option>
+                                    <option value="tri">Triangle</option>
+                                    <option value="pent">Pentagon / Pentagone</option>
+                                    <option value="flower">Flower / Fleur</option>
+                                    <option value="cloud">Cloud / Nuage</option>
+                                    <option value="drop">Teardrop / Goutte</option>
+                                </select>
+                            </div>
+                            <div class="ctrl-item" style="margin-top: 5px;">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-cookie" value="#ec4899" oninput="updateColor('cookie', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Cutting Depth</span><span data-lang-fr>Profondeur Lame</span></span> <span class="ctrl-val" id="val-ck-d">15</span></div>
+                                <input type="range" id="cookie-depth" min="5" max="30" step="1" value="15" oninput="updateVal('val-ck-d', this.value); buildCookie();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Handle Width</span><span data-lang-fr>Largeur Manche</span></span> <span class="ctrl-val" id="val-ck-w">5</span></div>
+                                <input type="range" id="cookie-width" min="2" max="10" step="1" value="5" oninput="updateVal('val-ck-w', this.value); buildCookie();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 15: Phone Stand -->
+                    <div id="comp-stand" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Stand Specs</span><span data-lang-fr>Spécifications du Support</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-stand" value="#3b82f6" oninput="updateColor('stand', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Viewing Angle</span><span data-lang-fr>Angle de Vue</span></span> <span class="ctrl-val" id="val-st-a">60°</span></div>
+                                <input type="range" id="stand-angle" min="45" max="85" step="5" value="60" oninput="updateVal('val-st-a', this.value+'°'); buildStand();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Device Thickness</span><span data-lang-fr>Épaisseur Appareil</span></span> <span class="ctrl-val" id="val-st-t">12mm</span></div>
+                                <input type="range" id="stand-thick" min="8" max="25" step="1" value="12" oninput="updateVal('val-st-t', this.value+'mm'); buildStand();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Width</span><span data-lang-fr>Largeur Base</span></span> <span class="ctrl-val" id="val-st-w">60mm</span></div>
+                                <input type="range" id="stand-width" min="30" max="120" step="5" value="60" oninput="updateVal('val-st-w', this.value+'mm'); buildStand();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 16: Maze Generator -->
+                    <div id="comp-maze" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Labyrinth Type</span><span data-lang-fr>Type Labyrinthe</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-maze" value="#f59e0b" oninput="updateColor('maze', this.value);">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Grid Complexity</span><span data-lang-fr>Complexité</span></span> <span class="ctrl-val" id="val-mz-c">12</span></div>
+                                <input type="range" id="maze-cols" min="5" max="30" step="1" value="12" oninput="updateVal('val-mz-c', this.value); buildMaze();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Wall Height</span><span data-lang-fr>Hauteur Mur</span></span> <span class="ctrl-val" id="val-mz-h">10</span></div>
+                                <input type="range" id="maze-height" min="2" max="30" step="1" value="10" oninput="updateVal('val-mz-h', this.value); buildMaze();">
+                            </div>
+                            <div class="ctrl-item">
+                                <button class="btn-action btn-primary" onclick="buildMaze()" style="margin-top: 10px;">🎲 Randomize</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compartment 17: Keychain Maker -->
+                    <div id="comp-keychain" class="compartment-ui hidden">
+                        <div class="control-group">
+                            <div class="group-title"><span data-lang-en>Keychain Tag</span><span data-lang-fr>Étiquette</span></div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Shape</span><span data-lang-fr>Forme de Base</span></span></div>
+                                <select id="kc-shape" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; outline: none; margin-bottom: 5px;" onchange="buildKeychain()">
+                                    <option value="pill">Pill (Classic)</option>
+                                    <option value="rect">Rectangle</option>
+                                    <option value="circle">Coin / Circle</option>
+                                    <option value="diamond">Diamond</option>
+                                </select>
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Base Color</span><span data-lang-fr>Couleur Base</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-kc-base" value="#e2e8f0" oninput="buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Text Color</span><span data-lang-fr>Couleur Texte</span></span></div>
+                                <input type="color" class="color-input-custom" id="col-kc-text" value="#ef4444" oninput="buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span data-lang-en>Name</span><span data-lang-fr>Nom</span></div>
+                                <input type="text" id="kc-input" value="Maker 7" onkeyup="buildKeychain()">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span> <span class="ctrl-val" id="val-kc-t">3.0</span></div>
+                                <input type="range" id="kc-thick" min="1" max="10" step="0.5" value="3.0" oninput="updateVal('val-kc-t', this.value); buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Text Size</span><span data-lang-fr>Taille Texte</span></span> <span class="ctrl-val" id="val-kc-f">16</span></div>
+                                <input type="range" id="kc-font" min="8" max="40" step="1" value="16" oninput="updateVal('val-kc-f', this.value); buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Text Extrude Z</span><span data-lang-fr>Z Texte</span></span> <span class="ctrl-val" id="val-kc-z">2.0</span></div>
+                                <input type="range" id="kc-depth" min="-2.0" max="5.0" step="0.5" value="2.0" oninput="updateVal('val-kc-z', this.value); buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Padding Width</span><span data-lang-fr>Marge Base</span></span> <span class="ctrl-val" id="val-kc-p">10</span></div>
+                                <input type="range" id="kc-pad" min="2" max="30" step="1" value="10" oninput="updateVal('val-kc-p', this.value); buildKeychain();">
+                            </div>
+                            <div class="ctrl-item">
+                                <div class="ctrl-label"><span><span data-lang-en>Ring Hole Radius</span><span data-lang-fr>Trou Anneau</span></span> <span class="ctrl-val" id="val-kc-r">3.5</span></div>
+                                <input type="range" id="kc-ring" min="2" max="15" step="0.5" value="3.5" oninput="updateVal('val-kc-r', this.value); buildKeychain();">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Tab: Export -->
+                <div id="tab-export" class="tab-panel">
+                    <div class="control-group">
+                        <div class="group-title"><span data-lang-en>Format & Geometry</span><span data-lang-fr>Format & Géométrie</span></div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px;">
+                            <span data-lang-en>Export your generated asset for 3D Printing (STL), Web Rendering (GLB), or Laser/CNC paths (DXF/SVG where applicable).</span>
+                            <span data-lang-fr>Exportez votre actif généré pour impression 3D (STL), rendu Web (GLB), ou tracés Laser/CNC (DXF/SVG où applicable).</span>
+                        </p>
+                        <button class="btn-action btn-primary" onclick="exportSTL()" style="margin-bottom: 8px;">EXPORT STL Mesh</button>
+                        <button class="btn-action btn-primary" onclick="exportGLB()" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 8px;">EXPORT GLB Model</button>
+                        <button class="btn-action btn-primary" onclick="exportSVG()" style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-bottom: 8px;">EXPORT SVG Vector</button>
+                        <button class="btn-action btn-primary" onclick="exportDXF()" style="background: linear-gradient(135deg, #e3a008, #b45309); margin-bottom: 8px;">EXPORT DXF Format</button>
+                        <button class="btn-action btn-primary" onclick="exportPDF()" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">EXPORT PDF Document</button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <div class="viewport-container">
+            <div class="badge-status hud-overlay">
+                <div class="dot-live"></div> 
+                <span id="studio-status" style="text-transform: uppercase;">AI TEXTURE CORE</span>
+            </div>
+            
+            <canvas id="canvas3d"></canvas>
+        </div>
+    </main>
+
+    <!-- Hidden file input for general uploads -->
+    <input type="file" id="general-file" class="hidden" accept="image/*,.gcode" onchange="handleFileUpload(event)">
+
+    <script>
+        // Language Toggle logic
+        function setLanguage(lang) {
+            document.getElementById('root').className = 'lang-' + lang;
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+        }
+
+        // Tab Switching in Sidebar
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+            else if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // Helper to update slider value labels
+        function updateVal(id, val) { 
+            document.getElementById(id).innerText = val; 
+        }
+        function triggerFile() {
+            document.getElementById('general-file').click();
+        }
+
+        let loadedImageCanvas = null;
+        let loadedImageContext = null;
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            event.target.value = ''; // Reset to allow re-uploading the same file
+            
+            if(!file) return;
+            
+            if(file.name.toLowerCase().endsWith('.gcode') || file.name.toLowerCase().endsWith('.nc')) {
+                buildGCode();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    loadedImageCanvas = document.createElement('canvas');
+                    // Downscale large images for performance
+                    const maxDim = 800;
+                    let w = img.width, h = img.height;
+                    if(w > maxDim || h > maxDim) {
+                        const aspect = w/h;
+                        if(w > h) { w = maxDim; h = Math.floor(maxDim/aspect); }
+                        else { h = maxDim; w = Math.floor(maxDim*aspect); }
+                    }
+                    loadedImageCanvas.width = w;
+                    loadedImageCanvas.height = h;
+                    loadedImageContext = loadedImageCanvas.getContext('2d', { willReadFrequently: true });
+                    loadedImageContext.drawImage(img, 0, 0, w, h);
+
+                    if(currentStudio === 'litho') {
+                        buildLitho();
+                    } else if (currentStudio === 'halftone') {
+                        buildHalftone();
+                    } else if (currentStudio === 'texture') {
+                        // For texture, we just load the image, the user will click "Generate Maps"
+                        // to apply it.
+                        buildTextureMock(); // Rebuilds the sphere with the default material
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        let currentStudio = 'texture';
+
+        // --- THREE.JS SETUP ---
+        const canvas = document.getElementById('canvas3d');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x05070a, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+        camera.position.set(0, 150, 400);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting System
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(100, 200, 100);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const blueBackLight = new THREE.PointLight(0x00f3ff, 1.5, 500);
+        blueBackLight.position.set(-150, -50, -200);
+        scene.add(blueBackLight);
+
+        const purpleFillLight = new THREE.PointLight(0xc026d3, 1.5, 500);
+        purpleFillLight.position.set(200, 50, 100);
+        scene.add(purpleFillLight);
+
+        // Floor Grid
+        const gridHelper = new THREE.GridHelper(1000, 50, 0x3b82f6, 0x1e293b);
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        gridHelper.position.y = -50;
+        scene.add(gridHelper);
+
+        // --- REAL-TIME COLOR UPDATER ---
+        function updateColor(comp, hexColor) {
+            if(!currentObject) return;
+            const color = new THREE.Color(hexColor);
+            
+            if(comp === 'texture' && texMesh && texMesh.material) {
+                texMesh.material.color.set(color);
+                return;
+            }
+
+            currentObject.traverse(function(child) {
+                if(child.material) {
+                    if (child.isLineSegments && comp !== 'gcode') return; 
+
+                    if (comp === 'box' || comp === 'text' || comp === 'litho' || comp === 'vase' || comp === 'gear' || comp === 'globe' || comp === 'topo' || comp === 'voronoi') {
+                        if (child.isMesh) child.material.color.set(color);
+                    } else if (comp === 'halftone') {
+                        if (child instanceof THREE.InstancedMesh) child.material.color.set(color);
+                    } else if (comp === 'mandala') {
+                        if (child.isLine || child.isLineSegments) child.material.color.set(color);
+                    } else if (comp === 'gcode') {
+                        if (child === currentObject.children[0]) child.material.color.set(color);
+                    }
+                }
+            });
+        }
+
+        // --- GLOBAL GEOMETRY HOLDER ---
+        let currentObject = new THREE.Group();
+        scene.add(currentObject);
+
+        // --- GLOBAL EXPORTS & UTILS ---
+        function saveBlob(blob, filename) {
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportSTL() {
+            if(!THREE.STLExporter) { alert("STL Exporter not loaded."); return; }
+            let exporter = new THREE.STLExporter();
+            let result = exporter.parse(currentObject);
+            let blob = new Blob([result], { type: 'text/plain' });
+            saveBlob(blob, 'MakerStudio_Export.stl');
+        }
+
+        function exportGLB() {
+            if(!THREE.GLTFExporter) { alert("GLTF Exporter not loaded."); return; }
+            let exporter = new THREE.GLTFExporter();
+            exporter.parse(currentObject, function(result) {
+                let blob = new Blob([result], { type: 'application/octet-stream' });
+                saveBlob(blob, 'MakerStudio_Export.glb');
+            }, function(error) {
+                console.error(error);
+                alert("Error exporting GLB.");
+            }, { binary: true });
+        }
+
+        // --- 2D VECTOR EXPORT LOGIC (SVG/DXF/PDF) ---
+        function get2DLines(obj) {
+            const lines = [];
+            
+            // Temporarily store and reset rotation so we get a pure unskewed top-down (XY) projection
+            const rotX = obj.rotation.x;
+            const rotY = obj.rotation.y;
+            const rotZ = obj.rotation.z;
+            obj.rotation.set(0, 0, 0);
+            obj.updateMatrixWorld(true);
+
+            const bbox = new THREE.Box3().setFromObject(obj);
+            const size = new THREE.Vector3();
+            bbox.getSize(size);
+            
+            let proj = 'Z';
+            if (size.x <= size.y && size.x <= size.z) proj = 'X';
+            else if (size.y <= size.x && size.y <= size.z) proj = 'Y';
+            
+            function addLinesFromPosMatrix(pos, matrix) {
+                for(let i=0; i<pos.count; i+=2) {
+                    const v1 = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(matrix);
+                    const v2 = new THREE.Vector3().fromBufferAttribute(pos, i+1).applyMatrix4(matrix);
+                    if (proj === 'Z') lines.push([v1.x, v1.y, v2.x, v2.y]);
+                    else if (proj === 'Y') lines.push([v1.x, v1.z, v2.x, v2.z]);
+                    else if (proj === 'X') lines.push([v1.y, v1.z, v2.y, v2.z]);
+                }
+            }
+
+            obj.traverse((child) => {
+                if (child.isInstancedMesh && child.geometry) {
+                    const edgesGeo = new THREE.EdgesGeometry(child.geometry, 15);
+                    const pos = edgesGeo.attributes.position;
+                    const matrixWorld = child.matrixWorld;
+                    const instanceMatrix = new THREE.Matrix4();
+                    const matrix = new THREE.Matrix4();
+                    if(pos) {
+                        for (let inst = 0; inst < child.count; inst++) {
+                            child.getMatrixAt(inst, instanceMatrix);
+                            matrix.multiplyMatrices(matrixWorld, instanceMatrix);
+                            addLinesFromPosMatrix(pos, matrix);
+                        }
+                    }
+                } else if (child.isMesh && child.geometry) {
+                    const edgesGeo = new THREE.EdgesGeometry(child.geometry, 15);
+                    const pos = edgesGeo.attributes.position;
+                    if(pos) addLinesFromPosMatrix(pos, child.matrixWorld);
+                } else if (child.isLineSegments && child.geometry) {
+                    const pos = child.geometry.attributes.position;
+                    if(pos) addLinesFromPosMatrix(pos, child.matrixWorld);
+                }
+            });
+            
+            // Restore original animation rotation
+            obj.rotation.set(rotX, rotY, rotZ);
+            obj.updateMatrixWorld(true);
+            
+            return lines;
+        }
+
+        function getLogical2DLayout() {
+            if (currentStudio === 'box') {
+                const w = parseFloat(document.getElementById('box-w') ? document.getElementById('box-w').value : 100);
+                const h = parseFloat(document.getElementById('box-h') ? document.getElementById('box-h').value : 50);
+                const d = parseFloat(document.getElementById('box-d') ? document.getElementById('box-d').value : 80);
+                
+                const lines = [];
+                function addR(px, py, pw, ph) {
+                    lines.push([px, py, px+pw, py]);
+                    lines.push([px+pw, py, px+pw, py+ph]);
+                    lines.push([px+pw, py+ph, px, py+ph]);
+                    lines.push([px, py+ph, px, py]);
+                }
+                addR(0, 0, w, d);              // Bottom
+                addR(-h - 5, 0, h, d);         // Left
+                addR(w + 5, 0, h, d);          // Right
+                addR(0, d + 5, w, h);          // Front
+                addR(0, -h - 5, w, h);         // Back
+                return lines;
+            } else if (currentStudio === 'vase') {
+                const height = parseFloat(document.getElementById('vase-h') ? document.getElementById('vase-h').value : 100);
+                const base = parseFloat(document.getElementById('vase-b') ? document.getElementById('vase-b').value : 30);
+                const neck = parseFloat(document.getElementById('vase-n') ? document.getElementById('vase-n').value : 15);
+                const belly = parseFloat(document.getElementById('vase-m') ? document.getElementById('vase-m').value : 45);
+                
+                const lines = [];
+                let lastP = null;
+                for (let i = 0; i <= 50; i++) {
+                    const t = i / 50;
+                    const py = t * height; 
+                    let px = 0;
+                    if(t < 0.2) px = base + (belly - base) * (t/0.2); 
+                    else if(t < 0.8) {
+                        const st = (t - 0.2) / 0.6;
+                        px = neck + (belly - neck) * (0.5 + 0.5 * Math.cos(st * Math.PI));
+                    } else {
+                        const st = (t - 0.8) / 0.2;
+                        px = neck + (base * 0.5 - neck) * (st * st);
+                    }
+                    if (lastP) {
+                        lines.push([lastP.x, lastP.y, px, py]); 
+                        lines.push([-lastP.x, lastP.y, -px, py]); 
+                    } else lines.push([-px, py, px, py]); 
+                    lastP = {x:px, y:py};
+                }
+                lines.push([-lastP.x, lastP.y, lastP.x, lastP.y]); 
+                return lines;
+            }
+            return get2DLines(currentObject);
+        }
+
+        function exportSVG() {
+            const lines = getLogical2DLayout();
+            if(lines.length === 0) return alert('No geometry to export!');
+            
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            lines.forEach(l => {
+                minX = Math.min(minX, l[0], l[2]); minY = Math.min(minY, l[1], l[3]);
+                maxX = Math.max(maxX, l[0], l[2]); maxY = Math.max(maxY, l[1], l[3]);
+            });
+            
+            const w = maxX - minX + 10;
+            const h = maxY - minY + 10;
+            const ox = minX - 5;
+            const oy = maxY + 5; 
+
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">\n`;
+            svg += '<g stroke="black" stroke-width="0.5" fill="none">\n';
+            lines.forEach(l => {
+                let x1 = l[0] - ox; let y1 = oy - l[1];
+                let x2 = l[2] - ox; let y2 = oy - l[3];
+                svg += `<line x1="${x1.toFixed(3)}" y1="${y1.toFixed(3)}" x2="${x2.toFixed(3)}" y2="${y2.toFixed(3)}" />\n`;
+            });
+            svg += '</g></svg>';
+            let blob = new Blob([svg], { type: 'image/svg+xml' });
+            saveBlob(blob, 'MakerStudio_Export.svg');
+        }
+
+        function exportDXF() {
+            const lines = getLogical2DLayout();
+            if(lines.length === 0) return alert('No geometry to export!');
+            
+            let dxf = "0\nSECTION\n2\nENTITIES\n";
+            lines.forEach(l => {
+                dxf += "0\nLINE\n8\n0\n";
+                dxf += `10\n${l[0].toFixed(3)}\n20\n${l[1].toFixed(3)}\n30\n0.0\n`;
+                dxf += `11\n${l[2].toFixed(3)}\n21\n${l[3].toFixed(3)}\n31\n0.0\n`;
+            });
+            dxf += "0\nENDSEC\n0\nEOF\n";
+            let blob = new Blob([dxf], { type: 'application/dxf' });
+            saveBlob(blob, 'MakerStudio_Export.dxf');
+        }
+
+        function exportPDF() {
+            const lines = getLogical2DLayout();
+            if(lines.length === 0) return alert('No geometry to export!');
+            if(!window.jspdf) return alert('PDF Library (jsPDF) failed to load!');
+            
+            const { jsPDF } = window.jspdf;
+            
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            lines.forEach(l => {
+                minX = Math.min(minX, l[0], l[2]); minY = Math.min(minY, l[1], l[3]);
+                maxX = Math.max(maxX, l[0], l[2]); maxY = Math.max(maxY, l[1], l[3]);
+            });
+            
+            const w = maxX - minX + 20;
+            const h = maxY - minY + 20;
+            
+            const validW = w < 1 ? 100 : w;
+            const validH = h < 1 ? 100 : h;
+            
+            const doc = new jsPDF({ orientation: validW > validH ? 'l' : 'p', unit: 'mm', format: [validW, validH] });
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            
+            const ox = minX - 10;
+            const oy = maxY + 10;
+            
+            lines.forEach(l => {
+                let x1 = l[0] - ox; let y1 = oy - l[1];
+                let x2 = l[2] - ox; let y2 = oy - l[3];
+                doc.line(x1, y1, x2, y2);
+            });
+            
+            doc.save('MakerStudio_Export.pdf');
+        }
+
+        // --- FONT LOADER for Text Studio ---
+        let globalFont = null;
+        if (THREE.FontLoader) {
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://unpkg.com/three@0.145.0/examples/fonts/helvetiker_bold.typeface.json', function(font) {
+                globalFont = font;
+                if(currentStudio === 'text') buildText3D();
+            });
+        }
+
+        function clearObject() {
+            while(currentObject.children.length > 0){ 
+                let child = currentObject.children[0];
+                if(child.geometry) child.geometry.dispose();
+                if(child.material) {
+                    if(Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                    else child.material.dispose();
+                }
+                currentObject.remove(child); 
+            }
+        }
+
+        // --- COMPARTMENT SPECIFIC LOGIC ---
+        function switchCompartment(compName) {
+            currentStudio = compName;
+            
+            // Update Active Nav Button
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            let navBtn = document.getElementById('nav-' + compName);
+            if(navBtn) navBtn.classList.add('active');
+
+            // Show proper UI panel
+            document.querySelectorAll('.compartment-ui').forEach(u => u.classList.add('hidden'));
+            let panel = document.getElementById('comp-' + compName);
+            if(panel) panel.classList.remove('hidden');
+
+            // Update Status Badge
+            const titles = {
+                'texture': 'AI TEXTURE CORE',
+                'litho': 'LITHOPHANE GENERATOR',
+                'box': 'PARAMETRIC BOX ENGINE',
+                'halftone': 'DOT ART MATRICES',
+                'text': '3D TYPOGRAPHY',
+                'mandala': 'PROCEDURAL PATTERNS',
+                'gcode': 'CNC VECTOR SIMULATOR',
+                'vase': 'POTTERY STUDIO',
+                'gear': 'MECHANICAL GEARS',
+                'globe': 'SPHERICAL LITHO',
+                'topo': 'TOPOGRAPHY MAP',
+                'voronoi': 'BIO-CELLULAR MESH',
+                'qrcode': '3D QR CODE MAKER',
+                'cookie': 'COOKIE CUTTER STUDIO',
+                'stand': 'PHONE STAND BUILDER',
+                'maze': 'PROCEDURAL MAZE',
+                'keychain': 'CUSTOM KEYCHAIN'
+            };
+            let statusEl = document.getElementById('studio-status');
+            if(statusEl) statusEl.innerText = titles[compName] || 'STUDIO ENGINE';
+
+            // Reset Camera smoothly
+            camera.position.set(0, 150, 400);
+            controls.target.set(0,0,0);
+
+            // Execute specific mock builders to showcase features
+            switch(compName) {
+                case 'texture': buildTextureMock(); break;
+                case 'litho': buildLitho(); break;
+                case 'box': buildBox(); break;
+                case 'halftone': buildHalftone(); break;
+                case 'text': buildText3D(); break;
+                case 'mandala': buildMandala(); break;
+                case 'gcode': buildGCode(); break;
+                case 'vase': buildVase(); break;
+                case 'gear': buildGear(); break;
+                case 'globe': buildGlobe(); break;
+                case 'topo': buildTopo(); break;
+                case 'voronoi': buildVoronoi(); break;
+                case 'qrcode': buildQR(); break;
+                case 'cookie': buildCookie(); break;
+                case 'stand': buildStand(); break;
+                case 'maze': buildMaze(); break;
+                case 'keychain': buildKeychain(); break;
+            }
+        }
+
+        // 1. Texture Generator
+        let texMesh;
+        function buildTextureMock() {
+            clearObject();
+            const geo = new THREE.SphereGeometry(80, 64, 64);
+            const colInput = document.getElementById('col-texture');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xffffff;
+            const mat = new THREE.MeshStandardMaterial({
+                color: col, // Distinct color to show it instantly
+                roughness: parseFloat(document.getElementById('tex-roughness').value) || 0.5,
+                metalness: 0.3
+            });
+            texMesh = new THREE.Mesh(geo, mat);
+            currentObject.add(texMesh);
+        }
+        function generateSimulatedTexture() {
+            if(texMesh) {
+                let btn = document.querySelector('#comp-texture .btn-primary');
+                let oldText = btn.innerHTML;
+                
+                if(!loadedImageCanvas) {
+                    alert("Nu ai nicio poză încărcată! Apasă pe butonul '+' (Upload File) din bara de unelte, alege o textură de pe calculator (ex: lemn, rocă, pânză), apoi apasă pe 'Generate Maps'.");
+                    return;
+                }
+
+                btn.innerHTML = '⚙️ <span data-lang-en>Processing Texture...</span><span data-lang-fr>Traitement Texture...</span>';
+                
+                setTimeout(() => {
+                    const roughInput = document.getElementById('tex-roughness');
+                    const normInput = document.getElementById('tex-normal');
+                    const roughness = roughInput ? parseFloat(roughInput.value) : 0.2;
+                    const bumpScale = normInput ? parseFloat(normInput.value)*0.05 : 0.05;
+                    const colInput = document.getElementById('col-texture');
+                    const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xffffff;
+                    
+                    const tCanvas = document.createElement('canvas');
+                    tCanvas.width = loadedImageCanvas.width; 
+                    tCanvas.height = loadedImageCanvas.height;
+                    const tCtx = tCanvas.getContext('2d');
+                    tCtx.drawImage(loadedImageCanvas, 0, 0);
+
+                    const colorTex = new THREE.CanvasTexture(tCanvas);
+                    colorTex.encoding = THREE.sRGBEncoding; // sRGBEncoding so colors look rich
+                    const bumpTex = new THREE.CanvasTexture(tCanvas);
+
+                    // Must fully replace material to avoid shader cache problems with bumpMap addition
+                    if(texMesh.material) texMesh.material.dispose();
+                    texMesh.material = new THREE.MeshStandardMaterial({
+                        color: col,
+                        map: colorTex, // Paints the uploaded image onto the sphere
+                        metalness: 0.2, // Lowered from 0.9 to look more photorealistic naturally
+                        roughness: roughness,
+                        bumpMap: bumpTex, // Evaluates 3D depth from image brightness
+                        bumpScale: bumpScale
+                    });
+                    
+                    gsap.fromTo(texMesh.scale, {x:0.1, y:0.1, z:0.1}, {x:1, y:1, z:1, duration:1, ease:"elastic.out(1, 0.3)"});
+                    btn.innerHTML = oldText;
+                }, 500);
+            }
+        }
+        function updateTextureMaterial() {
+            if(texMesh) {
+                let rVal = document.getElementById('tex-roughness');
+                if(rVal) texMesh.material.roughness = parseFloat(rVal.value);
+                
+                let normVal = document.getElementById('tex-normal');
+                if(normVal && texMesh.material.bumpMap) {
+                    const norm = parseFloat(normVal.value);
+                    texMesh.material.bumpScale = norm * 0.05;
+                } else if (normVal) {
+                    const norm = parseFloat(normVal.value);
+                    texMesh.scale.set(1 + norm*0.02, 1 + norm*0.02, 1 + norm*0.02);
+                }
+                texMesh.material.needsUpdate = true;
+            }
+        }
+
+        // 2. Lithophane
+        function buildLitho() {
+            clearObject();
+            const hasImage = loadedImageCanvas !== null;
+            const thick = parseFloat(document.getElementById('litho-thick').value) || 3.2;
+            const invert = document.getElementById('litho-inv') && document.getElementById('litho-inv').checked;
+            const resVal = parseInt(document.getElementById('litho-res') ? document.getElementById('litho-res').value : 2);
+            const contrast = parseFloat(document.getElementById('litho-cont') ? document.getElementById('litho-cont').value : 1.0);
+            const base = 0.5;
+
+            const segX = resVal * 100;
+            const segY = resVal * 75;
+            const geo = new THREE.PlaneGeometry(200, 150, segX, segY);
+            const pos = geo.attributes.position;
+            let imgData = null;
+            if(hasImage && loadedImageCanvas && loadedImageContext) {
+                imgData = loadedImageContext.getImageData(0, 0, loadedImageCanvas.width, loadedImageCanvas.height);
+            }
+
+            for(let i=0; i<pos.count; i++) {
+                let z = 0;
+                if(imgData) {
+                    const u = (pos.getX(i) / 200) + 0.5;
+                    const v = (pos.getY(i) / 150) + 0.5;
+                    let px = Math.floor(u * (loadedImageCanvas.width - 1));
+                    let py = Math.floor((1.0 - v) * (loadedImageCanvas.height - 1));
+                    
+                    let idx = (py * loadedImageCanvas.width + px) * 4;
+                    let brightness = (imgData.data[idx] + imgData.data[idx+1] + imgData.data[idx+2]) / 3 / 255; 
+                    brightness = Math.pow(brightness, contrast);
+                    const relief = invert ? brightness : (1.0 - Math.min(1.0, brightness));
+                    z = base + relief * thick; 
+                } else {
+                    z = Math.sin(pos.getX(i)*0.1) * Math.cos(pos.getY(i)*0.1) * thick;
+                    if(invert) z = -z;
+                }
+                pos.setZ(i, z);
+            }
+            geo.computeVertexNormals();
+
+            const colInput = document.getElementById('col-litho');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xffffff;
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, transmission: 0.9, opacity: 1, transparent: true });
+            const mesh = new THREE.Mesh(geo, mat);
+            currentObject.add(mesh);
+            
+            if(hasImage) {
+                controls.target.set(0,0,0);
+                camera.position.set(0, 50, 250);
+            }
+        }
+
+        // 3. Box Maker
+        function buildBox() {
+            clearObject();
+            const w = parseFloat(document.getElementById('box-w').value) || 100;
+            const h = parseFloat(document.getElementById('box-h').value) || 50;
+            const d = parseFloat(document.getElementById('box-d').value) || 80;
+            const t = parseFloat(document.getElementById('box-thick').value) || 3;
+
+            const colInput = document.getElementById('col-box');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xd97706;
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8 }); 
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+
+            function addPanel(pw, ph, pd, px, py, pz) {
+                const geo = new THREE.BoxGeometry(pw, ph, pd);
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(px, py, pz);
+                
+                const edges = new THREE.EdgesGeometry(geo);
+                const lines = new THREE.LineSegments(edges, edgeMat);
+                mesh.add(lines);
+                currentObject.add(mesh);
+            }
+
+            addPanel(w, t, d, 0, -h/2 + t/2, 0); // Bottom
+            addPanel(t, h - t, d, -w/2 + t/2, t/2, 0); // Left
+            addPanel(t, h - t, d, w/2 - t/2, t/2, 0); // Right
+            addPanel(w, h - t, t, 0, t/2, d/2 - t/2); // Front
+            addPanel(w, h - t, t, 0, t/2, -d/2 + t/2); // Back
+        }
+
+        // 4. Halftone
+        function buildHalftone() {
+            clearObject();
+            const hasImage = loadedImageCanvas !== null;
+            const maxSize = parseFloat(document.getElementById('half-size').value) || 5;
+            const grid = parseFloat(document.getElementById('half-grid') ? document.getElementById('half-grid').value : 2.0);
+            const zExtrude = parseFloat(document.getElementById('half-depth') ? document.getElementById('half-depth').value : 10);
+            const invert = document.getElementById('half-inv') && document.getElementById('half-inv').checked;
+            
+            const width = 200;
+            const height = 150;
+            const cols = Math.floor(width / grid);
+            const rows = Math.floor(height / grid);
+            const count = cols * rows;
+
+            const colInput = document.getElementById('col-halftone');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xffffff;
+
+            const geo = new THREE.CylinderGeometry(1, 1, 1, 12);
+            geo.rotateX(Math.PI / 2); // default face Z 
+            geo.translate(0, 0, 0.5); // anchor at Z=0 and stretch out
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.2 });
+            const instancedMesh = new THREE.InstancedMesh(geo, mat, count);
+
+            let dummy = new THREE.Object3D();
+            
+            let imgData = null;
+            if(hasImage && loadedImageCanvas && loadedImageContext) {
+                imgData = loadedImageContext.getImageData(0, 0, loadedImageCanvas.width, loadedImageCanvas.height);
+            }
+
+            let index = 0;
+            for(let y = 0; y < rows; y++) {
+                for(let x = 0; x < cols; x++) {
+                    const px = x * grid;
+                    const py = y * grid;
+                    
+                    let value = 1.0; 
+                    if(imgData) {
+                        const imgX = Math.floor((px / width) * loadedImageCanvas.width);
+                        const imgY = Math.floor((py / height) * loadedImageCanvas.height);
+                        let idx = (imgY * loadedImageCanvas.width + imgX) * 4;
+                        const brightness = (imgData.data[idx] + imgData.data[idx+1] + imgData.data[idx+2]) / 3 / 255;
+                        value = invert ? brightness : (1.0 - brightness); 
+                    } else {
+                        value = (Math.sin(px*0.1) * Math.cos(py*0.1) + 1) / 2;
+                        if(invert) value = 1.0 - value;
+                    }
+
+                    dummy.position.set(px - width/2, -(py - height/2), 0);
+                    let vScale = value * (maxSize / 2);
+                    if (vScale < 0.05) vScale = 0;
+                    const depthScale = vScale > 0 ? Math.max(0.2, value * zExtrude) : 0;
+                    
+                    dummy.scale.set(vScale, vScale, depthScale);
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(index++, dummy.matrix);
+                }
+            }
+            
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            currentObject.add(instancedMesh);
+            
+            if(hasImage) {
+                controls.target.set(0,0,0);
+                camera.position.set(0, 50, 250);
+            }
+        }
+
+        // 5. 3D Text
+        function buildText3D() {
+            clearObject();
+            let txtInp = document.getElementById('text-input');
+            const textStr = txtInp ? txtInp.value : 'MAKER 7';
+            const depth = parseFloat(document.getElementById('text-depth').value) || 10;
+            const bevel = parseFloat(document.getElementById('text-bevel').value) || 2;
+            
+            const colInput = document.getElementById('col-text');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x00f3ff;
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.8 });
+            
+            if(!globalFont) {
+                // Dacă fontul extern încă se descarcă de pe net, vom pune un pătrat albastru să zică "loading"
+                const geoMock = new THREE.BoxGeometry(20,20,20);
+                const mesh = new THREE.Mesh(geoMock, mat);
+                currentObject.add(mesh);
+                return;
+            }
+
+            // Real 3D Text Geometry
+            const geo = new THREE.TextGeometry(textStr || 'M', {
+                font: globalFont,
+                size: 25,
+                height: depth,
+                curveSegments: 12,
+                bevelEnabled: bevel > 0,
+                bevelThickness: bevel,
+                bevelSize: bevel * 0.2, // Bevel logic to avoid intersection inside the mesh
+                bevelOffset: 0,
+                bevelSegments: 3
+            });
+
+            geo.computeBoundingBox();
+            geo.translate(-0.5 * (geo.boundingBox.max.x - geo.boundingBox.min.x), 
+                          -0.5 * (geo.boundingBox.max.y - geo.boundingBox.min.y), 
+                          -0.5 * (geo.boundingBox.max.z - geo.boundingBox.min.z));
+
+            const mesh = new THREE.Mesh(geo, mat);
+            currentObject.add(mesh);
+        }
+
+        // 6. Mandala
+        function buildMandala() {
+            clearObject();
+            const sym = parseInt(document.getElementById('man-sym').value) || 8;
+            const layers = parseInt(document.getElementById('man-layers').value) || 5;
+            const radius = parseFloat(document.getElementById('man-radius').value) || 100;
+            
+            const activeShapes = [];
+            const ids = ['star', 'flower', 'circle', 'square', 'hexa', 'spiral'];
+            ids.forEach(id => {
+                let cb = document.getElementById('shp-' + id);
+                if(cb && cb.checked) activeShapes.push(id);
+            });
+            if(activeShapes.length === 0) activeShapes.push('star');
+
+            const colInput = document.getElementById('col-mandala');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xc026d3;
+
+            const mat = new THREE.LineBasicMaterial({ color: col, linewidth: 2 });
+            const group = new THREE.Group();
+
+            for(let l = 1; l <= layers; l++) {
+                const r = radius * (l / layers);
+                
+                activeShapes.forEach(shapeType => {
+                    if (shapeType === 'star' || shapeType === 'flower') {
+                        const points = [];
+                        const res = shapeType === 'flower' ? sym * 10 : sym * 2;
+                        for(let i = 0; i <= res; i++) {
+                            const angle = (i * Math.PI * 2) / res;
+                            let dist = r;
+                            if(shapeType === 'star') {
+                                dist = (i % 2 === 0) ? r : r * 0.4;
+                            } else if(shapeType === 'flower') {
+                                dist = r * (0.6 + 0.4 * Math.sin(sym * angle));
+                            }
+                            points.push(new THREE.Vector3(Math.cos(angle)*dist, Math.sin(angle)*dist, l*5));
+                        }
+                        const geo = new THREE.BufferGeometry().setFromPoints(points);
+                        group.add(new THREE.Line(geo, mat));
+                    } 
+                    else {
+                        let shapeGeo, isBuffer = false;
+                        if(shapeType === 'circle') shapeGeo = new THREE.CircleGeometry(r*0.25, 32);
+                        else if(shapeType === 'square') shapeGeo = new THREE.PlaneGeometry(r*0.4, r*0.4);
+                        else if(shapeType === 'hexa') shapeGeo = new THREE.CircleGeometry(r*0.3, 6);
+                        else if(shapeType === 'spiral') {
+                            const spPts = [];
+                            for(let st = 0; st <= 60; st++) {
+                                const stAng = st * 0.4;
+                                const stR = st * (r*0.35 / 60);
+                                spPts.push(new THREE.Vector3(Math.cos(stAng)*stR, Math.sin(stAng)*stR, 0));
+                            }
+                            shapeGeo = new THREE.BufferGeometry().setFromPoints(spPts);
+                            isBuffer = true;
+                        }
+
+                        const drawGeo = isBuffer ? shapeGeo : new THREE.EdgesGeometry(shapeGeo);
+                        
+                        for(let i = 0; i < sym; i++) {
+                            const angle = (i * Math.PI * 2) / sym;
+                            const mesh = isBuffer ? new THREE.Line(drawGeo, mat) : new THREE.LineSegments(drawGeo, mat);
+                            mesh.position.set(Math.cos(angle) * r * 0.75, Math.sin(angle) * r * 0.75, l*5);
+                            if (shapeType === 'square' || shapeType === 'hexa') mesh.rotation.z = angle;
+                            if (shapeType === 'spiral') mesh.rotation.z = angle + Math.PI; 
+                            group.add(mesh);
+                        }
+                        
+                        if(shapeType !== 'spiral' && shapeType !== 'hexa') {
+                            const ringPts = new THREE.Path().absarc(0,0, r * 0.75, 0, Math.PI*2).getPoints(64);
+                            const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+                            const ring = new THREE.Line(ringGeo, mat);
+                            ring.position.z = l*5;
+                            group.add(ring);
+                        }
+                    }
+                });
+            }
+            group.rotation.x = -Math.PI / 4;
+            currentObject.add(group);
+        }
+
+        // 8. Vase / Pottery
+        function buildVase() {
+            clearObject();
+            const pointsCount = 50;
+            const points = [];
+            const height = parseFloat(document.getElementById('vase-h') ? document.getElementById('vase-h').value : 100);
+            const base = parseFloat(document.getElementById('vase-b') ? document.getElementById('vase-b').value : 30);
+            const neck = parseFloat(document.getElementById('vase-n') ? document.getElementById('vase-n').value : 15);
+            const belly = parseFloat(document.getElementById('vase-m') ? document.getElementById('vase-m').value : 45);
+            const res = parseInt(document.getElementById('vase-res') ? document.getElementById('vase-res').value : 32);
+
+            const colInput = document.getElementById('col-vase');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x14b8a6;
+
+            for (let i = 0; i <= pointsCount; i++) {
+                const t = i / pointsCount;
+                const py = t * height - height/2; 
+                let px = 0;
+                if(t < 0.2) {
+                    px = base + (belly - base) * (t/0.2); 
+                } else if(t < 0.8) {
+                    const st = (t - 0.2) / 0.6;
+                    px = neck + (belly - neck) * (0.5 + 0.5 * Math.cos(st * Math.PI));
+                } else {
+                    const st = (t - 0.8) / 0.2;
+                    px = neck + (base * 0.5 - neck) * (st * st);
+                }
+                points.push(new THREE.Vector2(px, py));
+            }
+            const geo = new THREE.LatheGeometry(points, res);
+            geo.rotateX(Math.PI / 2); 
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.1, side: THREE.DoubleSide });
+            currentObject.add(new THREE.Mesh(geo, mat));
+        }
+
+        // 9. Mechanical Gear
+        function buildGear() {
+            clearObject();
+            const teeth = parseInt(document.getElementById('gear-t') ? document.getElementById('gear-t').value : 20);
+            const radius = parseFloat(document.getElementById('gear-r') ? document.getElementById('gear-r').value : 50);
+            const hole = parseFloat(document.getElementById('gear-h') ? document.getElementById('gear-h').value : 10);
+            const depth = parseFloat(document.getElementById('gear-d') ? document.getElementById('gear-d').value : 10);
+            
+            const colInput = document.getElementById('col-gear');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x64748b;
+
+            const shape = new THREE.Shape();
+            const step = (Math.PI * 2) / teeth;
+            const toothDepth = radius * 0.15; 
+            
+            for(let i=0; i<teeth; i++) {
+                const angle = i * step;
+                
+                const a1 = angle + step*0.1;
+                const a2 = angle + step*0.4;
+                const a3 = angle + step*0.6;
+                const a4 = angle + step*0.9;
+
+                if (i===0) shape.moveTo(Math.cos(a1)*(radius), Math.sin(a1)*(radius));
+                else shape.lineTo(Math.cos(a1)*(radius), Math.sin(a1)*(radius));
+                
+                shape.lineTo(Math.cos(a2)*(radius), Math.sin(a2)*(radius));
+                shape.lineTo(Math.cos(a3)*(radius-toothDepth), Math.sin(a3)*(radius-toothDepth));
+                shape.lineTo(Math.cos(a4)*(radius-toothDepth), Math.sin(a4)*(radius-toothDepth));
+            }
+            shape.closePath();
+
+            if(hole > 0) {
+                const holePath = new THREE.Path();
+                holePath.absarc(0, 0, hole, 0, Math.PI * 2, false);
+                shape.holes.push(holePath);
+            }
+
+            const extrudeSettings = { depth: depth, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.5, bevelThickness: 0.5 };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.translate(0, 0, -depth/2);
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, metalness: 0.6 });
+            const mesh = new THREE.Mesh(geo, mat);
+            currentObject.add(mesh);
+        }
+
+        // 10. Globe Lithophane
+        function buildGlobe() {
+            clearObject();
+            const radius = parseFloat(document.getElementById('globe-r') ? document.getElementById('globe-r').value : 60);
+            const thick = parseFloat(document.getElementById('globe-t') ? document.getElementById('globe-t').value : 4);
+            const res = parseInt(document.getElementById('globe-res') ? document.getElementById('globe-res').value : 128); 
+            const invert = document.getElementById('globe-inv') && document.getElementById('globe-inv').checked;
+            
+            const geo = new THREE.SphereGeometry(radius, res, res);
+            const pos = geo.attributes.position;
+            const uvs = geo.attributes.uv;
+            
+            let imgData = null;
+            const hasImage = loadedImageCanvas !== null;
+            if(hasImage && loadedImageCanvas && loadedImageContext) {
+                imgData = loadedImageContext.getImageData(0, 0, loadedImageCanvas.width, loadedImageCanvas.height);
+            }
+
+            for(let i=0; i<pos.count; i++) {
+                let rFinal = radius;
+                if(imgData) {
+                    const u = uvs.getX(i);
+                    const v = uvs.getY(i);
+                    let px = Math.floor(u * (loadedImageCanvas.width - 1));
+                    let py = Math.floor(v * (loadedImageCanvas.height - 1)); 
+                    let idx = (py * loadedImageCanvas.width + px) * 4;
+                    let brightness = (imgData.data[idx] + imgData.data[idx+1] + imgData.data[idx+2]) / 3 / 255; 
+                    const relief = invert ? brightness : (1.0 - brightness);
+                    rFinal = radius + (relief * thick); 
+                } else {
+                    rFinal = radius + Math.sin(uvs.getX(i)*10)*Math.cos(uvs.getY(i)*10)*thick;
+                }
+                const vec = new THREE.Vector3().fromBufferAttribute(pos, i).normalize();
+                pos.setXYZ(i, vec.x * rFinal, vec.y * rFinal, vec.z * rFinal);
+            }
+            geo.computeVertexNormals();
+
+            const colInput = document.getElementById('col-globe');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xffffff;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, transmission: 0.8, opacity:1, transparent: true });
+            const mesh = new THREE.Mesh(geo, mat);
+            currentObject.add(mesh);
+        }
+
+        // 11. Topographic Map
+        function buildTopo() {
+            clearObject();
+            const thick = parseFloat(document.getElementById('topo-t') ? document.getElementById('topo-t').value : 20);
+            const steps = parseInt(document.getElementById('topo-s') ? document.getElementById('topo-s').value : 10);
+            const invert = document.getElementById('topo-inv') && document.getElementById('topo-inv').checked;
+            const resVal = parseInt(document.getElementById('topo-res') ? document.getElementById('topo-res').value : 2);
+            
+            const segX = resVal * 100;
+            const segY = resVal * 75;
+            const geo = new THREE.PlaneGeometry(200, 150, segX, segY);
+            const pos = geo.attributes.position;
+            
+            let imgData = null;
+            const hasImage = loadedImageCanvas !== null;
+            if(hasImage && loadedImageCanvas && loadedImageContext) {
+                imgData = loadedImageContext.getImageData(0, 0, loadedImageCanvas.width, loadedImageCanvas.height);
+            }
+
+            for(let i=0; i<pos.count; i++) {
+                let z = 0;
+                if(imgData) {
+                    const u = (pos.getX(i) / 200) + 0.5;
+                    const v = (pos.getY(i) / 150) + 0.5;
+                    let px = Math.floor(u * (loadedImageCanvas.width - 1));
+                    let py = Math.floor((1.0 - v) * (loadedImageCanvas.height - 1));
+                    
+                    let idx = (py * loadedImageCanvas.width + px) * 4;
+                    let brightness = (imgData.data[idx] + imgData.data[idx+1] + imgData.data[idx+2]) / 3 / 255; 
+                    let relief = invert ? brightness : (1.0 - brightness);
+                    
+                    relief = Math.floor(relief * steps) / (steps - 1);
+                    z = relief * thick; 
+                } else {
+                    let noise = (Math.sin(pos.getX(i)*0.05) * Math.cos(pos.getY(i)*0.05) + 1)/2;
+                    z = Math.floor(noise * steps) / (steps - 1) * thick;
+                }
+                pos.setZ(i, z);
+            }
+            geo.computeVertexNormals();
+
+            const colInput = document.getElementById('col-topo');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x8b5cf6;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.9, flatShading: true });
+            currentObject.add(new THREE.Mesh(geo, mat));
+        }
+
+        // 12. Voronoi Bio-Mesh
+        function buildVoronoi() {
+            clearObject();
+            const cols = parseInt(document.getElementById('voro-c') ? document.getElementById('voro-c').value : 8);
+            const noise = parseFloat(document.getElementById('voro-n') ? document.getElementById('voro-n').value : 0.5);
+            const thick = parseFloat(document.getElementById('voro-t') ? document.getElementById('voro-t').value : 5);
+            
+            const colInput = document.getElementById('col-voronoi');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xe2e8f0;
+
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
+            
+            const hexOuterRadius = 200 / cols / 1.732;
+            const hexW = hexOuterRadius * 1.732; 
+            const hexH = hexOuterRadius * 1.5; 
+            
+            const rows = Math.floor(150 / hexH) + 2; 
+            const count = (rows + 1) * (cols + 1);
+            
+            const rOuter = hexOuterRadius * 1.05; 
+            const rInner = Math.max(0.1, hexOuterRadius - thick); 
+            
+            const activeShapes = [];
+            if(document.getElementById('v-shp-hex') && document.getElementById('v-shp-hex').checked) activeShapes.push({sides: 6, offset: Math.PI/6});
+            if(document.getElementById('v-shp-sq') && document.getElementById('v-shp-sq').checked) activeShapes.push({sides: 4, offset: Math.PI/4});
+            if(document.getElementById('v-shp-tri') && document.getElementById('v-shp-tri').checked) activeShapes.push({sides: 3, offset: Math.PI/2});
+            if(document.getElementById('v-shp-circ') && document.getElementById('v-shp-circ').checked) activeShapes.push({sides: 32, offset: 0});
+            if(activeShapes.length === 0) activeShapes.push({sides: 6, offset: Math.PI/6});
+
+            const meshes = [];
+            const matrices = [];
+
+            activeShapes.forEach((shapeConfig) => {
+                const shape = new THREE.Shape();
+                for(let i=0; i<shapeConfig.sides; i++) {
+                    const a = (i * Math.PI * 2 / shapeConfig.sides) + shapeConfig.offset;
+                    if(i===0) shape.moveTo(Math.cos(a)*rOuter, Math.sin(a)*rOuter);
+                    else shape.lineTo(Math.cos(a)*rOuter, Math.sin(a)*rOuter);
+                }
+                if(rInner > 0) {
+                    const hole = new THREE.Path();
+                    for(let i=shapeConfig.sides-1; i>=0; i--) {
+                        const a = (i * Math.PI * 2 / shapeConfig.sides) + shapeConfig.offset;
+                        if(i===shapeConfig.sides-1) hole.moveTo(Math.cos(a)*rInner, Math.sin(a)*rInner);
+                        else hole.lineTo(Math.cos(a)*rInner, Math.sin(a)*rInner);
+                    }
+                    shape.holes.push(hole);
+                }
+                
+                const geo = new THREE.ExtrudeGeometry(shape, {
+                    depth: thick * 2,
+                    bevelEnabled: true,
+                    bevelSegments: 1,
+                    steps: 1,
+                    bevelSize: thick * 0.1,
+                    bevelThickness: thick * 0.1
+                });
+                geo.translate(0, 0, -thick); // center
+
+                const instancedMesh = new THREE.InstancedMesh(geo, mat, count);
+                meshes.push(instancedMesh);
+                matrices.push([]);
+                currentObject.add(instancedMesh);
+            });
+
+            let dummy = new THREE.Object3D();
+            
+            let idx = 0;
+            const offsetX = (cols * hexW) / 2;
+            const offsetY = (rows * hexH) / 2;
+
+            for(let r=0; r<=rows; r++) {
+                for(let c=0; c<=cols; c++) {
+                    let cx = c * hexW + ((r%2)*hexW/2) - offsetX;
+                    let cy = r * hexH - offsetY;
+                    
+                    let nx = (Math.random()-0.5) * hexW * noise;
+                    let ny = (Math.random()-0.5) * hexH * noise;
+                    let nz = (Math.random()-0.5) * thick * noise;
+                    
+                    dummy.position.set(cx + nx, cy + ny, nz);
+                    
+                    let s = 1.0 - (Math.random() * 0.3 * noise); 
+                    dummy.scale.set(s, s, s);
+                    dummy.rotation.z = (Math.random()-0.5) * noise * 0.5;
+                    
+                    dummy.updateMatrix();
+                    
+                    const shapeIndex = Math.floor(Math.random() * activeShapes.length);
+                    matrices[shapeIndex].push(dummy.matrix.clone());
+                }
+            }
+            
+            meshes.forEach((mesh, index) => {
+                const mats = matrices[index];
+                mesh.count = mats.length;
+                if(mesh.count > 0) {
+                    mats.forEach((m, i) => {
+                        mesh.setMatrixAt(i, m);
+                    });
+                    mesh.instanceMatrix.needsUpdate = true;
+                }
+            });
+            
+            currentObject.add(group);
+        }
+
+        // 7. G-Code Visualizer
+        function buildGCode() {
+            clearObject();
+
+            const colInput = document.getElementById('col-gcode');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x10b981;
+
+            const matCuts = new THREE.LineBasicMaterial({ color: col, linewidth: 1 });
+            const matRapid = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 1, transparent: true, opacity: 0.3 });
+
+            const pointsCuts = [];
+            const pointsRapid = [];
+            
+            let lastX = 0, lastY = 0, lastZ = 50;
+            for(let i=0; i<200; i++) {
+                const angle = i * 0.2;
+                const r = i * 0.5;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                const z = (i % 20 === 0) ? 20 : 0; 
+
+                if (z > 0) {
+                    pointsRapid.push(new THREE.Vector3(lastX, lastY, lastZ));
+                    pointsRapid.push(new THREE.Vector3(x, y, z));
+                } else {
+                    pointsCuts.push(new THREE.Vector3(lastX, lastY, lastZ));
+                    pointsCuts.push(new THREE.Vector3(x, y, z));
+                }
+                lastX = x; lastY = y; lastZ = z;
+            }
+
+            const geoCuts = new THREE.BufferGeometry().setFromPoints(pointsCuts);
+            const geoRapid = new THREE.BufferGeometry().setFromPoints(pointsRapid);
+            
+            currentObject.add(new THREE.LineSegments(geoCuts, matCuts));
+            currentObject.add(new THREE.LineSegments(geoRapid, matRapid));
+
+            currentObject.rotation.x = -Math.PI / 2;
+        }
+
+        // 13. 3D QR Code Maker
+        function buildQR() {
+            clearObject();
+            const text = document.getElementById('qr-input') ? document.getElementById('qr-input').value : 'Maker7';
+            const baseThick = parseFloat(document.getElementById('qr-base') ? document.getElementById('qr-base').value : 2.0);
+            const qrThick = parseFloat(document.getElementById('qr-thick') ? document.getElementById('qr-thick').value : 1.0);
+            
+            const colBaseInput = document.getElementById('col-qr-base');
+            const colBase = colBaseInput ? parseInt(colBaseInput.value.replace('#', '0x')) : 0xffffff;
+            const colDotInput = document.getElementById('col-qr-dot');
+            const colDot = colDotInput ? parseInt(colDotInput.value.replace('#', '0x')) : 0x000000;
+
+            const group = new THREE.Group();
+            
+            let qr;
+            try {
+                qr = qrcode(0, 'M');
+                qr.addData(text || ' ');
+                qr.make();
+            } catch(e) {
+                qr = qrcode(20, 'M');
+                qr.addData(text || ' ');
+                qr.make();
+            }
+            
+            const moduleCount = qr.getModuleCount();
+            
+            // Add Quiet Zone (margin) of 4 modules 
+            const grid = moduleCount + 8; 
+            const size = 100;
+            const cellSize = size / grid;
+
+            // Base plate
+            const baseGeo = new THREE.BoxGeometry(size, size, baseThick);
+            const baseMat = new THREE.MeshStandardMaterial({ color: colBase, roughness: 0.8 });
+            const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+            baseMesh.position.z = -baseThick / 2;
+            group.add(baseMesh);
+
+            const dotGeo = new THREE.BoxGeometry(cellSize, cellSize, qrThick);
+            const dotMat = new THREE.MeshStandardMaterial({ color: colDot, roughness: 0.5 });
+            
+            const instancedDots = new THREE.InstancedMesh(dotGeo, dotMat, moduleCount * moduleCount);
+            let dummy = new THREE.Object3D();
+            let idx = 0;
+
+            for(let r=0; r<moduleCount; r++) {
+                for(let c=0; c<moduleCount; c++) {
+                    if (qr.isDark(r, c)) {
+                        let x = c + 4;
+                        let y = r + 4;
+                        dummy.position.set((x - grid/2 + 0.5) * cellSize, -(y - grid/2 + 0.5) * cellSize, qrThick/2);
+                        dummy.updateMatrix();
+                        instancedDots.setMatrixAt(idx++, dummy.matrix);
+                    }
+                }
+            }
+            instancedDots.count = idx;
+            instancedDots.instanceMatrix.needsUpdate = true;
+            group.add(instancedDots);
+            
+            currentObject.add(group);
+        }
+
+        // 14. Cookie Cutter
+        function buildCookie() {
+            clearObject();
+            const shapeType = document.getElementById('cookie-shape') ? document.getElementById('cookie-shape').value : 'heart';
+            const depth = parseFloat(document.getElementById('cookie-depth') ? document.getElementById('cookie-depth').value : 15);
+            const width = parseFloat(document.getElementById('cookie-width') ? document.getElementById('cookie-width').value : 5);
+            
+            const colInput = document.getElementById('col-cookie');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xec4899;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, metalness: 0.1, side: THREE.DoubleSide });
+
+            const baseShape = new THREE.Shape();
+            const R = 40;
+            
+            if(shapeType === 'heart') {
+                const x = 0, y = -15;
+                baseShape.moveTo(x + 25, y + 25);
+                baseShape.bezierCurveTo(x + 25, y + 25, x + 20, y, x, y);
+                baseShape.bezierCurveTo(x - 30, y, x - 30, y + 35, x - 30, y + 35);
+                baseShape.bezierCurveTo(x - 30, y + 55, x - 10, y + 77, x + 25, y + 95);
+                baseShape.bezierCurveTo(x + 60, y + 77, x + 80, y + 55, x + 80, y + 35);
+                baseShape.bezierCurveTo(x + 80, y + 35, x + 80, y, x + 50, y);
+                baseShape.bezierCurveTo(x + 35, y, x + 25, y + 25, x + 25, y + 25);
+            } else if(shapeType === 'star') {
+                for(let i=0; i<10; i++) {
+                    let r = i%2===0 ? R : R*0.4;
+                    let a = (i * Math.PI*2)/10;
+                    if(i===0) baseShape.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+                    else baseShape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+                }
+            } else if(shapeType === 'circle') {
+                baseShape.absarc(0, 0, R, 0, Math.PI*2, false);
+            } else if(shapeType === 'rect') {
+                const s = R * 0.8;
+                baseShape.moveTo(-s, s);
+                baseShape.lineTo(s, s);
+                baseShape.lineTo(s, -s);
+                baseShape.lineTo(-s, -s);
+                baseShape.lineTo(-s, s);
+            } else if(shapeType === 'hex') {
+                for(let i=0; i<6; i++) {
+                    let a = (i * Math.PI*2)/6;
+                    if(i===0) baseShape.moveTo(Math.cos(a)*R, Math.sin(a)*R);
+                    else baseShape.lineTo(Math.cos(a)*R, Math.sin(a)*R);
+                }
+            } else if(shapeType === 'tri') {
+                for(let i=0; i<3; i++) {
+                    let a = (i * Math.PI*2)/3 + Math.PI/2;
+                    if(i===0) baseShape.moveTo(Math.cos(a)*R, Math.sin(a)*R);
+                    else baseShape.lineTo(Math.cos(a)*R, Math.sin(a)*R);
+                }
+            } else if(shapeType === 'pent') {
+                for(let i=0; i<5; i++) {
+                    let a = (i * Math.PI*2)/5 + Math.PI/2;
+                    if(i===0) baseShape.moveTo(Math.cos(a)*R, Math.sin(a)*R);
+                    else baseShape.lineTo(Math.cos(a)*R, Math.sin(a)*R);
+                }
+            } else if(shapeType === 'flower') {
+                for(let i=0; i<=60; i++) {
+                    let a = (i * Math.PI*2)/60;
+                    let r = R * (0.8 + 0.2 * Math.sin(a * 6));
+                    if(i===0) baseShape.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+                    else baseShape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+                }
+            } else if(shapeType === 'cloud') {
+                for(let i=0; i<=60; i++) {
+                    let a = (i * Math.PI*2)/60;
+                    let r = R * (0.7 + 0.15 * Math.sin(a * 5) + 0.1 * Math.sin(a * 2));
+                    if(i===0) baseShape.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+                    else baseShape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+                }
+            } else if(shapeType === 'drop') {
+                baseShape.moveTo(0, R); // tip
+                baseShape.bezierCurveTo(R*0.5, R*0.5, R*0.8, 0, R*0.8, -R*0.3); // right side
+                baseShape.absarc(0, -R*0.3, R*0.8, 0, Math.PI, true); // bottom circle
+                baseShape.bezierCurveTo(-R*0.8, 0, -R*0.5, R*0.5, 0, R); // left side
+            }
+            
+            function createOutlineMesh(shapeToUse, shrinkOuter, shrinkInner, h) {
+                const s = new THREE.Shape(shapeToUse.getPoints());
+                const points = shapeToUse.getPoints();
+                const holePath = new THREE.Path();
+                let center = new THREE.Vector2();
+                points.forEach(p => center.add(p));
+                center.divideScalar(points.length);
+                
+                for(let i=points.length-1; i>=0; i--) {
+                    let p = points[i].clone().sub(center).multiplyScalar(shrinkInner).add(center);
+                    if(i===points.length-1) holePath.moveTo(p.x, p.y);
+                    else holePath.lineTo(p.x, p.y);
+                }
+                const outerShape = new THREE.Shape();
+                for(let i=0; i<points.length; i++) {
+                    let p = points[i].clone().sub(center).multiplyScalar(shrinkOuter).add(center);
+                    if(i===0) outerShape.moveTo(p.x, p.y);
+                    else outerShape.lineTo(p.x, p.y);
+                }
+                outerShape.holes.push(holePath);
+                const geo = new THREE.ExtrudeGeometry(outerShape, { depth: h, bevelEnabled: false });
+                geo.translate(-center.x, -center.y, -h/2);
+                return new THREE.Mesh(geo, mat);
+            }
+
+            const group = new THREE.Group();
+            let handle = createOutlineMesh(baseShape, 1.0 + width/100, 1.0 - width/100, 3);
+            handle.position.z = depth/2;
+            group.add(handle);
+            
+            let blade = createOutlineMesh(baseShape, 1.0 + 0.02, 1.0 - 0.02, depth);
+            group.add(blade);
+
+            if(shapeType==='star' || shapeType==='circle') group.rotation.x = -Math.PI/2;
+            currentObject.add(group);
+        }
+
+        // 15. Phone Stand
+        function buildStand() {
+            clearObject();
+            const angleDeg = parseFloat(document.getElementById('stand-angle') ? document.getElementById('stand-angle').value : 60);
+            const pt = parseFloat(document.getElementById('stand-thick') ? document.getElementById('stand-thick').value : 12);
+            const w = parseFloat(document.getElementById('stand-width') ? document.getElementById('stand-width').value : 60);
+            
+            const colInput = document.getElementById('col-stand');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0x3b82f6;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
+
+            const shape = new THREE.Shape();
+            const a = angleDeg * Math.PI / 180;
+            const backH = 80;
+            const lipH = 15;
+            const baseLen = 70;
+            const th = 4;
+
+            shape.moveTo(0, 0); 
+            shape.lineTo(baseLen, 0); 
+            shape.lineTo(baseLen, th);
+            shape.lineTo(th + pt/Math.sin(a), th); 
+            shape.lineTo(th + pt/Math.sin(a) + Math.cos(a)*lipH, th + Math.sin(a)*lipH); 
+            shape.lineTo(th + Math.cos(a)*lipH, th + Math.sin(a)*lipH + pt*Math.cos(a)); 
+            
+            shape.lineTo(th + Math.cos(a)*backH, th + Math.sin(a)*backH);
+            shape.lineTo(Math.cos(a)*backH, th + Math.sin(a)*backH);
+            shape.lineTo(0, th);
+            shape.lineTo(0,0);
+
+            const extrudeSettings = { depth: w, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 1, bevelThickness: 1 };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.translate(-baseLen/2, -backH/2, -w/2);
+
+            const mesh = new THREE.Mesh(geo, mat);
+            currentObject.add(mesh);
+        }
+
+        // 16. Maze Generator
+        function buildMaze() {
+            clearObject();
+            const size = parseInt(document.getElementById('maze-cols') ? document.getElementById('maze-cols').value : 12);
+            const wallH = parseFloat(document.getElementById('maze-height') ? document.getElementById('maze-height').value : 10);
+            
+            const colInput = document.getElementById('col-maze');
+            const col = colInput ? parseInt(colInput.value.replace('#', '0x')) : 0xf59e0b;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8 });
+
+            const group = new THREE.Group();
+            const cellSize = 100 / size;
+            const thick = 2; // wall thickness
+
+            const floorGeo = new THREE.BoxGeometry(100 + thick, 100 + thick, 2);
+            const floorMesh = new THREE.Mesh(floorGeo, mat);
+            floorMesh.position.z = -1;
+            group.add(floorMesh);
+
+            const wallGeoH = new THREE.BoxGeometry(cellSize + thick, thick, wallH);
+            const wallGeoV = new THREE.BoxGeometry(thick, cellSize + thick, wallH);
+            
+            const instH = new THREE.InstancedMesh(wallGeoH, mat, size * (size + 1));
+            const instV = new THREE.InstancedMesh(wallGeoV, mat, (size + 1) * size);
+            
+            let dummy = new THREE.Object3D();
+            let hIdx=0, vIdx=0;
+
+            for(let y=0; y<=size; y++) {
+                for(let x=0; x<=size; x++) {
+                    if (x < size) {
+                        let draw = (y===0 || y===size) || Math.random() > 0.5;
+                        if(y===0 && x===1) draw=false; // entrance
+                        if(draw) {
+                            dummy.position.set((x - size/2 + 0.5)*cellSize, (size/2 - y)*cellSize, wallH/2);
+                            dummy.updateMatrix();
+                            instH.setMatrixAt(hIdx++, dummy.matrix);
+                        }
+                    }
+                    if (y < size) {
+                        let draw = (x===0 || x===size) || Math.random() > 0.5;
+                        if(x===size && y===size-2) draw=false; // exit
+                        if(draw) {
+                            dummy.position.set((x - size/2)*cellSize, (size/2 - y - 0.5)*cellSize, wallH/2);
+                            dummy.updateMatrix();
+                            instV.setMatrixAt(vIdx++, dummy.matrix);
+                        }
+                    }
+                }
+            }
+            instH.count = hIdx; instH.instanceMatrix.needsUpdate = true; group.add(instH);
+            instV.count = vIdx; instV.instanceMatrix.needsUpdate = true; group.add(instV);
+            
+            group.rotation.x = -Math.PI / 2;
+            currentObject.add(group);
+        }
+
+        // 17. Keychain Maker
+        function buildKeychain() {
+            clearObject();
+            const textStr = document.getElementById('kc-input') ? document.getElementById('kc-input').value : 'Maker 7';
+            const thick = parseFloat(document.getElementById('kc-thick') ? document.getElementById('kc-thick').value : 3.0);
+            const fontSize = parseFloat(document.getElementById('kc-font') ? document.getElementById('kc-font').value : 16);
+            const textDepth = parseFloat(document.getElementById('kc-depth') ? document.getElementById('kc-depth').value : 2.0);
+            const pad = parseFloat(document.getElementById('kc-pad') ? document.getElementById('kc-pad').value : 10);
+            const ringHole = parseFloat(document.getElementById('kc-ring') ? document.getElementById('kc-ring').value : 3.5);
+            const shapeType = document.getElementById('kc-shape') ? document.getElementById('kc-shape').value : 'pill';
+            
+            const colBaseInput = document.getElementById('col-kc-base');
+            const colBase = colBaseInput ? parseInt(colBaseInput.value.replace('#', '0x')) : 0xe2e8f0;
+            const colTextInput = document.getElementById('col-kc-text');
+            const colText = colTextInput ? parseInt(colTextInput.value.replace('#', '0x')) : 0xef4444;
+
+            const group = new THREE.Group();
+            const matBase = new THREE.MeshStandardMaterial({ color: colBase, roughness: 0.6 });
+            const matText = new THREE.MeshStandardMaterial({ color: colText, roughness: 0.2, metalness: 0.5 });
+            
+            if(!globalFont) {
+                const mk = new THREE.Mesh(new THREE.BoxGeometry(40,20,thick), matBase);
+                currentObject.add(mk);
+                return;
+            }
+
+            const tH = Math.max(0.1, Math.abs(textDepth)); 
+            const textGeo = new THREE.TextGeometry(textStr || ' ', { font: globalFont, size: fontSize, height: tH, curveSegments: 6 });
+            textGeo.computeBoundingBox();
+            const tw = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+            const th = textGeo.boundingBox.max.y - textGeo.boundingBox.min.y;
+            textGeo.translate(-tw/2, -th/2, 0); 
+            const textMesh = new THREE.Mesh(textGeo, matText);
+            
+            if (textDepth < 0) {
+                textMesh.position.z = thick + textDepth + 0.05; // dual-color inlay representation
+            } else {
+                textMesh.position.z = thick; // extrude
+            }
+            group.add(textMesh);
+
+            const w = tw + pad*2;
+            const h = Math.max(20, th + pad*2);
+            let ringX = 0, ringY = 0;
+            const extrudeSettings = { depth: thick, bevelEnabled: true, bevelSize: 0.5, bevelThickness: 0.5, bevelSegments: 2 };
+            
+            const shape = new THREE.Shape();
+            if (shapeType === 'pill') {
+                const r = h/2; 
+                shape.moveTo(-w/2, h/2);
+                shape.lineTo(w/2, h/2);
+                shape.absarc(w/2, 0, r, Math.PI/2, -Math.PI/2, true);
+                shape.lineTo(-w/2, -h/2);
+                shape.absarc(-w/2, 0, r, -Math.PI/2, Math.PI/2, true);
+                ringX = -w/2 - r; 
+                ringY = 0;
+            } else if (shapeType === 'rect') {
+                shape.moveTo(-w/2, h/2);
+                shape.lineTo(w/2, h/2);
+                shape.lineTo(w/2, -h/2);
+                shape.lineTo(-w/2, -h/2);
+                ringX = -w/2;
+                ringY = 0;
+            } else if (shapeType === 'circle') {
+                const r = Math.max(w, h)/2;
+                shape.absarc(0, 0, r, 0, Math.PI*2, false);
+                ringX = -r;
+                ringY = 0;
+            } else if (shapeType === 'diamond') {
+                const dw = w/2 + pad;
+                const dh = h/2 + pad;
+                shape.moveTo(0, dh);
+                shape.lineTo(dw, 0);
+                shape.lineTo(0, -dh);
+                shape.lineTo(-dw, 0);
+                ringX = -dw;
+                ringY = 0;
+            }
+            
+            const baseGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const baseMesh = new THREE.Mesh(baseGeo, matBase);
+            group.add(baseMesh);
+
+            const borderThick = Math.max(3, pad * 0.4); 
+            const ringOuter = ringHole + borderThick;
+            const ringShape = new THREE.Shape();
+            ringShape.absarc(0, 0, ringOuter, 0, Math.PI*2, false);
+            const hole = new THREE.Path();
+            hole.absarc(0, 0, ringHole, 0, Math.PI*2, false);
+            ringShape.holes.push(hole);
+            
+            const ringGeo = new THREE.ExtrudeGeometry(ringShape, extrudeSettings);
+            const ringMesh = new THREE.Mesh(ringGeo, matBase);
+            
+            ringMesh.position.set(ringX - ringOuter + 2, ringY, 0);
+            
+            group.add(ringMesh);
+
+            currentObject.add(group);
+        }
+
+        // --- RENDER LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            if (currentObject && currentStudio !== 'gcode' && currentStudio !== 'halftone' && currentStudio !== 'box') {
+                currentObject.rotation.y += 0.002;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Very robust resizing fallback
+        function handleResize() {
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            if(w > 0 && h > 0) {
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h, false);
+            } else {
+                // If CSS fails, fallback to window minus sidebar
+                const backupW = window.innerWidth > 400 ? window.innerWidth - 400 : window.innerWidth;
+                const backupH = window.innerHeight;
+                camera.aspect = backupW / backupH;
+                camera.updateProjectionMatrix();
+                renderer.setSize(backupW, backupH, false);
+            }
+        }
+        window.addEventListener('resize', handleResize);
+
+        // Bootstrap on load
+        window.addEventListener('DOMContentLoaded', () => {
+            handleResize(); // Force initial dimension read safely
+            switchCompartment('texture');
+            animate();
+        });
+
+    </script>
+</body>
+</html>

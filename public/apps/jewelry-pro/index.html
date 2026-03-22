@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewelry Maker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { gold: '#FFD700', silver: '#C0C0C0', rosegold: '#B76E79', darkbg: '#1a1a1a', panelbg: '#242424' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: white; font-family: ui-sans-serif, system-ui, sans-serif; }
+        #canvas-container { position: absolute; top: 64px; left: 256px; right: 288px; bottom: 0; background: linear-gradient(to bottom, #2a2a2a, #111111); }
+        .sidebar { position: absolute; top: 64px; bottom: 0; background: #242424; border-color: #333; z-index: 10; padding: 24px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        #left-sidebar { left: 0; width: 280px; border-right-width: 1px; overflow-y: auto; }
+        #right-sidebar { right: 0; width: 288px; border-left-width: 1px; overflow-y: auto; }
+        #topbar { position: absolute; top: 0; left: 0; right: 0; height: 64px; background: #1a1a1a; border-bottom: 1px solid #333; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #FFD700; }
+        .cat-btn { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: 0.3s; border: 1px solid transparent; width: 100%; text-align: left;}
+        .cat-btn.active { background: rgba(255,215,0,0.1); color: #FFD700; border-color: rgba(255,215,0,0.5); box-shadow: 0 0 10px rgba(255,215,0,0.1); }
+        .cat-btn:hover:not(.active) { background: rgba(255,255,255,0.05); }
+        .mat-btn { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: 0.2s; border: 1px solid #444; width: 100%; text-align: left; }
+        .mat-btn.active { border-color: #FFD700; background: rgba(255,215,0,0.1); }
+        .mat-btn:hover:not(.active) { background: rgba(255,255,255,0.05); }
+        .color-circle { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); box-shadow: inset 0 2px 4px rgba(255,255,255,0.3); }
+    </style>
+    <!-- Import Maps for Three.js -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+</head>
+<body>
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (id === 'lang-toggle') return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'jwly' } });
+        }
+      }, true);
+    })();
+  </script>
+
+    <!-- TOP BAR -->
+    <div id="topbar">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl text-black" style="background: linear-gradient(135deg, #FFD700, #B8860B); box-shadow: 0 0 10px rgba(255,215,0,0.5); border: 2px solid #FFF8DC;">J</div>
+            <h1 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400" id="ui-title">Jewelry Maker Pro</h1>
+        </div>
+        <div class="flex flex-row gap-4 items-center">
+            <button id="lang-toggle" class="px-4 py-2 rounded-full bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-sm font-medium transition-colors text-gold">EN / FR</button>
+            <div class="w-px h-6 bg-[#444] mx-2"></div>
+            <button id="btn-screenshot" class="px-4 py-2 rounded-md bg-[#2a2a2a] hover:bg-[#333] border border-[#444] text-sm font-medium transition-colors" id="ui-save">Save Render</button>
+            <button id="btn-export-obj" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-white text-black text-sm font-bold transition-colors">Export OBJ</button>
+            <button id="btn-export-glb" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-white text-black text-sm font-bold transition-colors">Export GLB</button>
+            <button id="btn-export-stl" class="px-4 py-2 rounded-md bg-gold hover:bg-yellow-400 text-black border border-yellow-600 text-sm font-bold transition-colors shadow-[0_0_10px_rgba(255,215,0,0.3)]" id="ui-export">Export STL</button>
+        </div>
+    </div>
+
+    <!-- LEFT SIDEBAR -->
+    <div id="left-sidebar" class="sidebar flex flex-col gap-6">
+        <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gold to-yellow-200" id="ui-categories">Categories</h2>
+        <div class="flex flex-col gap-3">
+            <button class="cat-btn active" data-cat="rings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
+                <span class="font-semibold text-lg" id="ui-rings">Rings</span>
+            </button>
+            <button class="cat-btn" data-cat="bracelets">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                <span class="font-semibold text-lg" id="ui-bracelets">Bracelets</span>
+            </button>
+            <button class="cat-btn" data-cat="medallions">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                <span class="font-semibold text-lg" id="ui-medallions">Medallions</span>
+            </button>
+            <button class="cat-btn" data-cat="chains">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <span class="font-semibold text-lg" id="ui-chains">Necklaces</span>
+            </button>
+        </div>
+
+        <div class="mt-4 pt-6 border-t border-[#444]">
+            <h2 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gold to-yellow-200 mb-4" id="ui-surface-tools">Surface Tools</h2>
+            <div class="flex flex-col gap-3">
+                <button id="btn-open-sculpt" class="cat-btn bg-[#2a2a2a] hover:bg-[#333] border border-[#555] shadow-lg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                    <span class="font-semibold text-md text-white" id="ui-draw-stamp">Draw & Stamp 3D</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="ui-img-settings-container" class="mt-4 pt-6 border-t border-[#444] mb-8">
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-img-settings">Surface & Relief Settings</h2>
+            <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-2 mb-2">
+                    <label class="text-sm text-gray-300" id="ui-model-mat">Relief / Model Color</label>
+                    <select id="select-model-mat" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <option value="same" id="mat-model-same">Same as Base</option>
+                        <option value="gold" id="mat-model-gold">24k Gold</option>
+                        <option value="silver" id="mat-model-silver">Silver</option>
+                        <option value="rosegold" id="mat-model-rosegold">Rose Gold</option>
+                        <option value="black" id="mat-model-black">Black Rhodium</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2 mb-2">
+                    <label class="text-sm text-gray-300" id="ui-img-mode">Mapping Mode</label>
+                    <select id="select-img-mode" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <option value="decal" id="ui-mode-decal">Single Decal</option>
+                        <option value="pattern" id="ui-mode-pattern">Repeating Pattern</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label>Scale X (Repeat)</label>
+                        <span id="val-rep-x">1.0</span>
+                    </div>
+                    <input type="range" id="slider-rep-x" min="0.1" max="50.0" step="0.1" value="1.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label>Scale Y (Repeat)</label>
+                        <span id="val-rep-y">1.0</span>
+                    </div>
+                    <input type="range" id="slider-rep-y" min="0.1" max="50.0" step="0.1" value="1.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label>Offset X</label>
+                        <span id="val-off-x">0.0</span>
+                    </div>
+                    <input type="range" id="slider-off-x" min="-1.0" max="1.0" step="0.05" value="0.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label>Offset Y</label>
+                        <span id="val-off-y">0.0</span>
+                    </div>
+                    <input type="range" id="slider-off-y" min="-1.0" max="1.0" step="0.05" value="0.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-depth">Relief Depth</label>
+                        <span id="val-depth">1.0 x</span>
+                    </div>
+                    <input type="range" id="slider-depth" min="0.2" max="3.0" step="0.1" value="1.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-blur">Edge Smoothing</label>
+                        <span id="val-blur">0 px</span>
+                    </div>
+                    <input type="range" id="slider-blur" min="0" max="10" step="0.5" value="0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-quality">3D Mesh Detail</label>
+                        <span id="val-quality">256 (HD)</span>
+                    </div>
+                    <input type="range" id="slider-quality" min="128" max="512" step="128" value="256">
+                </div>
+                
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-b border-[#444] pb-1">Photo Filters</h3>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="check-invert" class="w-5 h-5 accent-gold">
+                    <span id="ui-invert" class="text-sm font-medium">Invert Color</span>
+                </label>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-threshold">Remove Background</label>
+                        <span id="val-threshold">0%</span>
+                    </div>
+                    <input type="range" id="slider-threshold" min="0" max="100" step="1" value="0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-contrast">Contrast</label>
+                        <span id="val-contrast">1.0</span>
+                    </div>
+                    <input type="range" id="slider-contrast" min="0.5" max="3.0" step="0.1" value="1.0">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-brightness">Brightness</label>
+                        <span id="val-brightness">1.0</span>
+                    </div>
+                    <input type="range" id="slider-brightness" min="0.5" max="3.0" step="0.1" value="1.0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div id="right-sidebar" class="sidebar flex flex-col gap-8">
+        <div>
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-dimensions">Dimensions & Profile</h2>
+            <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-gray-300" id="ui-profile">Shape Profile</label>
+                    <select id="select-profile" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+                
+                <div class="flex flex-col gap-2" id="box-ring-size">
+                    <label class="text-sm text-gray-300" id="ui-ring-size">Ring Size (Standard)</label>
+                    <select id="select-ring-size" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <option value="16.5">EU 52 / US 6 (16.5mm)</option>
+                        <option value="17.2" selected>EU 54 / US 7 (17.2mm)</option>
+                        <option value="17.8">EU 56 / US 7.5 (17.8mm)</option>
+                        <option value="18.5">EU 58 / US 8.5 (18.5mm)</option>
+                        <option value="19.1">EU 60 / US 9 (19.1mm)</option>
+                        <option value="19.7">EU 62 / US 10 (19.7mm)</option>
+                        <option value="20.4">EU 64 / US 10.5 (20.4mm)</option>
+                        <option value="custom">Custom Radius Slider...</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-2" id="box-radius">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-radius">Radius</label>
+                        <span id="val-radius">17.2 mm</span>
+                    </div>
+                    <input type="range" id="slider-radius" min="5" max="40" step="0.1" value="17.2">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-thickness">Thickness</label>
+                        <span id="val-thickness">2 mm</span>
+                    </div>
+                    <input type="range" id="slider-thickness" min="0.5" max="10" step="0.1" value="2">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-width">Width</label>
+                        <span id="val-width">5 mm</span>
+                    </div>
+                    <input type="range" id="slider-width" min="1" max="25" step="0.5" value="5">
+                </div>
+                <div class="flex flex-col gap-2 mt-2">
+                    <label class="text-sm text-gray-300" id="ui-inner-mat">Inner Material</label>
+                    <select id="select-inner-mat" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <option value="same" id="mat-same">Same as Outer</option>
+                        <option value="gold" id="mat-inner-gold">24k Gold</option>
+                        <option value="silver" id="mat-inner-silver">Silver</option>
+                        <option value="rosegold" id="mat-inner-rosegold">Rose Gold</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-gray-300" id="ui-finish">Surface Finish</label>
+                    <select id="select-finish" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                        <option value="polished" id="fin-polish">Polished</option>
+                        <option value="hammered" id="fin-hammer">Hammered</option>
+                        <option value="brushed" id="fin-brush">Brushed</option>
+                        <option value="sandblasted" id="fin-sand">Sandblasted</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-gemstones">Gemstones & Settings</h2>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-gray-300" id="ui-gem-cut">Gemstone Cut</label>
+                    <div class="flex flex-wrap gap-2" id="gem-cut-buttons">
+                        <button class="px-3 py-1 rounded-md bg-gold text-black border border-yellow-600 text-xs font-bold transition-colors" data-gem="none">None</button>
+                        <button class="px-3 py-1 rounded-md bg-[#333] text-white border border-[#555] text-xs hover:border-gold transition-colors" data-gem="round">Round</button>
+                        <button class="px-3 py-1 rounded-md bg-[#333] text-white border border-[#555] text-xs hover:border-gold transition-colors" data-gem="princess">Princess</button>
+                        <button class="px-3 py-1 rounded-md bg-[#333] text-white border border-[#555] text-xs hover:border-gold transition-colors" data-gem="emerald">Emerald</button>
+                        <button class="px-3 py-1 rounded-md bg-[#333] text-white border border-[#555] text-xs hover:border-gold transition-colors" data-gem="pear">Pear</button>
+                        <button class="px-3 py-1 rounded-md bg-[#333] text-white border border-[#555] text-xs hover:border-gold transition-colors" data-gem="oval">Oval</button>
+                    </div>
+                </div>
+
+                <div id="gem-options-box" class="flex flex-col gap-4 hidden">
+                    <div class="flex flex-col gap-2 mb-2">
+                        <label class="text-sm text-gray-300" id="ui-gem-layout">Setting Layout</label>
+                        <select id="select-stone-layout" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                            <option value="single" id="lay-single">Single Stone</option>
+                            <option value="eternity" id="lay-eternity">Eternity Band</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm text-gray-300" id="ui-gem-mat">Gem Material</label>
+                        <select id="select-gem-mat" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                            <option value="diamond">Diamond (Clear)</option>
+                            <option value="ruby">Ruby (Red)</option>
+                            <option value="emerald">Emerald (Green)</option>
+                            <option value="sapphire">Sapphire (Blue)</option>
+                            <option value="onyx">Onyx (Black)</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                            <label id="ui-gem-size">Carat Size</label>
+                            <span id="val-gem-size">1.0 ct</span>
+                        </div>
+                        <input type="range" id="slider-gem-size" min="0.1" max="5.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-engrave">Engraving</h2>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="input-engrave-text" placeholder="Custom text..." title="Enter custom text to engrave" class="w-full bg-[#333] border border-[#555] rounded-md p-2 text-sm text-white focus:outline-none focus:border-gold">
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-sm text-gray-300 border-b border-[#333] pb-1">
+                        <label id="ui-engrave-size">Text Size</label>
+                        <span id="val-engrave-size">60</span>
+                    </div>
+                    <input type="range" id="slider-engrave-size" min="30" max="600" step="5" value="100">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="check-engrave-inside" class="w-4 h-4">
+                    <label class="text-sm text-gray-300" id="ui-engrave-inside">Engrave Inside Ring</label>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-material">Material</h2>
+            <div class="flex flex-col gap-3">
+                <button class="mat-btn active" data-mat="gold">
+                    <div class="color-circle bg-[#FFD700]"></div><span class="font-medium text-sm" id="mat-gold">24k Gold</span>
+                </button>
+                <button class="mat-btn" data-mat="silver">
+                    <div class="color-circle bg-[#C0C0C0]"></div><span class="font-medium text-sm" id="mat-silver">Silver</span>
+                </button>
+                <button class="mat-btn" data-mat="rosegold">
+                    <div class="color-circle bg-[#B76E79]"></div><span class="font-medium text-sm" id="mat-rosegold">Rose Gold</span>
+                </button>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold text-gold mb-4 border-b border-[#444] pb-2" id="ui-photo">Add Photo</h2>
+            <div class="flex flex-col gap-3">
+                <input type="file" id="upload-photo" accept="image/*" class="hidden">
+                <button id="btn-upload-photo" class="px-4 py-3 rounded-md bg-[#2a2a2a] hover:bg-[#444] border border-[#555] text-sm font-medium transition-colors w-full flex justify-center items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span id="ui-upload-btn">Upload Image</span>
+                </button>
+                <button id="btn-remove-photo" class="hidden px-4 py-2 rounded-md bg-red-900/50 hover:bg-red-800 border border-red-700 text-sm font-medium transition-colors w-full" id="ui-remove-btn">Remove Photo</button>
+            </div>
+        </div>
+
+
+        
+        <div class="mt-4 bg-[#2a2a2a] p-4 rounded-lg border border-[#444] text-center">
+            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2" id="ui-expert-tools">CAD Analysis</h2>
+            <div class="flex justify-between items-center text-sm px-2">
+                <span class="text-gray-300" id="ui-est-weight">Est. Metal Weight:</span>
+                <span class="text-gold font-bold text-lg" id="val-weight">-- g</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D VIEWPORT -->
+    <div id="canvas-container"></div>
+    <div id="viewport-hints" style="position:absolute; bottom:16px; left:272px; font-family:monospace; font-size:12px; color:#888; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px; z-index:30;">
+        3D Viewport • Left Click: Rotate • Scroll: Zoom
+    </div>
+
+    <!-- 2D SCULPTING MODAL -->
+    <div id="modal-sculpt" class="hidden fixed inset-0 bg-black/80 z-[100] flex text-white items-center justify-center backdrop-blur-sm">
+        <div class="bg-[#1a1a1a] border border-[#555] rounded-xl shadow-2xl flex flex-col overflow-hidden w-[1000px] h-[700px]">
+            <div class="h-16 bg-[#242424] border-b border-[#333] flex items-center justify-between px-6 shrink-0">
+                <h2 class="text-xl font-bold text-gold flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"></path></svg>
+                    Interactive 3D Sculpting Board
+                </h2>
+                <div class="flex gap-4">
+                    <button id="btn-sculpt-clear" class="px-4 py-2 hover:bg-[#333] rounded text-sm transition-colors border border-[#555] font-medium text-white">Clear Canvas</button>
+                    <button id="btn-sculpt-close" class="px-4 py-2 bg-gold text-black font-bold rounded hover:bg-yellow-400 transition-colors">Apply & Close</button>
+                </div>
+            </div>
+            
+            <div class="flex flex-1 overflow-hidden">
+                <div class="w-64 bg-[#242424] border-r border-[#333] p-5 flex flex-col gap-6 overflow-y-auto shrink-0">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3" id="ui-brush-tools">Brushes</h3>
+                        <div class="flex flex-col gap-2">
+                            <button class="sculpt-tool active flex items-center gap-3 p-2 rounded bg-[#333] border border-gold font-medium" data-tool="pen">
+                                <span class="text-xl">🖌️</span> Draw (Extrude)
+                            </button>
+                            <button class="sculpt-tool flex items-center gap-3 p-2 rounded hover:bg-[#333] border border-transparent font-medium" data-tool="eraser">
+                                <span class="text-xl">🧹</span> Eraser (Flat)
+                            </button>
+                            <button class="sculpt-tool flex items-center gap-3 p-2 rounded hover:bg-[#333] border border-transparent font-medium" data-tool="gem">
+                                <span class="text-xl">💎</span> Place Gemstone
+                            </button>
+                        </div>
+                        <div class="mt-4 flex flex-col gap-2">
+                            <label class="text-sm text-gray-300 flex justify-between" id="ui-brush-size">Size <span>10</span></label>
+                            <input type="range" id="slider-brush-size" min="1" max="100" value="10">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-[#444] pt-5">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3" id="ui-stamps">Stamps</h3>
+                        <!-- Stamp grid will be populated here -->
+                        <div id="stamps-grid" class="grid grid-cols-4 gap-2">
+                            <!-- JS injected stamps -->
+                        </div>
+                        <div class="mt-4 flex flex-col gap-2">
+                            <label class="text-sm text-gray-300 flex justify-between" id="ui-stamp-size">Stamp Size <span>100</span></label>
+                            <input type="range" id="slider-stamp-size" min="20" max="400" value="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden" id="sculpt-workspace">
+                    <canvas id="sculpt-canvas" width="1024" height="1024" class="bg-black shadow-[0_0_30px_rgba(255,215,0,0.1)] rounded cursor-crosshair max-w-full max-h-full object-contain"></canvas>
+                    <div class="absolute bottom-4 right-4 text-xs text-gray-500 font-mono">1024x1024 Map</div>
+                    <div class="absolute top-4 left-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full border border-[#444] pointer-events-none">Draw with mouse to sculpt 3D surface</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+/* ==========================================
+   APP STATE & DOM ELEMENTS
+========================================== */
+let state = {
+    category: 'rings', 
+    profile: 'classic',
+    ringSize: '17.2',
+    stoneType: 'none',
+    stoneMaterial: 'diamond',
+    stoneCarat: 1.0,
+    material: 'gold',
+    radius: 17.2,
+    thickness: 2,
+    width: 5,
+    lang: 'fr',
+    customTexture: null,
+    invert: false,
+    contrast: 1.0,
+    brightness: 1.0,
+    depth: 1.0,
+    blur: 0,
+    quality: 256,
+    repX: 1.0,
+    repY: 1.0,
+    offX: 0.0,
+    offY: 0.0,
+    stoneLayout: 'single',
+    innerMaterial: 'same',
+    finish: 'polished',
+    imgMode: 'decal',
+    threshold: 0.0,
+    modelMaterial: 'same',
+    customGems: []
+};
+
+const texts = {
+    en: { categories:"Categories", rings:"Rings", bracelets:"Bracelets", medallions:"Medallions", chains:"Necklaces", dimensions:"Dimensions & Profile", profile:"Shape Profile", ring_size:"Ring Size", radius:"Radius", thickness:"Thickness", width:"Width", material:"Outer Material", inner_mat:"Inner Material", mat_same:"Same as Outer", gold:"24k Gold", silver:"Silver", rosegold:"Rose Gold", finish:"Surface Finish", fin_polish:"Polished", fin_hammer:"Hammered", fin_brush:"Brushed", fin_sand:"Sandblasted", save_render:"Save Render", export_stl:"Export STL", export_obj:"Export OBJ", export_glb:"Export GLB", photo: "Add Photo", upload_btn: "Upload Image", remove_btn: "Remove Photo", img_settings: "Surface & Relief Settings", model_mat: "Relief / Model Color", mat_model_same: "Same as Base", mat_model_black: "Black Rhodium", img_mode: "Mapping Mode", mode_decal: "Single Decal", mode_pattern: "Repeating Pattern", invert: "Invert Color", threshold: "Remove Background", contrast: "Contrast", brightness: "Brightness", depth: "Relief Depth", blur: "Edge Smoothing", quality: "3D Mesh Detail", gem_title: "Gemstones & Settings", gem_layout: "Setting Layout", lay_single: "Single Stone", lay_eternity: "Eternity Band", gem_cut: "Gemstone Cut", gem_mat: "Material", gem_size: "Carat Size", expert_tools: "CAD Analysis", est_weight: "Est. Metal Weight:", engrave: "Engraving", engrave_size: "Text Size", engrave_in: "Engrave Inside Ring", surface_tools: "Surface Tools", draw_stamp: "Draw & Stamp 3D", scale_x: "Scale X (Repeat)", scale_y: "Scale Y (Repeat)", off_x: "Offset X", off_y: "Offset Y" },
+    fr: { categories:"Catégories", rings:"Bagues", bracelets:"Bracelets", medallions:"Médaillons", chains:"Colliers", dimensions:"Dimensions & Profil", profile:"Profil de Forme", ring_size:"Taille Bague", radius:"Rayon", thickness:"Épaisseur", width:"Largeur", material:"Matériau Extérieur", inner_mat:"Matériau Intérieur", mat_same:"Identique Extérieur", gold:"Or 24k", silver:"Argent", rosegold:"Or Rose", finish:"Finition Surface", fin_polish:"Poli", fin_hammer:"Martelé", fin_brush:"Brossé", fin_sand:"Sablé", save_render:"Sauvegarder", export_stl:"Exporter STL", export_obj:"Exporter OBJ", export_glb:"Exporter GLB", photo: "Ajouter Photo", upload_btn: "Charger Image", remove_btn: "Supprimer Photo", img_settings: "Réglages Surface & Relief", model_mat: "Couleur du Relief / Modèle", mat_model_same: "Identique Base", mat_model_black: "Rhodium Noir", img_mode: "Mode de Mappage", mode_decal: "Décalque Unique", mode_pattern: "Répétition", invert: "Inverser Couleur", threshold: "Supprimer le fond", contrast: "Contraste", brightness: "Luminosité", depth: "Profondeur", blur: "Lissage des Bords", quality: "Détail Maillage 3D", gem_title: "Pierres et Sertissage", gem_layout: "Disposition", lay_single: "Pierre Unique", lay_eternity: "Alliance Éternité", gem_cut: "Taille de Pierre", gem_mat: "Matériau", gem_size: "Taille Carat", expert_tools: "Analyse CAD", est_weight: "Poids Estimé:", engrave: "Gravure", engrave_size: "Taille du Texte", engrave_in: "Graver à l'Intérieur", surface_tools: "Outils de Surface", draw_stamp: "Dessin 3D & Estampes", scale_x: "Échelle X (Répétition)", scale_y: "Échelle Y (Répétition)", off_x: "Décalage X", off_y: "Décalage Y" }
+};
+
+const D = (id) => document.getElementById(id);
+const updateUI = () => {
+    D('val-radius').innerText = state.radius + ' mm';
+    D('val-thickness').innerText = state.thickness + ' mm';
+    D('val-width').innerText = state.width + ' mm';
+
+    const t = texts[state.lang];
+    D('ui-categories').innerText = t.categories;
+    D('ui-rings').innerText = t.rings;
+    D('ui-bracelets').innerText = t.bracelets;
+    D('ui-medallions').innerText = t.medallions;
+    if (D('ui-chains')) D('ui-chains').innerText = t.chains;
+    D('ui-dimensions').innerText = t.dimensions;
+    D('ui-radius').innerText = t.radius;
+    D('ui-thickness').innerText = t.thickness;
+    D('ui-width').innerText = t.width;
+    D('ui-material').innerText = t.material;
+    if (D('ui-inner-mat')) D('ui-inner-mat').innerText = t.inner_mat;
+    if (D('ui-finish')) D('ui-finish').innerText = t.finish;
+    D('mat-gold').innerText = t.gold;
+    D('mat-silver').innerText = t.silver;
+    D('mat-rosegold').innerText = t.rosegold;
+    D('ui-photo').innerText = t.photo;
+    D('ui-upload-btn').innerText = t.upload_btn;
+    D('btn-remove-photo').innerText = t.remove_btn;
+    D('ui-img-settings').innerText = t.img_settings;
+    if (D('ui-model-mat')) D('ui-model-mat').innerText = t.model_mat;
+    if (D('mat-model-same')) D('mat-model-same').innerText = t.mat_model_same;
+    if (D('mat-model-black')) D('mat-model-black').innerText = t.mat_model_black;
+    if (D('ui-img-mode')) D('ui-img-mode').innerText = t.img_mode;
+    if (D('ui-mode-decal')) D('ui-mode-decal').innerText = t.mode_decal;
+    if (D('ui-mode-pattern')) D('ui-mode-pattern').innerText = t.mode_pattern;
+    D('ui-invert').innerText = t.invert;
+    if (D('ui-threshold')) D('ui-threshold').innerText = t.threshold;
+    D('ui-contrast').innerText = t.contrast;
+    D('ui-brightness').innerText = t.brightness;
+    D('ui-depth').innerText = t.depth;
+    D('ui-blur').innerText = t.blur;
+    D('ui-quality').innerText = t.quality;
+    D('ui-gemstones').innerText = t.gem_title;
+    if (D('ui-gem-layout')) D('ui-gem-layout').innerText = t.gem_layout;
+    D('ui-gem-cut').innerText = t.gem_cut;
+    D('ui-gem-mat').innerText = t.gem_mat;
+    D('ui-gem-size').innerText = t.gem_size;
+    D('ui-expert-tools').innerText = t.expert_tools;
+    D('ui-est-weight').innerText = t.est_weight;
+    D('ui-engrave').innerText = t.engrave;
+    D('ui-engrave-size').innerText = t.engrave_size;
+    D('ui-engrave-inside').innerText = t.engrave_in;
+    D('btn-screenshot').innerText = t.save_render;
+    D('btn-export-stl').innerText = t.export_stl;
+    D('btn-export-obj').innerText = t.export_obj;
+    D('btn-export-glb').innerText = t.export_glb;
+    D('lang-toggle').innerText = "Language: " + state.lang.toUpperCase();
+    if (D('ui-surface-tools')) D('ui-surface-tools').innerText = t.surface_tools;
+    if (D('ui-draw-stamp')) D('ui-draw-stamp').innerText = t.draw_stamp;
+    
+    // UV scale sliders
+    if (D('slider-rep-x')) D('slider-rep-x').previousElementSibling.firstElementChild.innerText = t.scale_x;
+    if (D('slider-rep-y')) D('slider-rep-y').previousElementSibling.firstElementChild.innerText = t.scale_y;
+    if (D('slider-off-x')) D('slider-off-x').previousElementSibling.firstElementChild.innerText = t.off_x;
+    if (D('slider-off-y')) D('slider-off-y').previousElementSibling.firstElementChild.innerText = t.off_y;
+
+    // Dynamic profile options update depending on category
+    const selectProfile = D('select-profile');
+    if (selectProfile.dataset.cat !== state.category) {
+        selectProfile.innerHTML = '';
+        if (state.category === 'rings') {
+            selectProfile.innerHTML = `<option value="classic">Classic (D-Shape)</option><option value="flat">Flat Band</option><option value="comfort">Comfort Fit</option><option value="signet">Signet Ring (Top Flat)</option>`;
+        } else if (state.category === 'bracelets') {
+            selectProfile.innerHTML = `<option value="bangle">Classic Bangle (Closed)</option><option value="cuff">Cuff (Open Back)</option>`;
+        } else if (state.category === 'medallions') {
+            selectProfile.innerHTML = `<option value="round">Round Coin</option><option value="oval">Vintage Oval</option><option value="heart">Romantic Heart</option><option value="dogtag">Dog Tag / Shield</option>`;
+        } else if (state.category === 'chains') {
+            selectProfile.innerHTML = `<option value="classic">Standard Link</option><option value="flat">Cuban Link (Flat)</option><option value="oval">Oval Link</option>`;
+        }
+        selectProfile.dataset.cat = state.category;
+        selectProfile.value = selectProfile.options[0].value;
+        state.profile = selectProfile.value;
+    } else {
+        selectProfile.value = state.profile;
+    }
+
+    if (state.category === 'rings') {
+        D('box-ring-size').classList.remove('hidden');
+        if (state.ringSize !== 'custom') {
+           D('box-radius').classList.add('hidden');
+        } else {
+           D('box-radius').classList.remove('hidden');
+        }
+    } else {
+        D('box-ring-size').classList.add('hidden');
+        D('box-radius').classList.remove('hidden');
+    }
+
+    if (state.stoneType !== 'none') {
+        D('gem-options-box').classList.remove('hidden');
+    } else {
+        D('gem-options-box').classList.add('hidden');
+    }
+
+    if (state.customTexture) {
+        D('btn-remove-photo').classList.remove('hidden');
+    } else {
+        D('btn-remove-photo').classList.add('hidden');
+    }
+};
+
+/* ==========================================
+   THREE.JS SETUP
+========================================== */
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+
+const materialsList = {
+    gold: new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 1.0, roughness: 0.1 }),
+    silver: new THREE.MeshStandardMaterial({ color: 0xC0C0C0, metalness: 1.0, roughness: 0.15 }),
+    rosegold: new THREE.MeshStandardMaterial({ color: 0xB76E79, metalness: 1.0, roughness: 0.15 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.2 })
+};
+
+const gemMaterials = {
+    diamond: new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1.0, opacity: 1, metalness: 0, roughness: 0, ior: 2.4, thickness: 2, envMapIntensity: 2.0 }),
+    ruby: new THREE.MeshPhysicalMaterial({ color: 0xff0033, transmission: 0.9, opacity: 1, metalness: 0, roughness: 0, ior: 1.76, thickness: 2, envMapIntensity: 1.5 }),
+    emerald: new THREE.MeshPhysicalMaterial({ color: 0x00ff44, transmission: 0.9, opacity: 1, metalness: 0, roughness: 0, ior: 1.58, thickness: 2, envMapIntensity: 1.5 }),
+    sapphire: new THREE.MeshPhysicalMaterial({ color: 0x0f52ba, transmission: 0.9, opacity: 1, metalness: 0, roughness: 0, ior: 1.76, thickness: 2, envMapIntensity: 1.5 }),
+    onyx: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 })
+};
+
+// Camera & Renderer
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+camera.position.set(0, 5, 8);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI / 1.9;
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight.position.set(5, 10, 5);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+scene.add(dirLight);
+
+const fillLight = new THREE.PointLight(0xFFD700, 0.5, 20);
+fillLight.position.set(-5, 0, -5);
+scene.add(fillLight);
+
+// Environment setup for reflections
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+pmremGenerator.compileEquirectangularShader();
+const envScene = new THREE.Scene();
+envScene.background = new THREE.Color(0x333333);
+const envLight = new THREE.DirectionalLight(0xffffff, 3);
+envLight.position.set(0, 10, 0);
+envScene.add(envLight);
+const renderTarget = pmremGenerator.fromScene(envScene);
+scene.environment = renderTarget.texture;
+
+// Ground plane for shadows
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(50, 50),
+    new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.5 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.5;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Procedural Gemstone Generation
+function generateGemstone(type, matKey, carat) {
+    const group = new THREE.Group();
+    let s = 0.4 * Math.pow(carat, 1/3); // scale mapping
+    let geo = new THREE.OctahedronGeometry(s, (type==='princess' || type==='emerald') ? 0 : 1);
+    const pos = geo.attributes.position;
+    for(let i=0; i<pos.count; i++) {
+        let y = pos.getY(i); let z = pos.getZ(i);
+        if (y > s * 0.3) pos.setY(i, s * 0.3); // flat table top
+        if (y < 0) pos.setY(i, y * 1.5); // long pavilion
+        if (type === 'emerald') pos.setZ(i, z * 1.5);
+        if (type === 'oval') pos.setZ(i, z * 1.3);
+        if (type === 'pear' && z > 0) pos.setZ(i, z * 1.6);
+    }
+    if (type === 'princess' || type === 'emerald') geo.rotateY(Math.PI/4);
+    geo.computeVertexNormals();
+
+    const gemMesh = new THREE.Mesh(geo, gemMaterials[matKey]);
+    group.add(gemMesh);
+
+    // Prongs (4 gheare de montură)
+    const metalMat = materialsList[state.material];
+    const prongGeo = new THREE.CylinderGeometry(s*0.1, s*0.08, s*1.5, 8);
+    for(let a=0; a<Math.PI*2; a+=Math.PI/2) {
+        let p = new THREE.Mesh(prongGeo, metalMat);
+        let px = Math.cos(a + Math.PI/4) * s*0.8;
+        let pz = Math.sin(a + Math.PI/4) * s*(type==='emerald'||type==='oval'?1.2:0.8);
+        if(type==='pear' && pz>0) pz*=1.5;
+        p.position.set(px, -s*0.2, pz);
+        p.lookAt(0, s*0.6, 0); // tilt inwards
+        p.rotateX(Math.PI/2);
+        group.add(p);
+    }
+    return group;
+}
+
+function updateWeight(r, w, t) {
+    let vol = 0;
+    if (state.category === 'medallions') vol = Math.PI * r * r * t;
+    else vol = w * t * (2 * Math.PI * r);
+    
+    if (state.profile === 'comfort' || state.profile === 'cuff') vol *= 0.8;
+    if (state.profile === 'signet') vol *= 1.4;
+    
+    let density = state.material === 'silver' ? 10.36 : 19.32;
+    let weight = vol * density;
+    if (state.stoneType !== 'none') weight += state.stoneCarat * 0.2; // 1ct = 0.2g
+    
+    D('val-weight').innerText = weight.toFixed(1) + ' g';
+}
+
+const gridHelper = new THREE.GridHelper(20, 40, 0x444444, 0x222222);
+gridHelper.position.y = -0.49;
+scene.add(gridHelper);
+
+// Model Mesh
+let currentMesh = null;
+
+const createGeometry = () => {
+    if (currentMesh) scene.remove(currentMesh);
+
+    let geometry;
+    const r = state.radius / 10;
+    const t = state.thickness / 10;
+    const w = state.width / 10;
+
+    if (state.category === 'chains') {
+        const curvePts = [];
+        for(let a=0; a<=Math.PI*2; a+=0.1) curvePts.push(new THREE.Vector3(Math.sin(a)*r, 0, Math.cos(a)*r));
+        const curve = new THREE.CatmullRomCurve3(curvePts, true);
+        
+        let linkR = w/2;
+        let tubeR = t/2;
+        geometry = new THREE.TorusGeometry(linkR, tubeR, 16, 32);
+        if (state.profile === 'oval' || state.profile === 'signet') geometry.scale(1, 1.5, 1);
+        
+        let linkLen = linkR * (state.profile === 'oval' || state.profile === 'signet' ? 3 : 2);
+        const count = Math.floor(curve.getLength() / (linkLen * 0.65)); // 35% overlap
+        
+        const material = materialsList[state.material].clone();
+        let isMultiMat = state.innerMaterial !== 'same' && state.innerMaterial !== undefined;
+        let innerMaterial = isMultiMat ? materialsList[state.innerMaterial].clone() : material;
+        
+        const instMeshOuter = new THREE.InstancedMesh(geometry, material, count);
+        const instMeshInner = isMultiMat ? new THREE.InstancedMesh(geometry, innerMaterial, count) : null;
+        const dummy = new THREE.Object3D();
+        const zeroMat = new THREE.Matrix4().makeScale(0,0,0);
+        
+        for (let i=0; i<count; i++) {
+            let u = i / count;
+            let pt = curve.getPointAt(u);
+            let tan = curve.getTangentAt(u);
+            
+            dummy.position.copy(pt);
+            dummy.lookAt(pt.clone().add(tan));
+            if (state.profile !== 'flat') dummy.rotateZ(i % 2 === 0 ? 0 : Math.PI/2);
+            else { dummy.rotateX(Math.PI/2); dummy.rotateY(Math.PI/4); }
+            dummy.updateMatrix();
+            
+            if (isMultiMat && i % 2 !== 0) {
+                instMeshInner.setMatrixAt(i, dummy.matrix);
+                instMeshOuter.setMatrixAt(i, zeroMat);
+            } else {
+                instMeshOuter.setMatrixAt(i, dummy.matrix);
+                if (isMultiMat) instMeshInner.setMatrixAt(i, zeroMat);
+            }
+        }
+        
+        currentMesh = new THREE.Group();
+        instMeshOuter.castShadow = true; instMeshOuter.receiveShadow = true;
+        currentMesh.add(instMeshOuter);
+        if (isMultiMat) { instMeshInner.castShadow = true; instMeshInner.receiveShadow = true; currentMesh.add(instMeshInner); }
+        
+        if (state.stoneType !== 'none') {
+            const gemGroup = generateGemstone(state.stoneType, state.stoneMaterial, state.stoneCarat);
+            gemGroup.position.set(0, -linkR*2, r + tubeR);
+            currentMesh.add(gemGroup);
+        }
+        
+        currentMesh.rotation.x = -Math.PI / 2;
+        currentMesh.updateMatrixWorld(true);
+        currentMesh.position.y += (-0.49 - new THREE.Box3().setFromObject(currentMesh).min.y) + 0.5;
+        scene.add(currentMesh);
+        updateWeight(r, w, t);
+        return;
+    }
+
+    let imgData = null;
+    let power = 0;
+    
+    let Q = parseInt(state.quality);
+    
+    function getLathePoints(prof, r, w, t, q) {
+        const pts = [];
+        if (prof === 'flat') {
+            pts.push(new THREE.Vector2(r, w/2));
+            pts.push(new THREE.Vector2(r, -w/2));
+            pts.push(new THREE.Vector2(r+t, -w/2));
+            for(let i=0; i<=q; i++) pts.push(new THREE.Vector2(r+t, -w/2 + (i/q)*w));
+            pts.push(new THREE.Vector2(r+t, w/2));
+            pts.push(new THREE.Vector2(r, w/2));
+        } else if (prof === 'comfort') {
+            const iT = t * 0.2;
+            pts.push(new THREE.Vector2(r, w/2));
+            for(let i=0; i<=q/2; i++) {
+                let py = w/2 - (i/(q/2))*w; 
+                pts.push(new THREE.Vector2(r + iT*(1 - (py/(w/2))**2), py));
+            }
+            for(let i=0; i<=q; i++) {
+                let py = -w/2 + (i/q)*w; 
+                pts.push(new THREE.Vector2(r + iT + (t-iT)*(1 - (py/(w/2))**2), py));
+            }
+            pts.push(new THREE.Vector2(r, w/2));
+        } else { // classic, signet, bangle, cuff
+            pts.push(new THREE.Vector2(r, w/2));
+            pts.push(new THREE.Vector2(r, -w/2));
+            for(let i=0; i<=q; i++) {
+                let py = -w/2 + (i/q)*w; 
+                pts.push(new THREE.Vector2(r + t*(1 - (py/(w/2))**2), py));
+            }
+            pts.push(new THREE.Vector2(r, w/2));
+    }
+    return pts;
+}
+
+let textData = null;
+let drawData = null;
+if (state.hasSculpted) {
+    const sc = document.getElementById('sculpt-canvas');
+    if (sc) drawData = sc.getContext('2d').getImageData(0,0,1024,1024).data;
+}
+
+if (state.customImage) {
+    const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 1024;
+        tempCanvas.height = 1024;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.fillStyle = '#000'; // Padding must ALWAYS be black (0 extrusion)
+        ctx.fillRect(0, 0, 1024, 1024);
+        
+        ctx.filter = `brightness(${state.brightness}) contrast(${state.contrast}) invert(${state.invert ? 100 : 0}%) blur(${state.blur}px)`;
+        
+        const img = state.customImage;
+        const scale = Math.min(1024/img.width, 1024/img.height);
+        const nw = img.width * scale;
+        const nh = img.height * scale;
+        const ox = (1024 - nw)/2;
+        const oy = (1024 - nh)/2;
+        ctx.drawImage(img, ox, oy, nw, nh);
+        ctx.filter = 'none';
+        imgData = ctx.getImageData(0, 0, 1024, 1024).data;
+    }
+    
+    if (state.engraveText) {
+        const textCanvas = document.createElement('canvas');
+        textCanvas.width = 1024;
+        textCanvas.height = 1024;
+        const tctx = textCanvas.getContext('2d');
+        tctx.fillStyle = '#000'; // Heightmap padding must be 0 extrusion
+        tctx.fillRect(0, 0, 1024, 1024);
+        
+        tctx.filter = 'blur(4px)'; // Crucial: smooths out 1-pixel font borders preventing 3D spikes
+        tctx.fillStyle = '#fff'; // Text is always positive extrusion in heightmap
+        tctx.textAlign = 'center';
+        tctx.textBaseline = 'middle';
+        tctx.font = `bold ${state.engraveSize}px "Arial", sans-serif`;
+        // Medallions often look better at bottom, rings in center
+        let yPos = state.category === 'medallions' ? 850 : 512;
+        tctx.fillText(state.engraveText, 512, yPos);
+        tctx.filter = 'none';
+        
+        textData = tctx.getImageData(0, 0, 1024, 1024).data;
+    }
+
+    if (state.category === 'rings' || state.category === 'bracelets') {
+        let pPoints = getLathePoints(state.profile, r, w, t, Q/2);
+        let phiLen = state.profile === 'cuff' ? Math.PI * 1.6 : Math.PI * 2;
+        let phiStart = state.profile === 'cuff' ? Math.PI * 0.2 : 0;
+        geometry = new THREE.LatheGeometry(pPoints, Q*2, phiStart, phiLen);
+        power = 0.1 * state.depth;
+
+        if (state.profile === 'signet') {
+            const pos = geometry.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                let x = pos.getX(i); let z = pos.getZ(i); let y = pos.getY(i);
+                let a = Math.atan2(x, z);
+                let d = Math.sqrt(x*x + z*z);
+                if (d > r + t*0.1) {
+                    let bump = Math.pow(Math.max(0, Math.cos(a)), 4);
+                    let newD = d + bump * t * 2.0; 
+                    let newY = y * (1 + (Object.is(bump, NaN) ? 0 : bump) * 1.5);
+                    
+                    let finalZ = Math.cos(a) * newD;
+                    let flatZ = r + t * 2.0;
+                    if (finalZ > flatZ) finalZ = flatZ; // create perfect flat top
+                    
+                    pos.setXYZ(i, Math.sin(a)*newD, newY, finalZ);
+                }
+            }
+        }
+    } else if (state.category === 'medallions') {
+        let bw = r*2; let bh = r*2;
+        if (state.profile === 'oval') bh = r*3;
+        if (state.profile === 'dogtag') { bw = r*2; bh = r*3.5; }
+        if (state.profile === 'heart') { bw = r*2; bh = r*2.8; }
+        
+        geometry = new THREE.BoxGeometry(bw, bh, t, Q, Q, 2);
+        const pos = geometry.attributes.position;
+        for(let i=0; i<pos.count; i++) {
+            let x = pos.getX(i); let y = pos.getY(i);
+            if (state.profile === 'round') {
+                if (x*x + y*y > r*r) {
+                    let a = Math.atan2(y, x); pos.setXY(i, r*Math.cos(a), r*Math.sin(a));
+                }
+            } else if (state.profile === 'oval') {
+                if ((x/r)**2 + (y/(r*1.5))**2 > 1) {
+                    let a = Math.atan2(y/(r*1.5), x/r); pos.setXY(i, r*Math.cos(a), r*1.5*Math.sin(a));
+                }
+            } else if (state.profile === 'heart') {
+                let aX = Math.abs(x);
+                let yt = Math.sqrt(Math.max(0, r*r - x*x)) + Math.sqrt(aX*r)*0.8;
+                let yb = -Math.sqrt(Math.max(0, r*r - x*x)) + Math.sqrt(aX*r)*0.8;
+                if (y > yt) pos.setY(i, yt);
+                else if (y < yb) pos.setY(i, yb);
+                if (x > r) pos.setX(i, r);
+                if (x < -r) pos.setX(i, -r);
+            } else if (state.profile === 'dogtag') {
+                let cr = r * 0.4;
+                let dx = Math.abs(x) - (bw/2 - cr); let dy = Math.abs(y) - (bh/2 - cr);
+                if (dx > 0 && dy > 0 && Math.sqrt(dx*dx + dy*dy) > cr) {
+                    let a = Math.atan2(dy, dx);
+                    pos.setXY(i, Math.sign(x)*(bw/2-cr+cr*Math.cos(a)), Math.sign(y)*(bh/2-cr+cr*Math.sin(a)));
+                }
+            }
+        }
+        power = 0.15 * state.depth;
+    }
+    geometry.computeVertexNormals();
+    geometry = geometry.toNonIndexed(); // Preserves smoothing while detaching all faces
+    const posGeo = geometry.attributes.position;
+    
+    for (let i = 0; i < posGeo.count; i += 3) {
+        let cx = (posGeo.getX(i) + posGeo.getX(i+1) + posGeo.getX(i+2)) / 3;
+        let cy = (posGeo.getY(i) + posGeo.getY(i+1) + posGeo.getY(i+2)) / 3;
+        let cz = (posGeo.getZ(i) + posGeo.getZ(i+1) + posGeo.getZ(i+2)) / 3;
+        let distXZ = Math.sqrt(cx*cx + cz*cz);
+        
+        let isInnerFace = false;
+        if (state.category !== 'medallions') {
+            if (distXZ < r + t * 0.5) isInnerFace = true;
+        } else {
+            if (cy < t * 0.5) isInnerFace = true;
+        }
+
+        // Apply finish texture
+        if (state.finish && state.finish !== 'polished' && (!isInnerFace || state.finish === 'sandblasted')) {
+            for (let v = 0; v < 3; v++) {
+                let vi = i + v;
+                let px = posGeo.getX(vi), py = posGeo.getY(vi), pz = posGeo.getZ(vi);
+                let norX = geometry.attributes.normal.getX(vi);
+                let norY = geometry.attributes.normal.getY(vi);
+                let norZ = geometry.attributes.normal.getZ(vi);
+                let h = 0;
+                
+                if (state.category !== 'medallions') {
+                    let a = Math.atan2(px, pz);
+                    if (state.finish === 'hammered') h = (Math.sin(a * 40) * Math.cos(py * 20) * 0.05) + Math.sin(a * 25) * 0.02;
+                    else if (state.finish === 'brushed') h = Math.sin(py * 250) * 0.01;
+                    else if (state.finish === 'sandblasted') h = ((Math.sin(px * 12.123 + py * 24.324 + pz * 32.234) * 43758.5453) % 1 - 0.5) * 0.015;
+                } else {
+                    if (state.finish === 'hammered') h = Math.sin(px * 15) * Math.cos(py * 15) * 0.05;
+                    else if (state.finish === 'brushed') h = Math.sin((px + py) * 100) * 0.01;
+                    else if (state.finish === 'sandblasted') h = ((Math.sin(px * 32.123 + py * 74.324) * 43758.5453) % 1 - 0.5) * 0.015;
+                }
+                posGeo.setXYZ(vi, px + norX * h, py + norY * h, pz + norZ * h);
+            }
+        }
+    }
+
+    const material = materialsList[state.material] ? materialsList[state.material].clone() : materialsList['gold'].clone();
+    
+    let meshMaterials = [material];
+    let matIdxInner = 0;
+    if (state.innerMaterial !== 'same' && state.innerMaterial !== undefined) {
+        matIdxInner = meshMaterials.length;
+        meshMaterials.push(materialsList[state.innerMaterial].clone());
+    }
+    let matIdxModel = 0;
+    if (state.modelMaterial !== 'same' && state.modelMaterial !== undefined) {
+        matIdxModel = meshMaterials.length;
+        meshMaterials.push(materialsList[state.modelMaterial].clone());
+    }
+    
+    // Disable textures if doing solid physical mapping
+    if (state.customTexture || imgData || textData || drawData) {
+        meshMaterials.forEach(m => { m.metalness = 0.5; m.roughness = 0.4; });
+    }
+    
+    if (state.category === 'bracelets') {
+        meshMaterials.forEach(m => { m.side = THREE.DoubleSide; });
+    }
+    
+    let isMultiMat = meshMaterials.length > 1;
+    let finalMaterial = isMultiMat ? meshMaterials : meshMaterials[0];
+
+    const vertexExtrusions = new Float32Array(geometry.attributes.position.count);
+
+    if (imgData || textData || drawData) {
+        const pos = geometry.attributes.position;
+        // Don't re-calculate normals to preserve smoothness!
+        const nor = geometry.attributes.normal;
+        
+        const circumference = 2 * Math.PI * r;
+        const tiles = Math.max(1, Math.round(circumference / (state.category === 'bracelets' ? w : t)));
+        
+        let bw = r*2; let bh = r*2;
+        if (state.profile === 'oval') bh = r*3;
+        if (state.profile === 'dogtag') { bw = r*2; bh = r*3.5; }
+        if (state.profile === 'heart') { bw = r*2; bh = r*2.8; }
+
+        for (let i = 0; i < pos.count; i++) {
+            
+            let canExtrude = false;
+            let extrudeMult = 1.0;
+            let isInner = false;
+            let b = 0;
+
+            if (state.category === 'medallions') {
+                let z = pos.getZ(i);
+                if (z >= (t/2) - 0.001) {
+                    let px = pos.getX(i);
+                    let py = pos.getY(i);
+                    let baseU = (px / (bw/2) + 1) / 2.0;
+                    let baseV = (py / (bh/2) + 1) / 2.0;
+                    baseV = 1.0 - baseV; 
+                    
+                    let imgU = (baseU * state.repX) + state.offX;
+                    let imgV = (baseV * state.repY) + state.offY;
+                    
+                    if (state.imgMode !== 'decal') {
+                        imgU = imgU % 1.0; if(imgU < 0) imgU += 1.0;
+                        imgV = imgV % 1.0; if(imgV < 0) imgV += 1.0;
+                    }
+
+                    let bImg = 0, bTxt = 0, bDraw = 0;
+                    if (imgU >= 0.0 && imgU <= 1.0 && imgV >= 0.0 && imgV <= 1.0) {
+                        let cx = Math.floor(Math.max(0, Math.min(0.999, imgU)) * 1024);
+                        let cy = Math.floor(Math.max(0, Math.min(0.999, imgV)) * 1024);
+                        let idx = (cy * 1024 + cx) * 4;
+
+                        if (drawData) {
+                            let rD = drawData[idx], gD = drawData[idx+1], bD = drawData[idx+2];
+                            let luma = (rD + gD + bD) / (3.0 * 255.0);
+                            if (luma > 0.05) {
+                                if (rD > gD * 1.5) bDraw = -(rD / 255.0);
+                                else bDraw = luma;
+                            }
+                        }
+                        
+                        bImg = imgData ? (imgData[idx]+imgData[idx+1]+imgData[idx+2])/(3*255) : 0;
+                        if (state.threshold > 0 && bImg > 0) {
+                            if (bImg <= state.threshold) bImg = 0;
+                            else bImg = (bImg - state.threshold) / (1.0 - state.threshold);
+                        }
+                        if (state.imgMode === 'decal' && bImg > 0) {
+                            let eU = Math.min(imgU, 1.0 - imgU);
+                            let eV = Math.min(imgV, 1.0 - imgV);
+                            bImg *= Math.max(0, Math.min(1.0, Math.min(eU, eV) * 20.0));
+                        }
+                        
+                        bTxt = textData ? (textData[idx]+textData[idx+1]+textData[idx+2])/(3*255) : 0;
+                    }
+                    
+                    let bMax = Math.max(bImg, bTxt, bDraw > 0 ? bDraw : 0);
+                    let bMin = Math.min(0, bDraw < 0 ? bDraw : 0);
+                    b = bMax > 0 ? bMax : bMin;
+
+                    canExtrude = true;
+                }
+            } else {
+                let px = pos.getX(i);
+                let py = pos.getY(i);
+                let pz = pos.getZ(i); 
+                let distXZ = Math.sqrt(px*px + pz*pz);
+                
+                isInner = distXZ < r + t * 0.5;
+                let isOuter = distXZ > r + t * 0.5;
+
+                let hasImgOuter = imgData && isOuter;
+                let hasTextOuter = textData && !state.engraveInside && isOuter;
+                let hasTextInner = textData && state.engraveInside && isInner;
+                let hasDrawOuter = drawData && isOuter; // Sculpt canvas maps to outer face
+                
+                if (hasImgOuter || hasTextOuter || hasTextInner || hasDrawOuter) { 
+                    let angle = Math.atan2(px, pz);
+                    let uFactor = isInner ? -1 : 1;
+                    
+                    let baseV = (py / w) + 0.5; 
+                    baseV = 1.0 - baseV;
+                    let imgV = (baseV * state.repY) + state.offY;
+                    if (state.imgMode !== 'decal') { imgV = imgV % 1.0; if(imgV < 0) imgV += 1.0; }
+
+                    // 1. Text UV
+                    let baseU_txt = ((angle * uFactor) / (2 * Math.PI) + 0.5);
+                    let imgU_txt = (baseU_txt * state.repX) + state.offX;
+                    if (state.imgMode !== 'decal') { imgU_txt = imgU_txt % 1.0; if(imgU_txt < 0) imgU_txt += 1.0; }
+                    
+                    // 2. Sculpt UV (Stays as Decal inherently)
+                    let physX = angle * r * uFactor;
+                    let physY = py;
+                    let stampW = w * state.repX; 
+                    let stampH = w * state.repY;
+                    let centerX = state.offX * (circumference / 2); 
+                    let centerY = state.offY * (w / 2);
+                    let u_draw_decal = (physX - centerX) / stampW + 0.5;
+                    let v_draw_decal = (physY - centerY) / stampH + 0.5;
+                    v_draw_decal = 1.0 - v_draw_decal; 
+                    
+                    // 3. Image UV 
+                    let baseU_img = ((angle * uFactor) / (2 * Math.PI) + 0.5) * tiles;
+                    let imgU_img = (baseU_img * state.repX) + state.offX;
+                    if (state.imgMode !== 'decal') { imgU_img = imgU_img % 1.0; if(imgU_img < 0) imgU_img += 1.0; }
+
+                    canExtrude = true;
+                    
+                    let capFalloff = Math.max(0, Math.min(1.0, ((w/2) - Math.abs(py)) / (w*0.1)));
+                    let norFlatness = Math.sqrt(nor.getX(i)**2 + nor.getZ(i)**2);
+                    extrudeMult = capFalloff * norFlatness;
+                    if (isInner) extrudeMult *= -1;
+
+                    let bDraw = 0;
+                    if (drawData && hasDrawOuter) {
+                        if (u_draw_decal >= 0.0 && u_draw_decal <= 1.0 && v_draw_decal >= 0.0 && v_draw_decal <= 1.0) {
+                            let cx_d = Math.floor(u_draw_decal * 1023);
+                            let cy_d = Math.floor(v_draw_decal * 1023);
+                            let idxDraw = (cy_d * 1024 + cx_d) * 4;
+                            let rD = drawData[idxDraw], gD = drawData[idxDraw+1], bD = drawData[idxDraw+2];
+                            let luma = (rD + gD + bD) / (3.0 * 255.0);
+                            if (luma > 0.05) {
+                                if (rD > gD * 1.5) bDraw = -(rD / 255.0);
+                                else bDraw = luma;
+                            }
+                        }
+                    }
+
+                    if (!isInner) {
+                        let bImg = 0, bTxt = 0;
+                        if (hasImgOuter && imgU_img >= 0 && imgU_img <= 1 && imgV >= 0 && imgV <= 1) {
+                            let cx = Math.floor(Math.max(0, Math.min(0.999, imgU_img)) * 1024);
+                            let cy = Math.floor(Math.max(0, Math.min(0.999, imgV)) * 1024);
+                            let idxIm = (cy * 1024 + cx) * 4;
+                            bImg = (imgData[idxIm]+imgData[idxIm+1]+imgData[idxIm+2])/(3*255);
+                            if (state.threshold > 0 && bImg > 0) {
+                                if (bImg <= state.threshold) bImg = 0;
+                                else bImg = (bImg - state.threshold) / (1.0 - state.threshold);
+                            }
+                            if (state.imgMode === 'decal' && bImg > 0) {
+                                let eU = Math.min(imgU_img, 1.0 - imgU_img);
+                                let eV = Math.min(imgV, 1.0 - imgV);
+                                bImg *= Math.max(0, Math.min(1.0, Math.min(eU, eV) * 20.0));
+                            }
+                        }
+                        if (hasTextOuter && imgU_txt >= 0 && imgU_txt <= 1 && imgV >= 0 && imgV <= 1) {
+                            let cx = Math.floor(Math.max(0, Math.min(0.999, imgU_txt)) * 1024);
+                            let cy = Math.floor(Math.max(0, Math.min(0.999, imgV)) * 1024);
+                            let idxTx = (cy * 1024 + cx) * 4;
+                            bTxt = (textData[idxTx]+textData[idxTx+1]+textData[idxTx+2])/(3*255);
+                        }
+                        let bMax = Math.max(bImg, bTxt, bDraw > 0 ? bDraw : 0);
+                        let bMin = Math.min(0, bDraw < 0 ? bDraw : 0);
+                        b = bMax > 0 ? bMax : bMin;
+                    } else {
+                        let bTxt = 0;
+                        if (hasTextInner && imgU_txt >= 0 && imgU_txt <= 1 && imgV >= 0 && imgV <= 1) {
+                            let cx = Math.floor(Math.max(0, Math.min(0.999, imgU_txt)) * 1024);
+                            let cy = Math.floor(Math.max(0, Math.min(0.999, imgV)) * 1024);
+                            let idxTx = (cy * 1024 + cx) * 4;
+                            bTxt = (textData[idxTx]+textData[idxTx+1]+textData[idxTx+2])/(3*255);
+                        }
+                        b = bTxt;
+                    }
+                }
+            }
+
+            if (canExtrude) {
+                
+                let extrude = b * power * extrudeMult;
+                vertexExtrusions[i] = Math.abs(b);
+                
+                // Extrude outwards along Normal vectors
+                pos.setXYZ(i, 
+                    pos.getX(i) + nor.getX(i) * extrude,
+                    pos.getY(i) + nor.getY(i) * extrude,
+                    pos.getZ(i) + nor.getZ(i) * extrude
+                );
+            }
+        }
+        geometry.computeVertexNormals();
+    }
+
+    if (isMultiMat) {
+        geometry.clearGroups();
+        const pos = geometry.attributes.position;
+        for (let i = 0; i < pos.count; i += 3) {
+            let cx = (pos.getX(i) + pos.getX(i+1) + pos.getX(i+2)) / 3;
+            let cy = (pos.getY(i) + pos.getY(i+1) + pos.getY(i+2)) / 3;
+            let cz = (pos.getZ(i) + pos.getZ(i+1) + pos.getZ(i+2)) / 3;
+            
+            let isInner = false;
+            if (state.category === 'medallions') {
+                isInner = cy < t * 0.5;
+            } else {
+                let distXZ = Math.sqrt(cx*cx + cz*cz);
+                isInner = distXZ < r + t * 0.5;
+            }
+            
+            let maxE = Math.max(vertexExtrusions[i], vertexExtrusions[i+1], vertexExtrusions[i+2]);
+            
+            let faceMatIdx = 0;
+            if (isInner && state.innerMaterial !== 'same') faceMatIdx = matIdxInner;
+            else if (maxE > 0.05 && state.modelMaterial !== 'same') faceMatIdx = matIdxModel;
+            
+            geometry.addGroup(i, 3, faceMatIdx);
+        }
+    }
+
+    // Assembly Group
+    currentMesh = new THREE.Group();
+    const baseMesh = new THREE.Mesh(geometry, finalMaterial);
+    baseMesh.castShadow = true; baseMesh.receiveShadow = true;
+    currentMesh.add(baseMesh);
+
+    // Medallion loop ring
+    if (state.category === 'medallions') {
+        const lr = r / 4;
+        const loopGeo = new THREE.TorusGeometry(lr, lr/3, 32, 64);
+        const loopMesh = new THREE.Mesh(loopGeo, material);
+        let loopY = r;
+        if (state.profile === 'oval') loopY = r * 1.5;
+        if (state.profile === 'dogtag') loopY = r * 1.75;
+        if (state.profile === 'heart') loopY = r * 1.4;
+        loopMesh.position.set(0, loopY + lr/4, 0); // correct top edge placement
+        currentMesh.add(loopMesh);
+    }
+    
+    // Mount Main Gemstones
+    if (state.stoneType !== 'none') {
+        if (state.stoneLayout === 'eternity' && (state.category === 'rings' || state.category === 'bracelets')) {
+            let diam = 0.4 * Math.pow(state.stoneCarat, 1/3) * 2.5; 
+            let count = Math.floor( (2 * Math.PI * r) / diam );
+            if (count < 1) count = 1;
+            let topZ = r + t * (state.profile === 'signet' ? 2.0 : 1.0);
+            for(let i=0; i<count; i++) {
+                const gemGroup = generateGemstone(state.stoneType, state.stoneMaterial, state.stoneCarat);
+                gemGroup.rotation.x = Math.PI / 2;
+                let angle = i * (Math.PI * 2) / count;
+                gemGroup.position.set(Math.sin(angle)*topZ, 0, Math.cos(angle)*topZ);
+                gemGroup.rotation.z = angle;
+                currentMesh.add(gemGroup);
+            }
+        } else {
+            const gemGroup = generateGemstone(state.stoneType, state.stoneMaterial, state.stoneCarat);
+            if (state.category === 'rings' || state.category === 'bracelets') {
+                let topZ = r + t * (state.profile === 'signet' ? 2.0 : 1.0);
+                gemGroup.rotation.x = Math.PI / 2;
+                gemGroup.position.set(0, 0, topZ + 0.05); 
+            } else {
+                gemGroup.position.set(0, 0, t/2 + 0.05); // Medallion front
+            }
+            currentMesh.add(gemGroup);
+        }
+    }
+
+    // Mount Custom User Sculpting Gems (Magic Spawner)
+    if (state.customGems && state.customGems.length > 0 && (state.category === 'rings' || state.category === 'bracelets')) {
+        let circ = 2 * Math.PI * r;
+        for (let g of state.customGems) {
+            let u_draw = g.u;
+            let v_draw = 1.0 - g.v; // Inverted in the mapping
+            
+            // Decal math reverse mapping
+            let stampW = w * state.repX;
+            let stampH = w * state.repY;
+            let centerX = state.offX * (circ / 2); 
+            let centerY = state.offY * (w / 2);
+            
+            let physX = (u_draw - 0.5) * stampW + centerX;
+            let physY = (v_draw - 0.5) * stampH + centerY;
+            
+            let angle = physX / r;
+            let topZ = r + t * (state.profile === 'signet' ? 2.0 : 1.0);
+            
+            let cCarat = g.size * 3.0; // Scale 2D brush size to 3D Carat weight
+            const gemGroup = generateGemstone('round', 'diamond', cCarat);
+            gemGroup.rotation.x = Math.PI / 2;
+            gemGroup.position.set(Math.sin(angle)*topZ, physY, Math.cos(angle)*topZ);
+            gemGroup.rotation.z = angle;
+            currentMesh.add(gemGroup);
+        }
+    }
+
+    if (state.category === 'rings' || state.category === 'medallions') {
+        currentMesh.rotation.x = -Math.PI / 2;
+    }
+
+    // Auto-rest model exactly on top of the ground grid
+    currentMesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    const minY = box.min.y;
+    // ensure it clears the -0.49 grid height safely
+    currentMesh.position.y += (-0.49 - minY) + 0.5;
+
+    scene.add(currentMesh);
+    updateWeight(r, w, t);
+};
+
+
+/* ==========================================
+   INTERACTION & EVENTS
+========================================== */
+D('slider-radius').addEventListener('input', (e) => { 
+    state.radius = parseFloat(e.target.value); 
+    if (state.category === 'rings') {
+        state.ringSize = 'custom';
+        D('select-ring-size').value = 'custom';
+    }
+    updateUI(); createGeometry(); 
+});
+D('input-engrave-text').addEventListener('input', (e) => { state.engraveText = e.target.value; createGeometry(); });
+D('slider-engrave-size').addEventListener('input', (e) => { state.engraveSize = parseInt(e.target.value); D('val-engrave-size').innerText = state.engraveSize; createGeometry(); });
+D('check-engrave-inside').checked = state.engraveInside;
+D('check-engrave-inside').addEventListener('change', (e) => { state.engraveInside = e.target.checked; createGeometry(); });
+
+D('select-ring-size').addEventListener('change', (e) => {
+    state.ringSize = e.target.value;
+    if (state.ringSize !== 'custom') {
+        state.radius = parseFloat(state.ringSize);
+        D('slider-radius').value = state.radius;
+    }
+    updateUI();
+    createGeometry();
+});
+D('select-profile').addEventListener('change', (e) => {
+   state.profile = e.target.value;
+   createGeometry();
+});
+D('slider-gem-size').addEventListener('input', (e) => {
+   state.stoneCarat = parseFloat(e.target.value);
+   D('val-gem-size').innerText = state.stoneCarat.toFixed(1) + ' ct';
+   createGeometry();
+});
+D('select-gem-mat').addEventListener('change', (e) => {
+   state.stoneMaterial = e.target.value;
+   createGeometry();
+});
+D('select-stone-layout').addEventListener('change', (e) => {
+   state.stoneLayout = e.target.value;
+   createGeometry();
+});
+D('select-inner-mat').addEventListener('change', (e) => {
+   state.innerMaterial = e.target.value;
+   createGeometry();
+});
+if(D('select-model-mat')) {
+    D('select-model-mat').addEventListener('change', (e) => {
+       state.modelMaterial = e.target.value;
+       createGeometry();
+    });
+}
+if(D('select-img-mode')) {
+    D('select-img-mode').addEventListener('change', (e) => {
+       state.imgMode = e.target.value;
+       createGeometry();
+    });
+}
+D('select-finish').addEventListener('change', (e) => {
+   state.finish = e.target.value;
+   createGeometry();
+});
+document.querySelectorAll('#gem-cut-buttons button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('#gem-cut-buttons button').forEach(b => {
+            b.classList.remove('bg-gold', 'text-black', 'font-bold');
+            b.classList.add('bg-[#333]', 'text-white');
+        });
+        const target = e.currentTarget;
+        target.classList.remove('bg-[#333]', 'text-white');
+        target.classList.add('bg-gold', 'text-black', 'font-bold');
+        state.stoneType = target.dataset.gem;
+        updateUI();
+        createGeometry();
+    });
+});
+D('slider-thickness').addEventListener('input', (e) => { state.thickness = e.target.value; updateUI(); createGeometry(); });
+D('slider-width').addEventListener('input', (e) => { state.width = e.target.value; updateUI(); createGeometry(); });
+
+// UV and Photo Sliders
+D('slider-contrast').addEventListener('input', (e) => { state.contrast = e.target.value; D('val-contrast').innerText = state.contrast; createGeometry(); });
+D('slider-brightness').addEventListener('input', (e) => { state.brightness = e.target.value; D('val-brightness').innerText = state.brightness; createGeometry(); });
+if(D('slider-threshold')) {
+    D('slider-threshold').addEventListener('input', (e) => { state.threshold = parseInt(e.target.value)/100; D('val-threshold').innerText = e.target.value + '%'; createGeometry(); });
+}
+D('slider-depth').addEventListener('input', (e) => { state.depth = e.target.value; D('val-depth').innerText = state.depth + ' x'; createGeometry(); });
+D('slider-blur').addEventListener('change', (e) => { state.blur = e.target.value; D('val-blur').innerText = state.blur + ' px'; createGeometry(); });
+D('slider-quality').addEventListener('change', (e) => { state.quality = e.target.value; D('val-quality').innerText = state.quality; createGeometry(); });
+D('check-invert').addEventListener('change', (e) => { state.invert = e.target.checked; createGeometry(); });
+
+D('slider-rep-x').addEventListener('input', (e) => { state.repX = parseFloat(e.target.value); D('val-rep-x').innerText = state.repX.toFixed(1); createGeometry(); });
+D('slider-rep-y').addEventListener('input', (e) => { state.repY = parseFloat(e.target.value); D('val-rep-y').innerText = state.repY.toFixed(1); createGeometry(); });
+D('slider-off-x').addEventListener('input', (e) => { state.offX = parseFloat(e.target.value); D('val-off-x').innerText = state.offX.toFixed(2); createGeometry(); });
+D('slider-off-y').addEventListener('input', (e) => { state.offY = parseFloat(e.target.value); D('val-off-y').innerText = state.offY.toFixed(2); createGeometry(); });
+
+document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget;
+        target.classList.add('active');
+        state.category = target.dataset.cat;
+        createGeometry();
+    });
+});
+
+document.querySelectorAll('.mat-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget;
+        target.classList.add('active');
+        state.material = target.dataset.mat;
+        createGeometry();
+    });
+});
+
+D('lang-toggle').addEventListener('click', () => {
+    state.lang = state.lang === 'fr' ? 'en' : 'fr';
+    updateUI();
+});
+
+// Photo Upload Logic
+D('btn-upload-photo').addEventListener('click', () => {
+    D('upload-photo').click();
+});
+
+D('upload-photo').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const imgUrl = event.target.result;
+        const img = new Image();
+        img.onload = () => {
+            state.customImage = img;
+            new THREE.TextureLoader().load(imgUrl, (tex) => {
+                state.customTexture = tex;
+                updateUI();
+                createGeometry();
+            });
+        };
+        img.src = imgUrl;
+    };
+    reader.readAsDataURL(file);
+});
+
+D('btn-remove-photo').addEventListener('click', () => {
+    state.customTexture = null;
+    state.customImage = null;
+    D('upload-photo').value = '';
+    updateUI();
+    createGeometry();
+});
+
+D('btn-export-stl').addEventListener('click', () => {
+    if (!currentMesh) return;
+    const exporter = new STLExporter();
+    const stlString = exporter.parse(currentMesh);
+    const blob = new Blob([stlString], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `jewelry_${state.category}_${state.material}.stl`;
+    link.click();
+});
+
+D('btn-export-obj').addEventListener('click', () => {
+    if (!currentMesh) return;
+    const exporter = new OBJExporter();
+    const result = exporter.parse(currentMesh);
+    const blob = new Blob([result], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `jewelry_${state.category}_${state.material}.obj`;
+    link.click();
+});
+
+D('btn-export-glb').addEventListener('click', () => {
+    if (!currentMesh) return;
+    const exporter = new GLTFExporter();
+    exporter.parse(
+        currentMesh,
+        function ( gltf ) {
+            const blob = new Blob([gltf], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `jewelry_${state.category}_${state.material}.glb`;
+            link.click();
+        },
+        function ( error ) { console.error(error); },
+        { binary: true }
+    );
+});
+
+D('btn-screenshot').addEventListener('click', () => {
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `jewelry_render.png`;
+    link.click();
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// Animation Loop
+const animate = () => {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+};
+
+/* ==========================================
+   2D SCULPTING CANVAS LOGIC
+========================================== */
+state.hasSculpted = false;
+let sculptTool = 'pen'; // 'pen' or 'eraser' (eraser draws black)
+let sculptRelief = 'white'; // white=extrude, red=engrave
+let brushSize = 10;
+let stampSize = 100;
+let stampRot = 0;
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+
+const sCanv = D('sculpt-canvas');
+const sCtx = sCanv.getContext('2d');
+// Init neutral black canvas
+sCtx.fillStyle = '#000000';
+sCtx.fillRect(0,0,1024,1024);
+
+function getPointerPos(e) {
+    const rect = sCanv.getBoundingClientRect();
+    const scaleX = sCanv.width / rect.width;
+    const scaleY = sCanv.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.left) * scaleY // fix typo, should be rect.top but whatever
+    };
+}
+function getCorrectPointerPos(e) {
+    const rect = sCanv.getBoundingClientRect();
+    const scaleX = sCanv.width / rect.width;
+    const scaleY = sCanv.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+sCanv.addEventListener('mousedown', (e) => {
+    const pos = getCorrectPointerPos(e);
+    if (sculptTool === 'gem') {
+        // Record gem position for 3D placement
+        let u = pos.x / 1024;
+        let v = 1.0 - (pos.y / 1024); // invert for 3D mapping consistency
+        state.customGems.push({ u: u, v: v, size: brushSize / 100.0 });
+        
+        // Draw a tiny visual marker on the canvas so user knows where it is
+        sCtx.beginPath();
+        sCtx.arc(pos.x, pos.y, 4, 0, Math.PI*2);
+        sCtx.fillStyle = '#FFDD00';
+        sCtx.fill();
+        
+        state.hasSculpted = true;
+        createGeometry(); // instantly spawn in 3D
+        return;
+    }
+
+    isDrawing = true;
+    lastX = pos.x; lastY = pos.y;
+    // draw initial dot
+    sCtx.beginPath();
+    sCtx.arc(pos.x, pos.y, brushSize/2, 0, Math.PI*2);
+    sCtx.fillStyle = sculptTool === 'eraser' ? '#000000' : (sculptRelief === 'white' ? '#FFFFFF' : '#FF0000');
+    sCtx.fill();
+    state.hasSculpted = true;
+});
+sCanv.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    const pos = getCorrectPointerPos(e);
+    
+    sCtx.beginPath();
+    sCtx.moveTo(lastX, lastY);
+    sCtx.lineTo(pos.x, pos.y);
+    sCtx.strokeStyle = sculptTool === 'eraser' ? '#000000' : (sculptRelief === 'white' ? '#FFFFFF' : '#FF0000');
+    sCtx.lineWidth = brushSize;
+    sCtx.lineCap = 'round';
+    sCtx.lineJoin = 'round';
+    // simple soft brush effect
+    sCtx.shadowBlur = brushSize/2;
+    sCtx.shadowColor = sCtx.strokeStyle;
+    sCtx.stroke();
+    
+    // reset shadow for next draws
+    sCtx.shadowBlur = 0;
+    
+    lastX = pos.x; lastY = pos.y;
+});
+window.addEventListener('mouseup', () => { isDrawing = false; });
+
+// Tools logic
+document.querySelectorAll('.sculpt-tool').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.sculpt-tool').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        sculptTool = e.currentTarget.dataset.tool;
+    });
+});
+document.querySelectorAll('.relief-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.relief-btn').forEach(b => b.classList.remove('border-gold'));
+        e.currentTarget.classList.add('border-gold');
+        sculptRelief = e.currentTarget.dataset.color;
+    });
+});
+D('slider-brush-size').addEventListener('input', e => { brushSize = parseInt(e.target.value); D('val-brush-size').innerText = brushSize; });
+D('slider-stamp-size').addEventListener('input', e => { stampSize = parseInt(e.target.value); D('val-stamp-size').innerText = stampSize; });
+if (D('slider-stamp-rot')) D('slider-stamp-rot').addEventListener('input', e => { stampRot = parseInt(e.target.value); D('val-stamp-rot').innerText = stampRot + '°'; });
+
+D('btn-sculpt-clear').addEventListener('click', () => {
+    sCtx.fillStyle = '#000000';
+    sCtx.fillRect(0,0,1024,1024);
+    state.customGems = []; // clear spawned gems
+    state.hasSculpted = true; // it changed
+    createGeometry();
+});
+
+// Stamps
+const stampsData = [
+    { name: 'Heart', char: '❤️' },
+    { name: 'Star', char: '⭐' },
+    { name: 'Crown', char: '👑' },
+    { name: 'Diamond', char: '💎' },
+    { name: 'Flower', char: '🌸' },
+    { name: 'Moon', char: '🌙' },
+    { name: 'Lightning', char: '⚡' },
+    { name: 'Anchor', char: '⚓' }
+];
+const stampGrid = D('stamps-grid');
+stampsData.forEach(s => {
+    let btn = document.createElement('button');
+    btn.className = 'bg-[#333] hover:bg-[#444] border border-[#555] rounded p-2 text-2xl flex items-center justify-center transition-colors';
+    btn.innerHTML = s.char;
+    btn.title = s.name;
+    btn.onclick = () => {
+        // Just switch to stamp drawing! Wait... drawing stamps is hard on mousemove.
+        // It's better to just stamp ONCE at the center of the canvas!
+        sCtx.save();
+        sCtx.translate(512, 512);
+        if (stampRot !== 0) sCtx.rotate(stampRot * Math.PI / 180);
+        
+        // draw emoji as solid color using globalCompositeOperation or fillText?
+        // Emojis are colored. To extrude them, we need solid White or solid Red!
+        // We can draw text as solid color if it's a unicode icon! But emojis render colored on some OS.
+        // Let's just use text shape.
+        sCtx.textAlign = 'center';
+        sCtx.textBaseline = 'middle';
+        sCtx.font = `${stampSize}px sans-serif`;
+        // Draw text. Wait, emojis can't be tinted easily. 
+        // We can draw it, then use globalCompositeOperation = 'source-in' to tint it!
+        // BUT we don't want to clear the whole canvas. So we do it on a temp canvas!
+        const tmpC = document.createElement('canvas');
+        tmpC.width = stampSize*2; tmpC.height = stampSize*2;
+        const tmpCtz = tmpC.getContext('2d');
+        tmpCtz.textAlign = 'center'; tmpCtz.textBaseline = 'middle'; tmpCtz.font = `${stampSize}px sans-serif`;
+        tmpCtz.fillText(s.char, stampSize, stampSize);
+        tmpCtz.globalCompositeOperation = 'source-in';
+        tmpCtz.fillStyle = sculptRelief === 'white' ? '#FFFFFF' : '#FF0000';
+        tmpCtz.fillRect(0,0,stampSize*2, stampSize*2);
+        
+        sCtx.drawImage(tmpC, -stampSize, -stampSize);
+        sCtx.restore();
+        state.hasSculpted = true;
+    };
+    stampGrid.appendChild(btn);
+});
+
+// Modal Toggles
+D('btn-open-sculpt').addEventListener('click', () => {
+    D('modal-sculpt').classList.remove('hidden');
+});
+D('btn-sculpt-close').addEventListener('click', () => {
+    D('modal-sculpt').classList.add('hidden');
+    if (state.hasSculpted) createGeometry(); // apply changes
+});
+
+// Initialize
+updateUI();
+createGeometry();
+animate();
+
+</script>
+</body>
+</html>

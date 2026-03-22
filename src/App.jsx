@@ -396,6 +396,8 @@ const StudiosPro = () => {
   const [isNew3DOpen, setIsNew3DOpen] = useState(false);
   const [isVectorOpen, setIsVectorOpen] = useState(false);
   const [isStudioProOpen, setIsStudioProOpen] = useState(false);
+  const [isMaker7Open, setIsMaker7Open] = useState(false);
+  const [isJewelryOpen, setIsJewelryOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -550,6 +552,8 @@ const StudiosPro = () => {
       if (ref === 'n3d') setIsNew3DOpen(true);
       if (ref === 'vcnc') setIsVectorOpen(true);
       if (ref === 'spro') setIsStudioProOpen(true);
+      if (ref === 'mkr7') setIsMaker7Open(true);
+      if (ref === 'jwly') setIsJewelryOpen(true);
     }
   }, [lang, user]);
 
@@ -602,6 +606,8 @@ const StudiosPro = () => {
         setIsNew3DOpen(false);
         setIsVectorOpen(false);
         setIsStudioProOpen(false);
+        setIsMaker7Open(false);
+        setIsJewelryOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
@@ -685,7 +691,9 @@ const StudiosPro = () => {
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC",
-      studioPro: "Studio Pro 4D"
+      studioPro: "Studio Pro 4D",
+      maker7: "Maker Studio 7",
+      jewelry: "Jewelry Maker Pro"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -717,14 +725,16 @@ const StudiosPro = () => {
       depthMaps: "Depth Maps",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC",
-      studioPro: "Studio Pro 4D"
+      studioPro: "Studio Pro 4D",
+      maker7: "Maker Studio 7",
+      jewelry: "Jewelry Maker Pro"
     }
   };
 
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -957,6 +967,30 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.studioPro}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMaker7Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f43f5e, #fb923c)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Maker Studio 7 Icon" />
+          </div>
+          <div className="card-label">{currentT.maker7}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsJewelryOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }} />
+            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Jewelry Maker Pro Icon" />
+          </div>
+          <div className="card-label">{currentT.jewelry}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -1018,6 +1052,16 @@ const StudiosPro = () => {
         {isStudioProOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/studio-pro/index.html" className="studio-iframe" title="Studio Pro 4D" />
+          </motion.div>
+        )}
+        {isMaker7Open && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/maker7/index.html" className="studio-iframe" title="Maker Studio 7" />
+          </motion.div>
+        )}
+        {isJewelryOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/jewelry-pro/index.html" className="studio-iframe" title="Jewelry Maker Pro" />
           </motion.div>
         )}
       </AnimatePresence>
