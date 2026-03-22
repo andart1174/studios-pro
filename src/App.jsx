@@ -857,6 +857,8 @@ const StudiosPro = () => {
             <li><strong>AI Depth Maps:</strong> Generate accurate depth maps from single photos for lithophanes and CNC relief carving.</li>
             <li><strong>Vector CNC:</strong> Professional photo-to-vector conversion for SVG, DXF, and G-code, optimized for laser and router CNC machines.</li>
             <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
+            <li><strong>Maker Studio 7:</strong> All-in-one generator for parametric boxes, spherical lithophanes, halftones, voronoi structures, and AI-powered PBR textures.</li>
+            <li><strong>Jewelry Maker Pro:</strong> Design custom 3D printable jewelry, rings, and accessories directly in your browser with precise CAD parameters and photo-relief mapping.</li>
           </ul>
         </div>
 
