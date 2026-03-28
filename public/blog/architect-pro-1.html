@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Pro 1 | Studios-Pro</title>
+    <meta name="description" content="A guide to using Architect Pro 1 for professional 2D and 3D floor drafting.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #fff; }
+        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(59,130,246,0.1); border-radius: 20px; border: 1px solid rgba(59,130,246,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6); color: #000; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59,130,246,0.5); }
+        
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>Professional Architectural Drafting with Architect Pro 1</span>
+            <span data-fr>Dessin Architectural Professionnel avec Architect Pro 1</span>
+        </h1>
+        
+        <p>
+            <span data-en>A guide to using Architect Pro 1 for professional 2D and 3D floor drafting.</span>
+            <span data-fr>Un guide pour utiliser Architect Pro 1 pour le dessin professionnel de plans 2D et 3D.</span>
+        </p>
+
+        <h2>
+            <span data-en>Drafting 2D Floor Plans</span>
+            <span data-fr>Dessin de Plans 2D</span>
+        </h2>
+        <p>
+            <span data-en>Start your project by plotting precise walls, doors, and windows on a top-down architectural grid. Measurements are instantly translated into real-world units, ensuring your designs adhere to professional standards.</span>
+            <span data-fr>Commencez votre projet en traçant des murs, portes et fenêtres avec précision sur une grille architecturale de haut en bas. Les mesures sont instantanément traduites en unités réelles.</span>
+        </p>
+
+        <h2>
+            <span data-en>Seamless 3D Visualization</span>
+            <span data-fr>Visualisation 3D Transparente</span>
+        </h2>
+        <p>
+            <span data-en>Once your 2D lines are drawn, switch instantly to 3D mode. Watch your floorplan extrude into realistic rooms. Export your final blueprints directly as professional CAD-ready formats.</span>
+            <span data-fr>Une fois vos lignes 2D dessinées, passez instantanément en mode 3D. Regardez votre plan s'extruder en pièces réalistes. Exportez vos plans sous des formats professionnels.</span>
+        </p>
+
+        <div class="cta-container">
+            <a href="/?ref=arp1" class="cta-btn">
+                <span data-en>Open Application</span>
+                <span data-fr>Ouvrir l'application</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>
