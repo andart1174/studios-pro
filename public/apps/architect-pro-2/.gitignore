@@ -1,0 +1,13 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# Gemini/Antigravity folders
+.gemini/
+.agents/
+_agent/
+brain/
+
+# Temp files
+/tmp/
+*.log

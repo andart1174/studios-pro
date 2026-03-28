@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en"> <!-- v3.0 -->
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>ArchitectPro — Intelligent House Builder</title>
+  <meta name="description"
+    content="Professional interactive house construction planner with 2D editor, 3D model, materials calculator and cost estimator." />
+  <link rel="stylesheet" href="style.css?v=3" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp2' } });
+        }
+      }, true);
+    })();
+  </script>
+
+
+  <!-- ═══════════════════ WIZARD ═══════════════════ -->
+  <div id="wizard-screen">
+    <div class="wizard-brand">
+      <div class="wizard-brand-icon">🏗️</div>
+      <h1 id="wiz-title">ArchitectPro</h1>
+    </div>
+    <p class="wizard-subtitle" id="wiz-subtitle">Build your dream home, step by step</p>
+    <div class="wizard-card">
+      <div class="wizard-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label id="wiz-label-type">House Type</label>
+          <select id="inp-type">
+            <option value="0">Single Story</option>
+            <option value="1">2 Floors</option>
+            <option value="2">3 Floors</option>
+            <option value="3">Villa / Custom</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="wiz-label-length">Length (m)</label><input type="number" id="inp-length"
+            value="12" min="5" max="50" step="0.5" /></div>
+        <div class="form-group"><label id="wiz-label-width">Width (m)</label><input type="number" id="inp-width"
+            value="9" min="4" max="40" step="0.5" /></div>
+        <div class="form-group"><label id="wiz-label-fh">Floor Height (m)</label><input type="number"
+            id="inp-floor-height" value="2.8" min="2.4" max="4.5" step="0.1" /></div>
+        <div class="form-group"><label id="wiz-label-floors">Number of Floors</label><input type="number"
+            id="inp-floors" value="1" min="1" max="5" step="1" /></div>
+        <div class="form-group"><label id="wiz-label-foundation">Foundation Type</label>
+          <select id="inp-foundation">
+            <option value="0">Strip Foundation</option>
+            <option value="1">Raft Slab</option>
+            <option value="2">Pile Foundation</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="wiz-label-roof">Roof Type</label>
+          <select id="inp-roof">
+            <option value="0">Flat Roof</option>
+            <option value="1">Gable Roof (2 slopes)</option>
+            <option value="2" selected>Hip Roof (4 slopes)</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="wiz-label-budget">Total Budget ($)</label><input type="number"
+            id="inp-budget" value="250000" min="10000" step="5000" /></div>
+        <div class="form-group"><label id="wiz-label-region">Region / Climate</label>
+          <select id="inp-region">
+            <option value="0">Temperate</option>
+            <option value="1">Cold / Nordic</option>
+            <option value="2">Hot / Mediterranean</option>
+            <option value="3">Tropical</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startApp()"><span>🔨</span><span id="wiz-btn-text">Generate My Plan
+          →</span></button>
+    </div>
+    <div style="margin-top:1.5rem">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="wiz-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
+        <button class="lang-btn" id="wiz-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+      </div>
+      <div class="lang-toggle mt-2">
+        <button class="lang-btn active" id="wiz-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
+        <button class="lang-btn" id="wiz-unit-imperial" onclick="setUnitSystem('imperial')">Imperial (ft)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ APP ═══════════════════════ -->
+  <div id="app-screen">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="header-brand-icon">🏗️</div>
+        <span>ArchitectPro</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-sm" onclick="resetApp()">🔄 <span data-i18n="newProject">New Project</span></button>
+        <button class="btn-sm" onclick="exportToPrint()">🖨️ <span data-i18n="printProject">Print</span></button>
+        <button class="btn-sm" onclick="exportToPDF()">📄 <span data-i18n="exportPDF">Download PDF</span></button>
+        <div class="lang-toggle">
+          <button class="lang-btn active" id="app-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
+          <button class="lang-btn" id="app-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+        </div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" id="app-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
+          <button class="lang-btn" id="app-unit-imperial" onclick="setUnitSystem('imperial')">Imperial (ft)</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-body">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title" data-i18n="progress">Progress</div>
+          <div class="progress-ring-wrap">
+            <div class="progress-ring">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="28" fill="none" stroke="#2a2f42" stroke-width="7" />
+                <circle id="progress-arc" cx="36" cy="36" r="28" fill="none" stroke="#f59e0b" stroke-width="7"
+                  stroke-dasharray="175.93" stroke-dashoffset="175.93" stroke-linecap="round"
+                  style="transition:stroke-dashoffset 0.6s ease" />
+              </svg>
+              <div class="progress-ring-text" id="progress-pct">0%</div>
+            </div>
+            <div class="progress-label" data-i18n="progress">Overall Progress</div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title" data-i18n="phases">Phases</div>
+          <div class="phase-list" id="phase-list"></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title" data-i18n="colorCustomizer">Colors</div>
+          <div class="color-grid" id="color-grid"></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title" data-i18n="budget">Budget</div>
+          <div class="budget-info">
+            <span class="budget-val" id="budget-spent-val">$0</span>
+            <span style="color:var(--text-faint)" id="budget-total-val">$0</span>
+          </div>
+          <div class="budget-bar">
+            <div class="budget-fill" id="budget-fill" style="width:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="budget-pct" id="budget-pct-text">0%</span>
+            <span class="budget-over-text" id="budget-over" style="display:none" data-i18n="overBudget">⚠️ Over
+              budget!</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main-content" id="main-content">
+
+        <!-- Overview -->
+        <div class="overview-bar">
+          <div class="overview-stat"><span class="ov-label">📐 Area</span><span class="ov-val" id="ov-area">—</span>
+          </div>
+          <div class="overview-stat"><span class="ov-label">🏠 Phases</span><span class="ov-val">7</span></div>
+          <div class="overview-stat"><span class="ov-label">💲 <span
+                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">—</span></div>
+          <div class="overview-stat"><span class="ov-label">👷 <span data-i18n="laborCost">Labor</span></span><span
+              class="ov-val" id="ov-lab-cost">—</span></div>
+          <div class="overview-stat"><span class="ov-label">📊 Total Est.</span><span class="ov-val green"
+              id="ov-total">—</span></div>
+          <div style="margin-left:auto">
+            <span id="hdr-dims" style="font-size:0.88rem;color:var(--text-muted);font-weight:600"></span>
+          </div>
+        </div>
+
+        <!-- ═══ SPLIT SCREEN ═══ -->
+        <div class="split-container">
+
+          <!-- LEFT: 2D EDITOR -->
+          <div class="editor-panel">
+
+            <!-- Toolbar -->
+            <div class="editor-toolbar" id="editor-toolbar">
+              <div class="tool-group">
+                <button class="tool-btn active" id="tool-select" onclick="setTool('select')" title="Select element">↖
+                  <span data-i18n="toolSelect">Select</span></button>
+              </div>
+              <div class="tool-sep"></div>
+              <div class="tool-group">
+                <button class="tool-btn" id="tool-wall" onclick="setTool('wall')" title="Draw interior wall">▬ <span
+                    data-i18n="toolWall">Wall</span></button>
+                <button class="tool-btn" id="tool-window" onclick="setTool('window')" title="Place window">🪟 <span
+                    data-i18n="toolWindow">Window</span></button>
+                <button class="tool-btn" id="tool-door" onclick="setTool('door')" title="Place door">🚪 <span
+                    data-i18n="toolDoor">Door</span></button>
+                <button class="tool-btn" id="tool-stairs" onclick="setTool('stairs')" title="Place staircase">🪜 <span
+                    data-i18n="toolStairs">Stairs</span></button>
+              </div>
+              <div class="tool-sep"></div>
+              <button class="tool-btn" id="tool-erase" onclick="setTool('erase')" title="Erase element">🗑️ <span
+                  data-i18n="toolErase">Erase</span></button>
+            </div>
+
+            <!-- Tool Options Bar (always visible, changes per tool) -->
+            <div class="tool-options-bar" id="tool-options-bar">
+              <!-- populated by editor.js buildToolOptions() -->
+            </div>
+
+            <!-- Canvas + Properties -->
+            <div class="editor-canvas-wrap" id="editor-canvas-wrap">
+              <canvas id="canvas-editor"></canvas>
+              <div class="properties-panel" id="properties-panel" style="display:none"></div>
+            </div>
+
+            <!-- Footer: floors + controls -->
+            <div class="editor-footer">
+              <div class="floor-tabs" id="floor-tabs"></div>
+              <div class="editor-controls">
+                <button class="ctrl-btn" id="btn-undo" onclick="editorUndo()" disabled>↩ Undo</button>
+                <button class="ctrl-btn" id="btn-redo" onclick="editorRedo()" disabled>↪ Redo</button>
+                <button class="ctrl-btn active" id="btn-grid" onclick="toggleGrid()">⊞ Grid</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: 3D MODEL -->
+          <div class="view-3d-panel">
+            <canvas id="canvas-3d"></canvas>
+            <div class="view-3d-label">🏠 3D Model — drag to rotate · scroll to zoom</div>
+            <div class="canvas-overlay">
+              <button class="canvas-btn" onclick="resetCamera()">⟳ Reset</button>
+              <button class="canvas-btn" id="btn-wireframe" onclick="toggleWireframe()">⬡ Wire</button>
+            </div>
+          </div>
+
+        </div><!-- end split-container -->
+
+        <!-- Phase header -->
+        <div class="phase-header" id="phase-header">
+          <div class="phase-header-icon" id="ph-icon">⛏️</div>
+          <div class="phase-header-text">
+            <h2 id="ph-name">Foundation</h2>
+            <p id="ph-sub">Phase 1 of 7</p>
+          </div>
+          <div class="phase-nav">
+            <button class="btn-phase-nav" onclick="changePhase(-1)">‹</button>
+            <button class="btn-phase-nav" onclick="changePhase(1)">›</button>
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <div class="panel-card">
+          <div class="panel-title">🪜 <span data-i18n="steps">Steps</span> — <span class="pton"
+              id="steps-phase-name">Foundation</span></div>
+          <div class="steps-grid" id="steps-grid" style="padding:10px"></div>
+        </div>
+
+        <!-- Materials + Costs -->
+        <div class="data-grid">
+          <div class="panel-card">
+            <div class="panel-title">🧮 <span data-i18n="materials">Materials Calculator</span></div>
+            <div style="overflow-x:auto">
+              <table class="mat-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="materialItem">Material</th>
+                    <th data-i18n="qty">Qty</th>
+                    <th data-i18n="unit">Unit</th>
+                    <th data-i18n="total">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="mat-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-title">💲 <span data-i18n="costs">Cost Estimator</span></div>
+            <div class="cost-rows" id="cost-rows"></div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-row" id="tips-row"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js?v=3"></script>
+  <script src="editor.js?v=3"></script>
+  <script src="three-scene.js?v=3"></script>
+  <script src="export-handler.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+</body>
+
+</html>
