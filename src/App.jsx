@@ -398,6 +398,13 @@ const StudiosPro = () => {
   const [isStudioProOpen, setIsStudioProOpen] = useState(false);
   const [isMaker7Open, setIsMaker7Open] = useState(false);
   const [isJewelryOpen, setIsJewelryOpen] = useState(false);
+  const [isAuraGenOpen, setIsAuraGenOpen] = useState(false);
+  const [isArchPro1Open, setIsArchPro1Open] = useState(false);
+  const [isArchPro2Open, setIsArchPro2Open] = useState(false);
+  const [isFigureBuilderOpen, setIsFigureBuilderOpen] = useState(false);
+  const [isMusicComposerOpen, setIsMusicComposerOpen] = useState(false);
+  const [isDesignProOpen, setIsDesignProOpen] = useState(false);
+  const [isIaArchitecteOpen, setIsIaArchitecteOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -554,6 +561,13 @@ const StudiosPro = () => {
       if (ref === 'spro') setIsStudioProOpen(true);
       if (ref === 'mkr7') setIsMaker7Open(true);
       if (ref === 'jwly') setIsJewelryOpen(true);
+      if (ref === 'aurg') setIsAuraGenOpen(true);
+      if (ref === 'arp1') setIsArchPro1Open(true);
+      if (ref === 'arp2') setIsArchPro2Open(true);
+      if (ref === 'figb') setIsFigureBuilderOpen(true);
+      if (ref === 'musc') setIsMusicComposerOpen(true);
+      if (ref === 'desp') setIsDesignProOpen(true);
+      if (ref === 'iaar') setIsIaArchitecteOpen(true);
     }
   }, [lang, user]);
 
@@ -608,6 +622,13 @@ const StudiosPro = () => {
         setIsStudioProOpen(false);
         setIsMaker7Open(false);
         setIsJewelryOpen(false);
+        setIsAuraGenOpen(false);
+        setIsArchPro1Open(false);
+        setIsArchPro2Open(false);
+        setIsFigureBuilderOpen(false);
+        setIsMusicComposerOpen(false);
+        setIsDesignProOpen(false);
+        setIsIaArchitecteOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
@@ -693,7 +714,14 @@ const StudiosPro = () => {
       vectorCnc: "Vector CNC",
       studioPro: "Studio Pro 4D",
       maker7: "Maker Studio 7",
-      jewelry: "Jewelry Maker Pro"
+      jewelry: "Jewelry Maker Pro",
+      auraGen: "Aura Gen",
+      archPro1: "Architect Pro 1",
+      archPro2: "Architect Pro 2",
+      figureBuilder: "4D Figure Builder",
+      musicComposer: "4D Music Composer",
+      designPro: "Design Pro Studio",
+      iaArchitecte: "IA Architecte"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -727,14 +755,21 @@ const StudiosPro = () => {
       vectorCnc: "Vector CNC",
       studioPro: "Studio Pro 4D",
       maker7: "Maker Studio 7",
-      jewelry: "Jewelry Maker Pro"
+      jewelry: "Jewelry Maker Pro",
+      auraGen: "Aura Gen",
+      archPro1: "Architect Pro 1",
+      archPro2: "Architect Pro 2",
+      figureBuilder: "4D Figure Builder",
+      musicComposer: "4D Music Composer",
+      designPro: "Design Pro Studio",
+      iaArchitecte: "IA Architecte"
     }
   };
 
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isAuraGenOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isIaArchitecteOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -993,6 +1028,90 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.jewelry}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsAuraGenOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-3" style={{ background: 'linear-gradient(135deg, #a855f7, #d946ef)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Aura Gen Icon" />
+          </div>
+          <div className="card-label">{currentT.auraGen}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArchPro1Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }} />
+            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 1 Icon" />
+          </div>
+          <div className="card-label">{currentT.archPro1}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArchPro2Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }} />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 2 Icon" />
+          </div>
+          <div className="card-label">{currentT.archPro2}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsFigureBuilderOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-6" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }} />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Figure Builder Icon" />
+          </div>
+          <div className="card-label">{currentT.figureBuilder}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMusicComposerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }} />
+            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Music Composer Icon" />
+          </div>
+          <div className="card-label">{currentT.musicComposer}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsDesignProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #14b8a6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Design Pro Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.designPro}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsIaArchitecteOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-3" style={{ background: 'linear-gradient(135deg, #eab308, #f59e0b)' }} />
+            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="IA Architecte Icon" />
+          </div>
+          <div className="card-label">{currentT.iaArchitecte}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -1064,6 +1183,41 @@ const StudiosPro = () => {
         {isJewelryOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/jewelry-pro/index.html" className="studio-iframe" title="Jewelry Maker Pro" />
+          </motion.div>
+        )}
+        {isAuraGenOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/aura-gen/index.html" className="studio-iframe" title="Aura Gen" />
+          </motion.div>
+        )}
+        {isArchPro1Open && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/architect-pro-1/index.html" className="studio-iframe" title="Architect Pro 1" />
+          </motion.div>
+        )}
+        {isArchPro2Open && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/architect-pro-2/index.html" className="studio-iframe" title="Architect Pro 2" />
+          </motion.div>
+        )}
+        {isFigureBuilderOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/figure-builder/index.html" className="studio-iframe" title="4D Figure Builder" />
+          </motion.div>
+        )}
+        {isMusicComposerOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/music-composer/index.html" className="studio-iframe" title="4D Music Composer" />
+          </motion.div>
+        )}
+        {isDesignProOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/design-pro-studio/index.html" className="studio-iframe" title="Design Pro Studio" />
+          </motion.div>
+        )}
+        {isIaArchitecteOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/ia-architecte/index.html" className="studio-iframe" title="IA Architecte" />
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Music Composer & Visualizer</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
+        }
+      }, true);
+    })();
+  </script>
+
+
+    <!-- Top Overlay (Language & branding) -->
+    <header class="top-bar">
+        <h1 class="brand-title"><i class="fa-solid fa-compact-disc fa-spin-pulse"></i> <span data-i18n="appTitle">4D Music Composer</span></h1>
+        
+        <div class="header-controls" style="display: flex; gap: 10px;">
+            <button id="btn-zen" class="lang-btn" title="Zen Theater Mode"><i class="fa-solid fa-expand"></i> Zen</button>
+            <button id="btn-share" class="lang-btn" style="color: #00f3ff; border-color: #00f3ff;" title="Copy Viral Link"><i class="fa-solid fa-share-nodes"></i> Share URL</button>
+            <button id="lang-btn" class="lang-btn">🇺🇸 EN | 🇫🇷 FR</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        
+        <!-- Left Panel: Sequencer & Instruments -->
+        <aside class="panel left-panel glass-panel">
+            <h2 data-i18n="instrumentsTitle">Instruments & Sequence</h2>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                <div class="pattern-banks" style="display:flex; gap:5px;">
+                    <button class="btn-bank active-bank" id="bank-0">A</button>
+                    <button class="btn-bank" id="bank-1">B</button>
+                    <button class="btn-bank" id="bank-2">C</button>
+                    <button class="btn-bank" id="bank-3">D</button>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <label id="swing-label" data-i18n="swing" style="font-size: 0.8rem; color: var(--accent-primary);">Swing 0%</label>
+                    <input type="range" id="swing-slider" min="0" max="100" value="0" style="accent-color: var(--accent-primary);">
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <label id="pitch-label" data-i18n="pitch" style="font-size: 0.8rem; color: #ff00ea;">Pitch: 0</label>
+                    <input type="range" id="master-pitch" min="-12" max="12" value="0" style="accent-color: #ff00ea;">
+                </div>
+            </div>
+
+            <div class="control-group" style="padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px;">
+                <label data-i18n="presetLabel" style="font-size:0.8rem; color:#fff; display:block; margin-bottom:5px;">Studio Templates</label>
+                <div style="display: flex; gap: 5px;">
+                    <select id="preset-library-select" class="glass-select" style="flex:1;">
+                        <option value="">-- Load 25 Presets --</option>
+                    </select>
+                    <button id="btn-load-preset" class="btn-primary" style="padding: 5px 10px;" title="Load Preset to Sequencer"><i class="fa-solid fa-download"></i></button>
+                    <button id="btn-auto-fill" class="btn-glow" style="background: linear-gradient(45deg, #ff00ff, #ffaa00); padding: 5px 10px; border-color: #ff00ff;" title="Magic Auto Drum Fill (Inject ghost notes to end of measure)"><i class="fa-solid fa-drum"></i></button>
+                </div>
+            </div>
+
+            <div class="instrument-rack" id="instrument-rack">
+                <!-- Instrument rows will be dynamically generated by JS -->
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: auto;">
+                <button id="btn-save" class="btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="save">Save</span></button>
+                <button id="btn-load" class="btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fa-solid fa-folder-open"></i> <span data-i18n="load">Load</span></button>
+            </div>
+        </aside>
+
+        <!-- Center Stage: 3D Visualizer -->
+        <main class="center-stage" id="stage-container">
+            <button id="btn-exit-zen" style="display: none; position: absolute; top: 20px; right: 20px; z-index: 10000; padding: 10px 20px; background: rgba(255,0,0,0.5); border: 1px solid #ff0000; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-compress"></i> EXIT ZEN</button>
+            <!-- Three.js Canvas will be injected here -->
+            <div class="stage-overlay">
+                <div class="transport-controls">
+                    <button id="btn-play" class="btn-primary"><i class="fa-solid fa-play"></i> <span data-i18n="play">Play</span></button>
+                    <button id="btn-stop" class="btn-secondary"><i class="fa-solid fa-stop"></i> <span data-i18n="stop">Stop</span></button>
+                    <button id="btn-record" class="btn-danger" style="background: rgba(255, 50, 50, 0.2); border: 1px solid #ff5555; padding: 10px 15px;"><i class="fa-solid fa-circle"></i> <span data-i18n="record">REC</span></button>
+                    <button id="btn-mic" class="btn-secondary" style="background: rgba(0, 200, 255, 0.2); color: #00f3ff; border: 1px solid #00f3ff;"><i class="fa-solid fa-microphone-lines"></i> <span data-i18n="mic">Mic</span></button>
+                    <div class="bpm-control">
+                        <label for="bpm-slider" data-i18n="bpm">BPM: <span id="bpm-value">120</span></label>
+                        <input type="range" id="bpm-slider" min="60" max="200" value="120">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel: AI & Effects -->
+        <aside class="panel right-panel glass-panel">
+            <h2 data-i18n="aiGeneratorTitle">AI Music Generator</h2>
+            <p class="ai-desc" data-i18n="aiDesc">Auto-generate unique melodic and rhythmic sequences.</p>
+            
+            <div class="visual-controls" style="margin-bottom: 10px;">
+                <label data-i18n="aiGenre">Musical Genre</label>
+                <select id="genre-select" class="glass-select">
+                    <option value="techno">Techno / Trance</option>
+                    <option value="house">Deep House</option>
+                    <option value="synthwave">Retro Synthwave</option>
+                    <option value="trap">Trap / Hip-Hop</option>
+                    <option value="ambient">Ambient Space</option>
+                </select>
+            </div>
+            
+            <button id="btn-ai-gen" class="btn-glow"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="generateMusic">Generate Magic</span></button>
+            <button id="btn-autopilot" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #ff00ff;"><i class="fa-solid fa-infinity"></i> <span data-i18n="autopilot">Autopilot: OFF</span></button>
+            <button id="btn-export-midi" class="btn-glow" style="background: linear-gradient(45deg, #0088ff, #00f3ff);"><i class="fa-solid fa-file-audio"></i> <span data-i18n="exportMidi">Export MIDI</span></button>
+            <button id="btn-export-stems" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #ffaa00;" title="Export Audio Stems (.WAV)"><i class="fa-solid fa-file-waveform"></i> <span data-i18n="exportStems">Export Stems (WAV)</span></button>
+            <button id="btn-clear" class="btn-danger"><i class="fa-solid fa-trash"></i> <span data-i18n="clearSequence">Clear All</span></button>
+
+            <div class="separator"></div>
+            
+            <h2 data-i18n="visualsTitle">4D Visuals</h2>
+            <div class="visual-controls">
+                <label data-i18n="modelType">Model Type</label>
+                        <select id="model-select" class="glass-select">
+                            <optgroup label="Entities (Animated)">
+                                <option value="sentinel" data-i18n="sentinel">Quantum Sentinel</option>
+                                <option value="jellyfish" data-i18n="jellyfish">Ethereal Jellyfish</option>
+                                <option value="golem" data-i18n="golem">Rhythm Golem</option>
+                                <option value="seraphim" data-i18n="seraphim">The Seraphim</option>
+                                <option value="arachnoid" data-i18n="arachnoid">Arachnoid Construct</option>
+                                <option value="parasite" data-i18n="parasite">Neural Parasite</option>
+                                <option value="twins" data-i18n="twins">Symbiotic Twins</option>
+                                <option value="lotus" data-i18n="lotus">Hyper-Lotus</option>
+                            </optgroup>
+                            <optgroup label="Abstract Shapes">
+                                <option value="cube" data-i18n="cube">Tesseract Cube</option>
+                                <option value="sphere" data-i18n="sphere">Energy Sphere</option>
+                                <option value="torus" data-i18n="torus">Infinity Loop</option>
+                                <option value="icosahedron" data-i18n="icosahedron">Quantum Crystal</option>
+                                <option value="pyramid" data-i18n="pyramid">Mystic Pyramid</option>
+                                <option value="dodecahedron" data-i18n="dodecahedron">Sacred Dodecahedron</option>
+                                <option value="torusknot" data-i18n="torusknot">Torus Knot</option>
+                            </optgroup>
+                        </select>
+                
+                <label data-i18n="customText">Custom 3D Neon Text</label>
+                <input type="text" id="neon-text-input" placeholder="Type Brand..." maxlength="15" autocomplete="off" style="width: 100%; margin-bottom: 10px; padding: 6px; background: rgba(0,0,0,0.6); color: #00f3ff; border: 1px solid #00f3ff; font-family: 'Outfit'; font-weight: bold; font-size: 1rem; border-radius: 4px;">
+                
+                <label data-i18n="colorTheme">Color Theme</label>
+                <select id="color-select" class="glass-select">
+                    <option value="cyberpunk" data-i18n="cyberpunk">Cyberpunk Neon</option>
+                    <option value="synthwave" data-i18n="synthwave">Retro Synthwave</option>
+                    <option value="matrix" data-i18n="matrix">Matrix Green</option>
+                    <option value="fire" data-i18n="fire">Lava Inferno</option>
+                    <option value="ocean" data-i18n="ocean">Deep Ocean</option>
+                    <option value="gold" data-i18n="gold">Royal Gold</option>
+                    <option value="vaporwave" data-i18n="vaporwave">Vaporwave Dream</option>
+                </select>
+                <button id="btn-vj-camera" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #00ffff;"><i class="fa-solid fa-video"></i> <span data-i18n="vjCamera">VJ Camera: OFF</span></button>
+                <button id="btn-lite-mode" class="btn-glow" style="margin-top: 10px; width: 100%; background: rgba(0, 255, 170, 0.1); border-color: #00ffaa; color: #00ffaa;" title="Disable Bloom & Post-FX for laptops/slow GPUs"><i class="fa-solid fa-bolt"></i> High Performance (Lite)</button>
+                <div class="separator"></div>
+                
+                <h2 data-i18n="fxTitle" style="font-size: 1rem; border-bottom: none; padding: 0;">Audio Effects</h2>
+                
+                <label data-i18n="reverbLevel">Reverb</label>
+                <input type="range" id="fx-reverb" min="0" max="100" value="50" style="margin-bottom: 5px; accent-color: #8800ff; width: 100%;">
+                
+                <label data-i18n="delayLevel">Delay</label>
+                <input type="range" id="fx-delay" min="0" max="100" value="20" style="margin-bottom: 5px; accent-color: #0088ff; width: 100%;">
+                
+                <label data-i18n="distLevel">Distortion</label>
+                <input type="range" id="fx-dist" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ff3300; width: 100%;">
+                
+                <label data-i18n="chorusLevel">Chorus</label>
+                <input type="range" id="fx-chorus" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #00ffaa; width: 100%;">
+                
+                <label data-i18n="bitLevel">8-Bit Crush</label>
+                <input type="range" id="fx-bit" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ff00aa; width: 100%;">
+                
+                <label data-i18n="phaserLevel">Space Phaser</label>
+                <input type="range" id="fx-phaser" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ffff00; width: 100%;">
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- ============================================================
+         PROFESSIONAL KEYBOARD SYNTHESIZER PANEL (Fixed Bottom)
+         ============================================================ -->
+    <div id="keyboard-synth-panel">
+
+        <!-- Controls row -->
+        <div class="ks-top-bar">
+
+            <!-- Title -->
+            <span class="ks-label">🎹 Live Keys</span>
+
+            <!-- Waveform selector -->
+            <span class="ks-label" style="color:var(--text-muted); margin-left:4px;">Wave:</span>
+            <div class="ks-wave-group" id="ks-wave-group">
+                <button class="ks-wave-btn active" data-wave="sawtooth">SAW</button>
+                <button class="ks-wave-btn" data-wave="sine">SIN</button>
+                <button class="ks-wave-btn" data-wave="triangle">TRI</button>
+                <button class="ks-wave-btn" data-wave="square">SQR</button>
+                <button class="ks-wave-btn" data-wave="pulse">PLS</button>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+
+            <!-- Octave shift -->
+            <div class="ks-octave-display">
+                <span class="ks-label" style="color:var(--text-muted);">OCT:</span>
+                <button class="ks-octave-btn" id="ks-oct-down">−</button>
+                <span id="ks-octave-val">4</span>
+                <button class="ks-octave-btn" id="ks-oct-up">+</button>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+
+            <!-- ADSR -->
+            <span class="ks-label" style="color:var(--text-muted);">ADSR:</span>
+            <div class="ks-adsr-group">
+                <div class="ks-adsr-item">
+                    <label>A</label>
+                    <input type="range" id="ks-adsr-a" min="0.001" max="2" step="0.001" value="0.02">
+                </div>
+                <div class="ks-adsr-item">
+                    <label>D</label>
+                    <input type="range" id="ks-adsr-d" min="0.001" max="2" step="0.001" value="0.1">
+                </div>
+                <div class="ks-adsr-item">
+                    <label>S</label>
+                    <input type="range" id="ks-adsr-s" min="0" max="1" step="0.01" value="0.5">
+                </div>
+                <div class="ks-adsr-item">
+                    <label>R</label>
+                    <input type="range" id="ks-adsr-r" min="0.01" max="4" step="0.01" value="0.8">
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+
+            <!-- Chord Mode -->
+            <button class="ks-toggle-btn" id="ks-chord-btn">♩ Chord</button>
+
+            <!-- Arpeggiator -->
+            <button class="ks-toggle-btn" id="ks-arp-btn">↑↓ Arp</button>
+            <select id="ks-arp-speed">
+                <option value="4n">1/4</option>
+                <option value="8n" selected>1/8</option>
+                <option value="16n">1/16</option>
+            </select>
+
+            <!-- Divider -->
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+
+            <!-- Sustain indicator -->
+            <span id="ks-sustain-indicator">SUSTAIN OFF</span>
+
+            <!-- Velocity hint -->
+            <span id="ks-vel-display">vel: mf</span>
+
+            <!-- Keyboard shortcut hint -->
+            <span style="font-size:0.6rem; color:rgba(255,255,255,0.25); white-space:nowrap; margin-left:auto;">
+                ← → Octave &nbsp;|&nbsp; Space = Sustain &nbsp;|&nbsp; Shift = forte &nbsp;|&nbsp; Ctrl = piano
+            </span>
+        </div>
+
+        <!-- Piano Keys -->
+        <div id="ks-keys-container">
+            <!-- Keys are generated by JS -->
+        </div>
+
+        <!-- ── ROW 2: Advanced Pro Features ── -->
+        <div class="ks-row2">
+
+            <!-- Emotion Engine -->
+            <span class="ks-label" style="flex-shrink:0;">🎭 Emotion:</span>
+            <div class="ks-emotion-group">
+                <button class="ks-emotion-btn" data-emotion="happy">😊 Happy</button>
+                <button class="ks-emotion-btn" data-emotion="sad">😢 Sad</button>
+                <button class="ks-emotion-btn" data-emotion="tense">⚡ Tense</button>
+                <button class="ks-emotion-btn" data-emotion="dreamy">🌊 Dreamy</button>
+                <button class="ks-emotion-btn" data-emotion="rage">🔥 Rage</button>
+                <button class="ks-emotion-btn" data-emotion="zen">🧘 Zen</button>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
+
+            <!-- Scale Lock -->
+            <span class="ks-label" style="flex-shrink:0;">🔒 Scale:</span>
+            <select id="ks-scale-select">
+                <option value="chromatic">Chromatic (all)</option>
+                <option value="major">Major</option>
+                <option value="minor">Natural Minor</option>
+                <option value="pentatonic">Pentatonic</option>
+                <option value="blues">Blues</option>
+                <option value="dorian">Dorian</option>
+                <option value="phrygian">Phrygian</option>
+                <option value="lydian">Lydian</option>
+                <option value="mixolydian">Mixolydian</option>
+                <option value="harmonic">Harmonic Minor</option>
+            </select>
+            <button class="ks-toggle-btn" id="ks-scale-lock-btn">Lock OFF</button>
+
+            <!-- Divider -->
+            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
+
+            <!-- AI Harmonizer -->
+            <span class="ks-label" style="flex-shrink:0;">🤖 Harmony:</span>
+            <button class="ks-harm-btn" id="ks-harm-off" data-voices="0">Off</button>
+            <button class="ks-harm-btn active" id="ks-harm-1" data-voices="1">1v</button>
+            <button class="ks-harm-btn" id="ks-harm-2" data-voices="2">2v</button>
+            <button class="ks-harm-btn" id="ks-harm-3" data-voices="3">3v</button>
+
+            <!-- Divider -->
+            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
+
+            <!-- Loop Recorder -->
+            <span class="ks-label" style="flex-shrink:0;">🔴 Loops:</span>
+            <div id="ks-loop-group">
+                <div class="ks-loop-btn" id="ks-loop-0" data-loop="0">
+                    <span class="ks-loop-label">F1</span>
+                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-0" style="background:#ff4444;"></div></div>
+                </div>
+                <div class="ks-loop-btn" id="ks-loop-1" data-loop="1">
+                    <span class="ks-loop-label">F2</span>
+                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-1" style="background:#44aaff;"></div></div>
+                </div>
+                <div class="ks-loop-btn" id="ks-loop-2" data-loop="2">
+                    <span class="ks-loop-label">F3</span>
+                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-2" style="background:#44ff88;"></div></div>
+                </div>
+                <button id="ks-loop-clear">✕ Clear</button>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
+
+            <!-- Theremin hint -->
+            <span id="theremin-hint" style="display:none;">🎵 THEREMIN ACTIVE</span>
+            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);white-space:nowrap;margin-left:auto;">
+                Tab = Theremin (mouse XY) &nbsp;|&nbsp; F1-F3 = Loops &nbsp;|&nbsp; Scale Lock = perfect improv
+            </span>
+        </div>
+    </div>
+
+    <!-- Theremin Overlay (shown when Tab held) -->
+    <div id="theremin-active-bar"></div>
+    <div id="theremin-cursor"></div>
+
+    <!-- Scripts via CDN -->
+    <!-- Three.js and Post-Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <!-- Tonejs MIDI parser/writer -->
+    <script src="https://unpkg.com/@tonejs/midi"></script>
+    <!-- Tone.js for high performance audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Application Logic -->
+    <script src="./js/presets.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>

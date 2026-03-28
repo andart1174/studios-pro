@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DesignPro Studio — Concepteur d'Intérieur 2D/3D</title>
+  <meta name="description"
+    content="Application professionnelle de design d'intérieur 2D/3D. Portes, fenêtres, mobilier réaliste. Bilingue FR/EN.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'desp' } });
+        }
+      }, true);
+    })();
+  </script>
+
+
+  <!-- BG Effects -->
+  <div class="bg-grid"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <div id="app">
+
+    <!-- ==================== NAVBAR ==================== -->
+    <nav id="navbar">
+      <div class="nav-brand">
+        <div class="nav-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9L12 3L21 9V21H15V15H9V21H3V9Z" stroke="url(#ng1)" stroke-width="1.8" stroke-linejoin="round" />
+            <defs>
+              <linearGradient id="ng1" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1" />
+                <stop offset="1" stop-color="#06b6d4" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <div class="nav-title">DesignPro Studio</div>
+          <div class="nav-sub" id="nav-sub-text">Concepteur d'Intérieur 2D · 3D</div>
+        </div>
+      </div>
+      <div class="nav-center" id="nav-center">
+        <!-- Will be populated after wizard -->
+      </div>
+      <div class="nav-actions">
+        <div class="unit-system-toggle" id="unit-toggle">
+          <button class="unit-btn active" data-unit="metric" id="btn-unit-metric">cm/m</button>
+          <button class="unit-btn" data-unit="imperial" id="btn-unit-imperial">in/ft</button>
+        </div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="fr" id="btn-lang-fr">FR</button>
+          <button class="lang-btn" data-lang="en" id="btn-lang-en">EN</button>
+        </div>
+        <button id="btn-new-project" class="nav-btn-secondary" title="Nouveau projet">
+          <span>＋</span> <span data-i18n="newProject">Nouveau</span>
+        </button>
+        <button id="btn-save" class="nav-btn-secondary" title="Sauvegarder">
+          💾 <span data-i18n="save">Sauvegarder</span>
+        </button>
+        <input type="file" id="file-load-json" accept=".json" style="display:none">
+        <button id="btn-load" class="nav-btn-secondary" title="Charger">
+          📂 <span data-i18n="load">Charger</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ==================== MAIN LAYOUT ==================== -->
+    <div id="main-layout">
+
+      <!-- ===== WIZARD ===== -->
+      <div id="wizard-overlay">
+        <div class="wizard-card">
+          <div class="wizard-header">
+            <div class="wizard-logo">🏠</div>
+            <h1 class="wizard-title" data-i18n="wizardTitle">Créez votre espace</h1>
+            <p class="wizard-sub" data-i18n="wizardSub">Configurez votre pièce pour commencer</p>
+          </div>
+
+          <div class="wizard-body">
+            <!-- Room Type -->
+            <div class="wiz-section">
+              <div class="wiz-label" data-i18n="roomType">Type de pièce</div>
+              <div class="room-type-grid" id="room-type-grid">
+                <button class="room-type-btn selected" data-type="living">🛋️<span
+                    data-i18n="living">Salon</span></button>
+                <button class="room-type-btn" data-type="bedroom">🛏️<span data-i18n="bedroom">Chambre</span></button>
+                <button class="room-type-btn" data-type="kitchen">🍳<span data-i18n="kitchen">Cuisine</span></button>
+                <button class="room-type-btn" data-type="bathroom">🚿<span data-i18n="bathroom">Salle de
+                    bain</span></button>
+                <button class="room-type-btn" data-type="office">💼<span data-i18n="office">Bureau</span></button>
+                <button class="room-type-btn" data-type="dining">🍽️<span data-i18n="dining">Salle à
+                    manger</span></button>
+              </div>
+            </div>
+
+            <!-- Dimensions -->
+            <div class="wiz-section">
+              <div class="wiz-label" data-i18n="dimensions">Dimensions de la pièce</div>
+              <div class="dim-grid">
+                <div class="dim-field">
+                  <label data-i18n="width">Largeur</label>
+                  <div class="dim-input-wrap">
+                    <input type="number" id="room-w" value="500" min="100" max="2000" step="10">
+                    <span class="dim-unit-label" id="dim-unit-w">cm</span>
+                  </div>
+                </div>
+                <div class="dim-field">
+                  <label data-i18n="depth">Profondeur</label>
+                  <div class="dim-input-wrap">
+                    <input type="number" id="room-d" value="400" min="100" max="2000" step="10">
+                    <span class="dim-unit-label" id="dim-unit-d">cm</span>
+                  </div>
+                </div>
+                <div class="dim-field">
+                  <label data-i18n="height">Hauteur</label>
+                  <div class="dim-input-wrap">
+                    <input type="number" id="room-h" value="260" min="200" max="600" step="10">
+                    <span class="dim-unit-label" id="dim-unit-h">cm</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Style -->
+            <div class="wiz-section">
+              <div class="wiz-label" data-i18n="style">Style décoratif</div>
+              <div class="style-chips" id="style-chips">
+                <button class="style-chip active" data-style="modern">✨ <span data-i18n="modern">Moderne</span></button>
+                <button class="style-chip" data-style="classic">🏛️ <span data-i18n="classic">Classique</span></button>
+                <button class="style-chip" data-style="scandinavian">🌿 <span
+                    data-i18n="scandinavian">Scandinave</span></button>
+                <button class="style-chip" data-style="industrial">🔩 <span
+                    data-i18n="industrial">Industriel</span></button>
+                <button class="style-chip" data-style="luxury">💎 <span data-i18n="luxury">Luxe</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-footer">
+            <button id="btn-create-room" class="btn-generate">
+              <span>🚀</span> <span data-i18n="createRoom">Créer la pièce</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SIDEBAR LEFT ===== -->
+      <aside id="sidebar-left">
+        <div class="stabs">
+          <button class="stab active" data-stab="room" id="stab-room">
+            <span class="stab-icon">📐</span>
+            <span class="stab-label" data-i18n="tabRoom">Pièce</span>
+          </button>
+          <button class="stab" data-stab="furniture" id="stab-furniture">
+            <span class="stab-icon">🪑</span>
+            <span class="stab-label" data-i18n="tabFurniture">Mobilier</span>
+          </button>
+          <button class="stab" data-stab="arch" id="stab-arch">
+            <span class="stab-icon">🚪</span>
+            <span class="stab-label" data-i18n="tabArch">Arch.</span>
+          </button>
+          <button class="stab" data-stab="design" id="stab-design">
+            <span class="stab-icon">🎨</span>
+            <span class="stab-label" data-i18n="tabDesign">Design</span>
+          </button>
+          <button class="stab" data-stab="costs" id="stab-costs">
+            <span class="stab-icon">💰</span>
+            <span class="stab-label" data-i18n="tabCosts">Devis</span>
+          </button>
+          <button class="stab" data-stab="export" id="stab-export">
+            <span class="stab-icon">💾</span>
+            <span class="stab-label" data-i18n="tabExport">Export</span>
+          </button>
+        </div>
+
+        <div class="stabs-content">
+
+          <!-- ROOM TAB -->
+          <div class="spanel active" id="sp-room">
+            <div class="sec-label" data-i18n="roomInfo">Informations Pièce</div>
+            <div id="room-info-panel"></div>
+            <div class="sec-label" style="margin-top:16px" data-i18n="tools">Outils</div>
+            <div class="tools-grid">
+              <button class="tool-btn active" id="tool-select" data-i18n="select">🖱️ Sélect.</button>
+              <button class="tool-btn" id="tool-ruler" data-i18n="measure">📏 Mesure</button>
+              <button class="tool-btn" id="tool-door" data-i18n="addDoor">🚪 Porte</button>
+              <button class="tool-btn" id="tool-window" data-i18n="addWindow">🪟 Fenêtre</button>
+            </div>
+            <div class="sec-label" style="margin-top:16px">Undo / Redo</div>
+            <div class="undo-row">
+              <button class="undo-btn" id="btn-undo">↩ <span data-i18n="undo">Annuler</span></button>
+              <button class="undo-btn" id="btn-redo">↪ <span data-i18n="redo">Rétablir</span></button>
+            </div>
+          </div>
+
+          <!-- FURNITURE TAB -->
+          <div class="spanel" id="sp-furniture">
+            <div class="sec-label" data-i18n="currentFurniture">Mobilier actuel</div>
+            <div id="furniture-placed-list"></div>
+            <div class="sec-label" style="margin-top:14px" data-i18n="addFurniture">Ajouter du mobilier</div>
+            <div id="furniture-library"></div>
+          </div>
+
+          <!-- ARCH TAB -->
+          <div class="spanel" id="sp-arch">
+            <div class="sec-label" data-i18n="doors">Portes</div>
+            <div id="doors-list"></div>
+            <div class="sec-label" style="margin-top:14px" data-i18n="windows">Fenêtres</div>
+            <div id="windows-list"></div>
+            <div class="arch-add-row">
+              <button class="arch-add-btn" id="arch-add-door">🚪 + <span data-i18n="door">Porte</span></button>
+              <button class="arch-add-btn" id="arch-add-window">🪟 + <span data-i18n="window">Fenêtre</span></button>
+            </div>
+          </div>
+
+          <!-- DESIGN TAB -->
+          <div class="spanel" id="sp-design">
+            <div class="design-section">
+              <div class="sec-label" data-i18n="walls">Murs</div>
+              <div class="color-row">
+                <label data-i18n="wallColor">Couleur</label>
+                <input type="color" id="wall-color" value="#e8e0d5">
+                <span class="color-hex" id="wall-color-hex">#e8e0d5</span>
+              </div>
+              <div class="mat-label" data-i18n="wallTexture">Texture Murs</div>
+              <div class="mat-chips" id="wall-mat-chips">
+                <button class="mat-chip active" data-mat="paint">🎨 <span data-i18n="paint">Peinture</span></button>
+                <button class="mat-chip" data-mat="brick">🧱 <span data-i18n="brick">Brique</span></button>
+                <button class="mat-chip" data-mat="wood">🪵 <span data-i18n="woodWall">Bois</span></button>
+                <button class="mat-chip" data-mat="concrete">🏗️ <span data-i18n="concrete">Béton</span></button>
+                <button class="mat-chip" data-mat="wallpaper">🌺 <span data-i18n="wallpaper">Papier
+                    Peint</span></button>
+                <button class="mat-chip" data-mat="marble">💎 <span data-i18n="marble">Marbre</span></button>
+              </div>
+            </div>
+            <div class="design-section">
+              <div class="sec-label" data-i18n="floor">Sol</div>
+              <div class="color-row">
+                <label data-i18n="floorColor">Couleur</label>
+                <input type="color" id="floor-color" value="#c8aa8c">
+                <span class="color-hex" id="floor-color-hex">#c8aa8c</span>
+              </div>
+              <div class="mat-label" data-i18n="floorMaterial">Matériau Sol</div>
+              <div class="mat-chips" id="floor-mat-chips">
+                <button class="mat-chip active" data-mat="parquet">🪵 <span data-i18n="parquet">Parquet</span></button>
+                <button class="mat-chip" data-mat="ceramic">⬛ <span data-i18n="ceramic">Céramique</span></button>
+                <button class="mat-chip" data-mat="marble">💎 <span data-i18n="marble">Marbre</span></button>
+                <button class="mat-chip" data-mat="carpet">🟫 <span data-i18n="carpet">Moquette</span></button>
+                <button class="mat-chip" data-mat="concrete">🏗️ <span data-i18n="concrete">Béton</span></button>
+                <button class="mat-chip" data-mat="vinyl">🔵 <span data-i18n="vinyl">Vinyle</span></button>
+              </div>
+            </div>
+            <div class="design-section">
+              <div class="sec-label" data-i18n="ceiling">Plafond</div>
+              <div class="color-row">
+                <label data-i18n="ceilColor">Couleur</label>
+                <input type="color" id="ceiling-color" value="#f5f5f0">
+                <span class="color-hex" id="ceiling-color-hex">#f5f5f0</span>
+              </div>
+              <label class="toggle-row">
+                <input type="checkbox" id="ceiling-visible" checked>
+                <span class="toggle-track"></span>
+                <span class="toggle-label" data-i18n="showCeiling">Afficher le plafond</span>
+              </label>
+            </div>
+            <div class="design-section">
+              <div class="sec-label" data-i18n="lighting">Éclairage & Environnement</div>
+              <div class="ctrl-row">
+                <label data-i18n="ambientLight">Ambient <span class="ctrl-val" id="v-ambient">0.6</span></label>
+                <input type="range" id="s-ambient" min="0.1" max="1.5" value="0.6" step="0.05">
+              </div>
+              <div class="ctrl-row">
+                <label data-i18n="timeOfDay">Heure <span class="ctrl-val" id="v-time">14:00</span></label>
+                <input type="range" id="s-time" min="6" max="22" value="14" step="0.5">
+              </div>
+              <div class="mat-label" data-i18n="envPresets">Ambiances</div>
+              <div class="env-grid">
+                <button class="env-btn active" data-env="day">☀️ <span data-i18n="envDay">Jour</span></button>
+                <button class="env-btn" data-env="sunset">🌅 <span data-i18n="envSunset">Coucher</span></button>
+                <button class="env-btn" data-env="bluehour">🌌 <span data-i18n="envBlue">Bleue</span></button>
+                <button class="env-btn" data-env="night">🌙 <span data-i18n="envNight">Nuit</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- COSTS TAB -->
+          <div class="spanel" id="sp-costs">
+            <div class="sec-label" data-i18n="quote">Devis & Prix</div>
+            <!-- Budget tracker -->
+            <div class="budget-box">
+              <div class="budget-header"><span id="budget-label">&#128181; Budget max</span>
+                <div class="budget-input-row"><span style="color:var(--green);font-weight:800">$</span><input
+                    type="number" id="budget-limit" value="5000" min="0" step="100"></div>
+              </div>
+              <div class="budget-bar-wrap">
+                <div class="budget-bar-track">
+                  <div class="budget-bar-fill" id="budget-bar-fill"></div>
+                </div>
+                <div class="budget-bar-labels"><span id="budget-spent">$0</span><span id="budget-remaining"></span>
+                </div>
+              </div>
+            </div>
+            <div id="costs-list"></div>
+            <div class="costs-total-row">
+              <span data-i18n="totalEst">Total estimé :</span>
+              <span id="costs-total" class="costs-total-val">$0.00</span>
+            </div>
+            <button id="btn-export-csv" class="btn-export-item" style="margin-top:14px">
+              📥 <span data-i18n="exportCSV">Télécharger Devis (CSV)</span>
+            </button>
+          </div>
+
+          <!-- EXPORT TAB -->
+          <div class="spanel" id="sp-export">
+            <div class="sec-label" data-i18n="exportProject">Exporter le projet</div>
+            <div class="export-cards">
+              <button class="export-card" id="exp-png-2d">
+                <span class="exp-icon">🖼️</span>
+                <span class="exp-title">PNG 2D</span>
+                <span class="exp-desc" data-i18n="exp2dDesc">Plan 2D haute résolution</span>
+              </button>
+              <button class="export-card" id="exp-png-3d">
+                <span class="exp-icon">📷</span>
+                <span class="exp-title">PNG 3D</span>
+                <span class="exp-desc" data-i18n="exp3dDesc">Vue 3D actuelle</span>
+              </button>
+              <button class="export-card" id="exp-json">
+                <span class="exp-icon">💾</span>
+                <span class="exp-title">JSON</span>
+                <span class="exp-desc" data-i18n="expJsonDesc">Sauvegarde complète</span>
+              </button>
+              <button class="export-card" id="exp-pdf">
+                <span class="exp-icon">📄</span>
+                <span class="exp-title">PDF</span>
+                <span class="exp-desc" data-i18n="expPdfDesc">Impression / PDF</span>
+              </button>
+              <button class="export-card" id="exp-svg">
+                <span class="exp-icon">🖋️</span>
+                <span class="exp-title">SVG</span>
+                <span class="exp-desc">Plan vectoriel (CAD)</span>
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /stabs-content -->
+      </aside>
+
+      <!-- ===== CANVAS AREA ===== -->
+      <div id="canvas-area">
+        <!-- Toolbar -->
+        <div id="toolbar">
+          <div class="view-toggle" id="view-toggle-btns">
+            <button class="view-btn active" id="btn-view-split" data-view="split">
+              ⊞ <span data-i18n="splitView">Vue Split</span>
+            </button>
+            <button class="view-btn" id="btn-view-2d" data-view="2d">
+              📐 <span>2D</span>
+            </button>
+            <button class="view-btn" id="btn-view-3d" data-view="3d">
+              🎮 <span>3D</span>
+            </button>
+          </div>
+          <div class="toolbar-sep"></div>
+          <div class="zoom-controls">
+            <button class="zm-btn" id="btn-zoom-out">−</button>
+            <span class="zm-val" id="zoom-val">100%</span>
+            <button class="zm-btn" id="btn-zoom-in">+</button>
+            <button class="zm-btn" id="btn-zoom-fit" title="Zoom ajusté">⊙</button>
+          </div>
+          <div class="toolbar-sep"></div>
+          <!-- Snap to grid -->
+          <div class="snap-ctrl">
+            <button class="toolbar-btn active" id="btn-snap" title="Snap to grid">🧲 Snap</button>
+            <select id="snap-size" title="Grid size">
+              <option value="10">10cm</option>
+              <option value="25" selected>25cm</option>
+              <option value="50">50cm</option>
+              <option value="100">100cm</option>
+            </select>
+          </div>
+          <div class="toolbar-sep"></div>
+          <!-- 3D Camera presets -->
+          <div class="cam-presets" id="cam-presets">
+            <button class="cam-btn active" id="cam-persp" title="Perspective">🎮 Persp.</button>
+            <button class="cam-btn" id="cam-top" title="Vue de dessus">⬆ Top</button>
+            <button class="cam-btn" id="cam-front" title="Vue de face">→ Front</button>
+            <button class="cam-btn" id="cam-iso" title="Vue isométrique">◈ Iso</button>
+          </div>
+          <div class="toolbar-sep"></div>
+          <button class="toolbar-btn" id="btn-wireframe" title="Wireframe 3D">🕸️</button>
+          <button class="toolbar-btn" id="btn-orbit-reset" title="Réinitialiser la vue 3D">↺</button>
+          <div class="toolbar-sep"></div>
+          <label class="toolbar-toggle" title="Afficher/Masquer les mesures">
+            <input type="checkbox" id="toggle-dimensions" checked>
+            <span class="toggle-track"></span>
+            <span class="view-label" data-i18n="showMeasures">📏</span>
+          </label>
+          <div class="toolbar-spacer"></div>
+          <div class="measure-bar" id="measure-bar" style="display:none">
+            <span class="measure-icon">📏</span>
+            <span id="measure-text">—</span>
+          </div>
+          <button class="toolbar-btn" id="btn-help" title="Raccourcis clavier">⌨️ ?</button>
+        </div>
+
+        <!-- Split View wrapper -->
+        <div id="views-wrapper">
+          <!-- 2D View -->
+          <div class="view-panel" id="view-2d">
+            <div class="vp-header">
+              <span class="vp-badge badge-2d">2D</span>
+              <span class="vp-title" data-i18n="floorPlan">Plan d'étage</span>
+              <div class="vp-hint" data-i18n="hint2d">Clic = sélect. · Glisser = déplacer · Scroll = zoom</div>
+            </div>
+            <canvas id="canvas-2d"></canvas>
+          </div>
+
+          <!-- Divider -->
+          <div id="split-divider">⋮⋮</div>
+
+          <!-- 3D View -->
+          <div class="view-panel" id="view-3d">
+            <div class="vp-header">
+              <span class="vp-badge badge-3d">3D</span>
+              <span class="vp-title" data-i18n="live3d">Vue 3D en temps réel</span>
+              <div class="vp-hint" data-i18n="hint3d">Glisser = orbiter · Scroll = zoom · Clic droit = panoramique</div>
+            </div>
+            <div id="container-3d"></div>
+            <!-- 3D loading overlay -->
+            <div class="loading-overlay" id="loading-3d" style="display:none">
+              <div class="loading-spinner"></div>
+              <div class="loading-text" data-i18n="loading3d">Génération 3D...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SIDEBAR RIGHT — SELECTION ===== -->
+      <aside id="sidebar-right">
+        <div class="sr-header">
+          <div class="sr-title">✏️ <span data-i18n="selection">Sélection</span></div>
+          <div class="align-tools" id="align-tools" style="display:none">
+            <button class="align-btn" id="align-left" title="Aligner à gauche">⬅</button>
+            <button class="align-btn" id="align-center-h" title="Centrer horizontal">↔</button>
+            <button class="align-btn" id="align-right" title="Aligner à droite">➡</button>
+            <span class="align-sep"></span>
+            <button class="align-btn" id="align-top" title="Aligner en haut">⬆</button>
+            <button class="align-btn" id="align-center-v" title="Centrer vertical">↕</button>
+            <button class="align-btn" id="align-bottom" title="Aligner en bas">⬇</button>
+            <span class="align-sep"></span>
+            <button class="align-btn" id="btn-duplicate" title="Dupliquer (Ctrl+D)">⧉</button>
+          </div>
+        </div>
+        <div id="selection-panel">
+          <div class="no-selection" data-i18n="clickToSelect">Cliquez sur un objet pour le sélectionner</div>
+        </div>
+      </aside>
+
+    </div><!-- /main-layout -->
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- ===== SHORTCUTS MODAL ===== -->
+    <div id="shortcuts-modal" class="modal-overlay" style="display:none">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">⌨️ <span id="modal-title-text">Raccourcis Clavier</span></div>
+          <button class="modal-close" id="btn-close-modal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="shortcuts-grid">
+            <div class="sc-group">
+              <div class="sc-group-label" id="sc-tools-label">Outils</div>
+              <div class="sc-row"><kbd>S</kbd><span id="sc-select">Sélection</span></div>
+              <div class="sc-row"><kbd>M</kbd><span id="sc-measure">Mesurer</span></div>
+              <div class="sc-row"><kbd>D</kbd><span id="sc-door">Ajouter porte</span></div>
+              <div class="sc-row"><kbd>W</kbd><span id="sc-window">Ajouter fenêtre</span></div>
+              <div class="sc-row"><kbd>Esc</kbd><span id="sc-esc">Sélection</span></div>
+            </div>
+            <div class="sc-group">
+              <div class="sc-group-label" id="sc-edit-label">Édition</div>
+              <div class="sc-row"><kbd>Ctrl</kbd><kbd>Z</kbd><span id="sc-undo">Annuler</span></div>
+              <div class="sc-row"><kbd>Ctrl</kbd><kbd>Y</kbd><span id="sc-redo">Rétablir</span></div>
+              <div class="sc-row"><kbd>Del</kbd><span id="sc-delete">Supprimer sélection</span></div>
+              <div class="sc-row"><kbd>R</kbd><span id="sc-rotate">Rotation 90°</span></div>
+              <div class="sc-row"><kbd>G</kbd><span id="sc-snap">Snap ON/OFF</span></div>
+            </div>
+            <div class="sc-group">
+              <div class="sc-group-label" id="sc-view-label">Vue</div>
+              <div class="sc-row"><kbd>1</kbd><span id="sc-v1">Vue Split</span></div>
+              <div class="sc-row"><kbd>2</kbd><span id="sc-v2">Vue 2D</span></div>
+              <div class="sc-row"><kbd>3</kbd><span id="sc-v3">Vue 3D</span></div>
+              <div class="sc-row"><kbd>F</kbd><span id="sc-fit">Zoom ajusté</span></div>
+              <div class="sc-row"><kbd>?</kbd><span>Aide</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ===== SESSION RECOVERY MODAL ===== -->
+      <div id="recovery-modal" class="modal-overlay" style="display:none">
+        <div class="modal-card" style="max-width:400px">
+          <div class="modal-header">
+            <div class="modal-title">💾 <span data-i18n="recoveryTitle">Projet trouvé</span></div>
+          </div>
+          <div class="modal-body">
+            <p style="color:var(--text-2);font-size:14px;margin-bottom:20px" data-i18n="recoveryMsg">Une session
+              précédente a été trouvée. Voulez-vous la restaurer ?</p>
+            <div style="display:flex;gap:12px">
+              <button id="btn-recovery-no" class="nav-btn-secondary" style="flex:1" data-i18n="no">Non</button>
+              <button id="btn-recovery-yes" class="btn-generate" style="flex:1" data-i18n="yes">Oui, restaurer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /app -->
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Main App -->
+    <script src="app.js"></script>
+</body>
+
+</html>

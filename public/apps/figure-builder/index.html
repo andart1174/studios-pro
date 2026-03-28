@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Figure Builder PRO | Constructeur de Figures 4D</title>
+    <meta name="description" content="Build and animate unique 4D hyperdimensional figures in real-time. / Construisez et animez des figures hyperspaciales 4D en temps réel.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Orbitron:wght@400;700;900&family=Syncopate:wght@400;700&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css?v=2">
+</head>
+<body>
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'figb' } });
+        }
+      }, true);
+    })();
+  </script>
+
+
+    <!-- ── HEADER ── -->
+    <header class="top-bar">
+        <h1 class="brand-title">
+            <i class="fa-solid fa-cube fa-spin-pulse"></i>
+            <span data-i18n="appTitle">4D Figure Builder</span>
+            <span class="pro-badge">PRO</span>
+        </h1>
+        <div class="header-controls">
+            <button id="btn-randomize" class="hdr-btn glow-cyan">
+                <i class="fa-solid fa-shuffle"></i> <span data-i18n="random">Random</span>
+            </button>
+            <button id="btn-present" class="hdr-btn" title="Presentation Mode" style="border-color:#ffcc00;color:#ffcc00;">
+                <i class="fa-solid fa-play-circle"></i> <span data-i18n="presentBtn">Présentation</span>
+            </button>
+            <button id="btn-music-toggle" class="hdr-btn glow-purple" title="Music Studio">
+                <i class="fa-solid fa-music"></i> <span data-i18n="musicBtn">Musique</span>
+            </button>
+            <button id="btn-text-toggle" class="hdr-btn" title="Text Studio" style="border-color:#ff88cc;color:#ff88cc;">
+                <i class="fa-solid fa-font"></i> <span data-i18n="textBtn">Texte</span>
+            </button>
+            <button id="btn-gallery" class="hdr-btn" title="Screenshot Gallery" style="border-color:#44ffaa;color:#44ffaa;">
+                <i class="fa-solid fa-images"></i> <span data-i18n="galleryBtn">Galerie</span>
+            </button>
+            <button id="btn-rec" class="hdr-btn rec-btn" title="Record Video">
+                <i class="fa-solid fa-circle"></i> <span data-i18n="recBtn">REC</span>
+            </button>
+            <button id="btn-screenshot" class="hdr-btn">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="screenshot">PNG</span>
+            </button>
+            <button id="btn-cinematic" class="hdr-btn" title="Cinematic Snapshot" style="border-color:#ff88cc;color:#ff88cc;">
+                <i class="fa-solid fa-clapperboard"></i> 🎬
+            </button>
+            <button id="btn-share" class="hdr-btn" title="Share URL + QR">
+                <i class="fa-solid fa-share-nodes"></i>
+            </button>
+            <button id="btn-fullscreen" class="hdr-btn">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+            <button id="btn-lang" class="hdr-btn lang-btn">🇺🇸 EN | 🇫🇷 FR</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+
+        <!-- ═══ LEFT PANEL ═══ -->
+        <aside class="panel left-panel glass-panel">
+            <h2><i class="fa-solid fa-atom"></i> <span data-i18n="labTitle">Laboratoire 4D</span></h2>
+
+            <div class="tab-group" id="cat-tabs">
+                <button class="tab-btn active" data-cat="polytopes">Polytopes</button>
+                <button class="tab-btn" data-cat="surfaces">Surfaces</button>
+                <button class="tab-btn" data-cat="organic">Organic</button>
+                <button class="tab-btn" data-cat="abstract">Abstract</button>
+                <button class="tab-btn alien-tab" data-cat="aliens">👽 Aliens</button>
+                <button class="tab-btn robot-tab" data-cat="robots">🤖 Robots</button>
+            </div>
+
+            <div class="figure-list" id="figure-list"></div>
+
+            <!-- Figure DNA display -->
+            <div id="fig-dna" class="fig-dna-bar" style="display:none;">
+                <span class="dna-label">DNA</span>
+                <canvas id="dna-canvas" width="220" height="16"></canvas>
+                <span id="dna-hash" class="dna-hash"></span>
+            </div>
+
+            <div class="separator"></div>
+
+            <h3 class="sub-heading" data-i18n="parametersTitle">Paramètres</h3>
+            <div class="param-grid">
+                <div class="param-row">
+                    <label data-i18n="paramRadius">Radius</label>
+                    <input type="range" id="p-radius" min="0.3" max="2.0" step="0.01" value="1.0">
+                    <span class="param-val" id="p-radius-val">1.00</span>
+                </div>
+                <div class="param-row">
+                    <label data-i18n="paramTube">Thickness</label>
+                    <input type="range" id="p-tube" min="0.05" max="0.8" step="0.01" value="0.3">
+                    <span class="param-val" id="p-tube-val">0.30</span>
+                </div>
+                <div class="param-row">
+                    <label data-i18n="paramSegs">Segments</label>
+                    <input type="range" id="p-segs" min="4" max="64" step="1" value="24">
+                    <span class="param-val" id="p-segs-val">24</span>
+                </div>
+                <div class="param-row">
+                    <label data-i18n="paramTwist">Twist</label>
+                    <input type="range" id="p-twist" min="0" max="6.28" step="0.01" value="0">
+                    <span class="param-val" id="p-twist-val">0.00</span>
+                </div>
+                <div class="param-row">
+                    <label data-i18n="paramW">W Offset</label>
+                    <input type="range" id="p-w" min="-2" max="2" step="0.01" value="0">
+                    <span class="param-val" id="p-w-val">0.00</span>
+                </div>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- MORPH SLIDER -->
+            <h3 class="sub-heading">⟷ <span data-i18n="morphSliderTitle">Morphose A↔B</span></h3>
+            <div class="morph-row">
+                <select id="morph-fig-a" class="glass-select" style="flex:1;font-size:0.72rem;padding:4px 6px;"></select>
+                <span style="color:var(--muted);font-size:0.7rem;">↔</span>
+                <select id="morph-fig-b" class="glass-select" style="flex:1;font-size:0.72rem;padding:4px 6px;"></select>
+            </div>
+            <div class="param-row" style="margin-top:4px;">
+                <label data-i18n="morphAlpha">Alpha</label>
+                <input type="range" id="morph-alpha" min="0" max="1" step="0.01" value="0">
+                <span class="param-val" id="morph-alpha-val">0.00</span>
+            </div>
+
+            <div class="separator"></div>
+            <h3 class="sub-heading" data-i18n="projTitle">Projection 4D→3D</h3>
+            <div class="btn-group-horiz">
+                <button class="mode-btn active" data-proj="stereo"  data-i18n="projStereo">Stéréo</button>
+                <button class="mode-btn" data-proj="ortho"   data-i18n="projOrtho">Ortho</button>
+                <button class="mode-btn" data-proj="slice"   data-i18n="projSlice">Tranche W</button>
+            </div>
+
+            <div class="separator"></div>
+            <h3 class="sub-heading" data-i18n="presetsTitle">Préréglages</h3>
+            <div class="preset-grid" id="preset-grid"></div>
+        </aside>
+
+        <!-- ═══ CENTER STAGE ═══ -->
+        <main class="center-stage" id="stage-container">
+            <div class="hud-overlay">
+                <div class="hud-figure-name" id="hud-name">Tesseract</div>
+                <div class="hud-stats" id="hud-stats">Vertices: 16 | Edges: 32</div>
+                <div id="hud-dna-dot" style="width:10px;height:10px;border-radius:50%;display:inline-block;margin-top:4px;"></div>
+            </div>
+
+            <!-- REC indicator -->
+            <div id="rec-overlay" style="display:none; position:absolute; top:14px; right:14px; z-index:20; align-items:center; gap:7px;">
+                <div class="rec-dot"></div>
+                <span style="font-size:0.7rem;font-weight:800;color:#ff3333;letter-spacing:2px;">REC</span>
+                <span id="rec-timer" style="font-size:0.7rem;color:#ff8888;min-width:50px;">00:00</span>
+            </div>
+
+            <!-- PRO TOOLS BAR (floating bottom-left) -->
+            <div class="pro-tools-bar">
+                <button id="btn-mouse-gravity" class="pro-tool-btn" title="Mouse Gravity">
+                    <i class="fa-solid fa-magnet"></i>
+                </button>
+                <button id="btn-repel" class="pro-tool-btn" title="Repel Mode">
+                    <i class="fa-solid fa-arrows-from-line"></i>
+                </button>
+                <button id="btn-creature-ai" class="pro-tool-btn" title="Creature AI">
+                    <i class="fa-solid fa-dna"></i>
+                </button>
+                <button id="btn-reactive-bg" class="pro-tool-btn" title="Reactive Background">
+                    <i class="fa-solid fa-waveform-lines"></i>
+                </button>
+                <button id="btn-chroma-abr" class="pro-tool-btn" title="Chromatic Aberration">
+                    <i class="fa-solid fa-droplet"></i>
+                </button>
+                <button id="btn-hyper-sketch" class="pro-tool-btn" title="Hyper-Sketch Studio" style="border-color:#00f3ff !important; color:#00f3ff !important; display:flex !important;">
+                    <i class="fa-solid fa-paintbrush"></i>
+                </button>
+                <button id="btn-export-obj" class="pro-tool-btn" title="Export OBJ">
+                    <i class="fa-solid fa-cube"></i> OBJ
+                </button>
+                <button id="btn-mic" class="pro-tool-btn" title="Microphone Voice Sculptor" style="border-color:#ff4488;color:#ff4488;">
+                    🎤
+                </button>
+            </div>
+            <!-- Mic Spectrum Visualizer -->
+            <canvas id="mic-spectrum" width="200" height="40" style="display:none;position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:12;border-radius:8px;opacity:0.85;"></canvas>
+
+            <div id="text-studio" class="text-studio glass-panel" style="display:none; min-width: 500px;">
+                <div class="text-studio-row" style="gap: 12px;">
+                    <input type="text" id="text-input" placeholder="Type your text..." maxlength="60"
+                        style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,136,204,0.4);color:#fff;padding:6px 10px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:0.9rem;outline:none;">
+                    
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                        <label style="font-size:0.6rem; color:var(--muted); text-transform:uppercase;">Size</label>
+                        <input type="range" id="text-size" min="40" max="300" step="1" value="160" style="width:70px;accent-color:#ff88cc;">
+                    </div>
+
+                    <select id="text-font" class="glass-select" style="width:110px; padding:4px 8px; font-size:0.75rem; border-color:rgba(255,136,204,0.4);">
+                        <option value="'Outfit', sans-serif">Outfit</option>
+                        <option value="'Orbitron', sans-serif">Orbitron</option>
+                        <option value="'Syncopate', sans-serif">Syncopate</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="serif">Classic</option>
+                        <option value="monospace">Tech</option>
+                    </select>
+
+                    <input type="color" id="text-color" value="#ff88cc" title="Text Color"
+                        style="width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;background:none;">
+                    <button id="btn-text-beat" class="hdr-btn" title="Beat Sync"
+                        style="padding:5px 10px;font-size:0.75rem;border-color:#ff88cc;color:#ff88cc;white-space:nowrap;">
+                        <i class="fa-solid fa-wave-square"></i> Beat
+                    </button>
+                    <button id="btn-text-clear" class="hdr-btn" style="padding:5px 10px;font-size:0.75rem;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="stage-controls">
+                <button id="btn-animate" class="stage-btn primary">
+                    <i class="fa-solid fa-circle-play"></i><span data-i18n="animate">Animer</span>
+                </button>
+                <button id="btn-reset-view" class="stage-btn">
+                    <i class="fa-solid fa-rotate"></i><span data-i18n="resetView">Vue</span>
+                </button>
+                <button id="btn-explode" class="stage-btn accent">
+                    <i class="fa-solid fa-burst"></i><span data-i18n="explode">Burst!</span>
+                </button>
+                <button id="btn-morph" class="stage-btn purple">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span data-i18n="morph">Morph</span>
+                </button>
+            </div>
+
+            <div class="axis-label" id="axis-x">X</div>
+            <div class="axis-label" id="axis-y">Y</div>
+            <div class="axis-label" id="axis-w">W</div>
+        </main>
+
+        <!-- ═══ RIGHT PANEL ═══ -->
+        <aside class="panel right-panel glass-panel">
+            <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="fxTitle">Animation & FX</span></h2>
+
+            <h3 class="sub-heading" data-i18n="animMode">Mode Animation</h3>
+            <select id="anim-mode" class="glass-select">
+                <option value="w-rotation"   data-i18n="animW">↗ W-Rotation</option>
+                <option value="double"        data-i18n="animDouble">⊕ Double Rotation</option>
+                <option value="breathing"     data-i18n="animBreath">💨 Breathing 4D</option>
+                <option value="kaleidoscope"  data-i18n="animKaleid">🔮 Kaleidoscope</option>
+                <option value="morph-loop"    data-i18n="animMorph">🌊 Living Morph</option>
+                <option value="isoclinic"     data-i18n="animIso">♾ Isoclinic Spin</option>
+            </select>
+
+            <div class="fx-row">
+                <label data-i18n="speed">Speed</label>
+                <input type="range" id="fx-speed" min="0.1" max="5.0" step="0.05" value="1.0">
+                <span class="param-val" id="fx-speed-val">1.0</span>
+            </div>
+
+            <h3 class="sub-heading" data-i18n="rotPlanes">Plans Rotation</h3>
+            <div class="plane-grid">
+                <label class="plane-toggle"><input type="checkbox" id="rot-xy" checked><span>XY</span></label>
+                <label class="plane-toggle"><input type="checkbox" id="rot-xz"><span>XZ</span></label>
+                <label class="plane-toggle"><input type="checkbox" id="rot-xw" checked><span>XW</span></label>
+                <label class="plane-toggle"><input type="checkbox" id="rot-yz"><span>YZ</span></label>
+                <label class="plane-toggle"><input type="checkbox" id="rot-yw"><span>YW</span></label>
+                <label class="plane-toggle"><input type="checkbox" id="rot-zw" checked><span>ZW</span></label>
+            </div>
+
+            <div class="separator"></div>
+            <h3 class="sub-heading" data-i18n="colorTheme">Thème Couleur</h3>
+            <div class="theme-grid" id="theme-grid">
+                <button class="theme-dot active" data-theme="cyberpunk" style="--c:#00f3ff" title="Cyberpunk"></button>
+                <button class="theme-dot" data-theme="matrix"   style="--c:#00ff44" title="Matrix"></button>
+                <button class="theme-dot" data-theme="fire"     style="--c:#ff5500" title="Fire"></button>
+                <button class="theme-dot" data-theme="ice"      style="--c:#88ddff" title="Ice"></button>
+                <button class="theme-dot" data-theme="gold"     style="--c:#ffcc00" title="Royal Gold"></button>
+                <button class="theme-dot" data-theme="vaporwave"style="--c:#ff00cc" title="Vaporwave"></button>
+                <button class="theme-dot" data-theme="aurora"   style="--c:#44ffaa" title="Aurora"></button>
+                <button class="theme-dot" data-theme="cosmic"   style="--c:#cc88ff" title="Cosmic"></button>
+            </div>
+
+            <div class="separator"></div>
+            <h3 class="sub-heading" data-i18n="renderMode">Mode Rendu</h3>
+            <div class="btn-group-horiz">
+                <button class="mode-btn active" data-render="wireframe" data-i18n="rWire">Fil</button>
+                <button class="mode-btn" data-render="solid"     data-i18n="rSolid">Solide</button>
+                <button class="mode-btn" data-render="ghost"     data-i18n="rGhost">Fantôme</button>
+                <button class="mode-btn" data-render="hologram"  data-i18n="rHolo">Hologram</button>
+            </div>
+
+            <div class="fx-row">
+                <label data-i18n="glow">Glow</label>
+                <input type="range" id="fx-glow" min="0" max="3.0" step="0.05" value="1.2">
+                <span class="param-val" id="fx-glow-val">1.2</span>
+            </div>
+            <div class="fx-row">
+                <label>Chroma</label>
+                <input type="range" id="fx-chroma" min="0" max="0.015" step="0.001" value="0.002">
+                <span class="param-val" id="fx-chroma-val">0.002</span>
+            </div>
+            <div class="fx-row">
+                <label data-i18n="trail">Trail</label>
+                <input type="range" id="fx-trail" min="0" max="1.0" step="0.01" value="0">
+                <span class="param-val" id="fx-trail-val">0.00</span>
+            </div>
+            <div class="fx-row">
+                <label data-i18n="particles">Particules</label>
+                <input type="range" id="fx-particles" min="0" max="1000" step="10" value="200">
+                <span class="param-val" id="fx-particles-val">200</span>
+            </div>
+
+            <div class="separator"></div>
+            <h3 class="sub-heading" data-i18n="crossTitle">Section W</h3>
+            <div class="fx-row">
+                <label>W =</label>
+                <input type="range" id="fx-cross" min="-2.0" max="2.0" step="0.01" value="0">
+                <span class="param-val" id="fx-cross-val">0.00</span>
+            </div>
+            <button id="btn-cross-anim" class="btn-full" data-i18n="animCross">
+                <i class="fa-solid fa-film"></i> Animer la tranche
+            </button>
+
+            <div class="separator"></div>
+            <div class="info-box">
+                <h4 data-i18n="infoTitle">À propos</h4>
+                <p id="info-text" data-i18n="infoDefault">Sélectionnez une figure.</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ═══ CINEMATIC PANEL ═══ -->
+    <div id="cinematic-panel" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;gap:18px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+            <span style="font-size:1.4rem;font-weight:800;color:#ff88cc;letter-spacing:3px;text-transform:uppercase;">🎬 Cinematic Gallery</span>
+            <button id="btn-cinematic-close" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:0.82rem;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+        <div id="cinematic-grid" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:1100px;"></div>
+        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin-top:4px;">3 cinematic angles captured automatically</p>
+    </div>
+
+    <!-- ═══ W-SLICER BAR ═══ -->
+    <div class="slicer-bar glass-panel" id="slicer-bar">
+        <span class="slicer-label"><i class="fa-solid fa-layer-group"></i> <span data-i18n="slicerLabel">Tranche W</span></span>
+        <div class="slicer-track-wrap">
+            <input type="range" id="slicer-w" min="-2.5" max="2.5" step="0.005" value="0" class="slicer-range">
+        </div>
+        <span class="slicer-val-display" id="slicer-val">W = 0.000</span>
+        <button id="btn-slicer-auto" class="hdr-btn glow-cyan" style="padding:4px 12px;font-size:0.75rem;">
+            <i class="fa-solid fa-play"></i> <span data-i18n="autoScan">Auto-Scan</span>
+        </button>
+        <button id="btn-cross-visible" class="hdr-btn" style="padding:4px 12px;font-size:0.75rem;">
+            <i class="fa-solid fa-eye"></i> <span data-i18n="showCross">Section</span>
+        </button>
+    </div>
+
+    <!-- ═══ MUSIC STUDIO DRAWER ═══ -->
+    <div id="music-drawer" class="music-drawer glass-panel" style="display:none;">
+        <div class="music-header">
+            <span class="music-title"><i class="fa-solid fa-headphones"></i> <span data-i18n="musicTitle">Studio Musical 4D</span></span>
+            <div class="music-ai-section">
+                <select id="ai-theme-select" class="glass-select" style="width:140px;padding:5px 8px;font-size:0.78rem;">
+                    <option value="cosmic">🌌 Cosmic</option>
+                    <option value="dark">🌑 Dark</option>
+                    <option value="alien">👽 Alien</option>
+                    <option value="tech">🤖 Tech</option>
+                    <option value="nature">🌿 Nature</option>
+                    <option value="battle">⚔️ Battle</option>
+                    <option value="dream">💭 Dream</option>
+                    <option value="tribal">🥁 Tribal</option>
+                </select>
+                <button id="btn-ai-music" class="hdr-btn glow-purple" style="padding:5px 12px;font-size:0.78rem;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="aiGenMusic">IA Générer</span>
+                </button>
+            </div>
+            <div class="music-transport">
+                <button id="btn-music-stop" class="hdr-btn" style="padding:5px 10px;">
+                    <i class="fa-solid fa-stop"></i>
+                </button>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                    <label style="font-size:0.62rem;color:var(--muted);" data-i18n="volLabel">Vol</label>
+                    <input type="range" id="music-vol" min="0" max="1" step="0.02" value="0.5" style="width:70px;accent-color:var(--c3);">
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                    <label style="font-size:0.62rem;color:var(--muted);" data-i18n="bpmLabel">BPM</label>
+                    <input type="range" id="music-bpm" min="40" max="240" step="1" value="120" title="BPM Regulator" style="width:70px;accent-color:var(--c3);">
+                </div>
+                <button id="btn-music-close" class="hdr-btn" style="padding:5px 10px;margin-left:6px;">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div id="music-now-playing" class="music-now-playing" style="display:none;">
+            <div class="music-wave-bars"><div></div><div></div><div></div><div></div><div></div></div>
+            <span id="music-playing-name">—</span>
+            <span id="music-bpm-badge" class="bpm-badge"></span>
+        </div>
+        <div class="melody-grid" id="melody-grid"></div>
+    </div>
+
+    <!-- ═══ SCREENSHOT GALLERY PANEL ═══ -->
+    <div id="gallery-panel" class="gallery-panel glass-panel" style="display:none;">
+        <div class="gallery-header">
+            <span class="gallery-title"><i class="fa-solid fa-images"></i> <span data-i18n="galleryTitle">Galerie</span></span>
+            <button id="btn-gallery-clear" class="hdr-btn" style="padding:4px 10px;font-size:0.72rem;border-color:#ff5555;color:#ff7777;">
+                <i class="fa-solid fa-trash"></i> <span data-i18n="galleryClear">Vider</span>
+            </button>
+            <button id="btn-gallery-close" class="hdr-btn" style="padding:4px 10px;font-size:0.72rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+
+    <!-- ═══ QR / SHARE MODAL ═══ -->
+    <div id="qr-modal" class="qr-modal" style="display:none;">
+        <div class="qr-modal-inner glass-panel">
+            <h3 class="qr-title"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="shareTitle">Partager</span></h3>
+            <div id="qr-container" class="qr-container"></div>
+            <button id="btn-copy-url" class="btn-full" style="margin-top:10px;">
+                <i class="fa-solid fa-copy"></i> <span data-i18n="copyUrl">Copier le lien</span>
+            </button>
+            <button id="btn-qr-close" class="hdr-btn" style="margin-top:8px;width:100%;justify-content:center;">
+                <i class="fa-solid fa-xmark"></i> Fermer
+            </button>
+        </div>
+    </div>
+
+    <!-- Hyper-Sketch Pad -->
+    <div id="sketch-overlay" class="glass" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:610px; min-height:640px; height:auto; z-index:9999; padding:20px; border: 1px solid rgba(0,243,255,0.4); border-radius:20px; box-shadow:0 0 40px rgba(0,0,0,0.8); background:rgba(10,10,30,0.95); backdrop-filter:blur(20px); max-height:95vh; overflow-y:auto;">
+        <div class="sketch-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+            <h3 style="margin:0; color:#00f3ff; font-family:'Orbitron', sans-serif; letter-spacing:2px;">🎨 HYPER-SKETCH STUDIO</h3>
+            <button id="btn-sketch-close" style="background:none; border:none; color:#ff00ea; font-size:1.8em; cursor:pointer; line-height:1;">✕</button>
+        </div>
+        <div style="text-align:center; color:#888; font-size:0.95em; margin-bottom:15px; font-weight:600;" data-i18n="sketchHint">Sketch your 4D figure... release its energy!</div>
+        
+        <!-- NEW CONTROLS: Color + Thickness -->
+        <div style="display:flex; justify-content:center; align-items:center; gap:20px; margin-bottom:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label style="color:#00f3ff; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Color</label>
+                <input type="color" id="sketch-color" value="#00f3ff" style="width:40px; height:40px; border:none; background:none; cursor:pointer; border-radius:8px;">
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:10px; flex:1; max-width:260px;">
+                <label style="color:#ff00ea; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Thickness</label>
+                <input type="range" id="sketch-thickness" min="0.01" max="0.5" step="0.01" value="0.08" style="flex:1; accent-color:#ff00ea;">
+            </div>
+
+            <div style="display:flex; gap:6px;">
+                <button class="sketch-preset" style="width:24px; height:24px; border-radius:50%; background:#00f3ff; border:2px solid #fff;" data-color="#00f3ff"></button>
+                <button class="sketch-preset" style="width:24px; height:24px; border-radius:50%; background:#ff00ea; border:2px solid rgba(255,255,255,0.2);" data-color="#ff00ea"></button>
+                <button class="sketch-preset" style="width:24px; height:24px; border-radius:50%; background:#ffcc00; border:2px solid rgba(255,255,255,0.2);" data-color="#ffcc00"></button>
+                <button class="sketch-preset" style="width:24px; height:24px; border-radius:50%; background:#00ff44; border:2px solid rgba(255,255,255,0.2);" data-color="#00ff44"></button>
+            </div>
+        </div>
+        <!-- STYLE SELECTOR -->
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px; padding:8px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+            <button class="sketch-style-btn active" data-style="NEON" title="Neon Tube">
+                <i class="fa-solid fa-grip-lines"></i> <span style="font-size:0.65rem;">Neon</span>
+            </button>
+            <button class="sketch-style-btn" data-style="PULSE" title="Energy Pulse (Bubble)">
+                <i class="fa-solid fa-circle-nodes"></i> <span style="font-size:0.65rem;">Bubble</span>
+            </button>
+            <button class="sketch-style-btn" data-style="RIBBON" title="Plasma Ribbon">
+                <i class="fa-solid fa-scroll"></i> <span style="font-size:0.65rem;">Ribbon</span>
+            </button>
+            <button class="sketch-style-btn" data-style="QUANTUM" title="Quantum Particles">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> <span style="font-size:0.65rem;">Quantum</span>
+            </button>
+            <button class="sketch-style-btn" data-style="CRYSTAL" title="Crystal Spikes">
+                <i class="fa-solid fa-diamond"></i> <span style="font-size:0.65rem;">Crystal</span>
+            </button>
+            <button class="sketch-style-btn" data-style="NEURAL" title="Neural Web">
+                <i class="fa-solid fa-network-wired"></i> <span style="font-size:0.65rem;">Neural</span>
+            </button>
+        </div>
+        <canvas id="sketch-canvas" width="570" height="420" style="background:rgba(0,0,0,0.4); border:2px solid rgba(0,243,255,0.2); border-radius:12px; cursor:crosshair; display:block; margin:0 auto;"></canvas>
+        <div style="display:flex; justify-content:space-between; margin-top:20px; padding: 0 10px;">
+            <button id="btn-sketch-clear" style="background:rgba(255,50,50,0.15); border:1px solid #ff3333; color:#ff9999; border-radius:30px; padding:10px 25px; cursor:pointer; font-weight:800; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">🗑️ Reset</button>
+            <button id="btn-sketch-apply" style="background:linear-gradient(45deg, #00f3ff, #ff00ea); border:none; color:white; font-weight:900; border-radius:30px; padding:12px 40px; cursor:pointer; text-transform:uppercase; letter-spacing:2px; box-shadow:0 0 20px rgba(0,243,255,0.4); transition:0.3s;" onmouseover="this.style.boxShadow='0 0 35px rgba(0,243,255,0.8)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,243,255,0.4)'">LIFT TO 4D ✨</button>
+        </div>
+    </div>
+
+    <!-- Three.js & Post-processing (Stable r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <!-- App JS -->
+    <script src="./js/math4d.js?v=5"></script>
+    <script src="./js/figures.js?v=5"></script>
+    <script src="./js/robots.js?v=5"></script>
+    <script src="./js/music.js?v=6"></script>
+    <script src="./js/extras.js?v=6"></script>
+    <script src="./js/sketch.js?v=6"></script>
+    <script src="./js/app.js?v=6"></script>
+</body>
+</html>

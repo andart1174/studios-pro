@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArchitectPro - Professional 2D & 3D Builder</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="dark-theme">
+
+  <!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 9999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED' && pendingTarget) {
+          isAllowed = true;
+          pendingTarget.click();
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        // Exclude the language toggle from triggering export
+        if (target.classList && target.classList.contains('lang-btn')) return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp1' } });
+        }
+      }, true);
+    })();
+  </script>
+
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-icon">M</div> <!-- Placeholder icon -->
+      <div class="logo-text">
+        <h1 data-i18n="app_title">ArchitectPro</h1>
+        <p data-i18n="app_subtitle">Intelligent 2D & 3D Builder</p>
+      </div>
+    </div>
+
+    <!-- Toolbar Top -->
+    <div class="top-center-tools">
+      <button class="tool-btn active" data-tool="select" title="Select (V)"><span class="icon">👆</span></button>
+      <button class="tool-btn" data-tool="wall" title="Draw Wall (W)"><span class="icon">🧱</span></button>
+      <button class="tool-btn" data-tool="door" title="Add Door (D)"><span class="icon">🚪</span></button>
+      <button class="tool-btn" data-tool="window" title="Add Window (N)"><span class="icon">🪟</span></button>
+      <button class="tool-btn" data-tool="floor" title="Add Floor (F)"><span class="icon">🟩</span></button>
+      <button class="tool-btn" data-tool="roof" title="Add Roof (R)"><span class="icon">🏠</span></button>
+      <button class="tool-btn" data-tool="furniture" title="Add Furniture (M)"><span class="icon">🪑</span></button>
+      <button class="tool-btn" data-tool="terrain" title="Sculpt Terrain (T)"><span class="icon">⛰️</span></button>
+      <button class="tool-btn" data-tool="camera" title="Camera Path (C)"><span class="icon">🎥</span></button>
+      <button class="tool-btn" data-tool="light" title="Artificial Light (L)"><span class="icon">💡</span></button>
+    </div>
+
+    <div class="header-right">
+      <div class="floor-toggle" title="Active Floor">
+        <select id="activeFloorSelect" class="styled-select" aria-label="Active Floor">
+          <option value="0">Ground Floor</option>
+          <option value="1">Floor 1</option>
+          <option value="2">Floor 2</option>
+          <option value="3">Floor 3</option>
+        </select>
+      </div>
+      <div class="unit-toggle" title="Measurement Unit">
+        <select id="unitSelect" class="styled-select">
+          <option value="m">Meters (m)</option>
+          <option value="cm">Centimeters (cm)</option>
+          <option value="in">Inches (in)</option>
+          <option value="ft">Feet (ft)</option>
+        </select>
+      </div>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+      </div>
+
+      <!-- AI Generator -->
+      <div class="ai-generator-wrapper"
+        style="display:flex; align-items:center; background:var(--bg-panel); border:1px solid #4B5563; border-radius:6px; padding:2px; margin-right:8px;">
+        <input type="text" id="aiPrompt" placeholder="AI: '4x5...'"
+          style="background:transparent; border:none; color:var(--text-main); font-size:12px; padding:4px 6px; width:100px; outline:none;" />
+        <button id="btnAIGenerate" title="Generate with AI"
+          style="background:#8B5CF6; border:none; color:white; border-radius:4px; padding:4px 8px; font-weight:bold; cursor:pointer; font-size:12px;">✨</button>
+      </div>
+
+      <div class="pricing-badge" id="totalPriceBadge">
+        <span class="price-symbol">$</span><span class="price-value">0.00</span>
+      </div>
+      <button class="btn-secondary" id="btnShortcuts" title="Keyboard Shortcuts"
+        style="margin-right:0; border:1px solid #4B5563; background:transparent; padding:6px 10px; border-radius:6px; cursor:pointer;"
+        data-i18n="btn_shortcuts">⌨️ Shortcuts</button>
+      <button class="btn-primary" id="btnExport" data-i18n="btn_export">Export 3D</button>
+    </div>
+  </header>
+
+  <!-- MAIN APP AREA -->
+  <main class="app-body">
+
+    <!-- LEFT SIDEBAR: PROPERTIES -->
+    <aside class="left-sidebar">
+      <div class="panel-header" data-i18n="panel_properties">Properties</div>
+      <div class="panel-content" id="propertiesPanel">
+        <div class="empty-state" data-i18n="empty_properties">Select an object to view properties.</div>
+
+        <!-- Dynamic properties will be injected here -->
+        <div id="dynamicProps" style="display:none;">
+          <div class="prop-group">
+            <label data-i18n="prop_width">Width</label>
+            <div class="input-with-unit">
+              <input type="number" id="propWidth" value="100" />
+              <span class="curr-unit">cm</span>
+            </div>
+          </div>
+          <div class="prop-group">
+            <label data-i18n="prop_height">Height</label>
+            <div class="input-with-unit">
+              <input type="number" id="propHeight" value="200" />
+              <span class="curr-unit">cm</span>
+            </div>
+          </div>
+          <div class="prop-group">
+            <label data-i18n="prop_elevation">Elevation</label>
+            <div class="input-with-unit">
+              <input type="number" id="propElevation" value="0" />
+              <span class="curr-unit">cm</span>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="prop-group">
+            <label data-i18n="prop_rotation">Rotation</label>
+            <div class="input-with-unit">
+              <input type="number" id="propRotation" value="0" />
+              <span class="curr-unit">°</span>
+            </div>
+          </div>
+
+          <div class="prop-group" id="groupCurvature" style="display:none;">
+            <label data-i18n="prop_curvature">Curvature</label>
+            <div class="input-with-unit">
+              <input type="number" id="propCurvature" value="0" />
+              <span class="curr-unit">cm</span>
+            </div>
+          </div>
+
+          <div class="prop-group" id="groupModel" style="display:none;">
+            <label data-i18n="prop_model">Model Variant</label>
+            <select id="propModel" class="styled-select w-100">
+              <!-- populated by JS depending on object type -->
+            </select>
+          </div>
+
+          <div class="prop-group" id="groupMaterial" style="display:none;">
+            <label data-i18n="prop_material">Material</label>
+            <select id="propMaterial" class="styled-select w-100">
+              <option value="none">Solid Color</option>
+              <option value="wood">Wood</option>
+              <option value="brick">Brick</option>
+              <option value="concrete">Concrete</option>
+              <option value="tiles">Tiles</option>
+              <option value="carpet">Carpet</option>
+              <option value="grass">Grass</option>
+              <option value="paving">Paving / Stone</option>
+              <option value="dirt">Dirt / Sand</option>
+              <option value="water">Water</option>
+              <option value="mirror">Mirror / Glass</option>
+            </select>
+          </div>
+
+          <div class="prop-group" id="groupColor">
+            <label data-i18n="prop_color">Color/Tint</label>
+            <input type="color" id="propColor" value="#ffffff" />
+          </div>
+
+          <div class="prop-group" id="groupPrice">
+            <label data-i18n="prop_cost">Unit Cost ($)</label>
+            <input type="number" id="propCost" value="0" step="0.01" />
+          </div>
+
+          <button class="btn-danger w-100 mt-10" id="btnDelete" data-i18n="btn_delete">Delete Object</button>
+        </div>
+      </div>
+
+      <div class="panel-header mt-auto" data-i18n="panel_project">Project Settings</div>
+      <div class="panel-content">
+        <div class="prop-group">
+          <label data-i18n="glob_wall_height">Default Wall Height</label>
+          <div class="input-with-unit">
+            <input type="number" id="globWallHeight" value="280" />
+            <span class="curr-unit">cm</span>
+          </div>
+        </div>
+        <div class="prop-group">
+          <label data-i18n="glob_wall_thick">Default Wall Thickness</label>
+          <div class="input-with-unit">
+            <input type="number" id="globWallThick" value="20" />
+            <span class="curr-unit">cm</span>
+          </div>
+        </div>
+        <!-- Load Blueprint -->
+        <button class="btn-secondary w-100 mt-10" id="btnLoadBlueprint" data-i18n="btn_load_blueprint">Load 2D
+          Blueprint</button>
+        <input type="file" id="blueprintFile" accept="image/*" style="display:none;" />
+
+        <!-- Import Custom 3D Model -->
+        <button class="btn-secondary w-100 mt-10" id="btnImportGLB" style="border-color:#3B82F6; color:#3B82F6;">Import
+          3D Model (.glb)</button>
+        <input type="file" id="importGLBFile" accept=".glb,.gltf" style="display:none;" />
+
+        <!-- Live BOM -->
+        <div class="panel-header mt-10" data-i18n="panel_bom"
+          style="background:var(--bg-panel); color:var(--accent); padding:10px 15px; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+          💰 Bill of Materials</div>
+        <div class="panel-content" style="font-size:12px; max-height:150px; overflow-y:auto; padding-top:5px;">
+          <table class="w-100" style="color:var(--text-main); text-align:left; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="padding-bottom:5px; border-bottom:1px solid #333;">Category</th>
+                <th style="padding-bottom:5px; text-align:right; border-bottom:1px solid #333;">Est. Cost</th>
+              </tr>
+            </thead>
+            <tbody id="bomTableBody">
+              <!-- populated by JS -->
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="font-weight:bold; padding-top:5px; border-top:1px solid #333;">Total</td>
+                <td id="bomTotal"
+                  style="text-align:right; font-weight:bold; color:var(--accent); padding-top:5px; border-top:1px solid #333;">
+                  $0.00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER SPLIT VIEW -->
+    <section class="split-view">
+      <!-- 2D EDITOR -->
+      <div class="split-pane pane-2d">
+        <div class="pane-header">
+          <span class="pane-title">🖼️ <span data-i18n="pane_2d">2D Floor Plan</span></span>
+          <div class="pane-actions">
+            <button class="icon-btn" id="btnZoomIn2D" title="Zoom In">+</button>
+            <button class="icon-btn" id="btnZoomOut2D" title="Zoom Out">-</button>
+            <button class="icon-btn" id="btnReset2D" title="Reset View">↺</button>
+          </div>
+        </div>
+        <div class="canvas-container" id="container2D">
+          <canvas id="canvas2D"></canvas>
+        </div>
+      </div>
+
+      <!-- DOM SPLITTER -->
+      <div class="splitter" id="vSplitter"></div>
+
+      <!-- 3D VIEWER -->
+      <div class="split-pane pane-3d">
+        <div class="pane-header">
+          <span class="pane-title">📦 <span data-i18n="pane_3d">3D Live Preview</span> <span id="mode3DStatus"
+              style="color:#10B981;font-size:10px;margin-left:10px;">(Orbit Controls)</span></span>
+          <div class="pane-actions" style="display:flex; align-items:center;">
+            <label for="timeSlider" id="timeLabel" style="font-size:12px; margin-right:5px; color:#aaa;">12:00</label>
+            <input type="range" id="timeSlider" min="6" max="20" step="0.1" value="12"
+              style="width:80px; margin-right:15px; cursor:ew-resize;" title="Time of Day (Sun)" />
+            <button class="icon-btn" id="btnWalk" title="Walkthrough (WASD)">🚶</button>
+            <button class="icon-btn" id="btnToggleLight" title="Toggle Day/Night">💡</button>
+            <button class="icon-btn" id="btnCamTop" title="Top View">T</button>
+            <button class="icon-btn" id="btnCamIso" title="Iso View">I</button>
+          </div>
+        </div>
+        <div class="canvas-container" id="container3D">
+          <canvas id="canvas3D"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Export Modal -->
+  <div class="modal-overlay" id="exportModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 data-i18n="export_title">Export Project</h3>
+        <button class="close-btn" id="closeExport">&times;</button>
+      </div>
+      <div class="modal-body">
+        <button class="btn-primary w-100 mb-10" id="doExportGLB">Export 3D Model (GLB)</button>
+        <button class="btn-primary w-100 mb-10" id="doExportSTL">Export 3D Model (STL)</button>
+        <button class="btn-primary w-100 mb-10" id="doExportOBJ">Export 3D Model (OBJ)</button>
+        <button class="btn-primary w-100 mb-10" id="doExportHR" style="background:#8B5CF6;">📸 Export High-Res Render
+          (PNG)</button>
+        <button class="btn-primary w-100 mb-10" id="doExportVideo" style="background:#10B981;">🎥 Record Virtual Tour
+          (.webm)</button>
+        <hr class="divider" />
+        <button class="btn-primary w-100 mb-10" id="doExportPDF" style="background:#EF4444;">Export PDF Quote &
+          Presentation</button>
+        <button class="btn-secondary w-100" id="doExportJSON">Save Project (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortcuts Modal -->
+  <div class="modal-overlay" id="shortcutsModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 data-i18n="shortcuts_title">Keyboard Shortcuts</h3>
+        <button class="close-btn" id="closeShortcuts">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size:14px; text-align:left;">
+        <ul style="list-style:none; padding:0; margin:0; line-height:2;">
+          <li><b style="color:var(--accent);">V</b> : Select Tool</li>
+          <li><b style="color:var(--accent);">W</b> : Wall Tool (Hold SHIFT for Curve)</li>
+          <li><b style="color:var(--accent);">D</b> : Door Tool</li>
+          <li><b style="color:var(--accent);">N</b> : Window Tool</li>
+          <li><b style="color:var(--accent);">F</b> : Floor Tool</li>
+          <li><b style="color:var(--accent);">R</b> : Roof Tool</li>
+          <li><b style="color:var(--accent);">M</b> : Furniture Tool</li>
+          <li><b style="color:var(--accent);">T</b> : Terrain Tool (Hold SHIFT to Lower)</li>
+          <li><b style="color:var(--accent);">Delete / Backspace</b> : Delete Selected Object</li>
+          <li><b style="color:var(--accent);">WASD</b> : Move in 3D Walkthrough Mode</li>
+          <li><b style="color:var(--accent);">Esc</b> : Exit Walkthrough Mode</li>
+          <li><b style="color:var(--accent);">Alt + Drag</b> : Pan 2D Camera</li>
+          <li><b style="color:var(--accent);">Scroll</b> : Zoom 2D Camera</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- App Modules -->
+  <script src="js/i18n.js"></script>
+  <script src="js/pricing.js"></script>
+  <script src="js/editor2d.js"></script>
+  <script src="js/engine3d.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
