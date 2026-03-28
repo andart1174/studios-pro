@@ -1,16 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Architecte</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
-        iframe { width: 100%; height: 100%; border: none; }
-    </style>
-</head>
-<body>
-    
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>app-123</title>
+    <script type="module" crossorigin src="./assets/index-4a3UfZog.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B9frSYDz.css">
+  </head>
+  <body>
+
   <!-- Back Button and Payment logic -->
   <style>
     .back-to-studios {
@@ -57,7 +56,7 @@
         const id = (target.id || "").toLowerCase();
         const cls = (target.className || "");
         const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
-        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture'];
+                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         // Exclude the language toggle from triggering export
@@ -73,6 +72,6 @@
     })();
   </script>
 
-    <iframe src="https://andmd7411-droid.github.io/arhitecte-ai---123/"></iframe>
-</body>
+    <div id="root"></div>
+  </body>
 </html>
