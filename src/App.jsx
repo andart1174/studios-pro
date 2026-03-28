@@ -715,13 +715,14 @@ const StudiosPro = () => {
       studioPro: "Studio Pro 4D",
       maker7: "Maker Studio 7",
       jewelry: "Jewelry Maker Pro",
-      auraGen: "Aura Gen",
+      auraGen: "Aura AI Studio",
       archPro1: "Architect Pro 1",
       archPro2: "Architect Pro 2",
       figureBuilder: "4D Figure Builder",
       musicComposer: "4D Music Composer",
       designPro: "Design Pro Studio",
-      iaArchitecte: "IA Architecte"
+      iaArchitecte: "IA Architecte",
+      faqBtn: "FAQ"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -756,13 +757,14 @@ const StudiosPro = () => {
       studioPro: "Studio Pro 4D",
       maker7: "Maker Studio 7",
       jewelry: "Jewelry Maker Pro",
-      auraGen: "Aura Gen",
+      auraGen: "Aura AI Studio",
       archPro1: "Architect Pro 1",
       archPro2: "Architect Pro 2",
       figureBuilder: "4D Figure Builder",
       musicComposer: "4D Music Composer",
       designPro: "Design Pro Studio",
-      iaArchitecte: "IA Architecte"
+      iaArchitecte: "IA Architecte",
+      faqBtn: "FAQ"
     }
   };
 
@@ -827,6 +829,10 @@ const StudiosPro = () => {
           <a href="/blog/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <BookOpen size={18} />
             <span>{currentT.blogBtn}</span>
+          </a>
+          <a href="/faq.html" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: 'bold' }}>?</span>
+            <span>{currentT.faqBtn}</span>
           </a>
         </div>
 
