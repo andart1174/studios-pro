@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Studio 6D</title>
+    <script src="https://unpkg.com/three@0.145.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/OBJExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/utils/BufferGeometryUtils.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/geometries/TextGeometry.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg: #05070a;
+            --surface: #0f172a;
+            --surface-glass: rgba(15, 23, 42, 0.7);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --neon-blue: #00f3ff;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --panel-width: 380px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 0.75rem 1.5rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .studio-nav {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            flex: 1;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+            padding-bottom: 4px;
+        }
+        .studio-nav::-webkit-scrollbar { height: 4px; }
+        .studio-nav::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+        .studio-nav::-webkit-scrollbar-track { background: transparent; }
+
+        .nav-item {
+            padding: 8px 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            gap: 5px;
+            font-weight: bold;
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .lang-switch button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .lang-switch button.active {
+            color: #fff;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        aside {
+            width: var(--panel-width);
+            background: var(--surface-glass);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            background: var(--surface-glass);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .group-title {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .ctrl-item {
+            margin-bottom: 12px;
+        }
+
+        .ctrl-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .select-dark {
+            width: 100%;
+            padding: 5px;
+            background: var(--surface);
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .color-picker {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .export-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .ctrl-val {
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 10px;
+            background: #1e293b;
+            appearance: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--accent);
+            cursor: pointer;
+        }
+
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #0f172a 0%, #05070a 100%);
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-section {
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        [data-lang-en],
+        [data-lang-fr] {
+            display: none;
+        }
+
+        body.lang-en [data-lang-en] {
+            display: inline;
+        }
+
+        body.lang-fr [data-lang-fr] {
+            display: inline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="lang-en">
+    <div id="local-payment-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;justify-content:center;align-items:center;backdrop-filter:blur(8px);">
+        <div style="background:#0f172a;padding:40px;border-radius:20px;text-align:center;max-width:400px;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="font-size:40px;margin-bottom:15px;">🔒</div>
+            <h2 style="font-size:24px;margin-bottom:15px;color:var(--accent);">Premium Mode Required</h2>
+            <p style="color:#94a3b8;margin-bottom:25px;font-size:15px;line-height:1.5;">This export feature requires an active Premium plan. Please upgrade to continue.</p>
+            <div style="display:flex;gap:15px;justify-content:center;">
+                <button id="modal-close-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:600;">Cancel</button>
+                <button id="pay-premium-btn" style="background:var(--accent);border:none;color:#fff;padding:12px 25px;border-radius:10px;cursor:pointer;font-weight:bold;box-shadow:0 0 15px var(--accent-glow);">Upgrade Now</button>
+            </div>
+        </div>
+    </div>
+    <header>
+        <button id="back-btn" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; font-weight:bold; margin-right:15px; display:flex; align-items:center; gap:5px;"><span style="font-size:16px;">←</span> Back</button>
+        <div class="logo">
+            <div class="logo-icon">6D</div>
+            <span>STUDIO PRO X</span>
+        </div>
+        <nav class="studio-nav">
+            <button class="nav-item active" onclick="setStudio('builder')" id="nav-builder">
+                <span data-lang-en>🎮 Game Builder</span><span data-lang-fr>🎮 Éditeur de Jeu</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('ui_asset')" id="nav-ui_asset">
+                <span data-lang-en>💎 UI Asset</span><span data-lang-fr>💎 Asset UI</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('parallax')" id="nav-parallax">
+                <span data-lang-en>🖼️ Parallax 2.5D</span><span data-lang-fr>🖼️ Bande Dessinée</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('typography')" id="nav-typography">
+                <span data-lang-en>🔠 Typography</span><span data-lang-fr>🔠 Texte 3D</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('organic')" id="nav-organic">
+                <span data-lang-en>🧬 Organic Art</span><span data-lang-fr>🧬 Art Organique</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('wave')" id="nav-wave">
+                <span data-lang-en>🌊 Wave Ocean</span><span data-lang-fr>🌊 Océan</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('mosaic')" id="nav-mosaic">
+                <span data-lang-en>🧡 Mosaic 3D</span><span data-lang-fr>🧡 Mosaïque</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('galaxy')" id="nav-galaxy">
+                <span data-lang-en>🌌 Galaxy</span><span data-lang-fr>🌌 Galaxie</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('qrcode')" id="nav-qrcode">
+                <span data-lang-en>🎯 QR Code 3D</span><span data-lang-fr>🎯 Code QR 3D</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('diamond')" id="nav-diamond">
+                <span data-lang-en>💎 Diamond Cut</span><span data-lang-fr>💎 Diamant</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('chain')" id="nav-chain">
+                <span data-lang-en>🔗 Chain Link</span><span data-lang-fr>🔗 Chaîne</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('gear')" id="nav-gear">
+                <span data-lang-en>⚙️ Gear Lab</span><span data-lang-fr>⚙️ Engrenage PRO</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('bracket')" id="nav-bracket">
+                <span data-lang-en>🔩 Bracket</span><span data-lang-fr>🔩 Support</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('terrain')" id="nav-terrain">
+                <span data-lang-en>🗻 Terrain</span><span data-lang-fr>🗻 Relief</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('fractal')" id="nav-fractal">
+                <span data-lang-en>❄️ Fractal</span><span data-lang-fr>❄️ Fractal</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('neon')" id="nav-neon">
+                <span data-lang-en>🌩️ Neon FX</span><span data-lang-fr>🌩️ Neon FX</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('spring')" id="nav-spring">
+                <span data-lang-en>🌀 Spring/Coil</span><span data-lang-fr>🌀 Ressort</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('lattice')" id="nav-lattice">
+                <span data-lang-en>🔷 Lattice</span><span data-lang-fr>🔷 Treillis</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('mandala')" id="nav-mandala">
+                <span data-lang-en>🌸 Mandala</span><span data-lang-fr>🌸 Mandala</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('polyhedra')" id="nav-polyhedra">
+                <span data-lang-en>🎲 Polyhedra</span><span data-lang-fr>🎲 Polyèdres</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('vase')" id="nav-vase">
+                <span data-lang-en>🏺 Potter Studio</span><span data-lang-fr>🏺 Potterie</span>
+            </button>
+            <button class="nav-item" onclick="setStudio('sprocket')" id="nav-sprocket">
+                <span data-lang-en>🗂️ Sprocket</span><span data-lang-fr>🗂️ Pignon</span>
+            </button>
+        </nav>
+        </nav>
+        <div class="lang-switch">
+            <button class="active" id="btn-en" onclick="setLang('en')">EN</button>
+            <button id="btn-fr" onclick="setLang('fr')">FR</button>
+        </div>
+    </header>
+
+    <main>
+        <aside id="controls">
+            <!-- Universal Project Settings -->
+            <div class="control-group">
+                <div class="upload-section" onclick="document.getElementById('file-in').click()">
+                    ✨ <br>
+                    <span data-lang-en>Upload Image/Logo</span><span data-lang-fr>Importer Image/Logo</span>
+                    <input type="file" id="file-in" class="hidden" accept="image/*" onchange="handleImage(event)">
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 1: GAME BUILDER -->
+            <div id="ctrl-builder" class="control-group studio-ctrl">
+                <div class="group-title"><span data-lang-en>Voxel Grid Generator</span><span data-lang-fr>Générateur
+                        Voxel</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Height Level</span><span
+                                data-lang-fr>Hauteur</span></span><span class="ctrl-val" id="val-b-h">5</span></div>
+                    <input type="range" id="b-h" min="1" max="10" step="1" value="5" oninput="generateVoxelTerrain()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Grid Width (Random)</span><span
+                                data-lang-fr>Largeur (Aléatoire)</span></span><span class="ctrl-val"
+                            id="val-b-w">10</span></div>
+                    <input type="range" id="b-w" min="5" max="50" step="1" value="10" oninput="generateVoxelTerrain()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Grid Length (Random)</span><span
+                                data-lang-fr>Longueur (Aléatoire)</span></span><span class="ctrl-val"
+                            id="val-b-l">10</span></div>
+                    <input type="range" id="b-l" min="5" max="50" step="1" value="10" oninput="generateVoxelTerrain()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Voxel Size</span><span data-lang-fr>Taille
+                                Voxel</span></span><span class="ctrl-val" id="val-b-s">1</span></div>
+                    <input type="range" id="b-s" min="0.1" max="5" step="0.1" value="1"
+                        oninput="generateVoxelTerrain()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Resolution (Image)</span><span
+                                data-lang-fr>Résolution (Image)</span></span><span class="ctrl-val"
+                            id="val-b-res">60</span></div>
+                    <input type="range" id="b-res" min="10" max="150" step="5" value="60"
+                        oninput="generateVoxelTerrain()">
+                </div>
+                <button class="btn-primary" onclick="generateVoxelTerrain()"><span data-lang-en>Generate
+                        Terrain</span><span data-lang-fr>Générer Terrain</span></button>
+            </div>
+
+            <!-- COMPARTMENT 2: UI ASSET -->
+            <div id="ctrl-ui_asset" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>3D UI Component</span><span data-lang-fr>Composant UI
+                        3D</span></div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Base Shape</span><span data-lang-fr>Forme de
+                                Base</span></span></div>
+                    <select id="ui-shape" class="select-dark" onchange="updateAsset()">
+                        <option value="cylinder">Cylinder (Disc)</option>
+                        <option value="roundBox">Rounded Box</option>
+                        <option value="hexagon">Hexagon</option>
+                        <option value="octagon">Octagon</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="star">Star</option>
+                        <option value="heart">Heart</option>
+                        <option value="shield">Shield</option>
+                        <option value="capsule">Capsule</option>
+                    </select>
+                </div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Extrusion</span><span
+                                data-lang-fr>Extrusion</span></span><span class="ctrl-val" id="val-ui-ex">2.0</span>
+                    </div>
+                    <input type="range" id="ui-ex" min="0.1" max="5.0" step="0.1" value="2.0" oninput="updateAsset()">
+                </div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Edge Bevel</span><span data-lang-fr>Biseau
+                                d'Arc</span></span><span class="ctrl-val" id="val-ui-bev">0.5</span></div>
+                    <input type="range" id="ui-bev" min="0" max="2.0" step="0.1" value="0.5" oninput="updateAsset()">
+                </div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Material</span><span
+                                data-lang-fr>Matériau</span></span></div>
+                    <select id="ui-mat" class="select-dark" onchange="updateAsset()">
+                        <option value="glass">Glassmorphism</option>
+                        <option value="clay">Claymorphism</option>
+                        <option value="neon">Neon</option>
+                    </select>
+                </div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Material Power</span><span
+                                data-lang-fr>Puissance</span></span><span class="ctrl-val" id="val-ui-pwr">1.0</span>
+                    </div>
+                    <input type="range" id="ui-pwr" min="0.1" max="3.0" step="0.1" value="1.0" oninput="updateAsset()"
+                        title="Adjusts opacity, glow or roughness">
+                </div>
+
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Remove White BG</span><span data-lang-fr>Effacer
+                                Fond Blanc</span></span><span class="ctrl-val" id="val-ui-trans">0</span></div>
+                    <input type="range" id="ui-trans" min="0" max="255" step="1" value="0" oninput="updateAsset()"
+                        title="Removes white background pixels to simulate transparency">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Size</span><span data-lang-fr>Taille
+                                Logo</span></span><span class="ctrl-val" id="val-ui-logo-sz">20</span></div>
+                    <input type="range" id="ui-logo-sz" min="5" max="50" step="1" value="20" oninput="updateAsset()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Quality (Mesh)</span><span
+                                data-lang-fr>Qualité Logo</span></span><span class="ctrl-val"
+                            id="val-ui-logo-q">120</span></div>
+                    <input type="range" id="ui-logo-q" min="10" max="300" step="10" value="120" oninput="updateAsset()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>Épaisseur
+                                Logo</span></span><span class="ctrl-val" id="val-ui-logo-th">0.5</span></div>
+                    <input type="range" id="ui-logo-th" min="0.1" max="5.0" step="0.1" value="0.5"
+                        oninput="updateAsset()">
+                </div>
+            </div>
+
+
+
+
+
+            <!-- COMPARTMENT 6: PARALLAX -->
+            <div id="ctrl-parallax" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>2.5D Comic Layout</span><span data-lang-fr>Bande Dessinée
+                        2.5D</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Depth Separation</span><span
+                                data-lang-fr>Profondeur</span></span><span class="ctrl-val" id="val-plx-d">20</span>
+                    </div>
+                    <input type="range" id="plx-d" min="5" max="50" value="20" oninput="updateParallax()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Background Color</span><span
+                                data-lang-fr>Fond</span></span></div>
+                    <input type="color" id="plx-c" value="#ff0044" style="width:100%; height:30px; border:none;"
+                        oninput="updateParallax()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Remove White BG</span><span
+                                data-lang-fr>Effacer Fond Blanc</span></span><span class="ctrl-val"
+                            id="val-plx-trans">0</span></div>
+                    <input type="range" id="plx-trans" min="0" max="255" step="1" value="0" oninput="updateParallax()"
+                        title="Removes white background pixels to simulate transparency">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Size</span><span data-lang-fr>Taille
+                                Logo</span></span><span class="ctrl-val" id="val-plx-logo-sz">24</span></div>
+                    <input type="range" id="plx-logo-sz" min="5" max="50" step="1" value="24" oninput="updateParallax()"
+                        title="Logo Size" placeholder="24">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Quality</span><span data-lang-fr>Qualité
+                                Logo</span></span><span class="ctrl-val" id="val-plx-logo-q">120</span></div>
+                    <input type="range" id="plx-logo-q" min="10" max="300" step="10" value="120"
+                        oninput="updateParallax()" title="Logo Quality" placeholder="120">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>Épaisseur
+                                Logo</span></span><span class="ctrl-val" id="val-plx-logo-th">1.0</span></div>
+                    <input type="range" id="plx-logo-th" min="0.1" max="5.0" step="0.1" value="1.0"
+                        oninput="updateParallax()" title="Logo Thickness" placeholder="1">
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 7: TYPOGRAPHY -->
+            <div id="ctrl-typography" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>3D Text Generator</span><span data-lang-fr>Générateur Texte 3D</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Text Content</span><span data-lang-fr>Texte</span></span></div>
+                    <input type="text" id="typo-text" value="3D STUDIO" class="select-dark" oninput="updateTypography()" style="width:100%; border:1px solid rgba(255,255,255,0.1); padding:8px;">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Font Style</span><span data-lang-fr>Police</span></span></div>
+                    <select id="typo-font" class="select-dark" onchange="loadFontBase()">
+                        <option value="helvetiker">Helvetiker (Clean)</option>
+                        <option value="optimer">Optimer (Tech)</option>
+                        <option value="gentilis">Gentilis (Elegant)</option>
+                        <option value="droid_sans">Droid Sans (Modern)</option>
+                    </select>
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Text Size</span><span data-lang-fr>Taille</span></span><span class="ctrl-val" id="val-typo-sz">10</span></div>
+                    <input type="range" id="typo-sz" min="2" max="30" step="0.5" value="10" oninput="updateTypography()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span><span class="ctrl-val" id="val-typo-th">2</span></div>
+                    <input type="range" id="typo-th" min="0.1" max="10" step="0.1" value="2" oninput="updateTypography()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Bevel / Rounding</span><span data-lang-fr>Biseau</span></span><span class="ctrl-val" id="val-typo-bv">0.5</span></div>
+                    <input type="range" id="typo-bv" min="0" max="2" step="0.1" value="0.5" oninput="updateTypography()">
+                </div>
+            </div>
+
+
+
+
+
+            <!-- COMPARTMENT 10: ORGANIC ART -->
+            <div id="ctrl-organic" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>Organic Form Generator</span><span data-lang-fr>Art Paramétrique</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Base Shape</span><span data-lang-fr>Forme Base</span></span></div>
+                    <select id="org-shape" class="select-dark" onchange="updateOrganic()">
+                        <option value="sphere">🌐 Sphere (Blob)</option>
+                        <option value="torus">👍 Torus (Ring)</option>
+                        <option value="tube">💊 Capsule (Pill)</option>
+                        <option value="torusKnot">🛤️ Torus Knot</option>
+                        <option value="icosahedron">🔷 Icosahedron (Crystal)</option>
+                        <option value="octahedron">🔸 Octahedron (Diamond)</option>
+                        <option value="dodecahedron">🔶 Dodecahedron (Gem)</option>
+                        <option value="cone">🔺 Cone (Spike)</option>
+                        <option value="cylinder">👠 Cylinder</option>
+                        <option value="tetrahedron">🔻 Tetrahedron (Pyramid)</option>
+                        <option value="lathe">🎺 Vase (Lathe)</option>
+                        <option value="spring">🌀 Spring (Helix)</option>
+                        <option value="star">⭐ Star Burst</option>
+                    </select>
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Noise Scale (Folds)</span><span data-lang-fr>Échelle Bruit</span></span><span class="ctrl-val" id="val-org-s">3.0</span></div>
+                    <input type="range" id="org-s" min="0.1" max="10" step="0.1" value="3.0" oninput="updateOrganic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Displacement (Spikes)</span><span data-lang-fr>Déformation</span></span><span class="ctrl-val" id="val-org-d">2.0</span></div>
+                    <input type="range" id="org-d" min="0" max="10" step="0.1" value="2.0" oninput="updateOrganic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Complexity (Polygons)</span><span data-lang-fr>Complexité</span></span><span class="ctrl-val" id="val-org-res">64</span></div>
+                    <input type="range" id="org-res" min="16" max="256" step="16" value="64" oninput="updateOrganic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Render Style</span><span data-lang-fr>Style Rendu</span></span></div>
+                    <select id="org-mat" class="select-dark" onchange="updateOrganic()">
+                        <option value="solid">Smooth Solid</option>
+                        <option value="wire">Wireframe Skeleton</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 11: WAVE OCEAN -->
+            <div id="ctrl-wave" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>🌊 Wave / Ocean Simulator</span><span data-lang-fr>Simulateur Océan</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Amplitude</span><span class="ctrl-val" id="val-wave-a">3</span></div>
+                    <input type="range" id="wave-a" min="0.5" max="10" step="0.5" value="3" oninput="updateWave()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Frequency (Waves)</span><span class="ctrl-val" id="val-wave-f">3</span></div>
+                    <input type="range" id="wave-f" min="1" max="12" step="0.5" value="3" oninput="updateWave()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Resolution (Grid)</span><span class="ctrl-val" id="val-wave-r">80</span></div>
+                    <input type="range" id="wave-r" min="20" max="200" step="10" value="80" oninput="updateWave()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Size</span><span class="ctrl-val" id="val-wave-s">50</span></div>
+                    <input type="range" id="wave-s" min="20" max="150" step="5" value="50" oninput="updateWave()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Style</span></div>
+                    <select id="wave-sty" class="select-dark" onchange="updateWave()">
+                        <option value="solid">Solid Plate</option>
+                        <option value="wire">Wireframe Net</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 12: MOSAIC -->
+            <div id="ctrl-mosaic" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>🧡 Mosaic / Brick Generator</span><span data-lang-fr>Générateur Mosaïque</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Upload Image</span></div>
+                    <button class="btn-primary" onclick="document.getElementById('file-in').click()">Import Image</button>
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Resolution (Tiles)</span><span class="ctrl-val" id="val-mos-r">40</span></div>
+                    <input type="range" id="mos-r" min="10" max="120" step="5" value="40" oninput="updateMosaic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Tile Height (Relief)</span><span class="ctrl-val" id="val-mos-h">1.5</span></div>
+                    <input type="range" id="mos-h" min="0.2" max="5" step="0.1" value="1.5" oninput="updateMosaic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Gap Between Tiles</span><span class="ctrl-val" id="val-mos-g">0.1</span></div>
+                    <input type="range" id="mos-g" min="0" max="0.5" step="0.05" value="0.1" oninput="updateMosaic()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Tile Shape</span></div>
+                    <select id="mos-shape" class="select-dark" onchange="updateMosaic()">
+                        <option value="box">Square Brick</option>
+                        <option value="round">Rounded Pebble</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 13: GALAXY -->
+            <div id="ctrl-galaxy" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>🌌 Galaxy Cloud</span><span data-lang-fr>Nuage Galactique</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Stars Count</span><span class="ctrl-val" id="val-gal-n">5000</span></div>
+                    <input type="range" id="gal-n" min="500" max="30000" step="500" value="5000" oninput="updateGalaxy()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Galaxy Radius</span><span class="ctrl-val" id="val-gal-r">50</span></div>
+                    <input type="range" id="gal-r" min="10" max="150" step="5" value="50" oninput="updateGalaxy()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Spiral Arms</span><span class="ctrl-val" id="val-gal-a">3</span></div>
+                    <input type="range" id="gal-a" min="1" max="8" step="1" value="3" oninput="updateGalaxy()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Vertical Scatter</span><span class="ctrl-val" id="val-gal-v">4</span></div>
+                    <input type="range" id="gal-v" min="0.5" max="20" step="0.5" value="4" oninput="updateGalaxy()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Star Size</span><span class="ctrl-val" id="val-gal-sz">0.5</span></div>
+                    <input type="range" id="gal-sz" min="0.1" max="3" step="0.1" value="0.5" oninput="updateGalaxy()">
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 14: QR CODE 3D -->
+            <div id="ctrl-qrcode" class="control-group studio-ctrl hidden">
+                <div class="group-title"><span data-lang-en>🎯 QR Code 3D Generator</span><span data-lang-fr>Générateur QR 3D</span></div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Text / URL</span></div>
+                    <input type="text" id="qr-text" value="https://studio6d.app" class="select-dark" style="width:100%;padding:8px;" oninput="scheduleQRUpdate()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Module Height (Extrusion)</span><span class="ctrl-val" id="val-qr-h">2</span></div>
+                    <input type="range" id="qr-h" min="0.5" max="8" step="0.5" value="2" oninput="updateQRCode()">
+                </div>
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span>Module Size</span><span class="ctrl-val" id="val-qr-sz">1.5</span></div>
+                    <input type="range" id="qr-sz" min="0.5" max="4" step="0.1" value="1.5" oninput="updateQRCode()">
+                </div>
+                <button class="btn-primary" onclick="generateQR()">Generate QR</button>
+            </div>
+
+
+
+            <!-- COMPARTMENT 14: DIAMOND CUT -->
+            <div id="ctrl-diamond" class="control-group studio-ctrl hidden">
+                <div class="group-title">💎 Diamond Cut</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Facets</span><span class="ctrl-val" id="val-dia-f">8</span></div>
+                    <input type="range" id="dia-f" min="4" max="32" step="1" value="8" oninput="updateDiamond()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Radius</span><span class="ctrl-val" id="val-dia-r">10</span></div>
+                    <input type="range" id="dia-r" min="5" max="25" step="1" value="10" oninput="updateDiamond()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Table Width</span><span class="ctrl-val" id="val-dia-t">0.6</span></div>
+                    <input type="range" id="dia-t" min="0.2" max="0.9" step="0.05" value="0.6" oninput="updateDiamond()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Pavilion Depth</span><span class="ctrl-val" id="val-dia-p">1.5</span></div>
+                    <input type="range" id="dia-p" min="0.5" max="3" step="0.1" value="1.5" oninput="updateDiamond()"></div>
+            </div>
+
+            <!-- COMPARTMENT 15: CHAIN LINK -->
+            <div id="ctrl-chain" class="control-group studio-ctrl hidden">
+                <div class="group-title">🔗 Chain Link</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Link Count</span><span class="ctrl-val" id="val-chn-n">5</span></div>
+                    <input type="range" id="chn-n" min="2" max="15" step="1" value="5" oninput="updateChain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Link Radius</span><span class="ctrl-val" id="val-chn-r">4</span></div>
+                    <input type="range" id="chn-r" min="2" max="10" step="0.5" value="4" oninput="updateChain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness</span><span class="ctrl-val" id="val-chn-t">0.8</span></div>
+                    <input type="range" id="chn-t" min="0.2" max="3" step="0.1" value="0.8" oninput="updateChain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Overlap</span><span class="ctrl-val" id="val-chn-o">0.3</span></div>
+                    <input type="range" id="chn-o" min="0" max="0.8" step="0.05" value="0.3" oninput="updateChain()"></div>
+            </div>
+
+            <!-- COMPARTMENT 16: GEAR BUILDER -->
+            <div id="ctrl-gear" class="control-group studio-ctrl hidden">
+                <div class="group-title">⚙️ Gear Builder</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Teeth Count</span><span class="ctrl-val" id="val-gear-t">20</span></div>
+                    <input type="range" id="gear-t" min="5" max="80" step="1" value="20" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Outer Radius</span><span class="ctrl-val" id="val-gear-r">10</span></div>
+                    <input type="range" id="gear-r" min="4" max="30" step="0.5" value="10" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Tooth Height</span><span class="ctrl-val" id="val-gear-th">2</span></div>
+                    <input type="range" id="gear-th" min="0.5" max="5" step="0.1" value="2" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness (Z)</span><span class="ctrl-val" id="val-gear-tk">3</span></div>
+                    <input type="range" id="gear-tk" min="1" max="12" step="0.5" value="3" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Hub Radius</span><span class="ctrl-val" id="val-gear-h">2</span></div>
+                    <input type="range" id="gear-h" min="0.5" max="8" step="0.5" value="2" oninput="updateGear()"></div>
+            </div>
+
+            <!-- COMPARTMENT 17: BRACKET -->
+            <div id="ctrl-bracket" class="control-group studio-ctrl hidden">
+                <div class="group-title">🔩 Parametric Bracket</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Width</span><span class="ctrl-val" id="val-brk-w">10</span></div>
+                    <input type="range" id="brk-w" min="4" max="40" step="1" value="10" oninput="updateBracket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Height</span><span class="ctrl-val" id="val-brk-h">10</span></div>
+                    <input type="range" id="brk-h" min="4" max="40" step="1" value="10" oninput="updateBracket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Depth</span><span class="ctrl-val" id="val-brk-d">10</span></div>
+                    <input type="range" id="brk-d" min="4" max="40" step="1" value="10" oninput="updateBracket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Wall Thickness</span><span class="ctrl-val" id="val-brk-t">1.5</span></div>
+                    <input type="range" id="brk-t" min="0.5" max="5" step="0.5" value="1.5" oninput="updateBracket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Shape</span></div>
+                    <select id="brk-shape" class="select-dark" onchange="updateBracket()">
+                        <option value="L">L-Bracket</option>
+                        <option value="U">U-Channel</option>
+                        <option value="T">T-Brace</option>
+                    </select></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Bolt Holes</span></div>
+                    <select id="brk-holes" class="select-dark" onchange="updateBracket()">
+                        <option value="1">Yes</option><option value="0">No</option>
+                    </select></div>
+            </div>
+
+            <!-- COMPARTMENT 16: GEAR LAB -->
+            <div id="ctrl-gear" class="control-group studio-ctrl hidden">
+                <div class="group-title">⚙️ Mechanical Gear Lab</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Teeth</span><span class="ctrl-val" id="val-gear-t">20</span></div>
+                    <input type="range" id="gear-t" min="8" max="100" step="1" value="20" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Module</span><span class="ctrl-val" id="val-gear-m">1.5</span></div>
+                    <input type="range" id="gear-m" min="0.5" max="5" step="0.1" value="1.5" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Pressure Angle</span><span class="ctrl-val" id="val-gear-pa">20</span></div>
+                    <input type="range" id="gear-pa" min="14.5" max="30" step="0.5" value="20" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness</span><span class="ctrl-val" id="val-gear-tk">5</span></div>
+                    <input type="range" id="gear-tk" min="1" max="20" step="1" value="5" oninput="updateGear()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Hub Radius</span><span class="ctrl-val" id="val-gear-h">3</span></div>
+                    <input type="range" id="gear-h" min="1" max="10" step="0.5" value="3" oninput="updateGear()"></div>
+            </div>
+
+            <!-- COMPARTMENT 18: TERRAIN -->
+            <div id="ctrl-terrain" class="control-group studio-ctrl hidden">
+                <div class="group-title">🗻 Landscape Builder</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Scale</span><span class="ctrl-val" id="val-ter-s">60</span></div>
+                    <input type="range" id="ter-s" min="20" max="150" step="5" value="60" oninput="updateTerrain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Amplitude</span><span class="ctrl-val" id="val-ter-a">10</span></div>
+                    <input type="range" id="ter-a" min="1" max="40" step="1" value="10" oninput="updateTerrain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Complexity</span><span class="ctrl-val" id="val-ter-f">0.05</span></div>
+                    <input type="range" id="ter-f" min="0.01" max="0.2" step="0.01" value="0.05" oninput="updateTerrain()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Resolution</span><span class="ctrl-val" id="val-ter-r">64</span></div>
+                    <input type="range" id="ter-r" min="16" max="128" step="16" value="64" oninput="updateTerrain()"></div>
+            </div>
+
+            <!-- COMPARTMENT 19: FRACTAL -->
+            <div id="ctrl-fractal" class="control-group studio-ctrl hidden">
+                <div class="group-title">❄️ Fractal Studio</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Iterations</span><span class="ctrl-val" id="val-fra-i">3</span></div>
+                    <input type="range" id="fra-i" min="1" max="6" step="1" value="3" oninput="updateFractal()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Sub-Scale</span><span class="ctrl-val" id="val-fra-s">0.5</span></div>
+                    <input type="range" id="fra-s" min="0.3" max="0.8" step="0.05" value="0.5" oninput="updateFractal()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Branch Angle</span><span class="ctrl-val" id="val-fra-a">60</span></div>
+                    <input type="range" id="fra-a" min="15" max="120" step="5" value="60" oninput="updateFractal()"></div>
+            </div>
+
+            <!-- COMPARTMENT 20: NEON FX -->
+            <div id="ctrl-neon" class="control-group studio-ctrl hidden">
+                <div class="group-title">🌩️ Neon FX Studio</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Text/Message</span></div>
+                    <input type="text" id="neo-txt" class="select-dark" value="STUDIO" oninput="updateNeon()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Glow Intensity</span><span class="ctrl-val" id="val-neo-g">2.0</span></div>
+                    <input type="range" id="neo-g" min="0.1" max="5" step="0.1" value="2.0" oninput="updateNeon()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness</span><span class="ctrl-val" id="val-neo-r">1.0</span></div>
+                    <input type="range" id="neo-r" min="0.1" max="3" step="0.1" value="1.0" oninput="updateNeon()"></div>
+            </div>
+
+
+
+
+            <!-- COMPARTMENT 24: SPRING/COIL -->
+            <div id="ctrl-spring" class="control-group studio-ctrl hidden">
+                <div class="group-title">🌀 Spring / Coil</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Turns</span><span class="ctrl-val" id="val-spr-t">8</span></div>
+                    <input type="range" id="spr-t" min="2" max="30" step="1" value="8" oninput="updateSpring()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Coil Radius</span><span class="ctrl-val" id="val-spr-r">5</span></div>
+                    <input type="range" id="spr-r" min="1" max="20" step="0.5" value="5" oninput="updateSpring()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Wire Radius</span><span class="ctrl-val" id="val-spr-w">0.5</span></div>
+                    <input type="range" id="spr-w" min="0.1" max="2" step="0.1" value="0.5" oninput="updateSpring()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Pitch (height/turn)</span><span class="ctrl-val" id="val-spr-p">2</span></div>
+                    <input type="range" id="spr-p" min="0.5" max="8" step="0.5" value="2" oninput="updateSpring()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Segments/Turn</span><span class="ctrl-val" id="val-spr-s">32</span></div>
+                    <input type="range" id="spr-s" min="8" max="64" step="4" value="32" oninput="updateSpring()"></div>
+            </div>
+
+
+
+            <!-- COMPARTMENT 26: LATTICE -->
+            <div id="ctrl-lattice" class="control-group studio-ctrl hidden">
+                <div class="group-title">🔷 Lattice / Infill</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Pattern</span></div>
+                    <select id="lat-pat" class="select-dark" onchange="updateLattice()">
+                        <option value="grid">Grid</option>
+                        <option value="hex">Hexagonal</option>
+                        <option value="diamond">Diamond</option>
+                        <option value="gyroid">Gyroid-like</option>
+                    </select></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Size</span><span class="ctrl-val" id="val-lat-s">30</span></div>
+                    <input type="range" id="lat-s" min="10" max="60" step="5" value="30" oninput="updateLattice()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Cell Size</span><span class="ctrl-val" id="val-lat-c">4</span></div>
+                    <input type="range" id="lat-c" min="1.5" max="10" step="0.5" value="4" oninput="updateLattice()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Strut Radius</span><span class="ctrl-val" id="val-lat-r">0.3</span></div>
+                    <input type="range" id="lat-r" min="0.1" max="1" step="0.05" value="0.3" oninput="updateLattice()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Height Layers</span><span class="ctrl-val" id="val-lat-h">3</span></div>
+                    <input type="range" id="lat-h" min="1" max="8" step="1" value="3" oninput="updateLattice()"></div>
+            </div>
+
+
+
+            <!-- COMPARTMENT 28: MANDALA -->
+            <div id="ctrl-mandala" class="control-group studio-ctrl hidden">
+                <div class="group-title">🌸 Professional Mandala Studio</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Symmetry Arms</span><span class="ctrl-val" id="val-man-a">8</span></div>
+                    <input type="range" id="man-a" min="3" max="32" step="1" value="8" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Rings</span><span class="ctrl-val" id="val-man-r">4</span></div>
+                    <input type="range" id="man-r" min="1" max="12" step="1" value="4" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Radius</span><span class="ctrl-val" id="val-man-o">20</span></div>
+                    <input type="range" id="man-o" min="5" max="50" step="1" value="20" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness/Height</span><span class="ctrl-val" id="val-man-h">2</span></div>
+                    <input type="range" id="man-h" min="0.5" max="10" step="0.5" value="2" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Petal Width</span><span class="ctrl-val" id="val-man-w">1.0</span></div>
+                    <input type="range" id="man-w" min="0.1" max="5.0" step="0.1" value="1.0" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Rotation Offset</span><span class="ctrl-val" id="val-man-rot">0</span></div>
+                    <input type="range" id="man-rot" min="0" max="360" step="5" value="0" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Spiral Twist</span><span class="ctrl-val" id="val-man-tw">0</span></div>
+                    <input type="range" id="man-tw" min="-180" max="180" step="1" value="0" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Layer Z-Height</span><span class="ctrl-val" id="val-man-z">0</span></div>
+                    <input type="range" id="man-z" min="-20" max="20" step="1" value="0" oninput="updateMandala()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Shape Pattern</span></div>
+                    <select id="man-pat" class="select-dark" onchange="updateMandala()">
+                        <option value="petal">🌸 Classic Petal</option>
+                        <option value="star">⭐ Star Points</option>
+                        <option value="circle">⭕ Rings</option>
+                        <option value="leaf">🍃 Leaf Pattern</option>
+                        <option value="crystal">💎 Crystal Prism</option>
+                        <option value="heart">💖 Heart</option>
+                        <option value="spike">📍 Sharp Spike</option>
+                        <option value="diamond">💠 Diamond</option>
+                        <option value="geo">⬛ Geometric Box</option>
+                    </select></div>
+                <div class="ctrl-item" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <button class="btn-primary" onclick="addMandalaLayer()"><span data-lang-en>Add Layer</span><span data-lang-fr>Ajouter Couche</span></button>
+                    <button class="btn-primary" onclick="clearMandala()"><span data-lang-en>Clear All</span><span data-lang-fr>Tout Effacer</span></button>
+                </div>
+            </div>
+
+            <!-- COMPARTMENT 29: POLYHEDRA -->
+            <div id="ctrl-polyhedra" class="control-group studio-ctrl hidden">
+                <div class="group-title">🎲 Polyhedra Explorer</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Shape</span></div>
+                    <select id="pol-shape" class="select-dark" onchange="updatePolyhedra()">
+                        <option value="tetra">Tetrahedron (4)</option>
+                        <option value="cube">Cube (Hexahedron 6)</option>
+                        <option value="octa">Octahedron (8)</option>
+                        <option value="dodeca">Dodecahedron (12)</option>
+                        <option value="icosa">Icosahedron (20)</option>
+                        <option value="c60">Buckyball (C60)</option>
+                        <option value="trunc">Truncated Sphere</option>
+                        <option value="prism">Prism (Cylinder)</option>
+                        <option value="pyramid">Pyramid (Cone)</option>
+                        <option value="torus">Torus (Ring)</option>
+                        <option value="knot">Torus Knot</option>
+                        <option value="sphere">Sphere (Low-Poly)</option>
+                    </select></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Radius</span><span class="ctrl-val" id="val-pol-r">10</span></div>
+                    <input type="range" id="pol-r" min="3" max="25" step="1" value="10" oninput="updatePolyhedra()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Subdivisions (Detail)</span><span class="ctrl-val" id="val-pol-det">0</span></div>
+                    <input type="range" id="pol-det" min="0" max="5" step="1" value="0" oninput="updatePolyhedra()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Scale X</span><span class="ctrl-val" id="val-pol-sx">1</span></div>
+                    <input type="range" id="pol-sx" min="0.1" max="5" step="0.1" value="1" oninput="updatePolyhedra()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Scale Y</span><span class="ctrl-val" id="val-pol-sy">1</span></div>
+                    <input type="range" id="pol-sy" min="0.1" max="5" step="0.1" value="1" oninput="updatePolyhedra()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Scale Z</span><span class="ctrl-val" id="val-pol-sz">1</span></div>
+                    <input type="range" id="pol-sz" min="0.1" max="5" step="0.1" value="1" oninput="updatePolyhedra()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Display Mode</span></div>
+                    <select id="pol-mode" class="select-dark" onchange="updatePolyhedra()">
+                        <option value="solid">Solid</option>
+                        <option value="wire">Wireframe</option>
+                        <option value="both">Solid + Wire</option>
+                    </select></div>
+            </div>
+
+
+
+            <!-- COMPARTMENT 31: VASE MODE -->
+            <div id="ctrl-vase" class="control-group studio-ctrl hidden">
+                <div class="group-title">🌡️ Vase Mode / Spiral</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Profile</span></div>
+                    <select id="vas-pro" class="select-dark" onchange="updateVase()">
+                        <option value="sine">Sinusoidal</option>
+                        <option value="hourglass">Hourglass</option>
+                        <option value="fib">Fibonacci</option>
+                        <option value="bulge">Bulge</option>
+                        <option value="twisted">Twisted</option>
+                    </select></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Height</span><span class="ctrl-val" id="val-vas-h">20</span></div>
+                    <input type="range" id="vas-h" min="5" max="50" step="1" value="20" oninput="updateVase()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Base Radius</span><span class="ctrl-val" id="val-vas-r">5</span></div>
+                    <input type="range" id="vas-r" min="1" max="15" step="0.5" value="5" oninput="updateVase()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Wall Thickness</span><span class="ctrl-val" id="val-vas-w">0.8</span></div>
+                    <input type="range" id="vas-w" min="0.2" max="3" step="0.1" value="0.8" oninput="updateVase()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Twist (turns)</span><span class="ctrl-val" id="val-vas-tw">0</span></div>
+                    <input type="range" id="vas-tw" min="0" max="4" step="0.25" value="0" oninput="updateVase()"></div>
+            </div>
+
+            <!-- COMPARTMENT 32: SPROCKET -->
+            <div id="ctrl-sprocket" class="control-group studio-ctrl hidden">
+                <div class="group-title">🗂️ Sprocket / Chain Wheel</div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Teeth</span><span class="ctrl-val" id="val-spk-t">16</span></div>
+                    <input type="range" id="spk-t" min="6" max="60" step="1" value="16" oninput="updateSprocket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Pitch (mm)</span><span class="ctrl-val" id="val-spk-p">8</span></div>
+                    <input type="range" id="spk-p" min="4" max="25" step="1" value="8" oninput="updateSprocket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Thickness</span><span class="ctrl-val" id="val-spk-tk">3</span></div>
+                    <input type="range" id="spk-tk" min="1" max="12" step="0.5" value="3" oninput="updateSprocket()"></div>
+                <div class="ctrl-item"><div class="ctrl-label"><span>Hub Radius</span><span class="ctrl-val" id="val-spk-h">3</span></div>
+                    <input type="range" id="spk-h" min="1" max="10" step="0.5" value="3" oninput="updateSprocket()"></div>
+            </div>
+
+            <div class="control-group" style="margin-top:auto;">
+                <div class="ctrl-item">
+                    <div class="ctrl-label"><span><span data-lang-en>Model Color</span><span data-lang-fr>Couleur
+                                Modèle</span></span></div>
+                    <input type="color" id="global-c" class="color-picker" value="#ffffff"
+                        oninput="updateGlobalColor()">
+                </div>
+                <div class="export-grid">
+                    <button class="btn-primary" onclick="exportSTL()">STL</button>
+                    <button class="btn-primary" onclick="exportOBJ()">OBJ</button>
+                    <button class="btn-primary" onclick="exportGLB()">GLB</button>
+                    <button class="btn-primary" onclick="exportPDF()">PDF</button>
+                    <button class="btn-primary" style="grid-column: span 2;" onclick="exportSVG()">SVG</button>
+                </div>
+            </div>
+        </aside>
+        <div class="viewport-container" id="vp">
+            <canvas id="canvas3d"></canvas>
+        </div>
+    </main>
+    <!-- Hidden QR rendering area for qrcodejs -->
+    <div id="_qr_hidden" style="display:none;"></div>
+
+    <script>
+        let currentMode = 'builder';
+        let textureImage = null;
+
+        // UI Logic
+        function setLang(lang) {
+            document.body.className = 'lang-' + lang;
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+        }
+
+        function setStudio(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('nav-' + mode).classList.add('active');
+
+            document.querySelectorAll('.studio-ctrl').forEach(c => c.classList.add('hidden'));
+            document.getElementById('ctrl-' + mode).classList.remove('hidden');
+
+            resetScene();
+            buildStudioScene();
+        }
+
+        // Engine Logic
+        const canvas = document.getElementById('canvas3d');
+        const vp = document.getElementById('vp');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+
+        // Fallback to window dimensions if Flexbox hasn't calculated them yet (prevents black screen)
+        let initialW = vp.clientWidth || (window.innerWidth - 380);
+        let initialH = vp.clientHeight || (window.innerHeight - 60);
+        renderer.setSize(initialW, initialH);
+        renderer.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, initialW / initialH, 0.1, 1000);
+        camera.position.set(0, 50, 100);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+        const light = new THREE.DirectionalLight(0xffffff, 1.0);
+        light.position.set(50, 100, 50);
+        light.castShadow = true;
+        scene.add(light);
+
+        let objectGroup = new THREE.Group();
+        scene.add(objectGroup);
+        let mandalaPersistentGroup = new THREE.Group();
+        scene.add(mandalaPersistentGroup);
+
+        function addMandalaLayer() {
+            if (currentMode !== 'mandala') return;
+            objectGroup.children.forEach(child => {
+                const clone = child.clone();
+                mandalaPersistentGroup.add(clone);
+            });
+        }
+
+        function clearMandala() {
+            mandalaPersistentGroup.clear();
+            updateMandala();
+        }
+
+        function resetScene() {
+            objectGroup.clear();
+            mandalaPersistentGroup.clear();
+            camera.position.set(0, 50, 100);
+            controls.target.set(0, 0, 0);
+            renderer.setClearColor(0x000000, 0);
+        }
+
+        function getVal(id) {
+            const v = document.getElementById(id).value;
+            document.getElementById('val-' + id).innerText = v;
+            return parseFloat(v);
+        }
+        function getCol(id) { return parseInt(document.getElementById(id).value.replace('#', '0x')); }
+
+        // --- Compartment 1: Builder ---
+        function generateVoxelTerrain() {
+            objectGroup.clear();
+            addFloor();
+
+            const heightMultiplier = getVal('b-h');
+            const vSize = getVal('b-s');
+
+            if (textureImage) {
+                // Generare Voxel pe baza Imaginii
+                const maxRes = getVal('b-res'); // iterare bazata pe input
+                const c2d = document.createElement('canvas');
+                c2d.width = maxRes;
+                c2d.height = maxRes;
+                const ctx = c2d.getContext('2d');
+                ctx.drawImage(textureImage, 0, 0, maxRes, maxRes);
+                const imgData = ctx.getImageData(0, 0, maxRes, maxRes).data;
+
+                const voxels = [];
+                let totalVoxels = 0;
+
+                for (let x = 0; x < maxRes; x++) {
+                    for (let z = 0; z < maxRes; z++) {
+                        const i = (z * maxRes + x) * 4;
+                        const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2], a = imgData[i + 3];
+                        if (a > 10) { // ignoram pixelii transparenti
+                            const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255; // 0=negru, 1=alb
+                            let h = Math.ceil((1.0 - brightness) * heightMultiplier); // mai intunecat = mai inalt
+                            if (h === 0) h = 1; // Macar 1 nivel
+                            voxels.push({ x: x - maxRes / 2, z: z - maxRes / 2, h: h, r: r / 255, g: g / 255, b: b / 255 });
+                            totalVoxels += h;
+                        }
+                    }
+                }
+                if (totalVoxels === 0) return;
+
+                const geo = new THREE.BoxGeometry(vSize, vSize, vSize);
+                const mat = new THREE.MeshStandardMaterial({ color: getCol('global-c'), roughness: 0.8, vertexColors: false });
+                // Folosim instanceColor
+                const instancedMesh = new THREE.InstancedMesh(geo, mat, totalVoxels);
+                instancedMesh.castShadow = true;
+                instancedMesh.receiveShadow = true;
+
+                const dummy = new THREE.Object3D();
+                const color = new THREE.Color();
+                let index = 0;
+
+                const spacing = vSize * 1.05;
+                voxels.forEach(v => {
+                    for (let y = 0; y < v.h; y++) {
+                        dummy.position.set(v.x * spacing, y * spacing + vSize / 2, v.z * spacing);
+                        dummy.updateMatrix();
+                        instancedMesh.setMatrixAt(index, dummy.matrix);
+
+                        color.setRGB(v.r, v.g, v.b);
+                        instancedMesh.setColorAt(index, color);
+                        index++;
+                    }
+                });
+
+                instancedMesh.instanceMatrix.needsUpdate = true;
+                instancedMesh.instanceColor.needsUpdate = true;
+                objectGroup.add(instancedMesh);
+
+            } else {
+                // Generare random dacă nu există imagine
+                const w = getVal('b-w');
+                const l = getVal('b-l');
+                const geo = new THREE.BoxGeometry(vSize * 4, vSize * 4, vSize * 4);
+                const mat = new THREE.MeshStandardMaterial({ color: getCol('global-c') });
+                const instanced = new THREE.InstancedMesh(geo, mat, w * l * heightMultiplier);
+                instanced.castShadow = true; instanced.receiveShadow = true;
+                const dummy = new THREE.Object3D();
+                let idx = 0;
+                const spacing = vSize * 4.1;
+                for (let i = 0; i < w; i++) {
+                    for (let j = 0; j < l; j++) {
+                        let h = Math.floor(Math.random() * heightMultiplier) + 1;
+                        for (let y = 0; y < h; y++) {
+                            dummy.position.set((i - w / 2) * spacing, y * spacing + (vSize * 4) / 2, (j - l / 2) * spacing);
+                            dummy.updateMatrix();
+                            instanced.setMatrixAt(idx++, dummy.matrix);
+                        }
+                    }
+                }
+                instanced.count = idx;
+                instanced.instanceMatrix.needsUpdate = true;
+                objectGroup.add(instanced);
+            }
+        }
+
+        // --- Compartment 2: UI Asset ---
+        function updateAsset() {
+            objectGroup.clear();
+
+            // Asigurăm că getVal nu dă crash dacă nu există parametrii imediat
+            const ex = getVal('ui-ex');
+            const bev = getVal('ui-bev') || 0;
+            const pwr = getVal('ui-pwr') || 1;
+            const shapeType = document.getElementById('ui-shape').value;
+            const type = document.getElementById('ui-mat').value;
+            const color = getCol('global-c');
+
+            let geo;
+            if (shapeType === 'cylinder') {
+                geo = new THREE.CylinderGeometry(15, 15, ex * 2, 64);
+                geo.rotateX(Math.PI / 2);
+            } else if (shapeType === 'hexagon') {
+                geo = new THREE.CylinderGeometry(15, 15, ex * 2, 6);
+                geo.rotateX(Math.PI / 2);
+            } else if (shapeType === 'octagon') {
+                geo = new THREE.CylinderGeometry(15, 15, ex * 2, 8);
+                geo.rotateX(Math.PI / 2);
+            } else if (shapeType === 'triangle') {
+                geo = new THREE.CylinderGeometry(15, 15, ex * 2, 3);
+                geo.rotateX(Math.PI / 2);
+            } else if (shapeType === 'roundBox') {
+                const shape = new THREE.Shape();
+                const w = 24, h = 24, r = Math.max(0.1, bev * 5); // radius dictated by bevel
+                shape.moveTo(-w / 2 + r, -h / 2);
+                shape.lineTo(w / 2 - r, -h / 2);
+                shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+                shape.lineTo(w / 2, h / 2 - r);
+                shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+                shape.lineTo(-w / 2 + r, h / 2);
+                shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+                shape.lineTo(-w / 2, -h / 2 + r);
+                shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+
+                const extrudeSettings = { depth: ex * 2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: bev, bevelThickness: bev };
+                geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                geo.translate(0, 0, -ex);
+            } else if (shapeType === 'star') {
+                const shape = new THREE.Shape();
+                const points = 5;
+                const outerR = 15;
+                const innerR = 7;
+                for (let i = 0; i < points * 2; i++) {
+                    const r = (i % 2 === 0) ? outerR : innerR;
+                    const a = (i / (points * 2)) * Math.PI * 2;
+                    if (i === 0) shape.moveTo(Math.sin(a) * r, Math.cos(a) * r);
+                    else shape.lineTo(Math.sin(a) * r, Math.cos(a) * r);
+                }
+                geo = new THREE.ExtrudeGeometry(shape, { depth: ex * 2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: bev, bevelThickness: bev });
+                geo.translate(0, 0, -ex);
+            } else if (shapeType === 'heart') {
+                const shape = new THREE.Shape();
+                shape.moveTo(5, 5);
+                shape.bezierCurveTo(5, 5, 4, 0, 0, 0);
+                shape.bezierCurveTo(-6, 0, -6, 7, -6, 7);
+                shape.bezierCurveTo(-6, 11, -3, 15.4, 5, 19);
+                shape.bezierCurveTo(12, 15.4, 16, 11, 16, 7);
+                shape.bezierCurveTo(16, 7, 16, 0, 10, 0);
+                shape.bezierCurveTo(7, 0, 5, 5, 5, 5);
+                geo = new THREE.ExtrudeGeometry(shape, { depth: ex * 2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: bev, bevelThickness: bev });
+                geo.translate(-5, -9.5, -ex);
+                geo.scale(1.3, -1.3, 1);
+            } else if (shapeType === 'shield') {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, -15);
+                shape.bezierCurveTo(15, -5, 15, 5, 15, 15);
+                shape.lineTo(0, 12);
+                shape.lineTo(-15, 15);
+                shape.bezierCurveTo(-15, 5, -15, -5, 0, -15);
+                geo = new THREE.ExtrudeGeometry(shape, { depth: ex * 2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: bev, bevelThickness: bev });
+                geo.translate(0, 0, -ex);
+            } else if (shapeType === 'capsule') {
+                const shape = new THREE.Shape();
+                const w = 30, h = 15, r = h / 2;
+                shape.moveTo(-w / 2 + r, -h / 2);
+                shape.lineTo(w / 2 - r, -h / 2);
+                shape.absarc(w / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
+                shape.lineTo(-w / 2 + r, h / 2);
+                shape.absarc(-w / 2 + r, 0, r, Math.PI / 2, 3 * Math.PI / 2, false);
+                geo = new THREE.ExtrudeGeometry(shape, { depth: ex * 2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: bev, bevelThickness: bev });
+                geo.translate(0, 0, -ex);
+            }
+
+            let mat;
+            if (type === 'glass') {
+                mat = new THREE.MeshPhysicalMaterial({ color, transmission: 0.9, opacity: Math.min(1.0, pwr), metalness: 0.1, roughness: 0.1, ior: 1.5 });
+            } else if (type === 'neon') {
+                mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: pwr * 2, roughness: 0.2 });
+            } else {
+                mat = new THREE.MeshStandardMaterial({ color, roughness: Math.min(1.0, pwr), metalness: 0 }); // clay
+            }
+
+            const backplate = new THREE.Mesh(geo, mat);
+            backplate.castShadow = true; backplate.receiveShadow = true;
+            objectGroup.add(backplate);
+
+            // Dacă este încărcată o imagine (Logo), o plasăm deasupra
+            const logoSz = getVal('ui-logo-sz') || 20;
+            const logoQ = getVal('ui-logo-q') || 120;
+            const logoTh = getVal('ui-logo-th') || 0.5;
+            const decal = create3DLogoMesh(logoSz, -1.5, logoTh, logoQ);
+            if (decal) {
+                decal.position.z = ex + bev - 0.05;
+                objectGroup.add(decal);
+            }
+        }
+
+
+
+
+
+
+        // --- Compartment 6: Parallax ---
+        let forePlate, backPlate;
+        function updateParallax() {
+            objectGroup.clear();
+            const d = getVal('plx-d');
+            const pColor = getCol('plx-c');
+            renderer.setClearColor(pColor, 1); // background color
+
+            const logoSz = document.getElementById('plx-logo-sz') ? getVal('plx-logo-sz') : 24;
+            const logoQ = document.getElementById('plx-logo-q') ? getVal('plx-logo-q') : 120;
+            const logoTh = document.getElementById('plx-logo-th') ? getVal('plx-logo-th') : 1.0;
+
+            const geo = new THREE.PlaneGeometry(logoSz * 1.5, logoSz * 2);
+            let backMat = new THREE.MeshStandardMaterial({ color: pColor });
+            backPlate = new THREE.Mesh(geo, backMat);
+            backPlate.position.z = -d;
+            backPlate.name = 'plx-bg';
+            objectGroup.add(backPlate);
+
+            forePlate = create3DLogoMesh(logoSz, -1, logoTh, logoQ);
+            if (!forePlate) {
+                let foreMat = new THREE.MeshStandardMaterial({ color: getCol('global-c'), transparent: true });
+                forePlate = new THREE.Mesh(geo, foreMat);
+            }
+            forePlate.position.z = 0;
+            objectGroup.add(forePlate);
+
+            camera.position.set(0, 0, 50); // straight on
+        }
+
+        // Move parallax on mouse move
+        window.addEventListener('mousemove', (e) => {
+            if (currentMode !== 'parallax' || !forePlate) return;
+            const x = (e.clientX / window.innerWidth) * 2 - 1;
+            const y = -(e.clientY / window.innerHeight) * 2 + 1;
+            camera.position.x = x * 10;
+            camera.position.y = y * 10;
+            camera.lookAt(0, 0, -getVal('plx-d') / 2);
+        });
+
+        // --- Compartment 7: Typography ---
+        let currentFont = null;
+        const fontLoader = new THREE.FontLoader();
+        const fontUrls = {
+            'helvetiker': 'https://unpkg.com/three@0.145.0/examples/fonts/helvetiker_regular.typeface.json',
+            'optimer': 'https://unpkg.com/three@0.145.0/examples/fonts/optimer_regular.typeface.json',
+            'gentilis': 'https://unpkg.com/three@0.145.0/examples/fonts/gentilis_regular.typeface.json',
+            'droid_sans': 'https://unpkg.com/three@0.145.0/examples/fonts/droid/droid_sans_regular.typeface.json'
+        };
+
+        function loadFontBase() {
+            const fontId = document.getElementById('typo-font') ? document.getElementById('typo-font').value : 'helvetiker';
+            fontLoader.load(fontUrls[fontId], function(font) {
+                currentFont = font;
+                updateTypography();
+            });
+        }
+
+        function updateTypography() {
+            if(currentMode !== 'typography') return;
+            objectGroup.clear();
+            addFloor();
+            
+            if (!currentFont) {
+                loadFontBase();
+                return;
+            }
+
+            const text = document.getElementById('typo-text') ? document.getElementById('typo-text').value : '3D STUDIO';
+            const sz = getVal('typo-sz') || 10;
+            const th = getVal('typo-th') || 2;
+            const bv = getVal('typo-bv') || 0.5;
+            
+            const geo = new THREE.TextGeometry(text, {
+                font: currentFont,
+                size: sz,
+                height: th,
+                curveSegments: 12,
+                bevelEnabled: bv > 0,
+                bevelThickness: bv,
+                bevelSize: bv,
+                bevelOffset: 0,
+                bevelSegments: 3
+            });
+            geo.computeBoundingBox();
+            const centerOffset = -0.5 * (geo.boundingBox.max.x - geo.boundingBox.min.x);
+            
+            const mat = new THREE.MeshStandardMaterial({ color: getCol('global-c') });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.x = centerOffset;
+            mesh.position.y = 2; // Elevate above floor
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            objectGroup.add(mesh);
+        }
+
+        // --- Compartment 8: Lithophane ---
+
+
+        // --- Compartment 9: Cinematic Studio ---
+
+
+        function updateOrganic() {
+            if(currentMode !== 'organic') return;
+            objectGroup.clear();
+            addFloor();
+            
+            const shape = document.getElementById('org-shape') ? document.getElementById('org-shape').value : 'sphere';
+            const s = getVal('org-s') || 3.0;
+            const d = getVal('org-d') || 2.0;
+            const res = parseInt(getVal('org-res') || 64);
+            const style = document.getElementById('org-mat') ? document.getElementById('org-mat').value : 'solid';
+            
+            let geo;
+            if (shape === 'sphere')       geo = new THREE.SphereGeometry(10, res, res);
+            else if (shape === 'torus')   geo = new THREE.TorusGeometry(8, 3, Math.round(res/2), res);
+            else if (shape === 'tube')    geo = new THREE.CapsuleGeometry(5, 10, Math.round(res/4), res);
+            else if (shape === 'torusKnot') geo = new THREE.TorusKnotGeometry(7, 2.5, res * 2, Math.round(res/4), 2, 3);
+            else if (shape === 'icosahedron') geo = new THREE.IcosahedronGeometry(10, Math.round(res/32));
+            else if (shape === 'octahedron')  geo = new THREE.OctahedronGeometry(10, Math.round(res/32));
+            else if (shape === 'dodecahedron') geo = new THREE.DodecahedronGeometry(10, Math.round(res/32));
+            else if (shape === 'tetrahedron') geo = new THREE.TetrahedronGeometry(10, Math.round(res/32));
+            else if (shape === 'cone')    geo = new THREE.ConeGeometry(8, 16, res, Math.round(res/8));
+            else if (shape === 'cylinder') geo = new THREE.CylinderGeometry(6, 8, 16, res, Math.round(res/8));
+            else if (shape === 'lathe') {
+                // Vase / urn silhouette using a lathe rotation
+                const pts = [];
+                for (let i = 0; i <= 20; i++) {
+                    const t = i / 20;
+                    const r = 3 + Math.sin(t * Math.PI * 2) * 4 + Math.sin(t * Math.PI) * 3;
+                    pts.push(new THREE.Vector2(r, t * 18 - 2));
+                }
+                geo = new THREE.LatheGeometry(pts, res);
+            } else if (shape === 'spring') {
+                // Spring / Helix using TubeGeometry + custom Curve
+                class HelixCurve extends THREE.Curve {
+                    getPoint(t) {
+                        const turns = 5;
+                        const angle = t * Math.PI * 2 * turns;
+                        return new THREE.Vector3(Math.cos(angle) * 6, t * 20 - 10, Math.sin(angle) * 6);
+                    }
+                }
+                geo = new THREE.TubeGeometry(new HelixCurve(), res * 3, 1.2, 12, false);
+            } else if (shape === 'star') {
+                // Star-burst: multiple ConeGeometry merged via InstancedMesh
+                // We'll create an icosahedron and scale it into a star spike pattern
+                geo = new THREE.IcosahedronGeometry(10, 1);
+                // Pull vertices outward very sharply to create spikes
+                const pos2 = geo.attributes.position;
+                for (let i = 0; i < pos2.count; i++) {
+                    const x = pos2.getX(i), y = pos2.getY(i), z = pos2.getZ(i);
+                    const len2 = Math.sqrt(x*x+y*y+z*z);
+                    const spike = (Math.abs(x*y*z) < 0.5) ? 2.2 : 0.6;
+                    if(len2 > 0) pos2.setXYZ(i, x/len2*10*spike, y/len2*10*spike, z/len2*10*spike);
+                }
+                geo.computeVertexNormals();
+            }
+            
+            // Apply organic noise displacement (skip for star which already has extreme deformation)
+            if (shape !== 'star' && d > 0.1) {
+                const pos = geo.attributes.position;
+                for(let i = 0; i < pos.count; i++) {
+                    const x = pos.getX(i); const y = pos.getY(i); const z = pos.getZ(i);
+                    const nx = Math.sin(x * s * 0.1) * Math.cos(y * s * 0.1);
+                    const ny = Math.sin(y * s * 0.1) * Math.cos(z * s * 0.1);
+                    const nz = Math.sin(z * s * 0.1) * Math.cos(x * s * 0.1);
+                    const noise = nx + ny + nz;
+                    const len = Math.sqrt(x*x + y*y + z*z);
+                    if(len > 0) {
+                        pos.setXYZ(i, x + (x/len)*noise*d, y + (y/len)*noise*d, z + (z/len)*noise*d);
+                    }
+                }
+                geo.computeVertexNormals();
+            }
+            
+            let mat;
+            if(style === 'wire') mat = new THREE.MeshStandardMaterial({ color: getCol('global-c'), wireframe: true });
+            else mat = new THREE.MeshStandardMaterial({ color: getCol('global-c'), roughness: 0.3, metalness: 0.2 });
+            
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.y = 15;
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            objectGroup.add(mesh);
+        }
+
+        // Helpers
+        // --- Compartment 11: Wave Ocean ---
+        function updateWave() {
+            if(currentMode !== 'wave') return;
+            objectGroup.clear();
+            const amp  = getVal('wave-a') || 3;
+            const freq = getVal('wave-f') || 3;
+            const res  = parseInt(getVal('wave-r') || 80);
+            const sz   = getVal('wave-s') || 50;
+            const sty  = document.getElementById('wave-sty') ? document.getElementById('wave-sty').value : 'solid';
+
+            const geo = new THREE.PlaneGeometry(sz, sz, res, res);
+            geo.rotateX(-Math.PI / 2);
+            const pos = geo.attributes.position;
+            for(let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+                const y = amp * Math.sin(freq * x * 0.1) * Math.cos(freq * z * 0.1)
+                        + amp * 0.4 * Math.sin(freq * 1.7 * x * 0.1 + 1.2) * Math.cos(freq * 1.3 * z * 0.1);
+                pos.setY(i, y);
+            }
+            geo.computeVertexNormals();
+            const mat = sty === 'wire'
+                ? new THREE.MeshStandardMaterial({ color: getCol('global-c'), wireframe: true })
+                : new THREE.MeshStandardMaterial({ color: getCol('global-c'), roughness: 0.15, metalness: 0.4, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            objectGroup.add(mesh);
+            camera.position.set(0, 40, 80);
+        }
+
+        // --- Compartment 12: Mosaic Brick ---
+        function updateMosaic() {
+            if(currentMode !== 'mosaic') return;
+            objectGroup.clear();
+            if(!textureImage) { addFloor(); return; }
+            const res   = parseInt(getVal('mos-r') || 40);
+            const relH  = getVal('mos-h') || 1.5;
+            const gap   = getVal('mos-g') || 0.1;
+            const shape = document.getElementById('mos-shape') ? document.getElementById('mos-shape').value : 'box';
+            const aspect = textureImage.width / textureImage.height;
+            const resH = Math.max(1, Math.round(res / aspect));
+            const c2d = document.createElement('canvas');
+            c2d.width = res; c2d.height = resH;
+            const ctx2 = c2d.getContext('2d');
+            ctx2.drawImage(textureImage, 0, 0, res, resH);
+            const imgD = ctx2.getImageData(0,0,res,resH).data;
+            const totalTiles = res * resH;
+            const tileSize = 1 - gap;
+            const geo = shape === 'round'
+                ? new THREE.CylinderGeometry(tileSize/2, tileSize/2, relH, 12)
+                : new THREE.BoxGeometry(tileSize, relH, tileSize);
+            geo.translate(0, relH/2, 0);
+            const mat = new THREE.MeshStandardMaterial({ vertexColors: false, roughness: 0.8 });
+            const mesh = new THREE.InstancedMesh(geo, mat, totalTiles);
+            const dummy = new THREE.Object3D();
+            const col = new THREE.Color();
+            let idx = 0;
+            for(let y=0; y<resH; y++) {
+                for(let x=0; x<res; x++) {
+                    const pi = (y*res+x)*4;
+                    const r = imgD[pi]/255, g = imgD[pi+1]/255, b = imgD[pi+2]/255;
+                    dummy.position.set(x - res/2, 0, y - resH/2);
+                    dummy.updateMatrix();
+                    mesh.setMatrixAt(idx, dummy.matrix);
+                    col.setRGB(r,g,b);
+                    mesh.setColorAt(idx, col);
+                    idx++;
+                }
+            }
+            mesh.instanceMatrix.needsUpdate = true;
+            if(mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            objectGroup.add(mesh);
+            addFloor();
+            camera.position.set(0, 50, 100);
+        }
+
+        // --- Compartment 13: Galaxy ---
+        let galaxyAnimId = null;
+        function updateGalaxy() {
+            if(currentMode !== 'galaxy') return;
+            objectGroup.clear();
+
+            const n    = parseInt(getVal('gal-n') || 5000);
+            const r    = getVal('gal-r') || 50;
+            const arms = parseInt(getVal('gal-a') || 3);
+            const vsc  = getVal('gal-v') || 4;
+            const sz   = getVal('gal-sz') || 0.5;
+
+            const positions = new Float32Array(n * 3);
+            const colors    = new Float32Array(n * 3);
+            const col = new THREE.Color();
+
+            for(let i = 0; i < n; i++) {
+                const armIdx  = i % arms;
+                const armAngle = (armIdx / arms) * Math.PI * 2;
+                const dist    = Math.random() * r;
+                const spin    = dist * 0.5;
+                const theta   = armAngle + spin + (Math.random() - 0.5) * 0.8;
+                const spread  = Math.exp(-dist / (r * 0.4)) * r * 0.3;
+                positions[i*3]   = Math.cos(theta) * dist + (Math.random()-0.5) * spread;
+                positions[i*3+1] = (Math.random()-0.5) * vsc * (1 - dist/r);
+                positions[i*3+2] = Math.sin(theta) * dist + (Math.random()-0.5) * spread;
+                // Color: inner = white-yellow, outer = blue-purple
+                const t = dist / r;
+                col.setHSL(0.6 + t * 0.3, 0.8, 0.3 + (1-t) * 0.5);
+                colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+            const mat = new THREE.PointsMaterial({ size: sz, vertexColors: true, sizeAttenuation: true });
+            const pts = new THREE.Points(geo, mat);
+            objectGroup.add(pts);
+            camera.position.set(0, 30, 100);
+        }
+
+        // --- Compartment 14: QR Code 3D ---
+        let qrMatrix = null;
+        let qrTimer  = null;
+        function scheduleQRUpdate() { clearTimeout(qrTimer); qrTimer = setTimeout(generateQR, 600); }
+        function generateQR() {
+            if (currentMode !== 'qrcode') return;
+            const text = document.getElementById('qr-text') ? document.getElementById('qr-text').value : 'https://studio6d.app';
+            if (!text) return;
+            const qDiv = document.getElementById('_qr_hidden');
+            qDiv.innerHTML = '';
+            try {
+                // Initialize QR. Note: width/height don't matter as we extract the raw modules
+                const qr = new QRCode(qDiv, { text: text, width: 64, height: 64, correctLevel: QRCode.CorrectLevel.M });
+                setTimeout(() => {
+                    if (qr && qr._oQRCode && qr._oQRCode.modules) {
+                        // Success! Extract the raw boolean grid instead of pixel data
+                        qrMatrix = qr._oQRCode.modules; 
+                        updateQRCode();
+                    } else {
+                        // Fallback: Original pixel-scanning (but improved)
+                        let qCanvas = qDiv.querySelector('canvas');
+                        const qImg = qDiv.querySelector('img');
+                        if (!qCanvas && qImg) {
+                            qCanvas = document.createElement('canvas');
+                            qCanvas.width = qImg.naturalWidth || 128;
+                            qCanvas.height = qImg.naturalHeight || 128;
+                            const ctx = qCanvas.getContext('2d');
+                            ctx.drawImage(qImg, 0, 0);
+                        }
+                        if (qCanvas) {
+                            const qCtx = qCanvas.getContext('2d');
+                            const qd = qCtx.getImageData(0, 0, qCanvas.width, qCanvas.height);
+                            qrMatrix = { data: qd.data, w: qCanvas.width, h: qCanvas.height, isPixels: true };
+                            updateQRCode();
+                        }
+                    }
+                }, 100);
+            } catch (e) { console.error('QR generation failed:', e); }
+        }
+
+        function updateQRCode() {
+            if (currentMode !== 'qrcode') return;
+            if (!qrMatrix) { generateQR(); return; }
+            objectGroup.clear();
+            const modH = getVal('qr-h') || 2, modSz = getVal('qr-sz') || 1.5;
+
+            let darkModules = [], gridW = 0, gridH = 0;
+
+            if (Array.isArray(qrMatrix)) {
+                // 100% Correct Data Mode (Raw Modules)
+                gridH = qrMatrix.length;
+                gridW = qrMatrix[0].length;
+                for (let y = 0; y < gridH; y++) {
+                    for (let x = 0; x < gridW; x++) {
+                        if (qrMatrix[y][x]) darkModules.push({ x, y });
+                    }
+                }
+            } else if (qrMatrix.isPixels) {
+                // Pixel Fallback Mode (Improved: finds smallest module width)
+                const { data, w, h } = qrMatrix;
+                let firstX=-1, firstY=-1, minM=999;
+                for(let y=0; y<h && firstX===-1; y++){
+                    for(let x=0; x<w; x++){ if(data[(y*w+x)*4]<128){ firstX=x; firstY=y; break; } }
+                }
+                if(firstX===-1) return;
+                // Scan to find the true module size (avoid finder patterns)
+                for(let y=firstY; y<h; y++){
+                    let consecutive=0;
+                    for(let x=0; x<w; x++){
+                        if(data[(y*w+x)*4]<128){ consecutive++; } 
+                        else if(consecutive>0){ minM=Math.min(minM, consecutive); consecutive=0; }
+                    }
+                }
+                if(minM===999 || minM===0) minM=8;
+                for(let y=firstY, gy=0; y<h-minM/2; y+=minM, gy++){
+                    gridH = Math.max(gridH, gy+1);
+                    for(let x=firstX, gx=0; x<w-minM/2; x+=minM, gx++){
+                        gridW = Math.max(gridW, gx+1);
+                        if(data[(Math.floor(y+minM/2)*w+Math.floor(x+minM/2))*4] < 128) darkModules.push({ x:gx, y:gy });
+                    }
+                }
+            }
+
+            const total = darkModules.length;
+            if (total === 0) return;
+
+            const instGeo = new THREE.BoxGeometry(modSz, modH, modSz);
+            instGeo.translate(0, modH / 2, 0);
+            const mat = new THREE.MeshStandardMaterial({ color: getCol('global-c') });
+            const mesh = new THREE.InstancedMesh(instGeo, mat, total);
+            const dummy = new THREE.Object3D();
+
+            for (let i = 0; i < total; i++) {
+                const m = darkModules[i];
+                dummy.position.set((m.x - gridW / 2 + 0.5) * modSz, 0, (m.y - gridH / 2 + 0.5) * modSz);
+                dummy.updateMatrix();
+                mesh.setMatrixAt(i, dummy.matrix);
+            }
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            objectGroup.add(mesh);
+            addFloor();
+            camera.position.set(0, gridH * modSz, gridH * modSz * 1.5);
+            controls.target.set(0, 0, 0);
+        }
+
+        // --- Compartment 13: Barcode 3D ---
+
+
+        // --- Compartment 14: Diamond Cut ---
+        function updateDiamond() {
+            if (currentMode !== 'diamond') return;
+            objectGroup.clear(); addFloor();
+            const facets = parseInt(getVal('dia-f') || 8), R = getVal('dia-r') || 10;
+            const tableW = getVal('dia-t') || 0.6, pavD = getVal('dia-p') || 1.5;
+            const col = getCol('global-c');
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.1, metalness: 0.9, flatShading: true });
+            const geo = new THREE.BufferGeometry();
+            const vertices = [];
+            const tr = R*tableW, gr = R, gy = 0, ty = R*0.4, py = -R*pavD;
+            for(let i=0; i<facets; i++) {
+                const a1 = (i/facets)*Math.PI*2, a2 = ((i+1)/facets)*Math.PI*2;
+                const c1 = Math.cos(a1), s1 = Math.sin(a1), c2 = Math.cos(a2), s2 = Math.sin(a2);
+                vertices.push(0,ty,0, c1*tr,ty,s1*tr, c2*tr,ty,s2*tr);
+                vertices.push(c1*tr,ty,s1*tr, c1*gr,gy,s1*gr, c2*gr,gy,s2*gr);
+                vertices.push(c1*tr,ty,s1*tr, c2*gr,gy,s2*gr, c2*tr,ty,s2*tr);
+                vertices.push(c1*gr,gy,s1*gr, 0,py,0, c2*gr,gy,s2*gr);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, mat); mesh.position.y = R*pavD; mesh.castShadow=true; objectGroup.add(mesh);
+            camera.position.set(0, R*2, R*3);
+        }
+
+        // --- Compartment 15: Chain Link ---
+        function updateChain() {
+            if (currentMode !== 'chain') return;
+            objectGroup.clear(); addFloor();
+            const N = parseInt(getVal('chn-n') || 5), R = getVal('chn-r') || 4;
+            const thick = getVal('chn-t') || 0.8, overlap = getVal('chn-o') || 0.3;
+            const col = getCol('global-c');
+            const mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.8, roughness: 0.2 });
+            const linkGeo = new THREE.TorusGeometry(R, thick, 12, 24);
+            const spacing = R * 2 * (1 - overlap);
+            for (let i = 0; i < N; i++) {
+                const link = new THREE.Mesh(linkGeo, mat);
+                link.position.x = (i - (N-1)/2) * spacing;
+                if (i % 2 === 1) link.rotation.x = Math.PI/2;
+                link.castShadow = true; objectGroup.add(link);
+            }
+            camera.position.set(0, R*2, N*spacing + 10);
+        }
+
+        function addFloor() {
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+            floor.name = 'floor';
+            objectGroup.add(floor);
+        }
+
+        // ===== COMPARTMENTS 24–32 =====
+
+        // 24: Spring / Coil
+        function updateSpring() {
+            if (currentMode !== 'spring') return;
+            objectGroup.clear(); addFloor();
+            const turns = getVal('spr-t') || 8, R = getVal('spr-r') || 5;
+            const wr = getVal('spr-w') || 0.5, pitch = getVal('spr-p') || 2;
+            const segs = parseInt(getVal('spr-s') || 32);
+            const col = getCol('global-c');
+            const totalSegs = Math.round(turns * segs);
+            const tubePath = [];
+            for (let i = 0; i <= totalSegs; i++) {
+                const t = i / segs; // turns
+                const angle = t * Math.PI * 2;
+                tubePath.push(new THREE.Vector3(Math.cos(angle) * R, t * pitch, Math.sin(angle) * R));
+            }
+            const curve = new THREE.CatmullRomCurve3(tubePath);
+            const geo = new THREE.TubeGeometry(curve, totalSegs * 4, wr, 10, false);
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.7 }));
+            mesh.position.y = 0;
+            mesh.castShadow = true;
+            objectGroup.add(mesh);
+            camera.position.set(0, turns * pitch * 0.5, R * 4 + 20);
+        }
+
+        // 25: Voronoi 3D (approximated using random seed cells + closest-cell pillars)
+
+
+        // 26: Lattice / Infill
+        function updateLattice() {
+            if (currentMode !== 'lattice') return;
+            objectGroup.clear(); addFloor();
+            const pat = document.getElementById('lat-pat') ? document.getElementById('lat-pat').value : 'grid';
+            const S = getVal('lat-s') || 30, C = getVal('lat-c') || 4;
+            const R = getVal('lat-r') || 0.3, layers = parseInt(getVal('lat-h') || 3);
+            const col = getCol('global-c');
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.5, metalness: 0.2 });
+            const cols = Math.ceil(S / C), rows = Math.ceil(S / C);
+
+            const addStrut = (x1,y1,z1, x2,y2,z2) => {
+                const p1=new THREE.Vector3(x1,y1,z1), p2=new THREE.Vector3(x2,y2,z2);
+                const dir=new THREE.Vector3().subVectors(p2,p1), len=dir.length();
+                if(len<0.01) return;
+                const m=new THREE.Mesh(new THREE.CylinderGeometry(R,R,len,6), mat);
+                m.position.copy(p1).add(dir.clone().multiplyScalar(0.5));
+                m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+                objectGroup.add(m);
+            };
+
+            for (let ly=0; ly<layers; ly++) {
+                const y = ly * C;
+                for (let r=0; r<=rows; r++) {
+                    for (let c=0; c<=cols; c++) {
+                        const x = (c-cols/2)*C, z = (r-rows/2)*C;
+                        if(pat==='grid' || pat==='gyroid') {
+                            if(c<cols) addStrut(x,y,z, x+C,y,z);
+                            if(r<rows) addStrut(x,y,z, x,y,z+C);
+                            if(ly<layers-1) addStrut(x,y,z, x,y+C,z);
+                        } else if(pat==='hex') {
+                            const offset = (r%2)*C*0.5;
+                            if(c<cols) addStrut(x+offset,y,z, x+C+offset,y,z);
+                            if(r<rows) addStrut(x+offset,y,z, x+offset+C*0.5,y,z+C);
+                        } else { // diamond
+                            if(c<cols && r<rows) {
+                                addStrut(x,y,z, x+C,y,z+C);
+                                addStrut(x+C,y,z, x,y,z+C);
+                                if(ly<layers-1){ addStrut(x,y,z,x,y+C,z); addStrut(x,y,z,x+C,y+C,z+C); }
+                            }
+                        }
+                    }
+                }
+            }
+            camera.position.set(0, 25, S + 15);
+        }
+
+        // 27: Text 3D Emboss
+
+
+        // 28: Mandala Generator
+        function updateMandala() {
+            if (currentMode !== 'mandala') return;
+            objectGroup.clear(); addFloor();
+            const arms = parseInt(getVal('man-a') || 8), rings = parseInt(getVal('man-r') || 4);
+            const OR = getVal('man-o') || 20, petH = getVal('man-h') || 2;
+            const petW = getVal('man-w') || 1;
+            const rotOff = (getVal('man-rot') || 0) * Math.PI / 180;
+            const twist  = (getVal('man-tw') || 0) * Math.PI / 180;
+            const zOff   = getVal('man-z') || 0;
+            const pat = document.getElementById('man-pat') ? document.getElementById('man-pat').value : 'petal';
+            const col = getCol('global-c');
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.3 });
+
+            // Preview Layer Origin
+            const center = new THREE.Mesh(new THREE.CylinderGeometry(OR*0.05, OR*0.05, petH, 32), mat);
+            center.position.y = zOff + petH/2; center.castShadow=true; objectGroup.add(center);
+
+            for (let ring = 1; ring <= rings; ring++) {
+                const r = (ring / rings) * OR;
+                const rSz = (OR / rings) * 0.45;
+                const ringRot = rotOff + (ring * twist);
+                for (let a = 0; a < arms; a++) {
+                    const angle = (a / arms) * Math.PI * 2 + ringRot;
+                    const x = Math.cos(angle) * r, z = Math.sin(angle) * r;
+                    let geo;
+                    if (pat === 'petal') {
+                        geo = new THREE.SphereGeometry(rSz, 16, 12); geo.scale(petW, 0.4, 1.4);
+                    } else if (pat === 'star') {
+                        geo = new THREE.ConeGeometry(rSz, petH, 4); geo.rotateX(Math.PI/2);
+                    } else if (pat === 'circle') {
+                        geo = new THREE.TorusGeometry(rSz, rSz*0.2, 12, 24); geo.rotateX(Math.PI/2);
+                    } else if (pat === 'leaf') {
+                        geo = new THREE.CapsuleGeometry(rSz*0.4, rSz, 4, 8); geo.scale(petW, 0.2, 1.2);
+                    } else if (pat === 'crystal') {
+                        geo = new THREE.IcosahedronGeometry(rSz, 0); geo.scale(petW, 2, 1);
+                    } else if (pat === 'heart') {
+                        const s = new THREE.Shape();
+                        s.moveTo(0,0); s.bezierCurveTo(rSz,rSz, rSz*2,0, 0,-rSz*2); s.bezierCurveTo(-rSz*2,0, -rSz,rSz, 0,0);
+                        geo = new THREE.ExtrudeGeometry(s, {depth: petH, bevelEnabled: false});
+                        geo.rotateX(-Math.PI/2); geo.scale(petW*0.6, 1, 0.6);
+                    } else if (pat === 'spike') {
+                        geo = new THREE.ConeGeometry(rSz*0.2, petH*3, 8); geo.rotateX(Math.PI/2);
+                    } else if (pat === 'diamond') {
+                        geo = new THREE.OctahedronGeometry(rSz); geo.scale(petW, 2, 1);
+                    } else {
+                        geo = new THREE.BoxGeometry(rSz*1.2, petH, rSz*1.2);
+                    }
+
+                    const m = new THREE.Mesh(geo, mat);
+                    m.position.set(x, zOff + petH/2, z);
+                    m.lookAt(new THREE.Vector3(0, zOff + petH/2, 0));
+                    if(pat!=='circle' && pat!=='heart') m.rotateX(Math.PI/2);
+                    m.castShadow = true;
+                    objectGroup.add(m);
+                }
+            }
+            camera.position.set(0, OR*2, OR*2.5);
+        }
+
+        // 29: Polyhedra Explorer
+        function updatePolyhedra() {
+            if (currentMode !== 'polyhedra') return;
+            objectGroup.clear(); addFloor();
+            const shape = document.getElementById('pol-shape') ? document.getElementById('pol-shape').value : 'icosa';
+            const R   = getVal('pol-r') || 10;
+            const det = Math.floor(getVal('pol-det') || 0);
+            const sx  = getVal('pol-sx') || 1;
+            const sy  = getVal('pol-sy') || 1;
+            const sz  = getVal('pol-sz') || 1;
+            const mode = document.getElementById('pol-mode') ? document.getElementById('pol-mode').value : 'solid';
+            const col = getCol('global-c');
+
+            let geo;
+            switch(shape) {
+                case 'tetra':  geo = new THREE.TetrahedronGeometry(R, det); break;
+                case 'cube':   geo = new THREE.BoxGeometry(R*1.4, R*1.4, R*1.4, det+1, det+1, det+1); break;
+                case 'octa':   geo = new THREE.OctahedronGeometry(R, det); break;
+                case 'dodeca': geo = new THREE.DodecahedronGeometry(R, det); break;
+                case 'icosa':  geo = new THREE.IcosahedronGeometry(R, det); break;
+                case 'c60':    geo = new THREE.IcosahedronGeometry(R, 1 + det); break;
+                case 'trunc':  geo = new THREE.IcosahedronGeometry(R, 2 + det); break;
+                case 'prism':  geo = new THREE.CylinderGeometry(R, R, R*2, 3 + det*2); break;
+                case 'pyramid':geo = new THREE.ConeGeometry(R, R*2, 3 + det*2); break;
+                case 'torus':  geo = new THREE.TorusGeometry(R, R/3, 8 + det*4, 16 + det*8); break;
+                case 'knot':   geo = new THREE.TorusKnotGeometry(R*0.7, R*0.2, 32 + det*16, 8 + det*4); break;
+                case 'sphere': geo = new THREE.SphereGeometry(R, 8 + det*4, 6 + det*3); break;
+                default:       geo = new THREE.IcosahedronGeometry(R, det); break;
+            }
+
+            const addM = (mat) => {
+                const m = new THREE.Mesh(geo, mat);
+                m.scale.set(sx, sy, sz);
+                // Position so base is on floor (approx)
+                let heightOffset = R;
+                if(shape==='cube') heightOffset = R*0.7;
+                if(shape==='torus' || shape==='knot') heightOffset = R * 0.5;
+                m.position.y = heightOffset * sy + 0.5;
+                m.castShadow = true; m.receiveShadow = true;
+                objectGroup.add(m);
+            };
+
+            if (mode === 'solid' || mode === 'both') {
+                addM(new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.5 }));
+            }
+            if (mode === 'wire' || mode === 'both') {
+                addM(new THREE.MeshStandardMaterial({ color: col, wireframe: true }));
+            }
+            camera.position.set(0, R * sy * 1.5 + 5, R * Math.max(sx, sz) * 3 + 10);
+        }
+
+        // 30: Snap Connector
+
+
+        // 31: Vase Mode
+        // 26: Lattice / TPMS Gen
+        function updateLattice() {
+            if (currentMode !== 'lattice') return;
+            objectGroup.clear(); addFloor();
+            const pat = document.getElementById('lat-pat') ? document.getElementById('lat-pat').value : 'gyroid';
+            const S = getVal('lat-s') || 30, cells = getVal('lat-h') || 3, cSz = getVal('lat-c') || 5;
+            const r = getVal('lat-r') || 0.4, col = getCol('global-c');
+
+            const res = 24; // Resolution per cell
+            const totalRes = res * cells;
+            const step = S / totalRes;
+
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.7 });
+            const instGeo = new THREE.SphereGeometry(r, 8, 8);
+            const mesh = new THREE.InstancedMesh(instGeo, mat, 5000); // Fixed max limit for stability
+            const dummy = new THREE.Object3D();
+            let count = 0;
+
+            // TPMS Equations (Simplified for point-lattice)
+            for(let x=0; x<cells; x++) {
+                for(let y=0; y<cells; y++) {
+                    for(let z=0; z<cells; z++) {
+                        const px = (x/cells - 0.5) * S, py = (y/cells - 0.5) * S, pz = (z/cells - 0.5) * S;
+                        const X = (x/cells) * Math.PI * 2, Y = (y/cells) * Math.PI * 2, Z = (z/cells) * Math.PI * 2;
+                        
+                        let val = 0;
+                        if(pat==='gyroid') val = Math.sin(X)*Math.cos(Y) + Math.sin(Y)*Math.cos(Z) + Math.sin(Z)*Math.cos(X);
+                        else if(pat==='diamond') val = Math.sin(X)*Math.sin(Y)*Math.sin(Z) + Math.sin(X)*Math.cos(Y)*Math.cos(Z) + Math.cos(X)*Math.sin(Y)*Math.cos(Z) + Math.cos(X)*Math.cos(Y)*Math.sin(Z);
+                        else val = Math.cos(X) + Math.cos(Y) + Math.cos(Z); // Schwarz P
+
+                        if(Math.abs(val) < 0.3 && count < 5000) {
+                            dummy.position.set(px, py + S/2, pz);
+                            dummy.updateMatrix();
+                            mesh.setMatrixAt(count++, dummy.matrix);
+                        }
+                    }
+                }
+            }
+            mesh.instanceMatrix.needsUpdate = true;
+            objectGroup.add(mesh);
+            camera.position.set(0, S, S * 1.5);
+        }
+
+        // 31: Advanced Pottery Studio
+        function updateVase() {
+            if (currentMode !== 'vase') return;
+            objectGroup.clear(); addFloor();
+            const H = getVal('vas-h') || 25, R = getVal('vas-r') || 8;
+            const bulge = getVal('vas-tw') || 0; // repurposed for pottery shape
+            const col = getCol('global-c');
+
+            const pts = [];
+            for (let i = 0; i <= 50; i++) {
+                const t = i / 50;
+                // Complex Pottery Profile (Base -> Belly -> Shoulder -> Neck -> Lip)
+                const r = R * (0.8 + 0.6 * Math.sin(t * Math.PI) + 0.2 * Math.sin(t * Math.PI * 3 + bulge));
+                pts.push(new THREE.Vector2(r, t * H));
+            }
+            const geo = new THREE.LatheGeometry(pts, 64);
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.1, metalness: 0.2, side: THREE.DoubleSide });
+            const m = new THREE.Mesh(geo, mat);
+            m.castShadow = true; objectGroup.add(m);
+            camera.position.set(0, H, H * 2);
+        }
+
+        // 32: Sprocket / Chain Wheel
+        function updateSprocket() {
+            if (currentMode !== 'sprocket') return;
+            objectGroup.clear(); addFloor();
+            const T = parseInt(getVal('spk-t') || 16), P = getVal('spk-p') || 8;
+            const tk = getVal('spk-tk') || 3, hr = getVal('spk-h') || 3;
+            const col = getCol('global-c');
+            // Pitch circle radius
+            const PCD = (P * T) / (2 * Math.PI);
+            const toothR = P * 0.31; // roller radius approx
+            const shape = new THREE.Shape();
+            for (let i = 0; i < T; i++) {
+                const a0 = (i / T) * Math.PI * 2;
+                const a1 = ((i + 0.4) / T) * Math.PI * 2;
+                const a2 = ((i + 0.6) / T) * Math.PI * 2;
+                const a3 = ((i + 1) / T) * Math.PI * 2;
+                const fn = i === 0 ? shape.moveTo.bind(shape) : shape.lineTo.bind(shape);
+                fn(Math.cos(a0)*(PCD-toothR*0.5), Math.sin(a0)*(PCD-toothR*0.5));
+                shape.lineTo(Math.cos(a1)*(PCD+toothR), Math.sin(a1)*(PCD+toothR));
+                shape.lineTo(Math.cos(a2)*(PCD+toothR), Math.sin(a2)*(PCD+toothR));
+                shape.lineTo(Math.cos(a3)*(PCD-toothR*0.5), Math.sin(a3)*(PCD-toothR*0.5));
+            }
+            shape.closePath();
+            const hole = new THREE.Path();
+            for (let i = 0; i <= 32; i++) { const a=(i/32)*Math.PI*2; i===0?hole.moveTo(Math.cos(a)*hr,Math.sin(a)*hr):hole.lineTo(Math.cos(a)*hr,Math.sin(a)*hr); }
+            shape.holes.push(hole);
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: tk, bevelEnabled: false });
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.7 }));
+            mesh.rotation.x = -Math.PI/2; mesh.position.y = 0.1; mesh.castShadow=true;
+            objectGroup.add(mesh);
+            camera.position.set(0, PCD + 15, PCD * 2 + 20);
+        }
+
+        function updateGlobalColor() { buildStudioScene(); }
+
+        function handleImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => { textureImage = img; buildStudioScene(); };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ===== COMPARTMENTS 16–23 =====
+
+        // 16: Gear Builder
+        // 16: Mechanical Gear Lab (Professional Involute)
+        function updateGear() {
+            if (currentMode !== 'gear') return;
+            objectGroup.clear(); addFloor();
+            const T = parseInt(getVal('gear-t') || 20); // Teeth count
+            const mod = getVal('gear-m') || 1.0;     // Module
+            const PA = (getVal('gear-pa') || 20) * Math.PI / 180; // Pressure Angle
+            const th = getVal('gear-tk') || 5;       // Thickness
+            const hr = getVal('gear-h') || 3;        // Hub radius
+            const col = getCol('global-c');
+
+            const PD = T * mod; // Pitch Diameter
+            const R  = PD / 2;  // Pitch Radius
+            const add = mod;    // Addendum
+            const ded = 1.25 * mod; // Dedendum
+            const baseR = R * Math.cos(PA);
+
+            const shape = new THREE.Shape();
+            const segs = 32;
+
+            for (let i = 0; i < T; i++) {
+                const step = (Math.PI * 2) / T;
+                const angleOffset = i * step;
+
+                // Tooth profile (simplified involute approximation)
+                for (let j = 0; j <= segs; j++) {
+                    const t = j / segs;
+                    const r = (R - ded) + (add + ded) * t;
+                    const inv = Math.sqrt((r*r)/(baseR*baseR) - 1) - Math.acos(baseR/r);
+                    const ang = angleOffset + inv;
+                    const x = Math.cos(ang) * r, y = Math.sin(ang) * r;
+                    if (i === 0 && j === 0) shape.moveTo(x, y);
+                    else shape.lineTo(x, y);
+                }
+                // Back of tooth
+                for (let j = segs; j >= 0; j--) {
+                    const t = j / segs;
+                    const r = (R - ded) + (add + ded) * t;
+                    const inv = Math.sqrt((r*r)/(baseR*baseR) - 1) - Math.acos(baseR/r);
+                    const ang = angleOffset + step/2 - inv;
+                    shape.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
+                }
+            }
+            shape.closePath();
+            const hole = new THREE.Path();
+            for(let i=0;i<=32;i++){ const a=(i/32)*Math.PI*2; i===0?hole.moveTo(Math.cos(a)*hr,Math.sin(a)*hr):hole.lineTo(Math.cos(a)*hr,Math.sin(a)*hr); }
+            shape.holes.push(hole);
+
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: th, bevelEnabled: false });
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.8 }));
+            mesh.rotation.x = -Math.PI/2; mesh.position.y = 0.5;
+            mesh.castShadow = true; objectGroup.add(mesh);
+            camera.position.set(0, PD*1.2, PD*2);
+        }
+
+        // 18: Terrain / Landscape Builder
+        function updateTerrain() {
+            if (currentMode !== 'terrain') return;
+            objectGroup.clear(); addFloor();
+            const S = getVal('ter-s') || 60, res = getVal('ter-r') || 64;
+            const amp = getVal('ter-a') || 10, freq = getVal('ter-f') || 0.05;
+            const col = getCol('global-c');
+
+            const geo = new THREE.PlaneGeometry(S, S, res, res);
+            const pos = geo.attributes.position;
+            // Simple Perlin-ish noise using sin/cos layers
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i), z = pos.getY(i);
+                const noise = Math.sin(x * freq) * Math.cos(z * freq) + 
+                              Math.sin(x * freq * 2) * Math.cos(z * freq * 2) * 0.5;
+                pos.setZ(i, noise * amp);
+            }
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, side: THREE.DoubleSide }));
+            mesh.rotation.x = -Math.PI/2; mesh.position.y = amp/2; mesh.castShadow = true;
+            objectGroup.add(mesh);
+            camera.position.set(0, S, S);
+        }
+
+        // 19: Snowflake / Fractal Generator
+        function updateFractal() {
+            if (currentMode !== 'fractal') return;
+            objectGroup.clear(); addFloor();
+            const iter = Math.min(5, getVal('fra-i') || 3); // Max 5 for safety/performance
+            const scale = getVal('fra-s') || 0.5;
+            const angle = (getVal('fra-a') || 60) * Math.PI/180;
+            const col = getCol('global-c');
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.8 });
+
+            const branch = (len, depth) => {
+                if (depth <= 0) return null;
+                const geo = new THREE.CylinderGeometry(len*0.08, len*0.05, len, 8);
+                geo.translate(0, len/2, 0);
+                const m = new THREE.Mesh(geo, mat);
+                m.castShadow = true; m.receiveShadow = true;
+                
+                const group = new THREE.Group();
+                group.add(m);
+                
+                const nextDepth = depth - 1;
+                const nextLen = len * scale;
+                
+                // Add 6 branches for snowflake symmetry
+                for(let i=0; i<6; i++) {
+                    const sub = branch(nextLen, nextDepth);
+                    if (sub) {
+                        sub.position.y = len * 0.9;
+                        sub.rotation.z = angle;
+                        sub.rotation.y = (i/6) * Math.PI * 2;
+                        group.add(sub);
+                    }
+                }
+                return group;
+            };
+
+            const root = branch(16, iter);
+            if (root) {
+                root.position.y = 0.5;
+                objectGroup.add(root);
+            }
+            camera.position.set(0, 40, 70);
+            controls.target.set(0, 10, 0);
+        }
+
+        // 20: Lighting & Neon FX
+        function updateNeon() {
+            if (currentMode !== 'neon') return;
+            objectGroup.clear(); // Black floor for neon
+            const glow = getVal('neo-g') || 2, r = getVal('neo-r') || 1;
+            const msg = document.getElementById('neo-txt') ? document.getElementById('neo-txt').value : 'LIGHT';
+            const col = getCol('global-c');
+
+            const loader = new THREE.FontLoader();
+            loader.load('https://unpkg.com/three@0.145.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                const geo = new THREE.TextGeometry(msg, { font, size: 10, height: 2, curveSegments: 12 });
+                geo.center();
+                const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: glow * 5 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.y = 12;
+                objectGroup.add(mesh);
+                
+                // Add a glow point light
+                const light = new THREE.PointLight(col, glow, 50);
+                light.position.set(0, 12, 5);
+                objectGroup.add(light);
+            });
+            camera.position.set(0, 20, 50);
+        }
+
+        // 17: Parametric Bracket
+        function updateBracket() {
+            if (currentMode !== 'bracket') return;
+            objectGroup.clear(); addFloor();
+            const W = getVal('brk-w') || 10, H = getVal('brk-h') || 10;
+            const D = getVal('brk-d') || 10, T = getVal('brk-t') || 1.5;
+            const shape = document.getElementById('brk-shape') ? document.getElementById('brk-shape').value : 'L';
+            const holes = document.getElementById('brk-holes') ? document.getElementById('brk-holes').value === '1' : false;
+            const mat = new THREE.MeshStandardMaterial({ color: getCol('global-c'), roughness: 0.5, metalness: 0.4 });
+            const addBox = (w,h,d,x,y,z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); m.castShadow=true; objectGroup.add(m); };
+            if (shape === 'L') {
+                addBox(W, T, D, 0, T/2, 0); addBox(T, H, D, -W/2+T/2, T+H/2, 0);
+            } else if (shape === 'U') {
+                addBox(W, T, D, 0, T/2, 0); addBox(T, H, D, -W/2+T/2, T+H/2, 0); addBox(T, H, D, W/2-T/2, T+H/2, 0);
+            } else {
+                addBox(W, T, D, 0, T/2, 0); addBox(T, H, D, 0, T+H/2, 0);
+            }
+            if (holes) {
+                const hm = new THREE.MeshStandardMaterial({ color: 0x111111 });
+                [-W/4, W/4].forEach(hx => { const h = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,T*2,16), hm); h.position.set(hx,T/2,0); objectGroup.add(h); });
+            }
+            camera.position.set(0, 20, 40);
+        }
+
+        // 18: Mini Architecture
+
+
+        // 19: Fractal Tree
+
+
+        // 20: Mask Generator
+
+
+        // 21: Puzzle Slicer
+
+
+        // 22: Map Relief
+
+
+        // 23: Molecule / DNA Viewer
+
+
+        function buildStudioScene() {
+            if (currentMode === 'builder')      generateVoxelTerrain();
+            if (currentMode === 'ui_asset')     updateAsset();
+            if (currentMode === 'parallax')     updateParallax();
+            if (currentMode === 'typography')   updateTypography();
+            if (currentMode === 'organic')      updateOrganic();
+            if (currentMode === 'wave')         updateWave();
+            if (currentMode === 'mosaic')       updateMosaic();
+            if (currentMode === 'galaxy')       updateGalaxy();
+            if (currentMode === 'qrcode')       updateQRCode();
+            if (currentMode === 'diamond')      updateDiamond();
+            if (currentMode === 'chain')        updateChain();
+            if (currentMode === 'gear')         updateGear();
+            if (currentMode === 'bracket')      updateBracket();
+            if (currentMode === 'terrain')      updateTerrain();
+            if (currentMode === 'fractal')      updateFractal();
+            if (currentMode === 'neon')         updateNeon();
+            if (currentMode === 'spring')       updateSpring();
+            if (currentMode === 'lattice')      updateLattice();
+            if (currentMode === 'mandala')      updateMandala();
+            if (currentMode === 'polyhedra')    updatePolyhedra();
+            if (currentMode === 'vase')         updateVase();
+            if (currentMode === 'sprocket')     updateSprocket();
+
+            ambient.intensity = 0.6;
+            light.intensity = 1.2;
+        }
+
+        function create3DLogoMesh(maxWidth, baseZ, extrudeZ, customSegments = 120) {
+            if (!textureImage) return null;
+
+            const aspect = textureImage.width / textureImage.height;
+            const w = aspect >= 1 ? maxWidth : maxWidth * aspect;
+            const h = aspect >= 1 ? maxWidth / aspect : maxWidth;
+
+            const c2d = document.createElement('canvas');
+            c2d.width = textureImage.width; c2d.height = textureImage.height;
+            const ctx = c2d.getContext('2d');
+            ctx.drawImage(textureImage, 0, 0);
+
+            const transThresh = (currentMode === 'parallax' && document.getElementById('plx-trans')) ? getVal('plx-trans') : (getVal('ui-trans') || 0);
+            if (transThresh > 0) {
+                const imgData = ctx.getImageData(0, 0, c2d.width, c2d.height);
+                const data = imgData.data;
+                const limit = 255 - transThresh;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i] >= limit && data[i + 1] >= limit && data[i + 2] >= limit) data[i + 3] = 0;
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+
+            const tex = new THREE.CanvasTexture(c2d);
+            tex.encoding = THREE.sRGBEncoding;
+
+            const segments = customSegments;
+            const geo = new THREE.PlaneGeometry(w, h, segments, segments);
+            const pos = geo.attributes.position;
+            const uv = geo.attributes.uv;
+            const index = geo.index;
+
+            const procData = ctx.getImageData(0, 0, c2d.width, c2d.height).data;
+            let cx = c2d.width, cy = c2d.height;
+
+            const vertexAlpha = new Float32Array(pos.count);
+            for (let i = 0; i < pos.count; i++) {
+                const u = uv.getX(i);
+                const v = uv.getY(i);
+                const px = Math.min(cx - 1, Math.max(0, Math.floor(u * cx)));
+                const py = Math.min(cy - 1, Math.max(0, Math.floor((1 - v) * cy)));
+
+                const alpha = procData[(py * cx + px) * 4 + 3];
+                vertexAlpha[i] = alpha;
+                if (alpha > 50) pos.setZ(i, extrudeZ);
+                else pos.setZ(i, baseZ);
+            }
+
+            // Eliminare triunghiuri transparente (bun pt forma la export STL)
+            if (index) {
+                const newIndices = [];
+                for (let i = 0; i < index.count; i += 3) {
+                    const a = index.getX(i);
+                    const b = index.getX(i + 1);
+                    const c = index.getX(i + 2);
+                    if (vertexAlpha[a] > 10 || vertexAlpha[b] > 10 || vertexAlpha[c] > 10) {
+                        newIndices.push(a, b, c);
+                    }
+                }
+                geo.setIndex(newIndices);
+            }
+
+            geo.computeVertexNormals();
+
+            const mat = new THREE.MeshStandardMaterial({
+                map: tex, transparent: true, alphaTest: 0.1, roughness: 0.4, color: getCol('global-c'), side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true;
+            return mesh;
+        }
+
+        function downloadFile(blob, filename) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function getExportTarget() {
+            const target = new THREE.Group();
+            const sourceArr = [...objectGroup.children, ...mandalaPersistentGroup.children];
+            sourceArr.forEach(child => {
+                if (child.name === 'floor' || child.name === 'plx-bg') return;
+                if (child.isInstancedMesh) {
+                    const mergedGeos = [];
+                    const matrix = new THREE.Matrix4();
+                    const BATCH = 2000;
+                    const total = Math.min(child.count, 50000);
+                    for (let i = 0; i < total; i++) {
+                        child.getMatrixAt(i, matrix);
+                        const geo = child.geometry.clone().toNonIndexed();
+                        for (const k of Object.keys(geo.attributes)) {
+                            if (k !== 'position' && k !== 'normal') delete geo.attributes[k];
+                        }
+                        geo.applyMatrix4(matrix);
+                        mergedGeos.push(geo);
+                        if (mergedGeos.length >= BATCH && i < total - 1) {
+                            const batch = THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeBufferGeometries(mergedGeos);
+                            mergedGeos.length = 0;
+                            if (batch) mergedGeos.push(batch);
+                        }
+                    }
+                    if (mergedGeos.length > 0 && THREE.BufferGeometryUtils) {
+                        const merged = THREE.BufferGeometryUtils.mergeBufferGeometries(mergedGeos);
+                        if (merged) {
+                            target.add(new THREE.Mesh(merged, new THREE.MeshStandardMaterial({ color: getCol('global-c') })));
+                        }
+                    }
+                } else {
+                    target.add(child.clone());
+                }
+            });
+            return target;
+        }
+
+        function exportSTL() {
+            if (!THREE.STLExporter) return alert("STLExporter is missing!");
+            const exporter = new THREE.STLExporter();
+            const res = exporter.parse(getExportTarget());
+            downloadFile(new Blob([res], { type: 'text/plain' }), 'studio_export.stl');
+        }
+
+        function exportOBJ() {
+            if (!THREE.OBJExporter) return alert("OBJExporter is missing!");
+            const exporter = new THREE.OBJExporter();
+            const res = exporter.parse(getExportTarget());
+            downloadFile(new Blob([res], { type: 'text/plain' }), 'studio_export.obj');
+        }
+
+        function exportGLB() {
+            if (!THREE.GLTFExporter) return alert("GLTFExporter is missing!");
+            const exporter = new THREE.GLTFExporter();
+            exporter.parse(getExportTarget(), (glb) => {
+                downloadFile(new Blob([glb], { type: 'application/octet-stream' }), 'studio_export.glb');
+            }, { binary: true });
+        }
+
+        function exportSVG() {
+            renderer.render(scene, camera); // Ensure up to date
+            const dataUrl = canvas.toDataURL("image/png");
+            const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.clientWidth}" height="${canvas.clientHeight}"><image href="${dataUrl}" width="${canvas.clientWidth}" height="${canvas.clientHeight}"/></svg>`;
+            downloadFile(new Blob([svgString], { type: 'image/svg+xml' }), 'studio_export.svg');
+        }
+
+        function exportPDF() {
+            if (!window.jspdf) return alert("jsPDF is missing!");
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('l', 'px', [canvas.clientWidth, canvas.clientHeight]);
+            renderer.render(scene, camera);
+            pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, canvas.clientWidth, canvas.clientHeight);
+            pdf.save('studio_export.pdf');
+        }
+
+        // Render loop
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.05;
+
+
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            let w = vp.clientWidth || (window.innerWidth - 380);
+            let h = vp.clientHeight || (window.innerHeight - 60);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
+
+        // Init
+        setStudio('builder');
+        animate();
+    </script>
+    <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      const modal = document.getElementById('local-payment-modal');
+      const closeBtn = document.getElementById('modal-close-btn');
+      const payPremiumBtn = document.getElementById('pay-premium-btn');
+      if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
+      if (payPremiumBtn) payPremiumBtn.onclick = () => {
+        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'spro2' } });
+        modal.style.display = 'none';
+      };
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED') {
+          modal.style.display = 'none';
+          if (pendingTarget) {
+            isAllowed = true;
+            pendingTarget.click();
+          }
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'svg', 'pdf'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || (target.id && target.id.toLowerCase().includes(k)));
+        if (isExport && !text.includes('upload') && !text.includes('import')) {
+          if (target.id === 'pay-single-btn' || target.id === 'pay-premium-btn' || target.id === 'modal-close-btn' || target.id === 'back-btn') return;
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          modal.style.display = 'flex';
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro2' } });
+        }
+      }, true);
+    })();
+    </script>
+</body>
+
+</html>

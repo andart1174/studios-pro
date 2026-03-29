@@ -1,0 +1,3504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MechGen Pro 3D</title>
+    <!-- Three.js and Dependencies -->
+    <script src="https://unpkg.com/three@0.145.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/OBJExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://unpkg.com/three@0.145.0/examples/js/utils/BufferGeometryUtils.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #090e17;
+            --panel-bg: #111827;
+            --accent: #f97316; /* Professional Orange */
+            --accent-glow: rgba(249, 115, 22, 0.3);
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-mut: #94a3b8;
+            --panel-width: 400px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        header {
+            height: 60px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: 900;
+        }
+
+        .nav-modules {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            flex: 1;
+            min-width: 0;
+            margin: 0 1.5rem;
+            padding: 8px 0;
+            scrollbar-width: thin;
+        }
+        .nav-modules::-webkit-scrollbar { height: 4px; }
+        .nav-modules::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .module-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            color: var(--text-mut);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .module-btn:hover { background: rgba(255,255,255,0.1); }
+        .module-btn.active {
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .lang-selector {
+            display: flex; gap: 20px; padding: 10px 1.5rem; border-top: 1px solid var(--border);
+            justify-content: center; background: rgba(0,0,0,0.3);
+        }
+        .lang-selector button {
+            background: none; border: none; color: var(--text-mut);
+            cursor: pointer; font-weight: bold; font-size: 0.9rem;
+        }
+        .lang-selector button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        
+        .action-btn { 
+            background: rgba(15, 23, 42, 0.4); 
+            border: 1px solid var(--border); 
+            color: var(--text-mut); 
+            cursor: pointer; 
+            font-size: 1.2rem; 
+            transition: 0.2s; 
+            width: 36px; height: 36px; 
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .action-btn:hover { transform: scale(1.1); filter: brightness(1.5); background: var(--border); }
+        .action-btn.active { color: #000; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); border-color: #fff; }
+
+        main { display: flex; flex: 1; overflow: hidden; }
+
+        aside {
+            width: var(--panel-width);
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+
+        .viewport {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+        }
+        #canvas3d { width: 100%; height: 100%; display: block; }
+
+        .control-group {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .group-title {
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ctrl-row { margin-bottom: 1rem; }
+        .ctrl-row:last-child { margin-bottom: 0; }
+        
+        .ctrl-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-mut);
+            margin-bottom: 0.5rem;
+        }
+
+        .val-display { color: var(--text-main); font-weight: 600; font-family: monospace; }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer;
+            background: var(--border); border-radius: 10px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px; width: 16px; border-radius: 50%;
+            background: var(--accent); cursor: pointer;
+            -webkit-appearance: none; margin-top: -6px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Number Inputs */
+        input[type=number], select {
+            width: 100%; padding: 8px;
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            color: var(--text-main); border-radius: 6px;
+            font-family: monospace;
+        }
+        input[type=number]:focus, select:focus {
+            outline: none; border-color: var(--accent);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--border);
+            color: var(--text-main);
+            border: none; padding: 10px 15px;
+            border-radius: 8px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+        }
+        .btn:hover { background: #475569; }
+        .btn-primary {
+            background: var(--accent); color: #000;
+        }
+        .btn-primary:hover { background: #ea580c; }
+
+        .export-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+            padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+        }
+
+        /* Lang classes */
+        [data-lang="en"], [data-lang="fr"] { display: none; }
+        body.lang-en [data-lang="en"] { display: inline-block; }
+        body.lang-fr [data-lang="fr"] { display: inline-block; }
+        
+        span[data-lang="en"], span[data-lang="fr"] { display: none; }
+        body.lang-en span[data-lang="en"] { display: inline; }
+        body.lang-fr span[data-lang="fr"] { display: inline; }
+
+        .hidden { display: none !important; }
+        
+        /* Stats overlay */
+        .stats-overlay {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(15, 23, 42, 0.8); 
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            padding: 15px; border-radius: 8px; border: 1px solid var(--border);
+            pointer-events: none; font-family: monospace; font-size: 0.9rem;
+        }
+        .stats-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 5px; }
+.plan-note { margin-top:10px; font-size:0.8rem; color:#94a3b8; line-height:1.4; }
+        .color-input-custom { width:100%; height:40px; border:none; border-radius:6px; cursor:pointer; }
+        .btn-dxf { background: #0284c7 !important; }
+        .btn-svg { background: #c2410c !important; }
+        .btn-png { background: #16a34a !important; }
+        .stats-val-custom { color: #f97316; font-weight: bold; }
+    </style>
+</head>
+<body class="lang-en">
+    <div id="local-payment-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;justify-content:center;align-items:center;backdrop-filter:blur(8px);">
+        <div style="background:#0f172a;padding:40px;border-radius:20px;text-align:center;max-width:400px;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="font-size:40px;margin-bottom:15px;">🔒</div>
+            <h2 style="font-size:24px;margin-bottom:15px;color:var(--accent);">Premium Mode Required</h2>
+            <p style="color:#94a3b8;margin-bottom:25px;font-size:15px;line-height:1.5;">This export feature requires an active Premium plan. Please upgrade to continue.</p>
+            <div style="display:flex;gap:15px;justify-content:center;">
+                <button id="modal-close-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:600;">Cancel</button>
+                <button id="pay-premium-btn" style="background:var(--accent);border:none;color:#fff;padding:12px 25px;border-radius:10px;cursor:pointer;font-weight:bold;box-shadow:0 0 15px var(--accent-glow);">Upgrade Now</button>
+            </div>
+        </div>
+    </div>
+    <header>
+        <button id="back-btn" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; font-weight:bold; margin-right:15px; display:flex; align-items:center; gap:5px;"><span style="font-size:16px;">←</span> Back</button>
+        <div class="logo">
+            <div class="logo-icon">M</div>
+            <span>MechGen Pro</span>
+        </div>
+        
+        <div class="nav-modules">
+            <button class="module-btn active" onclick="setModule('gear')" id="nav-gear">
+                <span data-lang="en">⚙️ Gears</span><span data-lang="fr">⚙️ Engrenages</span>
+            </button>
+            <button class="module-btn" onclick="setModule('sprocket')" id="nav-sprocket">
+                <span data-lang="en">🗂️ Sprockets</span><span data-lang="fr">🗂️ Pignons</span>
+            </button>
+            <button class="module-btn" onclick="setModule('bracket')" id="nav-bracket">
+                <span data-lang="en">📐 Brackets</span><span data-lang="fr">📐 Supports</span>
+            </button>
+            <button class="module-btn" onclick="setModule('screw')" id="nav-screw">
+                <span data-lang="en">🔩 Screws</span><span data-lang="fr">🔩 Vis</span>
+            </button>
+            <button class="module-btn" onclick="setModule('spring')" id="nav-spring">
+                <span data-lang="en">🌀 Springs</span><span data-lang="fr">🌀 Ressorts</span>
+            </button>
+            <button class="module-btn" onclick="setModule('bearing')" id="nav-bearing">
+                <span data-lang="en">🛠️ Bearings</span><span data-lang="fr">🛠️ Roulements</span>
+            </button>
+            <button class="module-btn" onclick="setModule('connect')" id="nav-connect">
+                <span data-lang="en">🧲 Connect</span><span data-lang="fr">🧲 Connecteur</span>
+            </button>
+            <button class="module-btn" onclick="setModule('pulley')" id="nav-pulley">
+                <span data-lang="en">🔄 Pulleys</span><span data-lang="fr">🔄 Poulies</span>
+            </button>
+            <button class="module-btn" onclick="setModule('hinge')" id="nav-hinge">
+                <span data-lang="en">🚪 Hinge</span><span data-lang="fr">🚪 Charnière</span>
+            </button>
+            <button class="module-btn" onclick="setModule('planetary')" id="nav-planetary">
+                <span data-lang="en">🌍 Planetary</span><span data-lang="fr">🌍 Planétaire</span>
+            </button>
+            <button class="module-btn" onclick="setModule('geneva')" id="nav-geneva">
+                <span data-lang="en">🎡 Geneva</span><span data-lang="fr">🎡 Genève</span>
+            </button>
+            <button class="module-btn" onclick="setModule('rack')" id="nav-rack">
+                <span data-lang="en">🏗️ Rack</span><span data-lang="fr">🏗️ Crémaillère</span>
+            </button>
+            <button class="module-btn" onclick="setModule('worm')" id="nav-worm">
+                <span data-lang="en">🐌 Worm</span><span data-lang="fr">🐌 Vis Sans Fin</span>
+            </button>
+            <button class="module-btn" onclick="setModule('tslot')" id="nav-tslot">
+                <span data-lang="en">🏗️ T-Slot</span><span data-lang="fr">🏗️ Profilé T</span>
+            </button>
+            <button class="module-btn" onclick="setModule('coupler')" id="nav-coupler">
+                <span data-lang="en">🔗 Coupler</span><span data-lang="fr">🔗 Accouplement</span>
+            </button>
+            <button class="module-btn" onclick="setModule('bevel')" id="nav-bevel">
+                <span data-lang="en">📐 Bevel Gear</span><span data-lang="fr">📐 Engrenage Conique</span>
+            </button>
+            <button class="module-btn" onclick="setModule('pillow')" id="nav-pillow">
+                <span data-lang="en">🧱 Pillow Block</span><span data-lang="fr">🧱 Palier</span>
+            </button>
+            <button class="module-btn" onclick="setModule('handwheel')" id="nav-handwheel">
+                <span data-lang="en">🎡 Handwheel</span><span data-lang="fr">🎡 Volant</span>
+            </button>
+            <button class="module-btn" onclick="setModule('standoff')" id="nav-standoff">
+                <span data-lang="en">🔩 Standoff</span><span data-lang="fr">🔩 Entretoise</span>
+            </button>
+            <button class="module-btn" onclick="setModule('cardan')" id="nav-cardan">
+                <span data-lang="en">🦴 U-Joint</span><span data-lang="fr">🦴 Cardan</span>
+            </button>
+            <button class="module-btn" onclick="setModule('linbear')" id="nav-linbear">
+                <span data-lang="en">🧊 Lin Bear</span><span data-lang="fr">🧊 Douille L.</span>
+            </button>
+            <button class="module-btn" onclick="setModule('nema')" id="nav-nema">
+                <span data-lang="en">⚡ Nema Mount</span><span data-lang="fr">⚡ Sup. Moteur</span>
+            </button>
+            <button class="module-btn" onclick="setModule('leadscrew')" id="nav-leadscrew">
+                <span data-lang="en">🔩 Lead Screw</span><span data-lang="fr">🔩 Vis Mère Z</span>
+            </button>
+            <button class="module-btn" onclick="setModule('chain')" id="nav-chain">
+                <span data-lang="en">⛓️ Drag Chain</span><span data-lang="fr">⛓️ Chaîne Câble</span>
+            </button>
+            <button class="module-btn" onclick="setModule('idler')" id="nav-idler">
+                <span data-lang="en">🛞 Idler</span><span data-lang="fr">🛞 Poulie Folle</span>
+            </button>
+            <button class="module-btn" onclick="setModule('collar')" id="nav-collar">
+                <span data-lang="en">⭕ Shaft Collar</span><span data-lang="fr">⭕ Bague d'Arrêt</span>
+            </button>
+            <button class="module-btn" onclick="setModule('balljoint')" id="nav-balljoint">
+                <span data-lang="en">🔮 Ball Joint</span><span data-lang="fr">🔮 Rotule</span>
+            </button>
+        </div>
+
+        <div class="header-actions">
+            <button class="action-btn" onclick="toggleExploded()" id="btn-explode" title="Exploded View">📂</button>
+            <button class="action-btn" onclick="toggleAnimation()" id="btn-anim" title="Animate Model">▶️</button>
+            <button class="action-btn" onclick="savePreset()" title="Save Preset">💾</button>
+            <button class="action-btn" onclick="loadPreset()" title="Load Preset">📁</button>
+        </div>
+    </header>
+
+    <main>
+        <aside>
+            <div class="scroll-area">
+                
+                <!-- GEAR MODULE -->
+                <div id="mod-gear" class="control-group generator-mod">
+                    <div class="group-title">
+                        <span data-lang="en">Spur Gear Generator</span><span data-lang="fr">Générateur R. Dentée</span>
+                    </div>
+                    
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Teeth Count (N)</span><span data-lang="fr">Nombre de Dents</span></span>
+                            <span class="val-display" id="val-gear-teeth">20</span>
+                        </div>
+                        <input type="range" id="gear-teeth" min="6" max="100" step="1" value="20" oninput="updateVal('gear-teeth'); generate()" title="Teeth Count"><br><br>
+                        <input type="number" id="num-gear-teeth" min="6" max="100" value="20" oninput="syncVal('num-gear-teeth', 'gear-teeth'); generate()" title="Teeth Count Input">
+                    </div>
+
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Module (m) [mm]</span><span data-lang="fr">Module (m) [mm]</span></span>
+                            <span class="val-display" id="val-gear-module">2.0</span>
+                        </div>
+                        <input type="range" id="gear-module" min="0.5" max="10" step="0.1" value="2.0" oninput="updateVal('gear-module'); generate()" title="Gear Module"><br><br>
+                        <input type="number" id="num-gear-module" min="0.5" max="10" step="0.1" value="2.0" oninput="syncVal('num-gear-module', 'gear-module'); generate()" title="Gear Module Input">
+                    </div>
+
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Thickness (z) [mm]</span><span data-lang="fr">Épaisseur (z) [mm]</span></span>
+                            <span class="val-display" id="val-gear-thick">5.0</span>
+                        </div>
+                        <input type="range" id="gear-thick" min="1" max="50" step="0.5" value="5" oninput="updateVal('gear-thick'); generate()" title="Gear Thickness">
+                    </div>
+                    
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Bore Diameter [mm]</span><span data-lang="fr">Diamètre Alésage [mm]</span></span>
+                            <span class="val-display" id="val-gear-bore">10.0</span>
+                        </div>
+                        <input type="range" id="gear-bore" min="2" max="50" step="0.5" value="10" oninput="updateVal('gear-bore'); generate()" title="Bore Diameter">
+                    </div>
+
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Tooth Length</span><span data-lang="fr">Longueur Dent</span></span>
+                            <span class="val-display" id="val-gear-len">1.0</span>
+                        </div>
+                        <input type="range" id="gear-len" min="0.2" max="3" step="0.1" value="1.0" oninput="updateVal('gear-len'); generate()" title="Tooth Length">
+                    </div>
+
+                    <div class="ctrl-row">
+                        <div class="ctrl-label">
+                            <span><span data-lang="en">Tooth Shape</span><span data-lang="fr">Profil Dent</span></span>
+                            <span class="val-display" id="val-gear-shape">1.0</span>
+                        </div>
+                        <input type="range" id="gear-shape" min="0" max="2" step="0.1" value="1.0" oninput="updateVal('gear-shape'); generate()" title="Tooth Shape">
+                    </div>
+                </div>
+
+                <!-- BRACKET MODULE -->
+                <div id="mod-bracket" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Parametric Bracket</span><span data-lang="fr">Support Paramétrique</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Type</span><span data-lang="fr">Type</span></span></div>
+                        <select id="brk-type" onchange="generate()" title="Bracket Type">
+                            <option value="L">L-Bracket</option>
+                            <option value="U">U-Channel</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Width (X)</span><span data-lang="fr">Largeur (X)</span></span><span class="val-display" id="val-brk-w">20.0</span></div>
+                        <input type="range" id="brk-w" min="10" max="100" step="1" value="20" oninput="updateVal('brk-w'); generate()" title="Bracket Width">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Height (Y)</span><span data-lang="fr">Hauteur (Y)</span></span><span class="val-display" id="val-brk-h">30.0</span></div>
+                        <input type="range" id="brk-h" min="10" max="100" step="1" value="30" oninput="updateVal('brk-h'); generate()" title="Bracket Height">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Depth (Z)</span><span data-lang="fr">Profondeur (Z)</span></span><span class="val-display" id="val-brk-d">20.0</span></div>
+                        <input type="range" id="brk-d" min="10" max="100" step="1" value="20" oninput="updateVal('brk-d'); generate()" title="Bracket Depth">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-brk-t">3.0</span></div>
+                        <input type="range" id="brk-t" min="1" max="10" step="0.5" value="3" oninput="updateVal('brk-t'); generate()" title="Bracket Thickness">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Hole Diameter</span><span data-lang="fr">Diamètre Trou</span></span><span class="val-display" id="val-brk-hd">4.0</span></div>
+                        <input type="range" id="brk-hd" min="0" max="15" step="0.5" value="4" oninput="updateVal('brk-hd'); generate()" title="Hole Diameter">
+                    </div>
+                </div>
+
+                <!-- SPRING MODULE -->
+                <div id="mod-spring" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Helical Spring</span><span data-lang="fr">Ressort Hélicoïdal</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Turns (N)</span><span data-lang="fr">Spires (N)</span></span><span class="val-display" id="val-spr-turns">10.0</span></div>
+                        <input type="range" id="spr-turns" min="2" max="50" step="0.5" value="10" oninput="updateVal('spr-turns'); generate()" title="Spring Turns">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-spr-od">20.0</span></div>
+                        <input type="range" id="spr-od" min="5" max="100" step="1" value="20" oninput="updateVal('spr-od'); generate()" title="Spring Outer Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Wire Diameter</span><span data-lang="fr">Diamètre Fil</span></span><span class="val-display" id="val-spr-wd">2.0</span></div>
+                        <input type="range" id="spr-wd" min="0.5" max="10" step="0.1" value="2.0" oninput="updateVal('spr-wd'); generate()" title="Spring Wire Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Free Length</span><span data-lang="fr">Longueur Libre</span></span><span class="val-display" id="val-spr-l">50.0</span></div>
+                        <input type="range" id="spr-l" min="10" max="200" step="1" value="50" oninput="updateVal('spr-l'); generate()" title="Spring Free Length">
+                    </div>
+                </div>
+
+                <!-- BEARING MODULE -->
+                <div id="mod-bearing" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Print-in-Place Bearing</span><span data-lang="fr">Roulement Imprimable</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Inner Diameter (Bore)</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-brg-id">8.0</span></div>
+                        <input type="range" id="brg-id" min="3" max="50" step="1" value="8" oninput="updateVal('brg-id'); generate()" title="Bearing Inner Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-brg-od">22.0</span></div>
+                        <input type="range" id="brg-od" min="10" max="100" step="1" value="22" oninput="updateVal('brg-od'); generate()" title="Bearing Outer Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Width)</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-brg-w">7.0</span></div>
+                        <input type="range" id="brg-w" min="4" max="30" step="1" value="7" oninput="updateVal('brg-w'); generate()" title="Bearing Thickness">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Tolerance (Clearance)</span><span data-lang="fr">Jeu / Tolérance</span></span><span class="val-display" id="val-brg-tol">0.3</span></div>
+                        <input type="range" id="brg-tol" min="0.1" max="1.0" step="0.05" value="0.3" oninput="updateVal('brg-tol'); generate()" title="Bearing Tolerance">
+                    </div>
+                </div>
+
+                <!-- SPROCKET MODULE -->
+                <div id="mod-sprocket" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Sprocket Generator</span><span data-lang="fr">Générateur Pignon</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Teeth Count</span><span data-lang="fr">Nombre de Dents</span></span><span class="val-display" id="val-spk-t">16</span></div>
+                        <input type="range" id="spk-t" min="6" max="60" step="1" value="16" oninput="updateVal('spk-t'); generate()" title="Sprocket Teeth Count"><br><br>
+                        <input type="number" id="num-spk-t" min="6" max="60" value="16" oninput="syncVal('num-spk-t', 'spk-t'); generate()" title="Sprocket Teeth Count Input">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Pitch (mm)</span><span data-lang="fr">Pas (mm)</span></span><span class="val-display" id="val-spk-p">8.0</span></div>
+                        <input type="range" id="spk-p" min="4" max="25" step="0.5" value="8" oninput="updateVal('spk-p'); generate()" title="Sprocket Pitch">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Z)</span><span data-lang="fr">Épaisseur (Z)</span></span><span class="val-display" id="val-spk-tk">3.0</span></div>
+                        <input type="range" id="spk-tk" min="1" max="15" step="0.5" value="3" oninput="updateVal('spk-tk'); generate()" title="Sprocket Thickness">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Tooth Length</span><span data-lang="fr">Longueur Dent</span></span><span class="val-display" id="val-spk-len">1.0</span></div>
+                        <input type="range" id="spk-len" min="0.2" max="3" step="0.1" value="1.0" oninput="updateVal('spk-len'); generate()" title="Tooth Length">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Tooth Shape</span><span data-lang="fr">Profil Dent</span></span><span class="val-display" id="val-spk-shape">1.0</span></div>
+                        <input type="range" id="spk-shape" min="0" max="2" step="0.1" value="1.0" oninput="updateVal('spk-shape'); generate()" title="Tooth Shape">
+                    </div>
+                </div>
+
+                <!-- SCREW MODULE -->
+                <div id="mod-screw" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Screw & Nut Builder</span><span data-lang="fr">Vis & Écrou</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <select id="scw-type" onchange="generate()" title="Screw Type">
+                            <option value="bolt">Hex Bolt (Vis Hex)</option>
+                            <option value="nut">Hex Nut (Écrou)</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Thread Dia. (M)</span><span data-lang="fr">Diamètre (M)</span></span><span class="val-display" id="val-scw-d">8.0</span></div>
+                        <input type="range" id="scw-d" min="3" max="30" step="1" value="8" oninput="updateVal('scw-d'); generate()" title="Thread Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Length</span><span data-lang="fr">Longueur</span></span><span class="val-display" id="val-scw-l">20.0</span></div>
+                        <input type="range" id="scw-l" min="5" max="100" step="1" value="20" oninput="updateVal('scw-l'); generate()" title="Screw Length">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Head Width</span><span data-lang="fr">Larg. hex.</span></span><span class="val-display" id="val-scw-hw">14.0</span></div>
+                        <input type="range" id="scw-hw" min="4" max="50" step="1" value="14" oninput="updateVal('scw-hw'); generate()" title="Head Width">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Head Thick</span><span data-lang="fr">Ép. Tête</span></span><span class="val-display" id="val-scw-ht">5.0</span></div>
+                        <input type="range" id="scw-ht" min="1" max="25" step="0.5" value="5" oninput="updateVal('scw-ht'); generate()" title="Head Thickness">
+                    </div>
+                </div>
+
+                <!-- CONNECTOR MODULE -->
+                <!-- CONNECT MODULE -->
+                <div id="mod-connect" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Snap-Fit Connector</span><span data-lang="fr">Connecteur Snap-Fit</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <select id="con-type" onchange="generate()" title="Connector Type">
+                            <option value="dovetail">Dovetail Joint</option>
+                            <option value="snap">Snap Buckle</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Size (Width)</span><span data-lang="fr">Taille (X)</span></span><span class="val-display" id="val-con-s">10.0</span></div>
+                        <input type="range" id="con-s" min="5" max="30" step="1" value="10" oninput="updateVal('con-s'); generate()" title="Connector Size">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tolérance</span></span><span class="val-display" id="val-con-t">0.2</span></div>
+                        <input type="range" id="con-t" min="0" max="0.5" step="0.05" value="0.2" oninput="updateVal('con-t'); generate()" title="Tolerance">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Length</span><span data-lang="fr">Longueur</span></span><span class="val-display" id="val-con-l">20.0</span></div>
+                        <input type="range" id="con-l" min="5" max="100" step="1" value="20" oninput="updateVal('con-l'); generate()" title="Connector Length">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Height</span><span data-lang="fr">Hauteur</span></span><span class="val-display" id="val-con-h">10.0</span></div>
+                        <input type="range" id="con-h" min="5" max="50" step="1" value="10" oninput="updateVal('con-h'); generate()" title="Connector Height">
+                    </div>
+                </div>
+
+                <!-- PLANETARY MODULE -->
+                <div id="mod-planetary" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Planetary Gearset</span><span data-lang="fr">Système Planétaire</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Module (m)</span></span><span class="val-display" id="val-plan-m">2.0</span></div>
+                        <input type="range" id="plan-m" min="0.5" max="5" step="0.1" value="2.0" oninput="updateVal('plan-m'); generate()">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Sun Teeth (Zs)</span><span data-lang="fr">Dents Soleil</span></span><span class="val-display" id="val-plan-zs">12</span></div>
+                        <input type="range" id="plan-zs" min="8" max="40" step="1" value="12" oninput="updateVal('plan-zs'); generate()" title="Sun Teeth">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Planet Teeth (Zp)</span><span data-lang="fr">Dents Planètes</span></span><span class="val-display" id="val-plan-zp">12</span></div>
+                        <input type="range" id="plan-zp" min="8" max="40" step="1" value="12" oninput="updateVal('plan-zp'); generate()" title="Planet Teeth">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Planet Count</span><span data-lang="fr">Nombre Planètes</span></span><span class="val-display" id="val-plan-n">3</span></div>
+                        <input type="range" id="plan-n" min="2" max="6" step="1" value="3" oninput="updateVal('plan-n'); generate()" title="Planet Count">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-plan-z">5.0</span></div>
+                        <input type="range" id="plan-z" min="2" max="20" step="1" value="5" oninput="updateVal('plan-z'); generate()" title="Planetary Thickness">
+                    </div>
+                    <div class="plan-note">
+                        <span data-lang="en">Ring gear teeth (Zr) is automatically calculated as Zs + 2*Zp.</span>
+                        <span data-lang="fr">Le nombre de dents de la couronne (Zr) est calculé comme Zs + 2*Zp.</span>
+                    </div>
+                </div>
+
+                <!-- PULLEY MODULE -->
+                <div id="mod-pulley" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Timing Pulley (GT2)</span><span data-lang="fr">Poulie Crantée (GT2)</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Teeth Count</span><span data-lang="fr">Nombre de Dents</span></span><span class="val-display" id="val-pul-t">20</span></div>
+                        <input type="range" id="pul-t" min="12" max="100" step="1" value="20" oninput="updateVal('pul-t'); generate()" title="Pulley Teeth Count">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Belt Width (mm)</span><span data-lang="fr">Largeur Courroie</span></span><span class="val-display" id="val-pul-w">6.0</span></div>
+                        <input type="range" id="pul-w" min="4" max="25" step="0.5" value="6" oninput="updateVal('pul-w'); generate()" title="Belt Width">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Bore Diameter</span><span data-lang="fr">Alésage Axe</span></span><span class="val-display" id="val-pul-b">5.0</span></div>
+                        <input type="range" id="pul-b" min="3" max="20" step="0.5" value="5" oninput="updateVal('pul-b'); generate()" title="Pulley Bore">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Flange Extra Dia</span><span data-lang="fr">Dia. Bride</span></span><span class="val-display" id="val-pul-fd">3.0</span></div>
+                        <input type="range" id="pul-fd" min="0" max="10" step="0.5" value="3" oninput="updateVal('pul-fd'); generate()" title="Flange Diameter">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Flange Thick</span><span data-lang="fr">Ép. Bride</span></span><span class="val-display" id="val-pul-ft">1.0</span></div>
+                        <input type="range" id="pul-ft" min="0" max="5" step="0.1" value="1.0" oninput="updateVal('pul-ft'); generate()" title="Flange Thickness">
+                    </div>
+                </div>
+                
+                <!-- HINGE MODULE -->
+                <div id="mod-hinge" class="control-group generator-mod hidden">
+                    <div class="group-title">
+                        <span data-lang="en">Para-Hinge</span><span data-lang="fr">Charnière Paramétrique</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Length (L)</span><span data-lang="fr">Longueur (L)</span></span><span class="val-display" id="val-hin-l">40.0</span></div>
+                        <input type="range" id="hin-l" min="20" max="150" step="1" value="40" oninput="updateVal('hin-l'); generate()" title="Hinge Length">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Width (W)</span><span data-lang="fr">Largeur (W)</span></span><span class="val-display" id="val-hin-w">30.0</span></div>
+                        <input type="range" id="hin-w" min="10" max="80" step="1" value="30" oninput="updateVal('hin-w'); generate()" title="Hinge Width">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Clearance</span><span data-lang="fr">Jeu / Tolérance</span></span><span class="val-display" id="val-hin-c">0.3</span></div>
+                        <input type="range" id="hin-c" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateVal('hin-c'); generate()" title="Hinge Clearance">
+                    </div>
+                </div>
+
+                <!-- GLOBAL SETTINGS -->
+                <div class="control-group">
+                    <div class="group-title">
+                        <span data-lang="en">Render Material</span><span data-lang="fr">Matériau de Rendu</span>
+                    </div>
+                    <div class="ctrl-row">
+                        <select id="mat-type" onchange="updateMaterial()" title="Material Type">
+                            <option value="solid">Metallic Solid</option>
+                            <option value="plastic">Matte Plastic (PLA/PETG)</option>
+                            <option value="wire">Engineering Wireframe</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span><span data-lang="en">Color</span><span data-lang="fr">Couleur</span></span></div>
+                        <input type="color" id="mat-color" value="#cbd5e1" class="color-input-custom" oninput="updateMaterial()" title="Material Color">
+                    </div>
+                </div>
+
+
+            <!-- Geneva Drive -->
+            <div id="mod-geneva" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Geneva Drive</span><span data-lang="fr">Croix de Malte</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Slots (N)</span><span data-lang="fr">Rainures (N)</span></span><span class="val-display" id="val-gen-n">6</span></div>
+                    <input type="range" id="gen-n" min="3" max="12" step="1" value="6" oninput="updateVal('gen-n'); generate()" title="Geneva Slots">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Modul (m)</span></span><span class="val-display" id="val-gen-m">5.0</span></div>
+                    <input type="range" id="gen-m" min="1" max="10" step="0.5" value="5" oninput="updateVal('gen-m'); generate()" title="Geneva Module">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-gen-z">5</span></div>
+                    <input type="range" id="gen-z" min="1" max="20" step="1" value="5" oninput="updateVal('gen-z'); generate()" title="Geneva Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Pin Radius</span><span data-lang="fr">Rayon Axe</span></span><span class="val-display" id="val-gen-pr">2.0</span></div>
+                    <input type="range" id="gen-pr" min="1" max="5" step="0.5" value="2" oninput="updateVal('gen-pr'); generate()" title="Pin Radius">
+                </div>
+            </div>
+
+            <!-- Rack & Pinion -->
+            <div id="mod-rack" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Rack & Pinion</span><span data-lang="fr">Crémaillère</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Modul (m)</span></span><span class="val-display" id="val-rack-m">2.0</span></div>
+                    <input type="range" id="rack-m" min="1" max="10" step="0.5" value="2" oninput="updateVal('rack-m'); generate()" title="Rack Module">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Pinion Teeth (Z)</span><span data-lang="fr">Dents Pignon (Z)</span></span><span class="val-display" id="val-rack-z">12</span></div>
+                    <input type="range" id="rack-z" min="8" max="40" step="1" value="12" oninput="updateVal('rack-z'); generate()" title="Pinion Teeth">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Rack Length</span><span data-lang="fr">Longueur Crémaillère</span></span><span class="val-display" id="val-rack-l">150</span></div>
+                    <input type="range" id="rack-l" min="50" max="300" step="10" value="150" oninput="updateVal('rack-l'); generate()" title="Rack Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-rack-thick">5</span></div>
+                    <input type="range" id="rack-thick" min="1" max="20" step="1" value="5" oninput="updateVal('rack-thick'); generate()" title="Rack Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Width (w)</span><span data-lang="fr">Largeur (w)</span></span><span class="val-display" id="val-rack-w">10</span></div>
+                    <input type="range" id="rack-w" min="5" max="30" step="1" value="10" oninput="updateVal('rack-w'); generate()" title="Rack Width">
+                </div>
+            </div>
+
+            <!-- Worm Gear -->
+            <div id="mod-worm" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Worm Gear Set</span><span data-lang="fr">Vis Sans Fin</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Modul (m)</span></span><span class="val-display" id="val-worm-m">2.0</span></div>
+                    <input type="range" id="worm-m" min="1" max="10" step="0.5" value="2" oninput="updateVal('worm-m'); generate()" title="Worm Module">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Wheel Teeth (Z)</span><span data-lang="fr">Dents Roue (Z)</span></span><span class="val-display" id="val-worm-z">24</span></div>
+                    <input type="range" id="worm-z" min="10" max="60" step="1" value="24" oninput="updateVal('worm-z'); generate()" title="Wheel Teeth">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Worm Length</span><span data-lang="fr">Longueur Vis</span></span><span class="val-display" id="val-worm-len">40</span></div>
+                    <input type="range" id="worm-len" min="20" max="100" step="5" value="40" oninput="updateVal('worm-len'); generate()" title="Worm Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-worm-thick">10</span></div>
+                    <input type="range" id="worm-thick" min="1" max="20" step="1" value="10" oninput="updateVal('worm-thick'); generate()" title="Worm Thickness">
+                </div>
+            </div>
+
+            <!-- T-Slot Profile -->
+            <div id="mod-tslot" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">T-Slot Profile</span><span data-lang="fr">Profil T-Slot</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Profile Size (X/Y)</span><span data-lang="fr">Taille Profilé</span></span><span class="val-display" id="val-tslot-s">20</span></div>
+                    <input type="range" id="tslot-s" min="10" max="100" step="5" value="20" oninput="updateVal('tslot-s'); generate()" title="Profile Size">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Standard Size</span><span data-lang="fr">Taille Standard</span></span></div>
+                    <select id="tslot-size" onchange="generate()" title="Standard Profile Selector">
+                        <option value="20">2020 (20x20mm)</option>
+                        <option value="40">4040 (40x40mm)</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Length (L)</span><span data-lang="fr">Longueur (L)</span></span><span class="val-display" id="val-tslot-l">100</span></div>
+                    <input type="range" id="tslot-l" min="20" max="500" step="10" value="100" oninput="updateVal('tslot-l'); generate()" title="Profile Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Wall Thick</span><span data-lang="fr">Ép. Paroi</span></span><span class="val-display" id="val-tslot-w">2.0</span></div>
+                    <input type="range" id="tslot-w" min="1" max="5" step="0.5" value="2" oninput="updateVal('tslot-w'); generate()" title="Wall Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Hole Dia</span><span data-lang="fr">D. Trou</span></span><span class="val-display" id="val-tslot-h">5</span></div>
+                    <input type="range" id="tslot-h" min="2" max="10" step="1" value="5" oninput="updateVal('tslot-h'); generate()" title="Hole Diameter">
+                </div>
+            </div>
+
+            <!-- SHAFT COUPLER -->
+            <div id="mod-coupler" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Shaft Coupler</span><span data-lang="fr">Accouplement</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Type</span><span data-lang="fr">Type</span></span></div>
+                    <select id="coup-type" onchange="generate()" title="Coupler Type">
+                        <option value="rigid">Rigid Cylinder</option>
+                        <option value="flex">Flex Slotted</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Length</span><span data-lang="fr">Longueur</span></span><span class="val-display" id="val-coup-l">25</span></div>
+                    <input type="range" id="coup-l" min="10" max="100" step="1" value="25" oninput="updateVal('coup-l'); generate()" title="Coupler Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia</span><span data-lang="fr">D. Externe</span></span><span class="val-display" id="val-coup-od">19</span></div>
+                    <input type="range" id="coup-od" min="10" max="80" step="1" value="19" oninput="updateVal('coup-od'); generate()" title="Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore 1</span><span data-lang="fr">Alésage 1</span></span><span class="val-display" id="val-coup-b1">5</span></div>
+                    <input type="range" id="coup-b1" min="3" max="50" step="0.5" value="5" oninput="updateVal('coup-b1'); generate()" title="Bore Diameter 1">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore 2</span><span data-lang="fr">Alésage 2</span></span><span class="val-display" id="val-coup-b2">8</span></div>
+                    <input type="range" id="coup-b2" min="3" max="50" step="0.5" value="8" oninput="updateVal('coup-b2'); generate()" title="Bore Diameter 2">
+                </div>
+            </div>
+
+            <!-- BEVEL GEAR -->
+            <div id="mod-bevel" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Bevel Gear (Straight)</span><span data-lang="fr">Angrenaj Conic</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Teeth (Z)</span><span data-lang="fr">Dents (Z)</span></span><span class="val-display" id="val-bevg-z">20</span></div>
+                    <input type="range" id="bevg-z" min="10" max="60" step="1" value="20" oninput="updateVal('bevg-z'); generate()" title="Teeth Count">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Module (m)</span></span><span class="val-display" id="val-bevg-m">2.0</span></div>
+                    <input type="range" id="bevg-m" min="1" max="10" step="0.1" value="2.0" oninput="updateVal('bevg-m'); generate()" title="Module">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Face Width</span><span data-lang="fr">Larg. Face</span></span><span class="val-display" id="val-bevg-fw">10</span></div>
+                    <input type="range" id="bevg-fw" min="2" max="30" step="1" value="10" oninput="updateVal('bevg-fw'); generate()" title="Face Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Cone Angle (deg)</span><span data-lang="fr">Angle Cône</span></span><span class="val-display" id="val-bevg-ang">45</span></div>
+                    <input type="range" id="bevg-ang" min="10" max="80" step="1" value="45" oninput="updateVal('bevg-ang'); generate()" title="Cone Angle">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Ax</span></span><span class="val-display" id="val-bevg-b">8</span></div>
+                    <input type="range" id="bevg-b" min="2" max="30" step="0.5" value="8" oninput="updateVal('bevg-b'); generate()" title="Bore Diameter">
+                </div>
+            </div>
+
+            <!-- PILLOW BLOCK -->
+            <div id="mod-pillow" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Pillow Block Mount</span><span data-lang="fr">Suport Lagăr</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bearing Dia (OD)</span><span data-lang="fr">Diamètre Rulment</span></span><span class="val-display" id="val-pil-od">22</span></div>
+                    <input type="range" id="pil-od" min="10" max="100" step="1" value="22" oninput="updateVal('pil-od'); generate()" title="Bearing Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Center Height</span><span data-lang="fr">Hauteur d'Axe</span></span><span class="val-display" id="val-pil-ch">20</span></div>
+                    <input type="range" id="pil-ch" min="10" max="100" step="1" value="20" oninput="updateVal('pil-ch'); generate()" title="Center Height">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Base Width</span><span data-lang="fr">Largeur Base</span></span><span class="val-display" id="val-pil-bw">60</span></div>
+                    <input type="range" id="pil-bw" min="30" max="200" step="5" value="60" oninput="updateVal('pil-bw'); generate()" title="Base Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur Base</span></span><span class="val-display" id="val-pil-t">12</span></div>
+                    <input type="range" id="pil-t" min="5" max="50" step="1" value="12" oninput="updateVal('pil-t'); generate()" title="Embase Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Mount Hole Dia</span><span data-lang="fr">Diamètre Fixation</span></span><span class="val-display" id="val-pil-hd">5</span></div>
+                    <input type="range" id="pil-hd" min="2" max="15" step="0.5" value="5" oninput="updateVal('pil-hd'); generate()" title="Mount Hole Diameter">
+                </div>
+            </div>
+
+            <!-- HANDWHEEL -->
+            <div id="mod-handwheel" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Handwheel</span><span data-lang="fr">Volantă</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-hw-od">80</span></div>
+                    <input type="range" id="hw-od" min="30" max="300" step="5" value="80" oninput="updateVal('hw-od'); generate()" title="Handwheel Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Rim Thickness</span><span data-lang="fr">Épaisseur Jante</span></span><span class="val-display" id="val-hw-rt">10</span></div>
+                    <input type="range" id="hw-rt" min="4" max="30" step="1" value="10" oninput="updateVal('hw-rt'); generate()" title="Rim Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Spokes</span><span data-lang="fr">Nombre de Rayons</span></span><span class="val-display" id="val-hw-sc">4</span></div>
+                    <input type="range" id="hw-sc" min="2" max="8" step="1" value="4" oninput="updateVal('hw-sc'); generate()" title="Spoke Count">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Handle Length</span><span data-lang="fr">Longueur Poignée</span></span><span class="val-display" id="val-hw-hl">30</span></div>
+                    <input type="range" id="hw-hl" min="0" max="100" step="5" value="30" oninput="updateVal('hw-hl'); generate()" title="Handle Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Central</span></span><span class="val-display" id="val-hw-b">8</span></div>
+                    <input type="range" id="hw-b" min="3" max="40" step="1" value="8" oninput="updateVal('hw-b'); generate()" title="Bore Diameter">
+                </div>
+            </div>
+
+            <!-- STANDOFF / SPACER -->
+            <div id="mod-standoff" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Standoff & Spacer</span><span data-lang="fr">Distanțier</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Shape</span><span data-lang="fr">Forme</span></span></div>
+                    <select id="sof-type" onchange="generate()" title="Standoff Shape">
+                        <option value="hex">Hexagonal</option>
+                        <option value="cyl">Cylinder / Round</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Length (Z)</span><span data-lang="fr">Longueur (Z)</span></span><span class="val-display" id="val-sof-l">15</span></div>
+                    <input type="range" id="sof-l" min="2" max="150" step="1" value="15" oninput="updateVal('sof-l'); generate()" title="Standoff Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Size</span><span data-lang="fr">Taille Extérieure</span></span><span class="val-display" id="val-sof-o">6</span></div>
+                    <input type="range" id="sof-o" min="3" max="30" step="0.5" value="6" oninput="updateVal('sof-o'); generate()" title="Outer Size">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore / Thread</span><span data-lang="fr">Alésage / Filetage</span></span><span class="val-display" id="val-sof-b">3.2</span></div>
+                    <input type="range" id="sof-b" min="0" max="20" step="0.1" value="3.2" oninput="updateVal('sof-b'); generate()" title="Bore Diameter">
+                </div>
+            </div>
+
+
+            <!-- UNIVERSAL JOINT (CARDAN) -->
+            <div id="mod-cardan" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Universal Joint (U-Joint)</span><span data-lang="fr">Joint de Cardan</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
+                    <select id="crd-mode" onchange="generate()" title="U-Joint Part Selector">
+                        <option value="asm">Assembled / Complet</option>
+                        <option value="yoke">Yoke Only / Mâchoire</option>
+                        <option value="spider">Spider / Croisillon</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia</span><span data-lang="fr">Diamètre d'Axe</span></span><span class="val-display" id="val-crd-sd">10</span></div>
+                    <input type="range" id="crd-sd" min="5" max="50" step="1" value="10" oninput="updateVal('crd-sd'); generate()" title="Shaft Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Joint Length</span><span data-lang="fr">Longueur Joint</span></span><span class="val-display" id="val-crd-l">40</span></div>
+                    <input type="range" id="crd-l" min="20" max="150" step="5" value="40" oninput="updateVal('crd-l'); generate()" title="Joint Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Yoke Thickness</span><span data-lang="fr">Épaisseur Mâchoire</span></span><span class="val-display" id="val-crd-yt">4</span></div>
+                    <input type="range" id="crd-yt" min="2" max="20" step="1" value="4" oninput="updateVal('crd-yt'); generate()" title="Yoke Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Spider Rad</span><span data-lang="fr">Rayon Croisillon</span></span><span class="val-display" id="val-crd-sr">4</span></div>
+                    <input type="range" id="crd-sr" min="2" max="15" step="0.5" value="4" oninput="updateVal('crd-sr'); generate()" title="Spider Radius">
+                </div>
+            </div>
+
+            <!-- LINEAR BEARING -->
+            <div id="mod-linbear" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Linear Bearing (LM8UU)</span><span data-lang="fr">Roulement Linéaire</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (OD)</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-lb-od">15</span></div>
+                    <input type="range" id="lb-od" min="6" max="50" step="1" value="15" oninput="updateVal('lb-od'); generate()" title="Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia (ID)</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-lb-id">8</span></div>
+                    <input type="range" id="lb-id" min="3" max="40" step="0.5" value="8" oninput="updateVal('lb-id'); generate()" title="Inner Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Length</span><span data-lang="fr">Longueur</span></span><span class="val-display" id="val-lb-l">24</span></div>
+                    <input type="range" id="lb-l" min="10" max="100" step="1" value="24" oninput="updateVal('lb-l'); generate()" title="Bearing Length">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Relief Slots</span><span data-lang="fr">Rainures de Décharge</span></span><span class="val-display" id="val-lb-s">4</span></div>
+                    <input type="range" id="lb-s" min="0" max="12" step="1" value="4" oninput="updateVal('lb-s'); generate()" title="Relief Slots">
+                </div>
+            </div>
+
+            <!-- NEMA MOUNT -->
+            <div id="mod-nema" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">NEMA Motor bracket</span><span data-lang="fr">Support Moteur NEMA</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Standard</span><span data-lang="fr">Modèle Standard</span></span></div>
+                    <select id="nem-type" onchange="generate()" title="NEMA Standard Selector">
+                        <option value="17">NEMA 17 (31mm)</option>
+                        <option value="14">NEMA 14 (26mm)</option>
+                        <option value="23">NEMA 23 (47.1mm)</option>
+                        <option value="11">NEMA 11 (23mm)</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-nem-t">5</span></div>
+                    <input type="range" id="nem-t" min="2" max="15" step="0.5" value="5" oninput="updateVal('nem-t'); generate()" title="Bracket Thickness">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Base Width</span><span data-lang="fr">Largeur Base</span></span><span class="val-display" id="val-nem-b">30</span></div>
+                    <input type="range" id="nem-b" min="10" max="100" step="1" value="30" oninput="updateVal('nem-b'); generate()" title="Base Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Slot Travel</span><span data-lang="fr">Course de Réglage</span></span><span class="val-display" id="val-nem-s">5</span></div>
+                    <input type="range" id="nem-s" min="0" max="20" step="1" value="5" oninput="updateVal('nem-s'); generate()" title="Slot Travel">
+                </div>
+            </div>
+
+            <!-- LEAD SCREW -->
+            <div id="mod-leadscrew" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Lead Screw (Tr)</span><span data-lang="fr">Vis Mère (Tr)</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
+                    <select id="ls-mode" onchange="generate()" title="Lead Screw Part Selector">
+                        <option value="rod">Rod Only / Tige</option>
+                        <option value="nut">Nut Only / Écrou</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (Tr)</span><span data-lang="fr">Diamètre Externe</span></span><span class="val-display" id="val-ls-d">8</span></div>
+                    <input type="range" id="ls-d" min="4" max="30" step="1" value="8" oninput="updateVal('ls-d'); generate()" title="Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Pitch / Lead</span><span data-lang="fr">Pas de Vis</span></span><span class="val-display" id="val-ls-p">2.0</span></div>
+                    <input type="range" id="ls-p" min="1" max="15" step="0.5" value="2.0" oninput="updateVal('ls-p'); generate()" title="Pitch/Lead">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Length</span><span data-lang="fr">Longueur Totale</span></span><span class="val-display" id="val-ls-l">50</span></div>
+                    <input type="range" id="ls-l" min="20" max="200" step="10" value="50" oninput="updateVal('ls-l'); generate()" title="Screw Length">
+                </div>
+            </div>
+
+            <!-- DRAG CHAIN -->
+            <div id="mod-chain" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Drag Chain</span><span data-lang="fr">Chaîne Porte-Câble</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Links Count</span><span data-lang="fr">Nombre de Maillons</span></span><span class="val-display" id="val-ch-n">3</span></div>
+                    <input type="range" id="ch-n" min="1" max="20" step="1" value="3" oninput="updateVal('ch-n'); generate()" title="Link Count">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Inner Width</span><span data-lang="fr">Largeur Interne</span></span><span class="val-display" id="val-ch-w">15</span></div>
+                    <input type="range" id="ch-w" min="8" max="50" step="1" value="15" oninput="updateVal('ch-w'); generate()" title="Inner Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Inner Height</span><span data-lang="fr">Hauteur Interne</span></span><span class="val-display" id="val-ch-h">10</span></div>
+                    <input type="range" id="ch-h" min="5" max="30" step="1" value="10" oninput="updateVal('ch-h'); generate()" title="Inner Height">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tolérance de Jeu</span></span><span class="val-display" id="val-ch-t">0.3</span></div>
+                    <input type="range" id="ch-t" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateVal('ch-t'); generate()" title="Tolerance">
+                </div>
+            </div>
+
+            <!-- SMOOTH IDLER -->
+            <div id="mod-idler" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Smooth Idler</span><span data-lang="fr">Poulie Folle</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Flanges</span><span data-lang="fr">Nombre de Brides</span></span></div>
+                    <select id="idl-type" onchange="generate()" title="Idler Flange Selector">
+                        <option value="2">Double Flange (H)</option>
+                        <option value="1">Single Flange (L)</option>
+                        <option value="0">No Flange (I)</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Working Dia</span><span data-lang="fr">Diamètre de Roulement</span></span><span class="val-display" id="val-idl-d">12.2</span></div>
+                    <input type="range" id="idl-d" min="8" max="40" step="0.2" value="12.2" oninput="updateVal('idl-d'); generate()" title="Working Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Belt Width</span><span data-lang="fr">Largeur Courroie</span></span><span class="val-display" id="val-idl-w">6</span></div>
+                    <input type="range" id="idl-w" min="4" max="25" step="0.5" value="6" oninput="updateVal('idl-w'); generate()" title="Belt Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Central</span></span><span class="val-display" id="val-idl-b">5</span></div>
+                    <input type="range" id="idl-b" min="3" max="20" step="0.5" value="5" oninput="updateVal('idl-b'); generate()" title="Bore Diameter">
+                </div>
+            </div>
+
+            <!-- SHAFT COLLAR -->
+            <div id="mod-collar" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Shaft Collar</span><span data-lang="fr">Bague d'Arrêt</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Inner Dia</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-col-id">8</span></div>
+                    <input type="range" id="col-id" min="4" max="50" step="1" value="8" oninput="updateVal('col-id'); generate()" title="Inner Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-col-od">16</span></div>
+                    <input type="range" id="col-od" min="10" max="80" step="1" value="16" oninput="updateVal('col-od'); generate()" title="Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Width</span><span data-lang="fr">Épaisseur Bague</span></span><span class="val-display" id="val-col-w">8</span></div>
+                    <input type="range" id="col-w" min="4" max="30" step="1" value="8" oninput="updateVal('col-w'); generate()" title="Collar Width">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Set Screw</span><span data-lang="fr">Vis de Pression</span></span><span class="val-display" id="val-col-s">3</span></div>
+                    <input type="range" id="col-s" min="2" max="10" step="1" value="3" oninput="updateVal('col-s'); generate()" title="Set Screw Diameter">
+                </div>
+            </div>
+
+            <!-- BALL JOINT -->
+            <div id="mod-balljoint" class="control-group generator-mod hidden">
+                <div class="group-title">
+                    <span data-lang="en">Ball Joint (Rod End)</span><span data-lang="fr">Embout à Rotule</span>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
+                    <select id="bj-mode" onchange="generate()" title="Ball Joint Part Selector">
+                        <option value="asm">Assembled / Complet</option>
+                        <option value="housing">Housing Only / Boîtier</option>
+                        <option value="ball">Ball Only / Rotule</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Ball Dia</span><span data-lang="fr">Diamètre Rotule</span></span><span class="val-display" id="val-bj-bd">12</span></div>
+                    <input type="range" id="bj-bd" min="6" max="40" step="1" value="12" oninput="updateVal('bj-bd'); generate()" title="Ball Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Rotule</span></span><span class="val-display" id="val-bj-b">4</span></div>
+                    <input type="range" id="bj-b" min="2" max="20" step="1" value="4" oninput="updateVal('bj-b'); generate()" title="Bore Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Housing OD</span><span data-lang="fr">Diamètre Boîtier</span></span><span class="val-display" id="val-bj-od">18</span></div>
+                    <input type="range" id="bj-od" min="10" max="60" step="1" value="18" oninput="updateVal('bj-od'); generate()" title="Housing Outer Diameter">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Rod Dia</span><span data-lang="fr">Corps Tige</span></span><span class="val-display" id="val-bj-rd">8</span></div>
+                    <input type="range" id="bj-rd" min="4" max="30" step="1" value="8" oninput="updateVal('bj-rd'); generate()">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span><span data-lang="en">Clearance</span><span data-lang="fr">Jeu Rotule</span></span><span class="val-display" id="val-bj-c">0.3</span></div>
+                    <input type="range" id="bj-c" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateVal('bj-c'); generate()">
+                </div>
+            </div>
+            <div class="lang-selector">
+                <button id="btn-lang-en" class="active" onclick="setLang('en')">EN</button>
+                <button id="btn-lang-fr" onclick="setLang('fr')">FR</button>
+            </div>
+            
+            <div class="export-grid">
+                <button class="btn btn-primary" onclick="exportSTL()">📦 STL</button>
+                <button class="btn" onclick="exportOBJ()">📄 OBJ</button>
+                <button class="btn" onclick="exportGLB()">🌐 GLB</button>
+                <button class="btn btn-dxf" onclick="exportDXF()">📐 DXF</button>
+                <button class="btn btn-svg" onclick="exportSVG()">🎨 SVG</button>
+                <button class="btn btn-png" onclick="exportPNG()">🖼️ PNG</button>
+            </div>
+        </aside>
+        
+        <div class="viewport">
+            <canvas id="canvas3d"></canvas>
+            
+            <div class="stats-overlay">
+                <div class="stats-row"><span>X:</span><span id="stat-x" class="stats-val">0.00 mm</span></div>
+                <div class="stats-row"><span>Y:</span><span id="stat-y" class="stats-val">0.00 mm</span></div>
+                <div class="stats-row"><span>Z:</span><span id="stat-z" class="stats-val">0.00 mm</span></div>
+                <hr style="border-color:#334155; margin:5px 0;">
+                <div class="stats-row"><span>Polys:</span><span id="stat-poly" class="stats-val">0</span></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- UI Logic ---
+        function setLang(lang) {
+            document.body.className = 'lang-' + lang;
+            document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
+        }
+
+        let currentModule = 'gear';
+        function setModule(mod) {
+            currentModule = mod;
+            document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('nav-' + mod).classList.add('active');
+            
+            document.querySelectorAll('.generator-mod').forEach(el => el.classList.add('hidden'));
+            const modEl = document.getElementById('mod-' + mod);
+            if(modEl) modEl.classList.remove('hidden');
+            
+            generate();
+        }
+
+        function getV(id) { return parseFloat(document.getElementById(id).value); }
+        function updateVal(id) { document.getElementById('val-' + id).innerText = document.getElementById(id).value; }
+        function syncVal(numId, rangeId) {
+            let val = document.getElementById(numId).value;
+            document.getElementById(rangeId).value = val;
+            updateVal(rangeId);
+        }
+
+        let isAnimating = false;
+        let isExploded = false;
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            document.getElementById('btn-anim').innerText = isAnimating ? "⏸️" : "▶️";
+            document.getElementById('btn-anim').classList.toggle('active', isAnimating);
+        }
+
+        function toggleExploded() {
+            isExploded = !isExploded;
+            document.getElementById('btn-explode').classList.toggle('active', isExploded);
+            generate();
+        }
+
+        function savePreset() {
+            const isFr = document.body.classList.contains('lang-fr');
+            const promptMsg = isFr ? "Nom du préréglage (ex: engrenage_moteur) :" : "Preset name (e.g., motor_gear):";
+            const successMsg = isFr ? "Préréglage enregistré !" : "Preset saved!";
+            
+            const presetName = prompt(promptMsg, "My Preset");
+            if(!presetName) return;
+            const preset = { module: currentModule, vals: {} };
+            document.querySelectorAll('input[type=range], select, input[type=number]').forEach(el => {
+                if(el.id) preset.vals[el.id] = el.value;
+            });
+            localStorage.setItem('mechgen_preset_' + presetName, JSON.stringify(preset));
+            alert(successMsg);
+        }
+
+        function loadPreset() {
+            const isFr = document.body.classList.contains('lang-fr');
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('mechgen_preset_'));
+            if(keys.length === 0) {
+                alert(isFr ? "Aucun préréglage trouvé." : "No presets found.");
+                return;
+            }
+            const names = keys.map(k => k.replace('mechgen_preset_', ''));
+            const promptMsg = isFr ? "Entrez le nom du préréglage à charger :\n" : "Enter name to load:\n";
+            const toLoad = prompt(promptMsg + names.join(", "));
+            if(toLoad && keys.includes('mechgen_preset_' + toLoad)) {
+                ['gear', 'bracket', 'spring', 'bearing', 'sprocket', 'screw', 'connect', 'pulley', 'hinge',
+                    'planetary', 'geneva', 'rack', 'worm', 'cam', 'link', 'tslot', 'legoauto', 'legoman',
+                    'coupler', 'bevel', 'pillow', 'handwheel', 'standoff', 'cardan',
+                    'linbear', 'nema', 'leadscrew', 'chain', 'idler', 'collar', 'balljoint'
+                ].forEach(m => {
+                    const el = document.getElementById('mod-' + m);
+                    if (el) el.style.display = (m === currentModule) ? 'block' : 'none';
+                    const nav = document.getElementById('nav-' + m);
+                    if (nav) nav.className = (m === currentModule) ? 'module-btn active' : 'module-btn';
+                });
+                const preset = JSON.parse(localStorage.getItem('mechgen_preset_' + toLoad));
+                setModule(preset.module);
+                for(let id in preset.vals) {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.value = preset.vals[id];
+                        updateVal(id);
+                    }
+                }
+                generate();
+            }
+        }
+
+        // --- Engine Setup ---
+        const canvas = document.getElementById('canvas3d');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setSize(window.innerWidth - 400, window.innerHeight - 60);
+        renderer.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, (window.innerWidth - 400) / (window.innerHeight - 60), 0.1, 1000);
+        camera.position.set(50, 50, 50);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0xaaccff, 0.3);
+        fillLight.position.set(-50, 0, -50);
+        scene.add(fillLight);
+
+        // Blueprint Grid
+        const grid = new THREE.GridHelper(200, 20, 0x334155, 0x1e293b);
+        grid.position.y = -0.1;
+        scene.add(grid);
+
+        let activeMesh = null;
+        let activeShapes = []; // [{ shape, x, y, rot }] for 2D Exporting (DXF/SVG)
+        let baseMaterial = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7, roughness: 0.3 });
+        
+        // Kinematic state
+        let sunMesh = null;
+        let planetGroup = null;
+        let planets = [];
+        let ringMesh = null;
+        let carrierGroup = null;
+        let zS = 0, zP = 0, zR = 0;
+        
+        // Phase 4 Kinematics
+        let genevaWheel=null, genevaDriver=null;
+        let rackPinion=null, rackMesh=null;
+        let wormWheel=null, wormScrew=null;
+        let camMesh=null, camFollower=null;
+        let linkA=null, linkB=null, linkC=null;
+        
+        // Phase 6 LEGO
+        let legoMesh = null;
+        let legoOriginalMesh = null;
+        let legoBricks = []; // Array for raycasting or rebuilding
+        let manualBricks = []; // { x, y, z, size, color }
+        let manualGroup = null;
+        let legoPreviewField = null; // Ghost brick
+        let isLegoMode = false;
+
+        function updateMaterial() {
+            const type = document.getElementById('mat-type').value;
+            const c = document.getElementById('mat-color').value;
+            
+            if(type === 'solid') {
+                baseMaterial = new THREE.MeshStandardMaterial({ color: c, metalness: 0.7, roughness: 0.2 });
+            } else if (type === 'plastic') {
+                baseMaterial = new THREE.MeshStandardMaterial({ color: c, metalness: 0.1, roughness: 0.8 });
+            } else if (type === 'wire') {
+                baseMaterial = new THREE.MeshBasicMaterial({ color: c, wireframe: true });
+            }
+            if(activeMesh) {
+                // Handle groups (like bearing)
+                activeMesh.traverse((child) => {
+                    if (child.isMesh) child.material = baseMaterial;
+                });
+            }
+        }
+
+        function updateStats(object) {
+            if(!object) return;
+            const box = new THREE.Box3().setFromObject(object);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            
+            document.getElementById('stat-x').innerText = size.x.toFixed(2) + ' mm';
+            document.getElementById('stat-y').innerText = size.y.toFixed(2) + ' mm';
+            document.getElementById('stat-z').innerText = size.z.toFixed(2) + ' mm';
+            
+            let polys = 0;
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    polys += child.geometry.attributes.position.count / 3;
+                }
+            });
+            document.getElementById('stat-poly').innerText = Math.round(polys).toLocaleString();
+        }
+
+        // --- GENERATORS ---
+        function generate() {
+            if (activeMesh) { scene.remove(activeMesh); activeMesh = null; }
+            activeShapes = []; // Reset 2D tracking
+
+            if (currentModule === 'gear') genGear();
+            else if (currentModule === 'bracket') genBracket();
+            else if (currentModule === 'spring') genSpring();
+            else if (currentModule === 'bearing') genBearing();
+            else if (currentModule === 'sprocket') genSprocket();
+            else if (currentModule === 'screw') genScrew();
+            else if (currentModule === 'connect') genConnector();
+            else if (currentModule === 'pulley') genPulley();
+            else if (currentModule === 'hinge') genHinge();
+            else if (currentModule === 'planetary') genPlanetary();
+            else if (currentModule === 'geneva') genGeneva();
+            else if (currentModule === 'rack') genRackPinion();
+            else if (currentModule === 'worm') genWormGear();
+            else if (currentModule === 'cam') genCamFollower();
+            else if (currentModule === 'link') gen4BarLinkage();
+            else if (currentModule === 'tslot') genTSlot();
+            else if (currentModule === 'coupler') genCoupler();
+            else if (currentModule === 'bevel') genBevelGear();
+            else if (currentModule === 'pillow') genPillowBlock();
+            else if (currentModule === 'handwheel') genHandwheel();
+            else if (currentModule === 'standoff') genStandoff();
+            else if (currentModule === 'cardan') genCardan();
+            else if (currentModule === 'linbear') genLinBear();
+            else if (currentModule === 'nema') genNema();
+            else if (currentModule === 'leadscrew') genLeadScrew();
+            else if (currentModule === 'chain') genChain();
+            else if (currentModule === 'idler') genIdler();
+            else if (currentModule === 'collar') genCollar();
+            else if (currentModule === 'balljoint') genBallJoint();
+            else if (currentModule === 'legoauto') genLegoAuto();
+            else if (currentModule === 'legoman') genLegoManual();
+
+            if (activeMesh) {
+                scene.add(activeMesh);
+                updateMaterial(); // apply current material
+                updateStats(activeMesh);
+            }
+        }
+
+        // 1. Involute Spur Gear Approximation
+        function genGear() {
+            const z = getV('gear-teeth');
+            const m = getV('gear-module');
+            const thick = getV('gear-thick');
+            const bore = getV('gear-bore');
+            const lenMult = getV('gear-len');
+            const shapeMult = getV('gear-shape'); // 0=triangular, 1=trapezoidal, 2=rectangular
+
+            const pd = z * m;
+            const od = pd + (2 * m * lenMult);
+            const rootD = pd - (2.5 * m * lenMult);
+
+            const shape = new THREE.Shape();
+            const rOuter = od / 2;
+            const rRoot = rootD / 2;
+            
+            const steps = z * 4; 
+            const angleStep = (Math.PI * 2) / steps;
+
+            for(let i=0; i<steps; i++) {
+                const angle = i * angleStep;
+                const phase = i % 4;
+                let r = phase === 1 || phase === 2 ? rOuter : rRoot;
+                
+                if(i===0) {
+                    shape.moveTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                } else {
+                    if (phase === 1 || phase === 3) {
+                        const midAngle = angle - angleStep/2;
+                        // shapeMult modifies how steep the tooth wall is
+                        // 0 = steep/triangular (tip is narrow)
+                        // 2 = flat/rectangular (tip is wide)
+                        const lerpFactor = 0.5 + (shapeMult - 1) * 0.4; // 0.1 to 0.9
+                        const midR = rRoot + (rOuter - rRoot) * lerpFactor;
+                        shape.lineTo(Math.cos(midAngle)*midR, Math.sin(midAngle)*midR);
+                    }
+                    shape.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                }
+            }
+            shape.closePath();
+
+            // Add bore hole
+            if(bore > 0) {
+                const holePath = new THREE.Path();
+                holePath.absarc(0, 0, bore/2, 0, Math.PI * 2, false);
+                shape.holes.push(holePath);
+            }
+            
+            activeShapes.push({ shape, x: 0, y: 0, rot: 0 });
+
+            const extrudeSettings = { depth: thick, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.5, bevelThickness: 0.5 };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geometry.center();
+            geometry.rotateX(-Math.PI/2);
+            activeMesh = new THREE.Mesh(geometry, baseMaterial);
+            activeMesh.castShadow = true;
+        }
+
+        // Helper for Gear Shapes
+        function createGearShape(z, m, isRing=false) {
+            const pd = z * m;
+            const ad = m; 
+            const dd = 1.25 * m;
+            const rOuter = isRing ? (pd/2 - ad) : (pd/2 + ad);
+            const rRoot = isRing ? (pd/2 + dd) : (pd/2 - dd);
+            
+            const s = new THREE.Shape();
+            const steps = z * 4;
+            for(let i=0; i<steps; i++){
+                const ang = (i / steps) * Math.PI * 2;
+                const phase = i % 4;
+                let r = (phase === 1 || phase === 2) ? rOuter : rRoot;
+                if(i === 0) s.moveTo(Math.cos(ang)*r, Math.sin(ang)*r);
+                else s.lineTo(Math.cos(ang)*r, Math.sin(ang)*r);
+            }
+            s.closePath();
+            
+            if(!isRing) {
+                const bore = new THREE.Path();
+                bore.absarc(0,0, (z*m/10) + 2, 0, Math.PI*2, true);
+                s.holes.push(bore);
+            }
+            return s;
+        }
+
+        function createGear(z, m, thick, isRing=false, ox=0, oy=0, orot=0) {
+            const s = createGearShape(z, m, isRing);
+            activeShapes.push({ shape: s, x: ox, y: oy, rot: orot });
+            
+            let geo;
+            if(isRing) {
+                const ringOuter = new THREE.Shape();
+                const rO = (z*m/2) + m*4;
+                ringOuter.absarc(0,0, rO, 0, Math.PI*2, false);
+                ringOuter.holes.push(s);
+                geo = new THREE.ExtrudeGeometry(ringOuter, {depth: thick, bevelEnabled: false});
+            } else {
+                geo = new THREE.ExtrudeGeometry(s, {depth: thick, bevelEnabled: true, bevelSize:0.5, bevelThickness:0.5});
+            }
+            geo.center(); geo.rotateX(Math.PI/2);
+            const mesh = new THREE.Mesh(geo, baseMaterial);
+            mesh.castShadow = true;
+            return mesh;
+        }
+
+        // 2. Parametric Bracket
+        function genBracket() {
+            const type = document.getElementById('brk-type').value;
+            const w = getV('brk-w');
+            const h = getV('brk-h');
+            const d = getV('brk-d');
+            const t = getV('brk-t');
+            const holeD = getV('brk-hd');
+
+            const shape = new THREE.Shape();
+            if (type === 'L') {
+                shape.moveTo(0, 0);
+                shape.lineTo(w, 0);
+                shape.lineTo(w, t);
+                shape.lineTo(t, t);
+                shape.lineTo(t, h);
+                shape.lineTo(0, h);
+                shape.lineTo(0, 0);
+            } else if (type === 'U') {
+                shape.moveTo(0, 0);
+                shape.lineTo(w, 0);
+                shape.lineTo(w, h);
+                shape.lineTo(w-t, h);
+                shape.lineTo(w-t, t);
+                shape.lineTo(t, t);
+                shape.lineTo(t, h);
+                shape.lineTo(0, h);
+                shape.lineTo(0, 0);
+            }
+
+            const extrudeSettings = { depth: d, bevelEnabled: false };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geometry.center();
+
+            // Perform manual hole cutting using a boolean approach or just display without holes if CSG not present.
+            // Since standard Three.js doesn't have reliable CSG built-in, we use path holes where possible, 
+            // but for a 3D bracket we'd need to cut holes in the extruded face.
+            // Simplified approach for UI generation (visual only without holes in this early version, OR we can draw holes on the 2D plane)
+            // Wait, we can add holes to the 2D profile! This means holes will run along the Z axis (depth).
+            // Let's add holes to the main face if it's large enough.
+            if(holeD > 0) {
+                const hRadius = holeD / 2;
+                // Add a hole in the bottom leg of the L
+                if(w > t*3) {
+                    const hole1 = new THREE.Path();
+                    hole1.absarc(w/2, t/2, Math.min(hRadius, (t-1)/2), 0, Math.PI*2, false);
+                    shape.holes.push(hole1);
+                }
+                const geometryWithHoles = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                geometryWithHoles.center();
+                activeMesh = new THREE.Mesh(geometryWithHoles, baseMaterial);
+            } else {
+                activeMesh = new THREE.Mesh(geometry, baseMaterial);
+            }
+            
+            activeShapes.push({ shape, x: 0, y: 0, rot: 0 });
+            activeMesh.castShadow = true;
+        }
+
+        // 3. Helical Spring
+        function genSpring() {
+            const turns = getV('spr-turns');
+            const od = getV('spr-od');
+            const wd = getV('spr-wd');
+            const len = getV('spr-l');
+
+            const meanRadius = (od - wd)/2;
+            const pitch = len / turns;
+
+            class SpringCurve extends THREE.Curve {
+                getPoint(t, optionalTarget = new THREE.Vector3()) {
+                    const angle = t * turns * Math.PI * 2;
+                    const x = meanRadius * Math.cos(angle);
+                    const z = meanRadius * Math.sin(angle);
+                    const y = t * len - len/2;
+                    return optionalTarget.set(x, y, z);
+                }
+            }
+
+            const path = new SpringCurve();
+            const tubularSegments = Math.round(turns * 32);
+            const radialSegments = 16;
+            const geometry = new THREE.TubeGeometry(path, tubularSegments, wd/2, radialSegments, false);
+            activeMesh = new THREE.Mesh(geometry, baseMaterial);
+            activeMesh.castShadow = true;
+        }
+
+        // 4. Print-in-Place Bearing
+        function genBearing() {
+            const id = getV('brg-id');
+            const od = getV('brg-od');
+            const w = getV('brg-w');
+            const tol = getV('brg-tol');
+
+            const ballDiameter = (od - id)/2 - tol*2;
+            if(ballDiameter <= 1) {
+                // Invalid state, geometry overlaps
+                return;
+            }
+
+            activeMesh = new THREE.Group();
+
+            // Inner Ring
+            const innerRingGeo = new THREE.CylinderGeometry(id/2 + ballDiameter + tol, id/2, w, 32);
+            const innerHole = new THREE.CylinderGeometry(id/2, id/2, w+1, 32); // boolean subtraction typically needed
+            // To do this natively without CSG, we use Shape + Extrude
+            const innerShape = new THREE.Shape();
+            innerShape.absarc(0,0, id/2 + ballDiameter/2 - tol, 0, Math.PI*2, false);
+            const boreHole = new THREE.Path();
+            boreHole.absarc(0,0, id/2, 0, Math.PI*2, false);
+            innerShape.holes.push(boreHole);
+
+            const innerRingM = new THREE.ExtrudeGeometry(innerShape, { depth: w, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: 0.5, bevelThickness: 0.5 });
+            innerRingM.center(); innerRingM.rotateX(Math.PI/2);
+            const innerMesh = new THREE.Mesh(innerRingM, baseMaterial);
+            if (isExploded) innerMesh.position.y = w * 1.5;
+            
+            // Outer Ring
+            const outerShape = new THREE.Shape();
+            outerShape.absarc(0,0, od/2, 0, Math.PI*2, false);
+            const outerHole = new THREE.Path();
+            outerHole.absarc(0,0, id/2 + ballDiameter/2 + tol, 0, Math.PI*2, false);
+            outerShape.holes.push(outerHole);
+            
+            activeShapes.push({ shape: innerShape, x: 0, y: 0, rot: 0 }, { shape: outerShape, x: 0, y: 0, rot: 0 });
+            
+            const outerRingM = new THREE.ExtrudeGeometry(outerShape, { depth: w, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: 0.5, bevelThickness: 0.5 });
+            outerRingM.center(); outerRingM.rotateX(Math.PI/2);
+            const outerMesh = new THREE.Mesh(outerRingM, baseMaterial);
+            if (isExploded) outerMesh.position.y = -w * 1.5;
+
+            // Balls
+            const ballGeo = new THREE.SphereGeometry(ballDiameter/2, 16, 16);
+            const ballCount = Math.floor(Math.PI * (id/2 + od/2) / ballDiameter) - 1;
+            const pitchRadius = (id/2 + od/2)/2 * (isExploded ? 1.4 : 1);
+            
+            for(let i=0; i<ballCount; i++) {
+                const angle = (i/ballCount) * Math.PI*2;
+                const ball = new THREE.Mesh(ballGeo, baseMaterial);
+                ball.position.set(Math.cos(angle)*pitchRadius, 0, Math.sin(angle)*pitchRadius);
+                activeMesh.add(ball);
+            }
+
+            activeMesh.add(innerMesh);
+            activeMesh.add(outerMesh);
+        }
+
+        // 5. Sprocket
+        function genSprocket() {
+            const t = getV('spk-t');
+            const p = getV('spk-p');
+            const tk = getV('spk-tk');
+            const lenMult = getV('spk-len');
+            const shapeMult = getV('spk-shape');
+            
+            const pitchRadius = (p / 2) / Math.sin(Math.PI / t);
+            const outerRadius = pitchRadius + (p*0.3 * lenMult);
+            const rootRadius = pitchRadius - (p*0.3 * lenMult);
+            
+            const shape = new THREE.Shape();
+            const steps = t * 2;
+            const stepAng = Math.PI*2 / steps;
+            
+            for(let i=0; i<steps; i++) {
+                const ang = i * stepAng;
+                const r = (i%2 === 0) ? outerRadius : rootRadius;
+                if(i===0) shape.moveTo(Math.cos(ang)*r, Math.sin(ang)*r);
+                else {
+                    const prevR = (i%2===0) ? rootRadius : outerRadius;
+                    const prevAng = ang - stepAng;
+                    
+                    // shapeMult modifies the control point curvature
+                    const cpAng = prevAng + stepAng/2;
+                    // 0 = straight lines, 1 = smooth curve, 2 = bulbous curve
+                    const lerpFactor = 0.5 + (shapeMult - 1) * 0.4;
+                    const cpR = rootRadius + (outerRadius - rootRadius) * lerpFactor;
+                    
+                    shape.quadraticCurveTo(Math.cos(cpAng)*cpR, Math.sin(cpAng)*cpR, Math.cos(ang)*r, Math.sin(ang)*r);
+                }
+            }
+            shape.closePath();
+            
+            const bore = new THREE.Path();
+            bore.absarc(0,0, pitchRadius*0.3, 0, Math.PI*2, false);
+            shape.holes.push(bore);
+
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: tk, bevelEnabled: true, bevelSize: 0.5, bevelThickness: 0.5});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+            activeMesh.castShadow = true;
+            activeShapes.push({ shape, x: 0, y: 0, rot: 0 });
+        }
+
+        // 6. Screw & Bolt
+        function genScrew() {
+            const type = document.getElementById('scw-type').value;
+            const dia = getV('scw-d');
+            const len = getV('scw-l');
+            const hw = getV('scw-hw') || (dia*0.8);
+            const ht = getV('scw-ht') || (dia*0.6);
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+            
+            if (type === 'bolt') {
+                const boltHeadShape = new THREE.Shape();
+                for(let i=0; i<6; i++) {
+                    const ang = i * Math.PI/3;
+                    if(i===0) boltHeadShape.moveTo(Math.cos(ang)*hw, Math.sin(ang)*hw);
+                    else boltHeadShape.lineTo(Math.cos(ang)*hw, Math.sin(ang)*hw);
+                }
+                boltHeadShape.closePath();
+                activeShapes.push({ shape: boltHeadShape, x: 0, y: 0, rot: 0 });
+
+                const headGeo = new THREE.CylinderGeometry(hw, hw, ht, 6);
+                headGeo.translate(0, len/2 + ht/2, 0);
+                const head = new THREE.Mesh(headGeo, baseMaterial);
+                head.castShadow = true;
+                if (isExploded) head.position.y += ht * 2;
+                
+                const shaftGeo = new THREE.CylinderGeometry(dia/2, dia/2, len, 32);
+                const shaft = new THREE.Mesh(shaftGeo, baseMaterial);
+                shaft.castShadow = true;
+                
+                activeMesh.add(head);
+                activeMesh.add(shaft);
+            } else {
+                const nutShape = new THREE.Shape();
+                for(let i=0; i<6; i++) {
+                    const ang = i * Math.PI/3;
+                    if(i===0) nutShape.moveTo(Math.cos(ang)*hw, Math.sin(ang)*hw);
+                    else nutShape.lineTo(Math.cos(ang)*hw, Math.sin(ang)*hw);
+                }
+                nutShape.closePath();
+                const bore = new THREE.Path();
+                bore.absarc(0,0, dia/2, 0, Math.PI*2, false);
+                nutShape.holes.push(bore);
+                
+                const geo = new THREE.ExtrudeGeometry(nutShape, {depth: ht, bevelEnabled: true, bevelSize: 0.3, bevelThickness: 0.3});
+                geo.center(); geo.rotateX(Math.PI/2);
+                const nut = new THREE.Mesh(geo, baseMaterial);
+                nut.castShadow = true;
+                if (isExploded) nut.position.y = ht * 3;
+                activeMesh.add(nut);
+                activeShapes.push({ shape: nutShape, x: 0, y: 0, rot: 0 });
+            }
+        }
+
+        // 7. Connector
+        function genConnector() {
+            const type = document.getElementById('con-type').value;
+            const w = getV('con-s');
+            const tol = getV('con-t');
+            const len = getV('con-l') || (w*2);
+            const h = getV('con-h') || w;
+            
+            const shape = new THREE.Shape();
+            
+            if (type === 'dovetail') {
+                shape.moveTo(-w/2, 0);
+                shape.lineTo(w/2, 0);
+                shape.lineTo(w/2 + w*0.3, h);
+                shape.lineTo(-w/2 - w*0.3, h);
+                shape.closePath();
+            } else {
+                shape.moveTo(-w/2, 0);
+                shape.lineTo(w/2, 0);
+                shape.lineTo(w/2, h);
+                shape.lineTo(w/2 + 2, h + 2);
+                shape.lineTo(w/2, h + 4);
+                shape.lineTo(-w/2, h + 4);
+                shape.lineTo(-w/2 - 2, h + 2);
+                shape.lineTo(-w/2, h);
+                shape.closePath();
+            }
+            
+            activeShapes.push({ shape, x: 0, y: 0, rot: 0 });
+            
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: len, bevelEnabled: false});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Group();
+            
+            const part1 = new THREE.Mesh(geo, baseMaterial);
+            part1.castShadow = true;
+            if (isExploded) part1.position.z = -len;
+            activeMesh.add(part1);
+            
+            if (isExploded) {
+                const part2 = new THREE.Mesh(geo, baseMaterial);
+                part2.castShadow = true;
+                part2.position.z = len;
+                part2.rotation.y = Math.PI;
+                activeMesh.add(part2);
+            }
+        }
+
+        // 8. GT2 Timing Pulley
+        function genPulley() {
+            const t = getV('pul-t');
+            const w = getV('pul-w');
+            const bore = getV('pul-b');
+            const pitch = 2.0; 
+            const pitchRadius = (t * pitch) / (2 * Math.PI);
+            const outerRadius = pitchRadius - 0.254;
+            const fd = getV('pul-fd') !== null && !isNaN(getV('pul-fd')) ? getV('pul-fd') : 1.5;
+            const ft = getV('pul-ft') !== null && !isNaN(getV('pul-ft')) ? getV('pul-ft') : 1.0;
+            const flangeRadius = pitchRadius + fd;
+            activeMesh = new THREE.Group();
+            
+            const shape = new THREE.Shape();
+            const steps = t;
+            const stepAng = Math.PI*2 / steps;
+            const toothDepth = 0.75;
+            for(let i=0; i<steps; i++) {
+                const ang = i * stepAng;
+                shape.lineTo(Math.cos(ang - stepAng/4)*outerRadius, Math.sin(ang - stepAng/4)*outerRadius);
+                shape.quadraticCurveTo(
+                    Math.cos(ang)*(outerRadius - toothDepth), Math.sin(ang)*(outerRadius - toothDepth),
+                    Math.cos(ang + stepAng/4)*outerRadius, Math.sin(ang + stepAng/4)*outerRadius
+                );
+            }
+            shape.closePath();
+            
+            const borePath = new THREE.Path();
+            borePath.absarc(0,0, bore/2, 0, Math.PI*2, false);
+            shape.holes.push(borePath);
+            
+            const flShape = new THREE.Shape();
+            flShape.absarc(0,0, flangeRadius, 0, Math.PI*2, false);
+            flShape.holes.push(borePath);
+            
+            activeShapes.push({ shape, x: 0, y: 0, rot: 0 }, { shape: flShape, x: 0, y: 0, rot: 0 });
+            
+            const pGeo = new THREE.ExtrudeGeometry(shape, {depth: w, bevelEnabled: false});
+            pGeo.center(); pGeo.rotateX(Math.PI/2);
+            const pulleyMesh = new THREE.Mesh(pGeo, baseMaterial);
+            pulleyMesh.castShadow = true;
+            activeMesh.add(pulleyMesh);
+            
+            const flGeo = new THREE.ExtrudeGeometry(flShape, {depth: ft, bevelEnabled:true, bevelSize:0.2, bevelThickness:0.2});
+            flGeo.center(); flGeo.rotateX(Math.PI/2);
+            const f1 = new THREE.Mesh(flGeo, baseMaterial);
+            f1.position.y = w/2 + ft/2; f1.castShadow=true;
+            const f2 = new THREE.Mesh(flGeo, baseMaterial);
+            f2.position.y = -w/2 - ft/2; f2.castShadow=true;
+            activeMesh.add(f1); activeMesh.add(f2);
+        }
+
+        // 9. Print-in-Place Hinge
+        function genHinge() {
+            const l = getV('hin-l');
+            const w = getV('hin-w');
+            const c = getV('hin-c');
+            
+            activeMesh = new THREE.Group();
+            
+            const pinRadius = 3;
+            const outerRadius = 6;
+            
+            const lShape = new THREE.Shape();
+            lShape.moveTo(-outerRadius, -outerRadius);
+            lShape.lineTo(-w/2, -outerRadius);
+            lShape.lineTo(-w/2, outerRadius);
+            lShape.lineTo(-outerRadius, outerRadius);
+            lShape.absarc(0,0, outerRadius, Math.PI/2, Math.PI*1.5, false);
+            lShape.closePath();
+            
+            const lhole = new THREE.Path(); lhole.absarc(0,0, pinRadius + c, 0, Math.PI*2, false);
+            lShape.holes.push(lhole);
+            
+            const lGeo = new THREE.ExtrudeGeometry(lShape, {depth: l/4, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            lGeo.center(); lGeo.rotateX(Math.PI/2);
+            
+            const lw1 = new THREE.Mesh(lGeo, baseMaterial);
+            lw1.position.y = l/2 - l/8; lw1.castShadow=true;
+            const lw2 = new THREE.Mesh(lGeo, baseMaterial);
+            lw2.position.y = -l/2 + l/8; lw2.castShadow=true;
+            
+            if (isExploded) {
+                lw1.position.x = -w/2;
+                lw2.position.x = -w/2;
+            }
+            
+            activeMesh.add(lw1); activeMesh.add(lw2);
+            
+            const rShape = new THREE.Shape();
+            rShape.moveTo(outerRadius, outerRadius);
+            rShape.lineTo(w/2, outerRadius);
+            rShape.lineTo(w/2, -outerRadius);
+            rShape.lineTo(outerRadius, -outerRadius);
+            rShape.absarc(0,0, outerRadius, -Math.PI/2, Math.PI/2, false);
+            rShape.closePath();
+            
+            const rhole = new THREE.Path(); rhole.absarc(0,0, pinRadius+c, 0, Math.PI*2, false);
+            rShape.holes.push(rhole);
+            
+            activeShapes.push({ shape: lShape, x: (isExploded ? -w/2 : 0), y: 0, rot: 0 }, { shape: rShape, x: (isExploded ? w/2 : 0), y: 0, rot: 0 });
+            
+            const rGeo = new THREE.ExtrudeGeometry(rShape, {depth: l/2 - c*2, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            rGeo.center(); rGeo.rotateX(Math.PI/2);
+            const rw = new THREE.Mesh(rGeo, baseMaterial);
+            rw.castShadow=true;
+            if (isExploded) rw.position.x = w/2;
+            activeMesh.add(rw);
+            
+            const pinGeo = new THREE.CylinderGeometry(pinRadius, pinRadius, l - c*2, 16);
+            const pinMesh = new THREE.Mesh(pinGeo, baseMaterial);
+            pinMesh.castShadow=true;
+            if (isExploded) pinMesh.position.y = l;
+            activeMesh.add(pinMesh);
+        }
+
+        // 10. Planetary Gearset
+        function genPlanetary() {
+            const m = getV('plan-m');
+            const zs = getV('plan-zs');
+            const zp = getV('plan-zp');
+            const n = getV('plan-n');
+            const z = getV('plan-z');
+            const zr = zs + 2 * zp;
+            zS = zs; zP = zp; zR = zr;
+            activeMesh = new THREE.Group();
+            planets = [];
+            activeShapes = [];
+
+            // SUN
+            sunMesh = createGear(zs, m, z); 
+            if (isExploded) sunMesh.position.y = z * 2;
+            activeMesh.add(sunMesh);
+
+            carrierGroup = new THREE.Group();
+            const orbitR = (zs + zp) * m / 2 * (isExploded ? 1.5 : 1);
+            for(let i=0; i<n; i++) {
+                const ang = (i / n) * Math.PI * 2;
+                const px = Math.cos(ang) * orbitR;
+                const py = Math.sin(ang) * orbitR;
+                const p = createGear(zp, m, z, false, px, py, 0); 
+                p.position.set(px, 0, py);
+                planets.push(p); carrierGroup.add(p);
+            }
+            activeMesh.add(carrierGroup);
+            ringMesh = createGear(zr, m, z, true); 
+            if (isExploded) ringMesh.position.y = -z * 2;
+            activeMesh.add(ringMesh);
+        }
+
+        // 9. Geneva Drive
+        function genGeneva() {
+            const n = getV('gen-n');
+            const m = getV('gen-m');
+            const thick = getV('gen-z');
+            const rPin = getV('gen-pr');
+            const rWheel = n * m;
+            const dist = Math.sqrt(rWheel**2 + (rWheel * Math.sin(Math.PI/n))**2);
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+
+            // 1. Slotted Wheel
+            const wShape = new THREE.Shape();
+            const res = 100;
+            for(let i=0; i<=res; i++) {
+                const ang = (i/res) * Math.PI*2;
+                wShape.lineTo(Math.cos(ang)*rWheel, Math.sin(ang)*rWheel);
+            }
+            wShape.closePath();
+            
+            for(let i=0; i<n; i++) {
+                const ang = (i/n) * Math.PI*2;
+                const hPath = new THREE.Path();
+                const sw = rPin * 2.2;
+                hPath.moveTo(Math.cos(ang-0.1)*rWheel, Math.sin(ang-0.1)*rWheel);
+                hPath.lineTo(Math.cos(ang)*rWheel*0.5, Math.sin(ang)*rWheel*0.5);
+                hPath.lineTo(Math.cos(ang+0.1)*rWheel, Math.sin(ang+0.1)*rWheel);
+                wShape.holes.push(hPath);
+            }
+            
+            const wGeo = new THREE.ExtrudeGeometry(wShape, {depth: thick, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            wGeo.center(); wGeo.rotateX(Math.PI/2);
+            const wMesh = new THREE.Mesh(wGeo, baseMaterial);
+            wMesh.position.x = dist + (isExploded ? rWheel : 0);
+            activeMesh.add(wMesh);
+            activeShapes.push({ shape: wShape, x: wMesh.position.x, y: 0, rot: 0 });
+            genevaWheel = wMesh;
+
+            // 2. Driver
+            const dShape = new THREE.Shape();
+            dShape.absarc(0,0, rPin*2.5, 0, Math.PI*2, false);
+            const dGeo = new THREE.ExtrudeGeometry(dShape, {depth: thick, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            dGeo.center(); dGeo.rotateX(Math.PI/2);
+            const dMesh = new THREE.Mesh(dGeo, baseMaterial);
+            dMesh.position.x = (isExploded ? -rWheel : 0);
+            dMesh.position.y = thick;
+            activeMesh.add(dMesh);
+            activeShapes.push({ shape: dShape, x: dMesh.position.x, y: 0, rot: 0 });
+            
+            const pGeo = new THREE.CylinderGeometry(rPin, rPin, thick*2, 16);
+            const pin = new THREE.Mesh(pGeo, baseMaterial);
+            pin.position.set(rPin*1.8, 0, 0);
+            dMesh.add(pin);
+            genevaDriver = dMesh;
+        }
+
+        // 10. Rack & Pinion
+        function genRackPinion() {
+            const m = getV('rack-m');
+            const z = getV('rack-z');
+            const l = getV('rack-l');
+            const thick = getV('rack-thick');
+            const rw = getV('rack-w');
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+
+            const pShape = createGearShape(z, m);
+            const pGeo = new THREE.ExtrudeGeometry(pShape, {depth: thick, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            pGeo.center(); pGeo.rotateX(Math.PI/2);
+            const pMesh = new THREE.Mesh(pGeo, baseMaterial);
+            pMesh.position.y = (z * m / 2) + (isExploded ? thick * 4 : 0);
+            activeMesh.add(pMesh);
+            activeShapes.push({ shape: pShape, x: 0, y: pMesh.position.y, rot: 0 });
+            rackPinion = pMesh;
+
+            const rShape = new THREE.Shape();
+            const pitch = Math.PI * m;
+            const teeth = Math.floor(l / pitch);
+            rShape.moveTo(-l/2, 0);
+            for(let i=0; i<teeth; i++) {
+                const x = -l/2 + i*pitch;
+                rShape.lineTo(x + pitch*0.25, 0);
+                rShape.lineTo(x + pitch*0.35, -m*2);
+                rShape.lineTo(x + pitch*0.65, -m*2);
+                rShape.lineTo(x + pitch*0.75, 0);
+            }
+            rShape.lineTo(l/2, 0);
+            rShape.lineTo(l/2, rw);
+            rShape.lineTo(-l/2, rw);
+            rShape.closePath();
+            
+            const rGeo = new THREE.ExtrudeGeometry(rShape, {depth: thick, bevelEnabled:false});
+            rGeo.center(); rGeo.rotateX(Math.PI/2);
+            const rMesh = new THREE.Mesh(rGeo, baseMaterial);
+            activeMesh.add(rMesh);
+            activeShapes.push({ shape: rShape, x: 0, y: 0, rot: 0 });
+            rackMesh = rMesh;
+        }
+
+        // 11. Worm Gear
+        function genWormGear() {
+            const m = getV('worm-m');
+            const z = getV('worm-z');
+            const thick = getV('worm-thick');
+            const wLen = getV('worm-len');
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+
+            const wShape = createGearShape(z, m);
+            const wGeo = new THREE.ExtrudeGeometry(wShape, {depth: thick, bevelEnabled:true, bevelSize:1, bevelThickness:1});
+            wGeo.center(); wGeo.rotateX(Math.PI/2);
+            const wMesh = new THREE.Mesh(wGeo, baseMaterial);
+            if (isExploded) wMesh.position.y = -thick * 2;
+            activeMesh.add(wMesh);
+            activeShapes.push({ shape: wShape, x: 0, y: 0, rot: 0 });
+            wormWheel = wMesh;
+
+            const rWorm = m * 4;
+            // Realistic helical worm thread using TubeGeometry or a helix loop
+            class WormHelix extends THREE.Curve {
+                getPoint(t, target = new THREE.Vector3()) {
+                    const angle = t * 6 * Math.PI; // 3 turns
+                    const z = (t - 0.5) * wLen;
+                    return target.set(Math.cos(angle) * rWorm, z, Math.sin(angle) * rWorm);
+                }
+            }
+            const threadGeo = new THREE.TubeGeometry(new WormHelix(), 64, m*0.6, 12, false);
+            const screw = new THREE.Mesh(threadGeo, baseMaterial);
+            screw.rotation.z = Math.PI/2;
+            screw.position.z = (z * m / 2) + rWorm + (isExploded ? thick * 3 : 0);
+            activeMesh.add(screw);
+            wormScrew = screw;
+        }
+
+        // 12. Cam & Follower
+        function genCamFollower() {
+            const type = document.getElementById('cam-type').value;
+            const br = getV('cam-r');
+            const lift = getV('cam-l');
+            const thick = 5;
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+
+            const cShape = new THREE.Shape();
+            const res = 120;
+            for(let i=0; i<=res; i++) {
+                const ang = (i/res) * Math.PI*2;
+                let r = br;
+                if(type === 'snail') {
+                    r = br + (ang / (Math.PI*2)) * lift;
+                } else if(type === 'heart') {
+                    r = br + Math.abs(Math.sin(ang)) * lift;
+                } else if(type === 'eccentric') {
+                    r = br + Math.cos(ang) * lift/2;
+                }
+                if(i===0) cShape.moveTo(Math.cos(ang)*r, Math.sin(ang)*r);
+                else cShape.lineTo(Math.cos(ang)*r, Math.sin(ang)*r);
+            }
+            cShape.closePath();
+            
+            const cGeo = new THREE.ExtrudeGeometry(cShape, {depth: thick, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            cGeo.center(); cGeo.rotateX(Math.PI/2);
+            const cMesh = new THREE.Mesh(cGeo, baseMaterial);
+            activeMesh.add(cMesh);
+            activeShapes.push({ shape: cShape, x:0, y:0, rot:0 });
+            camMesh = cMesh;
+
+            // Follower
+            const fd = getV('cam-fd');
+            const fGeo = new THREE.CylinderGeometry(fd/2, fd/2, 60, 16);
+            const follower = new THREE.Mesh(fGeo, baseMaterial);
+            follower.position.z = -30 - br; 
+            activeMesh.add(follower);
+            camFollower = follower;
+        }
+
+        // 13. 4-Bar Linkage
+        function gen4BarLinkage() {
+            const a = getV('link-a');
+            const b = getV('link-b');
+            const c = getV('link-c');
+            const d = getV('link-d');
+            const thick = getV('link-thick');
+            
+            activeMesh = new THREE.Group();
+            activeShapes = [];
+
+            // Ground
+            const gGeo = new THREE.BoxGeometry(d, 2, 2);
+            const ground = new THREE.Mesh(gGeo, baseMaterial);
+            ground.position.x = d/2;
+            activeMesh.add(ground);
+
+            function createBar(len, name, ox=0, oy=0, orot=0) {
+                const s = new THREE.Shape();
+                const bw = 6;
+                s.absarc(0,0, bw/2 + 1, 0, Math.PI*2);
+                s.absarc(len,0, bw/2 + 1, 0, Math.PI*2);
+                s.moveTo(0, bw/2); s.lineTo(len, bw/2); s.lineTo(len, -bw/2); s.lineTo(0, -bw/2); s.closePath();
+                activeShapes.push({ shape: s, x: ox, y: oy, rot: orot });
+                
+                const barGeo = new THREE.ExtrudeGeometry(s, {depth: thick, bevelEnabled: false});
+                const bar = new THREE.Mesh(barGeo, baseMaterial);
+                bar.position.set(ox, 0, oy);
+                bar.rotation.y = orot;
+                return bar;
+            }
+
+            linkA = createBar(a, 'crank', 0, 0, 0); 
+            if (isExploded) linkA.position.y = thick * 2;
+            activeMesh.add(linkA);
+            
+            linkB = createBar(b, 'coupler', a, 0, 0); 
+            if (isExploded) linkB.position.y = -thick * 2;
+            activeMesh.add(linkB);
+            
+            linkC = createBar(c, 'rocker', d, 0, 0); 
+            activeMesh.add(linkC);
+        }
+
+        // 14. T-Slot Profile
+        function genTSlot() {
+            let size = getV('tslot-s');
+            if (isNaN(size)) {
+                const sel = document.getElementById('tslot-size');
+                size = sel ? parseInt(sel.value) : 20;
+            }
+            const l = getV('tslot-l');
+            const tw = getV('tslot-w');
+            const th = getV('tslot-h');
+            const s = new THREE.Shape();
+            
+            const half = size/2;
+            s.moveTo(-half, -half); s.lineTo(half, -half); s.lineTo(half, half); s.lineTo(-half, half); s.closePath();
+            
+            const sw = size * 0.3 * (tw/2);
+            const sd = size * 0.2;
+            
+            function addSlot(ox, oy, rot) {
+                const pts = [ {x:-sw/3, y:0}, {x:sw/3, y:0}, {x:sw/3, y:sd}, {x:-sw/3, y:sd} ];
+                const hole = new THREE.Path();
+                pts.forEach((pt, i) => {
+                    const rx = pt.x * Math.cos(rot) - pt.y * Math.sin(rot) + ox;
+                    const ry = pt.x * Math.sin(rot) + pt.y * Math.cos(rot) + oy;
+                    if(i===0) hole.moveTo(rx, ry); else hole.lineTo(rx, ry);
+                });
+                hole.closePath();
+                s.holes.push(hole);
+            }
+            
+            addSlot(0, half, 0); addSlot(0, -half, Math.PI); addSlot(half, 0, Math.PI/2); addSlot(-half, 0, -Math.PI/2);
+            
+            const bore = new THREE.Path(); bore.absarc(0,0, th/2, 0, Math.PI*2);
+            s.holes.push(bore);
+
+            activeShapes = [{ shape: s, x:0, y:0, rot:0 }];
+            const geo = new THREE.ExtrudeGeometry(s, {depth: l, bevelEnabled: false});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+        }
+
+        // 15. Shaft Coupler
+        function genCoupler() {
+            const type = document.getElementById('coup-type').value;
+            const len = getV('coup-l');
+            const od = getV('coup-od');
+            const b1 = getV('coup-b1');
+            const b2 = getV('coup-b2');
+
+            activeMesh = new THREE.Group();
+            
+            const shape1 = new THREE.Shape();
+            shape1.absarc(0,0, od/2, 0, Math.PI*2, false);
+            const hole1 = new THREE.Path();
+            hole1.absarc(0,0, b1/2, 0, Math.PI*2, true);
+            shape1.holes.push(hole1);
+
+            const geo1 = new THREE.ExtrudeGeometry(shape1, {depth: len/2, bevelEnabled: false});
+            geo1.center(); geo1.rotateX(Math.PI/2);
+            const mesh1 = new THREE.Mesh(geo1, baseMaterial);
+            mesh1.position.y = len/4 + (isExploded ? len/2 : 0);
+            mesh1.castShadow = true;
+            
+            const shape2 = new THREE.Shape();
+            shape2.absarc(0,0, od/2, 0, Math.PI*2, false);
+            const hole2 = new THREE.Path();
+            hole2.absarc(0,0, b2/2, 0, Math.PI*2, true);
+            shape2.holes.push(hole2);
+
+            const geo2 = new THREE.ExtrudeGeometry(shape2, {depth: len/2, bevelEnabled: false});
+            geo2.center(); geo2.rotateX(Math.PI/2);
+            const mesh2 = new THREE.Mesh(geo2, baseMaterial);
+            mesh2.position.y = -len/4 - (isExploded ? len/2 : 0);
+            mesh2.castShadow = true;
+
+            activeMesh.add(mesh1);
+            activeMesh.add(mesh2);
+            
+            if(type === 'flex') {
+                const slitGeo = new THREE.BoxGeometry(od+2, len*0.6, 1.5);
+                const slitMat = new THREE.MeshBasicMaterial({color: 0x1e293b});
+                const slit1 = new THREE.Mesh(slitGeo, slitMat);
+                const slit2 = new THREE.Mesh(slitGeo, slitMat);
+                slit2.rotation.y = Math.PI/2;
+                activeMesh.add(slit1);
+                activeMesh.add(slit2);
+            }
+        }
+
+        // 16. Bevel Gear (Straight)
+        function genBevelGear() {
+            const z = getV('bevg-z');
+            const m = getV('bevg-m');
+            const fw = getV('bevg-fw');
+            const ang = getV('bevg-ang') * (Math.PI/180);
+            const bore = getV('bevg-b');
+
+            const pd = z * m;
+            const rOuter = pd/2;
+            
+            const topScale = Math.max(0.1, 1 - Math.tan(ang)*(fw/rOuter));
+            
+            const shape = createGearShape(z, m, false);
+            
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: fw, bevelEnabled:true, bevelSegments:2, bevelSize:1, bevelThickness:fw*0.4});
+            
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+            activeMesh.castShadow = true;
+            
+            const boreGeo = new THREE.CylinderGeometry(bore/2, bore/2, fw+4, 16);
+            const boreMesh = new THREE.Mesh(boreGeo, new THREE.MeshBasicMaterial({color: 0x1e293b}));
+            if (isExploded) boreMesh.position.y = fw * 2;
+            activeMesh.add(boreMesh);
+        }
+
+        // 17. Pillow Block Mount
+        function genPillowBlock() {
+            const od = getV('pil-od');
+            const center = getV('pil-ch');
+            const bw = getV('pil-bw');
+            const t = getV('pil-t');
+            const hd = getV('pil-hd');
+            
+            const s = new THREE.Shape();
+            const topH = center + od/2 + t;
+            
+            s.moveTo(-bw/2, 0);
+            s.lineTo(-bw/2, t);
+            s.lineTo(-od/2 - t, t);
+            s.lineTo(-od/2 - t, center);
+            s.absarc(0, center, od/2 + t, Math.PI, 0, false);
+            s.lineTo(od/2 + t, t);
+            s.lineTo(bw/2, t);
+            s.lineTo(bw/2, 0);
+            s.closePath();
+            
+            const bore = new THREE.Path();
+            bore.absarc(0, center, od/2, 0, Math.PI*2, false);
+            s.holes.push(bore);
+            
+            const m1 = new THREE.Path(); m1.absarc(-bw/2 + hd + 2, t/2, hd/2, 0, Math.PI*2, false);
+            const m2 = new THREE.Path(); m2.absarc(bw/2 - hd - 2, t/2, hd/2, 0, Math.PI*2, false);
+            s.holes.push(m1); s.holes.push(m2);
+            
+            const geo = new THREE.ExtrudeGeometry(s, {depth: t*1.5, bevelEnabled: true, bevelSize:0.5, bevelThickness:0.5});
+            geo.center(); geo.rotateX(Math.PI/2);
+            
+            const block = new THREE.Mesh(geo, baseMaterial);
+            block.castShadow = true;
+            if (isExploded) block.position.y = -center/2;
+            
+            activeMesh = new THREE.Group();
+            activeMesh.add(block);
+            
+            // Add a mock bearing for exploded view
+            const brgGeo = new THREE.CylinderGeometry(od/2, od/2, t*2, 32);
+            brgGeo.rotateZ(Math.PI/2);
+            const brg = new THREE.Mesh(brgGeo, new THREE.MeshStandardMaterial({color: 0x94a3b8, metalness: 1, roughness: 0.1}));
+            if (isExploded) brg.position.y = center/2;
+            activeMesh.add(brg);
+            
+            activeShapes = [{ shape: s, x:0, y:0, rot:0 }];
+        }
+
+        // 18. Handwheel
+        function genHandwheel() {
+            const od = getV('hw-od');
+            const rt = getV('hw-rt');
+            const sc = getV('hw-sc');
+            const hl = getV('hw-hl');
+            const bore = getV('hw-b');
+            
+            activeMesh = new THREE.Group();
+            
+            // Rim
+            const rinGeo = new THREE.TorusGeometry((od-rt)/2, rt/2, 16, 64);
+            rinGeo.rotateX(Math.PI/2);
+            const rim = new THREE.Mesh(rinGeo, baseMaterial);
+            activeMesh.add(rim);
+            
+            // Boss (Center)
+            const bossR = bore/2 + 6;
+            const bossGeo = new THREE.CylinderGeometry(bossR, bossR, rt*1.5, 32);
+            const boss = new THREE.Mesh(bossGeo, baseMaterial);
+            
+            // Bore
+            const boreGeo = new THREE.CylinderGeometry(bore/2, bore/2, rt*1.6, 16);
+            const boreMesh = new THREE.Mesh(boreGeo, new THREE.MeshBasicMaterial({color:0x1e293b}));
+            activeMesh.add(boss);
+            activeMesh.add(boreMesh);
+            
+            // Spokes
+            const spokeLen = (od-rt)/2 - bossR;
+            if(spokeLen > 0) {
+                const spokeGeo = new THREE.CylinderGeometry(rt*0.3, rt*0.2, spokeLen, 16);
+                spokeGeo.translate(0, spokeLen/2 + bossR, 0);
+                
+                for(let i=0; i<sc; i++){
+                    const ang = (i/sc)*Math.PI*2;
+                    const sp = new THREE.Mesh(spokeGeo, baseMaterial);
+                    sp.rotation.z = Math.PI/2;
+                    sp.rotation.y = ang;
+                    activeMesh.add(sp);
+                }
+            }
+            
+            // Handle
+            if(hl > 0) {
+                const handleGeo = new THREE.CylinderGeometry(rt*0.4, rt*0.5, hl, 16);
+                handleGeo.translate((od-rt)/2, hl/2, 0);
+                const handle = new THREE.Mesh(handleGeo, baseMaterial);
+                if (isExploded) handle.position.y = hl;
+                activeMesh.add(handle);
+            }
+            
+            if (isExploded) {
+                rim.position.y = rt * 2;
+                // boss and spokes stay
+            }
+        }
+
+        // 19. Standoff & Spacer
+        function genStandoff() {
+            const type = document.getElementById('sof-type').value;
+            const l = getV('sof-l');
+            const o = getV('sof-o');
+            const b = getV('sof-b');
+            
+            const shape = new THREE.Shape();
+            if(type === 'cyl') {
+                shape.absarc(0,0, o/2, 0, Math.PI*2, false);
+            } else {
+                for(let i=0; i<6; i++){
+                    const ang = (i/6)*Math.PI*2;
+                    if(i===0) shape.moveTo(Math.cos(ang)*o/2, Math.sin(ang)*o/2);
+                    else shape.lineTo(Math.cos(ang)*o/2, Math.sin(ang)*o/2);
+                }
+                shape.closePath();
+            }
+            
+            if(b > 0) {
+                const hole = new THREE.Path();
+                hole.absarc(0,0, b/2, 0, Math.PI*2, true);
+                shape.holes.push(hole);
+            }
+            
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: l, bevelEnabled:true, bevelSize:0.2, bevelThickness:0.2});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+            activeMesh.castShadow = true;
+            activeShapes = [{ shape: shape, x:0, y:0, rot:0 }];
+        }
+
+        // 20. Universal Joint (Cardan)
+        function genCardan() {
+            const mode = document.getElementById('crd-mode') ? document.getElementById('crd-mode').value : 'asm';
+            const sd = getV('crd-sd');
+            const l = getV('crd-l');
+            const yt = getV('crd-yt');
+            const sr = getV('crd-sr');
+            
+            activeMesh = new THREE.Group();
+            
+            function createYoke() {
+                const grp = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(sd/2, sd/2, l/4, 32), baseMaterial);
+                base.position.y = -l/8;
+                grp.add(base);
+                
+                const forkWidth = sr*2 + yt*2 + 2;
+                
+                const sy = new THREE.Shape();
+                sy.moveTo(-forkWidth/2, 0);
+                sy.lineTo(forkWidth/2, 0);
+                sy.lineTo(forkWidth/2, l/3);
+                sy.absarc(forkWidth/2 - yt/2, l/3, yt/2, 0, Math.PI, false);
+                sy.lineTo(forkWidth/2 - yt, l/3); 
+                sy.lineTo(forkWidth/2 - yt, yt); 
+                sy.lineTo(-forkWidth/2 + yt, yt); 
+                sy.lineTo(-forkWidth/2 + yt, l/3); 
+                sy.absarc(-forkWidth/2 + yt/2, l/3, yt/2, 0, Math.PI, false);
+                sy.closePath();
+                
+                const h1 = new THREE.Path(); h1.absarc(forkWidth/2 - yt/2, l/3 - yt/2, 2, 0, Math.PI*2); sy.holes.push(h1);
+                const h2 = new THREE.Path(); h2.absarc(-forkWidth/2 + yt/2, l/3 - yt/2, 2, 0, Math.PI*2); sy.holes.push(h2);
+
+                const forkGeo = new THREE.ExtrudeGeometry(sy, {depth: sd*0.8, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+                forkGeo.center();
+                const fork = new THREE.Mesh(forkGeo, baseMaterial);
+                fork.position.y = l/6;
+                grp.add(fork);
+                return grp;
+            }
+            
+            if (mode === 'yoke') {
+                const yoke = createYoke();
+                yoke.position.y = 0;
+                yoke.rotation.x = -Math.PI/2; // lay flat
+                activeMesh.add(yoke);
+            } else if (mode === 'spider') {
+                const spiderGroup = new THREE.Group();
+                const spiderGeo1 = new THREE.CylinderGeometry(sr, sr, sr*5, 16);
+                spiderGeo1.rotateZ(Math.PI/2);
+                const spiderGeo2 = new THREE.CylinderGeometry(sr, sr, sr*5, 16);
+                spiderGeo2.rotateX(Math.PI/2);
+                
+                const s1 = new THREE.Mesh(spiderGeo1, baseMaterial);
+                const s2 = new THREE.Mesh(spiderGeo2, baseMaterial);
+                spiderGroup.add(s1);
+                spiderGroup.add(s2);
+                
+                // Lay it flat
+                spiderGroup.rotation.x = -Math.PI/2;
+                activeMesh.add(spiderGroup);
+            } else {
+                const yoke1 = createYoke();
+                yoke1.position.y = -l/4 - (isExploded ? l/2 : 0);
+                activeMesh.add(yoke1);
+                
+                const yoke2 = createYoke();
+                yoke2.position.y = l/4 + (isExploded ? l/2 : 0);
+                yoke2.rotation.x = Math.PI;
+                yoke2.rotation.y = Math.PI/2;
+                activeMesh.add(yoke2);
+                
+                const spiderGeo1 = new THREE.CylinderGeometry(sr, sr, sr*5, 16);
+                spiderGeo1.rotateZ(Math.PI/2);
+                const spiderGeo2 = new THREE.CylinderGeometry(sr, sr, sr*5, 16);
+                spiderGeo2.rotateX(Math.PI/2);
+                
+                const s1 = new THREE.Mesh(spiderGeo1, baseMaterial);
+                const s2 = new THREE.Mesh(spiderGeo2, baseMaterial);
+                
+                if (isExploded) {
+                    s1.position.x = sr * 4;
+                    s2.position.z = sr * 4;
+                }
+
+                activeMesh.add(s1);
+                activeMesh.add(s2);
+            }
+        }
+
+        // 21. Linear Bearing (LM8UU style)
+        function genLinBear() {
+            const od = getV('lb-od');
+            const id = getV('lb-id');
+            const l = getV('lb-l');
+            const s = getV('lb-s');
+
+            const shape = new THREE.Shape();
+            shape.absarc(0,0, od/2, 0, Math.PI*2, false);
+            const hole = new THREE.Path();
+            hole.absarc(0,0, id/2, 0, Math.PI*2, true);
+            shape.holes.push(hole);
+            
+            if(s > 0) {
+                for(let i=0; i<s; i++){
+                    const ang = (i/s)*Math.PI*2;
+                    const sw = id*0.1;
+                    const sd = od/2 - 1;
+                    
+                    const slot = new THREE.Path();
+                    const pts = [
+                        {x: id/2, y: -sw/2}, {x: sd, y: -sw/2}, {x: sd, y: sw/2}, {x: id/2, y: sw/2}
+                    ];
+                    pts.forEach((pt, j) => {
+                        const rx = pt.x * Math.cos(ang) - pt.y * Math.sin(ang);
+                        const ry = pt.x * Math.sin(ang) + pt.y * Math.cos(ang);
+                        if(j===0) slot.moveTo(rx, ry); else slot.lineTo(rx, ry);
+                    });
+                    slot.closePath();
+                    shape.holes.push(slot);
+                }
+            }
+            
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: l, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+            activeMesh.castShadow = true;
+        }
+
+        // 22. NEMA Motor Mount
+        function genNema() {
+            const std = parseInt(document.getElementById('nem-type').value);
+            const t = getV('nem-t');
+            const baseW = getV('nem-b');
+            const slotL = getV('nem-s');
+
+            const nemaMap = {
+                11: { w:28, h:23, c:22, s: 2.5 },
+                14: { w:35, h:26, c:22, s: 3.0 },
+                17: { w:42, h:31, c:22, s: 3.0 },
+                23: { w:56.4, h:47.1, c:38.1, s: 5.0 }
+            };
+            const n = nemaMap[std] || nemaMap[17];
+            const w = n.w + 10;
+            const hFull = w;
+            const chamfer = 6;
+            
+            activeMesh = new THREE.Group();
+            
+            const plateShape = new THREE.Shape();
+            plateShape.moveTo(-w/2, 0);
+            plateShape.lineTo(w/2, 0);
+            plateShape.lineTo(w/2, hFull - chamfer);
+            plateShape.lineTo(w/2 - chamfer, hFull);
+            plateShape.lineTo(-w/2 + chamfer, hFull);
+            plateShape.lineTo(-w/2, hFull - chamfer);
+            plateShape.closePath();
+            
+            const cy = hFull/2;
+            const bore = new THREE.Path();
+            bore.absarc(0, cy, n.c/2 + 0.5, 0, Math.PI*2, true);
+            plateShape.holes.push(bore);
+            
+            const bDist = n.h/2;
+            [[-1,-1], [-1,1], [1,-1], [1,1]].forEach(([dx, dy]) => {
+                const ptX = dx * bDist;
+                const ptY = cy + dy * bDist;
+                
+                if(slotL > 0) {
+                    const ang = Math.atan2(dy, dx);
+                    const r = n.s/2 + 0.2;
+                    const l = slotL/2;
+                    const slot = new THREE.Path();
+                    
+                    const p1x = ptX - Math.cos(ang)*l;
+                    const p1y = ptY - Math.sin(ang)*l;
+                    const p2x = ptX + Math.cos(ang)*l;
+                    const p2y = ptY + Math.sin(ang)*l;
+                    
+                    const a1 = ang + Math.PI/2;
+                    const a2 = ang - Math.PI/2;
+                    
+                    slot.absarc(p1x, p1y, r, a1, a2, true);
+                    slot.absarc(p2x, p2y, r, a2, a1, true);
+                    slot.closePath();
+                    plateShape.holes.push(slot);
+                } else {
+                    const hole = new THREE.Path();
+                    hole.absarc(ptX, ptY, n.s/2+0.2, 0, Math.PI*2, true);
+                    plateShape.holes.push(hole);
+                }
+            });
+            
+            const plateGeo = new THREE.ExtrudeGeometry(plateShape, {depth: t, bevelEnabled:true, bevelSize:0.3, bevelThickness:0.3});
+            plateGeo.center();
+            const plateMesh = new THREE.Mesh(plateGeo, baseMaterial);
+            plateMesh.position.y = hFull/2;
+            
+            const baseShape = new THREE.Shape();
+            baseShape.moveTo(-w/2, 0);
+            baseShape.lineTo(w/2, 0);
+            baseShape.lineTo(w/2, baseW - chamfer);
+            baseShape.lineTo(w/2 - chamfer, baseW);
+            baseShape.lineTo(-w/2 + chamfer, baseW);
+            baseShape.lineTo(-w/2, baseW - chamfer);
+            baseShape.closePath();
+            
+            const slotWidth = n.s + 1;
+            const slotStart = baseW * 0.3;
+            const slotEnd = baseW * 0.8;
+            const slotX = w/2 - t*2 - slotWidth/2 - 2;
+            if(slotX > 0) {
+                [-slotX, slotX].forEach(x => {
+                    const slHole = new THREE.Path();
+                    slHole.absarc(x, slotStart, slotWidth/2, Math.PI, 0, true);
+                    slHole.absarc(x, slotEnd, slotWidth/2, 0, Math.PI, true);
+                    slHole.closePath();
+                    baseShape.holes.push(slHole);
+                });
+            }
+            
+            const baseGeo = new THREE.ExtrudeGeometry(baseShape, {depth: t, bevelEnabled:true, bevelSize:0.3, bevelThickness:0.3});
+            baseGeo.center(); baseGeo.rotateX(Math.PI/2);
+            const baseMesh = new THREE.Mesh(baseGeo, baseMaterial);
+            baseMesh.position.y = t/2;
+            baseMesh.position.z = baseW/2 - t/2;
+            
+            activeMesh.add(plateMesh);
+            activeMesh.add(baseMesh);
+            
+            const sShape = new THREE.Shape();
+            sShape.moveTo(0,0); 
+            sShape.lineTo(baseW*0.6, 0); 
+            sShape.lineTo(0, hFull*0.6); 
+            sShape.closePath();
+            
+            const sg = new THREE.ExtrudeGeometry(sShape, {depth: t, bevelEnabled:false});
+            sg.rotateY(-Math.PI/2);
+            
+            const sl = new THREE.Mesh(sg, baseMaterial);
+            sl.position.set(-w/2 + t, t, t/2);
+            
+            const sr = new THREE.Mesh(sg, baseMaterial);
+            sr.position.set(w/2, t, t/2);
+            
+            if (isExploded) {
+                plateMesh.position.y += hFull/2;
+                sl.position.x -= 20;
+                sr.position.x += 20;
+                baseMesh.position.z += 20;
+            }
+
+            activeMesh.add(sl); activeMesh.add(sr);
+            activeMesh.position.y = -hFull/2;
+        }
+
+        // 23. Lead Screw & Nut (Tr)
+        function genLeadScrew() {
+            const mode = document.getElementById('ls-mode').value;
+            const d = getV('ls-d');
+            const pitch = getV('ls-p');
+            const l = getV('ls-l');
+            
+            activeMesh = new THREE.Group();
+            
+            if(mode === 'rod') {
+                const shape = new THREE.Shape();
+                shape.absarc(0,0, d/2, 0, Math.PI*2);
+                const geo = new THREE.ExtrudeGeometry(shape, {depth: l, bevelEnabled:false, curveSegments:16});
+                geo.center(); geo.rotateX(Math.PI/2);
+                
+                const core = new THREE.Mesh(geo, baseMaterial);
+                
+                class HelixCurve extends THREE.Curve {
+                    getPoint(t, optionalTarget = new THREE.Vector3()) {
+                        const turns = l / pitch;
+                        const angle = t * turns * Math.PI * 2;
+                        const z = (t - 0.5) * l;
+                        return optionalTarget.set(Math.cos(angle) * d/2, z, Math.sin(angle) * d/2);
+                    }
+                }
+                const thread = new THREE.Mesh(new THREE.TubeGeometry(new HelixCurve(), l*2, pitch*0.2, 8, false), baseMaterial);
+                activeMesh.add(core);
+                activeMesh.add(thread);
+            } else {
+                const nutOD = d * 2.5;
+                const nutL = d * 1.5;
+                const shape = new THREE.Shape();
+                shape.absarc(0,0, nutOD/2, 0, Math.PI*2);
+                const hole = new THREE.Path();
+                hole.absarc(0,0, d/2 + 0.5, 0, Math.PI*2, true);
+                shape.holes.push(hole);
+                
+                const geo = new THREE.ExtrudeGeometry(shape, {depth: nutL, bevelEnabled:true, bevelSize:1, bevelThickness:1});
+                geo.center(); geo.rotateX(Math.PI/2);
+                const nut = new THREE.Mesh(geo, baseMaterial);
+                if (isExploded) nut.position.y = nutL * 1.5;
+                
+                const flGeo = new THREE.CylinderGeometry(nutOD*0.8, nutOD*0.8, 4, 32);
+                const fl = new THREE.Mesh(flGeo, baseMaterial);
+                fl.position.y = nutL/2;
+                if (isExploded) fl.position.y += nutL;
+                
+                [0, Math.PI/2, Math.PI, Math.PI*1.5].forEach(a => {
+                    const hg = new THREE.CylinderGeometry(1.5, 1.5, 5, 8);
+                    const hm = new THREE.Mesh(hg, new THREE.MeshBasicMaterial({color:0x1e293b}));
+                    const hpy = nutL/2;
+                    hm.position.set(Math.cos(a)*nutOD*0.6, hpy + (isExploded ? nutL : 0), Math.sin(a)*nutOD*0.6);
+                    activeMesh.add(hm);
+                });
+                
+                activeMesh.add(nut);
+                activeMesh.add(fl);
+            }
+        }
+
+        // 24. Drag Chain
+        function genChain() {
+            const count = getV('ch-n');
+            const w = getV('ch-w');
+            const h = getV('ch-h');
+            const tol = getV('ch-t');
+            
+            const wall = 3;
+            const fullW = w + wall*2;
+            const fullH = h + wall*2;
+            const linkLen = h * 1.5;
+            
+            activeMesh = new THREE.Group();
+            
+            function createLink() {
+                const grp = new THREE.Group();
+                const outL = linkLen;
+                
+                const s = new THREE.Shape();
+                s.moveTo(-outL/2, -fullW/2);
+                s.lineTo(outL/2, -fullW/2);
+                s.lineTo(outL/2, fullW/2);
+                s.lineTo(-outL/2, fullW/2);
+                s.closePath();
+                
+                const centerHole = new THREE.Path();
+                centerHole.moveTo(-outL/2 + wall, -w/2);
+                centerHole.lineTo(outL/2 - wall, -w/2);
+                centerHole.lineTo(outL/2 - wall, w/2);
+                centerHole.lineTo(-outL/2 + wall, w/2);
+                centerHole.closePath();
+                s.holes.push(centerHole);
+                
+                const g = new THREE.ExtrudeGeometry(s, {depth: fullH, bevelEnabled:true, bevelSize:0.5});
+                g.center();
+                const frame = new THREE.Mesh(g, baseMaterial);
+                grp.add(frame);
+                
+                const pinR = h*0.2;
+                const p1 = new THREE.Mesh(new THREE.CylinderGeometry(pinR, pinR, fullW + 2, 16), baseMaterial);
+                p1.rotation.x = Math.PI/2;
+                p1.position.x = outL/2 - h*0.3;
+                grp.add(p1);
+                
+                const holeVis = new THREE.Mesh(new THREE.CylinderGeometry(pinR+tol, pinR+tol, fullW+2.2, 16), new THREE.MeshBasicMaterial({color:0x1e293b}));
+                holeVis.rotation.x = Math.PI/2;
+                holeVis.position.x = -outL/2 + h*0.3;
+                grp.add(holeVis);
+                
+                return grp;
+            }
+            
+            const pitch = linkLen - h*0.6;
+            for(let i=0; i<count; i++) {
+                const l = createLink();
+                l.position.x = (i - count/2) * pitch * (isExploded ? 1.5 : 1);
+                if(i > count/2) {
+                    l.rotation.y = (i - count/2) * h*0.015;
+                    l.position.z -= Math.pow(i - count/2, 2) * 1.5;
+                }
+                activeMesh.add(l);
+            }
+        }
+
+        // 25. Smooth Idler
+        function genIdler() {
+            const flanges = parseInt(document.getElementById('idl-type').value);
+            const d = getV('idl-d');
+            const w = getV('idl-w');
+            const b = getV('idl-b');
+            
+            const shape = new THREE.Shape();
+            const rOD = d/2 + (flanges > 0 ? 2 : 0);
+            shape.absarc(0,0, rOD, 0, Math.PI*2);
+            const bore = new THREE.Path();
+            bore.absarc(0,0, b/2, 0, Math.PI*2, true);
+            shape.holes.push(bore);
+            
+            const totalW = w + (flanges * 2);
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: totalW, bevelEnabled:true, bevelSize:0.3, bevelThickness:0.3});
+            geo.center(); geo.rotateX(Math.PI/2);
+            
+            activeMesh = new THREE.Group();
+            const rim = new THREE.Mesh(geo, baseMaterial);
+            if (isExploded) rim.position.y = totalW;
+            activeMesh.add(rim);
+            
+            if(flanges > 0) {
+                const pts = [];
+                const fw = 1.5;
+                
+                if(flanges === 2) {
+                    pts.push(new THREE.Vector2(b/2, -w/2 - fw));
+                    pts.push(new THREE.Vector2(d/2 + fw, -w/2 - fw));
+                    pts.push(new THREE.Vector2(d/2 + fw, -w/2));
+                    pts.push(new THREE.Vector2(d/2, -w/2));
+                    pts.push(new THREE.Vector2(d/2, w/2));
+                    pts.push(new THREE.Vector2(d/2 + fw, w/2));
+                    pts.push(new THREE.Vector2(d/2 + fw, w/2 + fw));
+                    pts.push(new THREE.Vector2(b/2, w/2 + fw));
+                } else if (flanges === 1) {
+                    pts.push(new THREE.Vector2(b/2, -w/2));
+                    pts.push(new THREE.Vector2(d/2, -w/2));
+                    pts.push(new THREE.Vector2(d/2, w/2));
+                    pts.push(new THREE.Vector2(d/2 + fw, w/2));
+                    pts.push(new THREE.Vector2(d/2 + fw, w/2 + fw));
+                    pts.push(new THREE.Vector2(b/2, w/2 + fw));
+                } else {
+                    pts.push(new THREE.Vector2(b/2, -w/2));
+                    pts.push(new THREE.Vector2(d/2, -w/2));
+                    pts.push(new THREE.Vector2(d/2, w/2));
+                    pts.push(new THREE.Vector2(b/2, w/2));
+                }
+                
+                const lGeo = new THREE.LatheGeometry(pts, 64);
+                activeMesh.remove(rim);
+                activeMesh.add(new THREE.Mesh(lGeo, baseMaterial));
+            }
+        }
+
+        // 26. Shaft Collar
+        function genCollar() {
+            const id = getV('col-id');
+            const od = getV('col-od');
+            const w = getV('col-w');
+            const s = getV('col-s');
+            
+            const shape = new THREE.Shape();
+            shape.absarc(0,0, od/2, 0, Math.PI*2);
+            const hole = new THREE.Path();
+            hole.absarc(0,0, id/2, 0, Math.PI*2, true);
+            shape.holes.push(hole);
+            
+            const slot = new THREE.Path();
+            slot.moveTo(id/2 - 0.5, -0.5);
+            slot.lineTo(od/2 + 2, -0.5);
+            slot.lineTo(od/2 + 2, 0.5);
+            slot.lineTo(id/2 - 0.5, 0.5);
+            slot.closePath();
+            shape.holes.push(slot);
+            
+            const geo = new THREE.ExtrudeGeometry(shape, {depth: w, bevelEnabled:true, bevelSize:0.3, bevelThickness:0.3});
+            geo.center(); geo.rotateX(Math.PI/2);
+            activeMesh = new THREE.Mesh(geo, baseMaterial);
+            
+            const screw = new THREE.Mesh(new THREE.CylinderGeometry(s/2, s/2, od/2, 16), new THREE.MeshStandardMaterial({color:0x334155, metalness:0.8}));
+            screw.position.z = od/4 + id/4 + (isExploded ? od/2 : 0);
+            screw.rotation.x = Math.PI/2;
+            activeMesh.add(screw);
+        }
+
+        // 27. Ball Joint (Rod End)
+        function genBallJoint() {
+            const mode = document.getElementById('bj-mode') ? document.getElementById('bj-mode').value : 'asm';
+            const bd = getV('bj-bd');
+            const b = getV('bj-b');
+            const od = getV('bj-od');
+            const rd = getV('bj-rd');
+            const c = getV('bj-c');
+            
+            activeMesh = new THREE.Group();
+            
+            // Build Ball
+            const bGeo = new THREE.SphereGeometry(bd/2, 32, 32);
+            const ball = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({color:0x94a3b8, metalness:1.0, roughness:0.2}));
+            
+            const bhM = new THREE.Mesh(new THREE.CylinderGeometry(b/2, b/2, bd+2, 16), new THREE.MeshBasicMaterial({color:0x1e293b}));
+            bhM.rotation.x = Math.PI/2;
+            ball.add(bhM);
+            // Tilt ball to show it's a joint if assembled
+            if (mode === 'asm') {
+                ball.rotation.y = 0.3;
+                ball.rotation.x = 0.1;
+            } else if (mode === 'ball') {
+                // Stand ball upright for easy printing/export
+                ball.rotation.x = Math.PI/2;
+            }
+            
+            // Build Housing
+            const hShape = new THREE.Shape();
+            hShape.absarc(0,0, od/2, 0, Math.PI*2);
+            const hHole = new THREE.Path();
+            hHole.absarc(0,0, bd/2 + c, 0, Math.PI*2, true);
+            hShape.holes.push(hHole);
+            
+            const ringGeo = new THREE.ExtrudeGeometry(hShape, {depth: bd*0.7, bevelEnabled:true, bevelSize:0.5, bevelThickness:0.5});
+            ringGeo.center(); ringGeo.rotateX(Math.PI/2);
+            const ring = new THREE.Mesh(ringGeo, baseMaterial);
+            
+            const rodGeo = new THREE.CylinderGeometry(rd/2, rd/2, od*1.5, 32);
+            const rod = new THREE.Mesh(rodGeo, baseMaterial);
+            rod.position.z = -od*1.2;
+            rod.rotation.x = Math.PI/2;
+            ring.add(rod);
+            
+            if (mode === 'housing') {
+                // If housing only, lay it flat for printing or CNC milling
+                ring.rotation.x = -Math.PI/2;
+            }
+            
+            // Add to active mesh based on mode
+            if (mode === 'asm') {
+                if (isExploded) {
+                    ring.position.y = od/2;
+                    ball.position.y = -od/2;
+                }
+                activeMesh.add(ring);
+                activeMesh.add(ball);
+            } else if (mode === 'housing') {
+                activeMesh.add(ring);
+            } else if (mode === 'ball') {
+                activeMesh.add(ball);
+            }
+        }
+
+        // --- Phase 6 LEGO FUNCTIONS ---
+
+        function handleLegoImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const loader = new THREE.STLLoader();
+                const geometry = loader.parse(e.target.result);
+                geometry.computeBoundingBox();
+                geometry.center(); 
+                legoOriginalMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x475569, wireframe: true, transparent:true, opacity:0.3 }));
+                
+                const btn = event.target.parentElement;
+                const oldTxt = btn.innerText;
+                btn.innerText = "⏳ Processing...";
+                
+                setTimeout(() => {
+                    generate();
+                    btn.innerText = oldTxt;
+                }, 100);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function getLegoBrickGeometry(res) {
+            const box = new THREE.BoxGeometry(res * 0.98, res * 0.98, res * 0.98);
+            const stud = new THREE.CylinderGeometry(res * 0.2, res * 0.2, res * 0.2, 8);
+            stud.translate(0, res / 2, 0);
+            
+            // Merge for InstancedMesh
+            if (THREE.BufferGeometryUtils) {
+                return THREE.BufferGeometryUtils.mergeBufferGeometries([box, stud]);
+            }
+            return box;
+        }
+
+        function genLegoAuto() {
+            if (activeMesh) { scene.remove(activeMesh); activeMesh = null; }
+            activeMesh = new THREE.Group();
+            if (legoOriginalMesh) activeMesh.add(legoOriginalMesh);
+
+            const res = getV('lego-res');
+            if(!legoOriginalMesh) return;
+
+            const geo = legoOriginalMesh.geometry;
+            geo.computeBoundingBox();
+            const bbox = geo.boundingBox;
+            
+            const brickGeo = getLegoBrickGeometry(res);
+            const MAX_BRICKS = 200000;
+            const instancedBricks = new THREE.InstancedMesh(brickGeo, baseMaterial, MAX_BRICKS);
+            instancedBricks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            
+            let count = 0;
+            const ray = new THREE.Raycaster();
+            const down = new THREE.Vector3(0, -1, 0);
+            
+            // Grid Sampling
+            for(let x = bbox.min.x; x <= bbox.max.x; x += res) {
+                for(let z = bbox.min.z; z <= bbox.max.z; z += res) {
+                    // One raycast per (x,z) column to find ALL intersections
+                    ray.set(new THREE.Vector3(x, bbox.max.y + 10, z), down);
+                    const inters = ray.intersectObject(legoOriginalMesh);
+                    
+                    if(inters.length > 0) {
+                        // Point-in-polygon (parity check) across the Y axis
+                        for(let y = bbox.min.y; y <= bbox.max.y; y += res) {
+                            let hitsAbove = 0;
+                            for(let i=0; i<inters.length; i++) {
+                                if(inters[i].point.y >= y) hitsAbove++;
+                            }
+                            
+                            // If odd number of hits above, we are inside
+                            if(hitsAbove % 2 !== 0 && count < MAX_BRICKS) {
+                                const dummy = new THREE.Object3D();
+                                dummy.position.set(x, y, z);
+                                dummy.updateMatrix();
+                                instancedBricks.setMatrixAt(count++, dummy.matrix);
+                            }
+                        }
+                    }
+                }
+            }
+            instancedBricks.count = count;
+            instancedBricks.userData.totalCount = count; // Cache for visibility
+            activeMesh.add(instancedBricks);
+            legoMesh = instancedBricks;
+            updateLegoVisibility();
+        }
+
+        function updateLegoVisibility() {
+            if(!legoMesh || !legoMesh.userData) return;
+            const step = getV('lego-step') / 100;
+            const total = legoMesh.userData.totalCount || 0;
+            legoMesh.count = Math.floor(total * step);
+            legoMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // --- MANUAL BUILDER ---
+        function genLegoManual() {
+            if (activeMesh) { scene.remove(activeMesh); activeMesh = null; }
+            activeMesh = new THREE.Group();
+            manualGroup = new THREE.Group();
+            activeMesh.add(manualGroup);
+            
+            // Placement Preview (Ghost)
+            const ghostGeo = new THREE.BoxGeometry(4, 4, 4);
+            legoPreviewField = new THREE.Mesh(ghostGeo, new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.4}));
+            activeMesh.add(legoPreviewField);
+
+            const grid = new THREE.GridHelper(200, 40, 0x334155, 0x1e293b);
+            activeMesh.add(grid);
+
+            rebuildManualBricks();
+        }
+
+        function clearLegoManual() {
+            manualBricks = [];
+            rebuildManualBricks();
+        }
+
+        function rebuildManualBricks() {
+            if(!manualGroup) return;
+            manualGroup.clear();
+            const res = 4; // Manual grid snap
+            const brickGeo = getLegoBrickGeometry(res);
+            
+            manualBricks.forEach(b => {
+                const m = new THREE.Mesh(brickGeo, new THREE.MeshStandardMaterial({color: b.color || 0xf97316}));
+                m.scale.set(b.size, 1, b.size);
+                m.position.set(b.x, b.y, b.z);
+                manualGroup.add(m);
+            });
+        }
+
+        // Interaction for Manual Builder & Preview
+        window.addEventListener('mousemove', (event) => {
+            if(currentModule !== 'legoman' || !legoPreviewField) return;
+            const target = raycastToPlane(event);
+            if(target) {
+                legoPreviewField.position.set(
+                    Math.round(target.x / 4) * 4,
+                    2,
+                    Math.round(target.z / 4) * 4
+                );
+                const size = parseInt(document.getElementById('lego-manual-size').value);
+                legoPreviewField.scale.set(size, 1, size);
+            }
+        });
+
+        function raycastToPlane(event) {
+            const mouse = new THREE.Vector2(
+                ( (event.clientX - 400) / (window.innerWidth - 400) ) * 2 - 1,
+                -( (event.clientY - 60) / (window.innerHeight - 60) ) * 2 + 1
+            );
+            const r = new THREE.Raycaster();
+            r.setFromCamera(mouse, camera);
+            const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+            const target = new THREE.Vector3();
+            return r.ray.intersectPlane(plane, target) ? target : null;
+        }
+
+        window.addEventListener('click', (event) => {
+            if(currentModule !== 'legoman') return;
+            const target = raycastToPlane(event);
+            if(target) {
+                const x = Math.round(target.x / 4) * 4;
+                const z = Math.round(target.z / 4) * 4;
+                if(event.shiftKey) {
+                    manualBricks = manualBricks.filter(b => Math.abs(b.x - x) > 1 || Math.abs(b.z - z) > 1);
+                } else {
+                    const size = parseInt(document.getElementById('lego-manual-size').value);
+                    manualBricks.push({x, y:2, z, size, color: document.getElementById('mat-color').value});
+                }
+                rebuildManualBricks();
+            }
+        });
+
+        function updateLegoVisibility() {
+            if(!legoMesh) return;
+            const step = getV('lego-step') / 100;
+            // For InstancedMesh, we can't easily hide per instance in standard Three without custom shaders
+            // So we'll just scale the count for a simple visualization
+            legoMesh.count = Math.floor(legoMesh.instanceMatrix.array.length / 16 * step);
+            legoMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // --- MANUAL BUILDER ---
+        function genLegoManual() {
+            if (activeMesh) { scene.remove(activeMesh); activeMesh = null; }
+            activeMesh = new THREE.Group();
+            manualGroup = new THREE.Group();
+            activeMesh.add(manualGroup);
+            
+            // Add a temporary grid helper for placement
+            const grid = new THREE.GridHelper(100, 20, 0x334155, 0x1e293b);
+            activeMesh.add(grid);
+
+            rebuildManualBricks();
+        }
+
+        function clearLegoManual() {
+            manualBricks = [];
+            rebuildManualBricks();
+        }
+
+        function rebuildManualBricks() {
+            if(!manualGroup) return;
+            manualGroup.clear();
+            manualBricks.forEach(b => {
+                const geo = new THREE.BoxGeometry(b.size * 4, 4, b.size * 4);
+                const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: b.color || 0xf97316}));
+                m.position.set(b.x, b.y, b.z);
+                manualGroup.add(m);
+            });
+        }
+
+        // Interaction for Manual Builder
+        window.addEventListener('click', (event) => {
+            if(currentModule !== 'legoman') return;
+            
+            const mouse = new THREE.Vector2(
+                ( (event.clientX - 400) / (window.innerWidth - 400) ) * 2 - 1,
+                -( (event.clientY - 60) / (window.innerHeight - 60) ) * 2 + 1
+            );
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Plane for placement
+            const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+            const target = new THREE.Vector3();
+            if(raycaster.ray.intersectPlane(plane, target)) {
+                const size = parseInt(document.getElementById('lego-manual-size').value);
+                const x = Math.round(target.x / 4) * 4;
+                const z = Math.round(target.z / 4) * 4;
+                
+                if(event.shiftKey) {
+                    // Delete
+                    manualBricks = manualBricks.filter(b => Math.abs(b.x - x) > 1 || Math.abs(b.z - z) > 1);
+                } else {
+                    // Add
+                    manualBricks.push({x, y:2, z, size, color: document.getElementById('mat-color').value});
+                }
+                rebuildManualBricks();
+            }
+        });
+
+        // --- Render Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            if (isAnimating && activeMesh) {
+                if (currentModule === 'planetary' && sunMesh) {
+                    // Planetary Kinematics (Fixed Ring)
+                    const speed = 0.02;
+                    sunMesh.rotation.y += speed;
+                    
+                    // Carrier speed = SunSpeed * Zs / (Zs + Zr)
+                    const carrierSpeed = speed * zS / (zS + zR);
+                    carrierGroup.rotation.y += carrierSpeed;
+                    
+                    // Planets rotate relative to carrier: - (SunSpeed - CarrierSpeed) * Zs / Zp
+                    const planetRelSpeed = -(speed - carrierSpeed) * zS / zP;
+                    planets.forEach(p => {
+                        p.rotation.y += planetRelSpeed;
+                    });
+                } else if (currentModule === 'geneva' && genevaDriver) {
+                    genevaDriver.rotation.y += 0.03;
+                    // Intermittent math: wheel only turns when pin is engaged
+                    const ang = genevaDriver.rotation.y % (Math.PI*2);
+                    if (ang < 1 || ang > 5) genevaWheel.rotation.y += 0.01;
+                } else if (currentModule === 'rack' && rackPinion) {
+                    rackPinion.rotation.y += 0.05;
+                    rackMesh.position.x += 0.1;
+                    if(rackMesh.position.x > 50) rackMesh.position.x = -50;
+                } else if (currentModule === 'worm' && wormWheel) {
+                    wormScrew.rotation.x += 0.2;
+                    wormWheel.rotation.y += 0.005;
+                } else if (currentModule === 'cam' && camMesh) {
+                    camMesh.rotation.y += 0.05;
+                    // Follower tracking
+                    const ang = camMesh.rotation.y;
+                    const type = document.getElementById('cam-type').value;
+                    const br = getV('cam-r');
+                    const lift = getV('cam-l');
+                    let r = br;
+                    const modAng = (ang % (Math.PI*2) + (Math.PI*2)) % (Math.PI*2);
+                    if(type === 'snail') r = br + (modAng / (Math.PI*2)) * lift;
+                    else if(type === 'heart') r = br + Math.abs(Math.sin(modAng)) * lift;
+                    else if(type === 'eccentric') r = br + Math.cos(modAng) * lift/2;
+                    camFollower.position.z = -r;
+                } else if (currentModule === 'link' && linkA) {
+                    linkA.rotation.y += 0.05;
+                    // Simple procedural linkage ik (approximate for visual)
+                    const a = getV('link-a');
+                    const b = getV('link-b');
+                    const c = getV('link-c');
+                    const d = getV('link-d');
+                    const angA = linkA.rotation.y;
+                    const ax = Math.cos(angA)*a;
+                    const ay = Math.sin(angA)*a;
+                    // Dist to Ground(d,0)
+                    const dist = Math.sqrt((ax-d)**2 + ay**2);
+                    if(dist < b + c && dist > Math.abs(b-c)) {
+                        const alpha = Math.atan2(-ay, d-ax);
+                        const beta = Math.acos((dist**2 + c**2 - b**2) / (2*dist*c));
+                        linkC.rotation.y = alpha + beta;
+                        linkB.position.set(ax, 0, ay);
+                        linkB.rotation.y = Math.atan2((Math.sin(alpha+beta)*c - ay), (d + Math.cos(alpha+beta)*c - ax));
+                    }
+                } else {
+                    activeMesh.rotation.x += 0.005;
+                    activeMesh.rotation.y += 0.01;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth - 400;
+            const height = window.innerHeight - 60;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Initialize first module
+        setTimeout(generate, 100);
+
+        // --- EXPORT FUNCTIONS ---
+        // Exporter objects (assumed loaded from unpkg scripts)
+        function getDownloadName(ext) {
+            return `mechgen_${currentModule}_${Date.now()}.${ext}`;
+        }
+        function saveString(text, filename) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+        function saveArrayBuffer(buffer, filename) {
+            const blob = new Blob([buffer], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function exportSTL() {
+            if(!activeMesh) return;
+            const exporter = new THREE.STLExporter();
+            const result = exporter.parse(activeMesh, { binary: true });
+            const blob = new Blob([result], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = getDownloadName('stl');
+            link.click();
+        }
+
+        function exportOBJ() {
+            if(!activeMesh) return;
+            const exporter = new THREE.OBJExporter();
+            const result = exporter.parse(activeMesh);
+            saveString(result, getDownloadName('obj'));
+        }
+
+        function exportGLB() {
+            if(!activeMesh) return;
+            const exporter = new THREE.GLTFExporter();
+            exporter.parse(activeMesh, function (glb) {
+                saveArrayBuffer(glb, getDownloadName('glb'));
+            }, function(error) {
+                console.error(error);
+            }, { binary: true });
+        }
+
+        // --- 2D & IMAGE EXPORTERS ---
+        function exportPNG() {
+            renderer.render(scene, camera); // force render flush
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = getDownloadName('png');
+            link.click();
+        }
+
+        function exportDXF() {
+            if(activeShapes.length === 0) return alert(document.body.classList.contains('lang-fr') ? "Acest modul nu are un profil 2D pentru export DXF." : "This module does not have a 2D profile for DXF export.");
+            
+            let dxf = "0\nSECTION\n2\nENTITIES\n";
+            activeShapes.forEach(entry => {
+                const { shape, x, y, rot } = entry;
+                const cos = Math.cos(rot || 0);
+                const sin = Math.sin(rot || 0);
+                
+                const transform = (p) => ({
+                    x: (p.x * cos - p.y * sin) + (x || 0),
+                    y: (p.x * sin + p.y * cos) + (y || 0)
+                });
+
+                const pts = shape.getPoints(100);
+                for(let i=0; i<pts.length-1; i++) {
+                    const p1 = transform(pts[i]);
+                    const p2 = transform(pts[i+1]);
+                    dxf += `0\nLINE\n8\n0\n10\n${p1.x.toFixed(4)}\n20\n${p1.y.toFixed(4)}\n30\n0.0\n11\n${p2.x.toFixed(4)}\n21\n${p2.y.toFixed(4)}\n31\n0.0\n`;
+                }
+                const pL = transform(pts[pts.length-1]);
+                const pF = transform(pts[0]);
+                dxf += `0\nLINE\n8\n0\n10\n${pL.x.toFixed(4)}\n20\n${pL.y.toFixed(4)}\n30\n0.0\n11\n${pF.x.toFixed(4)}\n21\n${pF.y.toFixed(4)}\n31\n0.0\n`;
+                
+                shape.holes.forEach(hole => {
+                    const hpts = hole.getPoints(50);
+                    for(let i=0; i<hpts.length-1; i++) {
+                        const h1 = transform(hpts[i]);
+                        const h2 = transform(hpts[i+1]);
+                        dxf += `0\nLINE\n8\n0\n10\n${h1.x.toFixed(4)}\n20\n${h1.y.toFixed(4)}\n30\n0.0\n11\n${h2.x.toFixed(4)}\n21\n${h2.y.toFixed(4)}\n31\n0.0\n`;
+                    }
+                    const hL = transform(hpts[hpts.length-1]);
+                    const hF = transform(hpts[0]);
+                    dxf += `0\nLINE\n8\n0\n10\n${hL.x.toFixed(4)}\n20\n${hL.y.toFixed(4)}\n30\n0.0\n11\n${hF.x.toFixed(4)}\n21\n${hF.y.toFixed(4)}\n31\n0.0\n`;
+                });
+            });
+            dxf += "0\nENDSEC\n0\nEOF\n";
+            saveString(dxf, getDownloadName('dxf'));
+        }
+
+        function exportSVG() {
+            if(activeShapes.length === 0) return alert(document.body.classList.contains('lang-fr') ? "Acest modul nu are un profil 2D pentru export SVG." : "This module does not have a 2D profile for SVG export.");
+            
+            let minX = 9999, minY = 9999, maxX = -9999, maxY = -9999;
+            const pointsList = activeShapes.map(entry => {
+                const { shape, x, y, rot } = entry;
+                const cos = Math.cos(rot || 0);
+                const sin = Math.sin(rot || 0);
+                const transform = (p) => ({
+                    x: (p.x * cos - p.y * sin) + (x || 0),
+                    y: (p.x * sin + p.y * cos) + (y || 0)
+                });
+                
+                const pts = shape.getPoints(100).map(transform);
+                pts.forEach(p => {
+                    if(p.x < minX) minX = p.x; if(p.y < minY) minY = p.y;
+                    if(p.x > maxX) maxX = p.x; if(p.y > maxY) maxY = p.y;
+                });
+                const holes = shape.holes.map(h => h.getPoints(50).map(transform));
+                return { pts, holes };
+            });
+
+            let w = (maxX - minX) * 1.2 || 100;
+            let h = (maxY - minY) * 1.2 || 100;
+            let cx = (minX + maxX) / 2;
+            let cy = (minY + maxY) / 2;
+
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="${cx - w/2} ${cy - h/2} ${w} ${h}">\n`;
+            pointsList.forEach(obj => {
+                let pStr = obj.pts.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' ');
+                svg += `<polygon points="${pStr}" fill="none" stroke="#f97316" stroke-width="0.5"/>\n`;
+                obj.holes.forEach(hpts => {
+                    let hpStr = hpts.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' ');
+                    svg += `<polygon points="${hpStr}" fill="none" stroke="#f97316" stroke-width="0.5"/>\n`;
+                });
+            });
+            svg += `</svg>`;
+            saveString(svg, getDownloadName('svg'));
+        }
+
+    </script>
+    <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+      const modal = document.getElementById('local-payment-modal');
+      const closeBtn = document.getElementById('modal-close-btn');
+      const payPremiumBtn = document.getElementById('pay-premium-btn');
+      if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; pendingTarget = null; };
+      if (payPremiumBtn) payPremiumBtn.onclick = () => {
+        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'mechgen' } });
+        modal.style.display = 'none';
+      };
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED') {
+          modal.style.display = 'none';
+          if (pendingTarget) {
+            isAllowed = true;
+            pendingTarget.click();
+          }
+        }
+      };
+      document.addEventListener('click', (e) => {
+        if (isAllowed) { isAllowed = false; pendingTarget = null; return; }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'svg', 'dx', 'png'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || (target.id && target.id.toLowerCase().includes(k)));
+        if (isExport && !text.includes('upload') && !text.includes('import') && !text.includes('preset')) {
+          if (target.id === 'pay-single-btn' || target.id === 'pay-premium-btn' || target.id === 'modal-close-btn' || target.id === 'back-btn') return;
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          modal.style.display = 'flex';
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'mechgen' } });
+        }
+      }, true);
+    })();
+    </script>
+</body>
+</html>

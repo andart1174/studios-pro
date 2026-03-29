@@ -405,6 +405,8 @@ const StudiosPro = () => {
   const [isMusicComposerOpen, setIsMusicComposerOpen] = useState(false);
   const [isDesignProOpen, setIsDesignProOpen] = useState(false);
   const [isIaArchitecteOpen, setIsIaArchitecteOpen] = useState(false);
+  const [isStudioPro2Open, setIsStudioPro2Open] = useState(false);
+  const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -568,6 +570,8 @@ const StudiosPro = () => {
       if (ref === 'musc') setIsMusicComposerOpen(true);
       if (ref === 'desp') setIsDesignProOpen(true);
       if (ref === 'iaar') setIsIaArchitecteOpen(true);
+      if (ref === 'spro2') setIsStudioPro2Open(true);
+      if (ref === 'mechgen') setIsMechGenProOpen(true);
     }
   }, [lang, user]);
 
@@ -629,6 +633,8 @@ const StudiosPro = () => {
         setIsMusicComposerOpen(false);
         setIsDesignProOpen(false);
         setIsIaArchitecteOpen(false);
+        setIsStudioPro2Open(false);
+        setIsMechGenProOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         if (payload.type === 'premium') setIsPremium(true);
         if (payload.type === 'single') setHasExportCredit(true);
@@ -722,6 +728,8 @@ const StudiosPro = () => {
       musicComposer: "4D Music Composer",
       designPro: "Design Pro Studio",
       iaArchitecte: "IA Architecte",
+      studioPro2: "Studio Pro 2",
+      mechGenPro: "Mech Gen Pro",
       faqBtn: "FAQ"
     },
     en: {
@@ -764,6 +772,8 @@ const StudiosPro = () => {
       musicComposer: "4D Music Composer",
       designPro: "Design Pro Studio",
       iaArchitecte: "IA Architecte",
+      studioPro2: "Studio Pro 2",
+      mechGenPro: "Mech Gen Pro",
       faqBtn: "FAQ"
     }
   };
@@ -771,7 +781,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isAuraGenOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isIaArchitecteOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isAuraGenOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isIaArchitecteOpen || isStudioPro2Open || isMechGenProOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -1118,6 +1128,30 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.iaArchitecte}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsStudioPro2Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #f43f5e, #8b5cf6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 2 Icon" />
+          </div>
+          <div className="card-label">{currentT.studioPro2}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMechGenProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #14b8a6, #eab308)' }} />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Mech Gen Pro Icon" />
+          </div>
+          <div className="card-label">{currentT.mechGenPro}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -1224,6 +1258,16 @@ const StudiosPro = () => {
         {isIaArchitecteOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/ia-architecte/index.html" className="studio-iframe" title="IA Architecte" />
+          </motion.div>
+        )}
+        {isStudioPro2Open && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/studio-pro-2/index.html" className="studio-iframe" title="Studio Pro 2" />
+          </motion.div>
+        )}
+        {isMechGenProOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/mech-gen-pro/index.html" className="studio-iframe" title="Mech Gen Pro" />
           </motion.div>
         )}
       </AnimatePresence>
