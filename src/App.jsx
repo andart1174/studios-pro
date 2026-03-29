@@ -910,6 +910,8 @@ const StudiosPro = () => {
             <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
             <li><strong>Maker Studio 7:</strong> All-in-one generator for parametric boxes, spherical lithophanes, halftones, voronoi structures, and AI-powered PBR textures.</li>
             <li><strong>Jewelry Maker Pro:</strong> Design custom 3D printable jewelry, rings, and accessories directly in your browser with precise CAD parameters and photo-relief mapping.</li>
+            <li><strong>Studio Pro 2:</strong> Advanced scale 4D rendering library providing real-time multifold topological mapping and physically-based material lighting for high-fidelity interactive browser experiences.</li>
+            <li><strong>Mech Gen Pro:</strong> Professional browser-based procedural mechanical part and gear generator outputting DXF/SVG for laser cutters and STL for functional resin SLA 3D printed transmissions.</li>
           </ul>
         </div>
 
