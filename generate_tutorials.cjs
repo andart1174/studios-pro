@@ -3,35 +3,6 @@ const path = require('path');
 
 const tutorials = [
   {
-    id: 'aura-ai',
-    titleEn: 'Aura AI Studio | Studios-Pro',
-    titleFr: 'Aura AI Studio | Studios-Pro',
-    descEn: 'A complete guide to using Aura AI Studio for generating custom web applications using Artificial Intelligence.',
-    descFr: "Un guide complet pour utiliser Aura AI Studio afin de générer des applications web personnalisées à l'aide de l'Intelligence Artificielle.",
-    h1En: 'AI Web App Generation with Aura AI Studio',
-    h1Fr: "Génération d'Applications Web IA avec Aura AI Studio",
-    tag: 'Aura AI',
-    cardH2En: 'Generate React Applications with AI',
-    cardH2Fr: "Générez des Applications React avec l'IA",
-    cardPEn: 'Learn how to prompt, edit, and export complete React codebases visually.',
-    cardPFr: 'Apprenez à formuler des requêtes, éditer et exporter des bases de code React complètes visuellement.',
-    ref: 'aurg',
-    sections: [
-      {
-        h2En: 'Intelligent Code Generation',
-        h2Fr: 'Génération de Code Intelligente',
-        pEn: 'Aura AI Studio provides an advanced AI interface designed to turn your natural language prompts into production-ready React applications. From basic layouts to complex logic, the AI handles the heavy lifting while you focus on the vision.',
-        pFr: "Aura AI Studio offre une interface IA avancée conçue pour transformer vos requêtes en langage naturel en applications React prêtes pour la production. L'IA s'occupe du gros du travail pendant que vous vous concentrez sur la vision."
-      },
-      {
-        h2En: 'Real-time Preview & Export',
-        h2Fr: 'Aperçu en Temps Réel et Exportation',
-        pEn: 'As the AI generates code, the built-in IDE window renders it live. You can instantly test functionality, tweak styling, and when you are satisfied, export the entire project structure natively to your local environment.',
-        pFr: "Au fur et à mesure que l'IA génère du code, la fenêtre IDE intégrée le rend en direct. Vous pouvez tester instantanément la fonctionnalité et exporter l'ensemble du projet nativement."
-      }
-    ]
-  },
-  {
     id: 'architect-pro-1',
     titleEn: 'Architect Pro 1 | Studios-Pro',
     titleFr: 'Architect Pro 1 | Studios-Pro',
@@ -175,35 +146,6 @@ const tutorials = [
         pFr: "Que vous ayez besoin d'un PNG transparent ou d'un SVG évolutif pour CNC, le studio fournit des exportations fiables tout en préservant la hiérarchie."
       }
     ]
-  },
-  {
-    id: 'ia-architecte',
-    titleEn: 'IA Architecte | Studios-Pro',
-    titleFr: 'IA Architecte | Studios-Pro',
-    descEn: 'Leverage the power of Artificial Intelligence to generate rapid architectural models.',
-    descFr: "Tirez parti de la puissance de l'Intelligence Artificielle pour générer des modèles architecturaux rapides.",
-    h1En: 'Rapid Ideation with IA Architecte',
-    h1Fr: 'Idéation Rapide avec IA Architecte',
-    tag: 'IA Architecte',
-    cardH2En: 'AI-Powered Structural Generation',
-    cardH2Fr: "Génération Structurelle par l'IA",
-    cardPEn: 'Use AI prompts to quickly visualize and render complex structural geometries.',
-    cardPFr: 'Utilisez des requêtes IA pour visualiser et générer rapidement des géométries structurelles.',
-    ref: 'iaar',
-    sections: [
-      {
-        h2En: 'Prompt-Based Floorplans',
-        h2Fr: 'Plans Basés sur Requête IA',
-        pEn: 'Describe your architectural vision and let the intelligent engine process thousands of permutations to give you a strong starting foundation. Perfect for overcoming the blank-page syndrome.',
-        pFr: 'Décrivez votre vision architecturale et laissez le moteur intelligent traiter des milliers de permutations pour vous donner une base solide.'
-      },
-      {
-        h2En: 'Refinement and Execution',
-        h2Fr: 'Raffinement et Exécution',
-        pEn: 'Once the AI has constructed the initial wireframe, take over manual control to fine-tune material parameters, adjust scaling, and authorize the final production export.',
-        pFr: "Une fois que l'IA a construit l'ébauche initiale, prenez le contrôle manuel pour affiner les paramètres, ajuster l'échelle et autoriser l'exportation."
-      }
-    ]
   }
 ];
 
@@ -329,7 +271,7 @@ let cardsHtml = tutorials.map(tut => `
                 <span style="color:var(--accent); font-weight:600;"><span data-en>Read Tutorial →</span><span data-fr>Lire le Tutoriel →</span></span>
             </a>`).join('');
 
-if (!indexContent.includes('aura-ai.html')) {
+if (true) {
   indexContent = indexContent.replace('<div class="grid">', `<div class="grid">${cardsHtml}`);
   fs.writeFileSync(path.join(__dirname, 'public/blog/index.html'), indexContent);
   console.log('Updated index.html');
@@ -345,7 +287,7 @@ let sitemapUrls = tutorials.map(tut => `  <url>
     <priority>0.7</priority>
   </url>\n`).join('');
 
-if (!sitemap.includes('aura-ai.html')) {
+if (true) {
   sitemap = sitemap.replace('</urlset>', `${sitemapUrls}</urlset>`);
   fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), sitemap);
   console.log('Updated sitemap.xml');

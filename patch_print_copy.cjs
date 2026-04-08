@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 const apps = [
-  { p: 'public/apps/aura-gen/index.html' },
+
   { p: 'public/apps/architect-pro-1/index.html' },
   { p: 'public/apps/architect-pro-2/index.html' },
   { p: 'public/apps/figure-builder/index.html' },
   { p: 'public/apps/music-composer/index.html' },
   { p: 'public/apps/design-pro-studio/index.html' },
-  { p: 'public/apps/ia-architecte/index.html' }
+
 ];
 
 apps.forEach(app => {

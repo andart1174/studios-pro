@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 const apps = [
-  { p: 'public/apps/aura-gen/index.html', ref: 'aurg' },
+
   { p: 'public/apps/architect-pro-1/index.html', ref: 'arp1' },
   { p: 'public/apps/architect-pro-2/index.html', ref: 'arp2' },
   { p: 'public/apps/figure-builder/index.html', ref: 'figb' },
   { p: 'public/apps/music-composer/index.html', ref: 'musc' },
   { p: 'public/apps/design-pro-studio/index.html', ref: 'desp' },
-  { p: 'public/apps/ia-architecte/index.html', ref: 'iaar' }
+
 ];
 
 const scriptTemplate = (ref) => `
