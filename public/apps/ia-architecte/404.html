@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ANDRO AI - Redirect</title>
+  <script type="text/javascript">
+    // Common single-page app redirect for GitHub Pages
+    // This handles cases where people refresh on a Clean URL even when we use HashRouter
+    var path = window.location.pathname;
+    var base = '/app-123/';
+
+    if (path.startsWith(base)) {
+      var subPath = path.slice(base.length);
+      // If it's a real sub-page (not index.html itself), redirect to hash
+      if (subPath && subPath !== 'index.html' && subPath !== '') {
+        window.location.replace(base + '#/' + subPath);
+      } else {
+        window.location.replace(base);
+      }
+    } else {
+      window.location.replace(base);
+    }
+  </script>
+</head>
+
+<body>
+  <p>Redirecting to Andromeda Studio...</p>
+</body>
+
+</html>

@@ -175,6 +175,527 @@
     </style>
 </head>
 <body class="lang-en" id="root">
+<!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 99999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span>Retour / Back</span>
+  </button>
+  <script>
+    (function () {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      let isAllowed = false;
+      let pendingTarget = null;
+      let isPremiumUser = false;
+
+      const backBtn = document.getElementById('back-btn');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          channel.postMessage({ type: 'CLOSE_STUDIO' });
+          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        };
+      }
+
+      // Hide local payment modal if any (since some apps have local modals)
+      const localModal = document.getElementById('local-payment-modal');
+      if (localModal) {
+        localModal.style.display = 'none';
+        const localCloseBtn = document.getElementById('modal-close-btn');
+        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
+        const localPaySingleBtn = document.getElementById('pay-single-btn');
+        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
+          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'spro' } });
+          localModal.style.display = 'none';
+        };
+        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
+        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
+          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'spro' } });
+          localModal.style.display = 'none';
+        };
+      }
+
+      channel.onmessage = (e) => {
+        if (e.data.type === 'EXPORT_ALLOWED') {
+          isAllowed = true;
+          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
+          if (localModal) localModal.style.display = 'none';
+          if (pendingTarget) {
+            pendingTarget.click();
+          }
+        }
+      };
+
+      document.addEventListener('click', (e) => {
+        if (isAllowed) {
+          isAllowed = false;
+          pendingTarget = null;
+          return;
+        }
+        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+        if (!target) return;
+        const text = (target.innerText || target.textContent || "").toLowerCase();
+        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
+        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const cls = (target.className || "");
+        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        
+        if (target.classList && target.classList.contains('lang-btn')) return;
+        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn') return;
+
+        if (isExport) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          pendingTarget = target;
+          if (localModal) {
+            localModal.style.display = 'flex';
+          }
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro' } });
+        }
+      }, true);
+
+      // --- WEB EXPORT PRO INTERCEPTOR ---
+      const originalAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function() {
+        if (this.download && this.href && !this.dataset.bypassed) {
+          if (isPremiumUser) {
+            showExportSelectionModal(this.href, this.download, () => {
+              this.dataset.bypassed = 'true';
+              originalAnchorClick.apply(this);
+              delete this.dataset.bypassed;
+            });
+            return;
+          }
+        }
+        return originalAnchorClick.apply(this, arguments);
+      };
+
+      function showExportSelectionModal(fileUrl, fileName, onContinueRaw) {
+        let lang = 'en';
+        try {
+          if (window.parent && window.parent.document) {
+            const activeLangBtn = window.parent.document.querySelector('.lang-btn.active');
+            if (activeLangBtn) {
+              lang = activeLangBtn.innerText.toLowerCase().trim() === 'fr' ? 'fr' : 'en';
+            }
+          }
+        } catch (e) {}
+
+        const t = {
+          en: {
+            title: "WEB EXPORT PRO",
+            subtitle: "Choose your export format",
+            file: "File:",
+            rawBtn: "Standard Download",
+            rawDesc: "Save the raw file (.stl, .svg, .obj, .gcode) for printing or CNC.",
+            htmlBtn: "Interactive Web Page (HTML)",
+            htmlDesc: "Download an interactive web page of your creation for offline viewing or hosting.",
+            cancel: "Cancel",
+            generating: "Generating HTML..."
+          },
+          fr: {
+            title: "EXPORT WEB PRO",
+            subtitle: "Choisissez le format d'export",
+            file: "Fichier:",
+            rawBtn: "Téléchargement Standard",
+            rawDesc: "Sauvegardez le fichier brut (.stl, .svg, .obj, .gcode) pour l'impression ou CNC.",
+            htmlBtn: "Page Web Interactive (HTML)",
+            htmlDesc: "Téléchargez une page web interactive de votre création pour l'affichage hors-ligne.",
+            cancel: "Annuler",
+            generating: "Génération du HTML..."
+          }
+        }[lang];
+
+        const oldOverlay = document.getElementById('web-export-pro-overlay');
+        if (oldOverlay) oldOverlay.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'web-export-pro-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(12px); z-index: 999999; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: white; opacity: 0; transition: opacity 0.3s ease;';
+
+        const container = document.createElement('div');
+        container.style.cssText = 'background: #0f172a; padding: 30px; border-radius: 24px; width: 90%; max-width: 460px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: scale(0.9); transition: transform 0.3s ease; display: flex; flex-direction: column; gap: 20px;';
+
+        const header = document.createElement('div');
+        header.innerHTML = '<h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #3b82f6, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">' + t.title + '</h2><p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #94a3b8;">' + t.subtitle + '</p><div style="margin-top: 10px; font-size: 0.8rem; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #64748b;">' + t.file + '</span> <strong style="color: #cbd5e1;">' + fileName + '</strong></div>';
+        container.appendChild(header);
+
+        const rawBtn = document.createElement('button');
+        rawBtn.style.cssText = 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: white; padding: 15px; border-radius: 14px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;';
+        rawBtn.innerHTML = '<strong style="font-size: 0.95rem; color: #fff;">' + t.rawBtn + '</strong><span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.3;">' + t.rawDesc + '</span>';
+        rawBtn.onmouseover = () => { rawBtn.style.background = 'rgba(255, 255, 255, 0.06)'; rawBtn.style.borderColor = 'rgba(59, 130, 246, 0.4)'; };
+        rawBtn.onmouseout = () => { rawBtn.style.background = 'rgba(255, 255, 255, 0.03)'; rawBtn.style.borderColor = 'rgba(255, 255, 255, 0.08)'; };
+        rawBtn.onclick = () => { overlay.remove(); onContinueRaw(); };
+        container.appendChild(rawBtn);
+
+        const htmlBtn = document.createElement('button');
+        htmlBtn.style.cssText = 'background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: white; padding: 15px; border-radius: 14px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;';
+        htmlBtn.innerHTML = '<strong style="font-size: 0.95rem; color: #3b82f6;">' + t.htmlBtn + '</strong><span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.3;">' + t.htmlDesc + '</span>';
+        htmlBtn.onmouseover = () => { htmlBtn.style.background = 'rgba(59, 130, 246, 0.15)'; htmlBtn.style.borderColor = 'rgba(59, 130, 246, 0.5)'; };
+        htmlBtn.onmouseout = () => { htmlBtn.style.background = 'rgba(59, 130, 246, 0.1)'; htmlBtn.style.borderColor = 'rgba(59, 130, 246, 0.3)'; };
+        htmlBtn.onclick = async () => {
+          htmlBtn.disabled = true;
+          htmlBtn.style.opacity = '0.5';
+          htmlBtn.querySelector('strong').innerText = t.generating;
+          try {
+            await generateHtmlExport(fileUrl, fileName);
+          } catch (e) {
+            console.error(e);
+            alert("Error: " + e.message);
+          }
+          overlay.remove();
+        };
+        container.appendChild(htmlBtn);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.innerText = t.cancel;
+        cancelBtn.style.cssText = 'background: transparent; border: none; color: #64748b; padding: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: color 0.2s;';
+        cancelBtn.onmouseover = () => cancelBtn.style.color = '#94a3b8';
+        cancelBtn.onmouseout = () => cancelBtn.style.color = '#64748b';
+        cancelBtn.onclick = () => { overlay.remove(); };
+        container.appendChild(cancelBtn);
+
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+
+        setTimeout(() => { overlay.style.opacity = '1'; container.style.transform = 'scale(1)'; }, 10);
+      }
+
+      async function generateHtmlExport(fileUrl, fileName) {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const extension = fileName.split('.').pop().toLowerCase();
+
+        const base64Data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(blob);
+        });
+
+        let htmlContent = '';
+
+        if (['stl', 'obj', 'glb', 'gltf', 'ply'].includes(extension)) {
+          htmlContent = get3DTemplate(base64Data, extension, fileName);
+        } else if (extension === 'svg') {
+          htmlContent = getSvgTemplate(base64Data, fileName);
+        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
+          htmlContent = getImageTemplate(base64Data, extension, fileName);
+        } else {
+          htmlContent = getTextTemplate(base64Data, extension, fileName);
+        }
+
+        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+        const htmlUrl = URL.createObjectURL(htmlBlob);
+        const a = document.createElement('a');
+        a.href = htmlUrl;
+        a.download = fileName.replace('.' + extension, '_interactive.html');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(htmlUrl);
+      }
+
+      function get3DTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - 3D Interactive Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+    #container { width: 100vw; height: 100vh; display: block; }
+    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
+    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
+    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
+  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
+  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
+  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
+  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
+</head>
+<body>
+  <div id="loader">Loading 3D Model...</div>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>${fileName}</h3>
+    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
+    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
+    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
+  </div>
+  <script>
+    const base64Data = "${base64Data}";
+    const extension = "${extension}";
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1329);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 50);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+    
+    scene.add(new THREE.AmbientLight(0x666666));
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight1.position.set(1, 1, 1).normalize();
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
+    dirLight2.position.set(-1, -1, -1).normalize();
+    scene.add(dirLight2);
+    camera.add(new THREE.PointLight(0xffffff, 0.5));
+    scene.add(camera);
+    
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    let currentMesh;
+    
+    function base64ToArrayBuffer(base64) {
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+      return bytes.buffer;
+    }
+    
+    try {
+      const buffer = base64ToArrayBuffer(base64Data);
+      let loader;
+      if (extension === 'stl') {
+        loader = new THREE.STLLoader();
+        const geometry = loader.parse(buffer);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+        adjustCamera(geometry);
+      } else if (extension === 'ply') {
+        loader = new THREE.PLYLoader();
+        const geometry = loader.parse(buffer);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+        adjustCamera(geometry);
+      } else if (extension === 'obj') {
+        loader = new THREE.OBJLoader();
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(buffer);
+        const obj = loader.parse(text);
+        currentMesh = obj;
+        obj.traverse((child) => {
+          if (child.isMesh) { child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 }); }
+        });
+        scene.add(obj);
+        adjustCamera(obj);
+      } else if (['glb', 'gltf'].includes(extension)) {
+        loader = new THREE.GLTFLoader();
+        loader.parse(buffer, '', (gltf) => {
+          currentMesh = gltf.scene;
+          scene.add(currentMesh);
+          adjustCamera(currentMesh);
+        }, (error) => {
+          console.error(error);
+          document.getElementById('loader').innerText = 'Error loading model';
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loader').innerText = 'Failed to parse model';
+    }
+    
+    function adjustCamera(objOrGeom) {
+      document.getElementById('loader').style.opacity = '0';
+      setTimeout(() => document.getElementById('loader').remove(), 300);
+      let boundingBox = new THREE.Box3();
+      if (objOrGeom.attributes && objOrGeom.attributes.position) {
+        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
+      } else {
+        boundingBox.setFromObject(objOrGeom);
+      }
+      const center = new THREE.Vector3();
+      boundingBox.getCenter(center);
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
+      
+      if (objOrGeom.attributes && objOrGeom.attributes.position) {
+        objOrGeom.center();
+      } else {
+        objOrGeom.position.x += (objOrGeom.position.x - center.x);
+        objOrGeom.position.y += (objOrGeom.position.y - center.y);
+        objOrGeom.position.z += (objOrGeom.position.z - center.z);
+      }
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov * 2)) * 2.5;
+      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
+      camera.lookAt(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+    
+    document.getElementById('modelColor').addEventListener('input', (e) => {
+      if (!currentMesh) return;
+      currentMesh.traverse((child) => {
+        if (child.isMesh) child.material.color.set(e.target.value);
+      });
+    });
+    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
+    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
+    
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getSvgTemplate(base64Data, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Interactive Vector Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
+    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    #viewer-container:active { cursor: grabbing; }
+    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
+    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
+    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn:hover { background: #059669; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
+</head>
+<body>
+  <div id="viewer-container"></div>
+  <div class="panel">
+    <h3>${fileName}</h3>
+    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
+  </div>
+  <script>
+    const base64Data = "${base64Data}";
+    const svgText = decodeURIComponent(escape(window.atob(base64Data)));
+    document.getElementById('viewer-container').innerHTML = svgText;
+    
+    window.onload = function() {
+      const svgElement = document.querySelector('#viewer-container svg');
+      if (svgElement) {
+        svgElement.setAttribute('id', 'interactive-svg');
+        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
+        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
+      }
+    };
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getImageTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Interactive Image Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    #image-container:active { cursor: grabbing; }
+    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
+    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
+  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
+  <script>
+    const base64Data = "${base64Data}";
+    const extension = "${extension}";
+    const img = document.getElementById('zoomable-img');
+    const mime = extension === 'jpg' ? 'jpeg' : extension;
+    img.src = "data:image/" + mime + ";base64," + base64Data;
+    
+    const container = document.getElementById('image-container');
+    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
+    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
+    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
+    container.onmouseup = function(e) { isPanning = false; }
+    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
+    container.onwheel = function(e) {
+      e.preventDefault();
+      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
+      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
+      scale = Math.min(Math.max(0.1, scale), 10);
+      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
+      setTransform();
+    }
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getTextTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Document Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
+    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    header h3 { margin: 0; color: #fff; }
+    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn:hover { background: #2563eb; }
+    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
+  <pre><code id="code-content"></code></pre>
+  <script>
+    const base64Data = "${base64Data}";
+    const code = decodeURIComponent(escape(window.atob(base64Data)));
+    document.getElementById('code-content').textContent = code;
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.innerText = 'Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
+      });
+    });
+  <\/script>
+</body>
+</html>`;
+      }
+    })();
+  </script>
     <button id="back-btn" class="back-to-studios">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
         <span><span data-lang-fr>Retour aux Studios</span><span data-lang-en>Back to Studios</span></span>

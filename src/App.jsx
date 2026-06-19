@@ -586,8 +586,10 @@ const StudiosPro = () => {
         const hasCred = creditRef.current;
         const used = freeUsedRef.current;
 
-        if (isPrem || isAdm || hasCred) {
-          channel.postMessage({ type: 'EXPORT_ALLOWED' });
+        if (isPrem || isAdm) {
+          channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: true } });
+        } else if (hasCred) {
+          channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
         } else if (used < 2) {
           // Use one free credit
           setFreeExportsUsed(prev => {
@@ -595,7 +597,7 @@ const StudiosPro = () => {
             localStorage.setItem('freeExportsUsed', newVal);
             return newVal;
           });
-          channel.postMessage({ type: 'EXPORT_ALLOWED' });
+          channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
           alert(langRef.current === 'fr'
             ? `Export autorisé ! Il vous reste ${1 - used} export(s) gratuit(s).`
             : `Export granted! You have ${1 - used} free export(s) left.`);
@@ -634,9 +636,13 @@ const StudiosPro = () => {
         setIsStudioPro2Open(false);
         setIsMechGenProOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
-        if (payload.type === 'premium') setIsPremium(true);
+        let isPremSuccess = false;
+        if (payload.type === 'premium') {
+          setIsPremium(true);
+          isPremSuccess = true;
+        }
         if (payload.type === 'single') setHasExportCredit(true);
-        channel.postMessage({ type: 'EXPORT_ALLOWED' });
+        channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: isPremSuccess } });
       }
     };
 
