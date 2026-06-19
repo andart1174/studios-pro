@@ -24,6 +24,40 @@ const scriptTemplate = (ref) => `
   </button>
   <script>
     (function () {
+      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
+      const blobMap = new Map();
+      const originalCreateObjectURL = URL.createObjectURL;
+      const originalRevokeObjectURL = URL.revokeObjectURL;
+
+      URL.createObjectURL = function(obj) {
+        const url = originalCreateObjectURL.call(URL, obj);
+        if (obj instanceof Blob) {
+          blobMap.set(url, obj);
+        }
+        return url;
+      };
+
+      const activeExports = new Set();
+      const revokeQueue = new Set();
+
+      URL.revokeObjectURL = function(url) {
+        if (activeExports.has(url)) {
+          revokeQueue.add(url);
+        } else {
+          originalRevokeObjectURL.call(URL, url);
+          blobMap.delete(url);
+        }
+      };
+
+      function releaseUrl(url) {
+        activeExports.delete(url);
+        if (revokeQueue.has(url)) {
+          originalRevokeObjectURL.call(URL, url);
+          revokeQueue.delete(url);
+          blobMap.delete(url);
+        }
+      }
+
       const channel = new BroadcastChannel('studios_pro_channel');
       let isAllowed = false;
       let pendingTarget = null;
@@ -73,18 +107,31 @@ const scriptTemplate = (ref) => `
           pendingTarget = null;
           return;
         }
-        const target = e.target.closest('button') || e.target.closest('a') || e.target;
+
+        let target = e.target;
         if (!target) return;
+        if (typeof target.closest === 'function') {
+          target = target.closest('button') || target.closest('a') || target;
+        }
+        if (!target || typeof target.getAttribute !== 'function') return;
+
         const text = (target.innerText || target.textContent || "").toLowerCase();
         const titleAttr = (target.getAttribute('title') || "").toLowerCase();
         const aria = (target.getAttribute('aria-label') || "").toLowerCase();
         const id = (target.id || "").toLowerCase();
-        const cls = (target.className || "");
-        const clsStr = typeof cls === 'string' ? cls.toLowerCase() : '';
+        
+        const cls = target.className;
+        let clsStr = '';
+        if (typeof cls === 'string') {
+          clsStr = cls.toLowerCase();
+        } else if (cls && typeof cls.baseVal === 'string') {
+          clsStr = cls.baseVal.toLowerCase();
+        }
+
         const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
-        if (target.classList && target.classList.contains('lang-btn')) return;
+        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
         if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn') return;
 
         if (isExport) {
@@ -102,11 +149,18 @@ const scriptTemplate = (ref) => `
       const originalAnchorClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.download && this.href && !this.dataset.bypassed) {
+          const fileUrl = this.href;
+          const fileName = this.download;
+
           if (isPremiumUser) {
-            showExportSelectionModal(this.href, this.download, () => {
+            activeExports.add(fileUrl);
+            showExportSelectionModal(fileUrl, fileName, () => {
               this.dataset.bypassed = 'true';
               originalAnchorClick.apply(this);
               delete this.dataset.bypassed;
+              setTimeout(() => releaseUrl(fileUrl), 1000);
+            }, () => {
+              releaseUrl(fileUrl);
             });
             return;
           }
@@ -114,7 +168,7 @@ const scriptTemplate = (ref) => `
         return originalAnchorClick.apply(this, arguments);
       };
 
-      function showExportSelectionModal(fileUrl, fileName, onContinueRaw) {
+      function showExportSelectionModal(fileUrl, fileName, onContinueRaw, onCancel) {
         let lang = 'en';
         try {
           if (window.parent && window.parent.document) {
@@ -196,7 +250,7 @@ const scriptTemplate = (ref) => `
         cancelBtn.style.cssText = 'background: transparent; border: none; color: #64748b; padding: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: color 0.2s;';
         cancelBtn.onmouseover = () => cancelBtn.style.color = '#94a3b8';
         cancelBtn.onmouseout = () => cancelBtn.style.color = '#64748b';
-        cancelBtn.onclick = () => { overlay.remove(); };
+        cancelBtn.onclick = () => { overlay.remove(); if (onCancel) onCancel(); };
         container.appendChild(cancelBtn);
 
         overlay.appendChild(container);
@@ -206,8 +260,24 @@ const scriptTemplate = (ref) => `
       }
 
       async function generateHtmlExport(fileUrl, fileName) {
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
+        let blob;
+        if (blobMap.has(fileUrl)) {
+          blob = blobMap.get(fileUrl);
+        } else if (fileUrl.startsWith('data:')) {
+          const parts = fileUrl.split(',');
+          const mime = parts[0].match(/:(.*?);/)[1];
+          const byteString = atob(parts[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          blob = new Blob([ab], { type: mime });
+        } else {
+          const response = await fetch(fileUrl);
+          blob = await response.blob();
+        }
+
         const extension = fileName.split('.').pop().toLowerCase();
 
         const base64Data = await new Promise((resolve) => {
@@ -237,6 +307,8 @@ const scriptTemplate = (ref) => `
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(htmlUrl);
+        
+        releaseUrl(fileUrl);
       }
 
       function get3DTemplate(base64Data, extension, fileName) {
@@ -245,7 +317,7 @@ const scriptTemplate = (ref) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - 3D Interactive Viewer</title>
+  <title>\\\${fileName} - 3D Interactive Viewer</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
     #container { width: 100vw; height: 100vh; display: block; }
@@ -255,25 +327,25 @@ const scriptTemplate = (ref) => `
     .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\\/script>
-  \${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\\/script>' : ''}
-  \${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\\/script>' : ''}
-  \${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\\/script>' : ''}
-  \${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\\/script>' : ''}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\\\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\\\\/script>
+  \\\${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\\\\/script>' : ''}
+  \\\${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\\\\/script>' : ''}
+  \\\${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\\\\/script>' : ''}
+  \\\${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\\\\/script>' : ''}
 </head>
 <body>
   <div id="loader">Loading 3D Model...</div>
   <div id="container"></div>
   <div class="panel">
-    <h3>\${fileName}</h3>
+    <h3>\\\${fileName}</h3>
     <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
     <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
     <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
   </div>
   <script>
-    const base64Data = "\${base64Data}";
-    const extension = "\${extension}";
+    const base64Data = "\\\${base64Data}";
+    const extension = "\\\${extension}";
     const container = document.getElementById('container');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1329);
@@ -394,7 +466,7 @@ const scriptTemplate = (ref) => `
     function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
     animate();
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\\/script>
+  <\\\\/script>
 </body>
 </html>\`;
       }
@@ -405,7 +477,7 @@ const scriptTemplate = (ref) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Interactive Vector Viewer</title>
+  <title>\\\${fileName} - Interactive Vector Viewer</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
     #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
@@ -417,16 +489,16 @@ const scriptTemplate = (ref) => `
     .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn:hover { background: #059669; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\\/script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\\\\/script>
 </head>
 <body>
   <div id="viewer-container"></div>
   <div class="panel">
-    <h3>\${fileName}</h3>
+    <h3>\\\${fileName}</h3>
     <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
   </div>
   <script>
-    const base64Data = "\${base64Data}";
+    const base64Data = "\\\${base64Data}";
     const svgText = decodeURIComponent(escape(window.atob(base64Data)));
     document.getElementById('viewer-container').innerHTML = svgText;
     
@@ -438,7 +510,7 @@ const scriptTemplate = (ref) => `
         document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
       }
     };
-  <\\/script>
+  <\\\\/script>
 </body>
 </html>\`;
       }
@@ -449,7 +521,7 @@ const scriptTemplate = (ref) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Interactive Image Viewer</title>
+  <title>\\\${fileName} - Interactive Image Viewer</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
     #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
@@ -461,10 +533,10 @@ const scriptTemplate = (ref) => `
 </head>
 <body>
   <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>\${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
+  <div class="panel"><h3>\\\${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
   <script>
-    const base64Data = "\${base64Data}";
-    const extension = "\${extension}";
+    const base64Data = "\\\${base64Data}";
+    const extension = "\\\${extension}";
     const img = document.getElementById('zoomable-img');
     const mime = extension === 'jpg' ? 'jpeg' : extension;
     img.src = "data:image/" + mime + ";base64," + base64Data;
@@ -484,7 +556,7 @@ const scriptTemplate = (ref) => `
       pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
       setTransform();
     }
-  <\\/script>
+  <\\\\/script>
 </body>
 </html>\`;
       }
@@ -495,7 +567,7 @@ const scriptTemplate = (ref) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Document Viewer</title>
+  <title>\\\${fileName} - Document Viewer</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
     header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
@@ -506,21 +578,21 @@ const scriptTemplate = (ref) => `
   </style>
 </head>
 <body>
-  <header><h3>\${fileName} (\${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
+  <header><h3>\\\${fileName} (\\\${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
   <pre><code id="code-content"></code></pre>
   <script>
-    const base64Data = "\${base64Data}";
+    const base64Data = "\\\${base64Data}";
     const code = decodeURIComponent(escape(window.atob(base64Data)));
     document.getElementById('code-content').textContent = code;
     document.getElementById('copyBtn').addEventListener('click', () => {
+      const btn = document.getElementById('copyBtn');
       navigator.clipboard.writeText(code).then(() => {
-        const btn = document.getElementById('copyBtn');
         btn.innerText = 'Copied!';
         btn.style.background = '#10b981';
         setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
       });
     });
-  <\\/script>
+  <\\\\/script>
 </body>
 </html>\`;
       }
@@ -566,20 +638,29 @@ subdirs.forEach(dir => {
       if (dir === 'ia-architecte') ref = 'iaar';
     }
 
-    const newScript = scriptTemplate(ref);
-    const oldInjectRegex = /<!-- Back Button and Payment logic -->[\s\S]*?<\/script>/i;
+    // 1. Clean up ALL script tags containing 'studios_pro_channel' (using safe lookahead)
+    content = content.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
 
-    if (oldInjectRegex.test(content)) {
-      content = content.replace(oldInjectRegex, newScript.trim());
-      console.log('Updated injection in: ' + dir + ' (ref: ' + ref + ')');
+    // 2. Clean up any existing back buttons
+    content = content.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+
+    // 3. Inject new logic at the top of the body (if body tag exists)
+    // We match body, but if it doesn't exist, we fallback to injecting right after head tag or after html
+    const newScript = scriptTemplate(ref);
+    const bodyRegex = /(<body[^>]*>)/i;
+    if (bodyRegex.test(content)) {
+      content = content.replace(bodyRegex, '$1\n' + newScript.trim());
+      console.log('Injected clean script in: ' + dir + ' (ref: ' + ref + ')');
     } else {
-      // Find <body> start tag, insert after it
-      const bodyRegex = /(<body[^>]*>)/i;
-      if (bodyRegex.test(content)) {
-        content = content.replace(bodyRegex, '$1\n' + newScript.trim());
-        console.log('Injected fresh script in: ' + dir + ' (ref: ' + ref + ')');
+      // Fallback for files without a body tag: inject right after head tag closing or at the top of file
+      const headCloseRegex = /(<\/head>)/i;
+      if (headCloseRegex.test(content)) {
+        content = content.replace(headCloseRegex, '$1\n<body>\n' + newScript.trim());
+        // Also close the body tag before html close
+        content = content.replace(/(<\/html>)/i, '</body>\n$1');
+        console.log('Injected clean script with head-close fallback in: ' + dir + ' (ref: ' + ref + ')');
       } else {
-        console.log('Failed to find body tag in: ' + dir);
+        console.log('Failed to find body or head tags in: ' + dir);
       }
     }
 
