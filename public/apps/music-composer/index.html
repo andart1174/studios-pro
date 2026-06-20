@@ -320,8 +320,9 @@
         const a = document.createElement('a');
         a.href = htmlUrl;
         a.download = fileName.replace('.' + extension, '_interactive.html');
+        a.dataset.bypassed = 'true'; // bypass our monkey patch!
         document.body.appendChild(a);
-        a.click();
+        originalAnchorClick.call(a); // trigger download natively!
         document.body.removeChild(a);
         URL.revokeObjectURL(htmlUrl);
         
