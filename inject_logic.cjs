@@ -336,12 +336,12 @@ const scriptTemplate = (ref) => `
     .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\\\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\\\\/script>
-  \${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\\\\/script>' : ''}
-  \${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\\\\/script>' : ''}
-  \${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\\\\/script>' : ''}
-  \${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\\\\/script>' : ''}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\\/script>
+  \${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\\/script>' : ''}
+  \${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\\/script>' : ''}
+  \${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\\/script>' : ''}
+  \${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\\/script>' : ''}
 </head>
 <body>
   <div id="loader">Loading 3D Model...</div>
@@ -475,7 +475,7 @@ const scriptTemplate = (ref) => `
     function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
     animate();
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\\\\/script>
+  <\\/script>
 </body>
 </html>\`;
       }
@@ -498,7 +498,7 @@ const scriptTemplate = (ref) => `
     .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn:hover { background: #059669; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\\\\/script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\\/script>
 </head>
 <body>
   <div id="viewer-container"></div>
@@ -528,7 +528,7 @@ const scriptTemplate = (ref) => `
         document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
       }
     };
-  <\\\\/script>
+  <\\/script>
 </body>
 </html>\`;
       }
@@ -574,7 +574,7 @@ const scriptTemplate = (ref) => `
       pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
       setTransform();
     }
-  <\\\\/script>
+  <\\/script>
 </body>
 </html>\`;
       }
@@ -619,7 +619,7 @@ const scriptTemplate = (ref) => `
         setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
       });
     });
-  <\\\\/script>
+  <\\/script>
 </body>
 </html>\`;
       }
