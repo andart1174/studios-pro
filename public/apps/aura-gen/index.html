@@ -571,7 +571,16 @@
   </div>
   <script>
     const base64Data = "${base64Data}";
-    const svgText = decodeURIComponent(escape(window.atob(base64Data)));
+    let svgText = "";
+    try {
+      svgText = decodeURIComponent(escape(window.atob(base64Data)));
+    } catch (e) {
+      try {
+        svgText = window.atob(base64Data);
+      } catch (err) {
+        svgText = "Error decoding SVG content.";
+      }
+    }
     document.getElementById('viewer-container').innerHTML = svgText;
     
     window.onload = function() {
@@ -654,7 +663,16 @@
   <pre><code id="code-content"></code></pre>
   <script>
     const base64Data = "${base64Data}";
-    const code = decodeURIComponent(escape(window.atob(base64Data)));
+    let code = "";
+    try {
+      code = decodeURIComponent(escape(window.atob(base64Data)));
+    } catch (e) {
+      try {
+        code = window.atob(base64Data);
+      } catch (err) {
+        code = "Error decoding document content.";
+      }
+    }
     document.getElementById('code-content').textContent = code;
     document.getElementById('copyBtn').addEventListener('click', () => {
       const btn = document.getElementById('copyBtn');
@@ -670,6 +688,21 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 99999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  
+  
 <!-- Back Button and Payment logic -->
   <style>
     .back-to-studios {

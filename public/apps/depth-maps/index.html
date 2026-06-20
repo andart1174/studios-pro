@@ -1475,7 +1475,16 @@
   </div>
   <script>
     const base64Data = "${base64Data}";
-    const svgText = decodeURIComponent(escape(window.atob(base64Data)));
+    let svgText = "";
+    try {
+      svgText = decodeURIComponent(escape(window.atob(base64Data)));
+    } catch (e) {
+      try {
+        svgText = window.atob(base64Data);
+      } catch (err) {
+        svgText = "Error decoding SVG content.";
+      }
+    }
     document.getElementById('viewer-container').innerHTML = svgText;
     
     window.onload = function() {
@@ -1558,7 +1567,16 @@
   <pre><code id="code-content"></code></pre>
   <script>
     const base64Data = "${base64Data}";
-    const code = decodeURIComponent(escape(window.atob(base64Data)));
+    let code = "";
+    try {
+      code = decodeURIComponent(escape(window.atob(base64Data)));
+    } catch (e) {
+      try {
+        code = window.atob(base64Data);
+      } catch (err) {
+        code = "Error decoding document content.";
+      }
+    }
     document.getElementById('code-content').textContent = code;
     document.getElementById('copyBtn').addEventListener('click', () => {
       const btn = document.getElementById('copyBtn');
