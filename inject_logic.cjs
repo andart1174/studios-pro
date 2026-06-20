@@ -943,8 +943,13 @@ subdirs.forEach(dir => {
     // 2. Clean up any existing back buttons
     content = content.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
 
-    // 3. Clean up any existing back-to-studios styles
-    content = content.replace(/<style[^>]*>(?:(?!<\/style>)[\s\S])*?\.back-to-studios[\s\S]*?<\/style>/gi, '');
+    // 3. Clean up any existing back-to-studios styles safely
+    content = content.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (match, css) => {
+      if (css.includes('.back-to-studios') && !css.includes('local-payment-modal') && !css.includes('local-modal-content') && !css.includes('pay-btn') && !css.includes('premium-btn')) {
+        return '';
+      }
+      return match;
+    });
 
     // 3. Inject new logic at the top of the body (if body tag exists)
     const newScript = scriptTemplate(ref);
