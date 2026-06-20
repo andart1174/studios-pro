@@ -278,14 +278,32 @@
           blob = blobMap.get(fileUrl);
         } else if (fileUrl.startsWith('data:')) {
           const parts = fileUrl.split(',');
-          const mime = parts[0].match(/:(.*?);/)[1];
-          const byteString = atob(parts[1]);
-          const ab = new ArrayBuffer(byteString.length);
-          const ia = new Uint8Array(ab);
-          for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
+          const header = parts[0];
+          const dataStr = parts.slice(1).join(',');
+          let mime = 'text/plain';
+          const mimeMatch = header.match(/:(.*?)(;|$)/);
+          if (mimeMatch) {
+            mime = mimeMatch[1];
           }
-          blob = new Blob([ab], { type: mime });
+          if (header.includes(';base64')) {
+            const byteString = atob(dataStr);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+            }
+            blob = new Blob([ab], { type: mime });
+          } else {
+            let decoded = dataStr;
+            try {
+              decoded = decodeURIComponent(dataStr);
+            } catch (err) {
+              try {
+                decoded = unescape(dataStr);
+              } catch (e2) {}
+            }
+            blob = new Blob([decoded], { type: mime });
+          }
         } else {
           const response = await fetch(fileUrl);
           blob = await response.blob();
@@ -301,7 +319,7 @@
 
         let htmlContent = '';
 
-        if (['stl', 'obj', 'glb', 'gltf', 'ply'].includes(extension)) {
+        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
           htmlContent = get3DTemplate(base64Data, extension, fileName);
         } else if (extension === 'svg') {
           htmlContent = getSvgTemplate(base64Data, fileName);
@@ -461,7 +479,7 @@
       }
       const maxDim = Math.max(size.x, size.y, size.z);
       const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov * 2)) * 2.5;
+      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
       camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
       camera.lookAt(0, 0, 0);
       controls.target.set(0, 0, 0);
