@@ -485,8 +485,11 @@
         if (this.download && this.href && !this.dataset.bypassed) {
           const fileUrl = this.href;
           const fileName = this.download;
+          const extension = fileName.split('.').pop().toLowerCase();
+          const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
+          const isAllowedForHtml = allowedExtensions.includes(extension);
 
-          if (isPremiumUser) {
+          if (isPremiumUser && isAllowedForHtml) {
             activeExports.add(fileUrl);
             showExportSelectionModal(fileUrl, fileName, () => {
               // Create a clean, detached anchor to trigger the native download
@@ -505,6 +508,38 @@
           }
         }
         return originalAnchorClick.apply(this, arguments);
+      };
+
+      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
+      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
+      EventTarget.prototype.dispatchEvent = function(event) {
+        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
+          if (this.download && this.href && !this.dataset.bypassed) {
+            const fileUrl = this.href;
+            const fileName = this.download;
+            const extension = fileName.split('.').pop().toLowerCase();
+            const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
+            const isAllowedForHtml = allowedExtensions.includes(extension);
+
+            if (isPremiumUser && isAllowedForHtml) {
+              activeExports.add(fileUrl);
+              showExportSelectionModal(fileUrl, fileName, () => {
+                const a = document.createElement('a');
+                a.href = fileUrl;
+                a.download = fileName;
+                a.dataset.bypassed = 'true';
+                document.body.appendChild(a);
+                originalAnchorClick.call(a);
+                document.body.removeChild(a);
+                setTimeout(() => releaseUrl(fileUrl), 1000);
+              }, () => {
+                releaseUrl(fileUrl);
+              });
+              return false; // prevent event default/propagation simulation
+            }
+          }
+        }
+        return originalDispatchEvent.apply(this, arguments);
       };
 
       function showExportSelectionModal(fileUrl, fileName, onContinueRaw, onCancel) {
@@ -810,11 +845,20 @@
       if (objOrGeom.attributes && objOrGeom.attributes.position) {
         objOrGeom.center();
       } else {
-        objOrGeom.position.x += (objOrGeom.position.x - center.x);
-        objOrGeom.position.y += (objOrGeom.position.y - center.y);
-        objOrGeom.position.z += (objOrGeom.position.z - center.z);
+        objOrGeom.position.x -= center.x;
+        objOrGeom.position.y -= center.y;
+        objOrGeom.position.z -= center.z;
       }
-      const maxDim = Math.max(size.x, size.y, size.z);
+      let maxDim = Math.max(size.x, size.y, size.z);
+      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
+        maxDim = 50;
+      }
+      
+      // Update camera clipping planes dynamically to prevent clipping of large architectural models
+      camera.near = Math.min(0.1, maxDim / 100);
+      camera.far = Math.max(10000, maxDim * 100);
+      camera.updateProjectionMatrix();
+
       const fov = camera.fov * (Math.PI / 180);
       let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
       camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
@@ -1015,6 +1059,21 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  <style>
+    .back-to-studios {
+      position: fixed; top: 20px; left: 20px; z-index: 99999;
+      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+      color: white; padding: 10px 20px; border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
+      font-family: sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
+  </style>
+  
+  
 <!-- Back Button and Payment logic -->
   <style>
     .back-to-studios {
