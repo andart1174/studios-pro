@@ -12,168 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
-  <style>
-    .back-to-studios {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 9999;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      font-family: sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .back-to-studios:hover {
-      background: #3b82f6;
-      transform: translateY(-2px);
-    }
-
-    /* Modal Local Styles */
-    #local-payment-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
-
-    .local-modal-content {
-      background: #0f172a;
-      padding: 40px;
-      border-radius: 40px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .local-modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    .local-modal-content p {
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 25px;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .pay-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .premium-btn {
-      background: #d97706;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .pay-btn:hover,
-    .premium-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
-
-    .close-local-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 20px;
-    }
-
-    /* Language toggle */
-    .lang-toggle {
-      display: flex;
-      gap: 4px;
-      align-items: center
-    }
-
-    .lang-btn {
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 700;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all .2s;
-      letter-spacing: .5px;
-      font-family: 'Inter', sans-serif
-    }
-
-    .lang-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff
-    }
-
-    .lang-btn:hover:not(.active) {
-      border-color: var(--accent);
-      color: var(--accent)
-    }
-
-    /* EN text hidden when FR active, FR text hidden by default */
-    [data-fr] {
-      display: none
-    }
-
-    html.fr [data-en] {
-      display: none
-    }
-
-    html.fr [data-fr] {
-      display: inline
-    }
-  </style>
+  
 </head>
 
 <body>
@@ -810,7 +649,11 @@
         const obj = loader.parse(text);
         currentMesh = obj;
         obj.traverse((child) => {
-          if (child.isMesh) { child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 }); }
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+          } else if (child.isLine || child.isLineSegments || child.material) {
+            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
+          }
         });
         scene.add(obj);
         adjustCamera(obj);
@@ -872,7 +715,11 @@
     document.getElementById('modelColor').addEventListener('input', (e) => {
       if (!currentMesh) return;
       currentMesh.traverse((child) => {
-        if (child.isMesh) child.material.color.set(e.target.value);
+        if (child.isMesh) {
+          child.material.color.set(e.target.value);
+        } else if (child.isLine || child.isLineSegments || child.material) {
+          child.material.color.set(e.target.value);
+        }
       });
     });
     document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
@@ -1062,33 +909,19 @@
     })();
   </script>
 <!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
+  
   
   
 <!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
   
   
 

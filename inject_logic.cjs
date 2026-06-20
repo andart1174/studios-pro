@@ -638,7 +638,11 @@ const scriptTemplate = (ref) => `
         const obj = loader.parse(text);
         currentMesh = obj;
         obj.traverse((child) => {
-          if (child.isMesh) { child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 }); }
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+          } else if (child.isLine || child.isLineSegments || child.material) {
+            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
+          }
         });
         scene.add(obj);
         adjustCamera(obj);
@@ -700,7 +704,11 @@ const scriptTemplate = (ref) => `
     document.getElementById('modelColor').addEventListener('input', (e) => {
       if (!currentMesh) return;
       currentMesh.traverse((child) => {
-        if (child.isMesh) child.material.color.set(e.target.value);
+        if (child.isMesh) {
+          child.material.color.set(e.target.value);
+        } else if (child.isLine || child.isLineSegments || child.material) {
+          child.material.color.set(e.target.value);
+        }
       });
     });
     document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
@@ -934,6 +942,9 @@ subdirs.forEach(dir => {
 
     // 2. Clean up any existing back buttons
     content = content.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+
+    // 3. Clean up any existing back-to-studios styles
+    content = content.replace(/<style[^>]*>(?:(?!<\/style>)[\s\S])*?\.back-to-studios[\s\S]*?<\/style>/gi, '');
 
     // 3. Inject new logic at the top of the body (if body tag exists)
     const newScript = scriptTemplate(ref);

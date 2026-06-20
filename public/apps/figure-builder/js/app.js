@@ -892,13 +892,16 @@ document.getElementById('btn-chroma-abr').addEventListener('click', () => {
 });
 
 // OBJ Export
-document.getElementById('btn-export-obj').addEventListener('click', () => {
+const triggerOBJExport = () => {
     if (!fxGroup) { showToast('No figure loaded'); return; }
     const { verts4d, edges } = fxGroup.userData;
     const verts3d = verts4d.map(v => project4Dto3D(rotate4D(v, rotAngles)));
     OBJExport.export3D(state.figId, verts3d, edges);
     showToast('💾 OBJ Exported!');
-});
+};
+document.getElementById('btn-export-obj').addEventListener('click', triggerOBJExport);
+const btnHdrObj = document.getElementById('btn-export-obj-hdr');
+if (btnHdrObj) btnHdrObj.addEventListener('click', triggerOBJExport);
 
 // ── MUSIC DRAWER ──────────────────────────────────────────────────────────
 document.getElementById('btn-music-toggle').addEventListener('click', () => {
