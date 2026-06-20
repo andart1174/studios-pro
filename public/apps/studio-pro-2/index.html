@@ -282,6 +282,177 @@
   </button>
   <script>
     (function () {
+      function base64ToBytes(base64) {
+        const cleaned = base64.replace(/[^A-Za-z0-9+/]/g, '');
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        const lookup = new Uint8Array(256);
+        for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+        const bufferLength = Math.floor(cleaned.length * 0.75);
+        const bytes = new Uint8Array(bufferLength);
+        let p = 0;
+        for (let i = 0; i < cleaned.length; i += 4) {
+          const encoded1 = lookup[cleaned.charCodeAt(i)];
+          const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
+          const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
+          const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
+          bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+          if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+          if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+        }
+        return bytes;
+      }
+
+      function bytesToBase64(buffer) {
+        const bytes = new Uint8Array(buffer);
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        let base64 = '';
+        const chunk_size = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk_size) {
+          const chunk = bytes.subarray(i, i + chunk_size);
+          let chunkBase64 = '';
+          const len = chunk.length;
+          const extra = len % 3;
+          const mainLength = len - extra;
+          for (let j = 0; j < mainLength; j += 3) {
+            const byte1 = chunk[j];
+            const byte2 = chunk[j + 1];
+            const byte3 = chunk[j + 2];
+            chunkBase64 += chars[byte1 >> 2];
+            chunkBase64 += chars[((byte1 & 3) << 4) | (byte2 >> 4)];
+            chunkBase64 += chars[((byte2 & 15) << 2) | (byte3 >> 6)];
+            chunkBase64 += chars[byte3 & 63];
+          }
+          if (extra === 1) {
+            const byte1 = chunk[mainLength];
+            chunkBase64 += chars[byte1 >> 2];
+            chunkBase64 += chars[(byte1 & 3) << 4];
+            chunkBase64 += '==';
+          } else if (extra === 2) {
+            const byte1 = chunk[mainLength];
+            const byte2 = chunk[mainLength + 1];
+            chunkBase64 += chars[byte1 >> 2];
+            chunkBase64 += chars[((byte1 & 3) << 4) | (byte2 >> 4)];
+            chunkBase64 += chars[(byte2 & 15) << 2];
+            chunkBase64 += '=';
+          }
+          base64 += chunkBase64;
+        }
+        return base64;
+      }
+
+      if (typeof THREE !== 'undefined') {
+        THREE.STLExporter = class STLExporter {
+          parse(scene, options = {}) {
+            const binary = options.binary !== undefined ? options.binary : false;
+            const objects = [];
+            let triangles = 0;
+            scene.traverse(function(object) {
+              if (object.isMesh) {
+                const geometry = object.geometry;
+                const index = geometry.index;
+                const positionAttribute = geometry.getAttribute('position');
+                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
+                objects.push({ object3d: object, geometry: geometry });
+              }
+            });
+            let output;
+            let offset = 80;
+            if (binary === true) {
+              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
+              const arrayBuffer = new ArrayBuffer(bufferLength);
+              output = new DataView(arrayBuffer);
+              output.setUint32(offset, triangles, true);
+              offset += 4;
+            } else {
+              output = 'solid exported\n';
+            }
+            const vA = new THREE.Vector3();
+            const vB = new THREE.Vector3();
+            const vC = new THREE.Vector3();
+            const cb = new THREE.Vector3();
+            const ab = new THREE.Vector3();
+            const normal = new THREE.Vector3();
+            for (let i = 0, il = objects.length; i < il; i++) {
+              const object = objects[i].object3d;
+              const geometry = objects[i].geometry;
+              const index = geometry.index;
+              const positionAttribute = geometry.getAttribute('position');
+              if (index !== null) {
+                for (let j = 0; j < index.count; j += 3) {
+                  const a = index.getX(j + 0);
+                  const b = index.getX(j + 1);
+                  const c = index.getX(j + 2);
+                  writeFace(a, b, c, positionAttribute, object);
+                }
+              } else {
+                for (let j = 0; j < positionAttribute.count; j += 3) {
+                  const a = j + 0;
+                  const b = j + 1;
+                  const c = j + 2;
+                  writeFace(a, b, c, positionAttribute, object);
+                }
+              }
+            }
+            if (binary === false) {
+              output += 'endsolid exported\n';
+            }
+            return output;
+
+            function writeFace(a, b, c, positionAttribute, object) {
+              vA.fromBufferAttribute(positionAttribute, a);
+              vB.fromBufferAttribute(positionAttribute, b);
+              vC.fromBufferAttribute(positionAttribute, c);
+              if (object.isSkinnedMesh === true) {
+                object.boneTransform(a, vA);
+                object.boneTransform(b, vB);
+                object.boneTransform(c, vC);
+              }
+              vA.applyMatrix4(object.matrixWorld);
+              vB.applyMatrix4(object.matrixWorld);
+              vC.applyMatrix4(object.matrixWorld);
+              writeNormal(vA, vB, vC);
+              writeVertex(vA);
+              writeVertex(vB);
+              writeVertex(vC);
+              if (binary === true) {
+                output.setUint16(offset, 0, true);
+                offset += 2;
+              } else {
+                output += '\t\tendloop\n\tendfacet\n';
+              }
+            }
+            function writeNormal(vA, vB, vC) {
+              cb.subVectors(vC, vB);
+              ab.subVectors(vA, vB);
+              cb.cross(ab).normalize();
+              normal.copy(cb).normalize();
+              if (binary === true) {
+                output.setFloat32(offset, normal.x, true);
+                offset += 4;
+                output.setFloat32(offset, normal.y, true);
+                offset += 4;
+                output.setFloat32(offset, normal.z, true);
+                offset += 4;
+              } else {
+                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
+              }
+            }
+            function writeVertex(vertex) {
+              if (binary === true) {
+                output.setFloat32(offset, vertex.x, true);
+                offset += 4;
+                output.setFloat32(offset, vertex.y, true);
+                offset += 4;
+                output.setFloat32(offset, vertex.z, true);
+                offset += 4;
+              } else {
+                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
+              }
+            }
+          }
+        };
+      }
+
       // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
       const blobMap = new Map();
       const originalCreateObjectURL = URL.createObjectURL;
@@ -539,13 +710,7 @@
             mime = mimeMatch[1];
           }
           if (header.includes(';base64')) {
-            const byteString = atob(dataStr);
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
-              ia[i] = byteString.charCodeAt(i);
-            }
-            blob = new Blob([ab], { type: mime });
+            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
           } else {
             let decoded = dataStr;
             try {
@@ -564,11 +729,12 @@
 
         const extension = fileName.split('.').pop().toLowerCase();
 
-        const base64Data = await new Promise((resolve) => {
+        const arrayBuffer = await new Promise((resolve) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(blob);
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsArrayBuffer(blob);
         });
+        const base64Data = bytesToBase64(arrayBuffer);
 
         let htmlContent = '';
 
@@ -657,12 +823,28 @@
     controls.dampingFactor = 0.05;
     let currentMesh;
     
+    function base64ToBytes(base64) {
+      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const lookup = new Uint8Array(256);
+      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+      const bufferLength = Math.floor(cleaned.length * 0.75);
+      const bytes = new Uint8Array(bufferLength);
+      let p = 0;
+      for (let i = 0; i < cleaned.length; i += 4) {
+        const encoded1 = lookup[cleaned.charCodeAt(i)];
+        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
+        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
+        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
+        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      }
+      return bytes;
+    }
+    
     function base64ToArrayBuffer(base64) {
-      const binaryString = window.atob(base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
-      return bytes.buffer;
+      return base64ToBytes(base64).buffer;
     }
     
     try {
@@ -784,15 +966,30 @@
   </div>
   <script>
     const base64Data = "${base64Data}";
+    function base64ToBytes(base64) {
+      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const lookup = new Uint8Array(256);
+      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+      const bufferLength = Math.floor(cleaned.length * 0.75);
+      const bytes = new Uint8Array(bufferLength);
+      let p = 0;
+      for (let i = 0; i < cleaned.length; i += 4) {
+        const encoded1 = lookup[cleaned.charCodeAt(i)];
+        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
+        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
+        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
+        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      }
+      return bytes;
+    }
     let svgText = "";
     try {
-      svgText = decodeURIComponent(escape(window.atob(base64Data)));
+      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
     } catch (e) {
-      try {
-        svgText = window.atob(base64Data);
-      } catch (err) {
-        svgText = "Error decoding SVG content.";
-      }
+      svgText = "Error decoding SVG content.";
     }
     document.getElementById('viewer-container').innerHTML = svgText;
     
@@ -876,15 +1073,30 @@
   <pre><code id="code-content"></code></pre>
   <script>
     const base64Data = "${base64Data}";
+    function base64ToBytes(base64) {
+      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const lookup = new Uint8Array(256);
+      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+      const bufferLength = Math.floor(cleaned.length * 0.75);
+      const bytes = new Uint8Array(bufferLength);
+      let p = 0;
+      for (let i = 0; i < cleaned.length; i += 4) {
+        const encoded1 = lookup[cleaned.charCodeAt(i)];
+        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
+        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
+        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
+        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      }
+      return bytes;
+    }
     let code = "";
     try {
-      code = decodeURIComponent(escape(window.atob(base64Data)));
+      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
     } catch (e) {
-      try {
-        code = window.atob(base64Data);
-      } catch (err) {
-        code = "Error decoding document content.";
-      }
+      code = "Error decoding document content.";
     }
     document.getElementById('code-content').textContent = code;
     document.getElementById('copyBtn').addEventListener('click', () => {
