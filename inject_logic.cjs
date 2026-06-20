@@ -24,6 +24,23 @@ const scriptTemplate = (ref) => `
   </button>
   <script>
     (function () {
+      // Monkey patch Blob constructor to handle DataView gracefully
+      const OriginalBlob = window.Blob;
+      const CustomBlob = function (blobParts, options) {
+        if (blobParts && Array.isArray(blobParts)) {
+          const safeParts = blobParts.map(part => {
+            if (typeof DataView !== 'undefined' && part instanceof DataView) {
+              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
+            }
+            return part;
+          });
+          return new OriginalBlob(safeParts, options);
+        }
+        return new OriginalBlob(blobParts, options);
+      };
+      CustomBlob.prototype = OriginalBlob.prototype;
+      window.Blob = CustomBlob;
+
       function base64ToBytes(base64) {
         const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -46,40 +63,13 @@ const scriptTemplate = (ref) => `
 
       function bytesToBase64(buffer) {
         const bytes = new Uint8Array(buffer);
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-        let base64 = '';
+        let binary = '';
+        const len = bytes.length;
         const chunk_size = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunk_size) {
-          const chunk = bytes.subarray(i, i + chunk_size);
-          let chunkBase64 = '';
-          const len = chunk.length;
-          const extra = len % 3;
-          const mainLength = len - extra;
-          for (let j = 0; j < mainLength; j += 3) {
-            const byte1 = chunk[j];
-            const byte2 = chunk[j + 1];
-            const byte3 = chunk[j + 2];
-            chunkBase64 += chars[byte1 >> 2];
-            chunkBase64 += chars[((byte1 & 3) << 4) | (byte2 >> 4)];
-            chunkBase64 += chars[((byte2 & 15) << 2) | (byte3 >> 6)];
-            chunkBase64 += chars[byte3 & 63];
-          }
-          if (extra === 1) {
-            const byte1 = chunk[mainLength];
-            chunkBase64 += chars[byte1 >> 2];
-            chunkBase64 += chars[(byte1 & 3) << 4];
-            chunkBase64 += '==';
-          } else if (extra === 2) {
-            const byte1 = chunk[mainLength];
-            const byte2 = chunk[mainLength + 1];
-            chunkBase64 += chars[byte1 >> 2];
-            chunkBase64 += chars[((byte1 & 3) << 4) | (byte2 >> 4)];
-            chunkBase64 += chars[(byte2 & 15) << 2];
-            chunkBase64 += '=';
-          }
-          base64 += chunkBase64;
+        for (let i = 0; i < len; i += chunk_size) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk_size));
         }
-        return base64;
+        return btoa(binary);
       }
 
       if (typeof THREE !== 'undefined') {
