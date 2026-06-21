@@ -733,30 +733,32 @@ const StudiosPro = () => {
     if (!db || !collabRoomId) return;
 
     collabMessagesRef.current = []; // Clear any messages from previous room/session
-    const joinTime = new Date().toISOString();
+    let isInitial = true;
     const collabCollectionRef = collection(db, "scripting_rooms", collabRoomId, "messages");
     const q = query(collabCollectionRef, orderBy("timestamp", "asc"));
     
     const unsubscribeCollab = onSnapshot(q, (snapshot) => {
+      if (isInitial) {
+        isInitial = false;
+        return;
+      }
+
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msgData = change.doc.data();
           
-          // Only process and relay messages sent after we joined the room
-          if (msgData.timestamp && msgData.timestamp >= joinTime) {
-            // Avoid storing duplicates in collabMessagesRef
-            const exists = collabMessagesRef.current.some(m => m.timestamp === msgData.timestamp && m.userId === msgData.userId && m.type === msgData.type);
-            if (!exists) {
-              collabMessagesRef.current.push(msgData);
-            }
-            
-            // Relay to iframe if ready
-            if (isIframeReadyRef.current && scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
-              scriptingIframeRef.current.contentWindow.postMessage({
-                type: 'COLLAB_MSG',
-                payload: msgData
-              }, '*');
-            }
+          // Avoid storing duplicates in collabMessagesRef
+          const exists = collabMessagesRef.current.some(m => m.timestamp === msgData.timestamp && m.userId === msgData.userId && m.type === msgData.type);
+          if (!exists) {
+            collabMessagesRef.current.push(msgData);
+          }
+          
+          // Relay to iframe if ready
+          if (isIframeReadyRef.current && scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
+            scriptingIframeRef.current.contentWindow.postMessage({
+              type: 'COLLAB_MSG',
+              payload: msgData
+            }, '*');
           }
         }
       });
