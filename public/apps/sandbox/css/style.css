@@ -12,7 +12,7 @@
 html, body {
   font-family: 'Outfit', sans-serif; background-color: var(--bg-dark);
   color: var(--text-primary); overflow: hidden; height: 100vh; width: 100vw;
-  display: flex; flex-direction: row;
+  position: relative;
 }
 
 .glass-panel {
@@ -22,21 +22,22 @@ html, body {
 }
 
 .canvas-wrapper {
-  flex: 1; display: flex; justify-content: center; align-items: center;
-  position: relative; background: radial-gradient(circle at center, #1a1a24 0%, var(--bg-dark) 100%);
+  position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+  display: flex; justify-content: center; align-items: center;
+  background: radial-gradient(circle at center, #1a1a24 0%, var(--bg-dark) 100%);
   overflow: hidden;
 }
 
 canvas {
   touch-action: none; cursor: crosshair; background-color: transparent;
-  box-shadow: 0 0 60px rgba(0,0,0,0.8); border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px; width: 100%; height: 100%; object-fit: contain;
-  max-width: 1200px; max-height: 900px;
+  width: 100%; height: 100%; object-fit: fill;
+  max-width: none; max-height: none;
 }
 
 .sidebar {
+  position: absolute; top: 0; left: 0; z-index: 10;
   width: 320px; height: calc(100vh - 40px); margin: 20px; padding: 24px;
-  display: flex; flex-direction: column; gap: 16px; z-index: 10;
+  display: flex; flex-direction: column; gap: 16px;
   animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); overflow-y: auto;
 }
 .sidebar::-webkit-scrollbar { width: 6px; }

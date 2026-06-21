@@ -359,6 +359,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // We need to fetch and inline index.html but replace external scripts and style links
       let indexHtml = await fetch('index.html').then(r => r.text());
 
+      // Remove injected studios-pro back-button and payment logic wrapper
+      indexHtml = indexHtml.replace(/<!-- Back Button and Payment logic -->[\s\S]*?<!-- Back Button and Payment logic -->/gi, '');
+
       // Clean up header links and script tags from indexHtml
       indexHtml = indexHtml.replace(/<link rel="stylesheet" href="css\/style\.css">/g, '');
       indexHtml = indexHtml.replace(/<script src="js\/translations\.js"><\/script>/g, '');
