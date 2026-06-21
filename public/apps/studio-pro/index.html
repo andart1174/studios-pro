@@ -135,7 +135,7 @@
         body.lang-fr [data-lang-fr] { display: inline; }
         .hidden { display: none !important; }
 
-        .btn-export-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .btn-export-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
         .btn-export-grid .btn-action { padding: 0.5rem; font-size: 0.75rem; }
         .btn-preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .btn-preset-grid .btn-action { padding: 0.5rem; font-size: 0.75rem; }
@@ -404,14 +404,22 @@
         if (e.data.type === 'EXPORT_ALLOWED') {
           isAllowed = true;
           isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
+          window.isPremiumUser = isPremiumUser;
           if (localModal) localModal.style.display = 'none';
           if (pendingTarget) {
             pendingTarget.click();
           }
+        } else if (e.data.type === 'USER_STATUS_RESPONSE') {
+          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
+          window.isPremiumUser = isPremiumUser;
         }
       };
 
+      channel.postMessage({ type: 'GET_USER_STATUS' });
+
       document.addEventListener('click', (e) => {
+        if (!e.isTrusted) return;
+
         if (isAllowed) {
           isAllowed = false;
           pendingTarget = null;
@@ -441,7 +449,7 @@
           clsStr = cls.baseVal.toLowerCase();
         }
 
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];
+                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
@@ -1081,6 +1089,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
     
     <div id="local-payment-modal">
         <div class="local-modal-content">
@@ -1537,6 +1549,7 @@
                             <button class="btn-action btn-primary" onclick="exportSTL()">STL</button>
                             <button class="btn-action btn-primary" onclick="exportGLB()">GLB</button>
                             <button class="btn-action btn-primary" onclick="exportOBJ()">OBJ</button>
+                            <button class="btn-action btn-primary" onclick="exportHTML()">HTML</button>
                         </div>
                     </div>
                 </div>
@@ -3323,6 +3336,15 @@
                 const result = exporter.parse(obj);
                 saveFile(new Blob([result], { type: 'text/plain' }), currentStudio + '_pro.obj');
             } catch (e) { alert("Export failed: " + e.message); }
+        }
+
+        function exportHTML() {
+            if (!isPremiumUser && !window.isPremiumUser) {
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro' } });
+                return;
+            }
+            window.isGeneratingHtmlExport = true;
+            exportGLB();
         }
 
         function saveFile(blob, filename) {

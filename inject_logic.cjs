@@ -234,14 +234,22 @@ const scriptTemplate = (ref) => `
         if (e.data.type === 'EXPORT_ALLOWED') {
           isAllowed = true;
           isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
+          window.isPremiumUser = isPremiumUser;
           if (localModal) localModal.style.display = 'none';
           if (pendingTarget) {
             pendingTarget.click();
           }
+        } else if (e.data.type === 'USER_STATUS_RESPONSE') {
+          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
+          window.isPremiumUser = isPremiumUser;
         }
       };
 
+      channel.postMessage({ type: 'GET_USER_STATUS' });
+
       document.addEventListener('click', (e) => {
+        if (!e.isTrusted) return;
+
         if (isAllowed) {
           isAllowed = false;
           pendingTarget = null;
@@ -271,7 +279,7 @@ const scriptTemplate = (ref) => `
           clsStr = cls.baseVal.toLowerCase();
         }
 
-        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
@@ -886,7 +894,7 @@ const scriptTemplate = (ref) => `
 `;
 
 const oldKeywordsRegex = /const keywords \= \['export', 'download'[^\]]+\];/;
-const newKeywordsLine = "        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render'];";
+const newKeywordsLine = "        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];";
 
 // Automatically process discovered apps
 subdirs.forEach(dir => {
