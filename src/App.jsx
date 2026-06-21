@@ -458,8 +458,11 @@ const StudiosPro = () => {
             const data = userDoc.data();
             userData = { ...userData, ...data };
             
-            // Check if premium is still valid
-            if (data.premiumUntil) {
+            // Check if premium is manually set by admin or valid by expiration date
+            if (data.isPremium === true) {
+              setIsPremium(true);
+              setPremiumUntil(data.premiumUntil || null);
+            } else if (data.premiumUntil) {
               const now = new Date();
               const expires = new Date(data.premiumUntil);
               if (expires > now) {
@@ -470,7 +473,8 @@ const StudiosPro = () => {
                 setPremiumUntil(null);
               }
             } else {
-              setIsPremium(data.isPremium || false);
+              setIsPremium(false);
+              setPremiumUntil(null);
             }
 
             setHasExportCredit(data.hasExportCredit || false);
