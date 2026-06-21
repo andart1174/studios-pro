@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STUDIOS-PRO — 3D Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0b0f19;
+      color: #f1f5f9;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    /* Top bar */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    #topbar-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #topbar-title i { -webkit-text-fill-color: #06b6d4; }
+
+    #back-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #f1f5f9;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+    }
+    #back-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* HUD controls */
+    #hud {
+      position: fixed;
+      top: 72px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      z-index: 100;
+      min-width: 210px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    #hud h3 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: #06b6d4;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      font-weight: 800;
+    }
+    .ctrl {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+    }
+    .ctrl:last-child { margin-bottom: 0; }
+    .ctrl input[type="color"] {
+      border: none; background: none; cursor: pointer;
+      width: 32px; height: 22px; padding: 0;
+    }
+    .ctrl input[type="checkbox"] { cursor: pointer; transform: scale(1.1); }
+
+    /* Loading overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0b0f19;
+      z-index: 9999;
+      gap: 20px;
+      transition: opacity 0.4s ease;
+    }
+    #loader-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(6,182,212,0.2);
+      border-top-color: #06b6d4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error state */
+    #error-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: #0b0f19;
+      z-index: 9998;
+      gap: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+    #error-panel i { font-size: 3rem; color: #ef4444; }
+    #error-panel h2 { font-size: 1.3rem; color: #f1f5f9; }
+    #error-panel p { font-size: 0.85rem; color: #94a3b8; max-width: 480px; }
+    #error-panel a {
+      margin-top: 8px;
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* Animated grid helper color */
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loader">
+  <div class="spinner"></div>
+  <div id="loader-title">Generating 3D Model...</div>
+</div>
+
+<!-- Error panel (no state in URL) -->
+<div id="error-panel">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  <h2>No model to display</h2>
+  <p>This viewer requires a Share URL from STUDIOS-PRO Scripting Sandbox. Open the sandbox, run a script, then click <strong>Share</strong>.</p>
+  <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to Sandbox</a>
+</div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div id="topbar-title">
+    <i class="fa-solid fa-cube"></i>
+    STUDIOS-PRO <span style="font-size:0.7rem; background:rgba(6,182,212,0.15); color:#06b6d4; padding:2px 8px; border-radius:6px; border:1px solid rgba(6,182,212,0.3); font-weight:700; -webkit-background-clip:unset; -webkit-text-fill-color:#06b6d4;">3D Viewer</span>
+  </div>
+  <a href="index.html" id="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Editor</a>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <h3><i class="fa-solid fa-sliders"></i> View Controls</h3>
+  <div class="ctrl">
+    <span>Model Color</span>
+    <input type="color" id="modelColor" value="#38bdf8">
+  </div>
+  <div class="ctrl">
+    <span>Background</span>
+    <input type="color" id="bgColor" value="#0b0f19">
+  </div>
+  <div class="ctrl">
+    <span>Auto Rotate</span>
+    <input type="checkbox" id="autoRotate">
+  </div>
+  <div id="dynamic-controls-container" style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: none;">
+    <h3 style="font-size: 0.72rem; text-transform: uppercase; color: #06b6d4; margin-bottom: 10px; letter-spacing: 0.5px; font-weight: 800;"><i class="fa-solid fa-gears"></i> Script Controls</h3>
+    <div id="dyn-controls-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+  </div>
+</div>
+
+<!-- Three.js canvas target -->
+<div id="canvas-container"></div>
+
+<script>
+(function() {
+  // --- Decode URL state ---
+  const hash = window.location.hash;
+  if (!hash || !hash.startsWith('#state=')) {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('error-panel').style.display = 'flex';
+    document.getElementById('topbar').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+    return;
+  }
+
+  let state;
+  try {
+    const base64 = hash.substring(7);
+    state = JSON.parse(decodeURIComponent(escape(atob(base64))));
+  } catch(e) {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('error-panel').style.display = 'flex';
+    document.getElementById('topbar').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+    return;
+  }
+
+  const code = state.c || '';
+  const modelColor = state.mc || '#38bdf8';
+  const bgColor    = state.bc || '#0b0f19';
+  const autoRotate = state.ar || false;
+
+  // Apply initial settings to HUD
+  document.getElementById('modelColor').value = modelColor;
+  document.getElementById('bgColor').value = bgColor;
+  document.getElementById('autoRotate').checked = autoRotate;
+
+  // --- Three.js setup ---
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(bgColor);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 10000);
+  camera.position.set(30, 30, 50);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x555555));
+  const dir1 = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir1.position.set(1, 1, 1).normalize();
+  scene.add(dir1);
+  const dir2 = new THREE.DirectionalLight(0x223344, 0.5);
+  dir2.position.set(-1, -1, -1).normalize();
+  scene.add(dir2);
+
+  // Grid
+  const grid = new THREE.GridHelper(100, 40, 0x1e293b, 0x1e293b);
+  scene.add(grid);
+
+  // Controls
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.autoRotate = autoRotate;
+  controls.autoRotateSpeed = 2.0;
+
+  const keysPressed = {};
+  window.addEventListener('keydown', (e) => { keysPressed[e.key] = true; });
+  window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
+
+  let mouseState = { x: 0, y: 0, isDown: false };
+  const containerEl = document.getElementById('canvas-container');
+  if (containerEl) {
+    containerEl.addEventListener('mousemove', (e) => {
+      const rect = containerEl.getBoundingClientRect();
+      mouseState.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseState.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    });
+    containerEl.addEventListener('mousedown', () => { mouseState.isDown = true; });
+    containerEl.addEventListener('mouseup', () => { mouseState.isDown = false; });
+  }
+
+  const dynamicControlsData = {
+    values: {},
+    registered: []
+  };
+
+  // --- Scripting API ---
+  const geometryData = {
+    vertices: [],
+    edges: [],
+    faces: [],
+    particles: [],
+    spheres: [],
+    cubes: [],
+    cylinders: [],
+    toruses: [],
+    cones: [],
+    planes: []
+  };
+  let meshGroup = new THREE.Group();
+  scene.add(meshGroup);
+
+  let animFrameId = null;
+  let animStartTime = null;
+
+  // Parse Three.js Geometry to vertices/faces
+  function addThreeGeometryToData(geom) {
+    const positionAttr = geom.attributes.position;
+    const indexAttr = geom.index;
+    const startIdx = geometryData.vertices.length;
+    
+    for (let i = 0; i < positionAttr.count; i++) {
+      geometryData.vertices.push(new THREE.Vector3(
+        positionAttr.getX(i),
+        positionAttr.getY(i),
+        positionAttr.getZ(i)
+      ));
+    }
+    
+    if (indexAttr) {
+      for (let i = 0; i < indexAttr.count; i += 3) {
+        geometryData.faces.push([
+          startIdx + indexAttr.getX(i),
+          startIdx + indexAttr.getX(i + 1),
+          startIdx + indexAttr.getX(i + 2)
+        ]);
+      }
+    } else {
+      for (let i = 0; i < positionAttr.count; i += 3) {
+        geometryData.faces.push([
+          startIdx + i,
+          startIdx + i + 1,
+          startIdx + i + 2
+        ]);
+      }
+    }
+  }
+
+  // Cannon.js Physics Engine for Standalone Viewer
+  const physicsEngine = {
+    world: null,
+    bodies: [],
+    reset: function() {
+      this.world = null;
+      this.bodies = [];
+    },
+    init: function(gx = 0, gy = -9.82, gz = 0) {
+      if (typeof CANNON === 'undefined') {
+        console.error("Error: Cannon.js physics library not loaded yet.");
+        return;
+      }
+      this.world = new CANNON.World();
+      this.world.gravity.set(gx, gy, gz);
+      this.world.broadphase = new CANNON.NaiveBroadphase();
+      this.world.solver.iterations = 10;
+      this.bodies = [];
+    },
+    addFloor: function() {
+      if (!this.world) return;
+      const groundShape = new CANNON.Plane();
+      const groundBody = new CANNON.Body({ mass: 0 });
+      groundBody.addShape(groundShape);
+      groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+      groundBody.position.set(0, -10, 0);
+      this.world.addBody(groundBody);
+      this.bodies.push({ id: 'floor', body: groundBody, type: 'floor' });
+    },
+    addSphere: function(x, y, z, radius, mass) {
+      if (!this.world) return;
+      const shape = new CANNON.Sphere(radius);
+      const body = new CANNON.Body({
+        mass: mass,
+        shape: shape,
+        position: new CANNON.Vec3(x, y, z)
+      });
+      this.world.addBody(body);
+      const id = 'sphere_' + this.bodies.length;
+      this.bodies.push({ id: id, body: body, type: 'sphere', radius: radius });
+      return id;
+    },
+    addBox: function(x, y, z, size, mass) {
+      if (!this.world) return;
+      const shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
+      const body = new CANNON.Body({
+        mass: mass,
+        shape: shape,
+        position: new CANNON.Vec3(x, y, z)
+      });
+      this.world.addBody(body);
+      const id = 'box_' + this.bodies.length;
+      this.bodies.push({ id: id, body: body, type: 'box', size: size });
+      return id;
+    },
+    step: function(dt = 1/60) {
+      if (!this.world) return;
+      this.world.step(dt);
+    },
+    getBodiesState: function() {
+      return this.bodies.map(b => ({
+        id: b.id,
+        type: b.type,
+        radius: b.radius,
+        size: b.size,
+        position: { x: b.body.position.x, y: b.body.position.y, z: b.body.position.z },
+        quaternion: { x: b.body.quaternion.x, y: b.body.quaternion.y, z: b.body.quaternion.z, w: b.body.quaternion.w }
+      }));
+    }
+  };
+
+  // Sound-Reactive Audio Engine for Standalone Viewer
+  const audioEngine = {
+    audioContext: null,
+    analyser: null,
+    microphone: null,
+    dataArray: null,
+    active: false,
+    stream: null,
+    init: function() {
+      if (this.active) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audioContext = new AudioContext();
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 64;
+        const bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(bufferLength);
+        
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            this.stream = stream;
+            this.microphone = this.audioContext.createMediaStreamSource(stream);
+            this.microphone.connect(this.analyser);
+            this.active = true;
+            console.log("Audio input connected (microphone) in viewer.");
+          })
+          .catch(err => {
+            console.error("Microphone access denied in viewer:", err);
+          });
+      } catch(err) {
+        console.error("Web Audio API error in viewer:", err);
+      }
+    },
+    getData: function() {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+      if (!this.active || !this.analyser) {
+        return { volume: 0, frequencies: new Array(32).fill(0), getFrequency: () => 0 };
+      }
+      this.analyser.getByteFrequencyData(this.dataArray);
+      let sum = 0;
+      const frequencies = [];
+      for (let i = 0; i < this.dataArray.length; i++) {
+        sum += this.dataArray[i];
+        frequencies.push(this.dataArray[i]);
+      }
+      const volume = sum / (this.dataArray.length * 255);
+      return {
+        volume: volume,
+        frequencies: frequencies,
+        getFrequency: (idx) => frequencies[idx] || 0
+      };
+    },
+    stop: function() {
+      if (this.stream) {
+        this.stream.getTracks().forEach(track => track.stop());
+        this.stream = null;
+      }
+      this.active = false;
+      if (this.microphone) {
+        try { this.microphone.disconnect(); } catch(e) {}
+        this.microphone = null;
+      }
+    }
+  };
+
+  // Webcam Camera Engine for Standalone Viewer
+  const cameraEngine = {
+    video: null,
+    canvas: null,
+    ctx: null,
+    active: false,
+    stream: null,
+    init: function() {
+      if (this.active) return;
+      this.video = document.createElement('video');
+      this.video.autoplay = true;
+      this.video.playsInline = true;
+      
+      this.canvas = document.createElement('canvas');
+      this.canvas.width = 64;
+      this.canvas.height = 48;
+      this.ctx = this.canvas.getContext('2d');
+      
+      navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+        .then(stream => {
+          this.stream = stream;
+          this.video.srcObject = stream;
+          this.active = true;
+          console.log("Webcam input connected in viewer.");
+        })
+        .catch(err => {
+          console.error("Camera access denied in viewer:", err);
+        });
+    },
+    getData: function() {
+      if (!this.active || !this.video || this.video.readyState < 2) {
+        return null;
+      }
+      this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+      const imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      const data = imgData.data;
+      return {
+        width: this.canvas.width,
+        height: this.canvas.height,
+        getPixel: (x, y) => {
+          if (x < 0 || x >= this.canvas.width || y < 0 || y >= this.canvas.height) {
+            return { r: 0, g: 0, b: 0, brightness: 0, color: '#000000' };
+          }
+          const idx = (y * this.canvas.width + x) * 4;
+          const r = data[idx];
+          const g = data[idx+1];
+          const b = data[idx+2];
+          const brightness = (r + g + b) / 3;
+          const color = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+          return { r, g, b, brightness, color };
+        }
+      };
+    },
+    stop: function() {
+      if (this.stream) {
+        this.stream.getTracks().forEach(track => track.stop());
+        this.stream = null;
+      }
+      this.active = false;
+      if (this.video) {
+        this.video.srcObject = null;
+      }
+    }
+  };
+
+  const api = {
+    time: 0,
+    frame: 0,
+    keys: keysPressed,
+    mouse: mouseState,
+    addSlider: (name, defaultValue, min, max, step) => {
+      if (!dynamicControlsData.registered.some(c => c.name === name && c.type === 'slider')) {
+        dynamicControlsData.registered.push({
+          type: 'slider',
+          name: name,
+          default: defaultValue,
+          min: min !== undefined ? min : 0,
+          max: max !== undefined ? max : 100,
+          step: step !== undefined ? step : 1
+        });
+      }
+      return dynamicControlsData.values[name] !== undefined ? dynamicControlsData.values[name] : defaultValue;
+    },
+    addColorPicker: (name, defaultHex) => {
+      if (!dynamicControlsData.registered.some(c => c.name === name && c.type === 'color')) {
+        dynamicControlsData.registered.push({
+          type: 'color',
+          name: name,
+          default: defaultHex || '#38bdf8'
+        });
+      }
+      return dynamicControlsData.values[name] !== undefined ? dynamicControlsData.values[name] : (defaultHex || '#38bdf8');
+    },
+    addVertex: (x, y, z) => { geometryData.vertices.push(new THREE.Vector3(x, y, z)); return geometryData.vertices.length - 1; },
+    addEdge:   (i, j)    => { geometryData.edges.push([i, j]); },
+    addFace:   (i, j, k) => { geometryData.faces.push([i, j, k]); },
+    addParticle: (x, y, z, size, color) => {
+      geometryData.particles.push({
+        position: new THREE.Vector3(x, y, z),
+        size: size || 0.2,
+        color: color || document.getElementById('modelColor').value
+      });
+    },
+    addSphere: (x, y, z, radius, colorOrOptions) => {
+      geometryData.spheres.push({
+        position: new THREE.Vector3(x, y, z),
+        radius: radius || 0.5,
+        materialOptions: colorOrOptions
+      });
+    },
+    addCube: (x, y, z, size, colorOrOptions) => {
+      geometryData.cubes.push({
+        position: new THREE.Vector3(x, y, z),
+        size: size || 1.0,
+        materialOptions: colorOrOptions
+      });
+    },
+    addCylinder: (x, y, z, radiusTop, radiusBottom, height, colorOrOptions) => {
+      geometryData.cylinders.push({
+        position: new THREE.Vector3(x, y, z),
+        radiusTop: radiusTop !== undefined ? radiusTop : 0.5,
+        radiusBottom: radiusBottom !== undefined ? radiusBottom : 0.5,
+        height: height !== undefined ? height : 1.5,
+        materialOptions: colorOrOptions
+      });
+    },
+    addTorus: (x, y, z, radius, tubeRadius, radialSegments, tubularSegments, colorOrOptions) => {
+      geometryData.toruses.push({
+        position: new THREE.Vector3(x, y, z),
+        radius: radius !== undefined ? radius : 1.0,
+        tubeRadius: tubeRadius !== undefined ? tubeRadius : 0.3,
+        radialSegments: radialSegments !== undefined ? radialSegments : 16,
+        tubularSegments: tubularSegments !== undefined ? tubularSegments : 32,
+        materialOptions: colorOrOptions
+      });
+    },
+    addCone: (x, y, z, radius, height, colorOrOptions) => {
+      geometryData.cones.push({
+        position: new THREE.Vector3(x, y, z),
+        radius: radius !== undefined ? radius : 0.5,
+        height: height !== undefined ? height : 1.0,
+        materialOptions: colorOrOptions
+      });
+    },
+    addPlane: (x, y, z, width, height, colorOrOptions) => {
+      geometryData.planes.push({
+        position: new THREE.Vector3(x, y, z),
+        width: width !== undefined ? width : 2.0,
+        height: height !== undefined ? height : 2.0,
+        materialOptions: colorOrOptions
+      });
+    },
+    addLathe: (points, segments) => {
+      if (!points || points.length === 0) return;
+      const threePoints = points.map(p => {
+        if (Array.isArray(p)) return new THREE.Vector2(p[0], p[1]);
+        return new THREE.Vector2(p.x, p.y);
+      });
+      const latheGeom = new THREE.LatheGeometry(threePoints, segments || 32);
+      addThreeGeometryToData(latheGeom);
+      latheGeom.dispose();
+    },
+    addExtrude: (points, depth, bevelEnabled) => {
+      if (!points || points.length === 0) return;
+      const shape = new THREE.Shape();
+      const p0 = points[0];
+      const p0x = Array.isArray(p0) ? p0[0] : p0.x;
+      const p0y = Array.isArray(p0) ? p0[1] : p0.y;
+      shape.moveTo(p0x, p0y);
+      for (let i = 1; i < points.length; i++) {
+        const pi = points[i];
+        const pix = Array.isArray(pi) ? pi[0] : pi.x;
+        const piy = Array.isArray(pi) ? pi[1] : pi.y;
+        shape.lineTo(pix, piy);
+      }
+      const extrudeSettings = {
+        depth: depth !== undefined ? depth : 2.0,
+        bevelEnabled: bevelEnabled !== undefined ? bevelEnabled : true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.1,
+        bevelThickness: 0.1
+      };
+      const extrudeGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      addThreeGeometryToData(extrudeGeom);
+      extrudeGeom.dispose();
+    },
+    log:  (msg) => { console.log('[script]', msg); },
+    clear: () => {
+      geometryData.vertices = [];
+      geometryData.edges = [];
+      geometryData.faces = [];
+      geometryData.particles = [];
+      geometryData.spheres = [];
+      geometryData.cubes = [];
+      geometryData.cylinders = [];
+      geometryData.toruses = [];
+      geometryData.cones = [];
+      geometryData.planes = [];
+    },
+    // Camera API
+    initCamera: () => {
+      cameraEngine.init();
+    },
+    getCameraData: () => {
+      return cameraEngine.getData();
+    },
+    // Audio API
+    initAudio: () => {
+      audioEngine.init();
+    },
+    getAudioData: () => {
+      return audioEngine.getData();
+    },
+    // Cannon.js Physics APIs
+    initPhysics: (gx, gy, gz) => {
+      physicsEngine.init(gx, gy, gz);
+      api.physicsActive = true;
+    },
+    addPhysicalFloor: () => {
+      physicsEngine.addFloor();
+    },
+    addPhysicalSphere: (x, y, z, radius, mass) => {
+      return physicsEngine.addSphere(x, y, z, radius, mass);
+    },
+    addPhysicalBox: (x, y, z, size, mass) => {
+      return physicsEngine.addBox(x, y, z, size, mass);
+    },
+    stepPhysics: (dt) => {
+      physicsEngine.step(dt);
+    },
+    getPhysicalBodies: () => {
+      return physicsEngine.getBodiesState();
+    },
+    physicsActive: false
+  };
+
+  // Helper to parse material options
+  function getMaterialFromOptions(options, defaultColor) {
+    const modelColorVal = defaultColor || document.getElementById('modelColor').value;
+    if (!options) {
+      return new THREE.MeshStandardMaterial({
+        color: new THREE.Color(modelColorVal),
+        roughness: 0.4,
+        metalness: 0.2,
+        side: THREE.DoubleSide
+      });
+    }
+    
+    if (typeof options === 'string') {
+      return new THREE.MeshStandardMaterial({
+        color: new THREE.Color(options),
+        roughness: 0.4,
+        metalness: 0.2,
+        side: THREE.DoubleSide
+      });
+    }
+    
+    return new THREE.MeshStandardMaterial({
+      color: options.color !== undefined ? new THREE.Color(options.color) : new THREE.Color(modelColorVal),
+      roughness: options.roughness !== undefined ? parseFloat(options.roughness) : 0.4,
+      metalness: options.metalness !== undefined ? parseFloat(options.metalness) : 0.2,
+      emissive: options.emissive !== undefined ? new THREE.Color(options.emissive) : new THREE.Color(0x000000),
+      opacity: options.opacity !== undefined ? parseFloat(options.opacity) : 1.0,
+      transparent: options.transparent !== undefined ? !!options.transparent : (options.opacity !== undefined && options.opacity < 1.0),
+      wireframe: options.wireframe !== undefined ? !!options.wireframe : false,
+      side: THREE.DoubleSide
+    });
+  }
+
+  let lastRegisteredSerialized = '';
+  function renderDynamicControlsUI() {
+    const hud = document.getElementById('dynamic-controls-container');
+    const container = document.getElementById('dyn-controls-list');
+    if (!hud || !container) return;
+    
+    const registered = dynamicControlsData.registered;
+    if (registered.length === 0) {
+      hud.style.display = 'none';
+      lastRegisteredSerialized = '';
+      return;
+    }
+    
+    hud.style.display = 'block';
+    
+    const serialized = registered.map(c => `${c.type}:${c.name}:${c.min}:${c.max}:${c.step}`).join('|');
+    if (serialized === lastRegisteredSerialized) {
+      registered.forEach(c => {
+        const currentVal = dynamicControlsData.values[c.name] !== undefined ? dynamicControlsData.values[c.name] : c.default;
+        if (c.type === 'slider') {
+          const input = document.getElementById(`dyn-ctrl-${c.name}`);
+          const valSpan = document.getElementById(`dyn-val-${c.name}`);
+          if (input && document.activeElement !== input) input.value = currentVal;
+          if (valSpan) valSpan.innerText = currentVal;
+        } else if (c.type === 'color') {
+          const input = document.getElementById(`dyn-ctrl-${c.name}`);
+          if (input && document.activeElement !== input) input.value = currentVal;
+        }
+      });
+      return;
+    }
+    
+    lastRegisteredSerialized = serialized;
+    container.innerHTML = '';
+    
+    registered.forEach(c => {
+      const controlDiv = document.createElement('div');
+      controlDiv.className = 'ctrl';
+      controlDiv.style.flexDirection = 'column';
+      controlDiv.style.alignItems = 'stretch';
+      controlDiv.style.gap = '4px';
+      controlDiv.style.marginBottom = '6px';
+      
+      const labelRow = document.createElement('div');
+      labelRow.style.display = 'flex';
+      labelRow.style.justifyContent = 'space-between';
+      labelRow.style.fontSize = '0.75rem';
+      
+      const labelSpan = document.createElement('span');
+      labelSpan.innerText = c.name;
+      labelRow.appendChild(labelSpan);
+      
+      const currentVal = dynamicControlsData.values[c.name] !== undefined ? dynamicControlsData.values[c.name] : c.default;
+      
+      if (c.type === 'slider') {
+        const valueSpan = document.createElement('span');
+        valueSpan.id = `dyn-val-${c.name}`;
+        valueSpan.innerText = currentVal;
+        valueSpan.style.color = '#06b6d4';
+        valueSpan.style.fontWeight = 'bold';
+        labelRow.appendChild(valueSpan);
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.id = `dyn-ctrl-${c.name}`;
+        slider.min = c.min;
+        slider.max = c.max;
+        slider.step = c.step;
+        slider.value = currentVal;
+        slider.style.width = '100%';
+        slider.style.cursor = 'pointer';
+        
+        slider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          valueSpan.innerText = val;
+          dynamicControlsData.values[c.name] = val;
+          if (!isAnimatedScript) {
+            executeScript();
+          }
+        });
+        
+        controlDiv.appendChild(labelRow);
+        controlDiv.appendChild(slider);
+      } else if (c.type === 'color') {
+        controlDiv.style.flexDirection = 'row';
+        controlDiv.style.justifyContent = 'space-between';
+        controlDiv.style.alignItems = 'center';
+        controlDiv.style.marginBottom = '8px';
+        
+        const picker = document.createElement('input');
+        picker.type = 'color';
+        picker.id = `dyn-ctrl-${c.name}`;
+        picker.value = currentVal;
+        picker.style.width = '32px';
+        picker.style.height = '22px';
+        picker.style.border = 'none';
+        picker.style.background = 'none';
+        picker.style.cursor = 'pointer';
+        
+        picker.addEventListener('input', (e) => {
+          dynamicControlsData.values[c.name] = e.target.value;
+          if (!isAnimatedScript) {
+            executeScript();
+          }
+        });
+        
+        controlDiv.appendChild(labelRow);
+        controlDiv.appendChild(picker);
+      }
+      
+      container.appendChild(controlDiv);
+    });
+  }
+
+  function buildGeometry() {
+    const color = document.getElementById('modelColor').value;
+    const verts = geometryData.vertices;
+    const particles = geometryData.particles || [];
+    const spheres = geometryData.spheres || [];
+    const cubes = geometryData.cubes || [];
+    const cylinders = geometryData.cylinders || [];
+    const toruses = geometryData.toruses || [];
+    const cones = geometryData.cones || [];
+    const planes = geometryData.planes || [];
+
+    if (geometryData.faces.length > 0) {
+      const positions = [];
+      geometryData.faces.forEach(f => {
+        const v0 = verts[f[0]], v1 = verts[f[1]], v2 = verts[f[2]];
+        if (v0 && v1 && v2) positions.push(v0.x,v0.y,v0.z, v1.x,v1.y,v1.z, v2.x,v2.y,v2.z);
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.computeVertexNormals();
+      meshGroup.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.2, side: THREE.DoubleSide })));
+    }
+
+    if (geometryData.edges.length > 0) {
+      const linePos = [];
+      geometryData.edges.forEach(e => {
+        const v0 = verts[e[0]], v1 = verts[e[1]];
+        if (v0 && v1) linePos.push(v0.x,v0.y,v0.z, v1.x,v1.y,v1.z);
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+      meshGroup.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color })));
+    }
+
+    // Render Particles
+    if (particles.length > 0) {
+      const pGeom = new THREE.BufferGeometry();
+      const pPositions = [];
+      const pColors = [];
+      particles.forEach(p => {
+        pPositions.push(p.position.x, p.position.y, p.position.z);
+        const c = new THREE.Color(p.color);
+        pColors.push(c.r, c.g, c.b);
+      });
+      pGeom.setAttribute('position', new THREE.Float32BufferAttribute(pPositions, 3));
+      pGeom.setAttribute('color', new THREE.Float32BufferAttribute(pColors, 3));
+      
+      const pMat = new THREE.PointsMaterial({
+        size: 0.35,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9
+      });
+      meshGroup.add(new THREE.Points(pGeom, pMat));
+    }
+
+    // Render Spheres
+    if (spheres.length > 0) {
+      spheres.forEach(s => {
+        const sGeom = new THREE.SphereGeometry(s.radius, 16, 16);
+        const sMat = getMaterialFromOptions(s.materialOptions, color);
+        const sMesh = new THREE.Mesh(sGeom, sMat);
+        sMesh.position.copy(s.position);
+        meshGroup.add(sMesh);
+      });
+    }
+
+    // Render Cubes
+    if (cubes.length > 0) {
+      cubes.forEach(c => {
+        const cGeom = new THREE.BoxGeometry(c.size, c.size, c.size);
+        const cMat = getMaterialFromOptions(c.materialOptions, color);
+        const cMesh = new THREE.Mesh(cGeom, cMat);
+        cMesh.position.copy(c.position);
+        meshGroup.add(cMesh);
+      });
+    }
+
+    // Render Cylinders
+    if (cylinders.length > 0) {
+      cylinders.forEach(cy => {
+        const cyGeom = new THREE.CylinderGeometry(cy.radiusTop, cy.radiusBottom, cy.height, 16);
+        const cyMat = getMaterialFromOptions(cy.materialOptions, color);
+        const cyMesh = new THREE.Mesh(cyGeom, cyMat);
+        cyMesh.position.copy(cy.position);
+        meshGroup.add(cyMesh);
+      });
+    }
+
+    // Render Toruses
+    if (toruses.length > 0) {
+      toruses.forEach(to => {
+        const toGeom = new THREE.TorusGeometry(to.radius, to.tubeRadius, to.radialSegments, to.tubularSegments);
+        const toMat = getMaterialFromOptions(to.materialOptions, color);
+        const toMesh = new THREE.Mesh(toGeom, toMat);
+        toMesh.position.copy(to.position);
+        meshGroup.add(toMesh);
+      });
+    }
+
+    // Render Cones
+    if (cones.length > 0) {
+      cones.forEach(co => {
+        const coGeom = new THREE.ConeGeometry(co.radius, co.height, 16);
+        const coMat = getMaterialFromOptions(co.materialOptions, color);
+        const coMesh = new THREE.Mesh(coGeom, coMat);
+        coMesh.position.copy(co.position);
+        meshGroup.add(coMesh);
+      });
+    }
+
+    // Render Planes
+    if (planes.length > 0) {
+      planes.forEach(pl => {
+        const plGeom = new THREE.PlaneGeometry(pl.width, pl.height);
+        const plMat = getMaterialFromOptions(pl.materialOptions, color);
+        const plMesh = new THREE.Mesh(plGeom, plMat);
+        plMesh.position.copy(pl.position);
+        meshGroup.add(plMesh);
+      });
+    }
+
+    renderDynamicControlsUI();
+  }
+
+  function clearMeshGroup() {
+    while (meshGroup.children.length > 0) {
+      const child = meshGroup.children[0];
+      meshGroup.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) { if (Array.isArray(child.material)) child.material.forEach(m => m.dispose()); else child.material.dispose(); }
+    }
+  }
+
+  function adjustCamera() {
+    const box = new THREE.Box3().setFromObject(meshGroup);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) {
+      camera.position.set(maxDim * 1.2, maxDim * 1.2, maxDim * 1.5);
+      camera.lookAt(center);
+      controls.target.copy(center);
+      controls.update();
+    }
+    // Move grid to bottom of model
+    grid.position.y = box.min.y - 0.1;
+  }
+
+  // --- Execute the user script ---
+  let isAnimatedScript = false;
+  
+  function executeScript() {
+    dynamicControlsData.registered = [];
+    api.clear();
+    clearMeshGroup();
+    try {
+      const fn = new Function('api', code);
+      fn(api);
+      buildGeometry();
+    } catch(err) {
+      console.error('Script error:', err);
+    }
+  }
+
+  function runUserScript() {
+    const usesAudio = /\bapi\.initAudio\b/.test(code);
+    const usesCamera = /\bapi\.initCamera\b/.test(code);
+    
+    if (!usesCamera) {
+      cameraEngine.stop();
+    }
+    if (!usesAudio) {
+      audioEngine.stop();
+    }
+    physicsEngine.reset();
+    api.physicsActive = false;
+
+    isAnimatedScript = /\bapi\.(?:time|frame|getAudioData|getCameraData|stepPhysics)\b/.test(code);
+    if (isAnimatedScript) {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animStartTime = performance.now();
+      const fn = new Function('api', code);
+      const loop = () => {
+        api.time = (performance.now() - animStartTime) / 1000;
+        api.frame++;
+        api.clear();
+        clearMeshGroup();
+        dynamicControlsData.registered = [];
+        try {
+          fn(api);
+          buildGeometry();
+        } catch(e) {
+          console.error(e);
+          cancelAnimationFrame(animFrameId);
+          return;
+        }
+        animFrameId = requestAnimationFrame(loop);
+      };
+      dynamicControlsData.registered = [];
+      fn(api);
+      buildGeometry();
+      adjustCamera();
+      clearMeshGroup();
+      api.clear();
+      animFrameId = requestAnimationFrame(loop);
+    } else {
+      executeScript();
+      adjustCamera();
+    }
+  }
+
+  runUserScript();
+
+  // Hide loader with fade
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    loader.style.opacity = '0';
+    setTimeout(() => { loader.style.display = 'none'; }, 400);
+  }, 300);
+
+  // --- Render loop ---
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // --- Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // --- HUD interactions ---
+  document.getElementById('modelColor').addEventListener('input', (e) => {
+    meshGroup.traverse(child => {
+      if (child.material) child.material.color.set(e.target.value);
+    });
+  });
+
+  document.getElementById('bgColor').addEventListener('input', (e) => {
+    scene.background.set(new THREE.Color(e.target.value));
+  });
+
+  document.getElementById('autoRotate').addEventListener('change', (e) => {
+    controls.autoRotate = e.target.checked;
+  });
+
+})();
+</script>
+</body>
+</html>

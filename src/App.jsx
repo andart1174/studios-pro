@@ -99,7 +99,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply, Boxes, BookOpen
+  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code
 } from 'lucide-react';
 import './App.css';
 
@@ -407,6 +407,8 @@ const StudiosPro = () => {
 
   const [isStudioPro2Open, setIsStudioPro2Open] = useState(false);
   const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
+  const [isScriptingOpen, setIsScriptingOpen] = useState(false);
+  const [paymentReason, setPaymentReason] = useState('free_limit');
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -588,6 +590,9 @@ const StudiosPro = () => {
 
         if (isPrem || isAdm) {
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: true } });
+        } else if (payload && payload.forcePremium) {
+          setPaymentReason('premium_feature');
+          setShowPaymentRequest(true);
         } else if (hasCred) {
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
         } else if (used < 2) {
@@ -602,8 +607,14 @@ const StudiosPro = () => {
             ? `Export autorisé ! Il vous reste ${1 - used} export(s) gratuit(s).`
             : `Export granted! You have ${1 - used} free export(s) left.`);
         } else {
+          setPaymentReason('free_limit');
           setShowPaymentRequest(true);
         }
+      } else if (type === 'GET_USER_STATUS') {
+        channel.postMessage({ 
+          type: 'USER_STATUS_RESPONSE', 
+          payload: { isPremium: premiumRef.current || adminRef.current } 
+        });
       } else if (type === 'START_STRIPE_PAYMENT') {
         if (typeof payload === 'object') {
           redirectToStripe(payload.type, payload.ref);
@@ -635,6 +646,7 @@ const StudiosPro = () => {
         setIsDesignProOpen(false);
         setIsStudioPro2Open(false);
         setIsMechGenProOpen(false);
+        setIsScriptingOpen(false);
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         let isPremSuccess = false;
         if (payload.type === 'premium') {
@@ -734,6 +746,7 @@ const StudiosPro = () => {
 
       studioPro2: "Studio Pro 2",
       mechGenPro: "Mech Gen Pro",
+      scriptingStudio: "Studio Scripting",
       faqBtn: "FAQ"
     },
     en: {
@@ -778,6 +791,7 @@ const StudiosPro = () => {
 
       studioPro2: "Studio Pro 2",
       mechGenPro: "Mech Gen Pro",
+      scriptingStudio: "Scripting Studio",
       faqBtn: "FAQ"
     }
   };
@@ -785,7 +799,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -798,8 +812,12 @@ const StudiosPro = () => {
                 <Box size={48} color="#3b82f6" />
               </div>
 
-              <h2>{currentT.freeLimitTitle}</h2>
-              <p className="payment-desc">{currentT.freeLimitMsg}</p>
+              <h2>{paymentReason === 'premium_feature' 
+                ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
+                : currentT.freeLimitTitle}</h2>
+              <p className="payment-desc">{paymentReason === 'premium_feature' 
+                ? (lang === 'fr' ? "Cette fonctionnalité (copie de code, exportation, partage) est exclusivement réservée aux abonnés Premium. Abonnez-vous pour y accéder !" : "This feature (code copying, exporting, sharing) is exclusively reserved for Premium subscribers. Subscribe to get access!") 
+                : currentT.freeLimitMsg}</p>
 
               {!user && (
                 <button
@@ -1134,6 +1152,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.mechGenPro}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsScriptingOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-3" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)' }} />
+            <Code size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Scripting Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.scriptingStudio}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -1240,6 +1270,15 @@ const StudiosPro = () => {
         {isMechGenProOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/mech-gen-pro/index.html" className="studio-iframe" title="Mech Gen Pro" />
+          </motion.div>
+        )}
+        {isScriptingOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe 
+              src={`/apps/scripting-live/index.html?premium=${isPremium || isAdmin}`} 
+              className="studio-iframe" 
+              title="Scripting Studio" 
+            />
           </motion.div>
         )}
       </AnimatePresence>

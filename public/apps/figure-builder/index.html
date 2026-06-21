@@ -47,34 +47,13 @@
       window.Blob = CustomBlob;
 
       function base64ToBytes(base64) {
-        const cleaned = base64.replace(/[^A-Za-z0-9+/]/g, '');
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-        const lookup = new Uint8Array(256);
-        for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-        const bufferLength = Math.floor(cleaned.length * 0.75);
-        const bytes = new Uint8Array(bufferLength);
-        let p = 0;
-        for (let i = 0; i < cleaned.length; i += 4) {
-          const encoded1 = lookup[cleaned.charCodeAt(i)];
-          const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
-          const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
-          const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
-          bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-          if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-          if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+        const binString = atob(base64);
+        const len = binString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binString.charCodeAt(i);
         }
         return bytes;
-      }
-
-      function bytesToBase64(buffer) {
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        const len = bytes.length;
-        const chunk_size = 0x8000;
-        for (let i = 0; i < len; i += chunk_size) {
-          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk_size));
-        }
-        return btoa(binary);
       }
 
       if (typeof THREE !== 'undefined') {
@@ -501,12 +480,16 @@
 
         const extension = fileName.split('.').pop().toLowerCase();
 
-        const arrayBuffer = await new Promise((resolve) => {
+        const base64Data = await new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsArrayBuffer(blob);
+          reader.onloadend = () => {
+            const result = reader.result;
+            const base64 = result.substring(result.indexOf(',') + 1);
+            resolve(base64);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
         });
-        const base64Data = bytesToBase64(arrayBuffer);
 
         let htmlContent = '';
 
@@ -596,21 +579,11 @@
     let currentMesh;
     
     function base64ToBytes(base64) {
-      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-      const lookup = new Uint8Array(256);
-      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-      const bufferLength = Math.floor(cleaned.length * 0.75);
-      const bytes = new Uint8Array(bufferLength);
-      let p = 0;
-      for (let i = 0; i < cleaned.length; i += 4) {
-        const encoded1 = lookup[cleaned.charCodeAt(i)];
-        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
-        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
-        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
-        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
       }
       return bytes;
     }
@@ -670,12 +643,44 @@
     function adjustCamera(objOrGeom) {
       document.getElementById('loader').style.opacity = '0';
       setTimeout(() => document.getElementById('loader').remove(), 300);
+      
       let boundingBox = new THREE.Box3();
+      let hasGeometry = false;
+      
       if (objOrGeom.attributes && objOrGeom.attributes.position) {
         boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
+        hasGeometry = true;
       } else {
+        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
+        objOrGeom.traverse((child) => {
+          if (child.isMesh || child.isLine || child.isLineSegments) {
+            if (child.geometry) {
+              const nameLower = (child.name || '').toLowerCase();
+              const typeLower = (child.type || '').toLowerCase();
+              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
+                return;
+              }
+              child.geometry.computeBoundingBox();
+              if (child.geometry.boundingBox) {
+                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
+                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
+                  if (!hasGeometry) {
+                    boundingBox.copy(childBox);
+                    hasGeometry = true;
+                  } else {
+                    boundingBox.union(childBox);
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      if (!hasGeometry) {
         boundingBox.setFromObject(objOrGeom);
       }
+      
       const center = new THREE.Vector3();
       boundingBox.getCenter(center);
       const size = new THREE.Vector3();
@@ -684,16 +689,17 @@
       if (objOrGeom.attributes && objOrGeom.attributes.position) {
         objOrGeom.center();
       } else {
+        // Shift geometry group meshes to center at 0,0,0
         objOrGeom.position.x -= center.x;
         objOrGeom.position.y -= center.y;
         objOrGeom.position.z -= center.z;
       }
+      
       let maxDim = Math.max(size.x, size.y, size.z);
       if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
         maxDim = 50;
       }
       
-      // Update camera clipping planes dynamically to prevent clipping of large architectural models
       camera.near = Math.min(0.1, maxDim / 100);
       camera.far = Math.max(10000, maxDim * 100);
       camera.updateProjectionMatrix();
@@ -756,21 +762,11 @@
   <script>
     const base64Data = "${base64Data}";
     function base64ToBytes(base64) {
-      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-      const lookup = new Uint8Array(256);
-      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-      const bufferLength = Math.floor(cleaned.length * 0.75);
-      const bytes = new Uint8Array(bufferLength);
-      let p = 0;
-      for (let i = 0; i < cleaned.length; i += 4) {
-        const encoded1 = lookup[cleaned.charCodeAt(i)];
-        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
-        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
-        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
-        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
       }
       return bytes;
     }
@@ -863,21 +859,11 @@
   <script>
     const base64Data = "${base64Data}";
     function base64ToBytes(base64) {
-      const cleaned = base64.replace(/[^A-Za-z0-9+\/]/g, '');
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-      const lookup = new Uint8Array(256);
-      for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-      const bufferLength = Math.floor(cleaned.length * 0.75);
-      const bytes = new Uint8Array(bufferLength);
-      let p = 0;
-      for (let i = 0; i < cleaned.length; i += 4) {
-        const encoded1 = lookup[cleaned.charCodeAt(i)];
-        const encoded2 = lookup[cleaned.charCodeAt(i + 1)];
-        const encoded3 = lookup[cleaned.charCodeAt(i + 2)] || 0;
-        const encoded4 = lookup[cleaned.charCodeAt(i + 3)] || 0;
-        bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-        if (p < bufferLength) bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-        if (p < bufferLength) bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
       }
       return bytes;
     }
@@ -902,6 +888,22 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
