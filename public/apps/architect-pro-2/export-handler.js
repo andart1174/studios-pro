@@ -115,6 +115,7 @@ function exportGLB() {
             link.click();
             document.body.removeChild(link);
         },
+        null,
         { binary: true }
     );
 }

@@ -667,8 +667,8 @@
           ['obj'],
           ['ply'],
           ['3mf'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['save svg', 'export svg', 'download svg', 'svg'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['png', 'jpg', 'jpeg', 'capture', 'image'],
           ['gcode', 'g-code'],
           ['save', 'export', 'download', 'telecharger', 'render', 'capture']
@@ -1182,6 +1182,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
@@ -2127,6 +2131,7 @@
                 <button class="btn" onclick="exportGLB()">🌐 GLB</button>
                 <button class="btn btn-dxf" onclick="exportDXF()">📐 DXF</button>
                 <button class="btn btn-svg" onclick="exportSVG()">🎨 SVG</button>
+                <button class="btn btn-html" onclick="exportHTML()" style="background:linear-gradient(135deg, #6366f1, #a855f7);color:#fff;border:none;">🌐 HTML</button>
                 <button class="btn btn-png" onclick="exportPNG()">🖼️ PNG</button>
             </div>
         </aside>
@@ -4315,7 +4320,16 @@
                 saveArrayBuffer(glb, getDownloadName('glb'));
             }, function(error) {
                 console.error(error);
-            }, { binary: true });
+            }, null, { binary: true });
+        }
+
+        function exportHTML() {
+            if (!window.isPremiumUser && !isPremiumUser) {
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'mechgen' } });
+                return;
+            }
+            window.isGeneratingHtmlExport = true;
+            exportGLB();
         }
 
         // --- 2D & IMAGE EXPORTERS ---

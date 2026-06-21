@@ -904,7 +904,7 @@ document.getElementById('btn-export-glb')?.addEventListener('click', () => {
         a.click();
         document.body.removeChild(a);
         showToast('💾 GLB Exported!');
-    }, { binary: true });
+    }, (error) => console.error(error), { binary: true });
 });
 
 // STL Export
@@ -1568,3 +1568,12 @@ setTimeout(startApp, 50);
 applyLang('en');
 if(!window.location.hash) showToast('🌌 4D Figure Builder PRO ready ✨', 3500);
 
+// HTML Export
+document.getElementById('btn-export-html')?.addEventListener('click', () => {
+    if (!window.isPremiumUser && !isPremiumUser) {
+        channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'figb' } });
+        return;
+    }
+    window.isGeneratingHtmlExport = true;
+    document.getElementById('btn-export-glb')?.click();
+});

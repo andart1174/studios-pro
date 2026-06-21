@@ -663,8 +663,8 @@
           ['obj'],
           ['ply'],
           ['3mf'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['save svg', 'export svg', 'download svg', 'svg'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['png', 'jpg', 'jpeg', 'capture', 'image'],
           ['gcode', 'g-code'],
           ['save', 'export', 'download', 'telecharger', 'render', 'capture']
@@ -1178,6 +1178,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
@@ -3365,7 +3369,7 @@
             const exporter = new THREE.GLTFExporter();
             exporter.parse(getExportTarget(), (glb) => {
                 downloadFile(new Blob([glb], { type: 'application/octet-stream' }), 'studio_export.glb');
-            }, { binary: true });
+            }, null, { binary: true });
         }
 
         function exportSVG() {

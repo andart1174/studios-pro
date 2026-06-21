@@ -1477,7 +1477,16 @@ function setupExportPanel() {
   document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
   document.getElementById('exp-glb')?.addEventListener('click', () => {
-    if (!viewer3d || !viewer3d.scene) { showToast('Scene 3D non chargée', 'error'); return; }
+    if (!viewer3d || !viewer3d.scene) { showToast('Scene 3D non chargée', 'error'); return; 
+  document.getElementById('exp-html')?.addEventListener('click', () => {
+    if (!window.isPremiumUser && !isPremiumUser) {
+      channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'desp' } });
+      return;
+    }
+    window.isGeneratingHtmlExport = true;
+    document.getElementById('exp-glb')?.click();
+  });
+}
     const exporter = new THREE.GLTFExporter();
     exporter.parse(viewer3d.scene, function(gltf) {
       const blob = new Blob([gltf], { type: 'application/octet-stream' });
@@ -1485,7 +1494,7 @@ function setupExportPanel() {
       link.href = URL.createObjectURL(blob);
       link.download = 'design_pro_project.glb';
       link.click();
-    }, { binary: true });
+    }, (error) => console.error(error), { binary: true });
   });
 
   document.getElementById('exp-stl')?.addEventListener('click', () => {

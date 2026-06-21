@@ -24,6 +24,7 @@ window.Exporter = {
                 const blob = new Blob([gltf], { type: 'application/octet-stream' });
                 Exporter.saveFile(blob, 'architect_project.glb');
             },
+            null,
             { binary: true }
         );
     },
@@ -171,6 +172,15 @@ window.Exporter = {
 
 // Bind Export Buttons UI
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('doExportHTML')?.addEventListener('click', () => {
+        if (!window.isPremiumUser && !isPremiumUser) {
+            channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp1' } });
+            return;
+        }
+        window.isGeneratingHtmlExport = true;
+        Exporter.exportGLB();
+    });
+
     document.getElementById('doExportGLB')?.addEventListener('click', () => Exporter.exportGLB());
     document.getElementById('doExportSTL')?.addEventListener('click', () => Exporter.exportSTL());
     document.getElementById('doExportOBJ')?.addEventListener('click', () => Exporter.exportOBJ());

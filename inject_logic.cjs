@@ -407,8 +407,8 @@ const scriptTemplate = (ref) => {
           ['obj'],
           ['ply'],
           ['3mf'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['save svg', 'export svg', 'download svg', 'svg'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['png', 'jpg', 'jpeg', 'capture', 'image'],
           ['gcode', 'g-code'],
           ['save', 'export', 'download', 'telecharger', 'render', 'capture']

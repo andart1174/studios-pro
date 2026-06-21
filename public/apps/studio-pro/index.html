@@ -575,8 +575,8 @@
           ['obj'],
           ['ply'],
           ['3mf'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['save svg', 'export svg', 'download svg', 'svg'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
           ['png', 'jpg', 'jpeg', 'capture', 'image'],
           ['gcode', 'g-code'],
           ['save', 'export', 'download', 'telecharger', 'render', 'capture']
@@ -1090,6 +1090,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
@@ -3366,7 +3370,7 @@
             exporter.parse(obj, (result) => {
                 if (result instanceof ArrayBuffer) saveFile(new Blob([result], { type: 'application/octet-stream' }), currentStudio + '_pro.glb');
                 else saveFile(new Blob([JSON.stringify(result)], { type: 'application/json' }), currentStudio + '_pro.gltf');
-            }, { binary: true });
+            }, null, { binary: true });
         }
 
         function exportOBJ() {
