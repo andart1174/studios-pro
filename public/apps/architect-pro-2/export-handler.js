@@ -89,3 +89,74 @@ async function exportToPDF() {
         });
     }
 }
+
+/**
+ * Exporter functions for 3D model formats
+ */
+function exportGLB() {
+    if (!window.THREE || !window.THREE.GLTFExporter) {
+        alert('GLTFExporter not loaded.');
+        return;
+    }
+    if (!window._three3DScene) {
+        alert('3D scene not ready.');
+        return;
+    }
+    const exporter = new THREE.GLTFExporter();
+    exporter.parse(
+        window._three3DScene,
+        function (gltf) {
+            const blob = new Blob([gltf], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = URL.createObjectURL(blob);
+            link.download = 'architect_project.glb';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+        { binary: true }
+    );
+}
+
+function exportSTL() {
+    if (!window.THREE || !window.THREE.STLExporter) {
+        alert('STLExporter not loaded.');
+        return;
+    }
+    if (!window._three3DScene) {
+        alert('3D scene not ready.');
+        return;
+    }
+    const exporter = new THREE.STLExporter();
+    const stlString = exporter.parse(window._three3DScene);
+    const blob = new Blob([stlString], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.href = URL.createObjectURL(blob);
+    link.download = 'architect_project.stl';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportOBJ() {
+    if (!window.THREE || !window.THREE.OBJExporter) {
+        alert('OBJExporter not loaded.');
+        return;
+    }
+    if (!window._three3DScene) {
+        alert('3D scene not ready.');
+        return;
+    }
+    const exporter = new THREE.OBJExporter();
+    const result = exporter.parse(window._three3DScene);
+    const blob = new Blob([result], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.href = URL.createObjectURL(blob);
+    link.download = 'architect_project.obj';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}

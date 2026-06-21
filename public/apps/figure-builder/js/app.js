@@ -891,6 +891,37 @@ document.getElementById('btn-chroma-abr').addEventListener('click', () => {
     showToast(chromaPass ? (on ? '🔴🟢🔵 Chromatic aberration ON' : '🔵 Chroma OFF') : '⚠️ Post-processing not available');
 });
 
+// GLB Export
+document.getElementById('btn-export-glb')?.addEventListener('click', () => {
+    if (!fxGroup) { showToast('No figure loaded'); return; }
+    const exporter = new THREE.GLTFExporter();
+    exporter.parse(fxGroup, function(gltf) {
+        const blob = new Blob([gltf], { type: 'application/octet-stream' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `4d-${state.figId}-${Date.now()}.glb`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('💾 GLB Exported!');
+    }, { binary: true });
+});
+
+// STL Export
+document.getElementById('btn-export-stl')?.addEventListener('click', () => {
+    if (!fxGroup) { showToast('No figure loaded'); return; }
+    const exporter = new THREE.STLExporter();
+    const stlString = exporter.parse(fxGroup);
+    const blob = new Blob([stlString], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `4d-${state.figId}-${Date.now()}.stl`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('💾 STL Exported!');
+});
+
 // OBJ Export
 document.getElementById('btn-export-obj').addEventListener('click', () => {
     if (!fxGroup) { showToast('No figure loaded'); return; }

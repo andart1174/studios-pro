@@ -346,6 +346,45 @@
         return originalDispatchEvent.apply(this, arguments);
       };
 
+      // Intercept modern showSaveFilePicker API (File System Access API)
+      if (typeof window.showSaveFilePicker === 'function') {
+        const originalShowSaveFilePicker = window.showSaveFilePicker;
+        window.showSaveFilePicker = async function(options) {
+          if (window.isGeneratingHtmlExport) {
+            const suggestedName = (options && options.suggestedName) || 'export';
+            return {
+              kind: 'file',
+              name: suggestedName,
+              createWritable: async function() {
+                let chunks = [];
+                return {
+                  write: async function(data) {
+                    chunks.push(data);
+                  },
+                  close: async function() {
+                    window.isGeneratingHtmlExport = false; // Reset flag
+                    let blob;
+                    if (chunks.length === 1 && chunks[0] instanceof Blob) {
+                      blob = chunks[0];
+                    } else {
+                      blob = new Blob(chunks);
+                    }
+                    const fileUrl = URL.createObjectURL(blob);
+                    blobMap.set(fileUrl, blob);
+                    activeExports.add(fileUrl);
+                    generateHtmlExport(fileUrl, suggestedName).catch(e => {
+                      console.error(e);
+                      alert("Error generating HTML export: " + e.message);
+                    });
+                  }
+                };
+              }
+            };
+          }
+          return originalShowSaveFilePicker.apply(this, arguments);
+        };
+      }
+
       // Inject "Save HTML" button dynamically for all apps
       setInterval(() => {
         const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
@@ -354,8 +393,8 @@
         const validButtons = buttons.filter(btn => {
           const txt = (btn.textContent || btn.value || '').toLowerCase();
           const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium')) return false;
+          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
+          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
           return true;
         });
 
@@ -369,10 +408,13 @@
         // Find the best export/save button candidate based on text keywords
         let baseBtn = null;
         const priorities = [
-          ['save svg', 'export svg', 'download svg', 'svg'],
           ['glb', 'gltf'],
           ['stl'],
           ['obj'],
+          ['ply'],
+          ['3mf'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
+          ['save svg', 'export svg', 'download svg', 'svg'],
           ['png', 'jpg', 'jpeg', 'capture', 'image'],
           ['gcode', 'g-code'],
           ['save', 'export', 'download', 'telecharger', 'render', 'capture']
@@ -926,6 +968,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
 
   <!-- Back Button and Payment logic -->
   
@@ -1012,6 +1058,9 @@
         <button class="btn-sm" onclick="resetApp()">🔄 <span data-i18n="newProject">New Project</span></button>
         <button class="btn-sm" onclick="exportToPrint()">🖨️ <span data-i18n="printProject">Print</span></button>
         <button class="btn-sm" onclick="exportToPDF()">📄 <span data-i18n="exportPDF">Download PDF</span></button>
+        <button class="btn-sm" onclick="exportGLB()" id="btn-export-glb">📦 <span data-i18n="exportGLB">Download GLB</span></button>
+        <button class="btn-sm" onclick="exportSTL()" id="btn-export-stl">📦 <span data-i18n="exportSTL">Download STL</span></button>
+        <button class="btn-sm" onclick="exportOBJ()" id="btn-export-obj">📦 <span data-i18n="exportOBJ">Download OBJ</span></button>
         <div class="lang-toggle">
           <button class="lang-btn active" id="app-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
           <button class="lang-btn" id="app-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
@@ -1205,6 +1254,9 @@
   <script src="data.js?v=3"></script>
   <script src="editor.js?v=3"></script>
   <script src="three-scene.js?v=3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
   <script src="export-handler.js?v=3"></script>
   <script src="app.js?v=3"></script>
 </body>
