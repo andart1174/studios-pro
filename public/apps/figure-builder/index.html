@@ -302,15 +302,11 @@
       }, true);
 
       // --- WEB EXPORT PRO INTERCEPTOR ---
-      const isDfxOrSpro = false;
       const originalAnchorClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.download && this.href && !this.dataset.bypassed) {
           const fileUrl = this.href;
           const fileName = this.download;
-          const extension = fileName.split('.').pop().toLowerCase();
-          const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
-          const isAllowedForHtml = allowedExtensions.includes(extension);
 
           if (window.isGeneratingHtmlExport) {
             window.isGeneratingHtmlExport = false; // Reset flag
@@ -318,24 +314,6 @@
             generateHtmlExport(fileUrl, fileName).catch(e => {
               console.error(e);
               alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-
-          if (!isDfxOrSpro && isPremiumUser && isAllowedForHtml) {
-            activeExports.add(fileUrl);
-            showExportSelectionModal(fileUrl, fileName, () => {
-              // Create a clean, detached anchor to trigger the native download
-              const a = document.createElement('a');
-              a.href = fileUrl;
-              a.download = fileName;
-              a.dataset.bypassed = 'true';
-              document.body.appendChild(a);
-              originalAnchorClick.call(a);
-              document.body.removeChild(a);
-              setTimeout(() => releaseUrl(fileUrl), 1000);
-            }, () => {
-              releaseUrl(fileUrl);
             });
             return;
           }
@@ -350,9 +328,6 @@
           if (this.download && this.href && !this.dataset.bypassed) {
             const fileUrl = this.href;
             const fileName = this.download;
-            const extension = fileName.split('.').pop().toLowerCase();
-            const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
-            const isAllowedForHtml = allowedExtensions.includes(extension);
 
             if (window.isGeneratingHtmlExport) {
               window.isGeneratingHtmlExport = false; // Reset flag
@@ -363,156 +338,109 @@
               });
               return false; // prevent event default/propagation simulation
             }
-
-            if (!isDfxOrSpro && isPremiumUser && isAllowedForHtml) {
-              activeExports.add(fileUrl);
-              showExportSelectionModal(fileUrl, fileName, () => {
-                const a = document.createElement('a');
-                a.href = fileUrl;
-                a.download = fileName;
-                a.dataset.bypassed = 'true';
-                document.body.appendChild(a);
-                originalAnchorClick.call(a);
-                document.body.removeChild(a);
-                setTimeout(() => releaseUrl(fileUrl), 1000);
-              }, () => {
-                releaseUrl(fileUrl);
-              });
-              return false; // prevent event default/propagation simulation
-            }
           }
         }
         return originalDispatchEvent.apply(this, arguments);
       };
 
-      // Inject "Save HTML" button dynamically for DFX
-      if (isDfxOrSpro && 'figb' === 'dfx') {
-        setInterval(() => {
-          const buttons = Array.from(document.querySelectorAll('button'));
-          const svgBtn = buttons.find(btn => btn.textContent.toLowerCase().includes('save svg') || (btn.textContent.toLowerCase().includes('svg') && btn.textContent.toLowerCase().includes('save')));
-          if (svgBtn && !document.getElementById('injected-save-html-btn')) {
-            const parent = svgBtn.parentElement;
-            if (parent) {
-              const htmlBtn = document.createElement('button');
-              htmlBtn.id = 'injected-save-html-btn';
-              htmlBtn.innerText = 'Save HTML';
-              htmlBtn.className = svgBtn.className;
-              htmlBtn.style.cssText = svgBtn.style.cssText;
-              
-              // Premium styling
-              htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-              htmlBtn.style.color = '#ffffff';
+      // Inject "Save HTML" button dynamically for all apps
+      setInterval(() => {
+        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
+        
+        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
+        const validButtons = buttons.filter(btn => {
+          const txt = (btn.textContent || btn.value || '').toLowerCase();
+          const id = (btn.id || '').toLowerCase();
+          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium')) return false;
+          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium')) return false;
+          return true;
+        });
+
+        // Check if there is an existing button that already contains 'html'
+        const hasExistingHtmlBtn = buttons.some(btn => {
+          const txt = (btn.textContent || btn.value || '').toLowerCase();
+          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
+        });
+        if (hasExistingHtmlBtn) return;
+
+        // Find the best export/save button candidate based on text keywords
+        let baseBtn = null;
+        const priorities = [
+          ['save svg', 'export svg', 'download svg', 'svg'],
+          ['glb', 'gltf'],
+          ['stl'],
+          ['obj'],
+          ['png', 'jpg', 'jpeg', 'capture', 'image'],
+          ['gcode', 'g-code'],
+          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
+        ];
+
+        for (const kwList of priorities) {
+          baseBtn = validButtons.find(btn => {
+            const txt = (btn.textContent || btn.value || '').toLowerCase();
+            return kwList.some(kw => txt.includes(kw));
+          });
+          if (baseBtn) break;
+        }
+
+        if (baseBtn && !document.getElementById('injected-save-html-btn')) {
+          const parent = baseBtn.parentElement;
+          if (parent) {
+            const htmlBtn = document.createElement(baseBtn.tagName);
+            htmlBtn.id = 'injected-save-html-btn';
+            htmlBtn.className = baseBtn.className;
+            
+            // Style matching
+            htmlBtn.style.cssText = baseBtn.style.cssText;
+            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
+            htmlBtn.style.color = '#ffffff';
+            htmlBtn.style.borderColor = 'transparent';
+            
+            // Spacing adjustments
+            const display = window.getComputedStyle(parent).display;
+            if (display.includes('flex') || display.includes('grid')) {
+              // Flex or grid layouts handle layout automatically
+            } else {
               htmlBtn.style.marginTop = '8px';
-              
-              htmlBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (!isPremiumUser && !window.isPremiumUser) {
-                  channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-                  return;
-                }
-                
-                window.isGeneratingHtmlExport = true;
-                svgBtn.click();
-              };
-              
-              svgBtn.parentNode.insertBefore(htmlBtn, svgBtn.nextSibling);
+              htmlBtn.style.marginLeft = '4px';
             }
-          }
-        }, 1000);
-      }
 
-      function showExportSelectionModal(fileUrl, fileName, onContinueRaw, onCancel) {
-        let lang = 'en';
-        try {
-          if (window.parent && window.parent.document) {
-            const activeLangBtn = window.parent.document.querySelector('.lang-btn.active');
-            if (activeLangBtn) {
-              lang = activeLangBtn.innerText.toLowerCase().trim() === 'fr' ? 'fr' : 'en';
+            // Determine HTML button text based on base button text length/language
+            const baseText = baseBtn.textContent.trim();
+            let btnText = 'Save HTML';
+            if (baseText.length <= 5) {
+              btnText = 'HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('export')) {
+              btnText = 'Export HTML';
+            } else if (baseText.toLowerCase().includes('sauvegarder')) {
+              btnText = 'Sauvegarder HTML';
             }
+            
+            if (baseBtn.tagName === 'INPUT') {
+              htmlBtn.value = btnText;
+            } else {
+              htmlBtn.textContent = btnText;
+            }
+            
+            htmlBtn.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (!isPremiumUser && !window.isPremiumUser) {
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'figb' } });
+                return;
+              }
+              
+              window.isGeneratingHtmlExport = true;
+              baseBtn.click();
+            };
+            
+            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
           }
-        } catch (e) {}
-
-        const t = {
-          en: {
-            title: "WEB EXPORT PRO",
-            subtitle: "Choose your export format",
-            file: "File:",
-            rawBtn: "Standard Download",
-            rawDesc: "Save the raw file (.stl, .svg, .obj, .gcode) for printing or CNC.",
-            htmlBtn: "Interactive Web Page (HTML)",
-            htmlDesc: "Download an interactive web page of your creation for offline viewing or hosting.",
-            cancel: "Cancel",
-            generating: "Generating HTML..."
-          },
-          fr: {
-            title: "EXPORT WEB PRO",
-            subtitle: "Choisissez le format d'export",
-            file: "Fichier:",
-            rawBtn: "Téléchargement Standard",
-            rawDesc: "Sauvegardez le fichier brut (.stl, .svg, .obj, .gcode) pour l'impression ou CNC.",
-            htmlBtn: "Page Web Interactive (HTML)",
-            htmlDesc: "Téléchargez une page web interactive de votre création pour l'affichage hors-ligne.",
-            cancel: "Annuler",
-            generating: "Génération du HTML..."
-          }
-        }[lang];
-
-        const oldOverlay = document.getElementById('web-export-pro-overlay');
-        if (oldOverlay) oldOverlay.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'web-export-pro-overlay';
-        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(12px); z-index: 999999; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: white; opacity: 0; transition: opacity 0.3s ease;';
-
-        const container = document.createElement('div');
-        container.style.cssText = 'background: #0f172a; padding: 30px; border-radius: 24px; width: 90%; max-width: 460px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: scale(0.9); transition: transform 0.3s ease; display: flex; flex-direction: column; gap: 20px;';
-
-        const header = document.createElement('div');
-        header.innerHTML = '<h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #3b82f6, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">' + t.title + '</h2><p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #94a3b8;">' + t.subtitle + '</p><div style="margin-top: 10px; font-size: 0.8rem; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #64748b;">' + t.file + '</span> <strong style="color: #cbd5e1;">' + fileName + '</strong></div>';
-        container.appendChild(header);
-
-        const rawBtn = document.createElement('button');
-        rawBtn.style.cssText = 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: white; padding: 15px; border-radius: 14px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;';
-        rawBtn.innerHTML = '<strong style="font-size: 0.95rem; color: #fff;">' + t.rawBtn + '</strong><span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.3;">' + t.rawDesc + '</span>';
-        rawBtn.onmouseover = () => { rawBtn.style.background = 'rgba(255, 255, 255, 0.06)'; rawBtn.style.borderColor = 'rgba(59, 130, 246, 0.4)'; };
-        rawBtn.onmouseout = () => { rawBtn.style.background = 'rgba(255, 255, 255, 0.03)'; rawBtn.style.borderColor = 'rgba(255, 255, 255, 0.08)'; };
-        rawBtn.onclick = () => { overlay.remove(); onContinueRaw(); };
-        container.appendChild(rawBtn);
-
-        const htmlBtn = document.createElement('button');
-        htmlBtn.style.cssText = 'background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: white; padding: 15px; border-radius: 14px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px;';
-        htmlBtn.innerHTML = '<strong style="font-size: 0.95rem; color: #3b82f6;">' + t.htmlBtn + '</strong><span style="font-size: 0.75rem; color: #94a3b8; line-height: 1.3;">' + t.htmlDesc + '</span>';
-        htmlBtn.onmouseover = () => { htmlBtn.style.background = 'rgba(59, 130, 246, 0.15)'; htmlBtn.style.borderColor = 'rgba(59, 130, 246, 0.5)'; };
-        htmlBtn.onmouseout = () => { htmlBtn.style.background = 'rgba(59, 130, 246, 0.1)'; htmlBtn.style.borderColor = 'rgba(59, 130, 246, 0.3)'; };
-        htmlBtn.onclick = async () => {
-          htmlBtn.disabled = true;
-          htmlBtn.style.opacity = '0.5';
-          htmlBtn.querySelector('strong').innerText = t.generating;
-          try {
-            await generateHtmlExport(fileUrl, fileName);
-          } catch (e) {
-            console.error(e);
-            alert("Error: " + e.message);
-          }
-          overlay.remove();
-        };
-        container.appendChild(htmlBtn);
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.innerText = t.cancel;
-        cancelBtn.style.cssText = 'background: transparent; border: none; color: #64748b; padding: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: color 0.2s;';
-        cancelBtn.onmouseover = () => cancelBtn.style.color = '#94a3b8';
-        cancelBtn.onmouseout = () => cancelBtn.style.color = '#64748b';
-        cancelBtn.onclick = () => { overlay.remove(); if (onCancel) onCancel(); };
-        container.appendChild(cancelBtn);
-
-        overlay.appendChild(container);
-        document.body.appendChild(overlay);
-
-        setTimeout(() => { overlay.style.opacity = '1'; container.style.transform = 'scale(1)'; }, 10);
-      }
+        }
+      }, 1000);
 
       async function generateHtmlExport(fileUrl, fileName) {
         let blob;
@@ -955,6 +883,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
