@@ -1,0 +1,31 @@
+{
+  "name": "zen-sandscape-god-mode",
+  "version": "1.0.0",
+  "description": "Simulation physique interactive avec 37 matériaux / Interactive physics sandbox with 37 materials",
+  "author": "AI Code Studio <andart1174@gmail.com>",
+  "homepage": "https://ai-codestudio.com",
+  "license": "COMMERCIAL",
+  "keywords": [
+    "sandbox",
+    "physics",
+    "simulation",
+    "falling sand",
+    "canvas",
+    "javascript",
+    "game",
+    "interactive",
+    "particles",
+    "zen"
+  ],
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . --listen 8080"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai-codestudio/zen-sandscape"
+  }
+}

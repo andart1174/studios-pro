@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen Sandscape God Mode — Buy Now $29 | AI Code Studio</title>
+  <meta name="description" content="Interactive physics sandbox with 37 unique materials. Lasers, portals, vortex, virus and much more. One-time purchase $29. Pure HTML/JS — zero dependencies.">
+  <meta property="og:title" content="Zen Sandscape God Mode — $29">
+  <meta property="og:description" content="37-material physics sandbox. HTML/JS, no dependencies. Commercial license included.">
+  <meta property="og:image" content="thumbnail.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070b14;
+      --surface: #0d1424;
+      --surface2: #111827;
+      --border: rgba(99,179,237,0.12);
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --accent3: #06b6d4;
+      --gold: #f59e0b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --green: #10b981;
+      --red: #f43f5e;
+      --glow: rgba(59,130,246,0.35);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── LANG SWITCHER ─── */
+    #lang-switcher {
+      position: fixed;
+      top: 18px; right: 24px;
+      z-index: 999;
+      display: flex;
+      gap: 6px;
+    }
+    .lang-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(13,20,36,0.85);
+      backdrop-filter: blur(12px);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-btn.active, .lang-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      background: rgba(7,11,20,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent3); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 10% 90%, rgba(6,182,212,0.1) 0%, transparent 50%);
+      animation: heroPulse 8s ease-in-out infinite alternate;
+    }
+    @keyframes heroPulse {
+      from { opacity: 0.7; } to { opacity: 1; }
+    }
+
+    /* Floating particles */
+    .particles { position: absolute; inset: 0; pointer-events: none; }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: floatUp var(--dur) var(--delay) ease-in infinite;
+    }
+    @keyframes floatUp {
+      0%   { opacity: 0; transform: translateY(0) scale(1); }
+      30%  { opacity: 0.7; }
+      100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 50px;
+      padding: 6px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent3);
+      margin-bottom: 28px;
+      position: relative;
+      letter-spacing: 0.5px;
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      position: relative;
+      background: linear-gradient(135deg, #fff 0%, var(--accent3) 40%, var(--accent2) 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .hero-desc {
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
+      color: var(--muted);
+      max-width: 580px;
+      line-height: 1.7;
+      position: relative;
+      margin-bottom: 48px;
+    }
+
+    /* price */
+    .price-block {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .price-old {
+      font-size: 1.1rem;
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .price-main {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--gold) 0%, #fb923c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    .price-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 40px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(59,130,246,0.5); }
+    .btn-primary:hover::after { opacity: 1; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 32px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      backdrop-filter: blur(8px);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+
+    /* ─── PREVIEW IMAGE ─── */
+    .preview-section {
+      padding: 0 24px 80px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview-wrapper {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 80px rgba(59,130,246,0.2), 0 0 0 1px rgba(99,179,237,0.05);
+      max-width: 900px;
+      width: 100%;
+    }
+    .preview-wrapper img {
+      width: 100%;
+      display: block;
+    }
+    .preview-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(7,11,20,0.6) 0%, transparent 50%);
+    }
+    .preview-label {
+      position: absolute;
+      bottom: 16px; left: 16px;
+      background: rgba(7,11,20,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .preview-label strong { color: var(--accent3); }
+
+    /* ─── SECTION COMMON ─── */
+    section {
+      padding: 80px 24px;
+    }
+    .section-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent3);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 600px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ─── MATERIALS GRID ─── */
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .material-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    .material-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(99,179,237,0.3);
+      box-shadow: 0 8px 32px rgba(59,130,246,0.1);
+    }
+    .material-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent3);
+      margin-bottom: 12px;
+    }
+    .material-list {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .material-list li {
+      font-size: 12px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ─── FEATURES BIG ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--grad, linear-gradient(90deg, var(--accent), var(--accent2)));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: rgba(99,179,237,0.25); }
+    .feature-card:hover::before { opacity: 1; }
+    .feat-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+    .feat-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feat-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* ─── WHAT'S INCLUDED ─── */
+    .included-section { background: var(--surface); }
+    .included-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media(max-width: 640px) { .included-grid { grid-template-columns: 1fr; } }
+    .included-col h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .check-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .check-list li .icon-yes { color: var(--green); font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+    .check-list li .icon-no  { color: var(--red);   font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+    .check-list li strong { color: var(--text); }
+
+    /* ─── TECH STACK ─── */
+    .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+    .tech-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .tech-pill span { font-size: 1.1rem; }
+
+    /* ─── PRICING CARD ─── */
+    .pricing-section { text-align: center; }
+    .pricing-card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 28px;
+      padding: 48px 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(59,130,246,0.12);
+    }
+    .pricing-card::before {
+      content: '';
+      position: absolute;
+      top: -60%; left: -30%;
+      width: 160%; height: 160%;
+      background: radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%);
+    }
+    .pricing-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--gold), #fb923c);
+      color: #000;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 50px;
+      margin-bottom: 24px;
+    }
+    .pricing-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .pricing-desc {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 32px;
+    }
+    .pricing-price {
+      font-size: 5rem;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--gold) 0%, #fb923c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .pricing-once {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 36px;
+    }
+    .pricing-features {
+      list-style: none;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 36px;
+      position: relative;
+    }
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .pricing-features li .chk { color: var(--green); font-size: 1.1rem; }
+    .pricing-features li strong { color: var(--text); }
+
+    .btn-buy {
+      display: block;
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.4);
+      position: relative;
+    }
+    .btn-buy:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(59,130,246,0.55); }
+
+    .trust-line {
+      margin-top: 20px;
+      font-size: 0.83rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .trust-item { display: flex; align-items: center; gap: 5px; }
+
+    /* ─── FAQ ─── */
+    .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .faq-q {
+      padding: 20px 24px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 0.95rem;
+      user-select: none;
+      transition: color 0.2s;
+    }
+    .faq-q:hover { color: var(--accent3); }
+    .faq-arrow { transition: transform 0.3s; font-size: 1rem; }
+    .faq-item.open .faq-arrow { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.3s;
+      padding: 0 24px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .faq-item.open .faq-a { max-height: 300px; padding: 0 24px 20px; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer-logo {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .footer-logo span { color: var(--accent3); }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: 0.83rem; color: #475569; }
+
+    /* ─── VIDEO MODAL ─── */
+    .video-modal-overlay {
+      position: fixed; inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s, visibility 0.35s;
+    }
+    .video-modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .video-modal-box {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(99,179,237,0.2);
+      box-shadow: 0 0 120px rgba(59,130,246,0.25);
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      background: #000;
+    }
+    .video-modal-overlay.open .video-modal-box {
+      transform: scale(1) translateY(0);
+    }
+    .video-modal-box iframe {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: block;
+      border: none;
+    }
+    .video-modal-close {
+      position: absolute;
+      top: -16px; right: -16px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .video-modal-close:hover { background: var(--red); border-color: var(--red); transform: scale(1.1); }
+    .video-modal-header {
+      padding: 14px 20px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .video-modal-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .video-modal-title strong { color: var(--accent3); }
+    .video-modal-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .video-modal-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width: 640px) {
+      nav { padding: 12px 16px; }
+      .materials-grid { grid-template-columns: 1fr 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .pricing-card { padding: 36px 24px; }
+    }
+
+    /* ─── LANG VISIBILITY ─── */
+    .en, .fr { }
+    body.lang-fr .en { display: none !important; }
+    body.lang-en .fr { display: none !important; }
+  </style>
+</head>
+<body class="lang-en" id="page-body">
+
+  <!-- ─── LANG SWITCHER ─── -->
+  <div id="lang-switcher">
+    <button class="lang-btn active" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
+    <button class="lang-btn"        id="btn-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+  </div>
+
+  <!-- ─── NAV ─── -->
+  <nav>
+    <a href="https://ai-codestudio.com" class="nav-logo">AI <span>Code</span> Studio</a>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- EN -->
+    <div class="hero-badge en">
+      <span class="badge-dot"></span>
+      Available Now — Instant Download
+    </div>
+    <!-- FR -->
+    <div class="hero-badge fr">
+      <span class="badge-dot"></span>
+      Disponible maintenant — Téléchargement immédiat
+    </div>
+
+    <h1>Zen Sandscape<br>God Mode</h1>
+
+    <p class="hero-subtitle en">⚡ The Ultimate Physics Sandbox — 37 Materials</p>
+    <p class="hero-subtitle fr">⚡ Le Bac à sable Physique Ultime — 37 Matériaux</p>
+
+    <p class="hero-desc en">
+      A stunning real-time physics simulation built with pure HTML5 Canvas + JavaScript. Lasers, portals, vortex, virus, anti-gravity, piano blocks and much more. No dependencies, no build step — open and play.
+    </p>
+    <p class="hero-desc fr">
+      Une simulation physique temps réel époustouflante en HTML5 Canvas + JavaScript pur. Lasers, portails, vortex, virus, anti-gravité, blocs piano et bien plus. Aucune dépendance, aucune compilation — ouvrez et jouez.
+    </p>
+
+    <div class="price-block">
+      <span class="price-old">$79</span>
+      <span class="price-main">$29</span>
+      <span class="price-note en">One-time payment — Lifetime commercial license</span>
+      <span class="price-note fr">Paiement unique — Licence commerciale à vie</span>
+    </div>
+
+    <div class="hero-cta-group">
+      <a href="https://andalionart.gumroad.com/l/zen-sandscape" class="btn-primary" id="hero-buy-btn" target="_blank">
+        <span>🛒</span>
+        <span class="en">Buy Now — $29</span>
+        <span class="fr">Acheter — 29$</span>
+      </a>
+      <button class="btn-secondary" id="open-video-btn" onclick="openVideoModal()" style="cursor:pointer;">
+        <span>▶️</span>
+        <span class="en">Watch Demo</span>
+        <span class="fr">Voir la Démo</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── PREVIEW IMAGE ─── -->
+  <div class="preview-section">
+    <div class="preview-wrapper">
+      <img src="thumbnail.png" alt="Zen Sandscape God Mode — Screenshot" loading="lazy">
+      <div class="preview-overlay"></div>
+      <div class="preview-label">
+        <strong class="en">Live screenshot</strong>
+        <strong class="fr">Capture en direct</strong>
+        &nbsp;— Zen Sandscape God Mode v1.0
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MATERIALS ─── -->
+  <section id="materials">
+    <div class="section-inner">
+      <span class="section-label en">37 Materials</span>
+      <span class="section-label fr">37 Matériaux</span>
+
+      <h2 class="section-title en">Every material. Every interaction.</h2>
+      <h2 class="section-title fr">Chaque matériau. Chaque interaction.</h2>
+
+      <p class="section-desc en">From basic sand and water to black holes and light beams — a complete physical universe at your fingertips.</p>
+      <p class="section-desc fr">Du sable et de l'eau aux trous noirs et rayons lumineux — un univers physique complet à portée de main.</p>
+
+      <div class="materials-grid">
+        <div class="material-card">
+          <h3>⚡ Mega</h3>
+          <ul class="material-list">
+            <li>🏖️ Sand</li><li>💧 Water</li><li>🔥 Fire</li>
+            <li>☣️ Acid</li><li>🌱 Seed</li><li>⚡ Wire</li>
+            <li>✨ Spark</li><li>🧱 Obstacle</li>
+          </ul>
+        </div>
+        <div class="material-card">
+          <h3>👑 God Mode</h3>
+          <ul class="material-list">
+            <li>🐜 Bugs</li><li>💣 C4</li><li>🌋 Lava</li>
+            <li>🔵 Portal IN</li><li>🟠 Portal OUT</li>
+          </ul>
+        </div>
+        <div class="material-card">
+          <h3>🌌 Universe</h3>
+          <ul class="material-list">
+            <li>☁️ Weather</li><li>🚰 Spawner</li><li>🌌 Vortex</li>
+            <li>🦠 Virus</li><li>⬆️ Anti-Grav</li>
+          </ul>
+        </div>
+        <div class="material-card">
+          <h3>🎭 Deus Ex</h3>
+          <ul class="material-list">
+            <li>🎵 Piano</li><li>❄️ Snow</li><li>🧊 Ice</li>
+            <li>🎛️ Sensor</li><li>🚪 Auto Door</li>
+          </ul>
+        </div>
+        <div class="material-card">
+          <h3>🔬 Gen 5</h3>
+          <ul class="material-list">
+            <li>🔦 Laser</li><li>🪞 Mirror</li><li>🐟 Fish</li>
+            <li>🐝 Bee</li><li>🏭 Conveyor</li><li>💨 Fan</li>
+          </ul>
+        </div>
+        <div class="material-card">
+          <h3>🎨 Tools</h3>
+          <ul class="material-list">
+            <li>🖌️ Brush</li><li>💨 Spray</li><li>🌗 Symmetry</li>
+            <li>🏞️ Import</li><li>✂️ Stencils</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FEATURES ─── -->
+  <section id="features" style="background: var(--surface2);">
+    <div class="section-inner">
+      <span class="section-label en">Advanced Features</span>
+      <span class="section-label fr">Fonctionnalités Avancées</span>
+
+      <h2 class="section-title en">Built for creators & developers</h2>
+      <h2 class="section-title fr">Conçu pour créateurs & développeurs</h2>
+
+      <p class="section-desc en">Every feature engineered for maximum creativity and developer flexibility.</p>
+      <p class="section-desc fr">Chaque fonctionnalité conçue pour une créativité maximale et la flexibilité des développeurs.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feat-icon">⚡</span>
+          <div class="feat-title en">Pixel Physics Engine</div>
+          <div class="feat-title fr">Moteur Physique Pixel</div>
+          <div class="feat-desc en">Custom high-performance engine. Each pixel simulated independently with real physical rules.</div>
+          <div class="feat-desc fr">Moteur haute performance sur mesure. Chaque pixel simulé indépendamment avec de vraies règles physiques.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🔵</span>
+          <div class="feat-title en">Portal System</div>
+          <div class="feat-title fr">Système de Portails</div>
+          <div class="feat-desc en">Place IN and OUT portals anywhere. Particles travel between them with momentum preserved.</div>
+          <div class="feat-desc fr">Placez les portails IN et OUT n'importe où. Les particules voyagent avec l'élan conservé.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🔦</span>
+          <div class="feat-title en">Laser & Mirror</div>
+          <div class="feat-title fr">Laser & Miroir</div>
+          <div class="feat-desc en">Shoot laser beams and reflect them off mirror surfaces. Real angle calculations.</div>
+          <div class="feat-desc fr">Tirez des faisceaux laser et réfléchissez-les sur des miroirs. Calculs d'angles réels.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🌌</span>
+          <div class="feat-title en">Vortex Black Hole</div>
+          <div class="feat-title fr">Vortex Trou Noir</div>
+          <div class="feat-desc en">Real gravitational attraction pulls all nearby particles into a swirling singularity.</div>
+          <div class="feat-desc fr">Attraction gravitationnelle réelle qui aspire toutes les particules proches dans une singularité.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🎵</span>
+          <div class="feat-title en">Piano Block</div>
+          <div class="feat-title fr">Bloc Piano</div>
+          <div class="feat-desc en">Sand falls on piano blocks and plays real pentatonic scale notes. Meditative gameplay.</div>
+          <div class="feat-desc fr">Le sable tombe sur des blocs piano et joue de vraies notes pentatoniques. Jeu méditatif.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🎬</span>
+          <div class="feat-title en">Export & Record</div>
+          <div class="feat-title fr">Export & Enregistrement</div>
+          <div class="feat-desc en">Export PNG screenshots or record WebM video of your simulations in real-time.</div>
+          <div class="feat-desc fr">Exportez en PNG ou enregistrez des vidéos WebM de vos simulations en temps réel.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🖼️</span>
+          <div class="feat-title en">Photo Import + Stencils</div>
+          <div class="feat-title fr">Import Photo + Stencils</div>
+          <div class="feat-desc en">Import your own image with automatic white background removal. 10+ included stencils.</div>
+          <div class="feat-desc fr">Importez votre image avec suppression automatique du fond blanc. 10+ stencils inclus.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feat-icon">🌐</span>
+          <div class="feat-title en">Bilingual FR / EN</div>
+          <div class="feat-title fr">Bilingue FR / EN</div>
+          <div class="feat-desc en">Full French and English interface. Switch languages instantly with a single click.</div>
+          <div class="feat-desc fr">Interface complète en français et anglais. Changez de langue instantanément.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WHAT'S INCLUDED ─── -->
+  <section class="included-section" id="included">
+    <div class="section-inner">
+      <span class="section-label en">License</span>
+      <span class="section-label fr">Licence</span>
+
+      <h2 class="section-title en">What's included in $29</h2>
+      <h2 class="section-title fr">Ce qui est inclus pour 29$</h2>
+
+      <p class="section-desc en">A complete commercial package — no recurring fees, no subscriptions.</p>
+      <p class="section-desc fr">Un package commercial complet — pas de frais récurrents, pas d'abonnement.</p>
+
+      <div class="included-grid">
+        <div class="included-col">
+          <h3 class="en">✅ You CAN</h3>
+          <h3 class="fr">✅ Vous POUVEZ</h3>
+          <ul class="check-list">
+            <li><span class="icon-yes">✓</span><span><strong class="en">Use</strong><strong class="fr">Utiliser</strong> <span class="en">in personal & commercial projects</span><span class="fr">dans des projets perso & commerciaux</span></span></li>
+            <li><span class="icon-yes">✓</span><span><strong class="en">Modify</strong><strong class="fr">Modifier</strong> <span class="en">the source code</span><span class="fr">le code source</span></span></li>
+            <li><span class="icon-yes">✓</span><span><strong class="en">Deploy</strong><strong class="fr">Déployer</strong> <span class="en">on unlimited domains</span><span class="fr">sur des domaines illimités</span></span></li>
+            <li><span class="icon-yes">✓</span><span><strong class="en">Rebrand</strong><strong class="fr">Rebrandiser</strong> <span class="en">with your own logo & name</span><span class="fr">avec votre propre logo & nom</span></span></li>
+            <li><span class="icon-yes">✓</span><span><strong class="en">Use</strong><strong class="fr">Utiliser</strong> <span class="en">in client projects (agencies, freelancers)</span><span class="fr">dans des projets clients (agences, freelances)</span></span></li>
+            <li><span class="icon-yes">✓</span><span><strong class="en">Lifetime</strong><strong class="fr">Durée de vie</strong> <span class="en">access to the code</span><span class="fr">accès au code</span></span></li>
+          </ul>
+        </div>
+        <div class="included-col">
+          <h3 class="en">❌ You CANNOT</h3>
+          <h3 class="fr">❌ Vous ne POUVEZ PAS</h3>
+          <ul class="check-list">
+            <li><span class="icon-no">✗</span><span><strong class="en">Resell</strong><strong class="fr">Revendre</strong> <span class="en">the source code as-is</span><span class="fr">le code source tel quel</span></span></li>
+            <li><span class="icon-no">✗</span><span><strong class="en">Redistribute</strong><strong class="fr">Redistribuer</strong> <span class="en">to unauthorized third parties</span><span class="fr">à des tiers non autorisés</span></span></li>
+            <li><span class="icon-no">✗</span><span><strong class="en">Sub-license</strong><strong class="fr">Sous-licencier</strong> <span class="en">or transfer rights</span><span class="fr">ou transférer les droits</span></span></li>
+            <li><span class="icon-no">✗</span><span><strong class="en">Remove</strong><strong class="fr">Supprimer</strong> <span class="en">copyright notices from source code</span><span class="fr">les mentions copyright du code source</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TECH STACK ─── -->
+  <section id="tech">
+    <div class="section-inner">
+      <span class="section-label en">Technology</span>
+      <span class="section-label fr">Technologie</span>
+
+      <h2 class="section-title en">Zero dependencies. Pure web.</h2>
+      <h2 class="section-title fr">Zéro dépendance. Web pur.</h2>
+
+      <p class="section-desc en">No frameworks, no npm packages, no build tools required. Just open and it works.</p>
+      <p class="section-desc fr">Pas de frameworks, pas de packages npm, pas d'outils de build. Ouvrez et ça fonctionne.</p>
+
+      <div class="tech-pills">
+        <div class="tech-pill"><span>🌐</span> HTML5 Canvas</div>
+        <div class="tech-pill"><span>⚡</span> Vanilla JavaScript</div>
+        <div class="tech-pill"><span>🎨</span> CSS3 Glassmorphism</div>
+        <div class="tech-pill"><span>📱</span> Touch Events</div>
+        <div class="tech-pill"><span>🎬</span> MediaRecorder API</div>
+        <div class="tech-pill"><span>💾</span> localStorage</div>
+        <div class="tech-pill"><span>🌍</span> i18n FR/EN</div>
+        <div class="tech-pill"><span>0️⃣</span> <span class="en">Zero Dependencies</span><span class="fr">Zéro Dépendance</span></div>
+      </div>
+
+      <div class="included-col" style="max-width:500px;">
+        <h3 class="en" style="color:var(--accent3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">📦 Package Contents</h3>
+        <h3 class="fr" style="color:var(--accent3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">📦 Contenu du Package</h3>
+        <ul class="check-list">
+          <li><span class="icon-yes">✓</span><span class="en">index.html — Full application</span><span class="fr">index.html — Application complète</span></li>
+          <li><span class="icon-yes">✓</span><span>engine.js — <span class="en">Physics engine</span><span class="fr">Moteur physique</span></span></li>
+          <li><span class="icon-yes">✓</span><span>app.js — <span class="en">UI & events</span><span class="fr">UI & événements</span></span></li>
+          <li><span class="icon-yes">✓</span><span>models.js — <span class="en">Vector stencils</span><span class="fr">Stencils vectoriels</span></span></li>
+          <li><span class="icon-yes">✓</span><span>translations.js — FR/EN</span></li>
+          <li><span class="icon-yes">✓</span><span class="en">thumbnail.png — Preview image</span><span class="fr">thumbnail.png — Image de prévisualisation</span></li>
+          <li><span class="icon-yes">✓</span><span>README.md + DEPLOY.md + CHANGELOG.md</span></li>
+          <li><span class="icon-yes">✓</span><span class="en">LICENSE.md — Commercial license</span><span class="fr">LICENSE.md — Licence commerciale</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PRICING ─── -->
+  <section class="pricing-section" id="pricing" style="background: var(--surface2);">
+    <div class="section-inner" style="display:flex;flex-direction:column;align-items:center;">
+      <span class="section-label en">Pricing</span>
+      <span class="section-label fr">Tarif</span>
+
+      <h2 class="section-title en">Simple, honest pricing.</h2>
+      <h2 class="section-title fr">Un prix simple et honnête.</h2>
+
+      <p class="section-desc en" style="text-align:center;margin:0 auto 48px;">Pay once, own it forever. No subscriptions, no hidden fees.</p>
+      <p class="section-desc fr" style="text-align:center;margin:0 auto 48px;">Payez une fois, possédez-le pour toujours. Pas d'abonnement, pas de frais cachés.</p>
+
+      <div class="pricing-card">
+        <span class="pricing-badge en">Commercial License</span>
+        <span class="pricing-badge fr">Licence Commerciale</span>
+
+        <div class="pricing-name">Zen Sandscape — God Mode</div>
+        <div class="pricing-desc en">Complete package with source code + documentation</div>
+        <div class="pricing-desc fr">Package complet avec code source + documentation</div>
+
+        <div class="pricing-price">$29</div>
+        <div class="pricing-once en">One-time payment — no subscription</div>
+        <div class="pricing-once fr">Paiement unique — pas d'abonnement</div>
+
+        <ul class="pricing-features">
+          <li><span class="chk">✓</span><span><strong class="en">Full source code</strong><strong class="fr">Code source complet</strong></span></li>
+          <li><span class="chk">✓</span><span><strong>37</strong> <span class="en">unique materials</span><span class="fr">matériaux uniques</span></span></li>
+          <li><span class="chk">✓</span><span><span class="en">Commercial license — unlimited projects</span><span class="fr">Licence commerciale — projets illimités</span></span></li>
+          <li><span class="chk">✓</span><span><span class="en">Zero dependencies — deploy anywhere</span><span class="fr">Zéro dépendance — déployez partout</span></span></li>
+          <li><span class="chk">✓</span><span><span class="en">Complete bilingual documentation (FR/EN)</span><span class="fr">Documentation bilingue complète (FR/EN)</span></span></li>
+          <li><span class="chk">✓</span><span><span class="en">Lifetime access + future updates</span><span class="fr">Accès à vie + mises à jour futures</span></span></li>
+          <li><span class="chk">✓</span><span><span class="en">Email support — andart1174@gmail.com</span><span class="fr">Support par email — andart1174@gmail.com</span></span></li>
+        </ul>
+
+        <a href="https://andalionart.gumroad.com/l/zen-sandscape" class="btn-buy" id="pricing-buy-btn" target="_blank">
+          <span class="en">🛒 Buy Now — $29</span>
+          <span class="fr">🛒 Acheter maintenant — 29$</span>
+        </a>
+
+        <div class="trust-line">
+          <span class="trust-item">🔒 <span class="en">Secure email order</span><span class="fr">Commande sécurisée</span></span>
+          <span class="trust-item">⚡ <span class="en">Instant delivery</span><span class="fr">Livraison instantanée</span></span>
+          <span class="trust-item">🌍 <span class="en">Worldwide</span><span class="fr">Monde entier</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ─── -->
+  <section id="faq">
+    <div class="section-inner">
+      <span class="section-label">FAQ</span>
+
+      <h2 class="section-title en">Frequently Asked Questions</h2>
+      <h2 class="section-title fr">Questions Fréquentes</h2>
+
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="footer-logo">AI <span>Code</span> Studio</div>
+    <div class="footer-links">
+      <a href="https://ai-codestudio.com" target="_blank">ai-codestudio.com</a>
+      <a href="mailto:andart1174@gmail.com">andart1174@gmail.com</a>
+      <a href="LICENSE.md">License</a>
+      <a href="DEPLOY.md">Deploy Guide</a>
+    </div>
+    <div class="footer-copy">© 2026 AI Code Studio — Zen Sandscape v1.0.0 — Ref: ACS-SANDSCAPE-v1.0</div>
+  </footer>
+
+  <!-- ─── VIDEO MODAL ─── -->
+  <div class="video-modal-overlay" id="videoModal" onclick="handleOverlayClick(event)">
+    <div class="video-modal-box" id="videoModalBox">
+      <button class="video-modal-close" onclick="closeVideoModal()" title="Close">✕</button>
+      <iframe
+        id="yt-iframe"
+        src=""
+        title="Zen Sandscape God Mode — Demo"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowfullscreen>
+      </iframe>
+      <div class="video-modal-header">
+        <div class="video-modal-title">
+          <strong>Zen Sandscape God Mode</strong> &mdash; v1.0 &middot; AI Code Studio
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <a href="https://youtu.be/rg2hnBKsLec" target="_blank" style="color:var(--muted);font-size:0.82rem;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:5px;" title="Watch on YouTube">
+            ▶ <span class="en">Watch on YouTube</span><span class="fr">Voir sur YouTube</span>
+          </a>
+          <a href="https://andalionart.gumroad.com/l/zen-sandscape" class="video-modal-cta" target="_blank">
+            <span class="en">🛒 Buy Now &mdash; $29</span>
+            <span class="fr">🛒 Acheter &mdash; 29$</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── LANGUAGE ───
+    function setLang(lang) {
+      document.getElementById('page-body').className = 'lang-' + lang;
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+      localStorage.setItem('sandscape-lang', lang);
+      buildFaq(lang);
+    }
+
+    // ─── PARTICLES ───
+    const colors = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#10b981','#f43f5e'];
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 6 + 3;
+      p.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}%;
+        top:${40 + Math.random()*50}%;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        --dur:${3 + Math.random()*4}s;
+        --delay:${Math.random()*5}s;
+        box-shadow:0 0 ${size*2}px ${colors[Math.floor(Math.random()*colors.length)]};
+      `;
+      container.appendChild(p);
+    }
+
+    // ─── FAQ DATA ───
+    const faqData = {
+      en: [
+        { q: "How do I receive the files after purchase?", a: "After payment, you'll receive an email with a download link to the complete ZIP package within a few minutes. If you don't see it, check your spam folder or contact andart1174@gmail.com." },
+        { q: "What payment methods are accepted?", a: "We accept all major credit/debit cards, PayPal, and bank transfer. Payment instructions will be provided after you send the purchase request." },
+        { q: "Can I use this for client projects?", a: "Yes! The commercial license explicitly allows use in client projects. You can deploy it for as many clients as you want, rebrand it, and charge your clients for the work." },
+        { q: "Does it require a server or backend?", a: "No. This is pure HTML + JavaScript — no server, no database, no npm install needed. Just open index.html in any browser and it runs instantly." },
+        { q: "Which browsers are supported?", a: "Chrome, Firefox, Edge, and Safari — all modern browsers. Works on desktop and mobile (touch events supported)." },
+        { q: "Can I get a refund?", a: "Since this is a digital product (source code), we cannot offer refunds after delivery. However, you can try the live demo before purchasing to ensure it meets your needs." },
+        { q: "Will I get future updates?", a: "Yes. Buyers receive lifetime access to updates for this version. Major new versions may require a discounted upgrade purchase." },
+      ],
+      fr: [
+        { q: "Comment vais-je recevoir les fichiers après l'achat ?", a: "Après paiement, vous recevrez un email avec un lien de téléchargement vers le package ZIP complet en quelques minutes. Si vous ne le voyez pas, vérifiez vos spams ou contactez andart1174@gmail.com." },
+        { q: "Quels modes de paiement sont acceptés ?", a: "Nous acceptons toutes les principales cartes de crédit/débit, PayPal et virement bancaire. Les instructions de paiement seront fournies après envoi de votre demande d'achat." },
+        { q: "Puis-je l'utiliser pour des projets clients ?", a: "Oui ! La licence commerciale autorise explicitement l'utilisation dans des projets clients. Vous pouvez le déployer pour autant de clients que vous voulez, le rebrandiser et facturer vos clients." },
+        { q: "Nécessite-t-il un serveur ou un backend ?", a: "Non. C'est du HTML + JavaScript pur — pas de serveur, pas de base de données, pas de npm install. Ouvrez simplement index.html dans n'importe quel navigateur et ça fonctionne instantanément." },
+        { q: "Quels navigateurs sont supportés ?", a: "Chrome, Firefox, Edge et Safari — tous les navigateurs modernes. Fonctionne sur desktop et mobile (touch events supportés)." },
+        { q: "Puis-je obtenir un remboursement ?", a: "Comme il s'agit d'un produit numérique (code source), nous ne pouvons pas offrir de remboursement après livraison. Vous pouvez toutefois tester la démo live avant d'acheter." },
+        { q: "Vais-je recevoir les futures mises à jour ?", a: "Oui. Les acheteurs reçoivent un accès à vie aux mises à jour pour cette version. Les nouvelles versions majeures pourront nécessiter un achat de mise à niveau à tarif réduit." },
+      ]
+    };
+
+    function buildFaq(lang) {
+      const list = document.getElementById('faq-list');
+      list.innerHTML = '';
+      faqData[lang].forEach((item, i) => {
+        const el = document.createElement('div');
+        el.className = 'faq-item';
+        el.id = 'faq-' + i;
+        el.innerHTML = `
+          <div class="faq-q" onclick="toggleFaq(${i})">
+            <span>${item.q}</span>
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">${item.a}</div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    function toggleFaq(i) {
+      const el = document.getElementById('faq-' + i);
+      el.classList.toggle('open');
+    }
+
+    // ─── VIDEO MODAL ───
+    const YT_VIDEO_ID = 'rg2hnBKsLec';
+    const YT_EMBED    = `https://www.youtube-nocookie.com/embed/${YT_VIDEO_ID}?rel=0&modestbranding=1&color=white`;
+
+    function openVideoModal() {
+      document.getElementById('yt-iframe').src = YT_EMBED;
+      document.getElementById('videoModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeVideoModal() {
+      document.getElementById('videoModal').classList.remove('open');
+      document.getElementById('yt-iframe').src = '';
+      document.body.style.overflow = '';
+    }
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('videoModal')) closeVideoModal();
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
+
+    // Init
+    const savedLang = localStorage.getItem('sandscape-lang') || 'en';
+    setLang(savedLang);
+  </script>
+
+</body>
+</html>

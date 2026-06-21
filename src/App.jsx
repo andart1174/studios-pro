@@ -408,6 +408,7 @@ const StudiosPro = () => {
   const [isStudioPro2Open, setIsStudioPro2Open] = useState(false);
   const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
+  const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -585,6 +586,7 @@ const StudiosPro = () => {
       if (ref === 'desp') setIsDesignProOpen(true);
       if (ref === 'spro2') setIsStudioPro2Open(true);
       if (ref === 'mechgen') setIsMechGenProOpen(true);
+      if (ref === 'sandbox') setIsSandboxOpen(true);
     }
   }, [lang, user]);
 
@@ -662,6 +664,7 @@ const StudiosPro = () => {
         setIsStudioPro2Open(false);
         setIsMechGenProOpen(false);
         setIsScriptingOpen(false);
+        setIsSandboxOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -841,6 +844,7 @@ const StudiosPro = () => {
       studioPro2: "Studio Pro 2",
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Studio Scripting",
+      sandbox: "Zen Sandscape",
       faqBtn: "FAQ"
     },
     en: {
@@ -886,6 +890,7 @@ const StudiosPro = () => {
       studioPro2: "Studio Pro 2",
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Scripting Studio",
+      sandbox: "Zen Sandscape",
       faqBtn: "FAQ"
     }
   };
@@ -893,7 +898,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''}`}>
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
@@ -1258,6 +1263,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.scriptingStudio}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsSandboxOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Zen Sandscape Icon" />
+          </div>
+          <div className="card-label">{currentT.sandbox}</div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -1374,6 +1391,11 @@ const StudiosPro = () => {
               className="studio-iframe" 
               title="Scripting Studio" 
             />
+          </motion.div>
+        )}
+        {isSandboxOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/sandbox/index.html" className="studio-iframe" title="Zen Sandscape" />
           </motion.div>
         )}
       </AnimatePresence>
