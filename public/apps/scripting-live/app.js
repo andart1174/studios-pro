@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         collabChannel.postMessage({
           type: 'USER_JOIN',
+          userId: collabUser.id,
           user: collabUser
         });
       }, 500);
@@ -4049,7 +4050,7 @@ function executeREPLCommand() {
     const chatText = cmd.substring(5).trim();
     input.value = '';
     logChatToConsole(collabUser.name, chatText);
-    collabChannel.postMessage({ type: 'CHAT_MESSAGE', user: collabUser.name, text: chatText });
+    collabChannel.postMessage({ type: 'CHAT_MESSAGE', userId: collabUser.id, user: collabUser.name, text: chatText });
     return;
   }
   
@@ -4481,6 +4482,7 @@ function initCollaboration() {
   
   collabChannel.postMessage({
     type: 'USER_JOIN',
+    userId: collabUser.id,
     user: collabUser
   });
   
@@ -4530,12 +4532,14 @@ function handleCollabMessage(e) {
           userId: collabUser.id,
           userName: collabUser.name
         });
-        collabChannel.postMessage({
-          type: 'CODE_SYNC',
-          userId: collabUser.id,
-          code: document.getElementById('code-editor').value
-        });
       }
+      // Always broadcast the current code to make sure the joining user gets the latest code,
+      // even if there is no lock holder.
+      collabChannel.postMessage({
+        type: 'CODE_SYNC',
+        userId: collabUser.id,
+        code: document.getElementById('code-editor').value
+      });
       updateCollabUI();
       break;
       
