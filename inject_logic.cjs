@@ -4,7 +4,9 @@ const path = require('path');
 const appsDir = path.join(__dirname, 'public/apps');
 const subdirs = fs.readdirSync(appsDir).filter(f => fs.statSync(path.join(appsDir, f)).isDirectory());
 
-const scriptTemplate = (ref) => `
+const scriptTemplate = (ref) => {
+  const isDfxOrSpro = (ref === 'dfx' || ref === 'spro');
+  return `
   <!-- Back Button and Payment logic -->
   <style>
     .back-to-studios {
@@ -297,6 +299,7 @@ const scriptTemplate = (ref) => `
       }, true);
 
       // --- WEB EXPORT PRO INTERCEPTOR ---
+      const isDfxOrSpro = ${isDfxOrSpro};
       const originalAnchorClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.download && this.href && !this.dataset.bypassed) {
@@ -306,7 +309,17 @@ const scriptTemplate = (ref) => `
           const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
           const isAllowedForHtml = allowedExtensions.includes(extension);
 
-          if (isPremiumUser && isAllowedForHtml) {
+          if (window.isGeneratingHtmlExport) {
+            window.isGeneratingHtmlExport = false; // Reset flag
+            activeExports.add(fileUrl);
+            generateHtmlExport(fileUrl, fileName).catch(e => {
+              console.error(e);
+              alert("Error generating HTML export: " + e.message);
+            });
+            return;
+          }
+
+          if (!isDfxOrSpro && isPremiumUser && isAllowedForHtml) {
             activeExports.add(fileUrl);
             showExportSelectionModal(fileUrl, fileName, () => {
               // Create a clean, detached anchor to trigger the native download
@@ -338,7 +351,17 @@ const scriptTemplate = (ref) => `
             const allowedExtensions = ['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl', 'svg', 'png', 'jpg', 'jpeg', 'bmp'];
             const isAllowedForHtml = allowedExtensions.includes(extension);
 
-            if (isPremiumUser && isAllowedForHtml) {
+            if (window.isGeneratingHtmlExport) {
+              window.isGeneratingHtmlExport = false; // Reset flag
+              activeExports.add(fileUrl);
+              generateHtmlExport(fileUrl, fileName).catch(e => {
+                console.error(e);
+                alert("Error generating HTML export: " + e.message);
+              });
+              return false; // prevent event default/propagation simulation
+            }
+
+            if (!isDfxOrSpro && isPremiumUser && isAllowedForHtml) {
               activeExports.add(fileUrl);
               showExportSelectionModal(fileUrl, fileName, () => {
                 const a = document.createElement('a');
@@ -358,6 +381,44 @@ const scriptTemplate = (ref) => `
         }
         return originalDispatchEvent.apply(this, arguments);
       };
+
+      // Inject "Save HTML" button dynamically for DFX
+      if (isDfxOrSpro && '${ref}' === 'dfx') {
+        setInterval(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          const svgBtn = buttons.find(btn => btn.textContent.toLowerCase().includes('save svg') || (btn.textContent.toLowerCase().includes('svg') && btn.textContent.toLowerCase().includes('save')));
+          if (svgBtn && !document.getElementById('injected-save-html-btn')) {
+            const parent = svgBtn.parentElement;
+            if (parent) {
+              const htmlBtn = document.createElement('button');
+              htmlBtn.id = 'injected-save-html-btn';
+              htmlBtn.innerText = 'Save HTML';
+              htmlBtn.className = svgBtn.className;
+              htmlBtn.style.cssText = svgBtn.style.cssText;
+              
+              // Premium styling
+              htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
+              htmlBtn.style.color = '#ffffff';
+              htmlBtn.style.marginTop = '8px';
+              
+              htmlBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!isPremiumUser && !window.isPremiumUser) {
+                  channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
+                  return;
+                }
+                
+                window.isGeneratingHtmlExport = true;
+                svgBtn.click();
+              };
+              
+              svgBtn.parentNode.insertBefore(htmlBtn, svgBtn.nextSibling);
+            }
+          }
+        }, 1000);
+      }
 
       function showExportSelectionModal(fileUrl, fileName, onContinueRaw, onCancel) {
         let lang = 'en';
@@ -892,6 +953,7 @@ const scriptTemplate = (ref) => `
     })();
   </script>
 `;
+};
 
 const oldKeywordsRegex = /const keywords \= \['export', 'download'[^\]]+\];/;
 const newKeywordsLine = "        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];";
