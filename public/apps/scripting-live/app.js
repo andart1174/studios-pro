@@ -4494,6 +4494,9 @@ function initCollaboration() {
   collabChannel.onmessage = handleCollabMessage;
   
   updateCollabUI();
+  
+  // Notify parent window that we are fully ready to receive collaboration messages
+  window.parent.postMessage({ type: 'COLLAB_IFRAME_READY' }, '*');
 }
 
 function setupCameraCollabListener() {

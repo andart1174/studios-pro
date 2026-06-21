@@ -410,7 +410,10 @@ const StudiosPro = () => {
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
+  const [isIframeReady, setIsIframeReady] = useState(false);
   const scriptingIframeRef = useRef(null);
+  const isIframeReadyRef = useRef(false);
+  const collabMessagesRef = useRef([]);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -433,7 +436,8 @@ const StudiosPro = () => {
     freeUsedRef.current = freeExportsUsed;
     langRef.current = lang;
     collabRoomIdRef.current = collabRoomId;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId]);
+    isIframeReadyRef.current = isIframeReady;
+  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady]);
 
   useEffect(() => {
     if (!auth) {
@@ -659,6 +663,9 @@ const StudiosPro = () => {
         setIsMechGenProOpen(false);
         setIsScriptingOpen(false);
         setCollabRoomId(null);
+        setIsIframeReady(false);
+        isIframeReadyRef.current = false;
+        collabMessagesRef.current = [];
         // Reset URL parameters when closing
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (type === 'CREATE_COLLAB_ROOM') {
@@ -672,6 +679,17 @@ const StudiosPro = () => {
             ...payload,
             timestamp: new Date().toISOString()
           }).catch(e => console.error("Error writing collab msg to Firestore:", e));
+        }
+      } else if (type === 'COLLAB_IFRAME_READY') {
+        setIsIframeReady(true);
+        isIframeReadyRef.current = true;
+        if (scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
+          collabMessagesRef.current.forEach(msgData => {
+            scriptingIframeRef.current.contentWindow.postMessage({
+              type: 'COLLAB_MSG',
+              payload: msgData
+            }, '*');
+          });
         }
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         let isPremSuccess = false;
@@ -721,8 +739,15 @@ const StudiosPro = () => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msgData = change.doc.data();
-          // Filter out locally sent updates by comparing user ID if needed
-          if (scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
+          
+          // Avoid storing duplicates in collabMessagesRef
+          const exists = collabMessagesRef.current.some(m => m.timestamp === msgData.timestamp && m.userId === msgData.userId && m.type === msgData.type);
+          if (!exists) {
+            collabMessagesRef.current.push(msgData);
+          }
+          
+          // Relay to iframe if ready
+          if (isIframeReadyRef.current && scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
             scriptingIframeRef.current.contentWindow.postMessage({
               type: 'COLLAB_MSG',
               payload: msgData
