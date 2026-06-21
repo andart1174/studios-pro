@@ -6,6 +6,7 @@ let currentLang = 'en';
 // --- PREMIUM STATUS HANDSHAKE & BACK BUTTON ---
 const channel = new BroadcastChannel('studios_pro_channel');
 let isPremiumUser = new URLSearchParams(window.location.search).get('premium') === 'true';
+let collabRoomId = new URLSearchParams(window.location.search).get('room') || null;
 
 // Request fresh user status from host site
 channel.postMessage({ type: 'GET_USER_STATUS' });
@@ -14,10 +15,13 @@ channel.onmessage = (e) => {
   if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'EXPORT_ALLOWED') {
     isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
     updatePremiumUI();
+    if (e.data.payload && e.data.payload.userEmail) {
+      collabUser.name = e.data.payload.userEmail.split('@')[0] || collabUser.name;
+    }
   }
 };
 
-// Back button handler
+// Back & Collab button handlers
 document.addEventListener('DOMContentLoaded', () => {
   const backBtn = document.getElementById('back-btn');
   if (backBtn) {
@@ -28,6 +32,43 @@ document.addEventListener('DOMContentLoaded', () => {
       window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
     };
   }
+
+  const collabBtn = document.getElementById('btn-collab-start');
+  if (collabBtn) {
+    collabBtn.onclick = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      
+      if (!isPremiumUser) {
+        checkPremiumAction('share');
+        return;
+      }
+      
+      // Generate a new room ID
+      const newRoomId = 'room_' + Math.random().toString(36).substring(2, 9);
+      collabRoomId = newRoomId;
+      window.parent.postMessage({ type: 'CREATE_COLLAB_ROOM', payload: { roomId: newRoomId } }, '*');
+      
+      // Copy invitation link to clipboard
+      const inviteUrl = `${window.location.origin}/?ref=scripting&room=${newRoomId}`;
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        showToast(currentLang === 'en' ? '🔗 Collab link copied to clipboard!' : '🔗 Lien de collab copié !');
+      }).catch(err => {
+        console.error('Copy collab link error:', err);
+        window.prompt('Collab URL:', inviteUrl);
+      });
+      
+      // Force trigger local Join event to enter room state
+      setTimeout(() => {
+        collabChannel.postMessage({
+          type: 'USER_JOIN',
+          user: collabUser
+        });
+      }, 500);
+      
+      updateCollabUI();
+    };
+  }
   
   // Initialize UI lockouts
   updatePremiumUI();
@@ -35,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updatePremiumUI() {
-  const premiumButtons = ['btn-exp-obj', 'btn-exp-stl', 'btn-exp-html', 'btn-share'];
+  const premiumButtons = ['btn-exp-obj', 'btn-exp-stl', 'btn-exp-html', 'btn-share', 'btn-collab-start'];
   premiumButtons.forEach(btnId => {
     const btn = document.getElementById(btnId);
     if (btn) {
@@ -4383,6 +4424,42 @@ let lockOwnerId = null;
 let cameraSyncEnabled = false;
 let isUpdatingCameraFromSync = false;
 
+// Relaying messages over window postMessage to host Firestore database broker
+let codeSyncTimeout = null;
+let lastCameraSyncTime = 0;
+
+collabChannel.postMessage = function(msg) {
+  // Always call original BroadcastChannel locally
+  BroadcastChannel.prototype.postMessage.call(collabChannel, msg);
+  
+  if (!collabRoomId) return; // Only sync remotely if in a room!
+  
+  // Forward to parent window for remote sync
+  if (msg.type === 'CODE_SYNC') {
+    if (codeSyncTimeout) clearTimeout(codeSyncTimeout);
+    codeSyncTimeout = setTimeout(() => {
+      window.parent.postMessage({ type: 'COLLAB_MSG', payload: msg }, '*');
+    }, 300);
+  } else if (msg.type === 'CAMERA_MOVE') {
+    const now = Date.now();
+    if (now - lastCameraSyncTime > 100) {
+      window.parent.postMessage({ type: 'COLLAB_MSG', payload: msg }, '*');
+      lastCameraSyncTime = now;
+    }
+  } else {
+    window.parent.postMessage({ type: 'COLLAB_MSG', payload: msg }, '*');
+  }
+};
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'COLLAB_MSG') {
+    const msg = e.data.payload;
+    if (msg && msg.userId !== collabUser.id) {
+      handleCollabMessage({ data: msg });
+    }
+  }
+});
+
 function initCollaboration() {
   const btnLock = document.getElementById('btn-collab-lock');
   const btnCamera = document.getElementById('btn-collab-camera');
@@ -4634,9 +4711,12 @@ function updateCollabUI() {
   const badgeText = document.getElementById('collab-text');
   if (!badgeDot || !badgeText) return;
   
-  if (otherUsers.size === 0) {
+  if (!collabRoomId) {
     badgeDot.className = 'collab-dot offline';
     badgeText.innerText = currentLang === 'en' ? 'Single Mode' : 'Mode Solo';
+  } else if (otherUsers.size === 0) {
+    badgeDot.className = 'collab-dot online';
+    badgeText.innerText = currentLang === 'en' ? 'Collab: Room Active' : 'Collab : Salon Actif';
   } else {
     if (lockOwner !== null) {
       badgeDot.className = 'collab-dot locked';

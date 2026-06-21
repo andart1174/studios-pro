@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const [loading, setLoading] = useState(false);
   const t = {
@@ -409,6 +409,8 @@ const StudiosPro = () => {
   const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
+  const [collabRoomId, setCollabRoomId] = useState(null);
+  const scriptingIframeRef = useRef(null);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -422,6 +424,7 @@ const StudiosPro = () => {
   const creditRef = useRef(hasExportCredit);
   const freeUsedRef = useRef(freeExportsUsed);
   const langRef = useRef(lang);
+  const collabRoomIdRef = useRef(collabRoomId);
 
   useEffect(() => {
     premiumRef.current = isPremium;
@@ -429,7 +432,8 @@ const StudiosPro = () => {
     creditRef.current = hasExportCredit;
     freeUsedRef.current = freeExportsUsed;
     langRef.current = lang;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang]);
+    collabRoomIdRef.current = collabRoomId;
+  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId]);
 
   useEffect(() => {
     if (!auth) {
@@ -613,7 +617,10 @@ const StudiosPro = () => {
       } else if (type === 'GET_USER_STATUS') {
         channel.postMessage({ 
           type: 'USER_STATUS_RESPONSE', 
-          payload: { isPremium: premiumRef.current || adminRef.current } 
+          payload: { 
+            isPremium: premiumRef.current || adminRef.current,
+            userEmail: user ? user.email : 'Guest'
+          } 
         });
       } else if (type === 'START_STRIPE_PAYMENT') {
         if (typeof payload === 'object') {
@@ -647,6 +654,21 @@ const StudiosPro = () => {
         setIsStudioPro2Open(false);
         setIsMechGenProOpen(false);
         setIsScriptingOpen(false);
+        setCollabRoomId(null);
+        // Reset URL parameters when closing
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (type === 'CREATE_COLLAB_ROOM') {
+        const { roomId } = payload;
+        setCollabRoomId(roomId);
+        // Update URL query parameters without page reload
+        window.history.replaceState({}, document.title, `?ref=scripting&room=${roomId}`);
+      } else if (type === 'COLLAB_MSG') {
+        if (db && collabRoomIdRef.current) {
+          addDoc(collection(db, "scripting_rooms", collabRoomIdRef.current, "messages"), {
+            ...payload,
+            timestamp: new Date().toISOString()
+          }).catch(e => console.error("Error writing collab msg to Firestore:", e));
+        }
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
         let isPremSuccess = false;
         if (payload.type === 'premium') {
@@ -672,6 +694,42 @@ const StudiosPro = () => {
       window.removeEventListener('message', windowListener);
     };
   }, [user]);
+
+  // Handle collaboration room url parameter at startup
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    const room = params.get('room');
+    if (ref === 'scripting' || room) {
+      setIsScriptingOpen(true);
+      if (room) setCollabRoomId(room);
+    }
+  }, []);
+
+  // Real-time Firestore collaboration sync
+  useEffect(() => {
+    if (!db || !collabRoomId) return;
+
+    const collabCollectionRef = collection(db, "scripting_rooms", collabRoomId, "messages");
+    const q = query(collabCollectionRef, orderBy("timestamp", "asc"));
+    
+    const unsubscribeCollab = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const msgData = change.doc.data();
+          // Filter out locally sent updates by comparing user ID if needed
+          if (scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
+            scriptingIframeRef.current.contentWindow.postMessage({
+              type: 'COLLAB_MSG',
+              payload: msgData
+            }, '*');
+          }
+        }
+      });
+    });
+
+    return () => unsubscribeCollab();
+  }, [collabRoomId]);
 
   const redirectToStripe = async (type, refStudio = null) => {
     try {
@@ -1275,7 +1333,8 @@ const StudiosPro = () => {
         {isScriptingOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe 
-              src={`/apps/scripting-live/index.html?premium=${isPremium || isAdmin}`} 
+              ref={scriptingIframeRef}
+              src={`/apps/scripting-live/index.html?premium=${isPremium || isAdmin}&room=${collabRoomId || ''}`} 
               className="studio-iframe" 
               title="Scripting Studio" 
             />
