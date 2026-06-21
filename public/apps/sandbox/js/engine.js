@@ -510,30 +510,7 @@ class SandBoxEngine {
                this.swap(i, dest); continue;
             }
 
-            // VORTEX BLACK HOLE FORCES
-            let gotSucked = false;
-            if (this.vouts.length > 0) {
-               let minD = 999; let closest = -1;
-               for(let v of this.vouts) {
-                  let vx = v % w; let vy = Math.floor(v / w);
-                  let d = Math.abs(vx-c) + Math.abs(vy-r); // manhattan optimization
-                  if (d < 40 && d < minD) { minD = d; closest = v; }
-               }
-               if (closest !== -1) {
-                  let vx = closest % w; let vy = Math.floor(closest / w);
-                  // Calculate next gravitational pull step toward black hole
-                  let nx = c + Math.sign(vx-c); let ny = r + Math.sign(vy-r);
-                  let ni = ny*w + nx;
-                  // If extremely close, eat it 
-                  if (Math.abs(vx-c) <= 1 && Math.abs(vy-r) <= 1) { 
-                      this.rm(i); 
-                  } else if (types[ni] === 0) { 
-                      this.swap(i, ni); 
-                  }
-                  gotSucked = true;   
-               }
-            }
-            if (gotSucked) continue;
+
 
             // REPULSOR ANTI-GRAVITY BEAM
             let repulsed = false;
