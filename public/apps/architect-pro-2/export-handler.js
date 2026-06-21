@@ -103,21 +103,28 @@ function exportGLB() {
         return;
     }
     const exporter = new THREE.GLTFExporter();
-    exporter.parse(
-        window._three3DScene,
-        function (gltf) {
-            const blob = new Blob([gltf], { type: 'application/octet-stream' });
-            const link = document.createElement('a');
-            link.style.display = 'none';
-            link.href = URL.createObjectURL(blob);
-            link.download = 'architect_project.glb';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        },
-        null,
-        { binary: true }
-    );
+    const options = { binary: true };
+    const callback = function (result) {
+        const blob = (result instanceof ArrayBuffer) ?
+            new Blob([result], { type: 'application/octet-stream' }) :
+            new Blob([JSON.stringify(result)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = URL.createObjectURL(blob);
+        link.download = 'architect_project.glb';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    const onError = function (err) {
+        console.error(err);
+    };
+
+    if (exporter.parse.length === 4 || (window.THREE.REVISION && parseInt(window.THREE.REVISION) >= 135)) {
+        exporter.parse(window._three3DScene, callback, onError, options);
+    } else {
+        exporter.parse(window._three3DScene, callback, options);
+    }
 }
 
 function exportSTL() {

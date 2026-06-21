@@ -18,15 +18,22 @@ window.Exporter = {
             return;
         }
         const exporter = new THREE.GLTFExporter();
-        exporter.parse(
-            Engine3D.scene,
-            function (gltf) {
-                const blob = new Blob([gltf], { type: 'application/octet-stream' });
-                Exporter.saveFile(blob, 'architect_project.glb');
-            },
-            null,
-            { binary: true }
-        );
+        const options = { binary: true };
+        const callback = function (result) {
+            const blob = (result instanceof ArrayBuffer) ?
+                new Blob([result], { type: 'application/octet-stream' }) :
+                new Blob([JSON.stringify(result)], { type: 'application/json' });
+            Exporter.saveFile(blob, 'architect_project.glb');
+        };
+        const onError = function (err) {
+            console.error(err);
+        };
+
+        if (exporter.parse.length === 4 || (window.THREE.REVISION && parseInt(window.THREE.REVISION) >= 135)) {
+            exporter.parse(Engine3D.scene, callback, onError, options);
+        } else {
+            exporter.parse(Engine3D.scene, callback, options);
+        }
     },
 
     exportSTL() {

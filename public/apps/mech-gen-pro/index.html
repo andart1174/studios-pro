@@ -1230,6 +1230,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
     <div id="local-payment-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;justify-content:center;align-items:center;backdrop-filter:blur(8px);">
         <div style="background:#0f172a;padding:40px;border-radius:20px;text-align:center;max-width:400px;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
             <div style="font-size:40px;margin-bottom:15px;">🔒</div>
@@ -4288,7 +4292,9 @@
             link.click();
         }
         function saveArrayBuffer(buffer, filename) {
-            const blob = new Blob([buffer], { type: 'application/octet-stream' });
+            const blob = (buffer instanceof ArrayBuffer) ?
+                new Blob([buffer], { type: 'application/octet-stream' }) :
+                new Blob([JSON.stringify(buffer)], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = filename;
@@ -4316,11 +4322,18 @@
         function exportGLB() {
             if(!activeMesh) return;
             const exporter = new THREE.GLTFExporter();
-            exporter.parse(activeMesh, function (glb) {
+            const options = { binary: true };
+            const callback = function (glb) {
                 saveArrayBuffer(glb, getDownloadName('glb'));
-            }, function(error) {
+            };
+            const onError = function (error) {
                 console.error(error);
-            }, null, { binary: true });
+            };
+            if (exporter.parse.length === 4 || (window.THREE.REVISION && parseInt(window.THREE.REVISION) >= 135)) {
+                exporter.parse(activeMesh, callback, onError, options);
+            } else {
+                exporter.parse(activeMesh, callback, options);
+            }
         }
 
         function exportHTML() {

@@ -895,8 +895,11 @@ document.getElementById('btn-chroma-abr').addEventListener('click', () => {
 document.getElementById('btn-export-glb')?.addEventListener('click', () => {
     if (!fxGroup) { showToast('No figure loaded'); return; }
     const exporter = new THREE.GLTFExporter();
-    exporter.parse(fxGroup, function(gltf) {
-        const blob = new Blob([gltf], { type: 'application/octet-stream' });
+    const options = { binary: true };
+    const callback = function (result) {
+        const blob = (result instanceof ArrayBuffer) ?
+            new Blob([result], { type: 'application/octet-stream' }) :
+            new Blob([JSON.stringify(result)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `4d-${state.figId}-${Date.now()}.glb`;
@@ -904,7 +907,16 @@ document.getElementById('btn-export-glb')?.addEventListener('click', () => {
         a.click();
         document.body.removeChild(a);
         showToast('💾 GLB Exported!');
-    }, (error) => console.error(error), { binary: true });
+    };
+    const onError = function (err) {
+        console.error(err);
+    };
+
+    if (exporter.parse.length === 4 || (window.THREE.REVISION && parseInt(window.THREE.REVISION) >= 135)) {
+        exporter.parse(fxGroup, callback, onError, options);
+    } else {
+        exporter.parse(fxGroup, callback, options);
+    }
 });
 
 // STL Export

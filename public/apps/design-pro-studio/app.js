@@ -1476,8 +1476,30 @@ function setupExportPanel() {
   document.getElementById('exp-pdf').addEventListener('click', exportPDF);
   document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
-  document.getElementById('exp-glb')?.addEventListener('click', () => {
-    if (!viewer3d || !viewer3d.scene) { showToast('Scene 3D non chargée', 'error'); return; 
+    document.getElementById('exp-glb')?.addEventListener('click', () => {
+    if (!viewer3d || !viewer3d.scene) { showToast('Scene 3D non chargée', 'error'); return; }
+    const exporter = new THREE.GLTFExporter();
+    const options = { binary: true };
+    const callback = function (result) {
+      const blob = (result instanceof ArrayBuffer) ?
+        new Blob([result], { type: 'application/octet-stream' }) :
+        new Blob([JSON.stringify(result)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'design_pro_project.glb';
+      link.click();
+    };
+    const onError = function (err) {
+      console.error(err);
+    };
+
+    if (exporter.parse.length === 4 || (window.THREE.REVISION && parseInt(window.THREE.REVISION) >= 135)) {
+      exporter.parse(viewer3d.scene, callback, onError, options);
+    } else {
+      exporter.parse(viewer3d.scene, callback, options);
+    }
+  });
+
   document.getElementById('exp-html')?.addEventListener('click', () => {
     if (!window.isPremiumUser && !isPremiumUser) {
       channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'desp' } });
@@ -1485,16 +1507,6 @@ function setupExportPanel() {
     }
     window.isGeneratingHtmlExport = true;
     document.getElementById('exp-glb')?.click();
-  });
-}
-    const exporter = new THREE.GLTFExporter();
-    exporter.parse(viewer3d.scene, function(gltf) {
-      const blob = new Blob([gltf], { type: 'application/octet-stream' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'design_pro_project.glb';
-      link.click();
-    }, (error) => console.error(error), { binary: true });
   });
 
   document.getElementById('exp-stl')?.addEventListener('click', () => {
