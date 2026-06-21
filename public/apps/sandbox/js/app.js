@@ -367,40 +367,31 @@ document.addEventListener("DOMContentLoaded", () => {
       indexHtml = indexHtml.replace(/<script src="js\/app\.js"><\/script>/g, '');
 
       // Build inlined scripts/styles
-      const styles = `<style>\n${responseCss}\n</style>`;
-      const scripts = `
-      <script>
-        ${responseTrans}
-      </script>
-      <script>
-        ${responseEngine}
-      </script>
-      <script>
-        ${responseModels}
-      </script>
-      <script>
-        ${responseApp}
-      </script>
-      <script>
-        document.addEventListener("DOMContentLoaded", () => {
-          setTimeout(() => {
-            const savedState = ${stateJson};
-            if (savedState && savedState.length > 0 && window.engine) {
-              window.engine.clearCanvas();
-              savedState.forEach(p => {
-                window.engine.types[p.i] = p.t;
-                window.engine.colors[p.i] = p.c;
-              });
-            }
-          }, 100);
-        });
-      </script>
-      `;
+      const styles = '<style>\n' + responseCss + '\n</style>';
+      const scripts = 
+        '<sc' + 'ript>\n' + responseTrans + '\n</sc' + 'ript>\n' +
+        '<sc' + 'ript>\n' + responseEngine + '\n</sc' + 'ript>\n' +
+        '<sc' + 'ript>\n' + responseModels + '\n</sc' + 'ript>\n' +
+        '<sc' + 'ript>\n' + responseApp + '\n</sc' + 'ript>\n' +
+        '<sc' + 'ript>\n' +
+        '  document.addEventListener("DOMContentLoaded", () => {\n' +
+        '    setTimeout(() => {\n' +
+        '      const savedState = ' + stateJson + ';\n' +
+        '      if (savedState && savedState.length > 0 && window.engine) {\n' +
+        '        window.engine.clearCanvas();\n' +
+        '        savedState.forEach(p => {\n' +
+        '          window.engine.types[p.i] = p.t;\n' +
+        '          window.engine.colors[p.i] = p.c;\n' +
+        '        });\n' +
+        '      }\n' +
+        '    }, 100);\n' +
+        '  });\n' +
+        '</sc' + 'ript>\n';
 
       // Insert styles in head
-      indexHtml = indexHtml.replace('</head>', styles + '\n</head>');
+      indexHtml = indexHtml.replace('</he' + 'ad>', styles + '\n</he' + 'ad>');
       // Insert scripts in body
-      indexHtml = indexHtml.replace('</body>', scripts + '\n</body>');
+      indexHtml = indexHtml.replace('</bo' + 'dy>', scripts + '\n</bo' + 'dy>');
 
       // Create download link
       const blob = new Blob([indexHtml], { type: 'text/html' });
