@@ -316,8 +316,30 @@ let sitemapUrls = tutorials.map(tut => `  <url>
     <priority>0.7</priority>
   </url>\n`).join('');
 
-if (true) {
-  sitemap = sitemap.replace('</urlset>', `${sitemapUrls}</urlset>`);
-  fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), sitemap);
-  console.log('Updated sitemap.xml');
-}
+sitemap = sitemap.replace('</urlset>', `${sitemapUrls}</urlset>`);
+
+// Parse all <url> blocks and filter to keep only unique locations
+const urlRegex = /<url>[\s\S]*?<\/url>/g;
+const matches = sitemap.match(urlRegex) || [];
+const uniqueUrls = new Map();
+
+matches.forEach(match => {
+  const locMatch = match.match(/<loc>(.*?)<\/loc>/);
+  if (locMatch) {
+    const loc = locMatch[1];
+    const lastmodMatch = match.match(/<lastmod>(.*?)<\/lastmod>/);
+    const dateVal = lastmodMatch ? lastmodMatch[1] : '';
+    if (!uniqueUrls.has(loc) || uniqueUrls.get(loc).date < dateVal) {
+      uniqueUrls.set(loc, { content: match, date: dateVal });
+    }
+  }
+});
+
+let newSitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+uniqueUrls.forEach(val => {
+  newSitemap += val.content + '\n';
+});
+newSitemap += `</urlset>\n`;
+
+fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
+console.log('Updated sitemap.xml (cleaned duplicates)');
