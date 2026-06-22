@@ -370,7 +370,11 @@ document.addEventListener("DOMContentLoaded", () => {
       indexHtml = indexHtml.replace(/<script src="js\/app\.js"><\/script>/g, '');
 
       // Build inlined scripts/styles
-      const styles = '<style>\n' + responseCss + '\n</style>';
+      const styles = '<style>\n' + responseCss + '\n' +
+        '/* Hide UI controls and disable drawing in export */\n' +
+        '.sidebar { display: none !important; }\n' +
+        'canvas { pointer-events: none !important; }\n' +
+        '</style>';
       const scripts = 
         '<sc' + 'ript>\n' + responseTrans + '\n</sc' + 'ript>\n' +
         '<sc' + 'ript>\n' + responseEngine + '\n</sc' + 'ript>\n' +
