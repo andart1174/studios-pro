@@ -146,6 +146,35 @@ const tutorials = [
         pFr: "Que vous ayez besoin d'un PNG transparent ou d'un SVG évolutif pour CNC, le studio fournit des exportations fiables tout en préservant la hiérarchie."
       }
     ]
+  },
+  {
+    id: 'zen-sandscape',
+    titleEn: 'Zen Sandscape Simulator | Studios-Pro',
+    titleFr: 'Simulateur Zen Sandscape | Studios-Pro',
+    descEn: 'Learn how to paint with interactive physics elements and download standalone HTML simulations in Zen Sandscape.',
+    descFr: 'Apprenez à peindre avec des éléments physiques interactifs et téléchargez des simulations HTML autonomes dans Zen Sandscape.',
+    h1En: 'Interactive Sand Physics Painting with Zen Sandscape',
+    h1Fr: 'Peinture de Sable Physique Interactive avec Zen Sandscape',
+    tag: 'Zen Sandscape',
+    cardH2En: 'Create and Export Sand Physics Simulations',
+    cardH2Fr: 'Créez et Exportez des Simulations de Sable',
+    cardPEn: 'Simulate sand gravity, portal warps, volcanic lava, voltage sparks, and export full-screen offline interactive HTML files.',
+    cardPFr: 'Simulez la gravité du sable, les portails, la lave, les étincelles et exportez des fichiers HTML autonomes plein écran.',
+    ref: 'sandbox',
+    sections: [
+      {
+        h2En: 'Fascinating Physics Particles',
+        h2Fr: 'Particules Physiques Fascinantes',
+        pEn: 'Zen Sandscape introduces dynamic particle simulation. Paint with interactive elements like falling sand, flowing water, expanding fire, toxic acid, voltage sparks, and portal teleporters. Watch them interact in real-time under custom wind and gravity controls.',
+        pFr: "Zen Sandscape introduit une simulation dynamique de particules. Peignez avec des éléments interactifs comme le sable, l'eau, le feu, l'acide, les étincelles et les téléporteurs de portail. Observez leurs interactions en temps réel sous des contrôles de vent et de gravité personnalisés."
+      },
+      {
+        h2En: 'Offline Standalone HTML Export',
+        h2Fr: 'Exportation HTML Autonome Hors Ligne',
+        pEn: 'Create your perfect animated landscape, then click the HTML export button. Studios-Pro compiles a clean, fullscreen, offline-ready simulation file. It strips all UI controls and editing panels, allowing your audience to enjoy a pure, immersive physical simulation.',
+        pFr: "Créez votre paysage animé parfait, puis cliquez sur le bouton d'exportation HTML. Studios-Pro compile un fișier de simulare curat, pe tot ecranul și pregătit pentru utilizare offline, eliminând panourile de control pentru a oferi o experiență pură."
+      }
+    ]
   }
 ];
 
