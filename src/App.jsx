@@ -99,7 +99,7 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code
+  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search
 } from 'lucide-react';
 import './App.css';
 
@@ -111,6 +111,14 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
   const [activeTab, setActiveTab] = useState('users'); // 'users' or 'messages'
   const [loading, setLoading] = useState(true);
 
+  // Search & Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'premium', 'free'
+
+  // Pre-registration Form
+  const [newEmail, setNewEmail] = useState('');
+  const [newDuration, setNewDuration] = useState(30); // 30, 60, 365, 0 (Lifetime)
+
   useEffect(() => {
     if (!isOpen) return;
     const fetchData = async () => {
@@ -120,22 +128,20 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       }
       setLoading(true);
       try {
-        if (activeTab === 'users') {
-          const querySnapshot = await getDocs(collection(db, "users"));
-          const usersList = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setUsers(usersList);
-        } else {
-          const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
-          const querySnapshot = await getDocs(q);
-          const messagesList = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setMessages(messagesList);
-        }
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const usersList = usersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setUsers(usersList);
+
+        const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+        const messagesSnapshot = await getDocs(q);
+        const messagesList = messagesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setMessages(messagesList);
       } catch (error) {
         console.error("Error fetching data:", error);
         alert(lang === 'fr' ? "Erreur Admin (Firestore): " + error.message : "Admin Error (Firestore): " + error.message);
@@ -143,12 +149,24 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       setLoading(false);
     };
     fetchData();
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
-  const togglePremium = async (userId, currentStatus) => {
+  const setPremiumStatus = async (userId, status, days) => {
     try {
-      await setDoc(doc(db, "users", userId), { isPremium: !currentStatus }, { merge: true });
-      setUsers(users.map(u => u.id === userId ? { ...u, isPremium: !currentStatus } : u));
+      let expirationString = null;
+      if (status && days > 0) {
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + days);
+        expirationString = expDate.toISOString();
+      }
+      
+      const updateData = {
+        isPremium: status,
+        premiumUntil: expirationString
+      };
+      
+      await setDoc(doc(db, "users", userId), updateData, { merge: true });
+      setUsers(users.map(u => u.id === userId ? { ...u, ...updateData } : u));
     } catch (error) {
       alert("Error updating user: " + error.message);
     }
@@ -164,6 +182,60 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
     }
   };
 
+  const handlePreRegister = async (e) => {
+    e.preventDefault();
+    if (!newEmail) return;
+    try {
+      let expirationString = null;
+      if (newDuration > 0) {
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + newDuration);
+        expirationString = expDate.toISOString();
+      }
+      
+      const cleanEmail = newEmail.trim().toLowerCase();
+      // Use cleanEmail as document ID to match login fallback
+      const docId = cleanEmail.replace(/[^a-z0-9@.]/g, '_');
+      const docRef = doc(db, "users", docId);
+      
+      const newUserData = {
+        email: cleanEmail,
+        isPremium: true,
+        premiumUntil: expirationString,
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(docRef, newUserData, { merge: true });
+      alert(lang === 'fr' ? "Utilisateur Premium pré-enregistré avec succès !" : "Premium user pre-registered successfully!");
+      setNewEmail('');
+      
+      // Refresh list
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const usersList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUsers(usersList);
+    } catch (error) {
+      alert("Error pre-registering user: " + error.message);
+    }
+  };
+
+  // Stats calculations
+  const totalUsers = users.length;
+  const premiumUsers = users.filter(u => u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date())).length;
+  const freeUsers = totalUsers - premiumUsers;
+  const totalMessages = messages.length;
+
+  // Filtering users
+  const filteredUsers = users.filter(u => {
+    const emailMatches = u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const isPremiumUser = u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date());
+    if (filterStatus === 'premium') return emailMatches && isPremiumUser;
+    if (filterStatus === 'free') return emailMatches && !isPremiumUser;
+    return emailMatches;
+  });
+
   const t = {
     fr: {
       title: "Panneau d'administration",
@@ -173,7 +245,21 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       action: "Action",
       revoke: "Révoquer",
       makePremium: "Rendre Premium",
-      reply: "Répondre"
+      reply: "Répondre",
+      preRegTitle: "Pré-enregistrer un client Premium (par Email)",
+      preRegEmailPlace: "Email du client...",
+      preRegBtn: "Activer Premium",
+      statsTotal: "Utilisateurs",
+      statsPremium: "Premium",
+      statsFree: "Gratuit",
+      statsMsg: "Messages Contact",
+      searchPlace: "Rechercher par email...",
+      filterAll: "Tous",
+      filterPremium: "Premium",
+      filterFree: "Gratuit",
+      expLabel: "Jusqu'au",
+      durationLifetime: "À vie",
+      durationDays: "jours"
     },
     en: {
       title: "Admin Dashboard",
@@ -183,7 +269,21 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       action: "Action",
       revoke: "Revoke",
       makePremium: "Make Premium",
-      reply: "Reply"
+      reply: "Reply",
+      preRegTitle: "Pre-register Premium Client (by Email)",
+      preRegEmailPlace: "Client email...",
+      preRegBtn: "Activate Premium",
+      statsTotal: "Total Users",
+      statsPremium: "Premium",
+      statsFree: "Free",
+      statsMsg: "Contact Messages",
+      searchPlace: "Search by email...",
+      filterAll: "All",
+      filterPremium: "Premium",
+      filterFree: "Free",
+      expLabel: "Expires",
+      durationLifetime: "Lifetime",
+      durationDays: "days"
     }
   }[lang];
 
@@ -196,6 +296,26 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         <div className="admin-header">
           <Settings size={24} />
           <h2>{t.title}</h2>
+        </div>
+
+        {/* Dashboard Statistics Row */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <h4>{t.statsTotal}</h4>
+            <div className="stat-val">{totalUsers}</div>
+          </div>
+          <div className="admin-stat-card" style={{ borderLeft: '3px solid #8b5cf6' }}>
+            <h4>{t.statsPremium}</h4>
+            <div className="stat-val" style={{ color: '#a78bfa' }}>{premiumUsers}</div>
+          </div>
+          <div className="admin-stat-card">
+            <h4>{t.statsFree}</h4>
+            <div className="stat-val" style={{ color: '#94a3b8' }}>{freeUsers}</div>
+          </div>
+          <div className="admin-stat-card">
+            <h4>{t.statsMsg}</h4>
+            <div className="stat-val" style={{ color: '#14b8a6' }}>{totalMessages}</div>
+          </div>
         </div>
 
         <div className="admin-tabs">
@@ -217,35 +337,119 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           {loading ? (
             <div className="admin-loading">{t.loading}</div>
           ) : activeTab === 'users' ? (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>{t.email}</th>
-                  <th>{t.status}</th>
-                  <th>{t.action}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id}>
-                    <td>{u.email}</td>
-                    <td>
-                      <span className={`status-badge ${u.isPremium ? 'premium' : 'free'}`}>
-                        {u.isPremium ? 'PREMIUM' : 'FREE'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="admin-action-btn"
-                        onClick={() => togglePremium(u.id, u.isPremium)}
-                      >
-                        {u.isPremium ? t.revoke : t.makePremium}
-                      </button>
-                    </td>
+            <div>
+              {/* Pre-registration Form */}
+              <div className="admin-pre-reg-section">
+                <h3><UserPlus size={18} color="#8b5cf6" /> <span>{t.preRegTitle}</span></h3>
+                <form onSubmit={handlePreRegister} className="admin-pre-reg-form">
+                  <input 
+                    type="email" 
+                    placeholder={t.preRegEmailPlace} 
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="admin-input-txt"
+                    required
+                  />
+                  <select 
+                    value={newDuration} 
+                    onChange={(e) => setNewDuration(parseInt(e.target.value))}
+                    className="admin-select"
+                  >
+                    <option value="30">30 {lang === 'fr' ? 'Jours' : 'Days'}</option>
+                    <option value="60">60 {lang === 'fr' ? 'Jours' : 'Days'}</option>
+                    <option value="365">1 {lang === 'fr' ? 'An' : 'Year'}</option>
+                    <option value="0">{t.durationLifetime}</option>
+                  </select>
+                  <button type="submit" className="admin-action-btn">{t.preRegBtn}</button>
+                </form>
+              </div>
+
+              {/* Users Search and Filtering */}
+              <div className="admin-search-bar">
+                <Search size={18} color="#64748b" />
+                <input 
+                  type="text" 
+                  placeholder={t.searchPlace} 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="admin-search-input"
+                />
+                <div className="lang-switch" style={{ marginLeft: 'auto' }}>
+                  <button className={`lang-btn ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>{t.filterAll}</button>
+                  <button className={`lang-btn ${filterStatus === 'premium' ? 'active' : ''}`} onClick={() => setFilterStatus('premium')}>{t.filterPremium}</button>
+                  <button className={`lang-btn ${filterStatus === 'free' ? 'active' : ''}`} onClick={() => setFilterStatus('free')}>{t.filterFree}</button>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{t.email}</th>
+                    <th>{t.status}</th>
+                    <th>{t.action}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(u => {
+                    const isUserPremium = u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date());
+                    const remainingDays = u.premiumUntil 
+                      ? Math.ceil((new Date(u.premiumUntil) - new Date()) / (1000 * 60 * 60 * 24)) 
+                      : null;
+                    return (
+                      <tr key={u.id}>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{u.email}</span>
+                            {isUserPremium && u.premiumUntil && (
+                              <span style={{ fontSize: '0.65rem', color: '#10b981', marginTop: '2px' }}>
+                                {t.expLabel}: {new Date(u.premiumUntil).toLocaleDateString()} ({remainingDays} {t.durationDays})
+                              </span>
+                            )}
+                            {isUserPremium && !u.premiumUntil && (
+                              <span style={{ fontSize: '0.65rem', color: '#c084fc', marginTop: '2px', fontWeight: 'bold' }}>
+                                {t.durationLifetime}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${isUserPremium ? 'premium' : 'free'}`}>
+                            {isUserPremium ? 'PREMIUM' : 'FREE'}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            className="admin-duration-select"
+                            defaultValue=""
+                            onChange={(e) => {
+                              if (e.target.value === 'revoke') {
+                                setPremiumStatus(u.id, false, 0);
+                              } else if (e.target.value) {
+                                setPremiumStatus(u.id, true, parseInt(e.target.value));
+                              }
+                              e.target.value = ""; // Reset dropdown
+                            }}
+                          >
+                            <option value="" disabled>{lang === 'fr' ? 'Gérer...' : 'Manage...'}</option>
+                            {isUserPremium ? (
+                              <option value="revoke">{lang === 'fr' ? 'Révoquer Premium' : 'Revoke Premium'}</option>
+                            ) : (
+                              <>
+                                <option value="30">{lang === 'fr' ? 'Faire Premium 30 Jours' : 'Make Premium 30 Days'}</option>
+                                <option value="60">{lang === 'fr' ? 'Faire Premium 60 Jours' : 'Make Premium 60 Days'}</option>
+                                <option value="365">{lang === 'fr' ? 'Faire Premium 1 An' : 'Make Premium 1 Year'}</option>
+                                <option value="0">{lang === 'fr' ? 'Faire Premium À vie' : 'Make Premium Lifetime'}</option>
+                              </>
+                            )}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="admin-messages-list">
               {messages.length === 0 ? (
@@ -579,6 +783,19 @@ const StudiosPro = () => {
         .catch(err => console.error("Cloud sync error:", err));
     }
   }, [freeExportsUsed, user]);
+
+  // Broadcast premium status updates to all active iframes/tabs
+  useEffect(() => {
+    const channel = new BroadcastChannel('studios_pro_channel');
+    channel.postMessage({
+      type: 'USER_STATUS_RESPONSE',
+      payload: {
+        isPremium: isPremium || isAdmin,
+        userEmail: user ? user.email : 'Guest'
+      }
+    });
+    return () => channel.close();
+  }, [isPremium, isAdmin, user]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
