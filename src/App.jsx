@@ -1124,6 +1124,10 @@ const StudiosPro = () => {
             setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
           }
         }
+      } else if (type === 'LOAD_EXTERNAL_FILE') {
+        channel.postMessage({ type: 'LOAD_EXTERNAL_FILE', payload });
+      } else if (type === 'LOAD_EXTERNAL_URL') {
+        channel.postMessage({ type: 'LOAD_EXTERNAL_URL', payload });
       } else if (type === 'CLOSE_STUDIO') {
         setIs3DOpen(false);
         setIsDFXOpen(false);
@@ -1199,14 +1203,34 @@ const StudiosPro = () => {
     };
   }, [user]);
 
-  // Handle collaboration room url parameter at startup
+  // Handle startup url parameters to auto-open corresponding studio
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     const room = params.get('room');
-    if (ref === 'scripting' || room) {
+    
+    if (ref) {
+      if (ref === 'ap3d') setIs3DOpen(true);
+      if (ref === 'dfx') setIsDFXOpen(true);
+      if (ref === 'depth') setIsDepthOpen(true);
+      if (ref === 'n3d') setIsNew3DOpen(true);
+      if (ref === 'vcnc') setIsVectorOpen(true);
+      if (ref === 'spro') setIsStudioProOpen(true);
+      if (ref === 'mkr7') setIsMaker7Open(true);
+      if (ref === 'jwly') setIsJewelryOpen(true);
+      if (ref === 'arp1') setIsArchPro1Open(true);
+      if (ref === 'arp2') setIsArchPro2Open(true);
+      if (ref === 'figb') setIsFigureBuilderOpen(true);
+      if (ref === 'musc') setIsMusicComposerOpen(true);
+      if (ref === 'desp') setIsDesignProOpen(true);
+      if (ref === 'spro2') setIsStudioPro2Open(true);
+      if (ref === 'mechgen') setIsMechGenProOpen(true);
+      if (ref === 'sandbox') setIsSandboxOpen(true);
+      if (ref === 'scripting') setIsScriptingOpen(true);
+    }
+    if (room) {
       setIsScriptingOpen(true);
-      if (room) setCollabRoomId(room);
+      setCollabRoomId(room);
     }
   }, []);
 

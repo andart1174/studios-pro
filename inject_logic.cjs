@@ -244,6 +244,102 @@ const scriptTemplate = (ref) => {
         } else if (e.data.type === 'USER_STATUS_RESPONSE') {
           isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
           window.isPremiumUser = isPremiumUser;
+        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
+          (async () => {
+            try {
+              const { name, extension, data, isBinary } = e.data.payload;
+              console.log("Receiving external file from extension:", name);
+              let file;
+              if (isBinary) {
+                const res = await fetch(data);
+                const blob = await res.blob();
+                file = new File([blob], name, { type: 'application/octet-stream' });
+              } else {
+                file = new File([data], name, { type: 'text/plain' });
+              }
+
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+
+              const dropEvent = new DragEvent('drop', {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer: dataTransfer
+              });
+              
+              const dragOverEvent = new DragEvent('dragover', {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer: dataTransfer
+              });
+
+              // Set files on file inputs and trigger change
+              const fileInputs = document.querySelectorAll('input[type="file"]');
+              fileInputs.forEach(input => {
+                try {
+                  input.files = dataTransfer.files;
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch(err) { console.error("Input change dispatch error:", err); }
+              });
+
+              // Dispatch drag events
+              [document, document.body, window].forEach(t => {
+                try {
+                  t.dispatchEvent(dragOverEvent);
+                  t.dispatchEvent(dropEvent);
+                } catch(err) { console.error("Drop dispatch error:", err); }
+              });
+              
+              console.log('Successfully injected file:', name);
+            } catch (err) {
+              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
+            }
+          })();
+        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
+          (async () => {
+            try {
+              const { url } = e.data.payload;
+              const name = url.split('/').pop().split('?')[0] || 'imported_file';
+              console.log("Receiving external url from extension:", url);
+              const response = await fetch(url);
+              const blob = await response.blob();
+              const file = new File([blob], name, { type: 'application/octet-stream' });
+
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+
+              const dropEvent = new DragEvent('drop', {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer: dataTransfer
+              });
+              
+              const dragOverEvent = new DragEvent('dragover', {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer: dataTransfer
+              });
+
+              const fileInputs = document.querySelectorAll('input[type="file"]');
+              fileInputs.forEach(input => {
+                try {
+                  input.files = dataTransfer.files;
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch(err) {}
+              });
+
+              [document, document.body, window].forEach(t => {
+                try {
+                  t.dispatchEvent(dragOverEvent);
+                  t.dispatchEvent(dropEvent);
+                } catch(err) {}
+              });
+              
+              console.log('Successfully loaded file from url:', url);
+            } catch (err) {
+              console.error('Error handling LOAD_EXTERNAL_URL:', err);
+            }
+          })();
         }
       };
 
