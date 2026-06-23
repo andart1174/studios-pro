@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const [loading, setLoading] = useState(false);
   const t = {
@@ -451,7 +451,7 @@ const StudiosPro = () => {
         // Check premium status and sync free exports in Firestore
         try {
           const userDocRef = doc(db, "users", authUser.uid);
-          const userDoc = await getDoc(userDocRef);
+          let userDoc = await getDoc(userDocRef);
           
           let userData = {
             email: authUser.email,
@@ -459,34 +459,84 @@ const StudiosPro = () => {
             freeExportsUsed: freeExportsUsed
           };
 
+          let isUserPremium = false;
+          let premiumUntilVal = null;
+          let hasExportCreditVal = false;
+          let cloudFreeExportsUsed = undefined;
+
           if (userDoc.exists()) {
             const data = userDoc.data();
             userData = { ...userData, ...data };
             
-            // Check if premium is manually set by admin or valid by expiration date
             if (data.isPremium === true) {
-              setIsPremium(true);
-              setPremiumUntil(data.premiumUntil || null);
+              isUserPremium = true;
+              premiumUntilVal = data.premiumUntil || null;
             } else if (data.premiumUntil) {
               const now = new Date();
               const expires = new Date(data.premiumUntil);
               if (expires > now) {
-                setIsPremium(true);
-                setPremiumUntil(data.premiumUntil);
-              } else {
-                setIsPremium(false);
-                setPremiumUntil(null);
+                isUserPremium = true;
+                premiumUntilVal = data.premiumUntil;
               }
-            } else {
-              setIsPremium(false);
-              setPremiumUntil(null);
             }
+            hasExportCreditVal = data.hasExportCredit || false;
+            cloudFreeExportsUsed = data.freeExportsUsed;
+          }
 
-            setHasExportCredit(data.hasExportCredit || false);
-            if (data.freeExportsUsed !== undefined) {
-              setFreeExportsUsed(data.freeExportsUsed);
-              localStorage.setItem('freeExportsUsed', data.freeExportsUsed);
+          // Fallback: If not premium on their main UID document, check if there's an existing document with the same email
+          if (!isUserPremium) {
+            try {
+              const q = query(collection(db, "users"), where("email", "==", authUser.email));
+              const querySnapshot = await getDocs(q);
+              let fallbackDoc = null;
+              
+              querySnapshot.forEach(docSnap => {
+                if (docSnap.id !== authUser.uid) {
+                  const fData = docSnap.data();
+                  if (fData.isPremium === true || (fData.premiumUntil && new Date(fData.premiumUntil) > new Date())) {
+                    fallbackDoc = docSnap;
+                  }
+                }
+              });
+
+              if (fallbackDoc) {
+                console.log("Migrating premium status from document:", fallbackDoc.id);
+                const fData = fallbackDoc.data();
+                isUserPremium = true;
+                premiumUntilVal = fData.premiumUntil || null;
+                hasExportCreditVal = hasExportCreditVal || fData.hasExportCredit || false;
+                
+                // Merge this info back into the main user data
+                userData.isPremium = true;
+                if (fData.premiumUntil) userData.premiumUntil = fData.premiumUntil;
+                if (fData.hasExportCredit) userData.hasExportCredit = fData.hasExportCredit;
+
+                // Write it to the UID document
+                await setDoc(userDocRef, {
+                  isPremium: true,
+                  premiumUntil: fData.premiumUntil || null,
+                  hasExportCredit: userData.hasExportCredit || false
+                }, { merge: true });
+
+                // Delete the old duplicate document to keep Firestore clean
+                try {
+                  await deleteDoc(doc(db, "users", fallbackDoc.id));
+                } catch (delErr) {
+                  console.error("Error deleting fallback user document:", delErr);
+                }
+              }
+            } catch (fallbackErr) {
+              console.error("Error running fallback email query:", fallbackErr);
             }
+          }
+
+          // Apply state variables
+          setIsPremium(isUserPremium);
+          setPremiumUntil(premiumUntilVal);
+          setHasExportCredit(hasExportCreditVal);
+          if (cloudFreeExportsUsed !== undefined) {
+            setFreeExportsUsed(cloudFreeExportsUsed);
+            localStorage.setItem('freeExportsUsed', cloudFreeExportsUsed);
           }
 
           // Check if there's a pending premium from localStorage (redirect happened while not logged in)
