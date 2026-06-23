@@ -769,6 +769,7 @@ const StudiosPro = () => {
   const [isDesignProOpen, setIsDesignProOpen] = useState(false);
 
   const [isStudioPro2Open, setIsStudioPro2Open] = useState(false);
+  const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
@@ -804,6 +805,30 @@ const StudiosPro = () => {
   }, [user]);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
+
+  const redirectToStripe = async (type, refStudio = null) => {
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceType: type,
+          email: user?.email || 'customer@example.com',
+          origin: window.location.origin,
+          refStudio: refStudio
+        }),
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.open(url, '_blank');
+        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement dans la nouvelle fenêtre et revenir ici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
+      }
+    } catch (error) {
+      console.error("Stripe Redirect Error:", error);
+      alert("Error starting checkout. Please try again.");
+    }
+  };
 
   const [freeExportsUsed, setFreeExportsUsed] = useState(() => {
     return parseInt(localStorage.getItem('freeExportsUsed')) || 0;
@@ -1223,30 +1248,6 @@ const StudiosPro = () => {
 
     return () => unsubscribeCollab();
   }, [collabRoomId]);
-
-  const redirectToStripe = async (type, refStudio = null) => {
-    try {
-      const response = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceType: type,
-          email: user?.email || 'customer@example.com',
-          origin: window.location.origin,
-          refStudio: refStudio
-        }),
-      });
-
-      const { url } = await response.json();
-      if (url) {
-        window.open(url, '_blank');
-        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement dans la nouvelle fenêtre et revenir ici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
-      }
-    } catch (error) {
-      console.error("Stripe Redirect Error:", error);
-      alert("Error starting checkout. Please try again.");
-    }
-  };
 
   const handlePayForExport = () => {
     // Single export payment $2
