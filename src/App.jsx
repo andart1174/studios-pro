@@ -99,7 +99,8 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
 import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search
+  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
+  Megaphone, Copy
 } from 'lucide-react';
 import './App.css';
 
@@ -108,7 +109,7 @@ const ADMIN_EMAIL = 'andart1174@gmail.com';
 const AdminModal = ({ isOpen, onClose, lang }) => {
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'messages'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'messages', or 'announcements'
   const [loading, setLoading] = useState(true);
 
   // Search & Filter
@@ -118,6 +119,11 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
   // Pre-registration Form
   const [newEmail, setNewEmail] = useState('');
   const [newDuration, setNewDuration] = useState(30); // 30, 60, 365, 0 (Lifetime)
+
+  // Announcement Form
+  const [annTextFr, setAnnTextFr] = useState('');
+  const [annTextEn, setAnnTextEn] = useState('');
+  const [annActive, setAnnActive] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -142,6 +148,15 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           ...doc.data()
         }));
         setMessages(messagesList);
+
+        // Fetch current announcement for editing
+        const annDoc = await getDoc(doc(db, "announcements", "current"));
+        if (annDoc.exists()) {
+          const data = annDoc.data();
+          setAnnTextFr(data.textFr || '');
+          setAnnTextEn(data.textEn || '');
+          setAnnActive(data.active || false);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         alert(lang === 'fr' ? "Erreur Admin (Firestore): " + error.message : "Admin Error (Firestore): " + error.message);
@@ -169,6 +184,39 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       setUsers(users.map(u => u.id === userId ? { ...u, ...updateData } : u));
     } catch (error) {
       alert("Error updating user: " + error.message);
+    }
+  };
+
+  const setExportCreditStatus = async (userId, status) => {
+    try {
+      const updateData = {
+        hasExportCredit: status
+      };
+      await setDoc(doc(db, "users", userId), updateData, { merge: true });
+      setUsers(users.map(u => u.id === userId ? { ...u, ...updateData } : u));
+    } catch (error) {
+      alert("Error updating user export credit: " + error.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId, email) => {
+    if (!window.confirm(lang === 'fr' ? `Supprimer définitivement le profil de ${email} ?` : `Permanently delete profile for ${email}?`)) return;
+    try {
+      await deleteDoc(doc(db, "users", userId));
+      setUsers(users.filter(u => u.id !== userId));
+      alert(lang === 'fr' ? "Utilisateur supprimé avec succès !" : "User deleted successfully!");
+    } catch (error) {
+      alert("Error deleting user: " + error.message);
+    }
+  };
+
+  const toggleMessageRead = async (msgId, currentReadStatus) => {
+    try {
+      const newStatus = !currentReadStatus;
+      await setDoc(doc(db, "messages", msgId), { read: newStatus }, { merge: true });
+      setMessages(messages.map(m => m.id === msgId ? { ...m, read: newStatus } : m));
+    } catch (error) {
+      alert("Error updating message: " + error.message);
     }
   };
 
@@ -218,6 +266,23 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
       setUsers(usersList);
     } catch (error) {
       alert("Error pre-registering user: " + error.message);
+    }
+  };
+
+  const handleSaveAnnouncement = async (e) => {
+    e.preventDefault();
+    try {
+      const updatedAtStr = new Date().toISOString();
+      const annData = {
+        textFr: annTextFr,
+        textEn: annTextEn,
+        active: annActive,
+        updatedAt: updatedAtStr
+      };
+      await setDoc(doc(db, "announcements", "current"), annData);
+      alert(lang === 'fr' ? "Annonce enregistrée !" : "Announcement saved!");
+    } catch (error) {
+      alert("Error saving announcement: " + error.message);
     }
   };
 
@@ -327,6 +392,10 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
             <MessageSquare size={18} />
             <span>{lang === 'fr' ? 'Messages' : 'Messages'}</span>
           </button>
+          <button className={`admin-tab-btn ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => setActiveTab('announcements')}>
+            <Megaphone size={18} />
+            <span>{lang === 'fr' ? 'Annonces' : 'Announcements'}</span>
+          </button>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', fontSize: '12px', alignItems: 'center' }}>
             <span title="Firebase Status">DB: {db ? '✅' : '❌'}</span>
             <span title="Auth Status">Auth: {auth ? '✅' : '❌'}</span>
@@ -396,11 +465,25 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                     const remainingDays = u.premiumUntil 
                       ? Math.ceil((new Date(u.premiumUntil) - new Date()) / (1000 * 60 * 60 * 24)) 
                       : null;
+                    const hasExportCreditVal = u.hasExportCredit || false;
                     return (
                       <tr key={u.id}>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span>{u.email}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>{u.email}</span>
+                              <button 
+                                className="admin-icon-btn" 
+                                title={lang === 'fr' ? "Copier l'email" : "Copy Email"}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(u.email);
+                                  alert(lang === 'fr' ? "Email copié !" : "Email copied!");
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Copy size={12} />
+                              </button>
+                            </div>
                             {isUserPremium && u.premiumUntil && (
                               <span style={{ fontSize: '0.65rem', color: '#10b981', marginTop: '2px' }}>
                                 {t.expLabel}: {new Date(u.premiumUntil).toLocaleDateString()} ({remainingDays} {t.durationDays})
@@ -411,6 +494,11 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                                 {t.durationLifetime}
                               </span>
                             )}
+                            {hasExportCreditVal && (
+                              <span style={{ fontSize: '0.65rem', color: '#f59e0b', marginTop: '1px' }}>
+                                🪙 {lang === 'fr' ? "Crédit d'export actif" : "Export credit active"}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td>
@@ -419,30 +507,48 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                           </span>
                         </td>
                         <td>
-                          <select
-                            className="admin-duration-select"
-                            defaultValue=""
-                            onChange={(e) => {
-                              if (e.target.value === 'revoke') {
-                                setPremiumStatus(u.id, false, 0);
-                              } else if (e.target.value) {
-                                setPremiumStatus(u.id, true, parseInt(e.target.value));
-                              }
-                              e.target.value = ""; // Reset dropdown
-                            }}
-                          >
-                            <option value="" disabled>{lang === 'fr' ? 'Gérer...' : 'Manage...'}</option>
-                            {isUserPremium ? (
-                              <option value="revoke">{lang === 'fr' ? 'Révoquer Premium' : 'Revoke Premium'}</option>
-                            ) : (
-                              <>
-                                <option value="30">{lang === 'fr' ? 'Faire Premium 30 Jours' : 'Make Premium 30 Days'}</option>
-                                <option value="60">{lang === 'fr' ? 'Faire Premium 60 Jours' : 'Make Premium 60 Days'}</option>
-                                <option value="365">{lang === 'fr' ? 'Faire Premium 1 An' : 'Make Premium 1 Year'}</option>
-                                <option value="0">{lang === 'fr' ? 'Faire Premium À vie' : 'Make Premium Lifetime'}</option>
-                              </>
-                            )}
-                          </select>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <select
+                              className="admin-duration-select"
+                              defaultValue=""
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'revoke') {
+                                  setPremiumStatus(u.id, false, 0);
+                                } else if (val === 'grant_credit') {
+                                  setExportCreditStatus(u.id, true);
+                                } else if (val === 'revoke_credit') {
+                                  setExportCreditStatus(u.id, false);
+                                } else if (val) {
+                                  setPremiumStatus(u.id, true, parseInt(val));
+                                }
+                                e.target.value = ""; // Reset dropdown
+                              }}
+                            >
+                              <option value="" disabled>{lang === 'fr' ? 'Gérer...' : 'Manage...'}</option>
+                              {isUserPremium && (
+                                <option value="revoke">{lang === 'fr' ? 'Révoquer Premium' : 'Revoke Premium'}</option>
+                              )}
+                              <option value="30">{lang === 'fr' ? 'Premium 30 Jours' : 'Premium 30 Days'}</option>
+                              <option value="60">{lang === 'fr' ? 'Premium 60 Jours' : 'Premium 60 Days'}</option>
+                              <option value="365">{lang === 'fr' ? 'Premium 1 An' : 'Premium 1 Year'}</option>
+                              <option value="0">{lang === 'fr' ? 'Premium À vie' : 'Premium Lifetime'}</option>
+                              <option value="divider" disabled>────────────────</option>
+                              {hasExportCreditVal ? (
+                                <option value="revoke_credit">{lang === 'fr' ? "Révoquer crédit" : "Revoke credit"}</option>
+                              ) : (
+                                <option value="grant_credit">{lang === 'fr' ? "Accorder 1 crédit" : "Grant 1 credit"}</option>
+                              )}
+                            </select>
+                            <button 
+                              className="delete-user-btn" 
+                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              title={lang === 'fr' ? "Supprimer l'utilisateur" : "Delete User"}
+                              style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -450,16 +556,23 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                 </tbody>
               </table>
             </div>
-          ) : (
+          ) : activeTab === 'messages' ? (
             <div className="admin-messages-list">
               {messages.length === 0 ? (
                 <p className="no-messages">{lang === 'fr' ? 'Aucun message.' : 'No messages.'}</p>
               ) : messages.map(m => (
-                <div key={m.id} className="admin-message-card">
+                <div key={m.id} className={`admin-message-card ${m.read ? 'read' : 'unread'}`}>
                   <div className="message-header">
                     <strong>{m.name}</strong>
                     <span className="message-email">{m.email}</span>
                     <div className="message-actions">
+                      <button 
+                        className={`read-toggle-btn ${m.read ? 'is-read' : 'is-unread'}`} 
+                        onClick={() => toggleMessageRead(m.id, m.read)}
+                        title={m.read ? (lang === 'fr' ? "Marquer comme non lu" : "Mark as unread") : (lang === 'fr' ? "Marquer comme lu" : "Mark as read")}
+                      >
+                        <ShieldCheck size={16} />
+                      </button>
                       <a 
                         href={`mailto:${m.email}?subject=Studios-Pro: Re: ${m.name}`} 
                         className="reply-btn"
@@ -473,9 +586,51 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
                     </div>
                   </div>
                   <p className="message-text">{m.message}</p>
-                  <small className="message-date">{new Date(m.timestamp).toLocaleString()}</small>
+                  <div className="message-footer">
+                    <span className="message-badge">{m.read ? (lang === 'fr' ? 'Lu' : 'Read') : (lang === 'fr' ? 'Nouveau' : 'New')}</span>
+                    <small className="message-date">{new Date(m.timestamp).toLocaleString()}</small>
+                  </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="admin-announcement-section">
+              <h3>{lang === 'fr' ? "Gérer l'annonce système" : "Manage System Announcement"}</h3>
+              <form onSubmit={handleSaveAnnouncement} className="admin-announcement-form">
+                <div className="form-group-admin">
+                  <label>{lang === 'fr' ? "Texte en Français" : "French Text"}</label>
+                  <textarea
+                    value={annTextFr}
+                    onChange={(e) => setAnnTextFr(e.target.value)}
+                    placeholder="Message à afficher..."
+                    className="admin-textarea"
+                    required
+                  ></textarea>
+                </div>
+                <div className="form-group-admin">
+                  <label>{lang === 'fr' ? "Texte en Anglais" : "English Text"}</label>
+                  <textarea
+                    value={annTextEn}
+                    onChange={(e) => setAnnTextEn(e.target.value)}
+                    placeholder="Message to display..."
+                    className="admin-textarea"
+                    required
+                  ></textarea>
+                </div>
+                <div className="form-group-admin checkbox-group-admin">
+                  <label className="admin-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={annActive}
+                      onChange={(e) => setAnnActive(e.target.checked)}
+                    />
+                    <span>{lang === 'fr' ? "Activer l'annonce" : "Activate Announcement"}</span>
+                  </label>
+                </div>
+                <button type="submit" className="admin-action-btn" style={{ marginTop: '10px' }}>
+                  {lang === 'fr' ? "Enregistrer l'annonce" : "Save Announcement"}
+                </button>
+              </form>
             </div>
           )}
         </div>
@@ -520,12 +675,16 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Initialize user profile in Firestore
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          email: userCredential.user.email,
-          isPremium: false,
-          createdAt: new Date().toISOString()
-        });
+        // Initialize user profile in Firestore if it doesn't already exist to avoid overwriting premium status
+        const userRef = doc(db, "users", userCredential.user.uid);
+        const existingDoc = await getDoc(userRef);
+        if (!existingDoc.exists()) {
+          await setDoc(userRef, {
+            email: userCredential.user.email,
+            isPremium: false,
+            createdAt: new Date().toISOString()
+          });
+        }
       }
       onClose();
     } catch (err) {
@@ -610,7 +769,6 @@ const StudiosPro = () => {
   const [isDesignProOpen, setIsDesignProOpen] = useState(false);
 
   const [isStudioPro2Open, setIsStudioPro2Open] = useState(false);
-  const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
@@ -619,6 +777,31 @@ const StudiosPro = () => {
   const scriptingIframeRef = useRef(null);
   const isIframeReadyRef = useRef(false);
   const collabMessagesRef = useRef([]);
+
+  const [announcement, setAnnouncement] = useState(null);
+  const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(false);
+
+  useEffect(() => {
+    if (!db) return;
+    const fetchAnnouncement = async () => {
+      try {
+        const annDoc = await getDoc(doc(db, "announcements", "current"));
+        if (annDoc.exists()) {
+          const data = annDoc.data();
+          setAnnouncement(data);
+          if (data.active) {
+            const dismissedTime = localStorage.getItem('dismissedAnnouncementTime');
+            if (dismissedTime !== data.updatedAt) {
+              setIsAnnouncementVisible(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching announcement:", err);
+      }
+    };
+    fetchAnnouncement();
+  }, [user]);
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -651,7 +834,6 @@ const StudiosPro = () => {
     }
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        setUser(authUser);
         // Check premium status and sync free exports in Firestore
         try {
           const userDocRef = doc(db, "users", authUser.uid);
@@ -660,7 +842,8 @@ const StudiosPro = () => {
           let userData = {
             email: authUser.email,
             isPremium: false,
-            freeExportsUsed: freeExportsUsed
+            freeExportsUsed: freeExportsUsed,
+            createdAt: new Date().toISOString()
           };
 
           let isUserPremium = false;
@@ -763,8 +946,12 @@ const StudiosPro = () => {
             // New user, sync local to cloud
             await setDoc(userDocRef, userData, { merge: true });
           }
+
+          // Set user after resolving premium status
+          setUser(authUser);
         } catch (err) {
           console.error("Error fetching user data:", err);
+          setUser(authUser);
         }
       } else {
         setUser(null);
@@ -1079,7 +1266,7 @@ const StudiosPro = () => {
       logout: "Déconnexion",
       getPremium: "Devenir Premium",
       premiumActive: "Premium Actif",
-      premiumDesc: "Accès illimité - 20$/mois",
+      premiumDesc: "Accès illimité - 10$/mois",
       payRequest: "Paiement requis pour l'export",
       payMessage: "Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?",
       payBtn: "Devenir Premium",
@@ -1090,7 +1277,7 @@ const StudiosPro = () => {
       freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
-      unlimitedPrice: "20$ / mois",
+      unlimitedPrice: "10$ / mois",
       daysLeft: "jours restants",
       oneDayLeft: "jour restant",
       expired: "Expiré",
@@ -1125,7 +1312,7 @@ const StudiosPro = () => {
       logout: "Logout",
       getPremium: "Go Premium",
       premiumActive: "Premium Active",
-      premiumDesc: "Unlimited access - 20$/mo",
+      premiumDesc: "Unlimited access - 10$/mo",
       payRequest: "Payment required for export",
       payMessage: "You don't have a Premium account. Would you like to go Premium?",
       payBtn: "Go Premium",
@@ -1136,7 +1323,7 @@ const StudiosPro = () => {
       freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
-      unlimitedPrice: "$20 / month",
+      unlimitedPrice: "$10 / month",
       daysLeft: "days remaining",
       oneDayLeft: "day remaining",
       expired: "Expired",
@@ -1165,7 +1352,23 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''}`}>
+    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+      {isAnnouncementVisible && announcement && (
+        <div className="announcement-banner">
+          <span className="announcement-text">
+            {lang === 'fr' ? announcement.textFr : announcement.textEn}
+          </span>
+          <button 
+            className="announcement-close-btn" 
+            onClick={() => {
+              setIsAnnouncementVisible(false);
+              localStorage.setItem('dismissedAnnouncementTime', announcement.updatedAt || new Date().toISOString());
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>

@@ -942,3 +942,206 @@ body {
   background: #0f172a;
   color: white;
 }
+
+/* Announcement Banner styling */
+.announcement-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  padding: 0 50px;
+}
+
+.announcement-text {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.announcement-close-btn {
+  position: absolute;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.announcement-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Adjustments when announcement is visible */
+.main-container.has-announcement .nav-bar {
+  top: 40px;
+}
+.main-container.has-announcement .hero-section {
+  padding-top: 40px;
+}
+
+/* Read / Unread support message card style */
+.admin-message-card.unread {
+  border-left: 4px solid #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.03) !important;
+}
+
+.admin-message-card.read {
+  border-left: 4px solid #64748b !important;
+  opacity: 0.75;
+}
+
+.message-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 0.75rem;
+}
+
+.message-badge {
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.65rem;
+}
+
+.admin-message-card.unread .message-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.admin-message-card.read .message-badge {
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+}
+
+.read-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+
+.read-toggle-btn.is-unread {
+  color: #3b82f6;
+}
+
+.read-toggle-btn.is-unread:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.read-toggle-btn.is-read {
+  color: #64748b;
+}
+
+.read-toggle-btn.is-read:hover {
+  background: rgba(100, 116, 139, 0.1);
+}
+
+/* Announcement Admin Section styles */
+.admin-announcement-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.admin-announcement-section h3 {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.admin-announcement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-admin label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.admin-textarea {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  min-height: 80px;
+  resize: vertical;
+  transition: 0.2s;
+}
+
+.admin-textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.checkbox-group-admin {
+  flex-direction: row;
+}
+
+.admin-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: white;
+  font-size: 0.85rem;
+}
+
+.admin-checkbox-label input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+/* Admin icons actions styling */
+.admin-icon-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.admin-icon-btn:hover {
+  opacity: 1;
+}
+
+.delete-user-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  transform: scale(1.05);
+}

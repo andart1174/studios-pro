@@ -22,13 +22,13 @@ exports.handler = async (event) => {
         };
 
         if (priceType === 'premium') {
-            // 35$ Subscription
+            // 10$ Subscription
             sessionConfig.mode = 'subscription';
             sessionConfig.line_items = [{
                 price_data: {
                     currency: 'usd',
                     product_data: { name: 'Studios-Pro Premium' },
-                    unit_amount: 2000,
+                    unit_amount: 1000,
                     recurring: { interval: 'month' },
                 },
                 quantity: 1,
