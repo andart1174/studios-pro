@@ -579,8 +579,8 @@ const scriptTemplate = (ref) => {
                   ]).then(([htmlText, cssText, jsText]) => {
                       let cleanHtml = htmlText;
                       cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="js/app.js"></script>', '<script>' + jsText + '</script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\\s\\S])*?studios_pro_channel[\\s\\S]*?<\\/script>/gi, '');
+                      cleanHtml = cleanHtml.replace('<script src="js/app.js"><\\/script>', '<script>' + jsText + '<\\/script>');
+                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\\/script>)[\\s\\S])*?studios_pro_channel[\\s\\S]*?<\\/script>/gi, '');
                       cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\\s\\S]*?<\\/button>/gi, '');
                       
                       const hash = window.location.hash;

@@ -587,7 +587,519 @@
                   ]).then(([htmlText, cssText, jsText]) => {
                       let cleanHtml = htmlText;
                       cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="js/app.js"></script>', '<script>' + jsText + '</script>');
+                      cleanHtml = cleanHtml.replace('<script src="js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
+                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
+                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+                      
+                      const hash = window.location.hash;
+                      const playbackScript = `
+<script>
+  window.location.hash = "${hash}";
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const zenBtn = document.getElementById('btn-zen');
+      if (zenBtn) zenBtn.click();
+      const splash = document.createElement('div');
+      splash.style.position = 'fixed';
+      splash.style.top = '0'; splash.style.left = '0';
+      splash.style.width = '100vw'; splash.style.height = '100vh';
+      splash.style.background = '#05070a';
+      splash.style.color = '#fff';
+      splash.style.display = 'flex';
+      splash.style.flexDirection = 'column';
+      splash.style.alignItems = 'center';
+      splash.style.justifyContent = 'center';
+      splash.style.zIndex = '99999';
+      splash.style.fontFamily = 'sans-serif';
+      splash.style.cursor = 'pointer';
+      splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
+      document.body.appendChild(splash);
+      splash.onclick = function() {
+        if (typeof Tone !== "undefined") {
+          Tone.start().then(() => {
+            const playBtn = document.getElementById('btn-play');
+            if (playBtn) playBtn.click();
+            splash.remove();
+          });
+        } else {
+          splash.remove();
+        }
+      };
+    }, 500);
+  });
+<\/script>
+`;
+                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '\n</body>');
+                      const blob = new Blob([cleanHtml], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'music_composer_interactive.html';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                  }).catch(err => {
+                      alert("Error generating HTML: " + err.message);
+                  });
+                }
+                return;
+              }
+              
+              window.isGeneratingHtmlExport = true;
+              baseBtn.click();
+            };
+            
+            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
+          }
+        }
+      }, 1000);
+
+      async function generateHtmlExport(fileUrl, fileName) {
+        let blob;
+        if (blobMap.has(fileUrl)) {
+          blob = blobMap.get(fileUrl);
+        } else if (fileUrl.startsWith('data:')) {
+          const parts = fileUrl.split(',');
+          const header = parts[0];
+          const dataStr = parts.slice(1).join(',');
+          let mime = 'text/plain';
+          const mimeMatch = header.match(/:(.*?)(;|$)/);
+          if (mimeMatch) {
+            mime = mimeMatch[1];
+          }
+          if (header.includes(';base64')) {
+            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
+          } else {
+            let decoded = dataStr;
+            try {
+              decoded = decodeURIComponent(dataStr);
+            } catch (err) {
+              try {
+                decoded = unescape(dataStr);
+              } catch (e2) {}
+            }
+            blob = new Blob([decoded], { type: mime });
+          }
+        } else {
+          const response = await fetch(fileUrl);
+          blob = await response.blob();
+        }
+
+        const extension = fileName.split('.').pop().toLowerCase();
+
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result;
+            const base64 = result.substring(result.indexOf(',') + 1);
+            resolve(base64);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+
+        let htmlContent = '';
+
+        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
+          htmlContent = get3DTemplate(base64Data, extension, fileName);
+        } else if (extension === 'svg') {
+          htmlContent = getSvgTemplate(base64Data, fileName);
+        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
+          htmlContent = getImageTemplate(base64Data, extension, fileName);
+        } else {
+          htmlContent = getTextTemplate(base64Data, extension, fileName);
+        }
+
+        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+        const htmlUrl = URL.createObjectURL(htmlBlob);
+        const a = document.createElement('a');
+        a.href = htmlUrl;
+        a.download = fileName.replace('.' + extension, '_interactive.html');
+        a.dataset.bypassed = 'true'; // bypass our monkey patch!
+        document.body.appendChild(a);
+        originalAnchorClick.call(a); // trigger download natively!
+        document.body.removeChild(a);
+        URL.revokeObjectURL(htmlUrl);
+        
+        releaseUrl(fileUrl);
+      }
+
+      function get3DTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - 3D Interactive Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+    #container { width: 100vw; height: 100vh; display: block; }
+    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
+    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
+    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
+  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
+  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
+  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
+  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
+</head>
+<body>
+  <div id="loader">Loading 3D Model...</div>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>${fileName}</h3>
+    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
+    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
+    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
+  </div>
+  <script>
+    const base64Data = "${base64Data}";
+    const extension = "${extension}";
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1329);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 50);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+    
+    scene.add(new THREE.AmbientLight(0x666666));
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight1.position.set(1, 1, 1).normalize();
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
+    dirLight2.position.set(-1, -1, -1).normalize();
+    scene.add(dirLight2);
+    camera.add(new THREE.PointLight(0xffffff, 0.5));
+    scene.add(camera);
+    
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    let currentMesh;
+    
+    function base64ToBytes(base64) {
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
+      }
+      return bytes;
+    }
+    
+    function base64ToArrayBuffer(base64) {
+      return base64ToBytes(base64).buffer;
+    }
+    
+    try {
+      const buffer = base64ToArrayBuffer(base64Data);
+      let loader;
+      if (extension === 'stl') {
+        loader = new THREE.STLLoader();
+        const geometry = loader.parse(buffer);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+        adjustCamera(geometry);
+      } else if (extension === 'ply') {
+        loader = new THREE.PLYLoader();
+        const geometry = loader.parse(buffer);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+        currentMesh = new THREE.Mesh(geometry, material);
+        scene.add(currentMesh);
+        adjustCamera(geometry);
+      } else if (extension === 'obj') {
+        loader = new THREE.OBJLoader();
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(buffer);
+        const obj = loader.parse(text);
+        currentMesh = obj;
+        obj.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+          } else if (child.isLine || child.isLineSegments || child.material) {
+            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
+          }
+        });
+        scene.add(obj);
+        adjustCamera(obj);
+      } else if (['glb', 'gltf'].includes(extension)) {
+        loader = new THREE.GLTFLoader();
+        loader.parse(buffer, '', (gltf) => {
+          currentMesh = gltf.scene;
+          scene.add(currentMesh);
+          adjustCamera(currentMesh);
+        }, (error) => {
+          console.error(error);
+          document.getElementById('loader').innerText = 'Error loading model';
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loader').innerText = 'Failed to parse model';
+    }
+    
+    function adjustCamera(objOrGeom) {
+      document.getElementById('loader').style.opacity = '0';
+      setTimeout(() => document.getElementById('loader').remove(), 300);
+      
+      let boundingBox = new THREE.Box3();
+      let hasGeometry = false;
+      
+      if (objOrGeom.attributes && objOrGeom.attributes.position) {
+        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
+        hasGeometry = true;
+      } else {
+        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
+        objOrGeom.traverse((child) => {
+          if (child.isMesh || child.isLine || child.isLineSegments) {
+            if (child.geometry) {
+              const nameLower = (child.name || '').toLowerCase();
+              const typeLower = (child.type || '').toLowerCase();
+              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
+                return;
+              }
+              child.geometry.computeBoundingBox();
+              if (child.geometry.boundingBox) {
+                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
+                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
+                  if (!hasGeometry) {
+                    boundingBox.copy(childBox);
+                    hasGeometry = true;
+                  } else {
+                    boundingBox.union(childBox);
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      if (!hasGeometry) {
+        boundingBox.setFromObject(objOrGeom);
+      }
+      
+      const center = new THREE.Vector3();
+      boundingBox.getCenter(center);
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
+      
+      if (objOrGeom.attributes && objOrGeom.attributes.position) {
+        objOrGeom.center();
+      } else {
+        // Shift geometry group meshes to center at 0,0,0
+        objOrGeom.position.x -= center.x;
+        objOrGeom.position.y -= center.y;
+        objOrGeom.position.z -= center.z;
+      }
+      
+      let maxDim = Math.max(size.x, size.y, size.z);
+      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
+        maxDim = 50;
+      }
+      
+      camera.near = Math.min(0.1, maxDim / 100);
+      camera.far = Math.max(10000, maxDim * 100);
+      camera.updateProjectionMatrix();
+
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
+      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
+      camera.lookAt(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+    
+    document.getElementById('modelColor').addEventListener('input', (e) => {
+      if (!currentMesh) return;
+      currentMesh.traverse((child) => {
+        if (child.isMesh) {
+          child.material.color.set(e.target.value);
+        } else if (child.isLine || child.isLineSegments || child.material) {
+          child.material.color.set(e.target.value);
+        }
+      });
+    });
+    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
+    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
+    
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getSvgTemplate(base64Data, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Interactive Vector Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
+    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    #viewer-container:active { cursor: grabbing; }
+    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
+    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
+    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn:hover { background: #059669; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
+</head>
+<body>
+  <div id="viewer-container"></div>
+  <div class="panel">
+    <h3>${fileName}</h3>
+    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
+  </div>
+  <script>
+    const base64Data = "${base64Data}";
+    function base64ToBytes(base64) {
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
+      }
+      return bytes;
+    }
+    let svgText = "";
+    try {
+      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
+    } catch (e) {
+      svgText = "Error decoding SVG content.";
+    }
+    document.getElementById('viewer-container').innerHTML = svgText;
+    
+    window.onload = function() {
+      const svgElement = document.querySelector('#viewer-container svg');
+      if (svgElement) {
+        svgElement.setAttribute('id', 'interactive-svg');
+        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
+        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
+      }
+    };
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getImageTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Interactive Image Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    #image-container:active { cursor: grabbing; }
+    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
+    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
+  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
+  <script>
+    const base64Data = "${base64Data}";
+    const extension = "${extension}";
+    const img = document.getElementById('zoomable-img');
+    const mime = extension === 'jpg' ? 'jpeg' : extension;
+    img.src = "data:image/" + mime + ";base64," + base64Data;
+    
+    const container = document.getElementById('image-container');
+    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
+    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
+    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
+    container.onmouseup = function(e) { isPanning = false; }
+    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
+    container.onwheel = function(e) {
+      e.preventDefault();
+      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
+      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
+      scale = Math.min(Math.max(0.1, scale), 10);
+      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
+      setTransform();
+    }
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function getTextTemplate(base64Data, extension, fileName) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${fileName} - Document Viewer</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
+    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    header h3 { margin: 0; color: #fff; }
+    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn:hover { background: #2563eb; }
+    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
+  <pre><code id="code-content"></code></pre>
+  <script>
+    const base64Data = "${base64Data}";
+    function base64ToBytes(base64) {
+      const binString = atob(base64);
+      const len = binString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binString.charCodeAt(i);
+      }
+      return bytes;
+    }
+    let code = "";
+    try {
+      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
+    } catch (e) {
+      code = "Error decoding document content.";
+    }
+    document.getElementById('code-content').textContent = code;
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const btn = document.getElementById('copyBtn');
+      navigator.clipboard.writeText(code).then(() => {
+        btn.innerText = 'Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
+      });
+    });
+  <\/script>
+</body>
+</html>`;
+      }
+    })();
+  </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  ', '<script>' + jsText + '</script>');
                       cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!</script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
                       cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
                       
