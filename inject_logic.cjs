@@ -587,6 +587,14 @@ const scriptTemplate = (ref) => {
                       
                       const hash = window.location.hash;
                       const playbackScript = \`
+<style>
+  body { padding-bottom: 0 !important; }
+  .top-bar { display: none !important; }
+  .left-panel { display: none !important; }
+  .right-panel { display: none !important; }
+  #keyboard-synth-panel { display: none !important; }
+  .stage-overlay { bottom: 30px !important; }
+</style>
 <script>
   window.location.hash = "\${hash}";
   window.addEventListener('load', function() {
