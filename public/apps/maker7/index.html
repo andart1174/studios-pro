@@ -709,11 +709,13 @@
                   Promise.all([
                     fetch('/apps/music-composer/index.html').then(r => r.text()),
                     fetch('/apps/music-composer/css/style.css').then(r => r.text()),
+                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
                     fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, jsText]) => {
+                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
                       let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
+                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
+                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
+                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
                       cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
                       cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
                       
@@ -1222,6 +1224,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
