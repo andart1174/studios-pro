@@ -1033,30 +1033,34 @@ subdirs.forEach(dir => {
     // Skip rules, it has no payment trigger
     if (dir === 'rules') return;
 
-    // Detect ref from index.html content
-    const match = content.match(/payload:\s*\{\s*ref:\s*'([^']+)'\s*\}/) || content.match(/refStudio:\s*'([^']+)'/);
     let ref = dir;
-    if (match) {
-      ref = match[1];
+    if (dir === 'studio-3d-viewer') {
+      ref = 's3dviewer';
+    } else if (dir === 'ap3d') {
+      ref = 'ap3d';
     } else {
-      // mapping fallbacks
-      if (dir === 'depth-maps') ref = 'depth';
-      if (dir === 'new3d4d') ref = 'n3d';
-      if (dir === 'vector-cnc') ref = 'vcnc';
-      if (dir === 'studio-pro') ref = 'spro';
-      if (dir === 'maker7') ref = 'mkr7';
-      if (dir === 'jewelry-pro') ref = 'jwly';
-      if (dir === 'architect-pro-1') ref = 'arp1';
-      if (dir === 'architect-pro-2') ref = 'arp2';
-      if (dir === 'figure-builder') ref = 'figb';
-      if (dir === 'music-composer') ref = 'musc';
-      if (dir === 'design-pro-studio') ref = 'desp';
-      if (dir === 'studio-pro-2') ref = 'spro2';
-      if (dir === 'mech-gen-pro') ref = 'mechgen';
-      if (dir === 'ap3d') ref = 'ap3d';
-      if (dir === 'dfx') ref = 'dfx';
-      if (dir === 'aura-gen') ref = 'aurg';
-      if (dir === 'ia-architecte') ref = 'iaar';
+      const match = content.match(/payload:\s*\{\s*ref:\s*'([^']+)'\s*\}/) || content.match(/refStudio:\s*'([^']+)'/);
+      if (match) {
+        ref = match[1];
+      } else {
+        // mapping fallbacks
+        if (dir === 'depth-maps') ref = 'depth';
+        if (dir === 'new3d4d') ref = 'n3d';
+        if (dir === 'vector-cnc') ref = 'vcnc';
+        if (dir === 'studio-pro') ref = 'spro';
+        if (dir === 'maker7') ref = 'mkr7';
+        if (dir === 'jewelry-pro') ref = 'jwly';
+        if (dir === 'architect-pro-1') ref = 'arp1';
+        if (dir === 'architect-pro-2') ref = 'arp2';
+        if (dir === 'figure-builder') ref = 'figb';
+        if (dir === 'music-composer') ref = 'musc';
+        if (dir === 'design-pro-studio') ref = 'desp';
+        if (dir === 'studio-pro-2') ref = 'spro2';
+        if (dir === 'mech-gen-pro') ref = 'mechgen';
+        if (dir === 'dfx') ref = 'dfx';
+        if (dir === 'aura-gen') ref = 'aurg';
+        if (dir === 'ia-architecte') ref = 'iaar';
+      }
     }
 
     // 1. Clean up ALL script tags containing 'studios_pro_channel' (using safe lookahead)

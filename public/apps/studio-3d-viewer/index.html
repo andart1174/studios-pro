@@ -1,72 +1,20 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AuraGen IDE - Professional AI Site Generator</title>
-    
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>\${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "\${base64Data}";
-    const svgText = decodeURIComponent(escape(window.atob(base64Data)));
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  </script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
+  <title>Omni-Viewer 3D & CAD | Studios-Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js and loaders -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
 </head>
 <body>
 <!-- Back Button and Payment logic -->
@@ -284,12 +232,12 @@
         if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
         const localPaySingleBtn = document.getElementById('pay-single-btn');
         if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'aurg' } });
+          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 's3dviewer' } });
           localModal.style.display = 'none';
         };
         const localPayPremiumBtn = document.getElementById('pay-premium-btn');
         if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'aurg' } });
+          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 's3dviewer' } });
           localModal.style.display = 'none';
         };
       }
@@ -452,7 +400,7 @@
           if (localModal) {
             localModal.style.display = 'flex';
           }
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
+          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 's3dviewer' } });
         }
       }, true);
 
@@ -626,7 +574,7 @@
               e.stopPropagation();
               
               if (!isPremiumUser && !window.isPremiumUser) {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 's3dviewer' } });
                 return;
               }
               
@@ -1132,181 +1080,308 @@
   
   
   
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>\${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
+  <!-- Global error panel -->
+  <div id="error-log-panel" style="position: fixed; bottom: 20px; right: 20px; background: rgba(220, 38, 38, 0.95); color: white; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; max-width: 400px; z-index: 99999; display: none; border: 1px solid #ef4444; box-shadow: 0 10px 25px rgba(0,0,0,0.5); word-break: break-all;"></div>
   <script>
-    const base64Data = "\${base64Data}";
-    const extension = "\${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  </script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>\${fileName} (\${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "\${base64Data}";
-    const code = decodeURIComponent(escape(window.atob(base64Data)));
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(code).then(() => {
-        const btn = document.getElementById('copyBtn');
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
+    window.addEventListener('error', function(e) {
+      const p = document.getElementById('error-log-panel');
+      p.style.display = 'block';
+      p.innerText = 'JS Error: ' + e.message + '\nSource: ' + e.filename + ':' + e.lineno;
     });
   </script>
-</body>
-</html>`;
-      }
-    })();
-  </script>
 
-    <div id="root"></div>
-  </body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">O</div>
+        <div style="flex: 1;">
+          <h1 class="app-title">Omni-Viewer</h1>
+          <p class="app-subtitle" data-en="3D & CAD Universal Studio" data-fr="Studio Universel 3D & CAD">3D & CAD Universal Studio</p>
+        </div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="fr">FR</button>
+        </div>
+      </div>
+
+      <!-- Demo Models Preset -->
+      <div class="panel-section">
+        <h2 data-en="Demo Models" data-fr="Modèles de Démo">Demo Models</h2>
+        <div class="control-group">
+          <label data-en="Select test model / Open" data-fr="Sélectionner modèle / Ouvrir">Select test model / Open</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="demo-model-select" style="flex: 1;">
+              <option value="none" data-en="-- Upload / Drag --" data-fr="-- Charger / Glisser --">-- Upload / Drag --</option>
+              <option value="gear" data-en="Mechanical Gear" data-fr="Engrenage Mécanique">Mechanical Gear</option>
+              <option value="ring" data-en="Diamond Gold Ring" data-fr="Bague de Fiançailles Or">Diamond Gold Ring</option>
+              <option value="knot" data-en="Complex Torus Knot" data-fr="Nœud Torique Complexe">Complex Torus Knot</option>
+              <option value="cube" data-en="Calibration Cube" data-fr="Cube de Calibration">Calibration Cube</option>
+            </select>
+            <button class="btn btn-secondary" id="btn-upload-file" style="width: auto; padding: 0 12px;" data-en="📁 Open" data-fr="📁 Ouvrir">📁 Open</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene Models -->
+      <div class="panel-section">
+        <h2 data-en="Scene Models" data-fr="Modèles en Scène">Scene Models</h2>
+        <div class="control-group" style="gap: 6px;">
+          <div id="models-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto;"></div>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <button class="btn btn-secondary" id="btn-add-model" style="flex: 1; font-size: 11px;" data-en="+ Add Model" data-fr="+ Ajouter Modèle">+ Add Model</button>
+            <button class="btn btn-secondary" id="btn-clear-scene" style="flex: 1; font-size: 11px; color: #ef4444;" data-en="Clear All" data-fr="Tout Effacer">Clear All</button>
+          </div>
+          <input type="file" id="add-model-input" accept=".stl,.obj,.glb,.gltf" style="display: none;">
+        </div>
+      </div>
+
+      <!-- File Details -->
+      <div class="panel-section">
+        <h2 data-en="File Info" data-fr="Infos du Fichier">File Info</h2>
+        <div class="info-grid">
+          <div class="info-label" data-en="Name:" data-fr="Nom :">Name:</div>
+          <div class="info-val" id="file-name" data-en="None loaded" data-fr="Aucun chargé">None loaded</div>
+          <div class="info-label" data-en="Format:" data-fr="Format :">Format:</div>
+          <div class="info-val" id="file-format">-</div>
+          <div class="info-label" data-en="Size:" data-fr="Taille :">Size:</div>
+          <div class="info-val" id="file-size">-</div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="panel-section">
+        <h2 data-en="Appearance & Grid" data-fr="Apparence & Grille">Appearance & Grid</h2>
+        <div class="control-group">
+          <label data-en="Model Color" data-fr="Couleur du Modèle">Model Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="model-color" value="#3b82f6">
+            <span id="color-hex">#3B82F6</span>
+          </div>
+          <div id="svg-original-colors-container" style="display: none; align-items: center; gap: 6px; margin-top: 6px;">
+            <label style="font-size: 11px; font-weight: normal; text-transform: none; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #9ca3af;">
+              <input type="checkbox" id="svg-original-colors" checked>
+              <span data-en="Keep original SVG colors" data-fr="Garder les couleurs d'origine">Keep original SVG colors</span>
+            </label>
+          </div>
+        </div>
+        <div class="control-group">
+          <label data-en="Background Color" data-fr="Couleur de Fond">Background Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="bg-color" value="#0f172a">
+            <span id="bg-color-hex">#0F172A</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label data-en="Material Preset" data-fr="Matériau Prédéfini">Material Preset</label>
+          <select id="model-material">
+            <option value="default" data-en="Smooth Matte (Plastic)" data-fr="Mat Lisse (Plastique)">Smooth Matte (Plastic)</option>
+            <option value="metallic" data-en="Glossy Chrome (Metal)" data-fr="Chrome Brillant (Métal)">Glossy Chrome (Metal)</option>
+            <option value="glass" data-en="Translucent Glass" data-fr="Verre Translucide">Translucent Glass</option>
+            <option value="glow" data-en="Emissive Neon (Glow)" data-fr="Néon Émissif (Brillant)">Emissive Neon (Glow)</option>
+            <option value="gold" data-en="Polished Gold" data-fr="Or Poli">Polished Gold</option>
+            <option value="silver" data-en="Shiny Silver" data-fr="Argent Brillant">Shiny Silver</option>
+            <option value="copper" data-en="Brushed Copper" data-fr="Cuivre Brossé">Brushed Copper</option>
+            <option value="jade" data-en="Imperial Jade" data-fr="Jade Impérial">Imperial Jade</option>
+            <option value="wood" data-en="Natural Oak" data-fr="Chêne Naturel">Natural Oak</option>
+            <option value="clay" data-en="Matte Red Clay" data-fr="Argile Rouge Mate">Matte Red Clay</option>
+            <option value="carbon" data-en="Carbon Fiber" data-fr="Fibre de Carbone">Carbon Fiber</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label data-en="Lighting Environment" data-fr="Environnement Lumineux">Lighting Environment</label>
+          <select id="env-lighting-select">
+            <option value="studio" data-en="Studio (Daylight)" data-fr="Studio (Lumière du Jour)">Studio (Daylight)</option>
+            <option value="sunset" data-en="Sunset (Warm)" data-fr="Crépuscule (Chaud)">Sunset (Warm)</option>
+            <option value="cyberpunk" data-en="Cyberpunk (Neon Glow)" data-fr="Cyberpunk (Éclat Néon)">Cyberpunk (Neon Glow)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label data-en="Render Style" data-fr="Style de Rendu">Render Style</label>
+          <select id="render-style-select">
+            <option value="default" data-en="Default (Solid)" data-fr="Défaut (Solide)">Default (Solid)</option>
+            <option value="wireframe" data-en="Wireframe (Mesh)" data-fr="Filaire (Maillage)">Wireframe (Mesh)</option>
+            <option value="xray" data-en="X-Ray (Semi-Transparent)" data-fr="Rayons X (Semi-Transparent)">X-Ray (Semi-Transparent)</option>
+            <option value="blueprint" data-en="Technical Blueprint" data-fr="Plan Technique">Technical Blueprint</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label data-en="View Elements" data-fr="Éléments de Vue">View Elements</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="show-grid" checked> <span data-en="Axis Grid" data-fr="Grille d'Axes">Axis Grid</span></label>
+            <label><input type="checkbox" id="show-bbox"> <span data-en="Bounding Box" data-fr="Boîte Englobante">Bounding Box</span></label>
+            <label><input type="checkbox" id="auto-rotate-check"> <span data-en="Auto-Rotate" data-fr="Auto-Rotation">Auto-Rotate</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sizing & Scale -->
+      <div class="panel-section">
+        <h2 data-en="Geometry & Scale" data-fr="Géométrie & Échelle">Geometry & Scale</h2>
+        <div class="control-group">
+          <label data-en="Dimensions (mm)" data-fr="Dimensions (mm)">Dimensions (mm)</label>
+          <div class="dims-box" id="model-dims">X: -, Y: -, Z: -</div>
+        </div>
+        <div class="control-group" id="physical-props-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-direction: column; gap: 8px;">
+          <label data-en="Physical Properties" data-fr="Propriétés Physiques">Physical Properties</label>
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #9ca3af; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span data-en="Volume:" data-fr="Volume :">Volume:</span>
+              <strong id="model-volume">-</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span data-en="Surface Area:" data-fr="Surface :">Surface Area:</span>
+              <strong id="model-surface-area">-</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+              <span data-en="Material Density:" data-fr="Densité Matériau :">Material Density:</span>
+              <select id="model-density-select" style="font-size: 11px; padding: 2px 4px; background: #0f172a; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; width: 100px;">
+                <option value="1.24" data-en="PLA (Plastic)" data-fr="PLA (Plastique)">PLA (Plastic)</option>
+                <option value="1.04" data-en="ABS (Plastic)" data-fr="ABS (Plastique)">ABS (Plastic)</option>
+                <option value="7.85" data-en="Steel" data-fr="Acier">Steel</option>
+                <option value="2.70" data-en="Aluminum" data-fr="Aluminium">Aluminum</option>
+                <option value="19.32" data-en="Gold" data-fr="Or">Gold</option>
+                <option value="10.49" data-en="Silver" data-fr="Argent">Silver</option>
+                <option value="8.96" data-en="Copper" data-fr="Cuivre">Copper</option>
+                <option value="8.50" data-en="Brass" data-fr="Laiton">Brass</option>
+                <option value="4.50" data-en="Titanium" data-fr="Titane">Titanium</option>
+              </select>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px; margin-top: 4px; color: #10b981;">
+              <span data-en="Estimated Weight:" data-fr="Poids Estimé :">Estimated Weight:</span>
+              <strong id="model-weight">-</strong>
+            </div>
+          </div>
+        </div>
+        <div class="control-group" id="transform-tool-group" style="display: none;">
+          <label data-en="CAD Transform Tool" data-fr="Outil de Transformation CAD">CAD Transform Tool</label>
+          <div class="tool-buttons">
+            <button class="btn btn-tool active" id="tool-orbit" title="Orbit / Inspect Camera" data-en="🔍 Inspect" data-fr="🔍 Inspecter">🔍 Inspect</button>
+            <button class="btn btn-tool" id="tool-translate" title="Move Model" data-en="Move" data-fr="Déplacer">Move</button>
+            <button class="btn btn-tool" id="tool-rotate" title="Rotate Model" data-en="Rotate" data-fr="Pivoter">Rotate</button>
+            <button class="btn btn-tool" id="tool-scale" title="Scale Model" data-en="Scale" data-fr="Échelle">Scale</button>
+            <button class="btn btn-tool" id="tool-measure" title="Measure Distance" data-en="📏 Measure" data-fr="📏 Mesurer">📏 Measure</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label><span data-en="Scale Factor:" data-fr="Facteur d'Échelle :">Scale Factor:</span> <span id="scale-val">1.0</span>x</label>
+          <input type="range" id="scale-slider" min="0.1" max="5.0" step="0.05" value="1.0">
+        </div>
+
+        <!-- Exploded View Slider (3D Only) -->
+        <div class="control-group" id="exploded-view-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <label><span data-en="Exploded View:" data-fr="Vue Éclatée :">Exploded View:</span> <span id="exploded-val">0.0</span>x</label>
+          <input type="range" id="exploded-slider" min="0.0" max="2.0" step="0.05" value="0.0">
+        </div>
+
+        <!-- Section Plane Section (3D Only) -->
+        <div class="control-group" id="section-plane-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <label data-en="Section Axis / Clipping" data-fr="Axe de Coupe / Clipping">Section Axis / Clipping</label>
+          <select id="section-axis-select">
+            <option value="none" data-en="None" data-fr="Aucun">None</option>
+            <option value="x" data-en="X Axis" data-fr="Axe X">X Axis</option>
+            <option value="y" data-en="Y Axis" data-fr="Axe Y">Y Axis</option>
+            <option value="z" data-en="Z Axis" data-fr="Axe Z">Z Axis</option>
+          </select>
+          <div id="section-slider-row" style="display: none; flex-direction: column; gap: 4px; margin-top: 6px;">
+            <label><span data-en="Section Position:" data-fr="Position de Coupe :">Section Position:</span> <span id="section-val">0</span>mm</label>
+            <input type="range" id="section-slider" min="-100" max="100" step="1" value="0">
+          </div>
+          <div id="section-cap-options" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label style="font-size: 11px; text-transform: none; font-weight: normal;" data-en="Cap Fill Color:" data-fr="Couleur du Cap :">Cap Fill Color:</label>
+              <div class="color-picker-wrapper" style="gap: 6px;">
+                <input type="color" id="section-cap-color" value="#1e3a5f">
+                <span id="section-cap-color-hex" style="font-size: 10px;">#1E3A5F</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              <label style="font-size: 11px; text-transform: none; font-weight: normal; white-space: nowrap;" data-en="Cap Opacity:" data-fr="Opacité Cap :">Cap Opacity:</label>
+              <input type="range" id="section-cap-opacity" min="0" max="1" step="0.05" value="0.75" style="flex: 1;">
+              <span id="section-cap-opacity-val" style="font-size: 10px; width: 30px; text-align: right;">75%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Measurement Display -->
+        <div class="control-group" id="measurement-display-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <label data-en="CAD Measurement" data-fr="Mesure CAD">CAD Measurement</label>
+          <div class="dims-box" id="measurement-val" style="color: #10b981; font-family: monospace; font-size: 12px; text-align: center;">-</div>
+        </div>
+        
+        <!-- Precise Transform Sliders (Position & Rotation) -->
+        <div class="control-group transform-sliders-section" id="precise-sliders" style="display: none; gap: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px;" data-en="Precise Position (mm)" data-fr="Position Précise (mm)">Precise Position (mm)</label>
+          <div class="slider-row">
+            <span>X:</span>
+            <input type="range" id="pos-x" min="-100" max="100" step="1" value="0">
+            <span id="pos-x-val">0</span>
+          </div>
+          <div class="slider-row">
+            <span>Y:</span>
+            <input type="range" id="pos-y" min="-100" max="100" step="1" value="0">
+            <span id="pos-y-val">0</span>
+          </div>
+          <div class="slider-row">
+            <span>Z:</span>
+            <input type="range" id="pos-z" min="-100" max="100" step="1" value="0">
+            <span id="pos-z-val">0</span>
+          </div>
+          
+          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px; margin-top: 5px;" data-en="Precise Rotation (Degrees)" data-fr="Rotation Précise (Degrés)">Precise Rotation (Degrees)</label>
+          <div class="slider-row">
+            <span>X:</span>
+            <input type="range" id="rot-x" min="0" max="360" step="5" value="0">
+            <span id="rot-x-val">0°</span>
+          </div>
+          <div class="slider-row">
+            <span>Y:</span>
+            <input type="range" id="rot-y" min="0" max="360" step="5" value="0">
+            <span id="rot-y-val">0°</span>
+          </div>
+          <div class="slider-row">
+            <span>Z:</span>
+            <input type="range" id="rot-z" min="0" max="360" step="5" value="0">
+            <span id="rot-z-val">0°</span>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" id="btn-reset-transform" style="margin-top: 8px;" data-en="Reset Transform" data-fr="Réinitialiser">Reset Transform</button>
+      </div>
+
+      <!-- Export Panel -->
+      <div class="panel-section">
+        <h2 data-en="Export" data-fr="Export">Export</h2>
+        <div id="export-3d-group" style="display: none;">
+          <button class="btn btn-primary" id="export-stl" style="display: none;">STL</button>
+          <button class="btn btn-primary" id="export-obj" style="display: none;">OBJ</button>
+          <button class="btn btn-primary" id="export-glb" style="display: none;">GLB</button>
+        </div>
+        <div id="export-2d-group" style="display: none;">
+          <button class="btn btn-primary" id="export-dxf" style="display: none;">DXF</button>
+          <button class="btn btn-primary" id="export-svg" style="display: none;">SVG</button>
+        </div>
+        <button class="btn btn-accent" id="export-html" style="margin-top: 8px;" disabled data-en="🔗 Export Interactive HTML Viewer" data-fr="🔗 Exporter Visualiseur HTML Interactif">🔗 Export Interactive HTML Viewer</button>
+      </div>
+    </div>
+
+    <!-- Viewport Container -->
+    <div class="viewport" id="viewport">
+      <!-- 2D Canvas for DXF/SVG -->
+      <canvas id="canvas-2d"></canvas>
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Processing File...</div>
+      </div>
+      <!-- Drag & Drop overlay -->
+      <div class="drag-overlay" id="drag-overlay">
+        <div class="drag-box">
+          <div class="drag-icon">📁</div>
+          <div class="drag-text" data-en="Drop your STL, OBJ, GLB, DXF, or SVG file here" data-fr="Déposez votre fichier STL, OBJ, GLB, DXF ou SVG ici">Drop your STL, OBJ, GLB, DXF, or SVG file here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
 </html>

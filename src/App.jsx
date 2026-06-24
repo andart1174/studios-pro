@@ -753,6 +753,7 @@ const StudiosPro = () => {
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [pendingExport, setPendingExport] = useState(null);
   const [is3DOpen, setIs3DOpen] = useState(false);
+  const [is3DViewerOpen, setIs3DViewerOpen] = useState(false);
   const [isDFXOpen, setIsDFXOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isDepthOpen, setIsDepthOpen] = useState(false);
@@ -1050,6 +1051,7 @@ const StudiosPro = () => {
       // Auto-open studio if ref is present
       const ref = params.get('ref');
       if (ref === 'ap3d') setIs3DOpen(true);
+      if (ref === 's3dviewer') setIs3DViewerOpen(true);
       if (ref === 'dfx') setIsDFXOpen(true);
       if (ref === 'depth') setIsDepthOpen(true);
       if (ref === 'n3d') setIsNew3DOpen(true);
@@ -1130,6 +1132,7 @@ const StudiosPro = () => {
         channel.postMessage({ type: 'LOAD_EXTERNAL_URL', payload });
       } else if (type === 'CLOSE_STUDIO') {
         setIs3DOpen(false);
+        setIs3DViewerOpen(false);
         setIsDFXOpen(false);
         setIsRulesOpen(false);
         setIsDepthOpen(false);
@@ -1211,6 +1214,7 @@ const StudiosPro = () => {
     
     if (ref) {
       if (ref === 'ap3d') setIs3DOpen(true);
+      if (ref === 's3dviewer') setIs3DViewerOpen(true);
       if (ref === 'dfx') setIsDFXOpen(true);
       if (ref === 'depth') setIsDepthOpen(true);
       if (ref === 'n3d') setIsNew3DOpen(true);
@@ -1285,6 +1289,7 @@ const StudiosPro = () => {
       subtitle: "Votre hub créatif professionnel",
       message: "Nous espérons que vous réaliserez votre modèle à la qualité souhaitée et que vous reviendrez sur notre site.",
       app3d: "Studio 3D",
+      app3dViewer: "Studio 3D Viewer",
       appdfx: "Studio DFX",
       rules: "Règles du Site",
       login: "Connexion",
@@ -1331,6 +1336,7 @@ const StudiosPro = () => {
       subtitle: "Your professional creative hub",
       message: "We hope you will create your model at the desired quality and return to our site.",
       app3d: "3D Studio",
+      app3dViewer: "Studio 3D Viewer",
       appdfx: "DFX Studio",
       rules: "Site Rules",
       login: "Login",
@@ -1377,7 +1383,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -1565,6 +1571,18 @@ const StudiosPro = () => {
             <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Modeling Icon" />
           </div>
           <div className="card-label">{currentT.app3d}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIs3DViewerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Viewer Icon" />
+          </div>
+          <div className="card-label">{currentT.app3dViewer}</div>
         </motion.div>
 
         <motion.div
@@ -1801,6 +1819,11 @@ const StudiosPro = () => {
         {is3DOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/ap3d/index.html" className="studio-iframe" title="Studio 3D" />
+          </motion.div>
+        )}
+        {is3DViewerOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/studio-3d-viewer/index.html" className="studio-iframe" title="Studio 3D Viewer" />
           </motion.div>
         )}
         {isDFXOpen && (
