@@ -630,6 +630,76 @@
                 return;
               }
               
+              if ('iaar' === 'musc') {
+                const btnShare = document.getElementById('btn-share');
+                if (btnShare) {
+                  btnShare.click(); // Sets location.hash with the compressed state
+                  Promise.all([
+                    fetch('/apps/music-composer/index.html').then(r => r.text()),
+                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
+                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
+                  ]).then(([htmlText, cssText, jsText]) => {
+                      let cleanHtml = htmlText;
+                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="css/style.css">', '<style>' + cssText + '</style>');
+                      cleanHtml = cleanHtml.replace('<script src="js/app.js"></script>', '<script>' + jsText + '</script>');
+                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!</script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
+                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+                      
+                      const hash = window.location.hash;
+                      const playbackScript = `
+<script>
+  window.location.hash = "${hash}";
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const zenBtn = document.getElementById('btn-zen');
+      if (zenBtn) zenBtn.click();
+      const splash = document.createElement('div');
+      splash.style.position = 'fixed';
+      splash.style.top = '0'; splash.style.left = '0';
+      splash.style.width = '100vw'; splash.style.height = '100vh';
+      splash.style.background = '#05070a';
+      splash.style.color = '#fff';
+      splash.style.display = 'flex';
+      splash.style.flexDirection = 'column';
+      splash.style.alignItems = 'center';
+      splash.style.justifyContent = 'center';
+      splash.style.zIndex = '99999';
+      splash.style.fontFamily = 'sans-serif';
+      splash.style.cursor = 'pointer';
+      splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
+      document.body.appendChild(splash);
+      splash.onclick = function() {
+        if (typeof Tone !== "undefined") {
+          Tone.start().then(() => {
+            const playBtn = document.getElementById('btn-play');
+            if (playBtn) playBtn.click();
+            splash.remove();
+          });
+        } else {
+          splash.remove();
+        }
+      };
+    }, 500);
+  });
+<\/script>
+`;
+                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '\n</body>');
+                      const blob = new Blob([cleanHtml], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'music_composer_interactive.html';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                  }).catch(err => {
+                      alert("Error generating HTML: " + err.message);
+                  });
+                }
+                return;
+              }
+              
               window.isGeneratingHtmlExport = true;
               baseBtn.click();
             };
@@ -1080,6 +1150,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
