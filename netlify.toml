@@ -7,6 +7,12 @@
   SECRETS_SCAN_ENABLED = "false"
 
 [[redirects]]
+  from = "/api/proxy/*"
+  to = "https://tmpfiles.org/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
