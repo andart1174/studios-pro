@@ -262,7 +262,9 @@
           const directUrl = decodeURIComponent(queryUrl);
           const name = directUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
-          const res = await fetch(directUrl);
+          // Use allorigins CORS proxy to fetch the file securely without CORS blocks
+          const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
+          const res = await fetch(proxiedUrl);
           const blob = await res.blob();
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
