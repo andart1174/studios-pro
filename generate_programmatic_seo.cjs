@@ -175,6 +175,45 @@ const converters = [
   }
 ];
 
+const arViewers = [
+  {
+    id: 'stl',
+    ref: 'arviewer',
+    titleEn: 'Free Online STL to AR Viewer | Studios-Pro',
+    titleFr: 'Visualiseur STL en AR gratuit en ligne | Studios-Pro',
+    descEn: 'Project your STL 3D models in Augmented Reality (AR) directly in your room online. No app download required.',
+    descFr: 'Projetez vos modèles 3D STL en Réalité Augmentée (AR) directement dans votre pièce en ligne. Sans télécharger d\'application.',
+    h1En: 'Free STL to AR Viewer Online',
+    h1Fr: 'Visualiseur STL en Réalité Augmentée Gratuit en Ligne',
+    featureEn: 'Instant client-side GLB conversion, QR code mobile transfer, custom color adjustments, and WebAR projection.',
+    featureFr: 'Conversion GLB instantanée côté client, transfert QR sur mobile, personnalisation des couleurs et projection WebAR.'
+  },
+  {
+    id: 'obj',
+    ref: 'arviewer',
+    titleEn: 'Free Online OBJ to AR Viewer | Studios-Pro',
+    titleFr: 'Visualiseur OBJ en AR gratuit en ligne | Studios-Pro',
+    descEn: 'Load OBJ files, bake custom colors, and instantly preview them in Augmented Reality (AR) on Android and iOS.',
+    descFr: 'Chargez des fichiers OBJ, appliquez des couleurs et visualisez-les instantanément en Réalité Augmentée (AR) sur Android et iOS.',
+    h1En: 'Free OBJ to AR Viewer Online',
+    h1Fr: 'Visualiseur OBJ en Réalité Augmentée Gratuit en Ligne',
+    featureEn: 'Instant GLB conversion, customizable material colors, QR code mobile transfer, and mobile WebAR rendering.',
+    featureFr: 'Conversion GLB instantanée, couleurs de matériaux personnalisables, transfert mobile par QR code et rendu WebAR mobile.'
+  },
+  {
+    id: 'glb',
+    ref: 'arviewer',
+    titleEn: 'Free Online GLB/GLTF AR Viewer | Studios-Pro',
+    titleFr: 'Visualiseur GLB/GLTF en AR gratuit en ligne | Studios-Pro',
+    descEn: 'Open binary GLB and GLTF files and project them directly into your physical space using WebAR technology.',
+    descFr: 'Ouvrez des fichiers binaires GLB et GLTF et projetez-les directement dans votre espace physique en WebAR.',
+    h1En: 'Free GLB & GLTF AR Viewer Online',
+    h1Fr: 'Visualiseur GLB & GLTF en Réalité Augmentée Gratuit',
+    featureEn: 'High-fidelity WebAR rendering, neutral and studio lighting presets, auto-rotate toggles, and direct phone scan.',
+    featureFr: 'Rendu WebAR haute fidélité, préréglages d\'éclairage neutre et studio, auto-rotation et scan direct.'
+  }
+];
+
 const template = (page) => `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -471,12 +510,16 @@ const template = (page) => `<!DOCTYPE html>
 // Setup directories
 const viewerDir = path.join(__dirname, 'public/viewer');
 const convertDir = path.join(__dirname, 'public/convert');
+const arViewerDir = path.join(__dirname, 'public/ar-viewer');
 
 if (!fs.existsSync(viewerDir)) {
   fs.mkdirSync(viewerDir, { recursive: true });
 }
 if (!fs.existsSync(convertDir)) {
   fs.mkdirSync(convertDir, { recursive: true });
+}
+if (!fs.existsSync(arViewerDir)) {
+  fs.mkdirSync(arViewerDir, { recursive: true });
 }
 
 // Generate files
@@ -488,6 +531,11 @@ viewers.forEach(page => {
 converters.forEach(page => {
   fs.writeFileSync(path.join(convertDir, `${page.id}.html`), template(page));
   console.log(`Generated convert/${page.id}.html`);
+});
+
+arViewers.forEach(page => {
+  fs.writeFileSync(path.join(arViewerDir, `${page.id}.html`), template(page));
+  console.log(`Generated ar-viewer/${page.id}.html`);
 });
 
 // Update sitemap.xml
@@ -502,6 +550,13 @@ const viewerUrls = viewers.map(page => `  <url>
 
 const convertUrls = converters.map(page => `  <url>
     <loc>https://studios-pro.com/convert/${page.id}</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>\n`).join('');
+
+const arViewerUrls = arViewers.map(page => `  <url>
+    <loc>https://studios-pro.com/ar-viewer/${page.id}</loc>
     <lastmod>${date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -541,7 +596,7 @@ const baseUrls = `  <url>
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${tutorialUrls}${viewerUrls}${convertUrls}</urlset>
+${baseUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}</urlset>
 `;
 
 fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);

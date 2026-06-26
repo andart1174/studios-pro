@@ -1233,6 +1233,7 @@ const StudiosPro = () => {
       if (ref === 'mechgen') setIsMechGenProOpen(true);
       if (ref === 'sandbox') setIsSandboxOpen(true);
       if (ref === 'scripting') setIsScriptingOpen(true);
+      if (ref === 'arviewer') setIsARViewerOpen(true);
     }
     if (room) {
       setIsScriptingOpen(true);
