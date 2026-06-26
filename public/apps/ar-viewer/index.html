@@ -533,7 +533,11 @@
       viewer.src = url;
       placeholder.style.display = 'none';
       viewer.style.display = 'block';
-      infoSection.style.display     // Customization & Premium Controls Integration
+      infoSection.style.display = 'block';
+      hideLoader();
+    }
+
+    // Customization & Premium Controls Integration
     let originalColors = [];
     viewer.addEventListener('load', () => {
       // 1. Calculate & display dimensions
