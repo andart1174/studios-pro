@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Viewer 3D | Studios-Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js and Loaders/Exporters for client-side conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <!-- Google model-viewer for web-AR -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</head>
+<body>
+  <!-- Back Button (posts CLOSE_STUDIO to parent) -->
+  <button id="back-btn" class="back-to-studios">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <span class="lang-text" data-fr="Retour" data-en="Back">Back</span>
+  </button>
+
+  <div class="app-container">
+    <!-- Left Sidebar: Controls & QR Code -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">AR</div>
+        <div>
+          <h1 class="app-title lang-text" data-fr="Studio AR Viewer" data-en="AR Viewer 3D">AR Viewer 3D</h1>
+          <p class="app-subtitle lang-text" data-fr="Visualisez vos modèles 3D en Réalité Augmentée" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
+        </div>
+      </div>
+
+      <!-- Upload Section -->
+      <div class="panel-section">
+        <h2 class="lang-text" data-fr="Charger un Modèle 3D" data-en="Load 3D Model">Load 3D Model</h2>
+        <div id="drop-zone" class="drop-zone">
+          <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <p class="drop-text lang-text" data-fr="Glissez-déposez un fichier 3D ou cliquez pentru parcourir" data-en="Drag & drop a 3D file or click to browse">Drag & drop a 3D file or click to browse</p>
+          <span class="formats-text">GLB, GLTF, STL, OBJ</span>
+          <input type="file" id="file-input" accept=".glb,.gltf,.stl,.obj" style="display: none;">
+        </div>
+      </div>
+
+      <!-- Model Stats / Info -->
+      <div id="info-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Informations du Modèle" data-en="Model Information">Model Information</h2>
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label lang-text" data-fr="Nom:" data-en="Name:">Name:</span>
+            <span id="model-name" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label lang-text" data-fr="Format:" data-en="Format:">Format:</span>
+            <span id="model-format" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label lang-text" data-fr="Taille du fichier:" data-en="File Size:">File Size:</span>
+            <span id="model-size" class="info-value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Code (for Desktop to Mobile Transfer) -->
+      <div id="qr-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Scanner avec votre Téléphone" data-en="Scan with your Phone">Scan with your Phone</h2>
+        <div class="qr-container">
+          <div id="qr-loading" class="qr-spinner-wrapper" style="display: none;">
+            <div class="spinner"></div>
+            <p class="spinner-text lang-text" data-fr="Génération du lien AR..." data-en="Generating AR link...">Generating AR link...</p>
+          </div>
+          <img id="qr-code-img" src="" alt="AR QR Code" style="display: none;">
+          <p class="qr-hint lang-text" data-fr="Scannez ce code QR pour projeter instantanément ce modèle 3D sur votre table en AR !" data-en="Scan this QR code to instantly project this 3D model onto your table in AR!">Scan this QR code to instantly project this 3D model onto your table in AR!</p>
+        </div>
+      </div>
+      
+      <!-- General Tips / Help -->
+      <div class="panel-section help-section">
+        <h2 class="lang-text" data-fr="Comment utiliser ?" data-en="How to use ?">How to use ?</h2>
+        <ol class="help-list">
+          <li class="lang-text" data-fr="Chargez votre fichier (.glb, .gltf, .stl ou .obj)." data-en="Load your file (.glb, .gltf, .stl, or .obj).">Load your file (.glb, .gltf, .stl, or .obj).</li>
+          <li class="lang-text" data-fr="Sur Desktop: Scannez le code QR généré pour l'ouvrir sur votre mobile." data-en="On Desktop: Scan the generated QR code to open it on your mobile phone.">On Desktop: Scan the generated QR code to open it on your mobile phone.</li>
+          <li class="lang-text" data-fr="Sur Mobile: Appuyez sur 'View in AR' et pointez votre caméra vers une surface plane." data-en="On Mobile: Tap 'View in AR' and point your camera at a flat surface.">On Mobile: Tap 'View in AR' and point your camera at a flat surface.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Right Side: 3D Preview Panel -->
+    <div class="preview-area">
+      <!-- Loading indicator -->
+      <div id="loader" class="loader-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loader-text" class="lang-text" data-fr="Chargement et conversion du modèle..." data-en="Loading and converting model...">Loading and converting model...</p>
+      </div>
+
+      <!-- Placeholder before upload -->
+      <div id="placeholder" class="placeholder-content">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+        <h3 class="lang-text" data-fr="Aucun modèle chargé" data-en="No Model Loaded">No Model Loaded</h3>
+        <p class="lang-text" data-fr="Importez un fichier 3D dans le panneau de gauche pour commencer." data-en="Import a 3D file in the left panel to begin.">Import a 3D file in the left panel to begin.</p>
+      </div>
+
+      <!-- model-viewer for actual 3D display & AR trigger -->
+      <model-viewer 
+        id="viewer"
+        camera-controls 
+        touch-action="pan-y" 
+        shadow-intensity="1"
+        shadow-softness="0.8"
+        exposure="1"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="auto"
+        interaction-prompt="auto"
+        auto-rotate
+        alt="A 3D model preview in AR"
+        style="width: 100%; height: 100%; display: none;">
+        
+        <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
+        <button slot="ar-button" id="ar-button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
+        </button>
+      </model-viewer>
+      
+    </div>
+  </div>
+
+  <script>
+
+    // Language detection and routing
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentLang = urlParams.get('lang') || 'en';
+    if (currentLang !== 'fr' && currentLang !== 'en') {
+      currentLang = 'en';
+    }
+
+    // Apply translations
+    function translateUI() {
+      document.querySelectorAll('.lang-text').forEach(el => {
+        const text = el.getAttribute(`data-${currentLang}`);
+        if (text) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.placeholder = text;
+          } else {
+            el.textContent = text;
+          }
+        }
+      });
+    }
+    translateUI();
+
+    // BroadcastChannel for parent communication
+    const channel = new BroadcastChannel('studios_pro_channel');
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+      backBtn.onclick = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        channel.postMessage({ type: 'CLOSE_STUDIO' });
+        window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+      };
+    }
+
+    // UI elements
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const viewer = document.getElementById('viewer');
+    viewer.addEventListener('error', (event) => {
+      console.error("model-viewer error detail:", event.detail);
+    });
+    const placeholder = document.getElementById('placeholder');
+    const loader = document.getElementById('loader');
+    const loaderText = document.getElementById('loader-text');
+    const infoSection = document.getElementById('info-section');
+    const qrSection = document.getElementById('qr-section');
+    const qrLoading = document.getElementById('qr-loading');
+    const qrCodeImg = document.getElementById('qr-code-img');
+
+    const modelNameEl = document.getElementById('model-name');
+    const modelFormatEl = document.getElementById('model-format');
+    const modelSizeEl = document.getElementById('model-size');
+
+    // Setup event listeners for drag and drop
+    dropZone.onclick = () => fileInput.click();
+    
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.onchange = (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    };
+
+    // BroadcastChannel loader support
+    channel.onmessage = (e) => {
+      if (e.data.type === 'LOAD_EXTERNAL_FILE') {
+        (async () => {
+          try {
+            const { name, extension, data, isBinary } = e.data.payload;
+            console.log("AR Viewer: loaded external file:", name);
+            showLoader(currentLang === 'fr' ? "Chargement du modèle externe..." : "Loading external file...");
+            let file;
+            if (isBinary) {
+              const res = await fetch(data);
+              const blob = await res.blob();
+              file = new File([blob], name, { type: 'application/octet-stream' });
+            } else {
+              file = new File([data], name, { type: 'text/plain' });
+            }
+            handleFile(file);
+          } catch (err) {
+            console.error('AR Viewer error loading external file:', err);
+            hideLoader();
+          }
+        })();
+      } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
+        (async () => {
+          try {
+            const { url } = e.data.payload;
+            const name = url.split('/').pop().split('?')[0] || 'external_model.glb';
+            console.log("AR Viewer: loaded external url:", url);
+            showLoader(currentLang === 'fr' ? "Téléchargement du modèle..." : "Downloading model...");
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const file = new File([blob], name, { type: 'application/octet-stream' });
+            handleFile(file);
+          } catch (err) {
+            console.error('AR Viewer error loading external url:', err);
+            hideLoader();
+          }
+        })();
+      }
+    };
+
+    // Load URL if passed in URL query param (?url=...)
+    const queryUrl = urlParams.get('url');
+    if (queryUrl) {
+      (async () => {
+        try {
+          const directUrl = decodeURIComponent(queryUrl);
+          const name = directUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
+          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
+          const res = await fetch(directUrl);
+          const blob = await res.blob();
+          const file = new File([blob], name, { type: 'application/octet-stream' });
+          handleFile(file);
+        } catch (err) {
+          console.error("Error loading query url:", err);
+          hideLoader();
+          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
+        }
+      })();
+    }
+
+    // Helper: show/hide loading screen
+    function showLoader(msg) {
+      loaderText.textContent = msg;
+      loader.style.display = 'flex';
+    }
+
+    // Helper: hide loading screen
+    function hideLoader() {
+      loader.style.display = 'none';
+    }
+
+    // Format file size
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+
+
+    // Scale normalization to prevent oversized/microscopic models in AR
+    function normalizeObjectScale(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      
+      // If the model is likely in millimeters (max dimension > 5.0, e.g., 50mm to 300mm),
+      // we scale it down by 1000 to convert to meters for correct AR representation.
+      if (maxDim > 5.0) {
+        object.scale.multiplyScalar(0.001);
+      } else if (maxDim < 0.01 && maxDim > 0) {
+        // If microscopic (less than 1cm), scale up to a visible size
+        object.scale.multiplyScalar(0.1 / maxDim);
+      }
+    }
+
+    // Main file processor
+    async function handleFile(file) {
+      if (!file) return;
+
+      const name = file.name;
+      const extension = name.split('.').pop().toLowerCase();
+      
+      modelNameEl.textContent = name;
+      modelFormatEl.textContent = extension.toUpperCase();
+      modelSizeEl.textContent = formatBytes(file.size);
+      
+      showLoader(currentLang === 'fr' ? "Analyse du fichier 3D..." : "Parsing 3D file...");
+
+      try {
+        if (extension === 'glb' || extension === 'gltf') {
+          const fileUrl = URL.createObjectURL(file) + (extension === 'glb' ? '#model.glb' : '#model.gltf');
+          loadIntoModelViewer(fileUrl);
+          generateARShareLink(file, name);
+        } else if (extension === 'stl') {
+          showLoader(currentLang === 'fr' ? "Conversion de STL en GLB (Client)..." : "Converting STL to GLB (Client)...");
+          const reader = new FileReader();
+          reader.onload = async function (e) {
+            try {
+              const contents = e.target.result;
+              const loaderStl = new THREE.STLLoader();
+              const geometry = loaderStl.parse(contents);
+              
+              const material = new THREE.MeshStandardMaterial({ 
+                color: 0xcccccc, 
+                roughness: 0.4, 
+                metalness: 0.2 
+              });
+              const mesh = new THREE.Mesh(geometry, material);
+              
+              const scene = new THREE.Scene();
+              scene.add(mesh);
+              normalizeObjectScale(mesh);
+              
+              // Export to GLTF/GLB
+              const exporter = new THREE.GLTFExporter();
+              const options = { binary: true };
+              
+              const callback = function (result) {
+                const isBinary = (result instanceof ArrayBuffer);
+                const glbBlob = isBinary ?
+                  new Blob([result], { type: 'application/octet-stream' }) :
+                  new Blob([JSON.stringify(result)], { type: 'application/json' });
+                
+                const fileUrl = URL.createObjectURL(glbBlob) + (isBinary ? '#model.glb' : '#model.gltf');
+                loadIntoModelViewer(fileUrl);
+                
+                const finalExt = isBinary ? '.glb' : '.gltf';
+                const finalMime = isBinary ? 'application/octet-stream' : 'application/json';
+                const glbFile = new File([glbBlob], name.replace(/\.[^/.]+$/, "") + finalExt, { type: finalMime });
+                generateARShareLink(glbFile, name.replace(/\.[^/.]+$/, "") + finalExt);
+              };
+
+              const onError = function (err) {
+                console.error("GLTF Export error:", err);
+                hideLoader();
+                alert("Error during GLTF export conversion.");
+              };
+
+              if (exporter.parse.length === 4) {
+                exporter.parse(scene, callback, onError, options);
+              } else {
+                exporter.parse(scene, callback, options);
+              }
+            } catch (err) {
+              console.error("STL parse error:", err);
+              hideLoader();
+              alert("Error parsing STL file.");
+            }
+          };
+          
+          reader.readAsArrayBuffer(file);
+        } else if (extension === 'obj') {
+          showLoader(currentLang === 'fr' ? "Conversion de OBJ en GLB (Client)..." : "Converting OBJ to GLB (Client)...");
+          const reader = new FileReader();
+          reader.onload = async function (e) {
+            try {
+              const text = e.target.result;
+              const loaderObj = new THREE.OBJLoader();
+              const objGroup = loaderObj.parse(text);
+              
+              objGroup.traverse((child) => {
+                if (child.isMesh) {
+                  child.material = new THREE.MeshStandardMaterial({ 
+                    color: 0xcccccc, 
+                    roughness: 0.4, 
+                    metalness: 0.2 
+                  });
+                }
+              });
+              
+              const scene = new THREE.Scene();
+              scene.add(objGroup);
+              normalizeObjectScale(objGroup);
+              
+              const exporter = new THREE.GLTFExporter();
+              const options = { binary: true };
+              
+              const callback = function (result) {
+                const isBinary = (result instanceof ArrayBuffer);
+                const glbBlob = isBinary ?
+                  new Blob([result], { type: 'application/octet-stream' }) :
+                  new Blob([JSON.stringify(result)], { type: 'application/json' });
+                
+                const fileUrl = URL.createObjectURL(glbBlob) + (isBinary ? '#model.glb' : '#model.gltf');
+                loadIntoModelViewer(fileUrl);
+                
+                const finalExt = isBinary ? '.glb' : '.gltf';
+                const finalMime = isBinary ? 'application/octet-stream' : 'application/json';
+                const glbFile = new File([glbBlob], name.replace(/\.[^/.]+$/, "") + finalExt, { type: finalMime });
+                generateARShareLink(glbFile, name.replace(/\.[^/.]+$/, "") + finalExt);
+              };
+
+              const onError = function (err) {
+                console.error("GLTF Export error:", err);
+                hideLoader();
+                alert("Error during GLTF export conversion.");
+              };
+
+              if (exporter.parse.length === 4) {
+                exporter.parse(scene, callback, onError, options);
+              } else {
+                exporter.parse(scene, callback, options);
+              }
+            } catch (err) {
+              console.error("OBJ parse error:", err);
+              hideLoader();
+              alert("Error parsing OBJ file.");
+            }
+          };
+          reader.readAsText(file);
+        } else {
+          hideLoader();
+          alert(currentLang === 'fr' ? "Format de fichier non pris en charge !" : "Unsupported file format!");
+        }
+      } catch (err) {
+        console.error("Error handling file:", err);
+        hideLoader();
+      }
+    }
+
+    // Load URL to model-viewer
+    function loadIntoModelViewer(url) {
+      viewer.src = url;
+      placeholder.style.display = 'none';
+      viewer.style.display = 'block';
+      infoSection.style.display = 'block';
+      hideLoader();
+    }
+
+    // Upload to tmpfiles.org to generate temporary AR shareable link
+    async function generateARShareLink(file, fileName) {
+      // If mobile, don't show or generate QR code since user is already on mobile!
+      const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        qrSection.style.display = 'none';
+        return;
+      }
+
+      qrSection.style.display = 'block';
+      qrLoading.style.display = 'flex';
+      qrCodeImg.style.display = 'none';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file, fileName);
+
+        const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const json = await response.json();
+        if (json.status === 'success') {
+          const rawUrl = json.data.url;
+          // Direct download link replaces tmpfiles.org/ with tmpfiles.org/dl/
+          const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          
+          // Build absolute target URL. If on localhost, use production link but show helper message.
+          // If the user uses their network IP on desktop, it will generate a fully working local QR code!
+          const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+          const targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
+          
+          // Generate QR code using qrserver api
+          const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
+          
+          qrCodeImg.src = qrApiUrl;
+          qrCodeImg.onload = () => {
+            qrLoading.style.display = 'none';
+            qrCodeImg.style.display = 'block';
+            
+            // Show local testing message if running on localhost
+            if (window.location.origin.includes('localhost')) {
+              let localHint = document.getElementById('local-testing-hint');
+              if (!localHint) {
+                localHint = document.createElement('p');
+                localHint.id = 'local-testing-hint';
+                localHint.style.cssText = 'font-size: 10px; color: #fbbf24; margin-top: 10px; text-align: center; line-height: 1.4; border: 1px dashed rgba(251,191,36,0.3); padding: 8px; border-radius: 8px;';
+                qrSection.querySelector('.qr-container').appendChild(localHint);
+              }
+              localHint.innerHTML = currentLang === 'fr'
+                ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
+                : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
+            }
+          };
+        } else {
+          throw new Error("Upload response failed");
+        }
+      } catch (err) {
+        console.error("Failed to generate QR transfer link:", err);
+        qrLoading.style.display = 'none';
+        // Display fallback message
+        const fallbackText = document.createElement('p');
+        fallbackText.className = 'qr-error-msg';
+        fallbackText.textContent = currentLang === 'fr' 
+          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
+          : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
+        qrSection.appendChild(fallbackText);
+      }
+    }
+  </script>
+</body>
+</html>

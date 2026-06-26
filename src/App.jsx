@@ -754,6 +754,7 @@ const StudiosPro = () => {
   const [pendingExport, setPendingExport] = useState(null);
   const [is3DOpen, setIs3DOpen] = useState(false);
   const [is3DViewerOpen, setIs3DViewerOpen] = useState(false);
+  const [isARViewerOpen, setIsARViewerOpen] = useState(false);
   const [isDFXOpen, setIsDFXOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isDepthOpen, setIsDepthOpen] = useState(false);
@@ -1133,6 +1134,7 @@ const StudiosPro = () => {
       } else if (type === 'CLOSE_STUDIO') {
         setIs3DOpen(false);
         setIs3DViewerOpen(false);
+        setIsARViewerOpen(false);
         setIsDFXOpen(false);
         setIsRulesOpen(false);
         setIsDepthOpen(false);
@@ -1290,6 +1292,7 @@ const StudiosPro = () => {
       message: "Nous espérons que vous réaliserez votre modèle à la qualité souhaitée et que vous reviendrez sur notre site.",
       app3d: "Studio 3D",
       app3dViewer: "Studio 3D Viewer",
+      appARViewer: "AR Viewer",
       appdfx: "Studio DFX",
       rules: "Règles du Site",
       login: "Connexion",
@@ -1337,6 +1340,7 @@ const StudiosPro = () => {
       message: "We hope you will create your model at the desired quality and return to our site.",
       app3d: "3D Studio",
       app3dViewer: "Studio 3D Viewer",
+      appARViewer: "AR Viewer",
       appdfx: "DFX Studio",
       rules: "Site Rules",
       login: "Login",
@@ -1383,7 +1387,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -1583,6 +1587,18 @@ const StudiosPro = () => {
             <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Viewer Icon" />
           </div>
           <div className="card-label">{currentT.app3dViewer}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsARViewerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="AR Viewer Icon" />
+          </div>
+          <div className="card-label">{currentT.appARViewer}</div>
         </motion.div>
 
         <motion.div
@@ -1824,6 +1840,11 @@ const StudiosPro = () => {
         {is3DViewerOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/studio-3d-viewer/index.html" className="studio-iframe" title="Studio 3D Viewer" />
+          </motion.div>
+        )}
+        {isARViewerOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src={`/apps/ar-viewer/index.html?lang=${lang}`} className="studio-iframe" title="AR Viewer 3D" />
           </motion.div>
         )}
         {isDFXOpen && (
