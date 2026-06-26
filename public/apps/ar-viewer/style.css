@@ -370,22 +370,26 @@ body, html {
 @media (max-width: 767px) {
   .app-container {
     flex-direction: column-reverse;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .sidebar {
     width: 100%;
-    height: auto;
+    height: 45vh;
     border-right: none;
     border-top: 1px solid var(--card-border);
-    padding: 24px;
+    padding: 20px 16px;
     box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.5);
-    overflow-y: visible;
+    overflow-y: auto;
+    flex-shrink: 0;
   }
 
   .preview-area {
     width: 100%;
-    flex-grow: 1;
-    height: calc(100% - 280px); /* Leave space for bottom details */
+    height: 55vh;
+    flex-shrink: 0;
+    position: relative;
   }
 
   #qr-section {
