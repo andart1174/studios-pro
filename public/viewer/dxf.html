@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Online DXF CAD Viewer & Inspector | Studios-Pro</title>
+    <meta name="description" content="Open AutoCAD DXF vector layouts, inspect layer structures, and export as SVG/HTML.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070a;
+            --surface: rgba(15, 23, 42, 0.6);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        .nav {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(5, 7, 10, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo img {
+            border-radius: 6px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 24px;
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        h1 {
+            font-size: 3.2rem;
+            margin-bottom: 20px;
+            line-height: 1.25;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        p.subtitle {
+            font-size: 1.25rem;
+            color: var(--muted);
+            max-width: 700px;
+            margin: 0 auto 30px auto;
+        }
+        .dropzone-mockup {
+            background: var(--surface);
+            border: 2px dashed rgba(59, 130, 246, 0.4);
+            border-radius: 24px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            margin-bottom: 50px;
+        }
+        .dropzone-mockup:hover {
+            border-color: #00f3ff;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .dropzone-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+            animation: pulse 2s infinite;
+        }
+        .dropzone-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .dropzone-sub {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 60px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(8px);
+        }
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-top: 0;
+            color: white;
+            margin-bottom: 12px;
+        }
+        .feature-card p {
+            color: var(--muted);
+            font-size: 1rem;
+            margin: 0;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 70px 0;
+            padding: 48px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.1));
+            border-radius: 24px;
+            border: 1px solid rgba(59,130,246,0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7);
+            color: #000;
+            padding: 16px 48px;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: 0.3s;
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 45px rgba(0, 243, 255, 0.4);
+        }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn {
+            background: none;
+            border: 1px solid var(--muted);
+            color: var(--muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .lang-btn.active {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+    </style>
+    <!-- Structured Data Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Free Online DXF CAD Viewer & Inspector | Studios-Pro",
+      "operatingSystem": "Web",
+      "applicationCategory": "DesignApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "description": "Open AutoCAD DXF vector layouts, inspect layer structures, and export as SVG/HTML."
+    }
+    </script>
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" alt="Logo">
+            Studios-Pro
+        </a>
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLang('en')">EN</button>
+            <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <h1>
+                <span data-en>Online DXF File Viewer & CAD Blueprint Inspector</span>
+                <span data-fr>Visualiseur DXF en Ligne & Inspecteur de Plans CAO</span>
+            </h1>
+            <p class="subtitle">
+                <span data-en>Open AutoCAD DXF vector layouts, inspect layer structures, and export as SVG/HTML.</span>
+                <span data-fr>Ouvrez des plans vectoriels DXF AutoCAD, inspectez les calques et exportez en SVG/HTML.</span>
+            </p>
+        </div>
+
+        <div class="dropzone-mockup" onclick="location.href='/?ref=dfx'">
+            <div class="dropzone-icon">📥</div>
+            <div class="dropzone-text">
+                <span data-en>Click or Drag File Here to Open Viewer</span>
+                <span data-fr>Cliquez ou glissez le fichier ici pour ouvrir le visualiseur</span>
+            </div>
+            <div class="dropzone-sub">
+                <span data-en>No installation required. Works 100% inside your web browser.</span>
+                <span data-fr>Aucune installation requise. Fonctionne à 100% dans votre navigateur web.</span>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>
+                    <span data-en>Feature Highlights</span>
+                    <span data-fr>Points Forts</span>
+                </h3>
+                <p>
+                    <span data-en>Multi-layer visibility toggles, scaling grids, precise vector parsing, and SVG export.</span>
+                    <span data-fr>Visibilité des calques, grilles d'échelle, parsing vectoriel et export SVG.</span>
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>
+                    <span data-en>Secure & Private</span>
+                    <span data-fr>Sécurisé & Privé</span>
+                </h3>
+                <p>
+                    <span data-en>Files are processed directly in your browser. Your design data never leaves your computer.</span>
+                    <span data-fr>Les fichiers sont traités localement. Vos données de conception ne quittent jamais votre ordinateur.</span>
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>
+                    <span data-en>Premium HTML Export</span>
+                    <span data-fr>Export HTML Premium</span>
+                </h3>
+                <p>
+                    <span data-en>Package your layout, lighting, colors, and 3D scenes into standalone interactive HTML documents.</span>
+                    <span data-fr>Emballez vos conceptions, éclairages et scènes 3D dans des documents HTML autonomes.</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="cta-container">
+            <a href="/?ref=dfx" class="cta-btn">
+                <span data-en>Open Free App</span>
+                <span data-fr>Ouvrir l'App Gratuite</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                if(b.innerText.toLowerCase() === l) b.classList.add('active');
+            });
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>
