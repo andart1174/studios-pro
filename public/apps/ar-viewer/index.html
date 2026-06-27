@@ -191,23 +191,37 @@
       </div>
 
       <!-- ═══ Exploded View ══════════════════════════════════════════════ -->
-      <div id="exploded-view-section" class="panel-section" style="display: none;">
-        <h2 class="lang-text" data-fr="Vue Exposée (Exploded View)" data-en="Exploded View">Exploded View</h2>
+      <!-- ═══ Cross-Section Tool ═══════════════════════════════════════ -->
+      <div id="cross-section-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Coupe Transversale" data-en="Cross-Section">Cross-Section</h2>
         <p style="font-size:10px;color:#6b7280;margin:-4px 0 10px;" class="lang-text"
-           data-fr="Séparez les composants du modèle visuellement (STL/OBJ)."
-           data-en="Visually separate model components (STL/OBJ).">Visually separate model components (STL/OBJ).</p>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
-            <span class="lang-text" data-fr="Niveau d'explosion:" data-en="Explode level:">Explode level:</span>
-            <span id="explode-val">0%</span>
+           data-fr="Coupez le modèle selon l'axe X, Y ou Z pour voir l'intérieur."
+           data-en="Cut the model along X, Y or Z axis to reveal its interior.">Cut the model along X, Y or Z axis to reveal its interior.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Axis selector -->
+          <div style="display:flex;gap:6px;">
+            <button id="cs-axis-x" class="cs-axis-btn active" data-axis="x">X</button>
+            <button id="cs-axis-y" class="cs-axis-btn" data-axis="y">Y</button>
+            <button id="cs-axis-z" class="cs-axis-btn" data-axis="z">Z</button>
           </div>
-          <input type="range" id="explode-slider" min="0" max="100" step="5" value="0" class="custom-slider">
-          <button id="apply-explode-btn"
-            style="margin-top:4px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
-            class="lang-text" data-fr="Appliquer la vue" data-en="Apply Exploded View">Apply Exploded View</button>
-          <p id="explode-hint" style="font-size:10px;color:#fbbf24;display:none;" class="lang-text"
-             data-fr="Chargez un fichier STL ou OBJ pour utiliser la vue exposée."
-             data-en="Load an STL or OBJ file to use Exploded View.">Load an STL or OBJ file to use Exploded View.</p>
+          <!-- Position slider -->
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
+            <span class="lang-text" data-fr="Position de coupe:" data-en="Cut position:">Cut position:</span>
+            <span id="cs-pos-val">50%</span>
+          </div>
+          <input type="range" id="cs-pos-slider" min="5" max="95" step="1" value="50" class="custom-slider">
+          <!-- Buttons -->
+          <div style="display:flex;gap:6px;">
+            <button id="apply-cut-btn"
+              style="flex:2;background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+              class="lang-text" data-fr="Appliquer la coupe" data-en="Apply Cut">Apply Cut</button>
+            <button id="reset-cut-btn"
+              style="flex:1;background:rgba(255,255,255,0.05);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;font-size:11px;cursor:pointer;transition:all 0.2s;"
+              class="lang-text" data-fr="Réinitialiser" data-en="Reset">Reset</button>
+          </div>
+          <p id="cs-hint" style="font-size:10px;color:#fbbf24;display:none;" class="lang-text"
+             data-fr="Chargez un fichier STL ou OBJ pour utiliser la coupe transversale."
+             data-en="Load an STL or OBJ file to use Cross-Section.">Load an STL or OBJ file to use Cross-Section.</p>
         </div>
       </div>
 
@@ -714,22 +728,22 @@
       // 3. Show custom panels & floating action controls
       document.getElementById('customize-section').style.display = 'block';
       document.getElementById('material-studio-section').style.display = 'block';
-      document.getElementById('exploded-view-section').style.display = 'block';
+      document.getElementById('cross-section-section').style.display = 'block';
       document.querySelector('.floating-controls').style.display = 'flex';
       activeMaterial = 'original';
-      originalSceneSnapshot = null; // reset explode snapshot for new model
+      csOriginalScene = null; // reset cross-section snapshot for new model
       document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
       const origBtn = document.querySelector('.mat-btn[data-mat="original"]');
       if (origBtn) origBtn.classList.add('active');
       // Show hint if no Three.js scene (GLB direct)
-      const hint = document.getElementById('explode-hint');
-      const applyBtn = document.getElementById('apply-explode-btn');
+      const csHint = document.getElementById('cs-hint');
+      const applyCutBtn = document.getElementById('apply-cut-btn');
       if (!currentThreeScene) {
-        if (hint) hint.style.display = 'block';
-        if (applyBtn) applyBtn.disabled = true;
+        if (csHint) csHint.style.display = 'block';
+        if (applyCutBtn) applyCutBtn.disabled = true;
       } else {
-        if (hint) hint.style.display = 'none';
-        if (applyBtn) applyBtn.disabled = false;
+        if (csHint) csHint.style.display = 'none';
+        if (applyCutBtn) applyCutBtn.disabled = false;
       }
       
       // 4. Apply color from query parameters if present (for shared links)
@@ -1037,123 +1051,98 @@
     });
 
     // ══════════════════════════════════════════════════════════════════════
-    // EXPLODED VIEW  — layer-splitting algorithm (works on ANY STL/OBJ)
+    // CROSS-SECTION TOOL
     // ══════════════════════════════════════════════════════════════════════
-    const explodeSlider = document.getElementById('explode-slider');
-    const explodeVal    = document.getElementById('explode-val');
-    explodeSlider.oninput = (e) => {
-      explodeVal.textContent = e.target.value + '%';
-    };
+    let csAxis = 'x';            // active cutting axis
+    let csOriginalScene = null;  // snapshot to restore from
 
-    let originalSceneSnapshot = null; // snapshot of original scene before explode
+    // Axis selector buttons
+    document.querySelectorAll('.cs-axis-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.cs-axis-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        csAxis = btn.getAttribute('data-axis');
+      };
+    });
+
+    // Position slider display
+    const csPosSlider = document.getElementById('cs-pos-slider');
+    const csPosVal    = document.getElementById('cs-pos-val');
+    csPosSlider.oninput = (e) => { csPosVal.textContent = e.target.value + '%'; };
 
     /**
-     * Split a single THREE.Mesh geometry into N horizontal layers.
-     * Each layer contains only the triangles whose centroid Y falls in that band.
+     * Clip all meshes in scene: keep only triangles where vertex[axis] <= cutValue.
+     * Returns a new THREE.Scene with the clipped geometry.
      */
-    function splitMeshIntoLayers(mesh, numLayers) {
-      mesh.geometry.computeBoundingBox();
-      const bbox = mesh.geometry.boundingBox;
-      const yMin = bbox.min.y;
-      const yRange = bbox.max.y - yMin || 1;
-      const pos = mesh.geometry.attributes.position;
-      const layerVerts = Array.from({length: numLayers}, () => []);
-
-      for (let i = 0; i < pos.count; i += 3) {
-        const yc = (pos.getY(i) + pos.getY(i+1) + pos.getY(i+2)) / 3;
-        const li = Math.min(Math.floor((yc - yMin) / yRange * numLayers), numLayers - 1);
-        for (let k = 0; k < 3; k++) {
-          const vi = i + k;
-          layerVerts[li].push(pos.getX(vi), pos.getY(vi), pos.getZ(vi));
+    function clipSceneOnAxis(scene, axis, cutValue) {
+      const result = new THREE.Scene();
+      scene.traverse(obj => {
+        if (!obj.isMesh) return;
+        const pos = obj.geometry.attributes.position;
+        const newVerts = [];
+        for (let i = 0; i < pos.count; i += 3) {
+          const v = [pos.getComponent(i,   axis === 'x' ? 0 : axis === 'y' ? 1 : 2),
+                      pos.getComponent(i+1, axis === 'x' ? 0 : axis === 'y' ? 1 : 2),
+                      pos.getComponent(i+2, axis === 'x' ? 0 : axis === 'y' ? 1 : 2)];
+          if (v[0] <= cutValue && v[1] <= cutValue && v[2] <= cutValue) {
+            for (let k = 0; k < 3; k++) {
+              const vi = i + k;
+              newVerts.push(pos.getX(vi), pos.getY(vi), pos.getZ(vi));
+            }
+          }
         }
-      }
-
-      const mat = mesh.material;
-      return layerVerts.map((verts, li) => {
-        if (verts.length === 0) return null;
+        if (newVerts.length === 0) return;
         const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        g.setAttribute('position', new THREE.Float32BufferAttribute(newVerts, 3));
         g.computeVertexNormals();
-        const m = new THREE.Mesh(g, mat.clone());
-        m.userData.layerIdx = li;
-        return m;
-      }).filter(Boolean);
+        result.add(new THREE.Mesh(g, obj.material.clone()));
+      });
+      return result;
     }
 
-    document.getElementById('apply-explode-btn').onclick = async () => {
-      if (!currentThreeScene) return;
-      const factor = parseFloat(explodeSlider.value) / 100;
-
-      // Save a snapshot on first call so we can always work from original
-      if (!originalSceneSnapshot) {
-        originalSceneSnapshot = currentThreeScene.clone(true);
-      }
-
-      // Build the working scene fresh from the original snapshot
-      const workScene = originalSceneSnapshot.clone(true);
-      const meshes = [];
-      workScene.traverse(obj => { if (obj.isMesh) meshes.push(obj); });
-
-      if (meshes.length === 0) return;
-
-      const explodedScene = new THREE.Scene();
-
-      if (meshes.length === 1) {
-        // ── Single-mesh model (typical STL): split into horizontal layers ──
-        const NUM_LAYERS = 7;
-        const mesh = meshes[0];
-        const layers = splitMeshIntoLayers(mesh, NUM_LAYERS);
-
-        // Bounding box for layer height reference
-        mesh.geometry.computeBoundingBox();
-        const yRange = mesh.geometry.boundingBox.max.y - mesh.geometry.boundingBox.min.y || 1;
-        const layerStep = yRange / NUM_LAYERS;
-
-        layers.forEach((layerMesh, li) => {
-          // Offset each layer away from the center layer
-          const centerIdx = (NUM_LAYERS - 1) / 2;
-          const offset = (li - centerIdx) * layerStep * factor * 2.5;
-          layerMesh.position.y = offset;
-          explodedScene.add(layerMesh);
-        });
-      } else {
-        // ── Multi-mesh model (OBJ assemblies): spread parts from centroid ──
-        const sceneBbox = new THREE.Box3().setFromObject(workScene);
-        const center = new THREE.Vector3();
-        sceneBbox.getCenter(center);
-        const sceneSize = new THREE.Vector3();
-        sceneBbox.getSize(sceneSize);
-        const maxDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) || 1;
-
-        meshes.forEach(m => {
-          const mc = new THREE.Vector3();
-          new THREE.Box3().setFromObject(m).getCenter(mc);
-          const dir = mc.clone().sub(center);
-          if (dir.length() < 0.0001) dir.set(0, 1, 0); // fallback
-          dir.normalize();
-          m.position.addScaledVector(dir, factor * maxDim * 0.8);
-          explodedScene.add(m);
-        });
-      }
-
-      // Export to local Blob URL (no server upload needed for exploded preview)
-      showLoader(currentLang === 'fr' ? 'Calcul de la vue exposée...' : 'Computing exploded view...');
+    function exportSceneAsBlob(scene, onSuccess) {
       const exporter = new THREE.GLTFExporter();
       exporter.parse(
-        explodedScene,
-        (gltfBinary) => {
-          const blob = new Blob([gltfBinary], { type: 'model/gltf-binary' });
-          const blobUrl = URL.createObjectURL(blob);
-          loadIntoModelViewer(blobUrl);
+        scene,
+        (bin) => {
+          const url = URL.createObjectURL(new Blob([bin], { type: 'model/gltf-binary' }));
+          loadIntoModelViewer(url);
           hideLoader();
+          if (onSuccess) onSuccess();
         },
         (err) => {
-          console.error('Explode export error:', err);
+          console.error('CS export error:', err);
           hideLoader();
-          alert(currentLang === 'fr' ? 'Erreur lors du calcul de la vue exposée.' : 'Error computing exploded view.');
         },
         { binary: true }
       );
+    }
+
+    // Apply Cut
+    document.getElementById('apply-cut-btn').onclick = () => {
+      if (!currentThreeScene) return;
+
+      // Save snapshot once per model load
+      if (!csOriginalScene) csOriginalScene = currentThreeScene.clone(true);
+
+      // Compute cut position in world units from slider %
+      const bbox = new THREE.Box3().setFromObject(csOriginalScene);
+      const axisIdx = csAxis === 'x' ? 0 : csAxis === 'y' ? 1 : 2;
+      const minV = bbox.min.getComponent(axisIdx);
+      const maxV = bbox.max.getComponent(axisIdx);
+      const pct  = parseFloat(csPosSlider.value) / 100;
+      const cutValue = minV + (maxV - minV) * pct;
+
+      showLoader(currentLang === 'fr' ? 'Calcul de la coupe...' : 'Computing cross-section...');
+      const clipped = clipSceneOnAxis(csOriginalScene.clone(true), axisIdx, cutValue);
+      exportSceneAsBlob(clipped);
+    };
+
+    // Reset Cut — reload original model
+    document.getElementById('reset-cut-btn').onclick = () => {
+      if (!csOriginalScene) return;
+      showLoader(currentLang === 'fr' ? 'Réinitialisation...' : 'Resetting...');
+      exportSceneAsBlob(csOriginalScene.clone(true));
     };
 
     // ── Live dimension update on camera change ─────────────────────
