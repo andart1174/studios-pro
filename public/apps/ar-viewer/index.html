@@ -1071,26 +1071,38 @@
     csPosSlider.oninput = (e) => { csPosVal.textContent = e.target.value + '%'; };
 
     /**
-     * Clip all meshes in scene: keep only triangles where vertex[axis] <= cutValue.
-     * Returns a new THREE.Scene with the clipped geometry.
+     * Clip all meshes: keep only triangles where ALL 3 vertices are <= cutValue on the given axis.
+     * axisIdx: 0=X, 1=Y, 2=Z
      */
-    function clipSceneOnAxis(scene, axis, cutValue) {
+    function clipSceneOnAxis(scene, axisIdx, cutValue) {
+      // Pick the correct getter based on numeric index
+      const getVal = axisIdx === 0
+        ? (pos, i) => pos.getX(i)
+        : axisIdx === 1
+          ? (pos, i) => pos.getY(i)
+          : (pos, i) => pos.getZ(i);
+
       const result = new THREE.Scene();
       scene.traverse(obj => {
         if (!obj.isMesh) return;
-        const pos = obj.geometry.attributes.position;
+        const geo = obj.geometry;
+        if (!geo || !geo.attributes.position) return;
+        const pos = geo.attributes.position;
         const newVerts = [];
+
         for (let i = 0; i < pos.count; i += 3) {
-          const v = [pos.getComponent(i,   axis === 'x' ? 0 : axis === 'y' ? 1 : 2),
-                      pos.getComponent(i+1, axis === 'x' ? 0 : axis === 'y' ? 1 : 2),
-                      pos.getComponent(i+2, axis === 'x' ? 0 : axis === 'y' ? 1 : 2)];
-          if (v[0] <= cutValue && v[1] <= cutValue && v[2] <= cutValue) {
+          const v0 = getVal(pos, i);
+          const v1 = getVal(pos, i + 1);
+          const v2 = getVal(pos, i + 2);
+          // Keep triangle only if all 3 vertices are on the "keep" side
+          if (v0 <= cutValue && v1 <= cutValue && v2 <= cutValue) {
             for (let k = 0; k < 3; k++) {
               const vi = i + k;
               newVerts.push(pos.getX(vi), pos.getY(vi), pos.getZ(vi));
             }
           }
         }
+
         if (newVerts.length === 0) return;
         const g = new THREE.BufferGeometry();
         g.setAttribute('position', new THREE.Float32BufferAttribute(newVerts, 3));
@@ -1101,6 +1113,16 @@
     }
 
     function exportSceneAsBlob(scene, onSuccess) {
+      // Guard: check at least one mesh exists
+      let hasMesh = false;
+      scene.traverse(o => { if (o.isMesh) hasMesh = true; });
+      if (!hasMesh) {
+        hideLoader();
+        alert(currentLang === 'fr'
+          ? 'Aucune géométrie de ce côté. Ajustez la position du slider.'
+          : 'No geometry on this side of the cut. Adjust the position slider.');
+        return;
+      }
       const exporter = new THREE.GLTFExporter();
       exporter.parse(
         scene,
@@ -1113,6 +1135,7 @@
         (err) => {
           console.error('CS export error:', err);
           hideLoader();
+          alert(currentLang === 'fr' ? 'Erreur lors de l\'export.' : 'Export error.');
         },
         { binary: true }
       );
@@ -1125,11 +1148,11 @@
       // Save snapshot once per model load
       if (!csOriginalScene) csOriginalScene = currentThreeScene.clone(true);
 
-      // Compute cut position in world units from slider %
+      // Compute cut value in world units
       const bbox = new THREE.Box3().setFromObject(csOriginalScene);
       const axisIdx = csAxis === 'x' ? 0 : csAxis === 'y' ? 1 : 2;
-      const minV = bbox.min.getComponent(axisIdx);
-      const maxV = bbox.max.getComponent(axisIdx);
+      const minV = axisIdx === 0 ? bbox.min.x : axisIdx === 1 ? bbox.min.y : bbox.min.z;
+      const maxV = axisIdx === 0 ? bbox.max.x : axisIdx === 1 ? bbox.max.y : bbox.max.z;
       const pct  = parseFloat(csPosSlider.value) / 100;
       const cutValue = minV + (maxV - minV) * pct;
 
