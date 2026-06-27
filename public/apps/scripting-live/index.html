@@ -387,7 +387,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn' || id === 'injected-view-ar-btn') return;
+        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
         if (isExport) {
           e.stopImmediatePropagation();
@@ -416,16 +416,6 @@
             });
             return;
           }
-
-          if (window.isGeneratingArViewer) {
-            window.isGeneratingArViewer = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateArViewerExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error opening in AR Viewer: " + e.message);
-            });
-            return;
-          }
         }
         return originalAnchorClick.apply(this, arguments);
       };
@@ -444,16 +434,6 @@
               generateHtmlExport(fileUrl, fileName).catch(e => {
                 console.error(e);
                 alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-
-            if (window.isGeneratingArViewer) {
-              window.isGeneratingArViewer = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateArViewerExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error opening in AR Viewer: " + e.message);
               });
               return false; // prevent event default/propagation simulation
             }
@@ -491,45 +471,20 @@
               };
             });
           }
-          if (window.isGeneratingArViewer) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingArViewer = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateArViewerExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error opening in AR Viewer: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
           return originalShowSaveFilePicker.apply(this, arguments);
         };
       }
 
-      // Inject "Save HTML" & "View in AR" buttons dynamically for all apps
+      // Inject "Save HTML" button dynamically for all apps
       setInterval(() => {
         const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
         
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML/AR buttons
+        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
         const validButtons = buttons.filter(btn => {
           const txt = (btn.textContent || btn.value || '').toLowerCase();
           const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('ar') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('view in ar') || txt.includes('voir en ar') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
+          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
+          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
           return true;
         });
 
@@ -552,20 +507,6 @@
             return kwList.some(kw => txt.includes(kw));
           });
           if (baseBtn) break;
-        }
-
-        let baseBtn3D = null;
-        const priorities3D = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj']
-        ];
-        for (const kwList of priorities3D) {
-          baseBtn3D = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn3D) break;
         }
 
         // Check if there is an existing button that already contains 'html'
@@ -713,110 +654,11 @@
           }
         }
 
-        // 2. INJECT VIEW IN AR BUTTON (PREMIUM ONLY, 3D APP DETECTED)
-        if (baseBtn3D && !document.getElementById('injected-view-ar-btn')) {
-          const parent = baseBtn3D.parentElement;
-          if (parent) {
-            const arBtn = document.createElement(baseBtn3D.tagName);
-            arBtn.id = 'injected-view-ar-btn';
-            arBtn.className = baseBtn3D.className;
-            
-            // Style matching (strip display:none if set initially)
-            arBtn.style.cssText = baseBtn3D.style.cssText.replace(/display:s*none;?/g, '');
-            arBtn.style.background = 'linear-gradient(135deg, #10b981, #06b6d4)'; // Teal to cyan premium gradient
-            arBtn.style.color = '#ffffff';
-            arBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              arBtn.style.marginTop = '8px';
-              arBtn.style.marginLeft = '4px';
-            }
-
-            // Determine language: French or English
-            const baseText = baseBtn3D.textContent.toLowerCase();
-            const isFr = document.documentElement.lang === 'fr' || 
-                         window.location.search.includes('lang=fr') || 
-                         baseText.includes('télécharger') || 
-                         baseText.includes('telecharger') || 
-                         baseText.includes('sauvegarder') ||
-                         baseText.includes('sauver') ||
-                         baseText.includes('exporter');
-                         
-            const arText = isFr ? '👁️ Voir en AR' : '👁️ View in AR';
-            
-            if (baseBtn3D.tagName === 'INPUT') {
-              arBtn.value = arText;
-            } else {
-              arBtn.textContent = arText;
-            }
-            
-            arBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser) {
-                // View in AR is a strictly premium-only feature!
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live', forcePremium: true } });
-                return;
-              }
-              
-              // Create and show loading overlay
-              const loaderOverlay = document.createElement('div');
-              loaderOverlay.id = 'injected-ar-loading-overlay';
-              loaderOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999999; color:white; font-family:sans-serif; transition: opacity 0.3s ease;';
-              loaderOverlay.innerHTML = `
-                <div style="border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #06b6d4; border-radius: 50%; width: 45px; height: 45px; animation: injected_spin 1s linear infinite; margin-bottom: 20px;"></div>
-                <div style="font-size: 16px; font-weight: 600; text-align: center; padding: 0 20px;" class="loader-msg"></div>
-                <style>
-                  @keyframes injected_spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                </style>
-              `;
-              document.body.appendChild(loaderOverlay);
-              
-              const setMsg = (msg) => {
-                loaderOverlay.querySelector('.loader-msg').textContent = msg;
-              };
-              
-              setMsg(isFr ? 'Génération du modèle 3D...' : 'Generating 3D model...');
-              
-              // Set global flag and click base 3D export button
-              window.isGeneratingArViewer = true;
-              baseBtn3D.click();
-              
-              // Safety timeout: remove loader after 15 seconds if export fails
-              setTimeout(() => {
-                const overlay = document.getElementById('injected-ar-loading-overlay');
-                if (overlay) {
-                  overlay.remove();
-                  window.isGeneratingArViewer = false;
-                }
-              }, 15000);
-            };
-            
-            // Insert it next to the base 3D export button or next to the HTML button if it exists
-            const htmlBtn = document.getElementById('injected-save-html-btn');
-            if (htmlBtn && htmlBtn.parentElement === parent) {
-              parent.insertBefore(arBtn, htmlBtn.nextSibling);
-            } else {
-              baseBtn3D.parentNode.insertBefore(arBtn, baseBtn3D.nextSibling);
-            }
-          }
-        }
-
-        // 3. DYNAMIC VISIBILITY SYNCING
+        // 2. DYNAMIC VISIBILITY SYNCING
         const activeHtmlBtn = document.getElementById('injected-save-html-btn');
         if (activeHtmlBtn && baseBtn) {
           const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
           activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-        const activeArBtn = document.getElementById('injected-view-ar-btn');
-        if (activeArBtn && baseBtn3D) {
-          const isBaseVisible = window.getComputedStyle(baseBtn3D).display !== 'none' && baseBtn3D.style.display !== 'none';
-          activeArBtn.style.display = isBaseVisible ? '' : 'none';
         }
       }, 1000);
 
@@ -888,81 +730,6 @@
         URL.revokeObjectURL(htmlUrl);
         
         releaseUrl(fileUrl);
-      }
-
-      async function generateArViewerExport(fileUrl, fileName) {
-        const overlay = document.getElementById('injected-ar-loading-overlay');
-        const isFr = document.documentElement.lang === 'fr' || 
-                     window.location.search.includes('lang=fr') || 
-                     fileName.toLowerCase().includes('telecharger') || 
-                     fileName.toLowerCase().includes('sauvegarder');
-                     
-        const setMsg = (msg) => {
-          if (overlay) {
-            const el = overlay.querySelector('.loader-msg');
-            if (el) el.textContent = msg;
-          }
-        };
-        
-        try {
-          setMsg(isFr ? 'Téléchargement vers la Réalité Augmentée...' : 'Uploading to WebAR...');
-          
-          let blob;
-          if (blobMap.has(fileUrl)) {
-            blob = blobMap.get(fileUrl);
-          } else if (fileUrl.startsWith('data:')) {
-            const parts = fileUrl.split(',');
-            const header = parts[0];
-            const dataStr = parts.slice(1).join(',');
-            let mime = 'text/plain';
-            const mimeMatch = header.match(/:(.*?)(;|$)/);
-            if (mimeMatch) {
-              mime = mimeMatch[1];
-            }
-            if (header.includes(';base64')) {
-              blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-            } else {
-              let decoded = dataStr;
-              try {
-                decoded = decodeURIComponent(dataStr);
-              } catch (err) {
-                try {
-                  decoded = unescape(dataStr);
-                } catch (e2) {}
-              }
-              blob = new Blob([decoded], { type: mime });
-            }
-          } else {
-            const response = await fetch(fileUrl);
-            blob = await response.blob();
-          }
-
-          // Upload the model blob to tmpfiles.org
-          const formData = new FormData();
-          formData.append('file', blob, fileName);
-
-          const uploadRes = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: formData
-          });
-
-          const json = await uploadRes.json();
-          if (json.status === 'success') {
-            const rawUrl = json.data.url;
-            const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            
-            // Send message to parent app to load this URL in AR Viewer
-            channel.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: directDlUrl } });
-          } else {
-            throw new Error("Upload response status was not success");
-          }
-        } catch (err) {
-          console.error("AR Viewer transfer failed:", err);
-          alert(isFr ? "Échec du transfert vers l'AR Viewer. Veuillez réessayer." : "Failed to transfer to AR Viewer. Please try again.");
-        } finally {
-          if (overlay) overlay.remove();
-          releaseUrl(fileUrl);
-        }
       }
 
       function get3DTemplate(base64Data, extension, fileName) {
@@ -1336,6 +1103,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
