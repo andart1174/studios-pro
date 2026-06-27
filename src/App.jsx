@@ -755,6 +755,7 @@ const StudiosPro = () => {
   const [is3DOpen, setIs3DOpen] = useState(false);
   const [is3DViewerOpen, setIs3DViewerOpen] = useState(false);
   const [isARViewerOpen, setIsARViewerOpen] = useState(false);
+  const [arViewerUrl, setArViewerUrl] = useState('');
   const [isDFXOpen, setIsDFXOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isDepthOpen, setIsDepthOpen] = useState(false);
@@ -1131,10 +1132,14 @@ const StudiosPro = () => {
         channel.postMessage({ type: 'LOAD_EXTERNAL_FILE', payload });
       } else if (type === 'LOAD_EXTERNAL_URL') {
         channel.postMessage({ type: 'LOAD_EXTERNAL_URL', payload });
+      } else if (type === 'OPEN_AR_VIEWER') {
+        setArViewerUrl(payload.url || '');
+        setIsARViewerOpen(true);
       } else if (type === 'CLOSE_STUDIO') {
         setIs3DOpen(false);
         setIs3DViewerOpen(false);
         setIsARViewerOpen(false);
+        setArViewerUrl('');
         setIsDFXOpen(false);
         setIsRulesOpen(false);
         setIsDepthOpen(false);
@@ -1845,7 +1850,7 @@ const StudiosPro = () => {
         )}
         {isARViewerOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src={`/apps/ar-viewer/index.html?lang=${lang}`} className="studio-iframe" title="AR Viewer 3D" />
+            <iframe src={`/apps/ar-viewer/index.html?lang=${lang}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
           </motion.div>
         )}
         {isDFXOpen && (

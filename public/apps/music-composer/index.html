@@ -417,6 +417,16 @@
             });
             return;
           }
+
+          if (window.isGeneratingArViewer) {
+            window.isGeneratingArViewer = false; // Reset flag
+            activeExports.add(fileUrl);
+            generateArViewerExport(fileUrl, fileName).catch(e => {
+              console.error(e);
+              alert("Error opening in AR Viewer: " + e.message);
+            });
+            return;
+          }
         }
         return originalAnchorClick.apply(this, arguments);
       };
@@ -435,6 +445,16 @@
               generateHtmlExport(fileUrl, fileName).catch(e => {
                 console.error(e);
                 alert("Error generating HTML export: " + e.message);
+              });
+              return false; // prevent event default/propagation simulation
+            }
+
+            if (window.isGeneratingArViewer) {
+              window.isGeneratingArViewer = false; // Reset flag
+              activeExports.add(fileUrl);
+              generateArViewerExport(fileUrl, fileName).catch(e => {
+                console.error(e);
+                alert("Error opening in AR Viewer: " + e.message);
               });
               return false; // prevent event default/propagation simulation
             }
@@ -478,20 +498,52 @@
               }
             };
           }
+
+          if (window.isGeneratingArViewer) {
+            const suggestedName = (options && options.suggestedName) || 'export';
+            return {
+              kind: 'file',
+              name: suggestedName,
+              createWritable: async function() {
+                let chunks = [];
+                return {
+                  write: async function(data) {
+                    chunks.push(data);
+                  },
+                  close: async function() {
+                    window.isGeneratingArViewer = false; // Reset flag
+                    let blob;
+                    if (chunks.length === 1 && chunks[0] instanceof Blob) {
+                      blob = chunks[0];
+                    } else {
+                      blob = new Blob(chunks);
+                    }
+                    const fileUrl = URL.createObjectURL(blob);
+                    blobMap.set(fileUrl, blob);
+                    activeExports.add(fileUrl);
+                    generateArViewerExport(fileUrl, suggestedName).catch(e => {
+                      console.error(e);
+                      alert("Error opening in AR Viewer: " + e.message);
+                    });
+                  }
+                };
+              }
+            };
+          }
           return originalShowSaveFilePicker.apply(this, arguments);
         };
       }
 
-      // Inject "Save HTML" button dynamically for all apps
+      // Inject "Save HTML" & "View in AR" buttons dynamically for all apps
       setInterval(() => {
         const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
         
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
+        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML/AR buttons
         const validButtons = buttons.filter(btn => {
           const txt = (btn.textContent || btn.value || '').toLowerCase();
           const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
+          if (id.includes('html') || id.includes('ar') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
+          if (txt.includes('html') || txt.includes('view in ar') || txt.includes('voir en ar') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
           return true;
         });
 
@@ -500,166 +552,276 @@
           const txt = (btn.textContent || btn.value || '').toLowerCase();
           return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
         });
-        if (hasExistingHtmlBtn) return;
 
-        // Find the best export/save button candidate based on text keywords
+        // 1. INJECT SAVE HTML BUTTON
         let baseBtn = null;
-        const priorities = [
+        if (!hasExistingHtmlBtn) {
+          const priorities = [
+            ['glb', 'gltf'],
+            ['stl'],
+            ['obj'],
+            ['ply'],
+            ['3mf'],
+            ['save svg', 'export svg', 'download svg', 'svg'],
+            ['save dxf', 'export dxf', 'download dxf', 'dxf'],
+            ['png', 'jpg', 'jpeg', 'capture', 'image'],
+            ['gcode', 'g-code'],
+            ['save', 'export', 'download', 'telecharger', 'render', 'capture']
+          ];
+
+          for (const kwList of priorities) {
+            baseBtn = validButtons.find(btn => {
+              const txt = (btn.textContent || btn.value || '').toLowerCase();
+              return kwList.some(kw => txt.includes(kw));
+            });
+            if (baseBtn) break;
+          }
+
+          if (baseBtn && !document.getElementById('injected-save-html-btn')) {
+            const parent = baseBtn.parentElement;
+            if (parent) {
+              const htmlBtn = document.createElement(baseBtn.tagName);
+              htmlBtn.id = 'injected-save-html-btn';
+              htmlBtn.className = baseBtn.className;
+              
+              // Style matching
+              htmlBtn.style.cssText = baseBtn.style.cssText;
+              htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
+              htmlBtn.style.color = '#ffffff';
+              htmlBtn.style.borderColor = 'transparent';
+              
+              // Spacing adjustments
+              const display = window.getComputedStyle(parent).display;
+              if (display.includes('flex') || display.includes('grid')) {
+                // Flex or grid layouts handle layout automatically
+              } else {
+                htmlBtn.style.marginTop = '8px';
+                htmlBtn.style.marginLeft = '4px';
+              }
+
+              // Determine HTML button text based on base button text length/language
+              const baseText = baseBtn.textContent.trim();
+              let btnText = 'Save HTML';
+              if (baseText.length <= 5) {
+                btnText = 'HTML';
+              } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+                btnText = 'Télécharger HTML';
+              } else if (baseText.toLowerCase().includes('export')) {
+                btnText = 'Export HTML';
+              } else if (baseText.toLowerCase().includes('sauvegarder')) {
+                btnText = 'Sauvegarder HTML';
+              }
+              
+              if (baseBtn.tagName === 'INPUT') {
+                htmlBtn.value = btnText;
+              } else {
+                htmlBtn.textContent = btnText;
+              }
+              
+              htmlBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!isPremiumUser && !window.isPremiumUser) {
+                  channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
+                  return;
+                }
+                
+                if ('musc' === 'musc') {
+                  const btnShare = document.getElementById('btn-share');
+                  if (btnShare) {
+                    btnShare.click(); // Sets location.hash with the compressed state
+                    Promise.all([
+                      fetch('/apps/music-composer/index.html').then(r => r.text()),
+                      fetch('/apps/music-composer/css/style.css').then(r => r.text()),
+                      fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
+                      fetch('/apps/music-composer/js/app.js').then(r => r.text())
+                    ]).then(([htmlText, cssText, presetsText, jsText]) => {
+                        let cleanHtml = htmlText;
+                        cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
+                        cleanHtml = cleanHtml.replace('<script src="./js/presets.js"></script>', '<script>' + presetsText + '</script>');
+                        cleanHtml = cleanHtml.replace('<script src="./js/app.js"></script>', '<script>' + jsText + '</script>');
+                        cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!</script>)[sS])*?studios_pro_channel[sS]*?</script>/gi, '');
+                        cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[sS]*?</button>/gi, '');
+                        
+                        const hash = window.location.hash;
+                        const playbackScript = `
+  <style>
+    body { padding-bottom: 0 !important; }
+    .top-bar { display: none !important; }
+    .left-panel { display: none !important; }
+    .right-panel { display: none !important; }
+    #keyboard-synth-panel { display: none !important; }
+    .stage-overlay { bottom: 30px !important; }
+  </style>
+  <script>
+    window.location.hash = "${hash}";
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        const zenBtn = document.getElementById('btn-zen');
+        if (zenBtn) zenBtn.click();
+        const splash = document.createElement('div');
+        splash.style.position = 'fixed';
+        splash.style.top = '0'; splash.style.left = '0';
+        splash.style.width = '100vw'; splash.style.height = '100vh';
+        splash.style.background = '#05070a';
+        splash.style.color = '#fff';
+        splash.style.display = 'flex';
+        splash.style.flexDirection = 'column';
+        splash.style.alignItems = 'center';
+        splash.style.justifyContent = 'center';
+        splash.style.zIndex = '99999';
+        splash.style.fontFamily = 'sans-serif';
+        splash.style.cursor = 'pointer';
+        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
+        document.body.appendChild(splash);
+        splash.onclick = function() {
+          if (typeof Tone !== "undefined") {
+            Tone.start().then(() => {
+              const playBtn = document.getElementById('btn-play');
+              if (playBtn) playBtn.click();
+              splash.remove();
+            });
+          } else {
+            splash.remove();
+          }
+        };
+      }, 500);
+    });
+  </script>
+  `;
+                        cleanHtml = cleanHtml.replace('</body>', playbackScript + '
+</body>');
+                        const blob = new Blob([cleanHtml], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'music_composer_interactive.html';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }).catch(err => {
+                        alert("Error generating HTML: " + err.message);
+                    });
+                  }
+                  return;
+                }
+                
+                window.isGeneratingHtmlExport = true;
+                baseBtn.click();
+              };
+              
+              baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
+            }
+          }
+        }
+
+        // 2. INJECT VIEW IN AR BUTTON (PREMIUM ONLY, 3D APP DETECTED)
+        const priorities3D = [
           ['glb', 'gltf'],
           ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['gcode', 'g-code'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
+          ['obj']
         ];
-
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
+        let baseBtn3D = null;
+        for (const kwList of priorities3D) {
+          baseBtn3D = validButtons.find(btn => {
             const txt = (btn.textContent || btn.value || '').toLowerCase();
             return kwList.some(kw => txt.includes(kw));
           });
-          if (baseBtn) break;
+          if (baseBtn3D) break;
         }
 
-        if (baseBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
+        if (baseBtn3D && !document.getElementById('injected-view-ar-btn')) {
+          const parent = baseBtn3D.parentElement;
           if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
+            const arBtn = document.createElement(baseBtn3D.tagName);
+            arBtn.id = 'injected-view-ar-btn';
+            arBtn.className = baseBtn3D.className;
             
             // Style matching
-            htmlBtn.style.cssText = baseBtn.style.cssText;
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
+            arBtn.style.cssText = baseBtn3D.style.cssText;
+            arBtn.style.background = 'linear-gradient(135deg, #10b981, #06b6d4)'; // Teal to cyan premium gradient
+            arBtn.style.color = '#ffffff';
+            arBtn.style.borderColor = 'transparent';
             
             // Spacing adjustments
             const display = window.getComputedStyle(parent).display;
             if (display.includes('flex') || display.includes('grid')) {
               // Flex or grid layouts handle layout automatically
             } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
+              arBtn.style.marginTop = '8px';
+              arBtn.style.marginLeft = '4px';
             }
 
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
+            // Determine language: French or English
+            const baseText = baseBtn3D.textContent.toLowerCase();
+            const isFr = document.documentElement.lang === 'fr' || 
+                         window.location.search.includes('lang=fr') || 
+                         baseText.includes('télécharger') || 
+                         baseText.includes('telecharger') || 
+                         baseText.includes('sauvegarder') ||
+                         baseText.includes('sauver') ||
+                         baseText.includes('exporter');
+                         
+            const arText = isFr ? '👁️ Voir en AR' : '👁️ View in AR';
             
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
+            if (baseBtn3D.tagName === 'INPUT') {
+              arBtn.value = arText;
             } else {
-              htmlBtn.textContent = btnText;
+              arBtn.textContent = arText;
             }
             
-            htmlBtn.onclick = (e) => {
+            arBtn.onclick = (e) => {
               e.preventDefault();
               e.stopPropagation();
               
               if (!isPremiumUser && !window.isPremiumUser) {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
+                // View in AR is a strictly premium-only feature!
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc', forcePremium: true } });
                 return;
               }
               
-              if ('musc' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-<style>
-  body { padding-bottom: 0 !important; }
-  .top-bar { display: none !important; }
-  .left-panel { display: none !important; }
-  .right-panel { display: none !important; }
-  #keyboard-synth-panel { display: none !important; }
-  .stage-overlay { bottom: 30px !important; }
-</style>
-<script>
-  window.location.hash = "${hash}";
-  window.addEventListener('load', function() {
-    setTimeout(() => {
-      const zenBtn = document.getElementById('btn-zen');
-      if (zenBtn) zenBtn.click();
-      const splash = document.createElement('div');
-      splash.style.position = 'fixed';
-      splash.style.top = '0'; splash.style.left = '0';
-      splash.style.width = '100vw'; splash.style.height = '100vh';
-      splash.style.background = '#05070a';
-      splash.style.color = '#fff';
-      splash.style.display = 'flex';
-      splash.style.flexDirection = 'column';
-      splash.style.alignItems = 'center';
-      splash.style.justifyContent = 'center';
-      splash.style.zIndex = '99999';
-      splash.style.fontFamily = 'sans-serif';
-      splash.style.cursor = 'pointer';
-      splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-      document.body.appendChild(splash);
-      splash.onclick = function() {
-        if (typeof Tone !== "undefined") {
-          Tone.start().then(() => {
-            const playBtn = document.getElementById('btn-play');
-            if (playBtn) playBtn.click();
-            splash.remove();
-          });
-        } else {
-          splash.remove();
-        }
-      };
-    }, 500);
-  });
-<\/script>
-`;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '\n</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
+              // Create and show loading overlay
+              const loaderOverlay = document.createElement('div');
+              loaderOverlay.id = 'injected-ar-loading-overlay';
+              loaderOverlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999999; color:white; font-family:sans-serif; transition: opacity 0.3s ease;';
+              loaderOverlay.innerHTML = `
+                <div style="border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #06b6d4; border-radius: 50%; width: 45px; height: 45px; animation: injected_spin 1s linear infinite; margin-bottom: 20px;"></div>
+                <div style="font-size: 16px; font-weight: 600; text-align: center; padding: 0 20px;" class="loader-msg"></div>
+                <style>
+                  @keyframes injected_spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+              `;
+              document.body.appendChild(loaderOverlay);
+              
+              const setMsg = (msg) => {
+                loaderOverlay.querySelector('.loader-msg').textContent = msg;
+              };
+              
+              setMsg(isFr ? 'Génération du modèle 3D...' : 'Generating 3D model...');
+              
+              // Set global flag and click base 3D export button
+              window.isGeneratingArViewer = true;
+              baseBtn3D.click();
+              
+              // Safety timeout: remove loader after 15 seconds if export fails
+              setTimeout(() => {
+                const overlay = document.getElementById('injected-ar-loading-overlay');
+                if (overlay) {
+                  overlay.remove();
+                  window.isGeneratingArViewer = false;
                 }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
+              }, 15000);
             };
             
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
+            // Insert it next to the base 3D export button or next to the HTML button if it exists
+            const htmlBtn = document.getElementById('injected-save-html-btn');
+            if (htmlBtn && htmlBtn.parentElement === parent) {
+              parent.insertBefore(arBtn, htmlBtn.nextSibling);
+            } else {
+              baseBtn3D.parentNode.insertBefore(arBtn, baseBtn3D.nextSibling);
+            }
           }
         }
       }, 1000);
@@ -732,6 +894,81 @@
         URL.revokeObjectURL(htmlUrl);
         
         releaseUrl(fileUrl);
+      }
+
+      async function generateArViewerExport(fileUrl, fileName) {
+        const overlay = document.getElementById('injected-ar-loading-overlay');
+        const isFr = document.documentElement.lang === 'fr' || 
+                     window.location.search.includes('lang=fr') || 
+                     fileName.toLowerCase().includes('telecharger') || 
+                     fileName.toLowerCase().includes('sauvegarder');
+                     
+        const setMsg = (msg) => {
+          if (overlay) {
+            const el = overlay.querySelector('.loader-msg');
+            if (el) el.textContent = msg;
+          }
+        };
+        
+        try {
+          setMsg(isFr ? 'Téléchargement vers la Réalité Augmentée...' : 'Uploading to WebAR...');
+          
+          let blob;
+          if (blobMap.has(fileUrl)) {
+            blob = blobMap.get(fileUrl);
+          } else if (fileUrl.startsWith('data:')) {
+            const parts = fileUrl.split(',');
+            const header = parts[0];
+            const dataStr = parts.slice(1).join(',');
+            let mime = 'text/plain';
+            const mimeMatch = header.match(/:(.*?)(;|$)/);
+            if (mimeMatch) {
+              mime = mimeMatch[1];
+            }
+            if (header.includes(';base64')) {
+              blob = new Blob([base64ToBytes(dataStr)], { type: mime });
+            } else {
+              let decoded = dataStr;
+              try {
+                decoded = decodeURIComponent(dataStr);
+              } catch (err) {
+                try {
+                  decoded = unescape(dataStr);
+                } catch (e2) {}
+              }
+              blob = new Blob([decoded], { type: mime });
+            }
+          } else {
+            const response = await fetch(fileUrl);
+            blob = await response.blob();
+          }
+
+          // Upload the model blob to tmpfiles.org
+          const formData = new FormData();
+          formData.append('file', blob, fileName);
+
+          const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const json = await uploadRes.json();
+          if (json.status === 'success') {
+            const rawUrl = json.data.url;
+            const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            
+            // Send message to parent app to load this URL in AR Viewer
+            channel.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: directDlUrl } });
+          } else {
+            throw new Error("Upload response status was not success");
+          }
+        } catch (err) {
+          console.error("AR Viewer transfer failed:", err);
+          alert(isFr ? "Échec du transfert vers l'AR Viewer. Veuillez réessayer." : "Failed to transfer to AR Viewer. Please try again.");
+        } finally {
+          if (overlay) overlay.remove();
+          releaseUrl(fileUrl);
+        }
       }
 
       function get3DTemplate(base64Data, extension, fileName) {
@@ -1105,6 +1342,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
