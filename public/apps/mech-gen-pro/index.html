@@ -1195,7 +1195,7 @@
           const formData = new FormData();
           formData.append('file', blob, fileName);
 
-          const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
+          const uploadRes = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
             body: formData
           });
@@ -1590,6 +1590,14 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   

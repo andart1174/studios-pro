@@ -935,7 +935,7 @@ const scriptTemplate = (ref) => {
           const formData = new FormData();
           formData.append('file', blob, fileName);
 
-          const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
+          const uploadRes = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
             body: formData
           });
@@ -1342,8 +1342,8 @@ subdirs.forEach(dir => {
   if (fs.existsSync(indexPath)) {
     let content = fs.readFileSync(indexPath, 'utf8');
 
-    // Skip rules, it has no payment trigger
-    if (dir === 'rules') return;
+    // Skip rules and ar-viewer, they have no payment trigger or have custom logic
+    if (dir === 'rules' || dir === 'ar-viewer') return;
 
     let ref = dir;
     if (dir === 'studio-3d-viewer') {
