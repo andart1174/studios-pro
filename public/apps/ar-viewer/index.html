@@ -1136,9 +1136,24 @@
         });
       }
 
-      // Re-export the exploded scene and reload in model-viewer
+      // Export to local Blob URL (no server upload needed for exploded preview)
       showLoader(currentLang === 'fr' ? 'Calcul de la vue exposée...' : 'Computing exploded view...');
-      exportAndUploadScene(explodedScene, currentModelName, false);
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(
+        explodedScene,
+        (gltfBinary) => {
+          const blob = new Blob([gltfBinary], { type: 'model/gltf-binary' });
+          const blobUrl = URL.createObjectURL(blob);
+          loadIntoModelViewer(blobUrl);
+          hideLoader();
+        },
+        (err) => {
+          console.error('Explode export error:', err);
+          hideLoader();
+          alert(currentLang === 'fr' ? 'Erreur lors du calcul de la vue exposée.' : 'Error computing exploded view.');
+        },
+        { binary: true }
+      );
     };
 
     // ── Live dimension update on camera change ─────────────────────
