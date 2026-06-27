@@ -607,6 +607,11 @@ body, html {
   display: block;
 }
 
+/* Labels inside the overlay are always shown — the overlay itself is the toggle */
+#hud-overlay .hud-dim-label {
+  display: block;
+}
+
 .preview-area.grid-active {
   background-color: #05070c !important;
   background-image: 
