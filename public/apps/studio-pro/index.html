@@ -886,17 +886,18 @@
       }
       const exporter = new THREE.OBJExporter();
       const result = exporter.parse(group);
-      const blob = new Blob([result], { type: 'text/plain' });
-      const blobUrl = URL.createObjectURL(blob) + '#model.obj';
+      
+      // Save model data for BroadcastChannel transfer
+      window.lastGeneratedModel = result;
       
       // Open model in parent's AR Viewer iframe
-      window.parent.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: blobUrl } }, '*');
+      window.parent.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: 'broadcast' } }, '*');
       toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
       
       // Fallback for standalone mode testing (opens in new tab)
       if (window.parent === window) {
         setTimeout(() => {
-          window.open('/apps/ar-viewer/index.html?url=' + encodeURIComponent(blobUrl), '_blank');
+          window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
         }, 1000);
       }
     });
@@ -927,6 +928,18 @@
       } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
         isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
         window.isPremiumUser = isPremiumUser;
+      } else if (e.data.type === 'AR_VIEWER_READY') {
+        if (window.lastGeneratedModel) {
+          channel.postMessage({
+            type: 'LOAD_EXTERNAL_FILE',
+            payload: {
+              name: 'model.obj',
+              extension: 'obj',
+              data: window.lastGeneratedModel,
+              isBinary: false
+            }
+          });
+        }
       }
     };
 

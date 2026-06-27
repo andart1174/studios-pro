@@ -413,7 +413,7 @@
 
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
-    if (queryUrl) {
+    if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
           const directUrl = decodeURIComponent(queryUrl);
@@ -435,6 +435,9 @@
         }
       })();
     }
+
+    // Send ready signal to parent/sibling to request model transfer
+    channel.postMessage({ type: 'AR_VIEWER_READY' });
 
     // Helper: show/hide loading screen
     function showLoader(msg) {
