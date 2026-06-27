@@ -632,10 +632,10 @@ const scriptTemplate = (ref) => {
                     ]).then(([htmlText, cssText, presetsText, jsText]) => {
                         let cleanHtml = htmlText;
                         cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                        cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                        cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                        cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                        cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+                        cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\\/script>', '<script>' + presetsText + '<\\/script>');
+                        cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\\/script>', '<script>' + jsText + '<\\/script>');
+                        cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\\/script>)[\\s\\S])*?studios_pro_channel[\\s\\S]*?<\\/script>/gi, '');
+                        cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\\s\\S]*?<\\/button>/gi, '');
                         
                         const hash = window.location.hash;
                         const playbackScript = \`
@@ -681,7 +681,7 @@ const scriptTemplate = (ref) => {
         };
       }, 500);
     });
-  <\/script>
+  <\\/script>
   \`;
                         cleanHtml = cleanHtml.replace('</body>', playbackScript + '\n</body>');
                         const blob = new Blob([cleanHtml], { type: 'text/html' });
@@ -1397,13 +1397,13 @@ subdirs.forEach(dir => {
     const newScript = scriptTemplate(ref);
     const bodyRegex = /(<body[^>]*>)/i;
     if (bodyRegex.test(content)) {
-      content = content.replace(bodyRegex, '$1\n' + newScript.trim());
+      content = content.replace(bodyRegex, (match) => match + '\n' + newScript.trim());
       console.log('Injected clean script in: ' + dir + ' (ref: ' + ref + ')');
     } else {
       // Fallback for files without a body tag: inject right after head tag closing or at the top of file
       const headCloseRegex = /(<\/head>)/i;
       if (headCloseRegex.test(content)) {
-        content = content.replace(headCloseRegex, '$1\n<body>\n' + newScript.trim());
+        content = content.replace(headCloseRegex, (match) => match + '\n<body>\n' + newScript.trim());
         // Also close the body tag before html close
         content = content.replace(/(<\/html>)/i, '</body>\n$1');
         console.log('Injected clean script with head-close fallback in: ' + dir + ' (ref: ' + ref + ')');
@@ -1414,7 +1414,7 @@ subdirs.forEach(dir => {
 
     // Patch keywords in the file content if keywords array matches
     if (oldKeywordsRegex.test(content)) {
-      content = content.replace(oldKeywordsRegex, newKeywordsLine);
+      content = content.replace(oldKeywordsRegex, () => newKeywordsLine);
       console.log('Patched keywords array in: ' + dir);
     }
 
