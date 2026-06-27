@@ -717,6 +717,7 @@
       document.getElementById('exploded-view-section').style.display = 'block';
       document.querySelector('.floating-controls').style.display = 'flex';
       activeMaterial = 'original';
+      originalSceneSnapshot = null; // reset explode snapshot for new model
       document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
       const origBtn = document.querySelector('.mat-btn[data-mat="original"]');
       if (origBtn) origBtn.classList.add('active');
@@ -1036,7 +1037,7 @@
     });
 
     // ══════════════════════════════════════════════════════════════════════
-    // EXPLODED VIEW
+    // EXPLODED VIEW  — layer-splitting algorithm (works on ANY STL/OBJ)
     // ══════════════════════════════════════════════════════════════════════
     const explodeSlider = document.getElementById('explode-slider');
     const explodeVal    = document.getElementById('explode-val');
@@ -1044,49 +1045,100 @@
       explodeVal.textContent = e.target.value + '%';
     };
 
-    // Store original mesh positions for explode/reset
-    let origPositions = new Map();
+    let originalSceneSnapshot = null; // snapshot of original scene before explode
 
-    document.getElementById('apply-explode-btn').onclick = () => {
+    /**
+     * Split a single THREE.Mesh geometry into N horizontal layers.
+     * Each layer contains only the triangles whose centroid Y falls in that band.
+     */
+    function splitMeshIntoLayers(mesh, numLayers) {
+      mesh.geometry.computeBoundingBox();
+      const bbox = mesh.geometry.boundingBox;
+      const yMin = bbox.min.y;
+      const yRange = bbox.max.y - yMin || 1;
+      const pos = mesh.geometry.attributes.position;
+      const layerVerts = Array.from({length: numLayers}, () => []);
+
+      for (let i = 0; i < pos.count; i += 3) {
+        const yc = (pos.getY(i) + pos.getY(i+1) + pos.getY(i+2)) / 3;
+        const li = Math.min(Math.floor((yc - yMin) / yRange * numLayers), numLayers - 1);
+        for (let k = 0; k < 3; k++) {
+          const vi = i + k;
+          layerVerts[li].push(pos.getX(vi), pos.getY(vi), pos.getZ(vi));
+        }
+      }
+
+      const mat = mesh.material;
+      return layerVerts.map((verts, li) => {
+        if (verts.length === 0) return null;
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        g.computeVertexNormals();
+        const m = new THREE.Mesh(g, mat.clone());
+        m.userData.layerIdx = li;
+        return m;
+      }).filter(Boolean);
+    }
+
+    document.getElementById('apply-explode-btn').onclick = async () => {
       if (!currentThreeScene) return;
       const factor = parseFloat(explodeSlider.value) / 100;
 
-      // Calculate scene center
-      const center = new THREE.Vector3();
-      let meshCount = 0;
-      currentThreeScene.traverse(obj => {
-        if (obj.isMesh) {
-          obj.geometry.computeBoundingBox();
-          const c = new THREE.Vector3();
-          obj.geometry.boundingBox.getCenter(c);
-          obj.localToWorld(c);
-          center.add(c);
-          meshCount++;
-        }
-      });
-      if (meshCount > 0) center.divideScalar(meshCount);
+      // Save a snapshot on first call so we can always work from original
+      if (!originalSceneSnapshot) {
+        originalSceneSnapshot = currentThreeScene.clone(true);
+      }
 
-      // Store originals on first call
-      currentThreeScene.traverse(obj => {
-        if (obj.isMesh) {
-          if (!origPositions.has(obj.uuid)) {
-            origPositions.set(obj.uuid, obj.position.clone());
-          }
-          const orig = origPositions.get(obj.uuid);
-          const dir = new THREE.Vector3();
-          obj.geometry.computeBoundingBox();
-          const meshCenter = new THREE.Vector3();
-          obj.geometry.boundingBox.getCenter(meshCenter);
-          obj.localToWorld(meshCenter.clone());
-          dir.subVectors(orig, center).normalize();
-          const magnitude = factor * 0.5; // 0.5 = max explode distance in scene units
-          obj.position.copy(orig).addScaledVector(dir, magnitude);
-        }
-      });
+      // Build the working scene fresh from the original snapshot
+      const workScene = originalSceneSnapshot.clone(true);
+      const meshes = [];
+      workScene.traverse(obj => { if (obj.isMesh) meshes.push(obj); });
 
-      // Re-export and reload
+      if (meshes.length === 0) return;
+
+      const explodedScene = new THREE.Scene();
+
+      if (meshes.length === 1) {
+        // ── Single-mesh model (typical STL): split into horizontal layers ──
+        const NUM_LAYERS = 7;
+        const mesh = meshes[0];
+        const layers = splitMeshIntoLayers(mesh, NUM_LAYERS);
+
+        // Bounding box for layer height reference
+        mesh.geometry.computeBoundingBox();
+        const yRange = mesh.geometry.boundingBox.max.y - mesh.geometry.boundingBox.min.y || 1;
+        const layerStep = yRange / NUM_LAYERS;
+
+        layers.forEach((layerMesh, li) => {
+          // Offset each layer away from the center layer
+          const centerIdx = (NUM_LAYERS - 1) / 2;
+          const offset = (li - centerIdx) * layerStep * factor * 2.5;
+          layerMesh.position.y = offset;
+          explodedScene.add(layerMesh);
+        });
+      } else {
+        // ── Multi-mesh model (OBJ assemblies): spread parts from centroid ──
+        const sceneBbox = new THREE.Box3().setFromObject(workScene);
+        const center = new THREE.Vector3();
+        sceneBbox.getCenter(center);
+        const sceneSize = new THREE.Vector3();
+        sceneBbox.getSize(sceneSize);
+        const maxDim = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) || 1;
+
+        meshes.forEach(m => {
+          const mc = new THREE.Vector3();
+          new THREE.Box3().setFromObject(m).getCenter(mc);
+          const dir = mc.clone().sub(center);
+          if (dir.length() < 0.0001) dir.set(0, 1, 0); // fallback
+          dir.normalize();
+          m.position.addScaledVector(dir, factor * maxDim * 0.8);
+          explodedScene.add(m);
+        });
+      }
+
+      // Re-export the exploded scene and reload in model-viewer
       showLoader(currentLang === 'fr' ? 'Calcul de la vue exposée...' : 'Computing exploded view...');
-      exportAndUploadScene(currentThreeScene, currentModelName, true);
+      exportAndUploadScene(explodedScene, currentModelName, false);
     };
 
     // ── Live dimension update on camera change ─────────────────────
