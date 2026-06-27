@@ -515,7 +515,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn') return;
+        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn' || id === 'injected-view-ar-btn') return;
 
         if (isExport) {
           e.stopImmediatePropagation();
@@ -593,69 +593,56 @@
       // Intercept modern showSaveFilePicker API (File System Access API)
       if (typeof window.showSaveFilePicker === 'function') {
         const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = async function(options) {
+        window.showSaveFilePicker = function(options) {
           if (window.isGeneratingHtmlExport) {
             const suggestedName = (options && options.suggestedName) || 'export';
-            return {
-              kind: 'file',
-              name: suggestedName,
-              createWritable: async function() {
-                let chunks = [];
-                return {
-                  write: async function(data) {
-                    chunks.push(data);
-                  },
-                  close: async function() {
-                    window.isGeneratingHtmlExport = false; // Reset flag
-                    let blob;
-                    if (chunks.length === 1 && chunks[0] instanceof Blob) {
-                      blob = chunks[0];
-                    } else {
-                      blob = new Blob(chunks);
+            return new Promise((resolve, reject) => {
+              const mockFileHandle = {
+                kind: 'file',
+                name: suggestedName,
+                createWritable: async function() {
+                  return {
+                    write: async function(data) {
+                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
+                      window.isGeneratingHtmlExport = false; // Reset flag
+                      activeExports.add(fileUrl);
+                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
+                        console.error(e);
+                        alert("Error generating HTML export: " + e.message);
+                      });
+                    },
+                    close: async function() {
+                      resolve(mockFileHandle);
                     }
-                    const fileUrl = URL.createObjectURL(blob);
-                    blobMap.set(fileUrl, blob);
-                    activeExports.add(fileUrl);
-                    generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                      console.error(e);
-                      alert("Error generating HTML export: " + e.message);
-                    });
-                  }
-                };
-              }
-            };
+                  };
+                }
+              };
+            });
           }
-
           if (window.isGeneratingArViewer) {
             const suggestedName = (options && options.suggestedName) || 'export';
-            return {
-              kind: 'file',
-              name: suggestedName,
-              createWritable: async function() {
-                let chunks = [];
-                return {
-                  write: async function(data) {
-                    chunks.push(data);
-                  },
-                  close: async function() {
-                    window.isGeneratingArViewer = false; // Reset flag
-                    let blob;
-                    if (chunks.length === 1 && chunks[0] instanceof Blob) {
-                      blob = chunks[0];
-                    } else {
-                      blob = new Blob(chunks);
+            return new Promise((resolve, reject) => {
+              const mockFileHandle = {
+                kind: 'file',
+                name: suggestedName,
+                createWritable: async function() {
+                  return {
+                    write: async function(data) {
+                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
+                      window.isGeneratingArViewer = false; // Reset flag
+                      activeExports.add(fileUrl);
+                      generateArViewerExport(fileUrl, suggestedName).catch(e => {
+                        console.error(e);
+                        alert("Error opening in AR Viewer: " + e.message);
+                      });
+                    },
+                    close: async function() {
+                      resolve(mockFileHandle);
                     }
-                    const fileUrl = URL.createObjectURL(blob);
-                    blobMap.set(fileUrl, blob);
-                    activeExports.add(fileUrl);
-                    generateArViewerExport(fileUrl, suggestedName).catch(e => {
-                      console.error(e);
-                      alert("Error opening in AR Viewer: " + e.message);
-                    });
-                  }
-                };
-              }
-            };
+                  };
+                }
+              };
+            });
           }
           return originalShowSaveFilePicker.apply(this, arguments);
         };
@@ -674,6 +661,41 @@
           return true;
         });
 
+        // Always find the base buttons in every tick for visibility syncing
+        let baseBtn = null;
+        const priorities = [
+          ['glb', 'gltf'],
+          ['stl'],
+          ['obj'],
+          ['ply'],
+          ['3mf'],
+          ['save svg', 'export svg', 'download svg', 'svg'],
+          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
+          ['png', 'jpg', 'jpeg', 'capture', 'image'],
+          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
+        ];
+        for (const kwList of priorities) {
+          baseBtn = validButtons.find(btn => {
+            const txt = (btn.textContent || btn.value || '').toLowerCase();
+            return kwList.some(kw => txt.includes(kw));
+          });
+          if (baseBtn) break;
+        }
+
+        let baseBtn3D = null;
+        const priorities3D = [
+          ['glb', 'gltf'],
+          ['stl'],
+          ['obj']
+        ];
+        for (const kwList of priorities3D) {
+          baseBtn3D = validButtons.find(btn => {
+            const txt = (btn.textContent || btn.value || '').toLowerCase();
+            return kwList.some(kw => txt.includes(kw));
+          });
+          if (baseBtn3D) break;
+        }
+
         // Check if there is an existing button that already contains 'html'
         const hasExistingHtmlBtn = buttons.some(btn => {
           const txt = (btn.textContent || btn.value || '').toLowerCase();
@@ -681,98 +703,75 @@
         });
 
         // 1. INJECT SAVE HTML BUTTON
-        let baseBtn = null;
-        if (!hasExistingHtmlBtn) {
-          const priorities = [
-            ['glb', 'gltf'],
-            ['stl'],
-            ['obj'],
-            ['ply'],
-            ['3mf'],
-            ['save svg', 'export svg', 'download svg', 'svg'],
-            ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-            ['png', 'jpg', 'jpeg', 'capture', 'image'],
-            ['gcode', 'g-code'],
-            ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-          ];
+        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
+          const parent = baseBtn.parentElement;
+          if (parent) {
+            const htmlBtn = document.createElement(baseBtn.tagName);
+            htmlBtn.id = 'injected-save-html-btn';
+            htmlBtn.className = baseBtn.className;
+            
+            // Style matching (strip display:none if set initially)
+            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
+            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
+            htmlBtn.style.color = '#ffffff';
+            htmlBtn.style.borderColor = 'transparent';
+            
+            // Spacing adjustments
+            const display = window.getComputedStyle(parent).display;
+            if (display.includes('flex') || display.includes('grid')) {
+              // Flex or grid layouts handle layout automatically
+            } else {
+              htmlBtn.style.marginTop = '8px';
+              htmlBtn.style.marginLeft = '4px';
+            }
 
-          for (const kwList of priorities) {
-            baseBtn = validButtons.find(btn => {
-              const txt = (btn.textContent || btn.value || '').toLowerCase();
-              return kwList.some(kw => txt.includes(kw));
-            });
-            if (baseBtn) break;
-          }
-
-          if (baseBtn && !document.getElementById('injected-save-html-btn')) {
-            const parent = baseBtn.parentElement;
-            if (parent) {
-              const htmlBtn = document.createElement(baseBtn.tagName);
-              htmlBtn.id = 'injected-save-html-btn';
-              htmlBtn.className = baseBtn.className;
+            // Determine HTML button text based on base button text length/language
+            const baseText = baseBtn.textContent.trim();
+            let btnText = 'Save HTML';
+            if (baseText.length <= 5) {
+              btnText = 'HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('export')) {
+              btnText = 'Export HTML';
+            } else if (baseText.toLowerCase().includes('sauvegarder')) {
+              btnText = 'Sauvegarder HTML';
+            }
+            
+            if (baseBtn.tagName === 'INPUT') {
+              htmlBtn.value = btnText;
+            } else {
+              htmlBtn.textContent = btnText;
+            }
+            
+            htmlBtn.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
               
-              // Style matching
-              htmlBtn.style.cssText = baseBtn.style.cssText;
-              htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-              htmlBtn.style.color = '#ffffff';
-              htmlBtn.style.borderColor = 'transparent';
-              
-              // Spacing adjustments
-              const display = window.getComputedStyle(parent).display;
-              if (display.includes('flex') || display.includes('grid')) {
-                // Flex or grid layouts handle layout automatically
-              } else {
-                htmlBtn.style.marginTop = '8px';
-                htmlBtn.style.marginLeft = '4px';
-              }
-
-              // Determine HTML button text based on base button text length/language
-              const baseText = baseBtn.textContent.trim();
-              let btnText = 'Save HTML';
-              if (baseText.length <= 5) {
-                btnText = 'HTML';
-              } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-                btnText = 'Télécharger HTML';
-              } else if (baseText.toLowerCase().includes('export')) {
-                btnText = 'Export HTML';
-              } else if (baseText.toLowerCase().includes('sauvegarder')) {
-                btnText = 'Sauvegarder HTML';
+              if (!isPremiumUser && !window.isPremiumUser) {
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'mkr7' } });
+                return;
               }
               
-              if (baseBtn.tagName === 'INPUT') {
-                htmlBtn.value = btnText;
-              } else {
-                htmlBtn.textContent = btnText;
-              }
-              
-              htmlBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (!isPremiumUser && !window.isPremiumUser) {
-                  channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'mkr7' } });
-                  return;
-                }
-                
-                if ('mkr7' === 'musc') {
-                  const btnShare = document.getElementById('btn-share');
-                  if (btnShare) {
-                    btnShare.click(); // Sets location.hash with the compressed state
-                    Promise.all([
-                      fetch('/apps/music-composer/index.html').then(r => r.text()),
-                      fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                      fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                      fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                    ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                        let cleanHtml = htmlText;
-                        cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                        cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                        cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                        cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                        cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                        
-                        const hash = window.location.hash;
-                        const playbackScript = `
+              if ('mkr7' === 'musc') {
+                const btnShare = document.getElementById('btn-share');
+                if (btnShare) {
+                  btnShare.click(); // Sets location.hash with the compressed state
+                  Promise.all([
+                    fetch('/apps/music-composer/index.html').then(r => r.text()),
+                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
+                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
+                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
+                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
+                      let cleanHtml = htmlText;
+                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
+                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
+                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
+                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
+                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
+                      
+                      const hash = window.location.hash;
+                      const playbackScript = `
   <style>
     body { padding-bottom: 0 !important; }
     .top-bar { display: none !important; }
@@ -817,48 +816,32 @@
     });
   <\/script>
   `;
-                        cleanHtml = cleanHtml.replace('</body>', playbackScript + '
-</body>');
-                        const blob = new Blob([cleanHtml], { type: 'text/html' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'music_composer_interactive.html';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }).catch(err => {
-                        alert("Error generating HTML: " + err.message);
-                    });
-                  }
-                  return;
+                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      const blob = new Blob([cleanHtml], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'music_composer_interactive.html';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                  }).catch(err => {
+                      alert("Error generating HTML: " + err.message);
+                  });
                 }
-                
-                window.isGeneratingHtmlExport = true;
-                baseBtn.click();
-              };
+                return;
+              }
               
-              baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-            }
+              window.isGeneratingHtmlExport = true;
+              baseBtn.click();
+            };
+            
+            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
           }
         }
 
         // 2. INJECT VIEW IN AR BUTTON (PREMIUM ONLY, 3D APP DETECTED)
-        const priorities3D = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj']
-        ];
-        let baseBtn3D = null;
-        for (const kwList of priorities3D) {
-          baseBtn3D = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn3D) break;
-        }
-
         if (baseBtn3D && !document.getElementById('injected-view-ar-btn')) {
           const parent = baseBtn3D.parentElement;
           if (parent) {
@@ -866,8 +849,8 @@
             arBtn.id = 'injected-view-ar-btn';
             arBtn.className = baseBtn3D.className;
             
-            // Style matching
-            arBtn.style.cssText = baseBtn3D.style.cssText;
+            // Style matching (strip display:none if set initially)
+            arBtn.style.cssText = baseBtn3D.style.cssText.replace(/display:s*none;?/g, '');
             arBtn.style.background = 'linear-gradient(135deg, #10b981, #06b6d4)'; // Teal to cyan premium gradient
             arBtn.style.color = '#ffffff';
             arBtn.style.borderColor = 'transparent';
@@ -950,6 +933,18 @@
               baseBtn3D.parentNode.insertBefore(arBtn, baseBtn3D.nextSibling);
             }
           }
+        }
+
+        // 3. DYNAMIC VISIBILITY SYNCING
+        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
+        if (activeHtmlBtn && baseBtn) {
+          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
+          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
+        }
+        const activeArBtn = document.getElementById('injected-view-ar-btn');
+        if (activeArBtn && baseBtn3D) {
+          const isBaseVisible = window.getComputedStyle(baseBtn3D).display !== 'none' && baseBtn3D.style.display !== 'none';
+          activeArBtn.style.display = isBaseVisible ? '' : 'none';
         }
       }, 1000);
 
@@ -1469,6 +1464,14 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
