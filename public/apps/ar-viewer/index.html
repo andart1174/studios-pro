@@ -297,6 +297,7 @@
     let currentModelExtension = "";
     let lastExportedBlob = null;
     let lastShareUrl = "";
+    let hasReceivedFile = false;
 
     // Apply translations
     function translateUI() {
@@ -436,8 +437,14 @@
       })();
     }
 
-    // Send ready signal to parent/sibling to request model transfer
-    channel.postMessage({ type: 'AR_VIEWER_READY' });
+    // Send ready signal to parent/sibling to request model transfer repeatedly
+    const readyInterval = setInterval(() => {
+      if (hasReceivedFile) {
+        clearInterval(readyInterval);
+        return;
+      }
+      channel.postMessage({ type: 'AR_VIEWER_READY' });
+    }, 250);
 
     // Helper: show/hide loading screen
     function showLoader(msg) {
@@ -481,6 +488,7 @@
     // Main file processor
     async function handleFile(file) {
       if (!file) return;
+      hasReceivedFile = true;
 
       const name = file.name;
       const extension = name.split('.').pop().toLowerCase();
