@@ -437,6 +437,17 @@
       })();
     }
 
+    // Check if parent window has passed model data directly
+    if (window.parent && window.parent.lastArModelData) {
+      const modelData = window.parent.lastArModelData;
+      window.parent.lastArModelData = null; // clear after reading
+      
+      const file = new File([modelData], 'model.obj', { type: 'text/plain' });
+      setTimeout(() => {
+        handleFile(file);
+      }, 100);
+    }
+
     // Send ready signal to parent/sibling to request model transfer repeatedly
     const readyInterval = setInterval(() => {
       if (hasReceivedFile) {

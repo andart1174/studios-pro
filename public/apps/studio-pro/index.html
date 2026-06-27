@@ -891,7 +891,7 @@
       window.lastGeneratedModel = result;
       
       // Open model in parent's AR Viewer iframe
-      window.parent.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: 'broadcast' } }, '*');
+      window.parent.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: 'broadcast', modelData: result } }, '*');
       toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
       
       // Fallback for standalone mode testing (opens in new tab)

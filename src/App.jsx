@@ -1134,6 +1134,9 @@ const StudiosPro = () => {
         channel.postMessage({ type: 'LOAD_EXTERNAL_URL', payload });
       } else if (type === 'OPEN_AR_VIEWER') {
         setArViewerUrl(payload.url || '');
+        if (payload && payload.modelData) {
+          window.lastArModelData = payload.modelData;
+        }
         setIsARViewerOpen(true);
       } else if (type === 'CLOSE_STUDIO') {
         setIs3DOpen(false);
