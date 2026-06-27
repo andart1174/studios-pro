@@ -21,6 +21,10 @@ html,
   background: black;
 }
 
+.ar-viewer-overlay {
+  z-index: 2000 !important;
+}
+
 /* Performance Isolation: Hide background elements when studio is active */
 .studio-active>nav,
 .studio-active>header,
