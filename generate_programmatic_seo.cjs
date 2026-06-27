@@ -172,6 +172,42 @@ const converters = [
     h1Fr: 'Convertir STL en Page HTML Interactive Autonome',
     featureEn: 'Color and lighting customization, distance measurement tools, slicing, and HTML download.',
     featureFr: 'Personnalisation des couleurs, outils de mesure de distance, coupe de section et export HTML.'
+  },
+  {
+    id: '2d-sketch-to-3d',
+    ref: 'spro',
+    titleEn: 'Free Online 2D Sketch to 3D Model Converter | Studios-Pro',
+    titleFr: 'Convertisseur de Dessin 2D en Modèle 3D Gratuit | Studios-Pro',
+    descEn: 'Draw a 2D sketch or upload a drawing and instantly extrude it into an interactive 3D model. Export to OBJ, HTML, or view in AR.',
+    descFr: 'Dessinez un croquis 2D ou téléchargez un dessin et extrudez-le instantanément en modèle 3D interactif. Exportez en OBJ, HTML ou AR.',
+    h1En: 'Free Online 2D Sketch to 3D Model Extruder',
+    h1Fr: 'Convertisseur de Croquis 2D en Modèle 3D Gratuit',
+    featureEn: 'Interactive drawing canvas, precise thickness controls, custom heightmaps, and OBJ/HTML/AR export.',
+    featureFr: 'Canevas de dessin interactif, contrôle de l\'épaisseur, cartes de hauteur et export OBJ/HTML/AR.'
+  },
+  {
+    id: 'text-to-3d-model',
+    ref: 'spro',
+    titleEn: 'Free Online Text to 3D Model Generator | Studios-Pro',
+    titleFr: 'Générateur de Texte en Modèle 3D Gratuit en Ligne | Studios-Pro',
+    descEn: 'Type any text, choose your font, customize extrusion depth, bevels, and download as 3D OBJ model or standalone HTML.',
+    descFr: 'Saisissez du texte, choisissez votre police, ajustez la profondeur et téléchargez en modèle 3D OBJ ou HTML autonome.',
+    h1En: 'Free Online 3D Text & Logo Extrusion Creator',
+    h1Fr: 'Générateur de Texte 3D & Logos Gratuit en Ligne',
+    featureEn: 'Custom typography extrusion, depth and bevel scaling, direct live preview, and OBJ/HTML export.',
+    featureFr: 'Extrusion de typographie sur mesure, échelle de profondeur, aperçu en direct et export OBJ/HTML.'
+  },
+  {
+    id: 'svg-to-3d-model',
+    ref: 'spro',
+    titleEn: 'Free Online SVG to 3D Extruder Converter | Studios-Pro',
+    titleFr: 'Convertisseur SVG en Modèle 3D Gratuit en Ligne | Studios-Pro',
+    descEn: 'Upload vector SVG paths and extrude them into high-quality 3D geometry online. Download as OBJ or interactive HTML.',
+    descFr: 'Téléchargez des tracés vectoriels SVG et extrudez-les en géométrie 3D de haute qualité. Téléchargez en OBJ ou HTML.',
+    h1En: 'Free Online SVG Vector to 3D Shape Converter',
+    h1Fr: 'Convertisseur de Tracés Vectoriels SVG en 3D Gratuit',
+    featureEn: 'Accurate vector path scaling, extrusion depth adjuster, live PBR rendering, and standalone HTML export.',
+    featureFr: 'Mise à l\'échelle des tracés SVG, ajustement de la profondeur, rendu PBR en direct et export HTML.'
   }
 ];
 
@@ -214,7 +250,13 @@ const arViewers = [
   }
 ];
 
-const template = (page) => `<!DOCTYPE html>
+const template = (page) => {
+  let pagePath = '';
+  if (viewers.some(v => v.id === page.id)) pagePath = `viewer/${page.id}`;
+  else if (converters.some(c => c.id === page.id)) pagePath = `convert/${page.id}`;
+  else if (arViewers.some(a => a.id === page.id)) pagePath = `ar-viewer/${page.id}`;
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -222,6 +264,26 @@ const template = (page) => `<!DOCTYPE html>
     <title>${page.titleEn}</title>
     <meta name="description" content="${page.descEn}">
     <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://studios-pro.com/${pagePath}" />
+    <meta property="og:title" content="${page.titleEn}" />
+    <meta property="og:description" content="${page.descEn}" />
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://studios-pro.com/${pagePath}" />
+    <meta name="twitter:title" content="${page.titleEn}" />
+    <meta name="twitter:description" content="${page.descEn}" />
+    <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+    
+    <!-- Hreflang for internationalized search results -->
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
+    <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -348,7 +410,7 @@ const template = (page) => `<!DOCTYPE html>
         }
         .cta-container {
             text-align: center;
-            margin: 70px 0;
+            margin: 70px 0 30px 0;
             padding: 48px;
             background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.1));
             border-radius: 24px;
@@ -484,6 +546,34 @@ const template = (page) => `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- FAQ Accordion Section -->
+        <div class="faq-section" style="margin-top: 60px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 40px;">
+            <h2 style="font-size: 2.2rem; margin-bottom: 30px; font-weight: 800; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center;">
+                <span data-en>Frequently Asked Questions</span>
+                <span data-fr>Questions Fréquentes</span>
+            </h2>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>Is this tool completely free to use?</span>
+                    <span data-fr>Cet outil est-il complètement gratuit ?</span>
+                </h4>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>Yes, our tools are 100% free for basic modeling, viewing, and layout creation directly inside your web browser. Premium features are available for advanced batch export.</span>
+                    <span data-fr>Oui, nos outils sont 100% gratuits pour la modélisation de base, la visualisation et la création de mises en page. Les fonctions premium sont proposées pour des exports avancés.</span>
+                </p>
+            </div>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>Are my files uploaded to a remote server?</span>
+                    <span data-fr>Mes fichiers sont-ils téléchargés sur un serveur distant ?</span>
+                </h4>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>No. All 3D rendering, drawing extrusion, and vector conversions are performed 100% locally on your computer client-side. Your private design data never leaves your device.</span>
+                    <span data-fr>Non. Tout le rendu 3D, l'extrusion de dessin et la conversion vectorielle sont exécutés à 100% localement sur votre ordinateur. Vos données privées ne quittent jamais votre appareil.</span>
+                </p>
+            </div>
+        </div>
+
         <div class="cta-container">
             <a href="/?ref=${page.ref}" class="cta-btn">
                 <span data-en>Open Free App</span>
@@ -506,6 +596,7 @@ const template = (page) => `<!DOCTYPE html>
     </script>
 </body>
 </html>`;
+};
 
 // Setup directories
 const viewerDir = path.join(__dirname, 'public/viewer');
