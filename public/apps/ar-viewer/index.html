@@ -156,6 +156,61 @@
         </div>
       </div>
 
+      <!-- ═══ Material Studio PBR ═══════════════════════════════════════ -->
+      <div id="material-studio-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Material Studio" data-en="Material Studio">Material Studio</h2>
+        <p style="font-size:10px;color:#6b7280;margin:-4px 0 10px;" class="lang-text"
+           data-fr="Appliquez un matériau réaliste au modèle instantanément."
+           data-en="Apply a realistic material to the model instantly.">Apply a realistic material to the model instantly.</p>
+        <div id="material-presets" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          <button class="mat-btn active" data-mat="original" title="Original"
+            style="background:linear-gradient(135deg,#374151,#1f2937);border:2px dashed #06b6d4;"
+            ><span style="font-size:9px;color:#9ca3af;" class="lang-text" data-fr="Original" data-en="Original">Original</span></button>
+          <button class="mat-btn" data-mat="chrome" title="Chrome"
+            style="background:linear-gradient(135deg,#e8eaf0,#9ea7b8);"
+            ><span style="font-size:9px;">Chrome</span></button>
+          <button class="mat-btn" data-mat="gold" title="Gold"
+            style="background:linear-gradient(135deg,#ffd700,#b8860b);"
+            ><span style="font-size:9px;">Gold</span></button>
+          <button class="mat-btn" data-mat="copper" title="Copper"
+            style="background:linear-gradient(135deg,#b87333,#7c4a1e);"
+            ><span style="font-size:9px;">Copper</span></button>
+          <button class="mat-btn" data-mat="carbon" title="Carbon Fiber"
+            style="background:repeating-linear-gradient(45deg,#111,#111 4px,#222 4px,#222 8px);"
+            ><span style="font-size:9px;">Carbon</span></button>
+          <button class="mat-btn" data-mat="ceramic" title="White Ceramic"
+            style="background:linear-gradient(135deg,#f8f9fa,#dee2e6);"
+            ><span style="font-size:9px;color:#333;">Ceramic</span></button>
+          <button class="mat-btn" data-mat="rubber" title="Black Rubber"
+            style="background:linear-gradient(135deg,#1a1a1a,#333);"
+            ><span style="font-size:9px;">Rubber</span></button>
+          <button class="mat-btn" data-mat="wood" title="Oak Wood"
+            style="background:linear-gradient(135deg,#8B6914,#5c4008);"
+            ><span style="font-size:9px;">Wood</span></button>
+        </div>
+      </div>
+
+      <!-- ═══ Exploded View ══════════════════════════════════════════════ -->
+      <div id="exploded-view-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Vue Exposée (Exploded View)" data-en="Exploded View">Exploded View</h2>
+        <p style="font-size:10px;color:#6b7280;margin:-4px 0 10px;" class="lang-text"
+           data-fr="Séparez les composants du modèle visuellement (STL/OBJ)."
+           data-en="Visually separate model components (STL/OBJ).">Visually separate model components (STL/OBJ).</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
+            <span class="lang-text" data-fr="Niveau d'explosion:" data-en="Explode level:">Explode level:</span>
+            <span id="explode-val">0%</span>
+          </div>
+          <input type="range" id="explode-slider" min="0" max="100" step="5" value="0" class="custom-slider">
+          <button id="apply-explode-btn"
+            style="margin-top:4px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+            class="lang-text" data-fr="Appliquer la vue" data-en="Apply Exploded View">Apply Exploded View</button>
+          <p id="explode-hint" style="font-size:10px;color:#fbbf24;display:none;" class="lang-text"
+             data-fr="Chargez un fichier STL ou OBJ pour utiliser la vue exposée."
+             data-en="Load an STL or OBJ file to use Exploded View.">Load an STL or OBJ file to use Exploded View.</p>
+        </div>
+      </div>
+
       <!-- QR Code (for Desktop to Mobile Transfer) -->
       <div id="qr-section" class="panel-section" style="display: none;">
         <h2 class="lang-text" data-fr="Scanner avec votre Téléphone" data-en="Scan with your Phone">Scan with your Phone</h2>
@@ -599,6 +654,9 @@
 
     // Customization & Premium Controls Integration
     let originalColors = [];
+    let originalMetalness = [];
+    let originalRoughness = [];
+    let activeMaterial = 'original';
     viewer.addEventListener('load', () => {
       // 1. Calculate & display dimensions
       try {
@@ -638,19 +696,40 @@
         document.getElementById('model-dimensions').textContent = "-";
       }
 
-      // 2. Store original material colors for reset functionality
+      // 2. Store original PBR values (color, metalness, roughness)
       originalColors = [];
+      originalMetalness = [];
+      originalRoughness = [];
       if (viewer.model && viewer.model.materials) {
         viewer.model.materials.forEach((material, index) => {
-          if (material.pbrMetallicRoughness && material.pbrMetallicRoughness.baseColorFactor) {
-            originalColors[index] = [...material.pbrMetallicRoughness.baseColorFactor];
+          if (material.pbrMetallicRoughness) {
+            if (material.pbrMetallicRoughness.baseColorFactor)
+              originalColors[index] = [...material.pbrMetallicRoughness.baseColorFactor];
+            originalMetalness[index] = material.pbrMetallicRoughness.metallicFactor ?? 0;
+            originalRoughness[index] = material.pbrMetallicRoughness.roughnessFactor ?? 0.5;
           }
         });
       }
 
       // 3. Show custom panels & floating action controls
       document.getElementById('customize-section').style.display = 'block';
+      document.getElementById('material-studio-section').style.display = 'block';
+      document.getElementById('exploded-view-section').style.display = 'block';
       document.querySelector('.floating-controls').style.display = 'flex';
+      activeMaterial = 'original';
+      document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+      const origBtn = document.querySelector('.mat-btn[data-mat="original"]');
+      if (origBtn) origBtn.classList.add('active');
+      // Show hint if no Three.js scene (GLB direct)
+      const hint = document.getElementById('explode-hint');
+      const applyBtn = document.getElementById('apply-explode-btn');
+      if (!currentThreeScene) {
+        if (hint) hint.style.display = 'block';
+        if (applyBtn) applyBtn.disabled = true;
+      } else {
+        if (hint) hint.style.display = 'none';
+        if (applyBtn) applyBtn.disabled = false;
+      }
       
       // 4. Apply color from query parameters if present (for shared links)
       if (queryColor) {
@@ -908,10 +987,106 @@
       if (overlay) overlay.style.display = e.target.checked ? 'block' : 'none';
     };
 
-    // ── Blueprint Grid Toggle ──────────────────────────────────────
+    // ── Blueprint Grid Toggle ──────────────────────────────────────────
     document.getElementById('cad-grid-toggle').onchange = (e) => {
       const previewArea = document.querySelector('.preview-area');
       if (previewArea) previewArea.classList.toggle('grid-active', e.target.checked);
+    };
+
+    // ══════════════════════════════════════════════════════════════════════
+    // MATERIAL STUDIO PBR
+    // ══════════════════════════════════════════════════════════════════════
+    const MATERIAL_PRESETS = {
+      original: null,
+      chrome:  { metalness: 1.0, roughness: 0.05, color: [0.88, 0.90, 0.95, 1.0] },
+      gold:    { metalness: 1.0, roughness: 0.12, color: [1.00, 0.78, 0.10, 1.0] },
+      copper:  { metalness: 1.0, roughness: 0.28, color: [0.72, 0.45, 0.20, 1.0] },
+      carbon:  { metalness: 0.6, roughness: 0.08, color: [0.04, 0.04, 0.05, 1.0] },
+      ceramic: { metalness: 0.0, roughness: 0.04, color: [0.96, 0.96, 0.97, 1.0] },
+      rubber:  { metalness: 0.0, roughness: 0.98, color: [0.08, 0.08, 0.08, 1.0] },
+      wood:    { metalness: 0.0, roughness: 0.88, color: [0.55, 0.30, 0.10, 1.0] }
+    };
+
+    function applyMaterialPreset(presetKey) {
+      activeMaterial = presetKey;
+      if (!viewer.model || !viewer.model.materials) return;
+      const preset = MATERIAL_PRESETS[presetKey];
+      viewer.model.materials.forEach((mat, idx) => {
+        if (!mat.pbrMetallicRoughness) return;
+        if (preset === null) {
+          // Restore original
+          const origC = originalColors[idx] || [1,1,1,1];
+          mat.pbrMetallicRoughness.setBaseColorFactor(origC);
+          if (mat.pbrMetallicRoughness.setMetallicFactor)  mat.pbrMetallicRoughness.setMetallicFactor(originalMetalness[idx] ?? 0);
+          if (mat.pbrMetallicRoughness.setRoughnessFactor) mat.pbrMetallicRoughness.setRoughnessFactor(originalRoughness[idx] ?? 0.5);
+        } else {
+          if (preset.color) mat.pbrMetallicRoughness.setBaseColorFactor(preset.color);
+          if (mat.pbrMetallicRoughness.setMetallicFactor)  mat.pbrMetallicRoughness.setMetallicFactor(preset.metalness);
+          if (mat.pbrMetallicRoughness.setRoughnessFactor) mat.pbrMetallicRoughness.setRoughnessFactor(preset.roughness);
+        }
+      });
+    }
+
+    document.querySelectorAll('.mat-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyMaterialPreset(btn.getAttribute('data-mat'));
+      };
+    });
+
+    // ══════════════════════════════════════════════════════════════════════
+    // EXPLODED VIEW
+    // ══════════════════════════════════════════════════════════════════════
+    const explodeSlider = document.getElementById('explode-slider');
+    const explodeVal    = document.getElementById('explode-val');
+    explodeSlider.oninput = (e) => {
+      explodeVal.textContent = e.target.value + '%';
+    };
+
+    // Store original mesh positions for explode/reset
+    let origPositions = new Map();
+
+    document.getElementById('apply-explode-btn').onclick = () => {
+      if (!currentThreeScene) return;
+      const factor = parseFloat(explodeSlider.value) / 100;
+
+      // Calculate scene center
+      const center = new THREE.Vector3();
+      let meshCount = 0;
+      currentThreeScene.traverse(obj => {
+        if (obj.isMesh) {
+          obj.geometry.computeBoundingBox();
+          const c = new THREE.Vector3();
+          obj.geometry.boundingBox.getCenter(c);
+          obj.localToWorld(c);
+          center.add(c);
+          meshCount++;
+        }
+      });
+      if (meshCount > 0) center.divideScalar(meshCount);
+
+      // Store originals on first call
+      currentThreeScene.traverse(obj => {
+        if (obj.isMesh) {
+          if (!origPositions.has(obj.uuid)) {
+            origPositions.set(obj.uuid, obj.position.clone());
+          }
+          const orig = origPositions.get(obj.uuid);
+          const dir = new THREE.Vector3();
+          obj.geometry.computeBoundingBox();
+          const meshCenter = new THREE.Vector3();
+          obj.geometry.boundingBox.getCenter(meshCenter);
+          obj.localToWorld(meshCenter.clone());
+          dir.subVectors(orig, center).normalize();
+          const magnitude = factor * 0.5; // 0.5 = max explode distance in scene units
+          obj.position.copy(orig).addScaledVector(dir, magnitude);
+        }
+      });
+
+      // Re-export and reload
+      showLoader(currentLang === 'fr' ? 'Calcul de la vue exposée...' : 'Computing exploded view...');
+      exportAndUploadScene(currentThreeScene, currentModelName, true);
     };
 
     // ── Live dimension update on camera change ─────────────────────

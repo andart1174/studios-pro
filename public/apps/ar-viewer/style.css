@@ -586,7 +586,39 @@ body, html {
   }
 }
 
-/* Holographic HUD CAD Dimension Labels & Grid */
+/* Material Studio preset buttons */
+.mat-btn {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.mat-btn:hover {
+  border-color: rgba(6, 182, 212, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.mat-btn.active {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+/* Apply explode button disabled state */
+#apply-explode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#apply-explode-btn:not(:disabled):hover {
+  background: linear-gradient(135deg, #818cf8, #6366f1) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
 .hud-dim-label {
   background: rgba(6, 182, 212, 0.85);
   backdrop-filter: blur(4px);
