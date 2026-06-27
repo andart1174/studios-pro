@@ -1051,44 +1051,72 @@
       };
     }
 
-    // Upload to tmpfiles.org to generate temporary AR shareable link
+    // Upload to generate temporary AR shareable link (dual-service fallback)
     async function generateARShareLink(file, fileName) {
-      // If mobile, don't show or generate QR code since user is already on mobile!
+      // If mobile, skip QR generation (user is already on mobile!)
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
         return;
       }
- 
+
       qrSection.style.display = 'block';
       qrLoading.style.display = 'flex';
       qrCodeImg.style.display = 'none';
- 
+      // Remove any previous error messages
+      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+
+      let directDlUrl = null;
+
+      // ── Service 1: tmpfiles.org via Netlify proxy (existing) ──────────
       try {
-        const formData = new FormData();
-        formData.append('file', file, fileName);
- 
-        const response = await fetch('/api/proxy/api/v1/upload', {
+        const fd1 = new FormData();
+        fd1.append('file', file, fileName);
+        const r1 = await fetch('/api/proxy/api/v1/upload', {
           method: 'POST',
-          body: formData
+          body: fd1,
+          signal: AbortSignal.timeout(18000)   // 18s timeout
         });
- 
-        const json = await response.json();
-        if (json.status === 'success') {
-          const rawUrl = json.data.url;
-          const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          lastShareUrl = directDlUrl;
-          
-          updateQRCodeWithColorParam(directDlUrl, 'original');
-        } else {
-          throw new Error("Upload response failed");
+        if (r1.ok) {
+          const json = await r1.json();
+          if (json.status === 'success') {
+            directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          }
         }
-      } catch (err) {
-        console.error("Failed to generate QR transfer link:", err);
+      } catch(e) {
+        console.warn('Service 1 (tmpfiles.org) failed:', e.message);
+      }
+
+      // ── Service 2: litterbox.catbox.moe (free 72h hosting, CORS OK) ──
+      if (!directDlUrl) {
+        try {
+          const fd2 = new FormData();
+          fd2.append('reqtype', 'fileupload');
+          fd2.append('time', '72h');
+          fd2.append('fileToUpload', file, fileName);
+          const r2 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+            method: 'POST',
+            body: fd2,
+            signal: AbortSignal.timeout(30000)   // 30s timeout (larger files)
+          });
+          if (r2.ok) {
+            const urlText = (await r2.text()).trim();
+            if (urlText.startsWith('https://')) directDlUrl = urlText;
+          }
+        } catch(e) {
+          console.warn('Service 2 (litterbox.catbox.moe) failed:', e.message);
+        }
+      }
+
+      // ── Result ────────────────────────────────────────────────────────
+      if (directDlUrl) {
+        lastShareUrl = directDlUrl;
+        updateQRCodeWithColorParam(directDlUrl, 'original');
+      } else {
         qrLoading.style.display = 'none';
         const fallbackText = document.createElement('p');
         fallbackText.className = 'qr-error-msg';
-        fallbackText.textContent = currentLang === 'fr' 
+        fallbackText.textContent = currentLang === 'fr'
           ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
           : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
         qrSection.appendChild(fallbackText);
