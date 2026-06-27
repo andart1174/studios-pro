@@ -607,7 +607,7 @@ body, html {
   display: block;
 }
 
-#viewer.grid-active {
+.preview-area.grid-active {
   background-color: #05070c !important;
   background-image: 
     linear-gradient(rgba(6, 182, 212, 0.08) 1px, transparent 1px),
