@@ -585,3 +585,33 @@ body, html {
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
   }
 }
+
+/* Holographic HUD CAD Dimension Labels & Grid */
+.hud-dim-label {
+  background: rgba(6, 182, 212, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid #06b6d4;
+  color: white;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  transition: opacity 0.3s ease;
+  display: none;
+  z-index: 10;
+}
+.hud-dim-label.visible {
+  display: block;
+}
+
+#viewer.grid-active {
+  background-color: #05070c !important;
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: center;
+}

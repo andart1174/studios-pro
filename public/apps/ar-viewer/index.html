@@ -103,6 +103,57 @@
           </div>
           <input type="range" id="exposure-slider" min="0.2" max="2" step="0.1" value="1.0" class="custom-slider">
         </div>
+
+        <!-- CAD Dimensions & Grid Toggles -->
+        <div class="custom-control-group">
+          <label class="control-label lang-text" data-fr="Afișare CAD:" data-en="CAD Inspection:">CAD Inspection:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
+              <input type="checkbox" id="cad-box-toggle" style="accent-color: #06b6d4;">
+              <span class="lang-text" data-fr="Afișează cotele 3D (CAD Bounding Box)" data-en="Show Bounding Box (CAD 3D)">Show Bounding Box (CAD 3D)</span>
+            </label>
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
+              <input type="checkbox" id="cad-grid-toggle" style="accent-color: #06b6d4;">
+              <span class="lang-text" data-fr="Grilă podea luminoasă (Blueprint)" data-en="Glowing floor grid (Blueprint)">Glowing floor grid (Blueprint)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Advanced Rotation Controls -->
+        <div class="custom-control-group">
+          <label class="control-label lang-text" data-fr="Control Rotație:" data-en="Rotation Controls:">Rotation Controls:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <label style="font-size: 11px; color: #9ca3af;" class="lang-text" data-fr="Mod rotație:" data-en="Rotation style:">Rotation style:</label>
+              <select id="rot-style-select" style="font-size: 11px; background: #111827; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 4px;">
+                <option value="continuous" class="lang-text" data-fr="Continuu" data-en="Continuous">Continuous</option>
+                <option value="swing" class="lang-text" data-fr="Pendul / Swing" data-en="Swing / Pendulum">Swing / Pendulum</option>
+              </select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af;">
+                <span class="lang-text" data-fr="Viteză rotație:" data-en="Rotation speed:">Rotation speed:</span>
+                <span id="rot-speed-val">1.0x</span>
+              </div>
+              <input type="range" id="rot-speed-slider" min="0.1" max="3" step="0.1" value="1.0" class="custom-slider" style="height: 4px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mockup Capture Options -->
+        <div class="custom-control-group">
+          <label class="control-label lang-text" data-fr="Opțiuni Captură PNG:" data-en="PNG Export Options:">PNG Export Options:</label>
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
+              <input type="checkbox" id="mockup-transparent-toggle" checked style="accent-color: #06b6d4;">
+              <span class="lang-text" data-fr="Fundal transparent" data-en="Transparent background">Transparent background</span>
+            </label>
+            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
+              <input type="checkbox" id="mockup-shadows-toggle" checked style="accent-color: #06b6d4;">
+              <span class="lang-text" data-fr="Păstrează umbrele soft" data-en="Keep soft shadows">Keep soft shadows</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- QR Code (for Desktop to Mobile Transfer) -->
@@ -177,6 +228,11 @@
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
         
+        <!-- Holographic HUD CAD Dimension Labels -->
+        <div slot="hotspot-hud-x" id="hud-label-x" class="hud-dim-label">X: -</div>
+        <div slot="hotspot-hud-y" id="hud-label-y" class="hud-dim-label">Y: -</div>
+        <div slot="hotspot-hud-z" id="hud-label-z" class="hud-dim-label">Z: -</div>
+
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -552,7 +608,27 @@
               return `${(val * 100).toFixed(1)} cm`;
             }
           };
-          document.getElementById('model-dimensions').textContent = `${formatDim(dimensions.x)} x ${formatDim(dimensions.y)} x ${formatDim(dimensions.z)}`;
+          const formattedText = `${formatDim(dimensions.x)} x ${formatDim(dimensions.y)} x ${formatDim(dimensions.z)}`;
+          document.getElementById('model-dimensions').textContent = formattedText;
+
+          // Holographic HUD labels text
+          document.getElementById('hud-label-x').textContent = `X: ${formatDim(dimensions.x)}`;
+          document.getElementById('hud-label-y').textContent = `Y: ${formatDim(dimensions.y)}`;
+          document.getElementById('hud-label-z').textContent = `Z: ${formatDim(dimensions.z)}`;
+
+          // Position HUD hotspots on model bounding box faces
+          viewer.updateHotspot({
+            name: 'hotspot-hud-x',
+            position: `0 ${-dimensions.y / 2} ${dimensions.z / 2}`
+          });
+          viewer.updateHotspot({
+            name: 'hotspot-hud-y',
+            position: `${dimensions.x / 2} 0 0`
+          });
+          viewer.updateHotspot({
+            name: 'hotspot-hud-z',
+            position: `0 ${-dimensions.y / 2} ${-dimensions.z / 2}`
+          });
         }
       } catch (err) {
         console.error("Error reading model dimensions:", err);
@@ -705,44 +781,136 @@
       exposureVal.textContent = val.toFixed(1);
     };
 
+    // ── Rotation speed & style state ──────────────────────────────
+    let rotSpeedVal = 1.0;
+    let rotStyleVal = 'continuous';
+    let swingAngle = 0;
+    let swingDir = 1;
+    let swingRafId = null;
+
+    function applyRotationDelay() {
+      // model-viewer auto-rotate-delay controls perceived speed (lower = faster)
+      const base = 3000;
+      viewer.setAttribute('auto-rotate-delay', String(Math.round(base / rotSpeedVal)));
+    }
+
+    function startSwingMode() {
+      viewer.removeAttribute('auto-rotate');
+      const maxAngle = 40; // degrees
+      const step = 0.4 * rotSpeedVal;
+      function swing() {
+        swingAngle += step * swingDir;
+        if (Math.abs(swingAngle) >= maxAngle) swingDir *= -1;
+        viewer.setAttribute('camera-orbit', `${swingAngle}deg 75deg auto`);
+        swingRafId = requestAnimationFrame(swing);
+      }
+      swingRafId = requestAnimationFrame(swing);
+    }
+
+    function stopSwingMode() {
+      if (swingRafId) { cancelAnimationFrame(swingRafId); swingRafId = null; }
+      viewer.setAttribute('camera-orbit', 'auto auto auto');
+    }
+
     // Auto-Rotate floating button binding
     const rotateBtn = document.getElementById('rotate-btn');
     rotateBtn.onclick = () => {
       const active = rotateBtn.classList.toggle('active');
       if (active) {
-        viewer.setAttribute('auto-rotate', '');
+        stopSwingMode();
+        if (rotStyleVal === 'swing') {
+          startSwingMode();
+        } else {
+          viewer.setAttribute('auto-rotate', '');
+          applyRotationDelay();
+        }
       } else {
+        stopSwingMode();
         viewer.removeAttribute('auto-rotate');
       }
     };
 
-    // Screenshot floating button binding
+    // Rotation speed slider
+    const rotSpeedSlider = document.getElementById('rot-speed-slider');
+    const rotSpeedDisplay = document.getElementById('rot-speed-val');
+    rotSpeedSlider.oninput = (e) => {
+      rotSpeedVal = parseFloat(e.target.value);
+      rotSpeedDisplay.textContent = rotSpeedVal.toFixed(1) + 'x';
+      if (rotateBtn.classList.contains('active')) {
+        if (rotStyleVal === 'swing') {
+          stopSwingMode(); startSwingMode();
+        } else {
+          applyRotationDelay();
+        }
+      }
+    };
+
+    // Rotation style selector (continuous / swing)
+    const rotStyleSelect = document.getElementById('rot-style-select');
+    rotStyleSelect.onchange = (e) => {
+      rotStyleVal = e.target.value;
+      if (rotateBtn.classList.contains('active')) {
+        stopSwingMode();
+        viewer.removeAttribute('auto-rotate');
+        if (rotStyleVal === 'swing') {
+          startSwingMode();
+        } else {
+          viewer.setAttribute('auto-rotate', '');
+          applyRotationDelay();
+        }
+      }
+    };
+
+    // ── Screenshot / Mockup PNG capture ───────────────────────────
     const screenshotBtn = document.getElementById('screenshot-btn');
     screenshotBtn.onclick = async () => {
       try {
         showLoader(currentLang === 'fr' ? "Capture de la photo..." : "Capturing photo...");
-        // Tiny timeout to let UI update and show spinner
         await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Render current 3D canvas view to high-quality PNG Blob
+
+        const wantTransparent = document.getElementById('mockup-transparent-toggle').checked;
+        const wantShadows    = document.getElementById('mockup-shadows-toggle').checked;
+
+        // Temporarily adjust shadows if transparent bg requested
+        const origShadow = viewer.shadowIntensity;
+        if (wantTransparent && !wantShadows) viewer.shadowIntensity = 0;
+
+        // toBlob supports withCredentials – transparency depends on renderer bg
         const blob = await viewer.toBlob({ mimeType: 'image/png', idealAspect: true });
-        
+
+        // Restore shadows
+        if (wantTransparent && !wantShadows) viewer.shadowIntensity = origShadow;
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const baseName = modelNameEl.textContent.replace(/\.[^/.]+$/, "");
-        a.download = `${baseName}_ar_capture.png`;
+        const baseName = modelNameEl.textContent.replace(/\.[^/.]+$/, '');
+        const suffix = wantTransparent ? '_transparent' : '_render';
+        a.download = `${baseName}${suffix}.png`;
         document.body.appendChild(a);
         a.click();
-        
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         hideLoader();
       } catch (err) {
-        console.error("Failed to capture image:", err);
+        console.error('Failed to capture image:', err);
         hideLoader();
-        alert(currentLang === 'fr' ? "Erreur lors de la capture d'image." : "Error while capturing image.");
+        alert(currentLang === 'fr' ? "Erreur lors de la capture d'image." : 'Error while capturing image.');
       }
+    };
+
+    // ── CAD Bounding Box Toggle ────────────────────────────────────
+    document.getElementById('cad-box-toggle').onchange = (e) => {
+      const labels = ['hud-label-x', 'hud-label-y', 'hud-label-z'];
+      labels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('visible', e.target.checked);
+      });
+    };
+
+    // ── Blueprint Grid Toggle ──────────────────────────────────────
+    document.getElementById('cad-grid-toggle').onchange = (e) => {
+      viewer.classList.toggle('grid-active', e.target.checked);
     };
 
     // Shared QR code generator helper incorporating dynamic color params
