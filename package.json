@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node generate_programmatic_seo.cjs && vite build && node ping_indexnow.cjs",
+    "build": "node generate_faq_meta.cjs && node generate_programmatic_seo.cjs && vite build && node ping_indexnow.cjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

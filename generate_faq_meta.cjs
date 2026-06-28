@@ -37,6 +37,80 @@ const faqHtml = `<!DOCTYPE html>
         .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         .lang-btn.active { background: white; color: black; border-color: white; }
     </style>
+
+  <!-- Schema.org FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Do I need to install any software to use Studios-Pro?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Studios-Pro is a 100% browser-based platform. Whether you are analyzing CAD data in Jewelry Maker Pro, or recording videos in 4D Figure Builder, all computations are securely handled within your web browser."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What file formats can I export my 3D models in?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Our tools support industry-standard formats including OBJ, STL, GLB, and PLY for 3D printing and web visualization. For 2D vector applications like Vector CNC or Design Pro Studio, you can export scale-accurate SVG and DXF files."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my generated content and 3D data private?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Since computations run locally on your device via our advanced WebGL architecture, none of your geometric designs or uploaded photos are stored on our servers. Your architectural floorplans and AI prompts remain completely secure."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the payment system work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The platform is free to explore and design within. However, to export, download, or record final production files (like 3D STLs, high-res videos, or vectorized DXFs), you must activate a Premium subscription which unlocks the download triggers across all our 14 compartments."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the price of Studios-Pro Premium?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Studios-Pro Premium costs $20 USD per month and gives you unlimited exports across all 14 creative studios including 3D Studio, DFX Studio, Vector CNC, AI Depth Maps, Jewelry Maker Pro, Maker Studio 7, and more."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use Studios-Pro on mobile devices?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Studios-Pro is fully responsive and works on modern mobile browsers. However, for the best experience with complex 3D modeling tasks, we recommend using a desktop or laptop computer with a dedicated GPU."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the difference between free and premium?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Free users get 2 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB 3D exports, SVG/DXF vector exports, G-code for CNC machines, high-resolution video recordings, and priority support."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Studios-Pro work for 3D printing?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Studios-Pro is specifically designed for 3D printing workflows. You can design models in 3D Studio, generate depth maps for lithophane printing, create parametric boxes in Maker Studio 7, design custom jewelry in Jewelry Maker Pro, and export directly to STL format compatible with all 3D printers."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body class="lang-en">
     <nav class="nav">
@@ -76,6 +150,22 @@ const faqHtml = `<!DOCTYPE html>
                 <h3>Q4: How does the payment system work?</h3>
                 <p><strong>A4:</strong> The platform is free to explore and design within. However, to export, download, or record final production files (like 3D STLs, high-res videos, or vectorized DXFs), you must activate a Premium subscription which unlocks the download triggers across all our 14 compartments.</p>
             </div>
+            <div class="question">
+                <h3>Q5: What is the price of Studios-Pro Premium?</h3>
+                <p><strong>A5:</strong> Studios-Pro Premium costs $20 USD per month and gives you unlimited exports across all 14 creative studios.</p>
+            </div>
+            <div class="question">
+                <h3>Q6: Can I use Studios-Pro on mobile devices?</h3>
+                <p><strong>A6:</strong> Yes! Studios-Pro is fully responsive. However, for complex 3D modeling, we recommend a desktop computer with a dedicated GPU.</p>
+            </div>
+            <div class="question">
+                <h3>Q7: What is the difference between free and premium?</h3>
+                <p><strong>A7:</strong> Free users get 2 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB, SVG/DXF, G-code, and high-resolution video recordings.</p>
+            </div>
+            <div class="question">
+                <h3>Q8: Does Studios-Pro work for 3D printing?</h3>
+                <p><strong>A8:</strong> Absolutely! Studios-Pro is designed for 3D printing workflows — from Jewelry Maker Pro to Maker Studio 7 and the main 3D Studio — all exporting STL files compatible with all 3D printers.</p>
+            </div>
         </div>
 
         <div data-fr>
@@ -92,8 +182,24 @@ const faqHtml = `<!DOCTYPE html>
                 <p><strong>R3:</strong> Oui ! Étant donné que les calculs s'exécutent localement sur votre appareil via notre architecture WebGL avancée, aucune de vos conceptions géométriques n'est stockée sur nos serveurs. Vos plans architecturaux restent totalement sécurisés.</p>
             </div>
             <div class="question">
-                <h3>Q4: Comment fonctionne le système de paiement ?</h3>
-                <p><strong>R4:</strong> La plateforme est gratuite pour explorer et concevoir. Cependant, pour exporter, télécharger ou enregistrer des fichiers de production finaux (comme les STL 3D, les vidéos HD ou les DXF vectorisés), vous devez activer un abonnement Premium qui débloque les exportations sur l'ensemble de nos 14 départements.</p>
+                <h3>Q4 : Comment fonctionne le syst\u00e8me de paiement ?</h3>
+                <p><strong>R4 :</strong> La plateforme est gratuite pour explorer et concevoir. Cependant, pour exporter, t\u00e9l\u00e9charger ou enregistrer des fichiers de production finaux (comme les STL 3D, les vid\u00e9os HD ou les DXF vectoris\u00e9s), vous devez activer un abonnement Premium qui d\u00e9bloque les exportations sur l'ensemble de nos 14 d\u00e9partements.</p>
+            </div>
+            <div class="question">
+                <h3>Q5 : Quel est le prix de Studios-Pro Premium ?</h3>
+                <p><strong>R5 :</strong> Studios-Pro Premium co\u00fbte 20 $ USD par mois et vous donne des exportations illimit\u00e9es dans les 14 studios cr\u00e9atifs.</p>
+            </div>
+            <div class="question">
+                <h3>Q6 : Studios-Pro fonctionne-t-il sur les appareils mobiles ?</h3>
+                <p><strong>R6 :</strong> Oui ! Studios-Pro est enti\u00e8rement responsive. Cependant, pour les t\u00e2ches complexes de mod\u00e9lisation 3D, nous recommandons un ordinateur de bureau avec un GPU d\u00e9di\u00e9.</p>
+            </div>
+            <div class="question">
+                <h3>Q7 : Quelle est la diff\u00e9rence entre gratuit et premium ?</h3>
+                <p><strong>R7 :</strong> Les utilisateurs gratuits re\u00e7oivent 2 exportations pour tester la plateforme. Les utilisateurs Premium b\u00e9n\u00e9ficient d'exportations illimit\u00e9es dans les 14 studios, y compris STL/OBJ/GLB, SVG/DXF, G-code et enregistrements vid\u00e9o haute r\u00e9solution.</p>
+            </div>
+            <div class="question">
+                <h3>Q8 : Studios-Pro est-il adapt\u00e9 \u00e0 l'impression 3D ?</h3>
+                <p><strong>R8 :</strong> Absolument ! Studios-Pro est con\u00e7u pour les flux de travail d'impression 3D — de Jewelry Maker Pro \u00e0 Maker Studio 7 et le Studio 3D principal — tous exportant des fichiers STL compatibles avec toutes les imprimantes 3D.</p>
             </div>
         </div>
     </div>
