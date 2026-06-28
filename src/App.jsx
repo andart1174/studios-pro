@@ -2093,7 +2093,7 @@ const StudiosPro = () => {
         )}
         {is3DViewerOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/studio-3d-viewer/index.html" className="studio-iframe" title="Studio 3D Viewer" />
+            <iframe src={`/apps/studio-3d-viewer/index.html?lang=${lang}${new URLSearchParams(window.location.search).get('file_url') ? '&file_url=' + encodeURIComponent(new URLSearchParams(window.location.search).get('file_url')) : ''}`} className="studio-iframe" title="Studio 3D Viewer" />
           </motion.div>
         )}
         {isARViewerOpen && (

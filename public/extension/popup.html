@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 280px;
+      padding: 16px;
+      background: #090d16;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+    .logo-img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00f3ff, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    .desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+    .instructions {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .step {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 6px;
+    }
+    .step:last-child {
+      margin-bottom: 0;
+    }
+    .number {
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .btn {
+      display: block;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="icon.png" class="logo-img" alt="Logo">
+    <h1 class="title">Studios-Pro Previewer</h1>
+  </div>
+  
+  <p class="desc">Quickly preview 3D models and CAD vector designs right in your browser without downloading.</p>
+  
+  <div class="instructions">
+    <div class="step">
+      <span class="number">1</span>
+      <span>Find any download link to a `.stl`, `.obj`, `.glb`, or `.dxf` file.</span>
+    </div>
+    <div class="step">
+      <span class="number">2</span>
+      <span>Right-click on the link.</span>
+    </div>
+    <div class="step">
+      <span class="number">3</span>
+      <span>Select <strong>"Preview 3D/CAD in Studios-Pro"</strong>.</span>
+    </div>
+  </div>
+  
+  <a href="https://studios-pro.com" target="_blank" class="btn">Launch Studios-Pro App</a>
+</body>
+</html>

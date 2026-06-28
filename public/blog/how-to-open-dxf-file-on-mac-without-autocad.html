@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Open DXF Files on Mac Without AutoCAD | Studios-Pro</title>
+    <meta name="description" content="Learn how to open and view DXF CAD drawings on macOS for free without installing AutoCAD. Use our drag-and-drop interactive online DXF viewer.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.5rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.6rem; margin-top: 40px; color: white; }
+        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        .steps-container { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 24px; margin: 30px 0; }
+        .step-item { display: flex; gap: 16px; margin-bottom: 20px; }
+        .step-item:last-child { margin-bottom: 0; }
+        .step-number { background: var(--accent); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; }
+        .step-text h3 { margin: 0 0 6px 0; font-size: 1.15rem; color: white; }
+        .step-text p { margin: 0; font-size: 0.95rem; color: var(--muted); }
+
+        .viewer-frame-container { width: 100%; height: 600px; border-radius: 18px; border: 1px solid rgba(59,130,246,0.3); overflow: hidden; margin: 40px 0; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .viewer-iframe { width: 100%; height: 100%; border: none; }
+
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-btn.active { background: white; color: black; border-color: white; }
+    </style>
+    <!-- Structured Data HowTo JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to Open DXF Files on Mac Without AutoCAD",
+      "description": "A quick, free method to view DXF CAD drawings on macOS using Studios-Pro's online CAD tool without installing heavy software.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Access the Online DXF Viewer",
+          "text": "Scroll down to the interactive DXF viewer embedded on this page.",
+          "url": "https://studios-pro.com/blog/how-to-open-dxf-file-on-mac-without-autocad.html#viewer"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Upload your DXF drawing",
+          "text": "Drag your .dxf file from your Finder and drop it into the designated viewer window.",
+          "url": "https://studios-pro.com/blog/how-to-open-dxf-file-on-mac-without-autocad.html#viewer"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Inspect and Orbit the Model",
+          "text": "Use your mouse left-click to orbit, right-click to pan, and scroll wheel to zoom inside the CAD geometry.",
+          "url": "https://studios-pro.com/blog/how-to-open-dxf-file-on-mac-without-autocad.html#viewer"
+        }
+      ]
+    }
+    </script>
+
+    <meta property="og:title" content="Studios-Pro | Professional 3D & AI Design Generator">
+    <meta property="og:description" content="A complete tutorial and guide on using Studios-Pro's suite of creative tools ranging from CNC Vector paths to AI Depth maps and 4D Music Visualization.">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 20px; align-items:center;">
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>
+            <span data-en>How to Open DXF Files on Mac Without AutoCAD</span>
+            <span data-fr>Comment ouvrir un fichier DXF sur Mac sans AutoCAD</span>
+        </h1>
+        
+        <p>
+            <span data-en>Receiving a `.dxf` (Drawing Exchange Format) file on macOS can be challenging if you don't have active professional CAD applications like AutoCAD or Solidworks installed. Installing them is slow, expensive, and takes significant hard drive space.</span>
+            <span data-fr>Recevoir un fichier `.dxf` sur macOS peut être un défi si vous n'avez pas installé de logiciels CAO professionnels comme AutoCAD. L'installation est lente, coûteuse et consomme beaucoup d'espace disque.</span>
+        </p>
+
+        <p>
+            <span data-en>Fortunately, Studios-Pro provides a 100% free, browser-based CAD tool that opens vector DXF files in seconds on any macOS device (Macbook, iMac, Mac Mini) directly inside Safari, Chrome, or Firefox.</span>
+            <span data-fr>Heureusement, Studios-Pro propose un outil CAO 100 % gratuit basé pe navigateur qui ouvre les fichiers vectoriels DXF en quelques secondes sur n'importe quel appareil macOS.</span>
+        </p>
+
+        <div class="steps-container">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    <h3 data-en="Scroll to the Viewer">Faites défiler vers le visualiseur</h3>
+                    <p data-en="Navigate to the interactive iframe embedded below on this page.">Accédez à l'iframe interactive intégrée ci-dessous.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <h3 data-en="Drag & Drop your DXF">Glissez-déposez votre DXF</h3>
+                    <p data-en="Locate your CAD drawing in macOS Finder and drag it into the viewer container.">Localisez votre dessin CAO dans le Finder macOS et faites-le glisser.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    <h3 data-en="Inspect your Drawing">Inspectez votre dessin</h3>
+                    <p data-en="Zoom, rotate, and pan around the geometry with full controls.">Zoomez, pivotez et déplacez-vous autour de la géométrie avec des contrôles complets.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 id="viewer">
+            <span data-en="Interactive Online DXF Viewer Widget">Widget de Visualisation DXF en Ligne</span>
+            <span data-fr="Visualiseur DXF Interactif Intégré">Visualiseur DXF Interactif Intégré</span>
+        </h2>
+        
+        <div class="viewer-frame-container">
+            <iframe src="/?ref=dfx" class="viewer-iframe" title="Interactive DXF Viewer App"></iframe>
+        </div>
+
+        <h2>
+            <span data-en="Benefits of Browser-Based CAD Viewing">Advantages de la CAO sur navigateur</span>
+            <span data-fr="Avantages d'un visualiseur CAO en ligne">Avantages d'un visualiseur CAO en ligne</span>
+        </h2>
+        <ul>
+            <li data-en="No registration required to upload and view your files.">Aucune inscription requise pour charger et afficher vos fichiers.</li>
+            <li data-en="High-fidelity vector parsing matching standard CAD exports.">Analyse vectorielle haute fidélité conforme aux standards CAO.</li>
+            <li data-en="Fully secure — your files remain local and are never uploaded to a server.">Entièrement sécurisé — vos fichiers restent locaux et ne sont jamais envoyés au serveur.</li>
+        </ul>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            if(window.event && window.event.target) {
+                window.event.target.classList.add('active');
+            } else {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
+                });
+            }
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>
