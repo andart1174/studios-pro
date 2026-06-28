@@ -778,6 +778,7 @@ const StudiosPro = () => {
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
+  const [isEmbed, setIsEmbed] = useState(false);
   const scriptingIframeRef = useRef(null);
   const isIframeReadyRef = useRef(false);
   const collabMessagesRef = useRef([]);
@@ -818,7 +819,7 @@ const StudiosPro = () => {
 
   // Newsletter exit-intent trigger
   useEffect(() => {
-    if (newsletterDismissed || user) return;
+    if (newsletterDismissed || user || isEmbed) return;
     let triggered = false;
     const handleMouseLeave = (e) => {
       if (e.clientY < 10 && !triggered) {
@@ -838,7 +839,7 @@ const StudiosPro = () => {
       document.removeEventListener('mouseleave', handleMouseLeave);
       clearTimeout(timer);
     };
-  }, [newsletterDismissed, user]);
+  }, [newsletterDismissed, user, isEmbed]);
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
@@ -1289,7 +1290,11 @@ const StudiosPro = () => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     const room = params.get('room');
+    const embed = params.get('embed') === 'true';
     
+    if (embed) {
+      setIsEmbed(true);
+    }
     if (ref) {
       if (ref === 'ap3d') setIs3DOpen(true);
       if (ref === 's3dviewer') setIs3DViewerOpen(true);
@@ -1465,7 +1470,7 @@ const StudiosPro = () => {
 
   return (
     <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
-      {isAnnouncementVisible && announcement && (
+      {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
             {lang === 'fr' ? announcement.textFr : announcement.textEn}
@@ -1529,94 +1534,97 @@ const StudiosPro = () => {
         )}
       </AnimatePresence>
       {/* Navigation Top Bar */}
-      <nav className="nav-bar">
-        <div className="nav-left">
-          <div className="lang-toggle">
-            <button className={`lang-btn ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
-            <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
-          </div>
-          <button className="contact-btn-nav" onClick={() => setIsContactOpen(true)}>
-            <MessageSquare size={18} />
-            <span>{currentT.contact}</span>
-          </button>
-          <a href="/blog/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={18} />
-            <span>{currentT.blogBtn}</span>
-          </a>
-          <a href="/faq.html" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 'bold' }}>?</span>
-            <span>{currentT.faqBtn}</span>
-          </a>
-        </div>
-
-        <div className="nav-right">
-          {user ? (
-            <div className="user-controls">
-              <button
-                className={`premium-btn ${isPremium ? 'active-status' : ''}`}
-                onClick={() => redirectToStripe('premium')}
-              >
-                <CreditCard size={18} />
-                <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
-              </button>
-              {isPremium && premiumUntil && (
-                <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                  <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
-                    {(() => {
-                      const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
-                      return days > 0 
-                        ? `${days} ${days === 1 ? currentT.oneDayLeft : currentT.daysLeft}` 
-                        : currentT.expired;
-                    })()}
-                  </span>
-                </div>
-              )}
-              <div className="user-profile">
-                {isAdmin && (
-                  <button className="admin-nav-btn" onClick={() => setIsAdminOpen(true)} title="Admin">
-                    <Settings size={18} />
-                    <span>Admin</span>
-                  </button>
-                )}
-                <div className="user-icon"><User size={20} /></div>
-                <span className="user-email">{user.email}</span>
-                <button className="logout-btn" onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={18} /></button>
-              </div>
+      {!isEmbed && (
+        <nav className="nav-bar">
+          <div className="nav-left">
+            <div className="lang-toggle">
+              <button className={`lang-btn ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
+              <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
             </div>
-          ) : (
-            <button className="login-btn-nav" onClick={() => setIsAuthOpen(true)}>
-              <User size={18} />
-              <span>{currentT.login}</span>
+            <button className="contact-btn-nav" onClick={() => setIsContactOpen(true)}>
+              <MessageSquare size={18} />
+              <span>{currentT.contact}</span>
             </button>
-          )}
-        </div>
-      </nav>
+            <a href="/blog/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BookOpen size={18} />
+              <span>{currentT.blogBtn}</span>
+            </a>
+            <a href="/faq.html" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 'bold' }}>?</span>
+              <span>{currentT.faqBtn}</span>
+            </a>
+          </div>
 
-      <header className="header">
-        <motion.h1
-          className="title"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          Studios-Pro <span style={{ fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle' }}>(v2.0 - Single Page)</span>
-        </motion.h1>
+          <div className="nav-right">
+            {user ? (
+              <div className="user-controls">
+                <button
+                  className={`premium-btn ${isPremium ? 'active-status' : ''}`}
+                  onClick={() => redirectToStripe('premium')}
+                >
+                  <CreditCard size={18} />
+                  <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
+                </button>
+                {isPremium && premiumUntil && (
+                  <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
+                      {(() => {
+                        const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
+                        return days > 0 
+                          ? `${days} ${days === 1 ? currentT.oneDayLeft : currentT.daysLeft}` 
+                          : currentT.expired;
+                      })()}
+                    </span>
+                  </div>
+                )}
+                <div className="user-profile">
+                  {isAdmin && (
+                    <button className="admin-nav-btn" onClick={() => setIsAdminOpen(true)} title="Admin">
+                      <Settings size={18} />
+                      <span>Admin</span>
+                    </button>
+                  )}
+                  <div className="user-icon"><User size={20} /></div>
+                  <span className="user-email">{user.email}</span>
+                  <button className="logout-btn" onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={18} /></button>
+                </div>
+              </div>
+            ) : (
+              <button className="login-btn-nav" onClick={() => setIsAuthOpen(true)}>
+                <User size={18} />
+                <span>{currentT.login}</span>
+              </button>
+            )}
+          </div>
+        </nav>
+      )}
 
-        {/* Semantic SEO Description (Hidden) */}
-        <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
-          <h3>AI Design & CNC Tools: 3D Modeling, Depth Map Generation, and Vector Conversion</h3>
-          <p>Studios-Pro is a professional creative hub specializing in high-fidelity 3D rendering, AI monocular depth estimation, and technical vector exports. </p>
-          <ul>
-            <li><strong>3D Studio & New 3D 4D:</strong> Convert images to STL, OBJ, and GLB for 3D printing and animation.</li>
-            <li><strong>AI Depth Maps:</strong> Generate accurate depth maps from single photos for lithophanes and CNC relief carving.</li>
-            <li><strong>Vector CNC:</strong> Professional photo-to-vector conversion for SVG, DXF, and G-code, optimized for laser and router CNC machines.</li>
-            <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
-            <li><strong>Maker Studio 7:</strong> All-in-one generator for parametric boxes, spherical lithophanes, halftones, voronoi structures, and AI-powered PBR textures.</li>
-            <li><strong>Jewelry Maker Pro:</strong> Design custom 3D printable jewelry, rings, and accessories directly in your browser with precise CAD parameters and photo-relief mapping.</li>
-            <li><strong>Studio Pro 2:</strong> Advanced scale 4D rendering library providing real-time multifold topological mapping and physically-based material lighting for high-fidelity interactive browser experiences.</li>
-            <li><strong>Mech Gen Pro:</strong> Professional browser-based procedural mechanical part and gear generator outputting DXF/SVG for laser cutters and STL for functional resin SLA 3D printed transmissions.</li>
-          </ul>
-        </div>
+      {!isEmbed && (
+        <header className="header">
+          <motion.h1
+            className="title"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            Studios-Pro <span style={{ fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle' }}>(v2.0 - Single Page)</span>
+          </motion.h1>
+
+          {/* Semantic SEO Description (Hidden) */}
+          <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
+            <h3>AI Design & CNC Tools: 3D Modeling, Depth Map Generation, and Vector Conversion</h3>
+            <p>Studios-Pro is a professional creative hub specializing in high-fidelity 3D rendering, AI monocular depth estimation, and technical vector exports. </p>
+            <ul>
+              <li><strong>3D Studio & New 3D 4D:</strong> Convert images to STL, OBJ, and GLB for 3D printing and animation.</li>
+              <li><strong>AI Depth Maps:</strong> Generate accurate depth maps from single photos for lithophanes and CNC relief carving.</li>
+              <li><strong>Vector CNC:</strong> Professional photo-to-vector conversion for SVG, DXF, and G-code, optimized for laser and router CNC machines.</li>
+              <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
+              <li><strong>Maker Studio 7:</strong> All-in-one generator for parametric boxes, spherical lithophanes, halftones, voronoi structures, and AI-powered PBR textures.</li>
+              <li><strong>Jewelry Maker Pro:</strong> Design custom 3D printable jewelry, rings, and accessories directly in your browser with precise CAD parameters and photo-relief mapping.</li>
+              <li><strong>Studio Pro 2:</strong> Advanced scale 4D rendering library providing real-time multifold topological mapping and physically-based material lighting for high-fidelity interactive browser experiences.</li>
+              <li><strong>Mech Gen Pro:</strong> Professional browser-based procedural mechanical part and gear generator outputting DXF/SVG for laser cutters and STL for functional resin SLA 3D printed transmissions.</li>
+            </ul>
+          </div>
 
         <motion.div
           className="hero-section"
@@ -1679,6 +1687,7 @@ const StudiosPro = () => {
           </div>
         </motion.div>
       </header>
+      )}
 
       <div className="compartments-grid">
         <motion.div
@@ -2192,6 +2201,36 @@ const StudiosPro = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {isEmbed && (
+        <div style={{
+          position: 'fixed',
+          bottom: '15px',
+          right: '15px',
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(8px)',
+          padding: '8px 16px',
+          borderRadius: '30px',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          pointerEvents: 'auto'
+        }}>
+          <img src="/logo_studios_pro.png" width="18" height="18" style={{ borderRadius: '4px' }} alt="Logo" />
+          <a href="https://studios-pro.com" target="_blank" rel="noopener noreferrer" style={{
+            color: '#f8fafc',
+            textDecoration: 'none',
+            fontSize: '0.8rem',
+            fontWeight: 'bold',
+            fontFamily: 'Outfit, sans-serif'
+          }}>
+            View on Studios-Pro
+          </a>
+        </div>
+      )}
     </div>
   );
 };
