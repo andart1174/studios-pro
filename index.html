@@ -73,6 +73,78 @@
     }
   }
   </script>
+
+  <!-- Schema.org Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Studios-Pro",
+    "url": "https://studios-pro.com",
+    "logo": "https://studios-pro.com/logo_studios_pro.png",
+    "sameAs": [
+      "https://studios-pro.com"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "availableLanguage": ["English", "French"]
+    },
+    "description": "Studios-Pro is a professional creative hub for 3D design, AI Depth Maps, Vector CNC, and CAD exports — all in your browser."
+  }
+  </script>
+
+  <!-- Schema.org WebSite with SearchAction -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Studios-Pro",
+    "url": "https://studios-pro.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://studios-pro.com/blog/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <!-- Schema.org BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Studios-Pro Home",
+        "item": "https://studios-pro.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "3D Studio",
+        "item": "https://studios-pro.com/#3d-studio"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Blog",
+        "item": "https://studios-pro.com/blog/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "name": "FAQ",
+        "item": "https://studios-pro.com/faq.html"
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>

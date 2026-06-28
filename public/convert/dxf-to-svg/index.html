@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>Free DXF to SVG Converter Online | CAD to Vector | Studios-Pro</title>
+  <meta name="description" content="Convert DXF CAD files to SVG vectors online for free. Perfect for CNC, laser cutting, and web use. Professional DXF to SVG conversion with Studios-Pro." />
+  <meta name="keywords" content="dxf to svg, dxf to svg converter, convert dxf to svg, cad to vector, cad to svg, dxf converter online, free dxf to svg, laser cutting svg, cnc svg converter" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="author" content="Studios-Pro" />
+  <link rel="canonical" href="https://studios-pro.com/convert/dxf-to-svg" />
+  <link rel="icon" type="image/png" href="/logo_studios_pro.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://studios-pro.com/convert/dxf-to-svg" />
+  <meta property="og:title" content="Free DXF to SVG Converter Online | CAD to Vector | Studios-Pro" />
+  <meta property="og:description" content="Convert DXF CAD files to SVG vectors online for free. Perfect for CNC, laser cutting, and web use." />
+  <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Free DXF to SVG Converter Online | Studios-Pro" />
+  <meta name="twitter:description" content="Convert DXF CAD files to SVG vectors free online. Perfect for CNC and laser cutting." />
+  <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Schema.org HowTo -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Convert DXF to SVG Online",
+    "description": "Convert any DXF CAD file to a scalable SVG vector file for free using Studios-Pro's browser-based Vector CNC tool.",
+    "totalTime": "PT1M",
+    "estimatedCost": {
+      "@type": "MonetaryAmount",
+      "currency": "USD",
+      "value": "0"
+    },
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Open the Studios-Pro Vector CNC Tool",
+        "text": "Navigate to studios-pro.com and open the Mech Gen Pro or Vector CNC tool from the main dashboard — the dedicated DXF/SVG conversion studio.",
+        "url": "https://studios-pro.com/"
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Import your DXF CAD file",
+        "text": "Click the import button and select your DXF file. The tool parses your CAD geometry — lines, arcs, splines, and polylines — directly in the browser via WebGL."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Export as SVG",
+        "text": "Preview your converted vector geometry, then click Export as SVG. Download your scale-accurate SVG file ready for laser cutting, CNC machining, or web use."
+      }
+    ],
+    "tool": [
+      {
+        "@type": "HowToTool",
+        "name": "Studios-Pro Vector CNC / Mech Gen Pro"
+      },
+      {
+        "@type": "HowToTool",
+        "name": "Web Browser (Chrome, Firefox, Safari, Edge)"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Schema.org SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DXF to SVG Converter — Studios-Pro",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Web",
+    "url": "https://studios-pro.com/convert/dxf-to-svg",
+    "description": "Free online DXF to SVG converter. Convert CAD files to scalable vector graphics for CNC, laser cutting, and web use — directly in your browser.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Schema.org BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Studios-Pro",
+        "item": "https://studios-pro.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Convert",
+        "item": "https://studios-pro.com/convert/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "DXF to SVG",
+        "item": "https://studios-pro.com/convert/dxf-to-svg"
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #020617;
+      --surface: #0f172a;
+      --surface2: #1e293b;
+      --accent: #3b82f6;
+      --accent2: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    .nav {
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(2,6,23,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo img { border-radius: 6px; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-link:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--accent);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 100px 20px 80px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(16,185,129,0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 10% 80%, rgba(59,130,246,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.3);
+      color: #34d399;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #6ee7b7 50%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto 40px;
+    }
+    .hero-badges {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .badge span { color: #4ade80; margin-right: 5px; }
+    .cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: white;
+      padding: 16px 36px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(16,185,129,0.3);
+    }
+    .cta-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(16,185,129,0.45);
+    }
+    .cta-primary svg { width: 20px; height: 20px; }
+
+    /* SECTION SHARED */
+    section { padding: 80px 20px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #34d399;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 580px;
+      margin: 0 auto 56px;
+    }
+
+    /* FEATURES */
+    .features { background: rgba(15,23,42,0.5); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: border-color 0.3s, transform 0.3s, background 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(16,185,129,0.4);
+      background: rgba(16,185,129,0.05);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(59,130,246,0.2));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { color: var(--muted); font-size: 0.97rem; line-height: 1.65; }
+
+    /* HOW TO */
+    .how-to { border-top: 1px solid var(--border); }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+    }
+    .step-card {
+      position: relative;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 28px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .step-card:hover {
+      border-color: rgba(16,185,129,0.4);
+      transform: translateY(-4px);
+    }
+    .step-number {
+      position: absolute;
+      top: -18px; left: 28px;
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: white;
+      box-shadow: 0 0 16px rgba(16,185,129,0.5);
+    }
+    .step-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; padding-top: 6px; }
+    .step-card p { color: var(--muted); font-size: 0.95rem; line-height: 1.65; }
+
+    /* USE CASES TABLE */
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+    }
+    .use-case {
+      background: rgba(16,185,129,0.06);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .use-case-icon { font-size: 2rem; margin-bottom: 12px; }
+    .use-case h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: #6ee7b7; }
+    .use-case p { font-size: 0.9rem; color: var(--muted); }
+
+    /* FORMATS */
+    .formats-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 40px;
+    }
+    .format-tag {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 10px 22px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #6ee7b7;
+      letter-spacing: 0.04em;
+    }
+
+    /* FAQ MINI */
+    .faq-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent2);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .faq-item h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .faq-item p { color: var(--muted); font-size: 0.95rem; }
+
+    /* CTA */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(59,130,246,0.08) 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 40px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(15,23,42,0.6);
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-logo { font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.1rem; }
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { color: var(--muted); font-size: 0.85rem; }
+
+    @media (max-width: 640px) {
+      .nav { padding: 14px 20px; }
+      .nav-links .nav-link { display: none; }
+      .hero { padding: 70px 20px 60px; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="nav" aria-label="Main navigation">
+    <a href="https://studios-pro.com/" class="logo">
+      <img src="/logo_studios_pro.png" width="30" height="30" alt="Studios-Pro logo" />
+      Studios-Pro
+    </a>
+    <div class="nav-links">
+      <a href="https://studios-pro.com/" class="nav-link">Home</a>
+      <a href="https://studios-pro.com/blog/" class="nav-link">Blog</a>
+      <a href="https://studios-pro.com/faq.html" class="nav-link">FAQ</a>
+      <a href="https://studios-pro.com/" class="nav-cta">Launch App</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-eyebrow">CAD to Vector Converter</div>
+    <h1 id="hero-heading">Free DXF to SVG<br>Converter Online</h1>
+    <p class="hero-sub">
+      Convert AutoCAD DXF files to clean, scalable SVG vectors in seconds — directly in your browser.
+      Perfect for laser cutting, CNC machining, and web publishing.
+    </p>
+    <div class="hero-badges">
+      <div class="badge"><span>✓</span> 100% Free</div>
+      <div class="badge"><span>✓</span> No AutoCAD Needed</div>
+      <div class="badge"><span>✓</span> Scale-Accurate</div>
+      <div class="badge"><span>✓</span> CNC Ready</div>
+      <div class="badge"><span>✓</span> Privacy-First</div>
+    </div>
+    <a href="https://studios-pro.com/" class="cta-primary" aria-label="Launch DXF to SVG Converter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 3 21 3 21 8"></polyline>
+        <line x1="4" y1="20" x2="21" y2="3"></line>
+        <polyline points="21 16 21 21 16 21"></polyline>
+        <line x1="15" y1="15" x2="21" y2="21"></line>
+      </svg>
+      Launch DXF to SVG Converter
+    </a>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" aria-labelledby="features-heading">
+    <div class="container">
+      <div class="section-label">Tool Capabilities</div>
+      <h2 class="section-title" id="features-heading">Professional DXF to SVG Conversion</h2>
+      <p class="section-sub">From CAD to web-ready vector — with full support for DXF geometry types.</p>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">📐</div>
+          <h3>Full DXF Geometry Support</h3>
+          <p>Accurately converts DXF lines, arcs, circles, splines, polylines, and ellipses into clean SVG path data — preserving your design intent with millimeter precision.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">✂️</div>
+          <h3>Laser &amp; CNC Ready Output</h3>
+          <p>Exported SVG files include scale-accurate dimensions and clean path data — ready for immediate import into LightBurn, RDWorks, Fusion 360, and other CNC tools.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🌐</div>
+          <h3>100% Browser-Based</h3>
+          <p>No AutoCAD license needed. Your DXF files are processed locally in your browser via WebGL — no server upload, no data storage, complete privacy guaranteed.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🆓</div>
+          <h3>Free to Convert</h3>
+          <p>Two free exports included — no account required. Upgrade to Premium for $20/month to unlock unlimited DXF to SVG conversions plus all 14 Studios-Pro tools.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">⚙️</div>
+          <h3>Also Export to G-code</h3>
+          <p>Beyond SVG, Studios-Pro can also generate G-code directly from your DXF geometry — ready for GRBL, Mach3, and other CNC controllers with no extra software.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔄</div>
+          <h3>Bidirectional Conversion</h3>
+          <p>Studios-Pro's Mech Gen Pro also generates DXF output from vector designs — making it a complete roundtrip CAD conversion solution for any workflow.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO -->
+  <section class="how-to" aria-labelledby="howto-heading">
+    <div class="container">
+      <div class="section-label">Step by Step</div>
+      <h2 class="section-title" id="howto-heading">How to Convert DXF to SVG in 3 Steps</h2>
+      <p class="section-sub">Turn your CAD file into a professional SVG in under a minute.</p>
+      <div class="steps-grid">
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <h3>Open Vector CNC or Mech Gen Pro</h3>
+          <p>Go to <a href="https://studios-pro.com/" style="color: #34d399; text-decoration: none;">studios-pro.com</a> and select the <strong>Vector CNC</strong> or <strong>Mech Gen Pro</strong> module — the CAD conversion studio with native DXF support.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <h3>Import Your DXF File</h3>
+          <p>Click <strong>Import DXF</strong> and select your AutoCAD DXF file. The tool reads all DXF entities — lines, arcs, splines, blocks — and renders them instantly using WebGL.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <h3>Download as SVG</h3>
+          <p>Review the converted geometry, scale if needed, then click <strong>Export as SVG</strong>. Your scale-accurate SVG file downloads to your device ready for laser cutting or web use.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section style="padding: 80px 20px; background: rgba(15,23,42,0.4); border-top: 1px solid var(--border);" aria-labelledby="usecases-heading">
+    <div class="container">
+      <div class="section-label">Applications</div>
+      <h2 class="section-title" id="usecases-heading">Who Uses DXF to SVG Conversion?</h2>
+      <p class="section-sub">From hobbyists to professional engineers — CAD-to-vector conversion opens up powerful workflows.</p>
+      <div class="use-cases-grid">
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">🔦</div>
+          <h3>Laser Cutting</h3>
+          <p>Convert CAD drawings to SVG for direct import into laser cutter software like LightBurn or K40 Whisperer.</p>
+        </article>
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">⚙️</div>
+          <h3>CNC Machining</h3>
+          <p>Get clean SVG toolpaths from DXF blueprints for import into CAM software or direct G-code generation.</p>
+        </article>
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">🌐</div>
+          <h3>Web Publishing</h3>
+          <p>Publish technical drawings on the web as infinitely scalable SVG diagrams, perfectly rendered at any size.</p>
+        </article>
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">💎</div>
+          <h3>Jewelry CAD</h3>
+          <p>Convert jewelry CAD profiles from DXF to SVG for web catalogs or laser engraving production plates.</p>
+        </article>
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">🏗️</div>
+          <h3>Architecture</h3>
+          <p>Transform DXF floorplans and architectural drawings into web-friendly SVG formats for presentations and apps.</p>
+        </article>
+        <article class="use-case">
+          <div class="use-case-icon" aria-hidden="true">🖨️</div>
+          <h3>Print Production</h3>
+          <p>Convert technical DXF illustrations to SVG for high-resolution print layouts without quality loss.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMATS -->
+  <section style="padding: 60px 20px; text-align: center; border-top: 1px solid var(--border);" aria-labelledby="formats-heading">
+    <div class="container">
+      <div class="section-label">Supported Conversions</div>
+      <h2 class="section-title" id="formats-heading">DXF Input → Multiple Output Formats</h2>
+      <p class="section-sub">Studios-Pro goes beyond DXF to SVG — export to multiple formats for any workflow.</p>
+      <div class="formats-list" role="list">
+        <div class="format-tag" role="listitem">DXF → SVG</div>
+        <div class="format-tag" role="listitem">DXF → G-code</div>
+        <div class="format-tag" role="listitem">DXF → PNG</div>
+        <div class="format-tag" role="listitem">SVG → DXF</div>
+        <div class="format-tag" role="listitem">PNG → SVG</div>
+        <div class="format-tag" role="listitem">PNG → DXF</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ MINI -->
+  <section style="padding: 80px 20px; border-top: 1px solid var(--border);" aria-labelledby="faq-heading">
+    <div class="container">
+      <div class="section-label">Common Questions</div>
+      <h2 class="section-title" id="faq-heading">DXF to SVG FAQ</h2>
+      <p class="section-sub" style="margin-bottom: 40px;">Everything you need to know about converting DXF to SVG.</p>
+
+      <div class="faq-item">
+        <h3>Can I convert DXF to SVG without AutoCAD?</h3>
+        <p>Yes. Studios-Pro reads DXF files natively in the browser using WebGL — no AutoCAD license or installation of any software is required.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is the SVG output scale-accurate?</h3>
+        <p>Yes. Studios-Pro preserves the original DXF coordinate system and dimensions, producing SVG files with accurate real-world measurements — critical for CNC and laser cutting applications.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What DXF versions are supported?</h3>
+        <p>Studios-Pro supports the most common DXF versions including R12, R14, AutoCAD 2000, 2004, 2007, 2010, and 2013 entity types including LWPOLYLINE, ARC, CIRCLE, SPLINE, and TEXT.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is my DXF file uploaded to any server?</h3>
+        <p>No. Your DXF file is parsed and processed locally in your browser. Nothing is uploaded to Studios-Pro servers. Your proprietary CAD data stays completely private on your device.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" style="padding: 0;" aria-labelledby="cta-heading">
+    <div class="container" style="padding: 80px 0; text-align: center;">
+      <h2 id="cta-heading" style="font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; margin-bottom: 16px;">
+        Start Converting DXF to SVG for Free
+      </h2>
+      <p style="color: var(--muted); font-size: 1.05rem; max-width: 520px; margin: 0 auto 40px;">
+        Join thousands of CNC operators, laser cutters, and designers converting CAD files to vectors with Studios-Pro — no software, no cost to start.
+      </p>
+      <a href="https://studios-pro.com/" class="cta-primary" aria-label="Launch DXF to SVG Converter for free">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+        </svg>
+        Launch DXF to SVG Converter — Free
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <a href="https://studios-pro.com/" class="footer-logo">Studios-Pro</a>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="https://studios-pro.com/">Home</a>
+        <a href="https://studios-pro.com/blog/">Blog</a>
+        <a href="https://studios-pro.com/faq.html">FAQ</a>
+        <a href="https://studios-pro.com/convert/png-to-svg">PNG to SVG</a>
+        <a href="https://studios-pro.com/viewer/stl">STL Viewer</a>
+      </nav>
+      <p class="footer-copy">&copy; 2025 Studios-Pro. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -785,6 +785,15 @@ const StudiosPro = () => {
   const [announcement, setAnnouncement] = useState(null);
   const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(false);
 
+  // Newsletter popup state
+  const [showNewsletter, setShowNewsletter] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+  const [newsletterDismissed, setNewsletterDismissed] = useState(() => !!localStorage.getItem('nl_dismissed'));
+
+  // Social share copy feedback
+  const [linkCopied, setLinkCopied] = useState(false);
+
   useEffect(() => {
     if (!db) return;
     const fetchAnnouncement = async () => {
@@ -806,6 +815,65 @@ const StudiosPro = () => {
     };
     fetchAnnouncement();
   }, [user]);
+
+  // Newsletter exit-intent trigger
+  useEffect(() => {
+    if (newsletterDismissed || user) return;
+    let triggered = false;
+    const handleMouseLeave = (e) => {
+      if (e.clientY < 10 && !triggered) {
+        triggered = true;
+        setTimeout(() => setShowNewsletter(true), 300);
+      }
+    };
+    // Also show after 45 seconds if still on page
+    const timer = setTimeout(() => {
+      if (!triggered) {
+        triggered = true;
+        setShowNewsletter(true);
+      }
+    }, 45000);
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => {
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      clearTimeout(timer);
+    };
+  }, [newsletterDismissed, user]);
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    // Save to Firebase if available
+    if (db) {
+      try {
+        await addDoc(collection(db, 'newsletter'), {
+          email: newsletterEmail,
+          lang,
+          subscribedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Newsletter save error:', err);
+      }
+    }
+    setNewsletterSubmitted(true);
+    localStorage.setItem('nl_dismissed', '1');
+    setTimeout(() => {
+      setShowNewsletter(false);
+      setNewsletterDismissed(true);
+    }, 2500);
+  };
+
+  const handleNewsletterDismiss = () => {
+    setShowNewsletter(false);
+    setNewsletterDismissed(true);
+    localStorage.setItem('nl_dismissed', '1');
+  };
+
+  const handleShareCopy = () => {
+    navigator.clipboard.writeText('https://studios-pro.com').catch(() => {});
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   const isAdmin = user && user.email === ADMIN_EMAIL;
 
@@ -1571,6 +1639,45 @@ const StudiosPro = () => {
             </motion.div>
           )}
         </motion.div>
+
+        {/* Social Share Section */}
+        <motion.div
+          className="social-share-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <span className="social-share-label">
+            {lang === 'fr' ? '🌟 Partager avec des amis' : '🌟 Share with friends'}
+          </span>
+          <div className="social-share-buttons">
+            <a
+              id="share-twitter"
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(lang === 'fr' ? 'Découvrez Studios-Pro – Hub 3D, DFX et IA dans votre navigateur !' : 'Check out Studios-Pro – Professional 3D, DFX & AI tools in your browser!')}&url=https%3A%2F%2Fstudios-pro.com`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="share-btn share-btn-twitter"
+            >
+              𝕏 Twitter
+            </a>
+            <a
+              id="share-linkedin"
+              href={`https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fstudios-pro.com&title=Studios-Pro&summary=${encodeURIComponent(lang === 'fr' ? 'Hub créatif professionnel 3D, IA et CNC' : 'Professional 3D, AI & CNC creative hub')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="share-btn share-btn-linkedin"
+            >
+              in LinkedIn
+            </a>
+            <button
+              id="share-copy"
+              className="share-btn share-btn-copy"
+              onClick={handleShareCopy}
+            >
+              {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? '🔗 Copier le lien' : '🔗 Copy Link')}
+            </button>
+          </div>
+        </motion.div>
       </header>
 
       <div className="compartments-grid">
@@ -1814,6 +1921,144 @@ const StudiosPro = () => {
           <div className="card-label">{currentT.sandbox}</div>
         </motion.div>
       </div>
+
+      {/* Testimonials Section */}
+      <motion.section
+        className="testimonials-section"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.7 }}
+        aria-label="User Testimonials"
+      >
+        <h2 className="testimonials-title">
+          {lang === 'fr' ? '⭐ Ce que disent nos utilisateurs' : '⭐ What our users say'}
+        </h2>
+        <div className="testimonials-grid">
+          {[
+            {
+              name: 'Marc D.',
+              avatar: 'MD',
+              color: '#3b82f6',
+              en: 'Incredible tool for 3D printing prep! I designed a complete jewelry set in Jewelry Maker Pro and exported to STL in minutes.',
+              fr: 'Outil incroyable pour la préparation d\'impression 3D ! J\'ai conçu un ensemble de bijoux complet dans Jewelry Maker Pro et exporté en STL en quelques minutes.'
+            },
+            {
+              name: 'Sophie L.',
+              avatar: 'SL',
+              color: '#10b981',
+              en: 'The Vector CNC converter is a game changer for my laser cutting business. Professional SVG and DXF output every time.',
+              fr: 'Le convertisseur Vector CNC change la donne pour mon activité de découpe laser. Des sorties SVG et DXF professionnelles à chaque fois.'
+            },
+            {
+              name: 'Alex K.',
+              avatar: 'AK',
+              color: '#f59e0b',
+              en: 'Studio Pro 4D blew my mind. Real-time 4D animations directly in the browser? Nothing else comes close.',
+              fr: 'Studio Pro 4D m\'a époustouflé. Des animations 4D en temps réel directement dans le navigateur ? Rien n\'y ressemble.'
+            },
+            {
+              name: 'Camille R.',
+              avatar: 'CR',
+              color: '#8b5cf6',
+              en: 'I use the Depth Maps tool to create stunning lithophane prints. The AI accuracy is remarkable. 100% recommended!',
+              fr: 'J\'utilise l\'outil Depth Maps pour créer de magnifiques lithophanes. La précision de l\'IA est remarquable. 100% recommandé !'
+            },
+            {
+              name: 'Thomas B.',
+              avatar: 'TB',
+              color: '#ec4899',
+              en: 'Mech Gen Pro generated perfect DXF gears for my CNC router in seconds. The parametric controls are very intuitive.',
+              fr: 'Mech Gen Pro a généré des engrenages DXF parfaits pour ma fraiseuse CNC en quelques secondes. Les contrôles paramétriques sont très intuitifs.'
+            },
+            {
+              name: 'Isabelle M.',
+              avatar: 'IM',
+              color: '#06b6d4',
+              en: 'Maker Studio 7 saved me hours on my woodworking projects. The parametric box designer is flawless — I exported G-code directly!',
+              fr: 'Maker Studio 7 m\'a économisé des heures sur mes projets de menuiserie. Le designer de boîtes paramétriques est parfait — j\'ai exporté le G-code directement !'
+            }
+          ].map((testimonial, i) => (
+            <motion.div
+              key={i}
+              className="testimonial-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i }}
+              whileHover={{ y: -5, scale: 1.02 }}
+            >
+              <div className="testimonial-stars">
+                {'★★★★★'}
+              </div>
+              <p className="testimonial-text">
+                "{lang === 'fr' ? testimonial.fr : testimonial.en}"
+              </p>
+              <div className="testimonial-author">
+                <div className="testimonial-avatar" style={{ background: testimonial.color }}>
+                  {testimonial.avatar}
+                </div>
+                <span className="testimonial-name">{testimonial.name}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* Newsletter Popup */}
+      <AnimatePresence>
+        {showNewsletter && !newsletterDismissed && !user && (
+          <motion.div
+            className="newsletter-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="newsletter-modal"
+              initial={{ scale: 0.85, y: 40 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.85, y: 40 }}
+            >
+              <button className="close-btn" onClick={handleNewsletterDismiss}><X size={20} /></button>
+              {newsletterSubmitted ? (
+                <div className="newsletter-success">
+                  <div className="newsletter-success-icon">🎉</div>
+                  <h3>{lang === 'fr' ? 'Merci !' : 'Thank you!'}</h3>
+                  <p>{lang === 'fr' ? 'Vous êtes inscrit(e) ! Surveillez votre boîte mail.' : 'You\'re subscribed! Check your inbox soon.'}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="newsletter-icon">✉️</div>
+                  <h3 className="newsletter-title">
+                    {lang === 'fr' ? '1 export gratuit par semaine' : '1 free export per week'}
+                  </h3>
+                  <p className="newsletter-desc">
+                    {lang === 'fr'
+                      ? 'Inscrivez-vous à notre newsletter et recevez des astuces exclusives et des offres réservées aux abonnés.'
+                      : 'Subscribe to our newsletter and get exclusive tips and subscriber-only offers.'}
+                  </p>
+                  <form className="newsletter-form" onSubmit={handleNewsletterSubmit}>
+                    <input
+                      id="newsletter-email-input"
+                      type="email"
+                      className="newsletter-input"
+                      placeholder={lang === 'fr' ? 'Votre email...' : 'Your email...'}
+                      value={newsletterEmail}
+                      onChange={e => setNewsletterEmail(e.target.value)}
+                      required
+                    />
+                    <button type="submit" className="newsletter-submit">
+                      {lang === 'fr' ? 'S\'inscrire' : 'Subscribe'}
+                    </button>
+                  </form>
+                  <p className="newsletter-privacy">
+                    {lang === 'fr' ? '🔒 Pas de spam. Désinscription facile.' : '🔒 No spam. Unsubscribe anytime.'}
+                  </p>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isAuthOpen && (

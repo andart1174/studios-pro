@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>Free Online STL Viewer | View STL Files in Browser | Studios-Pro</title>
+  <meta name="description" content="View STL 3D model files instantly online. No software to install. Professional STL viewer with orbit, zoom, and material controls — powered by Studios-Pro." />
+  <meta name="keywords" content="stl viewer online, view stl file, stl viewer, online 3d viewer, stl file viewer, free stl viewer, open stl file browser" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="author" content="Studios-Pro" />
+  <link rel="canonical" href="https://studios-pro.com/viewer/stl" />
+  <link rel="icon" type="image/png" href="/logo_studios_pro.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://studios-pro.com/viewer/stl" />
+  <meta property="og:title" content="Free Online STL Viewer | View STL Files in Browser | Studios-Pro" />
+  <meta property="og:description" content="View STL 3D model files instantly online. No software to install. Professional STL viewer with orbit, zoom, and material controls." />
+  <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Free Online STL Viewer | Studios-Pro" />
+  <meta name="twitter:description" content="View STL 3D model files instantly online. Professional orbit, zoom, and material controls — no install needed." />
+  <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Schema.org HowTo -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to View an STL File Online",
+    "description": "Open and inspect any STL 3D model file directly in your browser using Studios-Pro's free online STL viewer.",
+    "totalTime": "PT30S",
+    "estimatedCost": {
+      "@type": "MonetaryAmount",
+      "currency": "USD",
+      "value": "0"
+    },
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Open Studios-Pro 3D Studio",
+        "text": "Navigate to studios-pro.com and click on the 3D Studio or New 3D 4D Modeling tool from the main dashboard.",
+        "url": "https://studios-pro.com/"
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Import your STL file",
+        "text": "Click the Import or Open File button and select your STL file. The WebGL renderer loads your 3D model instantly without any server upload."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Inspect and interact with your model",
+        "text": "Use orbit, pan, and zoom controls to inspect every angle of your STL model. Adjust materials, lighting, and wireframe view as needed."
+      }
+    ],
+    "tool": [
+      {
+        "@type": "HowToTool",
+        "name": "Studios-Pro 3D Studio"
+      },
+      {
+        "@type": "HowToTool",
+        "name": "Web Browser with WebGL support"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Schema.org SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "STL Viewer — Studios-Pro",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Web",
+    "url": "https://studios-pro.com/viewer/stl",
+    "description": "Free online STL file viewer. Open and inspect any STL 3D model directly in your browser with orbit, zoom, and material controls.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Schema.org BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Studios-Pro",
+        "item": "https://studios-pro.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Viewer",
+        "item": "https://studios-pro.com/viewer/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "STL Viewer",
+        "item": "https://studios-pro.com/viewer/stl"
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #020617;
+      --surface: #0f172a;
+      --surface2: #1e293b;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    .nav {
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo img { border-radius: 6px; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--accent);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 100px 20px 80px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139,92,246,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(59,130,246,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.35);
+      color: #a78bfa;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto 40px;
+    }
+    .hero-badges {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .badge span { color: #4ade80; margin-right: 5px; }
+    .cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      color: white;
+      padding: 16px 36px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(139,92,246,0.35);
+    }
+    .cta-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(139,92,246,0.5);
+    }
+    .cta-primary svg { width: 20px; height: 20px; }
+
+    /* 3D PREVIEW MOCKUP */
+    .viewer-mockup {
+      max-width: 700px;
+      margin: 60px auto 0;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .viewer-toolbar {
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px 12px 0 0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .toolbar-dot.red { background: #ef4444; }
+    .toolbar-dot.yellow { background: #eab308; }
+    .toolbar-dot.green { background: #22c55e; }
+    .toolbar-label {
+      margin-left: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .viewer-canvas {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      border-radius: 0 0 12px 12px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .viewer-canvas::before {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      border: 1px solid rgba(139,92,246,0.3);
+      transform: rotate(45deg) rotateX(60deg);
+      animation: spin3d 8s linear infinite;
+    }
+    .viewer-canvas::after {
+      content: '';
+      position: absolute;
+      width: 140px; height: 140px;
+      border: 1px solid rgba(59,130,246,0.4);
+      transform: rotate(45deg) rotateX(60deg) rotateZ(45deg);
+      animation: spin3d 12s linear infinite reverse;
+    }
+    @keyframes spin3d {
+      0% { transform: rotateX(60deg) rotateZ(0deg); }
+      100% { transform: rotateX(60deg) rotateZ(360deg); }
+    }
+    .viewer-label {
+      position: relative;
+      z-index: 2;
+      font-size: 0.85rem;
+      color: rgba(139,92,246,0.8);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* SECTION SHARED */
+    section { padding: 80px 20px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a78bfa;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 580px;
+      margin: 0 auto 56px;
+    }
+
+    /* FEATURES */
+    .features { background: rgba(15,23,42,0.5); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: border-color 0.3s, transform 0.3s, background 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(139,92,246,0.4);
+      background: rgba(139,92,246,0.06);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2));
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { color: var(--muted); font-size: 0.97rem; line-height: 1.65; }
+
+    /* HOW TO */
+    .how-to { border-top: 1px solid var(--border); }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+    }
+    .step-card {
+      position: relative;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 28px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .step-card:hover {
+      border-color: rgba(139,92,246,0.4);
+      transform: translateY(-4px);
+    }
+    .step-number {
+      position: absolute;
+      top: -18px; left: 28px;
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: white;
+      box-shadow: 0 0 16px rgba(139,92,246,0.5);
+    }
+    .step-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; padding-top: 6px; }
+    .step-card p { color: var(--muted); font-size: 0.95rem; line-height: 1.65; }
+
+    /* SPECS TABLE */
+    .specs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 40px;
+    }
+    .specs-table th, .specs-table td {
+      padding: 14px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .specs-table th {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+    }
+    .specs-table td { font-size: 0.97rem; color: var(--text); }
+    .specs-table td:first-child { color: var(--muted); }
+    .specs-table tr:last-child td { border-bottom: none; }
+    .check { color: #4ade80; font-weight: 700; }
+
+    /* CTA */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(59,130,246,0.08) 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 40px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(15,23,42,0.6);
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-logo { font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.1rem; }
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { color: var(--muted); font-size: 0.85rem; }
+
+    @media (max-width: 640px) {
+      .nav { padding: 14px 20px; }
+      .nav-links .nav-link { display: none; }
+      .hero { padding: 70px 20px 60px; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="nav" aria-label="Main navigation">
+    <a href="https://studios-pro.com/" class="logo">
+      <img src="/logo_studios_pro.png" width="30" height="30" alt="Studios-Pro logo" />
+      Studios-Pro
+    </a>
+    <div class="nav-links">
+      <a href="https://studios-pro.com/" class="nav-link">Home</a>
+      <a href="https://studios-pro.com/blog/" class="nav-link">Blog</a>
+      <a href="https://studios-pro.com/faq.html" class="nav-link">FAQ</a>
+      <a href="https://studios-pro.com/" class="nav-cta">Launch App</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-eyebrow">Free 3D Viewer</div>
+    <h1 id="hero-heading">Free Online<br>STL File Viewer</h1>
+    <p class="hero-sub">
+      Open any STL 3D model instantly in your browser. Full orbit, pan, zoom, and material controls.
+      No software to install. No file upload. 100% private.
+    </p>
+    <div class="hero-badges">
+      <div class="badge"><span>✓</span> Instant Load</div>
+      <div class="badge"><span>✓</span> No Install</div>
+      <div class="badge"><span>✓</span> WebGL Powered</div>
+      <div class="badge"><span>✓</span> Orbit &amp; Zoom</div>
+      <div class="badge"><span>✓</span> Privacy-First</div>
+    </div>
+    <a href="https://studios-pro.com/" class="cta-primary" aria-label="Launch STL Viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+      </svg>
+      Launch STL Viewer — Free
+    </a>
+
+    <!-- Viewer Mockup -->
+    <div class="viewer-mockup" aria-hidden="true">
+      <div class="viewer-toolbar">
+        <div class="toolbar-dot red"></div>
+        <div class="toolbar-dot yellow"></div>
+        <div class="toolbar-dot green"></div>
+        <span class="toolbar-label">Studios-Pro 3D Studio — model.stl</span>
+      </div>
+      <div class="viewer-canvas">
+        <span class="viewer-label">WebGL 3D Viewport</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" aria-labelledby="features-heading">
+    <div class="container">
+      <div class="section-label">Viewer Capabilities</div>
+      <h2 class="section-title" id="features-heading">Professional STL Viewer Features</h2>
+      <p class="section-sub">Everything you need to inspect and analyze your 3D models — right in the browser.</p>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔄</div>
+          <h3>Full 3D Orbit Controls</h3>
+          <p>Rotate your STL model freely in 3D space with smooth mouse and touch orbit controls. Pan, zoom, and inspect every surface and detail with precision.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">💡</div>
+          <h3>Material &amp; Lighting Controls</h3>
+          <p>Switch between wireframe, solid, and PBR material views. Adjust ambient lighting and directional shadows to reveal surface details and print quality.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">⚡</div>
+          <h3>Instant Loading</h3>
+          <p>STL files load directly in your browser using our optimized WebGL renderer. Binary and ASCII STL formats both load instantly regardless of file complexity.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔒</div>
+          <h3>100% Private — No Upload</h3>
+          <p>Your STL files never leave your device. All processing is done locally in your browser via WebGL — your proprietary 3D designs remain completely confidential.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">📏</div>
+          <h3>Model Measurements</h3>
+          <p>View bounding box dimensions, face count, and vertex count for your STL model. Verify model scale before sending to your 3D printer or CNC machine.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🖨️</div>
+          <h3>3D Print Ready</h3>
+          <p>Verify your STL model orientation and geometry before slicing. Compatible with all 3D printer brands — FDM, resin SLA, and industrial SLS workflows.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO -->
+  <section class="how-to" aria-labelledby="howto-heading">
+    <div class="container">
+      <div class="section-label">Step by Step</div>
+      <h2 class="section-title" id="howto-heading">How to View an STL File Online</h2>
+      <p class="section-sub">Open your 3D model in seconds — no download, no account required.</p>
+      <div class="steps-grid">
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <h3>Open Studios-Pro 3D Studio</h3>
+          <p>Click "Launch STL Viewer" above and navigate to the <strong>3D Studio</strong> or <strong>New 3D 4D Modeling</strong> module on the Studios-Pro dashboard.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <h3>Import Your STL File</h3>
+          <p>Click <strong>Import File</strong> and select your .stl file from your computer. Both binary and ASCII STL formats are supported and load instantly via WebGL.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <h3>Inspect &amp; Interact</h3>
+          <p>Orbit, zoom, and pan around your model. Toggle wireframe mode, adjust lighting, and verify dimensions. Export to STL, OBJ, or GLB if needed.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECS -->
+  <section style="padding: 80px 20px; background: rgba(15,23,42,0.4); border-top: 1px solid var(--border);" aria-labelledby="specs-heading">
+    <div class="container">
+      <div class="section-label">Specifications</div>
+      <h2 class="section-title" id="specs-heading">STL Viewer Technical Specs</h2>
+      <p class="section-sub">Built for professionals — from hobbyists to engineering teams.</p>
+      <table class="specs-table" aria-label="STL Viewer specifications">
+        <thead>
+          <tr>
+            <th scope="col">Feature</th>
+            <th scope="col">Details</th>
+            <th scope="col">Free</th>
+            <th scope="col">Premium</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>View STL files</td>
+            <td>Binary &amp; ASCII format support</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Orbit / Zoom / Pan</td>
+            <td>Full 6-DOF 3D controls</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Wireframe View</td>
+            <td>Toggle mesh visualization</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>PBR Material View</td>
+            <td>Physically-based rendering</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Export STL / OBJ / GLB</td>
+            <td>Download modified models</td>
+            <td>2 exports</td>
+            <td class="check">Unlimited</td>
+          </tr>
+          <tr>
+            <td>Model Dimensions</td>
+            <td>Bounding box &amp; face count</td>
+            <td class="check">✓</td>
+            <td class="check">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" style="padding: 0;" aria-labelledby="cta-heading">
+    <div class="container" style="padding: 80px 0; text-align: center;">
+      <h2 id="cta-heading" style="font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; margin-bottom: 16px;">
+        Ready to View Your STL Model?
+      </h2>
+      <p style="color: var(--muted); font-size: 1.05rem; max-width: 520px; margin: 0 auto 40px;">
+        Open Studios-Pro now and inspect your 3D model in seconds — directly in your browser, no account needed.
+      </p>
+      <a href="https://studios-pro.com/" class="cta-primary" aria-label="Launch STL Viewer now">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Launch STL Viewer — Free
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <a href="https://studios-pro.com/" class="footer-logo">Studios-Pro</a>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="https://studios-pro.com/">Home</a>
+        <a href="https://studios-pro.com/blog/">Blog</a>
+        <a href="https://studios-pro.com/faq.html">FAQ</a>
+        <a href="https://studios-pro.com/convert/png-to-svg">PNG to SVG</a>
+        <a href="https://studios-pro.com/convert/dxf-to-svg">DXF to SVG</a>
+      </nav>
+      <p class="footer-copy">&copy; 2025 Studios-Pro. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
