@@ -111,6 +111,28 @@ const faqHtml = `<!DOCTYPE html>
     ]
   }
   </script>
+
+  <!-- Schema.org BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Studios-Pro Home",
+        "item": "https://studios-pro.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "FAQ",
+        "item": "https://studios-pro.com/faq.html"
+      }
+    ]
+  }
+  </script>
 </head>
 <body class="lang-en">
     <nav class="nav">
