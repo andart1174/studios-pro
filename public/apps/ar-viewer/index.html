@@ -201,6 +201,19 @@
           </div>
           <img id="qr-code-img" src="" alt="AR QR Code" style="display: none;">
           <p class="qr-hint lang-text" data-fr="Scannez ce code QR pour projeter instantanément ce modèle 3D sur votre table en AR !" data-en="Scan this QR code to instantly project this 3D model onto your table in AR!">Scan this QR code to instantly project this 3D model onto your table in AR!</p>
+      </div>
+      
+      <!-- Embed Code Generator for E-Commerce / Web -->
+      <div id="embed-section" class="panel-section" style="display: none;">
+        <h2 class="lang-text" data-fr="Code d'Intégration Web (E-Commerce)" data-en="Web Embed Code (E-Commerce)">Code d'Intégration Web (E-Commerce)</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <p class="lang-text" style="font-size: 11px; color: #9ca3af; line-height: 1.4;" data-fr="Intégrez ce modèle 3D sur votre site Web (Shopify, WordPress, WooCommerce). Vos acheteurs verront le modèle et un bouton AR !" data-en="Embed this 3D model on your website (Shopify, WordPress, WooCommerce). Shoppers will see the model and an AR button!">Embed this 3D model on your website.</p>
+          
+          <button id="copy-embed-btn" class="mat-btn" style="width: 100%; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="copyArEmbedCode()">
+            📋 <span class="lang-text" data-fr="Copier le code d'intégration (1-Click)" data-en="Copy Embed Code (1-Click)">Copier le code d'intégration (1-Click)</span>
+          </button>
+          
+          <textarea id="embed-code-textarea" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #38bdf8; font-family: monospace; font-size: 11px; padding: 8px; border-radius: 8px; resize: none;"></textarea>
         </div>
       </div>
       
@@ -655,6 +668,9 @@
       viewer.style.display = 'block';
       infoSection.style.display = 'block';
       hideLoader();
+      if (typeof updateEmbedSection === 'function') {
+        updateEmbedSection(url);
+      }
     }
 
     // Customization & Premium Controls Integration
@@ -1137,6 +1153,9 @@
       if (directDlUrl) {
         lastShareUrl = directDlUrl;
         updateQRCodeWithColorParam(directDlUrl, 'original');
+        if (typeof updateEmbedSection === 'function') {
+          updateEmbedSection(directDlUrl);
+        }
       } else {
         qrLoading.style.display = 'none';
         const fallbackText = document.createElement('p');
@@ -1147,6 +1166,45 @@
         qrSection.appendChild(fallbackText);
       }
     }
+
+    // ── Web Embed Code Generator Helper for E-Commerce ─────────────
+    function updateEmbedSection(modelUrl) {
+      const embedSection = document.getElementById('embed-section');
+      const embedTextarea = document.getElementById('embed-code-textarea');
+      if (!embedSection || !embedTextarea) return;
+      
+      embedSection.style.display = 'block';
+      
+      const targetUrl = modelUrl || (viewer && viewer.src) || 'https://studios-pro.com/demo.glb';
+      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+      const arRedirectUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(targetUrl)}`;
+      
+      const btnLabel = currentLang === 'fr' ? '📱 Voir en AR (Scan QR)' : '📱 View in AR (Scan QR)';
+      
+      const codeSnippet = 
+`<!-- Studios-Pro AR E-Commerce Embed Widget -->\n` +
+`<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"><\/script>\n` +
+`<div style="position:relative; width:100%; height:480px; border-radius:16px; overflow:hidden; background:#0b0f19; box-shadow:0 15px 35px rgba(0,0,0,0.5);">\n` +
+`  <model-viewer src="${targetUrl}" ar ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate style="width:100%; height:100%;"></model-viewer>\n` +
+`  <button onclick="window.open('${arRedirectUrl}', '_blank')" style="position:absolute; bottom:20px; right:20px; background:linear-gradient(135deg, #06b6d4, #3b82f6); color:#ffffff; border:none; padding:12px 22px; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.4); font-family:sans-serif;">\n` +
+`    ${btnLabel}\n` +
+`  </button>\n` +
+`  <div style="position:absolute; bottom:12px; left:16px; font-size:11px; color:rgba(255,255,255,0.6); font-family:sans-serif;">Powered by Studios-Pro AR</div>\n` +
+`</div>`;
+
+      embedTextarea.value = codeSnippet;
+    }
+
+    window.copyArEmbedCode = function() {
+      const textarea = document.getElementById('embed-code-textarea');
+      if (!textarea || !textarea.value) return;
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        const btn = document.getElementById('copy-embed-btn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = currentLang === 'fr' ? '✓ Code Copié !' : '✓ Code Copied!';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+      });
+    };
   </script>
 </body>
 </html>
