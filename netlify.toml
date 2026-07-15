@@ -55,6 +55,18 @@
   status = 200
   force = false
 
+[[redirects]]
+  from = "/community"
+  to = "/community/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/*"
+  to = "/community/:splat"
+  status = 200
+  force = false
+
 # SPA catch-all — React app for everything else
 [[redirects]]
   from = "/*"

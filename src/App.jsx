@@ -1414,7 +1414,8 @@ const StudiosPro = () => {
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Studio Scripting",
       sandbox: "Zen Sandscape",
-      faqBtn: "FAQ"
+      faqBtn: "FAQ",
+      communityBtn: "Communauté"
     },
     en: {
       welcome: "Welcome to Studios-Pro",
@@ -1462,7 +1463,8 @@ const StudiosPro = () => {
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Scripting Studio",
       sandbox: "Zen Sandscape",
-      faqBtn: "FAQ"
+      faqBtn: "FAQ",
+      communityBtn: "Community"
     }
   };
 
@@ -1552,6 +1554,10 @@ const StudiosPro = () => {
             <a href="/faq.html" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontWeight: 'bold' }}>?</span>
               <span>{currentT.faqBtn}</span>
+            </a>
+            <a href="/community/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '10px', padding: '7px 14px', color: '#a78bfa', fontWeight: '700' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
+              <span>{currentT.communityBtn}</span>
             </a>
           </div>
 
