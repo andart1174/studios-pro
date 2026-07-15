@@ -781,54 +781,22 @@ function ksChordNotes(rootNote) {
 
 // --- Play note(s) ---
 function ksNoteOn(note, velocity) {
-    const quantNote = quantizeNoteToScale(note);
     const s = getKbSynth();
     const master = parseInt(document.getElementById('master-pitch').value) || 0;
-    let notes = kbChordMode ? ksChordNotes(quantNote) : [quantNote];
+    let notes = kbChordMode ? ksChordNotes(note) : [note];
     if (master !== 0) notes = notes.map(n => Tone.Frequency(n).transpose(master).toNote());
     s.triggerAttack(notes, Tone.now(), velocity);
-    if (lights && lights[0]) lights[0].intensity = 8;
-
-    // Record in active loops
-    if (typeof loopState !== 'undefined') {
-        loopState.forEach((ls, i) => {
-            if (ls.recording) {
-                notes.forEach(n => loopRecordNote(i, n, velocity));
-            }
-        });
-    }
-
-    // Play harmony voices
-    if (typeof kbHarmVoices !== 'undefined' && kbHarmVoices > 0 && typeof getHarmNotes === 'function') {
-        notes.forEach(n => {
-            const harmNotes = getHarmNotes(n);
-            if (harmNotes.length > 0 && kbSynth) {
-                kbSynth.triggerAttack(harmNotes, Tone.now(), velocity * 0.6);
-            }
-        });
-    }
-
+    if (lights[0]) lights[0].intensity = 8;
     return notes;
 }
 
 // --- Release note(s) ---
 function ksNoteOff(note) {
-    const quantNote = quantizeNoteToScale(note);
     const s = getKbSynth();
     const master = parseInt(document.getElementById('master-pitch').value) || 0;
-    let notes = kbChordMode ? ksChordNotes(quantNote) : [quantNote];
+    let notes = kbChordMode ? ksChordNotes(note) : [note];
     if (master !== 0) notes = notes.map(n => Tone.Frequency(n).transpose(master).toNote());
     s.triggerRelease(notes, Tone.now());
-
-    // Release harmony voices
-    if (typeof kbHarmVoices !== 'undefined' && kbHarmVoices > 0 && typeof getHarmNotes === 'function') {
-        notes.forEach(n => {
-            const harmNotes = getHarmNotes(n);
-            if (harmNotes.length > 0 && kbSynth) {
-                kbSynth.triggerRelease(harmNotes, Tone.now());
-            }
-        });
-    }
 }
 
 // --- Visual key highlight ---
@@ -1179,7 +1147,13 @@ function quantizeNoteToScale(noteStr) {
     return Tone.Frequency(quantMidi, 'midi').toNote();
 }
 
-// Scale Lock helper already quantizes notes directly in local ksNoteOn
+// Patch ksNoteOn to quantize before playing
+const _origNoteOn = ksNoteOn;
+window.ksNoteOn = function(note, velocity) {
+    return _origNoteOn(quantizeNoteToScale(note), velocity);
+};
+// Override global symbol
+Object.defineProperty(window, 'ksNoteOn', { value: window.ksNoteOn, writable: true });
 
 document.getElementById('ks-scale-lock-btn').addEventListener('click', () => {
     kbScaleLocked = !kbScaleLocked;
@@ -1364,7 +1338,15 @@ document.getElementById('ks-loop-clear').addEventListener('click', () => {
     });
 });
 
-// Loop recording handles event recording directly in local ksNoteOn
+// Patch loopRecordNote into ksNoteOn (hook) — records into active recording loops
+const _ksNoteOnOrig = window.ksNoteOn || ksNoteOn;
+function ksNoteOnPatched(note, velocity) {
+    const result = _ksNoteOnOrig(note, velocity);
+    loopState.forEach((ls, i) => { if (ls.recording) loopRecordNote(i, quantizeNoteToScale(note), velocity); });
+    return result;
+}
+// Replace ksNoteOn globally inside the module scope
+window._ksNoteOnFinal = ksNoteOnPatched;
 
 // =============================================================
 //   FEATURE 4 — THEREMIN MOUSE FX (Tab + mouse XY)
@@ -1460,7 +1442,33 @@ function getHarmNotes(rootNote) {
     return intervals.map(i => Tone.Frequency(rootNote).transpose(i).toNote());
 }
 
-// Harmony voices are triggered directly inside local ksNoteOn / ksNoteOff
+// Override ksNoteOn to add harmony
+const _baseNoteOn2 = _ksNoteOnOrig;
+function ksNoteOnWithHarmony(note, velocity) {
+    // Play root
+    const quantNote = quantizeNoteToScale(note);
+    _baseNoteOn2(quantNote, velocity);
+    // Record in active loops
+    loopState.forEach((ls, i) => { if (ls.recording) loopRecordNote(i, quantNote, velocity); });
+    // Play harmony voices
+    if (kbHarmVoices > 0) {
+        const harmNotes = getHarmNotes(quantNote);
+        if (harmNotes.length > 0 && kbSynth) {
+            kbSynth.triggerAttack(harmNotes, Tone.now(), velocity * 0.6);
+        }
+    }
+}
+
+// Override ksNoteOff to also release harmony
+const _baseNoteOff = ksNoteOff;
+window.ksNoteOffFull = function(note) {
+    const quantNote = quantizeNoteToScale(note);
+    _baseNoteOff(quantNote);
+    if (kbHarmVoices > 0 && kbSynth) {
+        const harmNotes = getHarmNotes(quantNote);
+        if (harmNotes.length > 0) kbSynth.triggerRelease(harmNotes, Tone.now());
+    }
+};
 
 // Harmonizer button group
 document.querySelectorAll('.ks-harm-btn').forEach(btn => {
@@ -2108,45 +2116,30 @@ function setGeometry(type) {
 
 function setTheme(themeName) {
     const theme = themes[themeName];
-    if (!theme) return;
-    if (scene) {
-        if (scene.background && typeof scene.background.set === 'function') {
-            scene.background.set(theme.bg);
-        } else if (scene.background && typeof scene.background.setHex === 'function') {
-            scene.background.setHex(theme.bg);
-        } else {
-            try { scene.background = new THREE.Color(theme.bg); } catch(e) {}
-        }
-        if (scene.fog && scene.fog.color && typeof scene.fog.color.setHex === 'function') {
-            scene.fog.color.setHex(theme.bg);
-        }
-    }
+    scene.background = new THREE.Color(theme.bg);
+    scene.fog.color.setHex(theme.bg);
     
-    if (mainObject && typeof mainObject.traverse === 'function') {
+    if (mainObject) {
         mainObject.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (child.material.color && typeof child.material.color.setHex === 'function') child.material.color.setHex(theme.obj);
-                if (child.material.emissive && typeof child.material.emissive.setHex === 'function') child.material.emissive.setHex(theme.obj);
+            if (child.isMesh) {
+                child.material.color.setHex(theme.obj);
+                child.material.emissive.setHex(theme.obj);
             }
         });
     }
     
-    if (window.THREE_PARTICLES && window.THREE_PARTICLES.material && window.THREE_PARTICLES.material.color && typeof window.THREE_PARTICLES.material.color.setHex === 'function') {
+    if (window.THREE_PARTICLES) {
         window.THREE_PARTICLES.material.color.setHex(theme.obj);
     }
     
-    if (lights && lights[0] && lights[0].color && typeof lights[0].color.setHex === 'function') lights[0].color.setHex(theme.light1);
-    if (lights && lights[1] && lights[1].color && typeof lights[1].color.setHex === 'function') lights[1].color.setHex(theme.light2);
+    if (lights[0]) lights[0].color.setHex(theme.light1);
+    if (lights[1]) lights[1].color.setHex(theme.light2);
     
-    if (scene && scene.children) {
-        scene.children.forEach(child => {
-            if (typeof THREE !== 'undefined' && THREE.GridHelper && child instanceof THREE.GridHelper) {
-                if (child.material && child.material.color && typeof child.material.color.setHex === 'function') {
-                    child.material.color.setHex(theme.obj);
-                }
-            }
-        });
-    }
+    scene.children.forEach(child => {
+        if (child instanceof THREE.GridHelper) {
+            child.material.color.setHex(theme.obj);
+        }
+    });
 }
 
 document.getElementById('model-select').addEventListener('change', (e) => {
@@ -2169,7 +2162,6 @@ document.getElementById('btn-lite-mode').addEventListener('click', () => {
 });
 
 function animate3D() {
-    if (typeof THREE === 'undefined' || !scene || !camera) return;
     requestAnimationFrame(animate3D);
     
     // Declare avg at function scope so it's accessible everywhere in animate3D
@@ -2198,8 +2190,8 @@ function animate3D() {
         pScale = 1 + (avg * 0.8);
         if(window.THREE_PARTICLES) window.THREE_PARTICLES.scale.set(pScale, pScale, pScale);
         
-        if (lights && lights[0]) lights[0].intensity = 2 + (avg * 8);
-        if (lights && lights[1]) lights[1].intensity = 2 + (avg * 8);
+        lights[0].intensity = 2 + (avg * 8);
+        lights[1].intensity = 2 + (avg * 8);
 
         const beatTime = (Date.now() / 1000) * (Tone.Transport.bpm.value / 60) * Math.PI;
         const time = Date.now() / 1000;
@@ -2306,7 +2298,7 @@ function animate3D() {
         
         if(avg === 0 && !isPlaying) {
             if(window.THREE_PARTICLES) window.THREE_PARTICLES.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-            if (lights && lights[0]) lights[0].intensity = Math.max(2, lights[0].intensity - 0.1);
+            lights[0].intensity = Math.max(2, lights[0].intensity - 0.1);
         }
         
         // VJ Camera Choreography trigger
@@ -2340,16 +2332,9 @@ function animate3D() {
                 particlePositions[i*3+2] += 0.05; // come forward
             }
         }
-        
-        if (particles && particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
-            particles.geometry.attributes.position.needsUpdate = true;
-        }
-        if (particles && particles.material) {
-            particles.material.size = 0.05 + (avg * 1.0);
-            if (particles.material.color && typeof particles.material.color.setHex === 'function' && themes[document.getElementById('color-select').value]) {
-                particles.material.color.setHex(themes[document.getElementById('color-select').value].obj);
-            }
-        }
+        particles.geometry.attributes.position.needsUpdate = true;
+        particles.material.size = 0.05 + (avg * 1.0);
+        particles.material.color.setHex(themes[document.getElementById('color-select').value].obj);
     }
     
     // Dynamic Bloom Strength
@@ -2363,7 +2348,7 @@ function animate3D() {
     
     if (composer && !isLiteMode) {
         composer.render();
-    } else if (renderer) {
+    } else {
         renderer.render(scene, camera);
     }
 }

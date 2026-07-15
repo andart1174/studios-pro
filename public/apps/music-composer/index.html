@@ -388,20 +388,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        
-        const controlIds = [
-          'pay-single-btn', 'pay-premium-btn', 'modal-close-btn', 'back-btn', 'injected-save-html-btn',
-          'btn-play', 'btn-stop', 'btn-record', 'btn-clear', 'btn-autopilot', 'btn-vj-camera',
-          'btn-lite-mode', 'btn-mic', 'btn-zen', 'btn-share', 'lang-btn', 'btn-load-preset', 'btn-auto-fill'
-        ];
-        if (controlIds.includes(id)) return;
-        if (
-          clsStr.includes('ks-emotion-btn') ||
-          clsStr.includes('ks-harm-btn') ||
-          clsStr.includes('ks-loop-btn') ||
-          clsStr.includes('ks-key-') ||
-          clsStr.includes('ks-toggle-btn')
-        ) return;
+        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
         if (isExport) {
           e.stopImmediatePropagation();
@@ -643,11 +630,7 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('
-  <script src="/community/share-bridge.js"></script>
-</body>', playbackScript + '
-  <script src="/community/share-bridge.js"></script>
-</body>');
+                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -962,8 +945,6 @@
     animate();
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   <\/script>
-
-  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1022,8 +1003,6 @@
       }
     };
   <\/script>
-
-  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1070,8 +1049,6 @@
       setTransform();
     }
   <\/script>
-
-  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1122,8 +1099,6 @@
       });
     });
   <\/script>
-
-  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
