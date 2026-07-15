@@ -685,27 +685,18 @@
 
     // Capture listener — injected into every preview blob
     const PRE_SCRIPT = `<script>
-    // Monkey patch WebGLRenderer at start (before page scripts run)
+    // Native Canvas getContext wrapper to force preserveDrawingBuffer: true
     (function() {
-      function patch(v) {
-        if (v && v.WebGLRenderer && !v.WebGLRenderer._patched) {
-          const Orig = v.WebGLRenderer;
-          v.WebGLRenderer = function(p) {
-            const params = p || {};
-            params.preserveDrawingBuffer = true;
-            return new Orig(params);
-          };
-          v.WebGLRenderer._patched = true;
-        }
-      }
-      if (window.THREE) patch(window.THREE);
-      else {
-        Object.defineProperty(window, 'THREE', {
-          configurable: true, enumerable: true,
-          get: function() { return this._THREE; },
-          set: function(v) { this._THREE = v; patch(v); }
-        });
-      }
+      try {
+        const orig = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+          if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+            attributes = attributes || {};
+            attributes.preserveDrawingBuffer = true;
+          }
+          return orig.call(this, type, attributes);
+        };
+      } catch(e) {}
     })();
     <\/script>`;
 
