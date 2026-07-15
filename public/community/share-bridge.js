@@ -1,11 +1,11 @@
-/* Studios-PRO → Community Share Bridge v3.0 */
+/* Studios-PRO → Community Share Bridge v4.0 */
 (function () {
   'use strict';
 
-  const COMM_URL  = '/community/';
-  const LS_KEY    = 'studios_community_share';
-  const BC_NAME   = 'sp_community_channel';
-  const SRC       = document.title || location.pathname;
+  const COMM_URL = '/community/';
+  const LS_KEY   = 'studios_community_share';
+  const BC_NAME  = 'sp_community_channel';
+  const SRC      = document.title || location.pathname;
 
   /* ── CSS ──────────────────────────────────────────────── */
   const style = document.createElement('style');
@@ -28,11 +28,12 @@
     transform:translateX(140%);transition:transform .28s;pointer-events:none;max-width:290px;}
   ._sp_t.ok{background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.4);color:#34d399;}
   ._sp_t.err{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);color:#f87171;}
+  ._sp_t.info{background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.4);color:#a78bfa;}
   ._sp_t.show{transform:translateX(0);}
   `;
   document.head.appendChild(style);
 
-  /* ── Create FAB ───────────────────────────────────────── */
+  /* ── FAB ──────────────────────────────────────────────── */
   function createFAB() {
     if (document.getElementById('_sp_fab')) return;
     const btn = document.createElement('button');
@@ -43,139 +44,202 @@
     document.body.appendChild(btn);
   }
 
-  /* ── Main action ──────────────────────────────────────── */
+  /* ── Main ─────────────────────────────────────────────── */
   function doShare() {
-    const fab = document.getElementById('_sp_fab');
-    if (fab) { fab.style.opacity = '.5'; fab.style.pointerEvents = 'none'; }
+    setFab(false);
+    toast('Capturing…', 'info');
 
-    // Force a Three.js render frame (checks global AND sp* names)
-    forceRender();
-
-    // Wait 2 animation frames for GPU flush
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      capture(function (dataUrl, err) {
-        if (fab) { fab.style.opacity = ''; fab.style.pointerEvents = ''; }
-
-        if (err || !dataUrl) {
-          toast('No canvas found in this tool', 'err');
-          return;
-        }
-
-        const payload = {
-          type: 'screenshot',
-          imageDataUrl: dataUrl,
-          source: SRC,
-          sourcePage: location.pathname,
-          ts: Date.now()
-        };
-
-        // Save to localStorage as fallback
-        try {
-          localStorage.setItem(LS_KEY, JSON.stringify(payload));
-        } catch(e) { /* storage full — try without image */ }
-
-        toast('✦ Sending to Community…', 'ok');
-
-        // Try BroadcastChannel first — if Community tab is open, it receives instantly
-        let ackReceived = false;
-        try {
-          const bc = new BroadcastChannel(BC_NAME);
-          bc.onmessage = function(e) {
-            if (e.data === 'ack') {
-              ackReceived = true;
-              toast('✦ Sent! Check Community tab', 'ok');
-            }
-            bc.close();
-          };
-          bc.postMessage({ type: 'share', data: payload });
-
-          // Wait 300ms — if no ack, Community tab is closed → open it
-          setTimeout(function () {
-            bc.close();
-            if (!ackReceived) {
-              // Open Community in a new tab (just once)
-              window.open(COMM_URL + '?share=1', '_blank');
-            }
-          }, 350);
-        } catch(e) {
-          // BroadcastChannel not supported — open tab
-          window.open(COMM_URL + '?share=1', '_blank');
+    // Case 1: Studio Pro 4D — has a preview iframe with capture3d postMessage
+    const iframe = document.getElementById('preview-iframe');
+    if (iframe && iframe.contentWindow && iframe.src && iframe.src !== 'about:blank') {
+      captureViaIframe(iframe, function(dataUrl) {
+        setFab(true);
+        if (dataUrl) {
+          sendShare(dataUrl);
+        } else {
+          toast('No 3D preview loaded yet', 'err');
         }
       });
+      return;
+    }
+
+    // Case 2: Three.js with exposed spRenderer — use WebGL readPixels (no taint)
+    const rend = window.spRenderer || window.renderer || window.threeRenderer;
+    const sc   = window.spScene   || window.scene    || window.threeScene;
+    const cam  = window.spCamera  || window.camera   || window.threeCamera;
+
+    if (rend && rend.getContext && sc && cam) {
+      const dataUrl = captureViaGLReadPixels(rend, sc, cam);
+      setFab(true);
+      if (dataUrl) { sendShare(dataUrl); return; }
+    }
+
+    // Case 3: Any other canvas — try normal toDataURL
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dataUrl = captureCanvas();
+      setFab(true);
+      if (dataUrl) {
+        sendShare(dataUrl);
+      } else {
+        toast('No canvas found in this tool', 'err');
+      }
     }));
   }
 
-  /* ── Force render ─────────────────────────────────────── */
-  function forceRender() {
-    try {
-      // Check sp* names (our exposed vars) and common global names
-      const rend = window.spRenderer || window.renderer || window.threeRenderer;
-      const sc   = window.spScene   || window.scene    || window.threeScene  || window.mainScene;
-      const cam  = window.spCamera  || window.camera   || window.cam         || window.threeCamera;
-      if (rend && rend.render && sc && cam) {
-        rend.render(sc, cam);
+  /* ── Capture Methods ──────────────────────────────────── */
+
+  // For Studio Pro 4D (iframe-based): use existing capture3d postMessage
+  function captureViaIframe(iframe, cb) {
+    toast('Capturing from 3D preview…', 'info');
+    let done = false;
+    const timeout = setTimeout(function() {
+      if (!done) { done = true; cb(null); }
+    }, 3000);
+
+    window.addEventListener('message', function handler(e) {
+      if (e.data && e.data.type === 'captureOK') {
+        clearTimeout(timeout);
+        window.removeEventListener('message', handler);
+        if (!done) { done = true; cb(e.data.url || null); }
       }
-    } catch(e) {}
+      if (e.data && e.data.type === 'captureERR') {
+        clearTimeout(timeout);
+        window.removeEventListener('message', handler);
+        if (!done) { done = true; cb(null); }
+      }
+    });
+    iframe.contentWindow.postMessage('capture3d', '*');
   }
 
-  /* ── Capture canvas ───────────────────────────────────── */
-  function capture(cb) {
-    // Prefer the renderer's own canvas if available
-    const rend = window.spRenderer || window.renderer || window.threeRenderer;
-    let cv = (rend && rend.domElement) ? rend.domElement : null;
+  // WebGL readPixels — bypasses canvas taint (works with cross-origin textures)
+  function captureViaGLReadPixels(renderer, scene, camera) {
+    try {
+      // Force render one frame
+      renderer.render(scene, camera);
 
-    // Fallback: largest canvas on page
-    if (!cv) {
-      const all = Array.from(document.querySelectorAll('canvas'));
-      if (!all.length) { cb(null, true); return; }
-      cv = all.reduce((a, b) => (a.width * a.height >= b.width * b.height ? a : b));
+      const gl = renderer.getContext();
+      const W  = gl.drawingBufferWidth;
+      const H  = gl.drawingBufferHeight;
+      if (!W || !H) return null;
+
+      // Read raw pixels
+      const pixels = new Uint8Array(W * H * 4);
+      gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+      // Check if all black
+      let bright = 0;
+      for (let i = 0; i < Math.min(pixels.length, 400); i += 4) {
+        bright += pixels[i] + pixels[i+1] + pixels[i+2];
+      }
+      if (bright < 100) return null; // genuinely empty
+
+      // Scale to max 1100px
+      const MAX = 1100;
+      const ratio = Math.min(MAX / W, MAX / H, 1);
+      const tW = Math.round(W * ratio);
+      const tH = Math.round(H * ratio);
+
+      // Full-res canvas (WebGL is bottom-to-top, flip vertically)
+      const full = document.createElement('canvas');
+      full.width = W; full.height = H;
+      const fctx = full.getContext('2d');
+      const imgData = fctx.createImageData(W, H);
+      for (let row = 0; row < H; row++) {
+        const src = (H - 1 - row) * W * 4;
+        const dst = row * W * 4;
+        imgData.data.set(pixels.subarray(src, src + W * 4), dst);
+      }
+      fctx.putImageData(imgData, 0, 0);
+
+      // Scale down
+      const tmp = document.createElement('canvas');
+      tmp.width = tW; tmp.height = tH;
+      tmp.getContext('2d').drawImage(full, 0, 0, tW, tH);
+      return tmp.toDataURL('image/jpeg', 0.85);
+    } catch(e) {
+      return null;
     }
+  }
 
-    if (!cv || !cv.width || !cv.height) { cb(null, true); return; }
-
+  // Fallback: normal canvas capture
+  function captureCanvas() {
+    const all = Array.from(document.querySelectorAll('canvas'));
+    if (!all.length) return null;
+    const cv = all.reduce((a, b) => (a.width * a.height >= b.width * b.height ? a : b));
+    if (!cv.width || !cv.height) return null;
     try {
       const MAX = 1100;
       const ratio = Math.min(MAX / cv.width, MAX / cv.height, 1);
-      const W = Math.round(cv.width  * ratio);
+      const W = Math.round(cv.width * ratio);
       const H = Math.round(cv.height * ratio);
-
       const tmp = document.createElement('canvas');
       tmp.width = W; tmp.height = H;
       const ctx = tmp.getContext('2d');
-
-      // Dark background first (handles transparent canvases)
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, W, H);
       ctx.drawImage(cv, 0, 0, W, H);
+      return tmp.toDataURL('image/jpeg', 0.85);
+    } catch(e) { return null; }
+  }
 
-      // Detect if still black (mostly empty canvas)
-      try {
-        const px = ctx.getImageData(0, 0, Math.min(W, 30), Math.min(H, 30)).data;
-        let bright = 0;
-        for (let i = 0; i < px.length; i += 4) bright += px[i] + px[i+1] + px[i+2];
-        if (bright < 500) {
-          // Still very dark — try forcing another render and drawing again
-          forceRender();
-          ctx.fillStyle = '#0d1117';
-          ctx.fillRect(0, 0, W, H);
-          ctx.drawImage(cv, 0, 0, W, H);
+  /* ── Send to Community ────────────────────────────────── */
+  function sendShare(dataUrl) {
+    const payload = {
+      type: 'screenshot',
+      imageDataUrl: dataUrl,
+      source: SRC,
+      sourcePage: location.pathname,
+      ts: Date.now()
+    };
+
+    // Save to localStorage (fallback)
+    try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e) {}
+
+    // BroadcastChannel: if Community tab is open → instant delivery, no new tab
+    let ackReceived = false;
+    try {
+      const bc = new BroadcastChannel(BC_NAME);
+      bc.onmessage = function(e) {
+        if (e.data === 'ack') {
+          ackReceived = true;
+          toast('✦ Sent! Switch to Community tab', 'ok');
         }
-      } catch(e) { /* CORS pixel read blocked — proceed anyway */ }
+        bc.close();
+      };
+      bc.postMessage({ type: 'share', data: payload });
 
-      const dataUrl = tmp.toDataURL('image/jpeg', 0.85);
-      cb(dataUrl, null);
+      // 500ms window — if no ack, Community not open → open new tab
+      setTimeout(function() {
+        try { bc.close(); } catch(x) {}
+        if (!ackReceived) {
+          toast('✦ Opening Community…', 'ok');
+          setTimeout(function() {
+            window.open(COMM_URL + '?share=1', '_blank');
+          }, 300);
+        }
+      }, 500);
     } catch(e) {
-      cb(null, e);
+      toast('✦ Opening Community…', 'ok');
+      setTimeout(function() {
+        window.open(COMM_URL + '?share=1', '_blank');
+      }, 300);
     }
   }
 
-  /* ── Toast ────────────────────────────────────────────── */
+  /* ── Utils ────────────────────────────────────────────── */
+  function setFab(enabled) {
+    const fab = document.getElementById('_sp_fab');
+    if (!fab) return;
+    fab.style.opacity   = enabled ? '' : '.5';
+    fab.style.pointerEvents = enabled ? '' : 'none';
+  }
+
   function toast(msg, type) {
     let t = document.querySelector('._sp_t');
     if (!t) { t = document.createElement('div'); t.className = '_sp_t'; document.body.appendChild(t); }
     t.textContent = msg;
     t.className = '_sp_t ' + (type || 'ok');
-    void t.offsetWidth; // force reflow
+    void t.offsetWidth;
     t.classList.add('show');
     clearTimeout(t._tid);
     t._tid = setTimeout(() => t.classList.remove('show'), 3500);
