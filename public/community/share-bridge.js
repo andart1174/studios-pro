@@ -214,14 +214,14 @@
         if (!ackReceived) {
           toast('✦ Opening Community…', 'ok');
           setTimeout(function() {
-            window.open(COMM_URL + '?share=1', '_blank');
+            window.open(COMM_URL + '?share=1', 'studios_community_tab');
           }, 300);
         }
       }, 500);
     } catch(e) {
       toast('✦ Opening Community…', 'ok');
       setTimeout(function() {
-        window.open(COMM_URL + '?share=1', '_blank');
+        window.open(COMM_URL + '?share=1', 'studios_community_tab');
       }, 300);
     }
   }

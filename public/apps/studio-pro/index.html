@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -685,6 +685,35 @@
 
     // Capture listener — injected into every preview blob
     const CAPTURE_SCRIPT = `<script>
+    // Monkey patch THREE.WebGLRenderer constructor to force preserveDrawingBuffer
+    if (window.THREE && window.THREE.WebGLRenderer) {
+      const OriginalRenderer = window.THREE.WebGLRenderer;
+      window.THREE.WebGLRenderer = function(parameters) {
+        const params = parameters || {};
+        params.preserveDrawingBuffer = true;
+        return new OriginalRenderer(params);
+      };
+    } else {
+      // Defer patch if THREE loads asynchronously
+      Object.defineProperty(window, 'THREE', {
+        configurable: true,
+        enumerable: true,
+        get: function() { return this._THREE; },
+        set: function(v) {
+          this._THREE = v;
+          if (v && v.WebGLRenderer && !v.WebGLRenderer._patched) {
+            const Orig = v.WebGLRenderer;
+            v.WebGLRenderer = function(p) {
+              const params = p || {};
+              params.preserveDrawingBuffer = true;
+              return new Orig(params);
+            };
+            v.WebGLRenderer._patched = true;
+          }
+        }
+      });
+    }
+
     window.mediaRecorder = null;
     window.recordedChunks = [];
     window.addEventListener('message', function(e) {
