@@ -172,18 +172,38 @@
 
   function doScreenshot() {
     showProgress('Taking screenshot...');
-    setTimeout(() => {
+    // Force Three.js to render one frame before capture (fixes black canvas)
+    try {
+      const rend = window.renderer || window.threeRenderer;
+      const sc = window.scene || window.threeScene || window.mainScene;
+      const cam = window.camera || window.cam || window.threeCamera || window.mainCamera;
+      if (rend && rend.render && sc && cam) rend.render(sc, cam);
+    } catch(e) {}
+
+    // Wait 2 frames for render to flush to canvas
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       const cv = document.querySelector('canvas');
       if (!cv) { hideProgress(); toast('No canvas found'); return; }
       try {
-        const W = Math.min(cv.width,1200), H = Math.min(cv.height,900);
+        const W = Math.min(cv.width, 1200), H = Math.min(cv.height, 900);
         const t = document.createElement('canvas'); t.width = W; t.height = H;
-        t.getContext('2d').drawImage(cv,0,0,W,H);
-        const dataUrl = t.toDataURL('image/jpeg',.82);
+        const ctx = t.getContext('2d');
+        ctx.drawImage(cv, 0, 0, W, H);
+        // Check if image is mostly black (all pixels near 0)
+        const px = ctx.getImageData(0, 0, Math.min(W, 50), Math.min(H, 50)).data;
+        let sum = 0;
+        for (let i = 0; i < px.length; i += 4) sum += px[i] + px[i+1] + px[i+2];
+        if (sum < 100) {
+          // Still black — try a white background fill
+          ctx.fillStyle = '#1a1a2e';
+          ctx.fillRect(0, 0, W, H);
+          ctx.drawImage(cv, 0, 0, W, H);
+        }
+        const dataUrl = t.toDataURL('image/jpeg', .85);
         hideProgress();
-        send({ type:'screenshot', imageDataUrl:dataUrl, source:SOURCE_TITLE });
+        send({ type: 'screenshot', imageDataUrl: dataUrl, source: SOURCE_TITLE });
       } catch(e) { hideProgress(); toast('Screenshot blocked (CORS)'); }
-    }, 60);
+    }));
   }
 
   function doCode() {
