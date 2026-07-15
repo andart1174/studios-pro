@@ -381,7 +381,10 @@
         <img src="" alt="" class="u-av" id="slAv">
         <div class="u-av-online"></div>
       </div>
-      <div class="u-name" id="slName"></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:5px 0;">
+        <div class="u-name" id="slName" style="margin:0"></div>
+        <button onclick="editDisplayName()" style="background:none;border:none;cursor:pointer;color:var(--accent3);font-size:0.85rem;padding:2px;display:flex;align-items:center;justify-content:center;" title="Edit Name">✏️</button>
+      </div>
       <div class="u-rank" id="slRank"></div>
       <div class="u-stats">
         <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
@@ -492,12 +495,6 @@
       <div class="sc-title" data-t="topCreators">🏆 Top Creators</div>
       <div id="leaderboard"><div style="text-align:center;color:var(--muted);font-size:.81rem;padding:10px 0">Loading...</div></div>
     </div>
-    <!-- Tools -->
-    <div class="sc">
-      <div class="sc-title" data-t="studioTools">Studios-PRO Tools</div>
-      <a href="../hologram-hud-builder/index.html" class="tool-link">✨ Hologram HUD Builder</a>
-      <a href="#" class="tool-link">🔮 3D Model Viewer</a>
-      <a href="#" class="tool-link">🎨 Design Studio</a>
     </div>
   </aside>
 </div>
@@ -835,6 +832,28 @@ function doSignOut() {
   if (curUser && db) setPresence(curUser.uid, false);
   auth.signOut().then(() => { toast('Signed out', 'info'); setTimeout(() => location.reload(), 500); });
 }
+
+async function editDisplayName() {
+  if (!curUser || !db) return;
+  const oldName = curUser.displayName || 'User';
+  const newName = prompt(curLang === 'fr' ? 'Entrez votre nouveau nom d\'affichage :' : 'Enter your new display name:', oldName);
+  if (!newName) return;
+  const cleanName = newName.trim();
+  if (cleanName.length < 2) { toast(curLang === 'fr' ? 'Nom trop court (min 2 caractéristiques)' : 'Name too short (min 2 chars)', 'error'); return; }
+  if (cleanName.length > 25) { toast(curLang === 'fr' ? 'Nom trop long (max 25 caractéristiques)' : 'Name too long (max 25 chars)', 'error'); return; }
+  
+  try {
+    toast('Updating...', 'info');
+    await curUser.updateProfile({ displayName: cleanName });
+    await db.collection('users').doc(curUser.uid).set({ displayName: cleanName }, { merge: true });
+    toast(curLang === 'fr' ? 'Nom mis à jour ! 🎉' : 'Name updated! 🎉', 'success');
+    setTimeout(() => location.reload(), 1000);
+  } catch(e) {
+    console.error(e);
+    toast(e.message, 'error');
+  }
+}
+
 
 function switchTab(mode) {
   document.getElementById('tabLogin').classList.toggle('active', mode==='login');
