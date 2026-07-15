@@ -684,36 +684,32 @@
     });
 
     // Capture listener — injected into every preview blob
-    const CAPTURE_SCRIPT = `<script>
-    // Monkey patch THREE.WebGLRenderer constructor to force preserveDrawingBuffer
-    if (window.THREE && window.THREE.WebGLRenderer) {
-      const OriginalRenderer = window.THREE.WebGLRenderer;
-      window.THREE.WebGLRenderer = function(parameters) {
-        const params = parameters || {};
-        params.preserveDrawingBuffer = true;
-        return new OriginalRenderer(params);
-      };
-    } else {
-      // Defer patch if THREE loads asynchronously
-      Object.defineProperty(window, 'THREE', {
-        configurable: true,
-        enumerable: true,
-        get: function() { return this._THREE; },
-        set: function(v) {
-          this._THREE = v;
-          if (v && v.WebGLRenderer && !v.WebGLRenderer._patched) {
-            const Orig = v.WebGLRenderer;
-            v.WebGLRenderer = function(p) {
-              const params = p || {};
-              params.preserveDrawingBuffer = true;
-              return new Orig(params);
-            };
-            v.WebGLRenderer._patched = true;
-          }
+    const PRE_SCRIPT = `<script>
+    // Monkey patch WebGLRenderer at start (before page scripts run)
+    (function() {
+      function patch(v) {
+        if (v && v.WebGLRenderer && !v.WebGLRenderer._patched) {
+          const Orig = v.WebGLRenderer;
+          v.WebGLRenderer = function(p) {
+            const params = p || {};
+            params.preserveDrawingBuffer = true;
+            return new Orig(params);
+          };
+          v.WebGLRenderer._patched = true;
         }
-      });
-    }
+      }
+      if (window.THREE) patch(window.THREE);
+      else {
+        Object.defineProperty(window, 'THREE', {
+          configurable: true, enumerable: true,
+          get: function() { return this._THREE; },
+          set: function(v) { this._THREE = v; patch(v); }
+        });
+      }
+    })();
+    </script>`;
 
+    const CAPTURE_SCRIPT = `<script>
     window.mediaRecorder = null;
     window.recordedChunks = [];
     window.addEventListener('message', function(e) {
@@ -766,7 +762,16 @@
       const code = document.getElementById('code-editor').value;
       if (!code) return;
       const iframe = document.getElementById('preview-iframe');
-      const injected = code.replace('</body>', CAPTURE_SCRIPT + '</body>');
+      
+      // Inject PRE_SCRIPT right after <head> or at start, and CAPTURE_SCRIPT at end
+      let injected = code;
+      if (injected.indexOf('<head>') > -1) {
+        injected = injected.replace('<head>', '<head>' + PRE_SCRIPT);
+      } else {
+        injected = PRE_SCRIPT + injected;
+      }
+      injected = injected.replace('</body>', CAPTURE_SCRIPT + '</body>');
+      
       const blob = new Blob([injected], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       iframe.src = url;
