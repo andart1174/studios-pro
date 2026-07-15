@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"> <!-- v3.0 -->
 
 <head>
@@ -629,7 +629,11 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js"></script>
+</body>', playbackScript + '
+  <script src="/community/share-bridge.js"></script>
+</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -944,6 +948,8 @@
     animate();
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1002,6 +1008,8 @@
       }
     };
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1048,6 +1056,8 @@
       setTransform();
     }
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1098,6 +1108,8 @@
       });
     });
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1562,6 +1574,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
   <script src="export-handler.js?v=3"></script>
   <script src="app.js?v=3"></script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 
 </html>

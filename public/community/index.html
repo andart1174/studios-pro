@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1489,8 +1489,135 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ─── Incoming Share from Tools ────────────────────────────
+function loadIncomingShare() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has('share')) return;
+  // Clean URL without reload
+  history.replaceState(null, '', location.pathname);
+
+  const raw = localStorage.getItem('studios_community_share');
+  if (!raw) return;
+  try { localStorage.removeItem('studios_community_share'); } catch(e){}
+
+  let data;
+  try { data = JSON.parse(raw); } catch(e) { return; }
+  if (!data) return;
+
+  // Defer until auth is ready (max 5s)
+  let tries = 0;
+  const tryOpen = setInterval(() => {
+    tries++;
+    if (tries > 50) { clearInterval(tryOpen); return; }
+    if (!curUser && tries < 40) return; // wait for login
+    clearInterval(tryOpen);
+    applyIncomingShare(data);
+  }, 100);
+}
+
+function applyIncomingShare(data) {
+  openCreate(); // opens modal (may show auth if not logged in)
+  setTimeout(() => {
+    const src = data.source || data.sourcePage || 'Studios-PRO Tool';
+
+    // ── Pre-fill text content ────────────────────────────
+    const ta = document.getElementById('postContent');
+    if (ta && !ta.value) {
+      ta.value = `Shared from: ${src}`;
+      updChar();
+    }
+
+    // ── Set category ────────────────────────────────────
+    const catSel = document.getElementById('postCat');
+    if (catSel) {
+      if (data.type === '3dmodel') catSel.value = '3dmodel';
+      else if (data.type === 'screenshot') catSel.value = 'showcase';
+      else if (data.type === 'images') catSel.value = 'photo';
+      else if (data.type === 'html') catSel.value = 'showcase';
+    }
+
+    // ── 3D Model ─────────────────────────────────────────
+    if (data.type === '3dmodel' && data.modelData) {
+      transferred3D = data.modelData;
+      document.getElementById('transferBadge').style.display = 'inline-flex';
+      toast('3D Model attached from ' + src + ' 🔮', 'success');
+      // Show preview screenshot if available
+      if (data.preview) injectPreviewDataUrl(data.preview);
+    }
+
+    // ── Screenshot / single image ─────────────────────────
+    if ((data.type === 'screenshot' || data.type === 'image') && data.imageDataUrl) {
+      injectPreviewDataUrl(data.imageDataUrl);
+    }
+
+    // ── Multiple images ───────────────────────────────────
+    if (data.type === 'images' && Array.isArray(data.imageDataUrls)) {
+      data.imageDataUrls.slice(0, 4).forEach((url, i) => {
+        if (!url) return;
+        dataUrlToFile(url, `share_image_${i}.jpg`).then(f => {
+          if (!f) return;
+          uploadedFiles.push(f);
+          const idx = uploadedFiles.length - 1;
+          const item = document.createElement('div');
+          item.className = 'ip-item'; item.id = `ip-${idx}`;
+          item.innerHTML = `<img src="${url}" alt=""><button class="ip-rm" onclick="rmImg(${idx})">✕</button>`;
+          document.getElementById('imgPreviews').appendChild(item);
+        });
+      });
+      toast('Images loaded from ' + src + ' 📸', 'success');
+    }
+
+    // ── HTML Code ─────────────────────────────────────────
+    if (data.type === 'html' && data.code) {
+      if (ta) {
+        ta.value = '💻 Shared Code from: ' + src + '\n\n' + data.code.slice(0, 500) + (data.code.length > 500 ? '\n...(truncated)' : '');
+        updChar();
+      }
+      // Store full code for rendering
+      window._sharedCode = data.code;
+      // Add code badge
+      const badge = document.createElement('div');
+      badge.style.cssText = 'padding:8px 12px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);border-radius:9px;color:#a78bfa;font-size:.8rem;font-weight:700;margin-top:8px;';
+      badge.innerHTML = '💻 HTML Code attached — will render as live preview in the post';
+      document.getElementById('transferBadge').parentNode.appendChild(badge);
+      // Store code in transferred3D slot as code type
+      transferred3D = { codeType: 'html', code: data.code };
+      catSel && (catSel.value = 'showcase');
+      toast('Code shared from ' + src + ' 💻', 'success');
+    }
+  }, 300);
+}
+
+// Convert data URL to File object for upload
+function dataUrlToFile(dataUrl, name) {
+  return new Promise(res => {
+    try {
+      const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8 = new Uint8Array(n);
+      while(n--) u8[n] = bstr.charCodeAt(n);
+      res(new File([u8], name, { type: mime }));
+    } catch(e) { res(null); }
+  });
+}
+
+// Inject a data URL as a preview image in the modal
+function injectPreviewDataUrl(dataUrl) {
+  dataUrlToFile(dataUrl, 'share_preview.jpg').then(f => {
+    if (!f) return;
+    const idx = uploadedFiles.push(f) - 1;
+    const item = document.createElement('div');
+    item.className = 'ip-item'; item.id = `ip-${idx}`;
+    item.innerHTML = `<img src="${dataUrl}" alt="preview"><button class="ip-rm" onclick="rmImg(${idx})">✕</button>`;
+    document.getElementById('imgPreviews').appendChild(item);
+  });
+}
+
 // ─── Init ──────────────────────────────────────────────────
 applyLang();
+// Run share receiver after a tick so auth can initialize
+setTimeout(loadIncomingShare, 200);
 </script>
 </body>
 </html>

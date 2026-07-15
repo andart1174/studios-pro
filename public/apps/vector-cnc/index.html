@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -793,7 +793,11 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js"></script>
+</body>', playbackScript + '
+  <script src="/community/share-bridge.js"></script>
+</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1108,6 +1112,8 @@
     animate();
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1166,6 +1172,8 @@
       }
     };
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1212,6 +1220,8 @@
       setTransform();
     }
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -1262,6 +1272,8 @@
       });
     });
   <\/script>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>`;
       }
@@ -2208,6 +2220,8 @@
   <!-- ══ TOAST NOTIFICATIONS (Stability Fix) ══ -->
   <div id="toastContainer" class="toast-container"></div>
   
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -737,7 +737,11 @@
       const code = document.getElementById('code-editor').value;
       if (!code) return;
       const iframe = document.getElementById('preview-iframe');
-      const injected = code.replace('</body>', CAPTURE_SCRIPT + '</body>');
+      const injected = code.replace('
+  <script src="/community/share-bridge.js"></script>
+</body>', CAPTURE_SCRIPT + '
+  <script src="/community/share-bridge.js"></script>
+</body>');
       const blob = new Blob([injected], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       iframe.src = url;
@@ -1023,5 +1027,7 @@
       </div>
     </div>
   </div>
+
+  <script src="/community/share-bridge.js"></script>
 </body>
 </html>
