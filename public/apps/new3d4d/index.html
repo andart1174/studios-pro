@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D·4D Studio — Image to STL & GLB Converter</title>
+  <title>3Dï¿½4D Studio ï¿½ Image to STL & GLB Converter</title>
   <meta name="description"
     content="Professional image to 3D model converter. Convert PNG, JPG, BMP to STL (3D) and GLB (4D animated) models with ultra quality." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -662,8 +662,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('tï¿½lï¿½charger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Tï¿½lï¿½charger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1441,8 +1441,8 @@
         </svg>
       </div>
       <div>
-        <div class="logo-text">3D · 4D Studio</div>
-        <div class="logo-sub">Image ? STL · GLB · Professional 3D Converter</div>
+        <div class="logo-text">3D ï¿½ 4D Studio</div>
+        <div class="logo-sub">Image ? STL ï¿½ GLB ï¿½ Professional 3D Converter</div>
       </div>
     </div>
     <div class="header-right">
@@ -1470,7 +1470,7 @@
         </button>
         <button class="stab" data-stab="adjust" id="stab-adjust">
           <span class="stab-icon">???</span>
-          <span class="stab-label" data-en="Adjust" data-fr="Régler">Adjust</span>
+          <span class="stab-label" data-en="Adjust" data-fr="Rï¿½gler">Adjust</span>
         </button>
         <button class="stab" data-stab="model3d" id="stab-model3d">
           <span class="stab-icon">??</span>
@@ -1493,8 +1493,8 @@
           <div class="upload-zone" id="uploadZone" tabindex="0">
             <div class="uz-glow"></div>
             <div class="uz-icon">???</div>
-            <h3 class="uz-title" data-en="Drop Image Here" data-fr="Déposez l'image ici">Drop Image Here</h3>
-            <p class="uz-sub">PNG · JPG · BMP · WebP · TIFF · GIF · AVIF</p>
+            <h3 class="uz-title" data-en="Drop Image Here" data-fr="Dï¿½posez l'image ici">Drop Image Here</h3>
+            <p class="uz-sub">PNG ï¿½ JPG ï¿½ BMP ï¿½ WebP ï¿½ TIFF ï¿½ GIF ï¿½ AVIF</p>
             <p class="uz-hint" data-en="or click to browse" data-fr="ou cliquez pour parcourir">or click to browse</p>
             <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
               ?? <span data-en="Choose File" data-fr="Choisir fichier">Choose File</span>
@@ -1503,20 +1503,20 @@
           </div>
 
           <div class="file-info" id="fileInfo" style="display:none">
-            <div class="sec-label" data-en="Loaded File" data-fr="Fichier chargé">Loaded File
+            <div class="sec-label" data-en="Loaded File" data-fr="Fichier chargï¿½">Loaded File
             </div>
             <div class="info-grid">
               <div class="info-chip full">
                 <div class="ic-label" data-en="Filename" data-fr="Nom">Filename</div>
-                <div class="ic-val" id="infoFilename">—</div>
+                <div class="ic-val" id="infoFilename">ï¿½</div>
               </div>
               <div class="info-chip">
                 <div class="ic-label" data-en="Size" data-fr="Taille">Size</div>
-                <div class="ic-val" id="infoSize">—</div>
+                <div class="ic-val" id="infoSize">ï¿½</div>
               </div>
               <div class="info-chip">
                 <div class="ic-label" data-en="Pixels" data-fr="Pixels">Pixels</div>
-                <div class="ic-val" id="infoDims">—</div>
+                <div class="ic-val" id="infoDims">ï¿½</div>
               </div>
             </div>
           </div>
@@ -1524,26 +1524,26 @@
           <div class="info-box">
             <div class="ib-icon">??</div>
             <div>
-              <strong data-en="Best results:" data-fr="Meilleurs résultats:">Best
+              <strong data-en="Best results:" data-fr="Meilleurs rï¿½sultats:">Best
                 results:</strong>
               <span
                 data-en=" Use high-contrast images, grayscale drawings, logos or depth maps for optimal 3D extrusion."
-                data-fr=" Utilisez des images à fort contraste pour une extrusion 3D optimale."> Use high-contrast images,
+                data-fr=" Utilisez des images ï¿½ fort contraste pour une extrusion 3D optimale."> Use high-contrast images,
                 grayscale drawings, logos or depth maps for optimal 3D extrusion.</span>
             </div>
           </div>
 
           <!-- Thumbnail history -->
           <div class="sec-label" id="historyLabel" style="display:none" data-en="Recent Files"
-            data-fr="Fichiers récents">Recent Files</div>
+            data-fr="Fichiers rï¿½cents">Recent Files</div>
           <div class="thumb-grid" id="thumbGrid"></div>
         </div>
 
         <!-- -- ADJUST TAB -- -->
         <div class="spanel" id="sp-adjust">
-          <div class="sec-label" data-en="Brightness & Contrast" data-fr="Luminosité & Contraste">Brightness & Contrast</div>
+          <div class="sec-label" data-en="Brightness & Contrast" data-fr="Luminositï¿½ & Contraste">Brightness & Contrast</div>
           <div class="ctrl-row">
-            <label><span data-en="Brightness" data-fr="Luminosité">Brightness</span> <span
+            <label><span data-en="Brightness" data-fr="Luminositï¿½">Brightness</span> <span
                 class="ctrl-val" id="vBrightness">0</span></label>
             <input type="range" id="sBrightness" min="-100" max="100" value="0" />
           </div>
@@ -1558,7 +1558,7 @@
             <input type="range" id="sSaturation" min="-100" max="100" value="0" />
           </div>
 
-          <div class="sec-label" data-en="Preprocessing" data-fr="Prétraitement">Preprocessing
+          <div class="sec-label" data-en="Preprocessing" data-fr="Prï¿½traitement">Preprocessing
           </div>
           <div class="ctrl-row">
             <label><span data-en="Blur (pre-smooth)" data-fr="Flou">Blur (pre-smooth)</span> <span
@@ -1566,7 +1566,7 @@
             <input type="range" id="sBlur" min="0" max="20" value="0" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Sharpen" data-fr="Netteté">Sharpen</span> <span class="ctrl-val"
+            <label><span data-en="Sharpen" data-fr="Nettetï¿½">Sharpen</span> <span class="ctrl-val"
                 id="vSharpen">0</span></label>
             <input type="range" id="sSharpen" min="0" max="10" value="0" />
           </div>
@@ -1595,7 +1595,7 @@
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Edge Enhance" data-fr="Amélioration bords">Edge
+              <span data-en="Edge Enhance" data-fr="Amï¿½lioration bords">Edge
                 Enhance</span>
               <small data-en="Sharper 3D edges" data-fr="Bords 3D plus nets">Sharper 3D
                 edges</small>
@@ -1603,7 +1603,7 @@
             <label class="sw"><input type="checkbox" id="tEdge" /><span class="sw-track"></span></label>
           </div>
           <button class="btn-sec act-btn" id="btnPreview2D" disabled>
-            ??? <span data-en="Preview Processed" data-fr="Aperçu traité">Preview
+            ??? <span data-en="Preview Processed" data-fr="Aperï¿½u traitï¿½">Preview
               Processed</span>
           </button>
         </div>
@@ -1619,7 +1619,7 @@
           </div>
 
           <!-- Quality presets -->
-          <div class="sec-label" data-en="Quality Preset" data-fr="Préréglage qualité">
+          <div class="sec-label" data-en="Quality Preset" data-fr="Prï¿½rï¿½glage qualitï¿½">
             Quality Preset</div>
           <div class="mode-chips">
             <button class="mchip" data-preset="draft">? <span data-en="Draft" data-fr="Brouillon">Draft</span></button>
@@ -1627,7 +1627,7 @@
             <button class="mchip" data-preset="ultra">?? <span data-en="Ultra">Ultra</span></button>
           </div>
 
-          <div class="sec-label" data-en="Geometry Settings" data-fr="Paramètres géométrie">
+          <div class="sec-label" data-en="Geometry Settings" data-fr="Paramï¿½tres gï¿½omï¿½trie">
             Geometry Settings</div>
           <div class="ctrl-row">
             <label><span data-en="Extrusion Depth (mm)">Extrusion Depth (mm)</span> <span
@@ -1655,11 +1655,11 @@
 
           <div class="ctrl-row">
             <label><span data-en="Super-Sampling">Super-Sampling</span>
-              <span class="ctrl-val" id="vSuperSample">2×</span></label>
+              <span class="ctrl-val" id="vSuperSample">2ï¿½</span></label>
             <div class="mode-chips" style="margin-top:4px">
-              <button class="mchip" data-ssuper="1">1× <small>Off</small></button>
-              <button class="mchip active" data-ssuper="2">2× <small>HD</small></button>
-              <button class="mchip" data-ssuper="4">4× <small>Ultra</small></button>
+              <button class="mchip" data-ssuper="1">1ï¿½ <small>Off</small></button>
+              <button class="mchip active" data-ssuper="2">2ï¿½ <small>HD</small></button>
+              <button class="mchip" data-ssuper="4">4ï¿½ <small>Ultra</small></button>
             </div>
           </div>
 
@@ -1667,7 +1667,7 @@
             <label><span data-en="Smoothing Algorithm">Smoothing Algorithm</span></label>
             <select id="sSmoothMethod"
               style="width:100%;padding:6px 8px;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:12px;margin-top:4px">
-              <option value="bilateral">?? Bilateral (Edge-Preserving) — Recommended</option>
+              <option value="bilateral">?? Bilateral (Edge-Preserving) ï¿½ Recommended</option>
               <option value="laplacian">?? Laplacian (Organic Smooth)</option>
               <option value="both">?? Bilateral + Laplacian (Ultra)</option>
               <option value="box">?? Box (Classic/Fast)</option>
@@ -1723,7 +1723,7 @@
           <div class="toggle-row">
             <div class="tgl-label">
               <span>?? Subdivision Pass</span>
-              <small>Bilinear midpoint subdivision — doubles triangle count</small>
+              <small>Bilinear midpoint subdivision ï¿½ doubles triangle count</small>
             </div>
             <label class="sw"><input type="checkbox" id="tSubdiv" /><span class="sw-track"></span></label>
           </div>
@@ -1738,7 +1738,7 @@
               <strong data-en="4D = 3D + Animation" data-fr="4D = 3D + Animation">4D = 3D +
                 Animation</strong>
               <small data-en="GLB format with embedded animations, materials & PBR shading"
-                data-fr="Format GLB avec animations, matériaux & ombrage PBR">GLB format with embedded animations, materials
+                data-fr="Format GLB avec animations, matï¿½riaux & ombrage PBR">GLB format with embedded animations, materials
                 & PBR shading</small>
             </div>
           </div>
@@ -1755,16 +1755,16 @@
 
           <div class="ctrl-row">
             <label><span data-en="Animation Speed" data-fr="Vitesse animation">Animation
-                Speed</span> <span class="ctrl-val" id="vAnimSpeed">1.0</span>×</label>
+                Speed</span> <span class="ctrl-val" id="vAnimSpeed">1.0</span>ï¿½</label>
             <input type="range" id="sAnimSpeed" min="0.1" max="5" value="1.0" step="0.1" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Animation Duration (s)" data-fr="Durée (s)">Animation Duration
+            <label><span data-en="Animation Duration (s)" data-fr="Durï¿½e (s)">Animation Duration
                 (s)</span> <span class="ctrl-val" id="vAnimDur">3</span>s</label>
             <input type="range" id="sAnimDur" min="1" max="30" value="3" />
           </div>
 
-          <div class="sec-label" data-en="PBR Material" data-fr="Matériau PBR">PBR Material</div>
+          <div class="sec-label" data-en="PBR Material" data-fr="Matï¿½riau PBR">PBR Material</div>
           <div class="mat-presets" id="matPresets">
             <div class="matcard active" data-mat="plastic">
               <div class="mc-preview" style="background:linear-gradient(135deg,#a8d8ea,#6faed4)"></div>
@@ -1772,7 +1772,7 @@
             </div>
             <div class="matcard" data-mat="metal">
               <div class="mc-preview" style="background:linear-gradient(135deg,#c0c0c0,#707070)"></div>
-              <span data-en="Metal" data-fr="Métal">Metal</span>
+              <span data-en="Metal" data-fr="Mï¿½tal">Metal</span>
             </div>
             <div class="matcard" data-mat="gold">
               <div class="mc-preview" style="background:linear-gradient(135deg,#ffd700,#c8a000)"></div>
@@ -1790,17 +1790,17 @@
             </div>
             <div class="matcard" data-mat="custom">
               <div class="mc-preview" style="background:conic-gradient(red,yellow,green,blue,red)"></div>
-              <span data-en="Custom" data-fr="Personnalisé">Custom</span>
+              <span data-en="Custom" data-fr="Personnalisï¿½">Custom</span>
             </div>
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Metalness" data-fr="Métallicité">Metalness</span> <span
+            <label><span data-en="Metalness" data-fr="Mï¿½tallicitï¿½">Metalness</span> <span
                 class="ctrl-val" id="vMetalness">0.0</span></label>
             <input type="range" id="sMetalness" min="0" max="1" value="0.0" step="0.01" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Roughness" data-fr="Rugosité">Roughness</span> <span
+            <label><span data-en="Roughness" data-fr="Rugositï¿½">Roughness</span> <span
                 class="ctrl-val" id="vRoughness">0.5</span></label>
             <input type="range" id="sRoughness" min="0" max="1" value="0.5" step="0.01" />
           </div>
@@ -1814,8 +1814,8 @@
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Emissive Glow" data-fr="Lueur émissive">Emissive Glow</span>
-              <small data-en="Material emits light" data-fr="Le matériau émet de la lumière">Material emits light</small>
+              <span data-en="Emissive Glow" data-fr="Lueur ï¿½missive">Emissive Glow</span>
+              <small data-en="Material emits light" data-fr="Le matï¿½riau ï¿½met de la lumiï¿½re">Material emits light</small>
             </div>
             <label class="sw"><input type="checkbox" id="tEmissive" /><span class="sw-track"></span></label>
           </div>
@@ -1823,8 +1823,8 @@
 
         <!-- -- EXPORT TAB -- -->
         <div class="spanel" id="sp-export">
-          <div class="sec-label" data-en="3D Export — STL" data-fr="Export 3D — STL">3D Export
-            — STL</div>
+          <div class="sec-label" data-en="3D Export ï¿½ STL" data-fr="Export 3D ï¿½ STL">3D Export
+            ï¿½ STL</div>
           <div class="export-cards">
             <div class="ecard ecard-stl" id="ecSTL">
               <div class="ec-icon">??</div>
@@ -1849,7 +1849,7 @@
             <button class="btn-exp" id="btnExportOBJ" disabled>? OBJ</button>
           </div>
 
-          <div class="sec-label" style="margin-top:18px" data-en="4D Export — GLB/GLTF" data-fr="Export 4D — GLB/GLTF">4D Export — GLB/GLTF</div>
+          <div class="sec-label" style="margin-top:18px" data-en="4D Export ï¿½ GLB/GLTF" data-fr="Export 4D ï¿½ GLB/GLTF">4D Export ï¿½ GLB/GLTF</div>
           <div class="export-cards">
             <div class="ecard ecard-glb" id="ecGLB">
               <div class="ec-icon">?</div>
@@ -1873,7 +1873,7 @@
             <button class="btn-exp btn-exp-4d" id="btnExportGLTF" disabled>?? GLTF</button>
           </div>
 
-          <div class="sec-label" style="margin-top:18px" data-en="Quality Presets" data-fr="Préréglages qualité">Quality Presets</div>
+          <div class="sec-label" style="margin-top:18px" data-en="Quality Presets" data-fr="Prï¿½rï¿½glages qualitï¿½">Quality Presets</div>
           <div class="mode-chips">
             <button class="mchip" data-preset="draft">? <span data-en="Draft" data-fr="Brouillon">Draft</span></button>
             <button class="mchip active" data-preset="standard">? <span data-en="Standard" data-fr="Standard">Standard</span></button>
@@ -1883,7 +1883,7 @@
           <div class="info-box" style="margin-top:14px">
             <div class="ib-icon">??</div>
             <div id="exportStats">
-              <span data-en="Generate a model first." data-fr="Générez un modèle d'abord.">Generate a model first.</span>
+              <span data-en="Generate a model first." data-fr="Gï¿½nï¿½rez un modï¿½le d'abord.">Generate a model first.</span>
             </div>
           </div>
         </div>
@@ -1895,7 +1895,7 @@
         <button class="btn-gen" id="btnGenerate" disabled>
           <span class="gen-icon">?</span>
           <span class="gen-text">
-            <span data-en="Generate 3D Model" data-fr="Générer le modèle 3D">Generate 3D
+            <span data-en="Generate 3D Model" data-fr="Gï¿½nï¿½rer le modï¿½le 3D">Generate 3D
               Model</span>
           </span>
         </button>
@@ -1911,7 +1911,7 @@
       <div class="pv-header">
         <div class="pv-title">
           <div class="pv-dot"></div>
-          <span data-en="3D/4D Preview" data-fr="Aperçu 3D/4D">3D/4D Preview</span>
+          <span data-en="3D/4D Preview" data-fr="Aperï¿½u 3D/4D">3D/4D Preview</span>
         </div>
         <div class="pv-actions">
           <button class="pv-btn" id="btnViewMode2D" title="2D View">??? 2D</button>
@@ -1937,7 +1937,7 @@
           <div class="pv-canvas-wrap">
             <div class="pv-placeholder" id="pvPlaceholder">
               <div class="pvp-icon">???</div>
-              <p data-en="Drop an image to get started" data-fr="Déposez une image pour commencer">Drop an image to get started</p>
+              <p data-en="Drop an image to get started" data-fr="Dï¿½posez une image pour commencer">Drop an image to get started</p>
             </div>
             <canvas id="canvas2D" style="display:none;max-width:100%;max-height:100%;object-fit:contain"></canvas>
           </div>
@@ -1946,7 +1946,7 @@
         <!-- 3D Preview Panel -->
         <div class="pv-panel" id="pv3D" style="display:none">
           <div class="pv-panel-head">
-            <span class="pvh-title">?? <span data-en="3D Model Preview" data-fr="Aperçu modèle 3D">3D Model Preview</span></span>
+            <span class="pvh-title">?? <span data-en="3D Model Preview" data-fr="Aperï¿½u modï¿½le 3D">3D Model Preview</span></span>
             <span class="pvh-badge" style="background:rgba(79,142,255,.2);color:#4f8eff">LIVE 3D</span>
           </div>
           <div class="pv-canvas-wrap" style="padding:0;position:relative">
@@ -1968,24 +1968,24 @@
       <div class="stats-bar">
         <div class="stat-chip">
           <div class="sc-label" data-en="Vertices" data-fr="Vertices">Vertices</div>
-          <div class="sc-val" id="statVerts">—</div>
+          <div class="sc-val" id="statVerts">ï¿½</div>
         </div>
         <div class="stat-chip">
           <div class="sc-label" data-en="Triangles" data-fr="Triangles">Triangles</div>
-          <div class="sc-val" id="statTris">—</div>
+          <div class="sc-val" id="statTris">ï¿½</div>
         </div>
         <div class="stat-chip">
           <div class="sc-label" data-en="Dimensions (mm)" data-fr="Dimensions (mm)">Dimensions
             (mm)</div>
-          <div class="sc-val" id="statDims">— × — × —</div>
+          <div class="sc-val" id="statDims">ï¿½ ï¿½ ï¿½ ï¿½ ï¿½</div>
         </div>
         <div class="stat-chip">
           <div class="sc-label" data-en="STL Size" data-fr="Taille STL">STL Size</div>
-          <div class="sc-val" id="statSTLSize">—</div>
+          <div class="sc-val" id="statSTLSize">ï¿½</div>
         </div>
         <div class="stat-chip">
           <div class="sc-label" data-en="GLB Size" data-fr="Taille GLB">GLB Size</div>
-          <div class="sc-val" id="statGLBSize">—</div>
+          <div class="sc-val" id="statGLBSize">ï¿½</div>
         </div>
       </div>
     </main>

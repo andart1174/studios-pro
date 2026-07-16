@@ -1503,8 +1503,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('tï¿½lï¿½charger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Tï¿½lï¿½charger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -2268,7 +2268,7 @@
         <div class="upload-zone" id="uploadZone">
             <span class="upload-icon">???</span>
             <h3>Drop an image here</h3>
-            <p>PNG, JPG, WEBP supported · Max 10MB</p>
+            <p>PNG, JPG, WEBP supported ï¿½ Max 10MB</p>
             <button class="btn-upload" id="uploadBtn">?? Choose Image</button>
             <input type="file" id="fileInput" accept="image/*" />
         </div>
@@ -2376,7 +2376,7 @@
 
         <div class="progress-container" id="progressContainer">
             <div class="progress-label">
-                <span id="progressLabel">Initializing AI model…</span>
+                <span id="progressLabel">Initializing AI modelï¿½</span>
                 <span id="progressPct">0%</span>
             </div>
             <div class="progress-bar">
@@ -2386,23 +2386,23 @@
         <div class="stats" id="stats" style="display:none">
             <div class="stat-card">
                 <div class="label">Image Size</div>
-                <div class="value" id="imgSize">—</div>
+                <div class="value" id="imgSize">ï¿½</div>
             </div>
             <div class="stat-card">
                 <div class="label">Min Depth</div>
-                <div class="value" id="minDepth" style="color:var(--accent3)">—</div>
+                <div class="value" id="minDepth" style="color:var(--accent3)">ï¿½</div>
             </div>
             <div class="stat-card">
                 <div class="label">Max Depth</div>
-                <div class="value" id="maxDepth" style="color:var(--accent)">—</div>
+                <div class="value" id="maxDepth" style="color:var(--accent)">ï¿½</div>
             </div>
             <div class="stat-card">
                 <div class="label">Avg Depth</div>
-                <div class="value" id="avgDepth" style="color:var(--accent2)">—</div>
+                <div class="value" id="avgDepth" style="color:var(--accent2)">ï¿½</div>
             </div>
             <div class="stat-card">
                 <div class="label">Processing Time</div>
-                <div class="value" id="procTime" style="color:#fbbf24">—</div>
+                <div class="value" id="procTime" style="color:#fbbf24">ï¿½</div>
             </div>
         </div>
 
@@ -2462,7 +2462,7 @@
             <div class="panel-header">
                 <div class="panel-dot" style="background:#06d6a0"></div>
                 <span>3D Point Cloud Preview</span>
-                <span style="font-size:12px;color:var(--muted)">Drag to rotate · Scroll to zoom</span>
+                <span style="font-size:12px;color:var(--muted)">Drag to rotate ï¿½ Scroll to zoom</span>
                 <button class="btn-toggle" id="autoRotateBtn" title="Auto Rotate">? Auto Rotate</button>
             </div>
             <div class="panel-body" style="padding:0"><canvas id="canvas3d"></canvas></div>
@@ -2582,7 +2582,7 @@
         let originalImageEl = null;
         let currentModel = 'onnx-community/depth-anything-v2-small';
 
-        // Persistent WebGL state — initialized once, reused across images
+        // Persistent WebGL state ï¿½ initialized once, reused across images
         let _rafId = null;
         let _gl = null, _prog = null, _posBuf = null, _colBuf = null, _uMVP = null;
         let _rot = { x: 0.3, y: 0, zoom: 1.8, dr: false, lx: 0, ly: 0 };
@@ -2624,7 +2624,7 @@
             document.getElementById('toastIcon').textContent = icon;
             t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
         }
-        function showLoading(id, text = 'Processing…') {
+        function showLoading(id, text = 'Processingï¿½') {
             const p = document.getElementById(id);
             const ex = p.querySelector('.loading-overlay'); if (ex) ex.remove();
             const ov = document.createElement('div'); ov.className = 'loading-overlay';
@@ -2760,7 +2760,7 @@
             document.getElementById('minDepth').textContent = mn.toFixed(3);
             document.getElementById('maxDepth').textContent = mx.toFixed(3);
             document.getElementById('avgDepth').textContent = (processedData.reduce((a, b) => a + b, 0) / processedData.length).toFixed(3); // Avg of processed data
-            document.getElementById('imgSize').textContent = `${width}×${height}`;
+            document.getElementById('imgSize').textContent = `${width}ï¿½${height}`;
             document.getElementById('stats').style.display = 'flex';
 
             const offscreenCanvas = document.createElement('canvas');
@@ -2815,7 +2815,7 @@
             renderMask();
         }
 
-        // -- 3D Point Cloud — persistent WebGL context ------------------------
+        // -- 3D Point Cloud ï¿½ persistent WebGL context ------------------------
         function render3D(depthCanvas, w, h, rawData, mn, range, rawWidth, rawHeight) {
             // Stop previous loop
             if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
@@ -2869,7 +2869,7 @@
                     _colBuf = _gl.createBuffer();
                     _uMVP = _gl.getUniformLocation(_prog, 'u_mvp');
 
-                    // Mouse/touch events – registered once
+                    // Mouse/touch events ï¿½ registered once
                     cv.onmousedown = e => { _rot.dr = true; _rot.lx = e.clientX; _rot.ly = e.clientY; };
                     window.addEventListener('mouseup', () => _rot.dr = false);
                     cv.onmousemove = e => {
@@ -2934,26 +2934,26 @@
         async function generate() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true; document.getElementById('generateIcon').textContent = '?';
-            showProgress(true); setProgress(5, 'Loading depth estimation model…');
+            showProgress(true); setProgress(5, 'Loading depth estimation modelï¿½');
             try {
                 const t0 = performance.now();
                 const selectedModel = document.getElementById('modelSelect').value;
                 if (!inferencer || currentModel !== selectedModel) {
                     currentModel = selectedModel;
-                    setProgress(10, 'Downloading AI model (first time can take a while)…');
+                    setProgress(10, 'Downloading AI model (first time can take a while)ï¿½');
                     inferencer = await pipeline('depth-estimation', currentModel, {
                         progress_callback: p => {
                             if (p.status === 'downloading') {
                                 const pct = Math.round(10 + (p.progress || 0) * .6);
-                                setProgress(pct, `Downloading model: ${p.name || '…'} (${Math.round(p.progress || 0)}%)`);
+                                setProgress(pct, `Downloading model: ${p.name || 'ï¿½'} (${Math.round(p.progress || 0)}%)`);
                             }
                         }
                     });
                     setProgress(72, 'Model ready!');
-                } else { setProgress(72, 'Using cached model…'); }
+                } else { setProgress(72, 'Using cached modelï¿½'); }
 
-                setProgress(78, 'Running depth estimation…');
-                showLoading('depthPanel', 'Running AI inference…');
+                setProgress(78, 'Running depth estimationï¿½');
+                showLoading('depthPanel', 'Running AI inferenceï¿½');
 
                 const url = URL.createObjectURL(window._currentFile);
 
@@ -2989,10 +2989,10 @@
                 const result = await inferencer(url, options);
                 URL.revokeObjectURL(url); // clear out original file url
 
-                setProgress(95, 'Applying color map…');
+                setProgress(95, 'Applying color mapï¿½');
 
                 const tensor = result.predicted_depth;
-                const data = tensor.data; // TypedArray — NOT a function
+                const data = tensor.data; // TypedArray ï¿½ NOT a function
 
                 // Fix: V3 tensors might expose dimensions directly or via ort_tensor
                 let height, width;
@@ -3298,7 +3298,7 @@
             this.classList.toggle('on', _autoRotate);
             this.textContent = _autoRotate ? '? Auto Rotate' : '? Auto Rotate';
         });
-        // Modify draw loop externally via a global flag — _rot.autoY
+        // Modify draw loop externally via a global flag ï¿½ _rot.autoY
         // The 3D draw function reads _autoRotate and increments _rot.y if true
 
         // -- OBJ Export -------------------------------------------------------

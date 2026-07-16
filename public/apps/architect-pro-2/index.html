@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>ArchitectPro — Intelligent House Builder</title>
+  <title>ArchitectPro ï¿½ Intelligent House Builder</title>
   <meta name="description"
     content="Professional interactive house construction planner with 2D editor, 3D model, materials calculator and cost estimator." />
   <link rel="stylesheet" href="style.css?v=3" />
@@ -543,8 +543,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('tï¿½lï¿½charger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Tï¿½lï¿½charger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1424,15 +1424,15 @@
 
         <!-- Overview -->
         <div class="overview-bar">
-          <div class="overview-stat"><span class="ov-label">?? Area</span><span class="ov-val" id="ov-area">—</span>
+          <div class="overview-stat"><span class="ov-label">?? Area</span><span class="ov-val" id="ov-area">ï¿½</span>
           </div>
           <div class="overview-stat"><span class="ov-label">?? Phases</span><span class="ov-val">7</span></div>
           <div class="overview-stat"><span class="ov-label">?? <span
-                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">—</span></div>
+                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">ï¿½</span></div>
           <div class="overview-stat"><span class="ov-label">?? <span data-i18n="laborCost">Labor</span></span><span
-              class="ov-val" id="ov-lab-cost">—</span></div>
+              class="ov-val" id="ov-lab-cost">ï¿½</span></div>
           <div class="overview-stat"><span class="ov-label">?? Total Est.</span><span class="ov-val green"
-              id="ov-total">—</span></div>
+              id="ov-total">ï¿½</span></div>
           <div style="margin-left:auto">
             <span id="hdr-dims" style="font-size:0.88rem;color:var(--text-muted);font-weight:600"></span>
           </div>
@@ -1491,7 +1491,7 @@
           <!-- RIGHT: 3D MODEL -->
           <div class="view-3d-panel">
             <canvas id="canvas-3d"></canvas>
-            <div class="view-3d-label">?? 3D Model — drag to rotate · scroll to zoom</div>
+            <div class="view-3d-label">?? 3D Model ï¿½ drag to rotate ï¿½ scroll to zoom</div>
             <div class="canvas-overlay">
               <button class="canvas-btn" onclick="resetCamera()">? Reset</button>
               <button class="canvas-btn" id="btn-wireframe" onclick="toggleWireframe()">? Wire</button>
@@ -1508,14 +1508,14 @@
             <p id="ph-sub">Phase 1 of 7</p>
           </div>
           <div class="phase-nav">
-            <button class="btn-phase-nav" onclick="changePhase(-1)">‹</button>
-            <button class="btn-phase-nav" onclick="changePhase(1)">›</button>
+            <button class="btn-phase-nav" onclick="changePhase(-1)">ï¿½</button>
+            <button class="btn-phase-nav" onclick="changePhase(1)">ï¿½</button>
           </div>
         </div>
 
         <!-- Steps -->
         <div class="panel-card">
-          <div class="panel-title">?? <span data-i18n="steps">Steps</span> — <span class="pton"
+          <div class="panel-title">?? <span data-i18n="steps">Steps</span> ï¿½ <span class="pton"
               id="steps-phase-name">Foundation</span></div>
           <div class="steps-grid" id="steps-grid" style="padding:10px"></div>
         </div>
