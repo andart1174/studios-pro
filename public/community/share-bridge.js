@@ -1,4 +1,4 @@
-/* Studios-PRO → Community Share Bridge v4.0 */
+/* Studios-PRO → Community Share Bridge v5.0 — ping/pong via storage events */
 (function () {
   'use strict';
 
@@ -114,32 +114,26 @@
   // WebGL readPixels — bypasses canvas taint (works with cross-origin textures)
   function captureViaGLReadPixels(renderer, scene, camera) {
     try {
-      // Force render one frame
       renderer.render(scene, camera);
-
       const gl = renderer.getContext();
       const W  = gl.drawingBufferWidth;
       const H  = gl.drawingBufferHeight;
       if (!W || !H) return null;
 
-      // Read raw pixels
       const pixels = new Uint8Array(W * H * 4);
       gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-      // Check if all black
       let bright = 0;
       for (let i = 0; i < Math.min(pixels.length, 400); i += 4) {
         bright += pixels[i] + pixels[i+1] + pixels[i+2];
       }
-      if (bright < 100) return null; // genuinely empty
+      if (bright < 100) return null;
 
-      // Scale to max 1100px
       const MAX = 1100;
       const ratio = Math.min(MAX / W, MAX / H, 1);
       const tW = Math.round(W * ratio);
       const tH = Math.round(H * ratio);
 
-      // Full-res canvas (WebGL is bottom-to-top, flip vertically)
       const full = document.createElement('canvas');
       full.width = W; full.height = H;
       const fctx = full.getContext('2d');
@@ -151,7 +145,6 @@
       }
       fctx.putImageData(imgData, 0, 0);
 
-      // Scale down
       const tmp = document.createElement('canvas');
       tmp.width = tW; tmp.height = tH;
       tmp.getContext('2d').drawImage(full, 0, 0, tW, tH);
@@ -183,9 +176,16 @@
   }
 
   /* ── Send to Community ────────────────────────────────── */
-
-  /* ── Send to Community ────────────────────────────────── */
+  /*
+   * PING-PONG via localStorage storage events (NOT throttled in background tabs).
+   * 1. Tool writes share data + ping token to localStorage.
+   * 2. Community receives the 'storage' event (fires even if tab is sleeping).
+   * 3. Community writes pong token back to localStorage + shows modal.
+   * 4. Tool reads pong after 350ms — if it matches, community is open → NO window.open.
+   * 5. If no pong → community is NOT open → window.open to open it.
+   */
   function sendShare(dataUrl) {
+    const pingToken = Date.now().toString();
     const payload = {
       type: 'screenshot',
       imageDataUrl: dataUrl,
@@ -194,32 +194,43 @@
       ts: Date.now()
     };
 
-    // Save to localStorage (fallback)
+    // 1. Save share data to localStorage
     try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e) {}
 
-    // Check if Community tab is active based on heartbeat (updated every 2s)
-    let isCommOpen = false;
+    // 2. Send ping — community's storage event listener will respond
+    try { localStorage.setItem('studios_community_ping', pingToken); } catch(e) {}
+
+    // 3. Also send via BroadcastChannel (redundant but helps in same-window tabs)
     try {
-      const activeTime = parseInt(localStorage.getItem('studios_community_active') || '0', 10);
-      isCommOpen = (Date.now() - activeTime) < 4000;
+      const bc = new BroadcastChannel(BC_NAME);
+      bc.postMessage({ type: 'share', data: payload });
+      setTimeout(function() { try { bc.close(); } catch(x) {} }, 1500);
     } catch(e) {}
 
-    if (isCommOpen) {
-      // Just broadcast via BroadcastChannel, do not call window.open
-      try {
-        const bc = new BroadcastChannel(BC_NAME);
-        bc.postMessage({ type: 'share', data: payload });
-        bc.close();
-      } catch(e) {}
-      toast('✦ Sent! Switch to your Community tab', 'ok');
-      return;
-    }
+    toast('Sending to Community…', 'info');
 
-    // Community is closed: open a new tab
-    toast('✦ Opening Community…', 'ok');
+    // 4. Wait 350ms — enough for storage event to fire and pong to be written
     setTimeout(function() {
-      window.open(COMM_URL + '?share=1', 'studios_community_tab');
-    }, 300);
+      let pongReceived = false;
+      try {
+        const pong = localStorage.getItem('studios_community_pong');
+        // Pong must be within 2 seconds and match our ping era
+        if (pong && (Date.now() - parseInt(pong)) < 2000) {
+          pongReceived = true;
+        }
+      } catch(e) {}
+
+      if (pongReceived) {
+        // Community is open and received the data
+        toast('✦ Sent! Switch to your Community tab', 'ok');
+      } else {
+        // Community is NOT open — open it (it will read from localStorage on load)
+        toast('✦ Opening Community…', 'ok');
+        setTimeout(function() {
+          window.open(COMM_URL + '?share=1', 'studios_community_tab');
+        }, 200);
+      }
+    }, 350);
   }
 
   /* ── Utils ────────────────────────────────────────────── */

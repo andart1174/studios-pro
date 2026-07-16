@@ -1707,21 +1707,34 @@ function injectPreviewDataUrl(dataUrl) {
   });
 }
 
-// ─── BroadcastChannel & Heartbeat — receive shares from tool pages ─────
-try {
-  const updateHeartbeat = () => { try { localStorage.setItem('studios_community_active', Date.now().toString()); } catch(x){} };
-  updateHeartbeat();
-  setInterval(updateHeartbeat, 2000);
+// ─── Storage event PING-PONG — fires even in sleeping background tabs ──────
+// When tool writes 'studios_community_ping', we respond with 'studios_community_pong'
+// so the tool knows community is already open and skips calling window.open.
+window.addEventListener('storage', function(e) {
+  if (e.key === 'studios_community_ping' && e.newValue) {
+    // Send pong immediately (not throttled — storage events are high priority)
+    try { localStorage.setItem('studios_community_pong', Date.now().toString()); } catch(x) {}
+    // Process the share data that the tool already saved to localStorage
+    try {
+      const shareData = JSON.parse(localStorage.getItem('studios_community_share') || 'null');
+      if (shareData && (Date.now() - (shareData.ts || 0)) < 10000) {
+        applyIncomingShare(shareData);
+      }
+    } catch(x) {}
+  }
+});
 
+// ─── BroadcastChannel — secondary delivery for same-window tabs ─────────
+try {
   const _spBC = new BroadcastChannel('sp_community_channel');
   _spBC.onmessage = function(e) {
     if (e.data && e.data.type === 'share') {
-      _spBC.postMessage('ack'); // tell tool page "I'm open, got it"
+      try { localStorage.setItem('studios_community_pong', Date.now().toString()); } catch(x){}
       try { localStorage.setItem('studios_community_share', JSON.stringify(e.data.data)); } catch(x){}
       applyIncomingShare(e.data.data);
     }
   };
-} catch(e) { /* BroadcastChannel not supported — fallback to localStorage */ }
+} catch(e) { /* BroadcastChannel not supported */ }
 
 // ─── Init ──────────────────────────────────────────────────
 applyLang();
