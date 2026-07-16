@@ -23,6 +23,61 @@
   // Promise that resolves after the FIRST onAuthStateChanged fires (may be logged-in or null)
   let _authReadyPromise = null;
   let _authReadyResolve = null;
+  let _curModelData = null;
+
+  /* ── Extract 3D Model Geometry (Safe for Firestore) ────── */
+  function get3DModelData() {
+    try {
+      let mesh = null;
+      // Look for spScene or other exposed Three.js scenes
+      const sc = window.spScene || window.scene || window.threeScene;
+      if (sc) {
+        sc.traverse(function(o) {
+          if (o.isMesh && o.geometry && !mesh) mesh = o;
+        });
+      }
+      if (!mesh) {
+        // Scan window properties for any mesh
+        for (const k of Object.keys(window)) {
+          try {
+            const v = window[k];
+            if (v && v.isMesh && v.geometry) { mesh = v; break; }
+          } catch(x){}
+        }
+      }
+      if (!mesh) return null;
+
+      const geo = mesh.geometry;
+      if (!geo || !geo.attributes || !geo.attributes.position) return null;
+
+      // Convert Float32Array to standard array
+      const pos = Array.from(geo.attributes.position.array);
+      const nor = geo.attributes.normal ? Array.from(geo.attributes.normal.array) : null;
+      const idx = geo.index ? Array.from(geo.index.array) : null;
+
+      // Limit positions to ~90,000 floats (30,000 vertices) to fit inside Firestore's 1MB limit
+      const MAX_FLOATS = 90000;
+      if (pos.length > MAX_FLOATS) return null;
+
+      let color = '#6366f1';
+      if (mesh.material) {
+        if (mesh.material.color) color = '#' + mesh.material.color.getHexString();
+        else if (Array.isArray(mesh.material) && mesh.material[0] && mesh.material[0].color) {
+          color = '#' + mesh.material[0].color.getHexString();
+        }
+      }
+
+      return {
+        positions: pos,
+        normals: nor,
+        indices: idx,
+        color: color
+      };
+    } catch(e) {
+      console.warn('Could not extract 3D geometry:', e);
+      return null;
+    }
+  }
 
   /* ── Load Firebase SDK lazily ──────────────────────────── */
   function loadFirebase(cb) {
@@ -157,6 +212,7 @@
   function onClickShare() {
     setFab(false);
     toast('Capturing…', 'info');
+    _curModelData = get3DModelData();
 
     // Case 1: Studio Pro 4D iframe
     const iframe = document.getElementById('preview-iframe');
@@ -326,19 +382,24 @@
 
       // 2. Write post to Firestore
       const ud = (await _db.collection('users').doc(_curUser.uid).get()).data() || {};
-      await _db.collection(COLL).add({
+      const postPayload = {
         uid: _curUser.uid,
         displayName: _curUser.displayName || 'Anonymous',
         photoURL: _curUser.photoURL || null,
         content: content || `Shared from: ${sourceTitle}`,
-        category: cat,
+        category: _curModelData ? '3dmodel' : cat,
         images: [imageUrl],
         videoUrl: '',
         likes: [], likesCount: 0, commentsCount: 0,
         userPostCount: ud.postCount || 0,
         sourcePage: location.pathname,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if (_curModelData) {
+        postPayload.modelData = _curModelData;
+      }
+      await _db.collection(COLL).add(postPayload);
+      _curModelData = null; // reset
 
       // 3. Increment user post count
       try { await _db.collection('users').doc(_curUser.uid).update({ postCount: firebase.firestore.FieldValue.increment(1) }); } catch(x){}
@@ -350,6 +411,7 @@
       }, 400);
 
     } catch(err) {
+      _curModelData = null; // reset on error
       console.error('Share publish error:', err);
       btn.disabled = false; btn.textContent = '✦ Publish Post';
       hideProgress();

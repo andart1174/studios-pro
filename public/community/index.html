@@ -157,11 +157,19 @@
     .ig-4 img{width:100%;height:185px;object-fit:cover;cursor:pointer}
     .p-imgs img:hover{opacity:.9}
     /* 3D Viewer */
-    .p-3dv{margin-bottom:14px;border-radius:14px;overflow:hidden;height:280px;background:#030712;border:1px solid var(--border);position:relative;cursor:grab}
+    .p-3dv{overflow:hidden;height:100%;background:#030712;position:relative;cursor:grab}
     .p-3dv:active{cursor:grabbing}
-    .p-3dv canvas{display:block}
+    .p-3dv canvas{display:block;width:100%;height:100%}
     .p-3d-badge{position:absolute;top:10px;left:10px;background:rgba(99,102,241,.85);backdrop-filter:blur(6px);border:1px solid rgba(99,102,241,.5);color:#fff;font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px;font-family:'Orbitron',monospace;z-index:2}
     .p-3d-hint{position:absolute;bottom:10px;right:10px;color:rgba(255,255,255,.5);font-size:.68rem;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);padding:3px 8px;border-radius:6px;z-index:2;pointer-events:none}
+    
+    /* Play/Exit Button styles for hybrid 3D cards */
+    .p-3d-play-btn:hover {background: rgba(0,0,0,0.3) !important;}
+    .p-3d-play-inner {background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-size: 0.85rem; font-weight: 800; padding: 12px 24px; border-radius: 999px; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(99,102,241,0.5); border: 1px solid rgba(255,255,255,0.15); transition: transform 0.2s;}
+    .p-3d-play-btn:hover .p-3d-play-inner {transform: scale(1.06);}
+    .p-3d-play-icon {font-size: 1.1rem;}
+    .p-3d-exit {position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-family: inherit;}
+    .p-3d-exit:hover {background: rgba(239,68,68,0.85); border-color: rgba(239,68,68,0.4); transform: scale(1.03);}
     /* Video */
     .p-video{margin-bottom:12px;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
     .p-video iframe{width:100%;height:100%;border:none}
@@ -1138,6 +1146,28 @@ function buildCard(p) {
   const has3D = p.modelData && (p.modelData.positions || p.modelData.vertices);
   const postCnt = p.userPostCount || 0;
 
+  let mediaHtml = '';
+  if (has3D) {
+    const mainImg = p.images && p.images[0] ? p.images[0] : '';
+    mediaHtml = `
+      <div class="p-3d-card-wrapper" id="wrap-${p.id}" style="position:relative; border-radius:14px; overflow:hidden; margin-bottom:14px; background:#0b0f19; border:1px solid var(--border);">
+        <img src="${mainImg}" id="img-${p.id}" style="width:100%; height:320px; object-fit:cover; display:block;">
+        <div class="p-3d-play-btn" id="play-${p.id}" onclick="start3DPreview('${p.id}')" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); cursor:pointer; transition:all 0.2s;">
+          <div class="p-3d-play-inner">
+            <span class="p-3d-play-icon">🔮</span>
+            <span class="p-3d-play-text">View in 3D</span>
+          </div>
+        </div>
+        <div class="p-3dv" id="v3d-${p.id}" data-model='${JSON.stringify(p.modelData).replace(/'/g,"&#39;")}' style="display:none; height:320px; width:100%; position:relative;">
+          <div class="p-3d-badge">🔮 3D PREVIEW</div>
+          <button class="p-3d-exit" onclick="stop3DPreview('${p.id}')">✕ Exit 3D</button>
+          <div class="p-3d-hint">Drag to rotate</div>
+        </div>
+      </div>`;
+  } else {
+    mediaHtml = imgsHtml(p.images) + (vid ? `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>` : '');
+  }
+
   div.innerHTML = `
     ${p.pinned ? '<div class="pinned-tag">📌 Pinned</div>' : ''}
     <div class="ph">
@@ -1156,12 +1186,7 @@ function buildCard(p) {
       ${canDel ? `<button class="del-btn" onclick="delPost('${p.id}')">🗑️</button>` : ''}
     </div>
     ${p.content ? `<div class="p-content">${esc(p.content)}</div>` : ''}
-    ${has3D ? `<div class="p-3dv" id="v3d-${p.id}" data-model='${JSON.stringify(p.modelData).replace(/'/g,"&#39;")}'>
-      <div class="p-3d-badge">🔮 3D MODEL</div>
-      <div class="p-3d-hint">Drag to rotate</div>
-    </div>` : ''}
-    ${imgsHtml(p.images)}
-    ${vid ? `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>` : ''}
+    ${mediaHtml}
     <div class="pf">
       <button class="act-btn${liked?' liked':''}" onclick="toggleLike('${p.id}')">
         <svg viewBox="0 0 24 24" fill="${liked?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -1180,20 +1205,78 @@ function buildCard(p) {
 }
 
 // ─── 3D Viewer ─────────────────────────────────────────────
+// ─── 3D Viewer Lifecycle Management ─────────────────────────
+const activeRenderers = {};
+
 function initAll3D() {
-  if (typeof THREE === 'undefined') return;
-  document.querySelectorAll('.p-3dv[data-model]').forEach(el => {
-    if (el.dataset.init) return;
-    el.dataset.init = '1';
-    init3D(el);
-  });
+  // Deprecated: We now initialize WebGL on-demand via start3DPreview to optimize memory and performance
 }
 
-function init3D(container) {
+function start3DPreview(postId) {
+  const img = document.getElementById(`img-${postId}`);
+  const playBtn = document.getElementById(`play-${postId}`);
+  const viewer = document.getElementById(`v3d-${postId}`);
+
+  if (!img || !playBtn || !viewer) return;
+
+  // Swap UI visibility
+  img.style.display = 'none';
+  playBtn.style.display = 'none';
+  viewer.style.display = 'block';
+
+  // Instantiate 3D context
+  init3D(viewer, postId);
+}
+
+function stop3DPreview(postId) {
+  const img = document.getElementById(`img-${postId}`);
+  const playBtn = document.getElementById(`play-${postId}`);
+  const viewer = document.getElementById(`v3d-${postId}`);
+
+  if (!img || !playBtn || !viewer) return;
+
+  // Fully dispose WebGL memory
+  if (activeRenderers[postId]) {
+    try {
+      const state = activeRenderers[postId];
+      state.running = false;
+      if (state.af) cancelAnimationFrame(state.af);
+      if (state.obs) state.obs.disconnect();
+      
+      if (state.mesh) {
+        if (state.mesh.geometry) state.mesh.geometry.dispose();
+        if (state.mesh.material) {
+          if (Array.isArray(state.mesh.material)) {
+            state.mesh.material.forEach(m => m.dispose());
+          } else {
+            state.mesh.material.dispose();
+          }
+        }
+      }
+      if (state.renderer) {
+        state.renderer.dispose();
+        if (state.renderer.domElement) state.renderer.domElement.remove();
+      }
+    } catch(e) {
+      console.warn('Error disposing 3D preview:', e);
+    }
+    delete activeRenderers[postId];
+  }
+
+  // Reset viewer markup
+  viewer.style.display = 'none';
+  viewer.querySelectorAll('canvas').forEach(c => c.remove());
+
+  // Show static previews
+  img.style.display = 'block';
+  playBtn.style.display = 'flex';
+}
+
+function init3D(container, postId) {
   try {
     const md = JSON.parse(container.dataset.model);
     if (!md) return;
-    const W = container.clientWidth || 500, H = 280;
+    const W = container.clientWidth || 500, H = 320;
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -1241,6 +1324,17 @@ function init3D(container) {
     animate();
     const obs = new IntersectionObserver(e => { running=e[0].isIntersecting; if (running) animate(); });
     obs.observe(container);
+
+    // Track active state for memory release
+    activeRenderers[postId] = {
+      renderer,
+      scene,
+      camera,
+      mesh,
+      af,
+      running,
+      obs
+    };
   } catch(e) { console.warn('3D viewer error:', e); }
 }
 
