@@ -29,35 +29,68 @@
   function get3DModelData() {
     try {
       let mesh = null;
-      // Look for spScene or other exposed Three.js scenes
       const sc = window.spScene || window.scene || window.threeScene;
+      let candidates = [];
+
+      // Helper function to check if a mesh is a background/grid/helper
+      function isHelper(o) {
+        const name = (o.name || '').toLowerCase();
+        const materialName = (o.material && o.material.name || '').toLowerCase();
+        return name.includes('grid') || name.includes('helper') || name.includes('ground') || 
+               name.includes('floor') || name.includes('plane') || name.includes('sky') ||
+               name.includes('background') || materialName.includes('grid') || 
+               o.isGridHelper || o.isAxesHelper;
+      }
+
       if (sc) {
         sc.traverse(function(o) {
-          if (o.isMesh && o.geometry && !mesh) mesh = o;
+          if (o.isMesh && o.geometry && !isHelper(o)) {
+            candidates.push(o);
+          }
         });
       }
-      if (!mesh) {
-        // Scan window properties for any mesh
+
+      // If no candidate found via traversal, look in window variables
+      if (candidates.length === 0) {
         for (const k of Object.keys(window)) {
           try {
             const v = window[k];
-            if (v && v.isMesh && v.geometry) { mesh = v; break; }
+            if (v && v.isMesh && v.geometry && !isHelper(v)) {
+              candidates.push(v);
+            }
           } catch(x){}
         }
       }
+
+      if (candidates.length === 0) return null;
+
+      // Sort candidate meshes by vertex count (descending) to find the primary subject
+      candidates.sort(function(a, b) {
+        const countA = (a.geometry.attributes && a.geometry.attributes.position) ? a.geometry.attributes.position.count : 0;
+        const countB = (b.geometry.attributes && b.geometry.attributes.position) ? b.geometry.attributes.position.count : 0;
+        return countB - countA;
+      });
+
+      // Find the first mesh that has valid positions and is within size limits
+      const MAX_FLOATS = 90000; // 30,000 vertices * 3 coordinates
+      for (let i = 0; i < candidates.length; i++) {
+        const m = candidates[i];
+        const geo = m.geometry;
+        if (geo.attributes && geo.attributes.position) {
+          const pos = Array.from(geo.attributes.position.array);
+          if (pos.length > 0 && pos.length <= MAX_FLOATS) {
+            mesh = m;
+            break;
+          }
+        }
+      }
+
       if (!mesh) return null;
 
       const geo = mesh.geometry;
-      if (!geo || !geo.attributes || !geo.attributes.position) return null;
-
-      // Convert Float32Array to standard array
       const pos = Array.from(geo.attributes.position.array);
       const nor = geo.attributes.normal ? Array.from(geo.attributes.normal.array) : null;
       const idx = geo.index ? Array.from(geo.index.array) : null;
-
-      // Limit positions to ~90,000 floats (30,000 vertices) to fit inside Firestore's 1MB limit
-      const MAX_FLOATS = 90000;
-      if (pos.length > MAX_FLOATS) return null;
 
       let color = '#6366f1';
       if (mesh.material) {
