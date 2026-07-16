@@ -20,12 +20,20 @@
   let _fb = null, _auth = null, _db = null, _stor = null, _curUser = null;
   let _fbReady = false;
   let _fbLoading = false;
-  let _pendingShare = null;  // holds captured screenshot while Firebase loads
+  // Promise that resolves after the FIRST onAuthStateChanged fires (may be logged-in or null)
+  let _authReadyPromise = null;
+  let _authReadyResolve = null;
 
   /* ── Load Firebase SDK lazily ──────────────────────────── */
   function loadFirebase(cb) {
-    if (_fbReady) { cb(); return; }
-    if (_fbLoading) { const t = setInterval(() => { if (_fbReady) { clearInterval(t); cb(); } }, 100); return; }
+    // If already ready, wait for auth state then call cb
+    if (_fbReady && _authReadyPromise) { _authReadyPromise.then(function() { cb(); }); return; }
+    if (_fbLoading) {
+      const t = setInterval(function() {
+        if (_fbReady && _authReadyPromise) { clearInterval(t); _authReadyPromise.then(function() { cb(); }); }
+      }, 80);
+      return;
+    }
     _fbLoading = true;
 
     function loadScript(src, onLoad) {
@@ -40,13 +48,19 @@
           loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js', function() {
             try {
               if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
-              else _fb = firebase.apps[0];
               _auth = firebase.auth();
               _db   = firebase.firestore();
               _stor = firebase.storage();
-              _auth.onAuthStateChanged(function(u) { _curUser = u; });
+              // Create a promise that resolves after the FIRST auth state is known
+              _authReadyPromise = new Promise(function(resolve) { _authReadyResolve = resolve; });
+              _auth.onAuthStateChanged(function(u) {
+                _curUser = u;
+                // Resolve only the first time (subsequent calls update _curUser only)
+                if (_authReadyResolve) { _authReadyResolve(u); _authReadyResolve = null; }
+              });
               _fbReady = true;
-              cb();
+              // cb fires AFTER auth state is known (not before)
+              _authReadyPromise.then(function() { cb(); });
             } catch(e) { toast('Firebase init error', 'err'); }
           });
         });
@@ -271,14 +285,16 @@
     ov.querySelector('#_sp_cls').addEventListener('click', closeModal);
     ov.querySelector('#_sp_pub').addEventListener('click', () => doPublish(dataUrl, sourceTitle));
 
-    // Load Firebase in background while user fills in the form
-    loadFirebase(() => {
+    // Load Firebase and wait for auth state before showing any warning
+    loadFirebase(function() {
+      // onAuthStateChanged has fired by now — _curUser is correct
       if (!_curUser) {
         const nl = document.getElementById('_sp_not_logged');
         if (nl) nl.style.display = '';
         const btn = document.getElementById('_sp_pub');
-        if (btn) btn.disabled = true;
+        if (btn) { btn.disabled = true; btn.textContent = 'Sign in required'; }
       }
+      // If logged in: modal is already ready, Publish button is enabled by default
     });
   }
 
