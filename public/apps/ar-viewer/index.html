@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27,18 +27,18 @@
         <div class="logo">AR</div>
         <div>
           <h1 class="app-title lang-text" data-fr="Studio AR Viewer" data-en="AR Viewer 3D">AR Viewer 3D</h1>
-          <p class="app-subtitle lang-text" data-fr="Visualisez vos modèles 3D en Réalité Augmentée" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
+          <p class="app-subtitle lang-text" data-fr="Visualisez vos mod�les 3D en R�alit� Augment�e" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
         </div>
       </div>
 
       <!-- Upload Section -->
       <div class="panel-section">
-        <h2 class="lang-text" data-fr="Charger un Modèle 3D" data-en="Load 3D Model">Load 3D Model</h2>
+        <h2 class="lang-text" data-fr="Charger un Mod�le 3D" data-en="Load 3D Model">Load 3D Model</h2>
         <div id="drop-zone" class="drop-zone">
           <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
           </svg>
-          <p class="drop-text lang-text" data-fr="Glissez-déposez un fichier 3D ou cliquez pentru parcourir" data-en="Drag & drop a 3D file or click to browse">Drag & drop a 3D file or click to browse</p>
+          <p class="drop-text lang-text" data-fr="Glissez-d�posez un fichier 3D ou cliquez pentru parcourir" data-en="Drag & drop a 3D file or click to browse">Drag & drop a 3D file or click to browse</p>
           <span class="formats-text">GLB, GLTF, STL, OBJ</span>
           <input type="file" id="file-input" accept=".glb,.gltf,.stl,.obj" style="display: none;">
         </div>
@@ -46,7 +46,7 @@
 
       <!-- Model Stats / Info -->
       <div id="info-section" class="panel-section" style="display: none;">
-        <h2 class="lang-text" data-fr="Informations du Modèle" data-en="Model Information">Model Information</h2>
+        <h2 class="lang-text" data-fr="Informations du Mod�le" data-en="Model Information">Model Information</h2>
         <div class="info-grid">
           <div class="info-row">
             <span class="info-label lang-text" data-fr="Nom:" data-en="Name:">Name:</span>
@@ -73,7 +73,7 @@
         
         <!-- Color Picker -->
         <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Couleur du Modèle:" data-en="Model Color:">Model Color:</label>
+          <label class="control-label lang-text" data-fr="Couleur du Mod�le:" data-en="Model Color:">Model Color:</label>
           <div class="color-palette">
             <button class="color-btn active" data-color="original" title="Original" style="background: linear-gradient(135deg, #374151, #1f2937); border: 2px dashed #06b6d4;"></button>
             <button class="color-btn" data-color="#06b6d4" title="Cyan" style="background-color: #06b6d4;"></button>
@@ -87,7 +87,7 @@
 
         <!-- Lighting Presets -->
         <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Éclairage:" data-en="Lighting:">Lighting:</label>
+          <label class="control-label lang-text" data-fr="�clairage:" data-en="Lighting:">Lighting:</label>
           <div class="lighting-presets">
             <button class="light-btn active" data-preset="neutral" data-fr="Neutre" data-en="Neutral">Neutral</button>
             <button class="light-btn" data-preset="studio" data-fr="Studio" data-en="Studio">Studio</button>
@@ -98,7 +98,7 @@
         <!-- Exposure Slider -->
         <div class="custom-control-group">
           <div class="slider-label-row">
-            <label class="control-label lang-text" data-fr="Luminosité:" data-en="Exposure:">Exposure:</label>
+            <label class="control-label lang-text" data-fr="Luminosit�:" data-en="Exposure:">Exposure:</label>
             <span id="exposure-val">1.0</span>
           </div>
           <input type="range" id="exposure-slider" min="0.2" max="2" step="0.1" value="1.0" class="custom-slider">
@@ -110,7 +110,7 @@
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
             <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
               <input type="checkbox" id="cad-box-toggle" style="accent-color: #06b6d4;">
-              <span class="lang-text" data-fr="Afficher les cotes 3D (Boîte CAD)" data-en="Show Bounding Box (CAD 3D)">Show Bounding Box (CAD 3D)</span>
+              <span class="lang-text" data-fr="Afficher les cotes 3D (Bo�te CAD)" data-en="Show Bounding Box (CAD 3D)">Show Bounding Box (CAD 3D)</span>
             </label>
             <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
               <input type="checkbox" id="cad-grid-toggle" style="accent-color: #06b6d4;">
@@ -121,7 +121,7 @@
 
         <!-- Advanced Rotation Controls -->
         <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Contrôles de Rotation:" data-en="Rotation Controls:">Rotation Controls:</label>
+          <label class="control-label lang-text" data-fr="Contr�les de Rotation:" data-en="Rotation Controls:">Rotation Controls:</label>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <label style="font-size: 11px; color: #9ca3af;" class="lang-text" data-fr="Style de rotation:" data-en="Rotation style:">Rotation style:</label>
@@ -156,11 +156,11 @@
         </div>
       </div>
 
-      <!-- ═══ Material Studio PBR ═══════════════════════════════════════ -->
+      <!-- --- Material Studio PBR --------------------------------------- -->
       <div id="material-studio-section" class="panel-section" style="display: none;">
         <h2 class="lang-text" data-fr="Material Studio" data-en="Material Studio">Material Studio</h2>
         <p style="font-size:10px;color:#6b7280;margin:-4px 0 10px;" class="lang-text"
-           data-fr="Appliquez un matériau réaliste au modèle instantanément."
+           data-fr="Appliquez un mat�riau r�aliste au mod�le instantan�ment."
            data-en="Apply a realistic material to the model instantly.">Apply a realistic material to the model instantly.</p>
         <div id="material-presets" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
           <button class="mat-btn active" data-mat="original" title="Original"
@@ -190,17 +190,17 @@
         </div>
       </div>
 
-      <!-- ═══ Exploded View ══════════════════════════════════════════════ -->
+      <!-- --- Exploded View ---------------------------------------------- -->
       <!-- QR Code (for Desktop to Mobile Transfer) -->
       <div id="qr-section" class="panel-section" style="display: none;">
-        <h2 class="lang-text" data-fr="Scanner avec votre Téléphone" data-en="Scan with your Phone">Scan with your Phone</h2>
+        <h2 class="lang-text" data-fr="Scanner avec votre T�l�phone" data-en="Scan with your Phone">Scan with your Phone</h2>
         <div class="qr-container">
           <div id="qr-loading" class="qr-spinner-wrapper" style="display: none;">
             <div class="spinner"></div>
-            <p class="spinner-text lang-text" data-fr="Génération du lien AR..." data-en="Generating AR link...">Generating AR link...</p>
+            <p class="spinner-text lang-text" data-fr="G�n�ration du lien AR..." data-en="Generating AR link...">Generating AR link...</p>
           </div>
           <img id="qr-code-img" src="" alt="AR QR Code" style="display: none;">
-          <p class="qr-hint lang-text" data-fr="Scannez ce code QR pour projeter instantanément ce modèle 3D sur votre table en AR !" data-en="Scan this QR code to instantly project this 3D model onto your table in AR!">Scan this QR code to instantly project this 3D model onto your table in AR!</p>
+          <p class="qr-hint lang-text" data-fr="Scannez ce code QR pour projeter instantan�ment ce mod�le 3D sur votre table en AR !" data-en="Scan this QR code to instantly project this 3D model onto your table in AR!">Scan this QR code to instantly project this 3D model onto your table in AR!</p>
         </div>
       </div>
       
@@ -209,8 +209,8 @@
         <h2 class="lang-text" data-fr="Comment utiliser ?" data-en="How to use ?">How to use ?</h2>
         <ol class="help-list">
           <li class="lang-text" data-fr="Chargez votre fichier (.glb, .gltf, .stl ou .obj)." data-en="Load your file (.glb, .gltf, .stl, or .obj).">Load your file (.glb, .gltf, .stl, or .obj).</li>
-          <li class="lang-text" data-fr="Sur Desktop: Scannez le code QR généré pour l'ouvrir sur votre mobile." data-en="On Desktop: Scan the generated QR code to open it on your mobile phone.">On Desktop: Scan the generated QR code to open it on your mobile phone.</li>
-          <li class="lang-text" data-fr="Sur Mobile: Appuyez sur 'View in AR' et pointez votre caméra vers une surface plane." data-en="On Mobile: Tap 'View in AR' and point your camera at a flat surface.">On Mobile: Tap 'View in AR' and point your camera at a flat surface.</li>
+          <li class="lang-text" data-fr="Sur Desktop: Scannez le code QR g�n�r� pour l'ouvrir sur votre mobile." data-en="On Desktop: Scan the generated QR code to open it on your mobile phone.">On Desktop: Scan the generated QR code to open it on your mobile phone.</li>
+          <li class="lang-text" data-fr="Sur Mobile: Appuyez sur 'View in AR' et pointez votre cam�ra vers une surface plane." data-en="On Mobile: Tap 'View in AR' and point your camera at a flat surface.">On Mobile: Tap 'View in AR' and point your camera at a flat surface.</li>
         </ol>
       </div>
     </div>
@@ -220,7 +220,7 @@
       <!-- Loading indicator -->
       <div id="loader" class="loader-overlay" style="display: none;">
         <div class="spinner"></div>
-        <p id="loader-text" class="lang-text" data-fr="Chargement et conversion du modèle..." data-en="Loading and converting model...">Loading and converting model...</p>
+        <p id="loader-text" class="lang-text" data-fr="Chargement et conversion du mod�le..." data-en="Loading and converting model...">Loading and converting model...</p>
       </div>
 
       <!-- Placeholder before upload -->
@@ -230,7 +230,7 @@
           <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
           <line x1="12" y1="22.08" x2="12" y2="12"/>
         </svg>
-        <h3 class="lang-text" data-fr="Aucun modèle chargé" data-en="No Model Loaded">No Model Loaded</h3>
+        <h3 class="lang-text" data-fr="Aucun mod�le charg�" data-en="No Model Loaded">No Model Loaded</h3>
         <p class="lang-text" data-fr="Importez un fichier 3D dans le panneau de gauche pour commencer." data-en="Import a 3D file in the left panel to begin.">Import a 3D file in the left panel to begin.</p>
       </div>
 
@@ -268,7 +268,7 @@
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
+          <span class="lang-text" data-fr="VOIR EN R�ALIT� AUGMENT�E" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
       </model-viewer>
 
@@ -378,7 +378,7 @@
           try {
             const { name, extension, data, isBinary } = e.data.payload;
             console.log("AR Viewer: loaded external file:", name);
-            showLoader(currentLang === 'fr' ? "Chargement du modèle externe..." : "Loading external file...");
+            showLoader(currentLang === 'fr' ? "Chargement du mod�le externe..." : "Loading external file...");
             let file;
             if (isBinary) {
               const res = await fetch(data);
@@ -399,7 +399,7 @@
             const { url } = e.data.payload;
             const name = url.split('/').pop().split('?')[0] || 'external_model.glb';
             console.log("AR Viewer: loaded external url:", url);
-            showLoader(currentLang === 'fr' ? "Téléchargement du modèle..." : "Downloading model...");
+            showLoader(currentLang === 'fr' ? "T�l�chargement du mod�le..." : "Downloading model...");
             const response = await fetch(url);
             const blob = await response.blob();
             const file = new File([blob], name, { type: 'application/octet-stream' });
@@ -422,7 +422,7 @@
           if (name.includes('#')) {
             name = name.split('#').pop();
           }
-          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
+          showLoader(currentLang === 'fr' ? "T�l�chargement du mod�le de transfert..." : "Downloading transfer model...");
           const fetchUrl = directUrl.split('#')[0];
           const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
           const res = await fetch(proxiedUrl);
@@ -432,7 +432,7 @@
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
-          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
+          alert(currentLang === 'fr' ? "Erreur de chargement du mod�le AR partag�." : "Error loading shared AR model.");
         }
       })();
     }
@@ -608,7 +608,7 @@
       const options = { binary: true };
 
       if (isFirstLoad) {
-        showLoader(currentLang === 'fr' ? "Génération du modèle 3D..." : "Generating 3D model...");
+        showLoader(currentLang === 'fr' ? "G�n�ration du mod�le 3D..." : "Generating 3D model...");
       } else {
         // Show QR loading indicator
         qrLoading.style.display = 'flex';
@@ -858,7 +858,7 @@
       exposureVal.textContent = val.toFixed(1);
     };
 
-    // ── Rotation speed & style state ──────────────────────────────
+    // -- Rotation speed & style state ------------------------------
     let rotSpeedVal = 1.0;
     let rotStyleVal = 'continuous';
     let swingAngle = 0;
@@ -938,7 +938,7 @@
       }
     };
 
-    // ── Screenshot / Mockup PNG capture ───────────────────────────
+    // -- Screenshot / Mockup PNG capture ---------------------------
     const screenshotBtn = document.getElementById('screenshot-btn');
     screenshotBtn.onclick = async () => {
       try {
@@ -952,7 +952,7 @@
         const origShadow = viewer.shadowIntensity;
         if (wantTransparent && !wantShadows) viewer.shadowIntensity = 0;
 
-        // toBlob supports withCredentials – transparency depends on renderer bg
+        // toBlob supports withCredentials � transparency depends on renderer bg
         const blob = await viewer.toBlob({ mimeType: 'image/png', idealAspect: true });
 
         // Restore shadows
@@ -976,21 +976,21 @@
       }
     };
 
-    // ── CAD Bounding Box Toggle ────────────────────────────────────
+    // -- CAD Bounding Box Toggle ------------------------------------
     document.getElementById('cad-box-toggle').onchange = (e) => {
       const overlay = document.getElementById('hud-overlay');
       if (overlay) overlay.style.display = e.target.checked ? 'block' : 'none';
     };
 
-    // ── Blueprint Grid Toggle ──────────────────────────────────────────
+    // -- Blueprint Grid Toggle ------------------------------------------
     document.getElementById('cad-grid-toggle').onchange = (e) => {
       const previewArea = document.querySelector('.preview-area');
       if (previewArea) previewArea.classList.toggle('grid-active', e.target.checked);
     };
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ----------------------------------------------------------------------
     // MATERIAL STUDIO PBR
-    // ══════════════════════════════════════════════════════════════════════
+    // ----------------------------------------------------------------------
     const MATERIAL_PRESETS = {
       original: null,
       chrome:  { metalness: 1.0, roughness: 0.05, color: [0.88, 0.90, 0.95, 1.0] },
@@ -1031,7 +1031,7 @@
     });
 
 
-    // ── Live dimension update on camera change ─────────────────────
+    // -- Live dimension update on camera change ---------------------
     viewer.addEventListener('camera-change', () => {
       try {
         const dims = viewer.getDimensions();
@@ -1070,7 +1070,7 @@
             qrSection.querySelector('.qr-container').appendChild(localHint);
           }
           localHint.innerHTML = currentLang === 'fr'
-            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
+            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse r�seau locale indiqu�e par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre t�l�phone."
             : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
         }
       };
@@ -1093,7 +1093,7 @@
 
       let directDlUrl = null;
 
-      // ── Service 1: tmpfiles.org via Netlify proxy (existing) ──────────
+      // -- Service 1: tmpfiles.org via Netlify proxy (existing) ----------
       try {
         const fd1 = new FormData();
         fd1.append('file', file, fileName);
@@ -1112,7 +1112,7 @@
         console.warn('Service 1 (tmpfiles.org) failed:', e.message);
       }
 
-      // ── Service 2: litterbox.catbox.moe (free 72h hosting, CORS OK) ──
+      // -- Service 2: litterbox.catbox.moe (free 72h hosting, CORS OK) --
       if (!directDlUrl) {
         try {
           const fd2 = new FormData();
@@ -1133,7 +1133,7 @@
         }
       }
 
-      // ── Result ────────────────────────────────────────────────────────
+      // -- Result --------------------------------------------------------
       if (directDlUrl) {
         lastShareUrl = directDlUrl;
         updateQRCodeWithColorParam(directDlUrl, 'original');
@@ -1142,13 +1142,13 @@
         const fallbackText = document.createElement('p');
         fallbackText.className = 'qr-error-msg';
         fallbackText.textContent = currentLang === 'fr'
-          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
+          ? "Impossible de g�n�rer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
           : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
         qrSection.appendChild(fallbackText);
       }
     }
   </script>
 
-  <script src="/community/share-bridge.js"></script>
+  <script src="/community/share-bridge.js?v=5"></script>
 </body>
 </html>

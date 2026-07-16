@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -547,8 +547,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t√©l√©charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T√©l√©charger HTML';
+            } else if (baseText.toLowerCase().includes('tÈlÈcharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'TÈlÈcharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1222,29 +1222,29 @@
 
       <!-- Demo Models Preset -->
       <div class="panel-section">
-        <h2 data-en="Demo Models" data-fr="Mod√®les de D√©mo">Demo Models</h2>
+        <h2 data-en="Demo Models" data-fr="ModËles de DÈmo">Demo Models</h2>
         <div class="control-group">
-          <label data-en="Select test model / Open" data-fr="S√©lectionner mod√®le / Ouvrir">Select test model / Open</label>
+          <label data-en="Select test model / Open" data-fr="SÈlectionner modËle / Ouvrir">Select test model / Open</label>
           <div style="display: flex; gap: 8px;">
             <select id="demo-model-select" style="flex: 1;">
               <option value="none" data-en="-- Upload / Drag --" data-fr="-- Charger / Glisser --">-- Upload / Drag --</option>
-              <option value="gear" data-en="Mechanical Gear" data-fr="Engrenage M√©canique">Mechanical Gear</option>
-              <option value="ring" data-en="Diamond Gold Ring" data-fr="Bague de Fian√ßailles Or">Diamond Gold Ring</option>
-              <option value="knot" data-en="Complex Torus Knot" data-fr="N≈ìud Torique Complexe">Complex Torus Knot</option>
+              <option value="gear" data-en="Mechanical Gear" data-fr="Engrenage MÈcanique">Mechanical Gear</option>
+              <option value="ring" data-en="Diamond Gold Ring" data-fr="Bague de FianÁailles Or">Diamond Gold Ring</option>
+              <option value="knot" data-en="Complex Torus Knot" data-fr="Núud Torique Complexe">Complex Torus Knot</option>
               <option value="cube" data-en="Calibration Cube" data-fr="Cube de Calibration">Calibration Cube</option>
             </select>
-            <button class="btn btn-secondary" id="btn-upload-file" style="width: auto; padding: 0 12px;" data-en="üìÅ Open" data-fr="üìÅ Ouvrir">üìÅ Open</button>
+            <button class="btn btn-secondary" id="btn-upload-file" style="width: auto; padding: 0 12px;" data-en="?? Open" data-fr="?? Ouvrir">?? Open</button>
           </div>
         </div>
       </div>
 
       <!-- Scene Models -->
       <div class="panel-section">
-        <h2 data-en="Scene Models" data-fr="Mod√®les en Sc√®ne">Scene Models</h2>
+        <h2 data-en="Scene Models" data-fr="ModËles en ScËne">Scene Models</h2>
         <div class="control-group" style="gap: 6px;">
           <div id="models-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto;"></div>
           <div style="display: flex; gap: 6px; margin-top: 4px;">
-            <button class="btn btn-secondary" id="btn-add-model" style="flex: 1; font-size: 11px;" data-en="+ Add Model" data-fr="+ Ajouter Mod√®le">+ Add Model</button>
+            <button class="btn btn-secondary" id="btn-add-model" style="flex: 1; font-size: 11px;" data-en="+ Add Model" data-fr="+ Ajouter ModËle">+ Add Model</button>
             <button class="btn btn-secondary" id="btn-clear-scene" style="flex: 1; font-size: 11px; color: #ef4444;" data-en="Clear All" data-fr="Tout Effacer">Clear All</button>
           </div>
           <input type="file" id="add-model-input" accept=".stl,.obj,.glb,.gltf" style="display: none;">
@@ -1256,7 +1256,7 @@
         <h2 data-en="File Info" data-fr="Infos du Fichier">File Info</h2>
         <div class="info-grid">
           <div class="info-label" data-en="Name:" data-fr="Nom :">Name:</div>
-          <div class="info-val" id="file-name" data-en="None loaded" data-fr="Aucun charg√©">None loaded</div>
+          <div class="info-val" id="file-name" data-en="None loaded" data-fr="Aucun chargÈ">None loaded</div>
           <div class="info-label" data-en="Format:" data-fr="Format :">Format:</div>
           <div class="info-val" id="file-format">-</div>
           <div class="info-label" data-en="Size:" data-fr="Taille :">Size:</div>
@@ -1268,7 +1268,7 @@
       <div class="panel-section">
         <h2 data-en="Appearance & Grid" data-fr="Apparence & Grille">Appearance & Grid</h2>
         <div class="control-group">
-          <label data-en="Model Color" data-fr="Couleur du Mod√®le">Model Color</label>
+          <label data-en="Model Color" data-fr="Couleur du ModËle">Model Color</label>
           <div class="color-picker-wrapper">
             <input type="color" id="model-color" value="#3b82f6">
             <span id="color-hex">#3B82F6</span>
@@ -1288,17 +1288,17 @@
           </div>
         </div>
         <div class="control-group">
-          <label data-en="Material Preset" data-fr="Mat√©riau Pr√©d√©fini">Material Preset</label>
+          <label data-en="Material Preset" data-fr="MatÈriau PrÈdÈfini">Material Preset</label>
           <select id="model-material">
             <option value="default" data-en="Smooth Matte (Plastic)" data-fr="Mat Lisse (Plastique)">Smooth Matte (Plastic)</option>
-            <option value="metallic" data-en="Glossy Chrome (Metal)" data-fr="Chrome Brillant (M√©tal)">Glossy Chrome (Metal)</option>
+            <option value="metallic" data-en="Glossy Chrome (Metal)" data-fr="Chrome Brillant (MÈtal)">Glossy Chrome (Metal)</option>
             <option value="glass" data-en="Translucent Glass" data-fr="Verre Translucide">Translucent Glass</option>
-            <option value="glow" data-en="Emissive Neon (Glow)" data-fr="N√©on √âmissif (Brillant)">Emissive Neon (Glow)</option>
+            <option value="glow" data-en="Emissive Neon (Glow)" data-fr="NÈon …missif (Brillant)">Emissive Neon (Glow)</option>
             <option value="gold" data-en="Polished Gold" data-fr="Or Poli">Polished Gold</option>
             <option value="silver" data-en="Shiny Silver" data-fr="Argent Brillant">Shiny Silver</option>
-            <option value="copper" data-en="Brushed Copper" data-fr="Cuivre Bross√©">Brushed Copper</option>
-            <option value="jade" data-en="Imperial Jade" data-fr="Jade Imp√©rial">Imperial Jade</option>
-            <option value="wood" data-en="Natural Oak" data-fr="Ch√™ne Naturel">Natural Oak</option>
+            <option value="copper" data-en="Brushed Copper" data-fr="Cuivre BrossÈ">Brushed Copper</option>
+            <option value="jade" data-en="Imperial Jade" data-fr="Jade ImpÈrial">Imperial Jade</option>
+            <option value="wood" data-en="Natural Oak" data-fr="ChÍne Naturel">Natural Oak</option>
             <option value="clay" data-en="Matte Red Clay" data-fr="Argile Rouge Mate">Matte Red Clay</option>
             <option value="carbon" data-en="Carbon Fiber" data-fr="Fibre de Carbone">Carbon Fiber</option>
           </select>
@@ -1306,25 +1306,25 @@
         <div class="control-group">
           <label data-en="Lighting Environment" data-fr="Environnement Lumineux">Lighting Environment</label>
           <select id="env-lighting-select">
-            <option value="studio" data-en="Studio (Daylight)" data-fr="Studio (Lumi√®re du Jour)">Studio (Daylight)</option>
-            <option value="sunset" data-en="Sunset (Warm)" data-fr="Cr√©puscule (Chaud)">Sunset (Warm)</option>
-            <option value="cyberpunk" data-en="Cyberpunk (Neon Glow)" data-fr="Cyberpunk (√âclat N√©on)">Cyberpunk (Neon Glow)</option>
+            <option value="studio" data-en="Studio (Daylight)" data-fr="Studio (LumiËre du Jour)">Studio (Daylight)</option>
+            <option value="sunset" data-en="Sunset (Warm)" data-fr="CrÈpuscule (Chaud)">Sunset (Warm)</option>
+            <option value="cyberpunk" data-en="Cyberpunk (Neon Glow)" data-fr="Cyberpunk (…clat NÈon)">Cyberpunk (Neon Glow)</option>
           </select>
         </div>
         <div class="control-group">
           <label data-en="Render Style" data-fr="Style de Rendu">Render Style</label>
           <select id="render-style-select">
-            <option value="default" data-en="Default (Solid)" data-fr="D√©faut (Solide)">Default (Solid)</option>
+            <option value="default" data-en="Default (Solid)" data-fr="DÈfaut (Solide)">Default (Solid)</option>
             <option value="wireframe" data-en="Wireframe (Mesh)" data-fr="Filaire (Maillage)">Wireframe (Mesh)</option>
             <option value="xray" data-en="X-Ray (Semi-Transparent)" data-fr="Rayons X (Semi-Transparent)">X-Ray (Semi-Transparent)</option>
             <option value="blueprint" data-en="Technical Blueprint" data-fr="Plan Technique">Technical Blueprint</option>
           </select>
         </div>
         <div class="control-group">
-          <label data-en="View Elements" data-fr="√âl√©ments de Vue">View Elements</label>
+          <label data-en="View Elements" data-fr="…lÈments de Vue">View Elements</label>
           <div class="checkbox-group">
             <label><input type="checkbox" id="show-grid" checked> <span data-en="Axis Grid" data-fr="Grille d'Axes">Axis Grid</span></label>
-            <label><input type="checkbox" id="show-bbox"> <span data-en="Bounding Box" data-fr="Bo√Æte Englobante">Bounding Box</span></label>
+            <label><input type="checkbox" id="show-bbox"> <span data-en="Bounding Box" data-fr="BoÓte Englobante">Bounding Box</span></label>
             <label><input type="checkbox" id="auto-rotate-check"> <span data-en="Auto-Rotate" data-fr="Auto-Rotation">Auto-Rotate</span></label>
           </div>
         </div>
@@ -1332,13 +1332,13 @@
 
       <!-- Sizing & Scale -->
       <div class="panel-section">
-        <h2 data-en="Geometry & Scale" data-fr="G√©om√©trie & √âchelle">Geometry & Scale</h2>
+        <h2 data-en="Geometry & Scale" data-fr="GÈomÈtrie & …chelle">Geometry & Scale</h2>
         <div class="control-group">
           <label data-en="Dimensions (mm)" data-fr="Dimensions (mm)">Dimensions (mm)</label>
           <div class="dims-box" id="model-dims">X: -, Y: -, Z: -</div>
         </div>
         <div class="control-group" id="physical-props-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-direction: column; gap: 8px;">
-          <label data-en="Physical Properties" data-fr="Propri√©t√©s Physiques">Physical Properties</label>
+          <label data-en="Physical Properties" data-fr="PropriÈtÈs Physiques">Physical Properties</label>
           <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #9ca3af; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between;">
               <span data-en="Volume:" data-fr="Volume :">Volume:</span>
@@ -1349,7 +1349,7 @@
               <strong id="model-surface-area">-</strong>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-              <span data-en="Material Density:" data-fr="Densit√© Mat√©riau :">Material Density:</span>
+              <span data-en="Material Density:" data-fr="DensitÈ MatÈriau :">Material Density:</span>
               <select id="model-density-select" style="font-size: 11px; padding: 2px 4px; background: #0f172a; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; width: 100px;">
                 <option value="1.24" data-en="PLA (Plastic)" data-fr="PLA (Plastique)">PLA (Plastic)</option>
                 <option value="1.04" data-en="ABS (Plastic)" data-fr="ABS (Plastique)">ABS (Plastic)</option>
@@ -1363,7 +1363,7 @@
               </select>
             </div>
             <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px; margin-top: 4px; color: #10b981;">
-              <span data-en="Estimated Weight:" data-fr="Poids Estim√© :">Estimated Weight:</span>
+              <span data-en="Estimated Weight:" data-fr="Poids EstimÈ :">Estimated Weight:</span>
               <strong id="model-weight">-</strong>
             </div>
           </div>
@@ -1371,21 +1371,21 @@
         <div class="control-group" id="transform-tool-group" style="display: none;">
           <label data-en="CAD Transform Tool" data-fr="Outil de Transformation CAD">CAD Transform Tool</label>
           <div class="tool-buttons">
-            <button class="btn btn-tool active" id="tool-orbit" title="Orbit / Inspect Camera" data-en="üîç Inspect" data-fr="üîç Inspecter">üîç Inspect</button>
-            <button class="btn btn-tool" id="tool-translate" title="Move Model" data-en="Move" data-fr="D√©placer">Move</button>
+            <button class="btn btn-tool active" id="tool-orbit" title="Orbit / Inspect Camera" data-en="?? Inspect" data-fr="?? Inspecter">?? Inspect</button>
+            <button class="btn btn-tool" id="tool-translate" title="Move Model" data-en="Move" data-fr="DÈplacer">Move</button>
             <button class="btn btn-tool" id="tool-rotate" title="Rotate Model" data-en="Rotate" data-fr="Pivoter">Rotate</button>
-            <button class="btn btn-tool" id="tool-scale" title="Scale Model" data-en="Scale" data-fr="√âchelle">Scale</button>
-            <button class="btn btn-tool" id="tool-measure" title="Measure Distance" data-en="üìè Measure" data-fr="üìè Mesurer">üìè Measure</button>
+            <button class="btn btn-tool" id="tool-scale" title="Scale Model" data-en="Scale" data-fr="…chelle">Scale</button>
+            <button class="btn btn-tool" id="tool-measure" title="Measure Distance" data-en="?? Measure" data-fr="?? Mesurer">?? Measure</button>
           </div>
         </div>
         <div class="control-group">
-          <label><span data-en="Scale Factor:" data-fr="Facteur d'√âchelle :">Scale Factor:</span> <span id="scale-val">1.0</span>x</label>
+          <label><span data-en="Scale Factor:" data-fr="Facteur d'…chelle :">Scale Factor:</span> <span id="scale-val">1.0</span>x</label>
           <input type="range" id="scale-slider" min="0.1" max="5.0" step="0.05" value="1.0">
         </div>
 
         <!-- Exploded View Slider (3D Only) -->
         <div class="control-group" id="exploded-view-group" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-          <label><span data-en="Exploded View:" data-fr="Vue √âclat√©e :">Exploded View:</span> <span id="exploded-val">0.0</span>x</label>
+          <label><span data-en="Exploded View:" data-fr="Vue …clatÈe :">Exploded View:</span> <span id="exploded-val">0.0</span>x</label>
           <input type="range" id="exploded-slider" min="0.0" max="2.0" step="0.05" value="0.0">
         </div>
 
@@ -1411,7 +1411,7 @@
               </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-              <label style="font-size: 11px; text-transform: none; font-weight: normal; white-space: nowrap;" data-en="Cap Opacity:" data-fr="Opacit√© Cap :">Cap Opacity:</label>
+              <label style="font-size: 11px; text-transform: none; font-weight: normal; white-space: nowrap;" data-en="Cap Opacity:" data-fr="OpacitÈ Cap :">Cap Opacity:</label>
               <input type="range" id="section-cap-opacity" min="0" max="1" step="0.05" value="0.75" style="flex: 1;">
               <span id="section-cap-opacity-val" style="font-size: 10px; width: 30px; text-align: right;">75%</span>
             </div>
@@ -1426,7 +1426,7 @@
         
         <!-- Precise Transform Sliders (Position & Rotation) -->
         <div class="control-group transform-sliders-section" id="precise-sliders" style="display: none; gap: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px;" data-en="Precise Position (mm)" data-fr="Position Pr√©cise (mm)">Precise Position (mm)</label>
+          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px;" data-en="Precise Position (mm)" data-fr="Position PrÈcise (mm)">Precise Position (mm)</label>
           <div class="slider-row">
             <span>X:</span>
             <input type="range" id="pos-x" min="-100" max="100" step="1" value="0">
@@ -1443,25 +1443,25 @@
             <span id="pos-z-val">0</span>
           </div>
           
-          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px; margin-top: 5px;" data-en="Precise Rotation (Degrees)" data-fr="Rotation Pr√©cise (Degr√©s)">Precise Rotation (Degrees)</label>
+          <label style="font-weight: 600; color: #3b82f6; text-transform: uppercase; font-size: 11px; margin-top: 5px;" data-en="Precise Rotation (Degrees)" data-fr="Rotation PrÈcise (DegrÈs)">Precise Rotation (Degrees)</label>
           <div class="slider-row">
             <span>X:</span>
             <input type="range" id="rot-x" min="0" max="360" step="5" value="0">
-            <span id="rot-x-val">0¬∞</span>
+            <span id="rot-x-val">0∞</span>
           </div>
           <div class="slider-row">
             <span>Y:</span>
             <input type="range" id="rot-y" min="0" max="360" step="5" value="0">
-            <span id="rot-y-val">0¬∞</span>
+            <span id="rot-y-val">0∞</span>
           </div>
           <div class="slider-row">
             <span>Z:</span>
             <input type="range" id="rot-z" min="0" max="360" step="5" value="0">
-            <span id="rot-z-val">0¬∞</span>
+            <span id="rot-z-val">0∞</span>
           </div>
         </div>
 
-        <button class="btn btn-secondary" id="btn-reset-transform" style="margin-top: 8px;" data-en="Reset Transform" data-fr="R√©initialiser">Reset Transform</button>
+        <button class="btn btn-secondary" id="btn-reset-transform" style="margin-top: 8px;" data-en="Reset Transform" data-fr="RÈinitialiser">Reset Transform</button>
       </div>
 
       <!-- Export Panel -->
@@ -1476,7 +1476,7 @@
           <button class="btn btn-primary" id="export-dxf" style="display: none;">DXF</button>
           <button class="btn btn-primary" id="export-svg" style="display: none;">SVG</button>
         </div>
-        <button class="btn btn-accent" id="export-html" style="margin-top: 8px;" disabled data-en="üîó Export Interactive HTML Viewer" data-fr="üîó Exporter Visualiseur HTML Interactif">üîó Export Interactive HTML Viewer</button>
+        <button class="btn btn-accent" id="export-html" style="margin-top: 8px;" disabled data-en="?? Export Interactive HTML Viewer" data-fr="?? Exporter Visualiseur HTML Interactif">?? Export Interactive HTML Viewer</button>
       </div>
     </div>
 
@@ -1491,14 +1491,14 @@
       <!-- Drag & Drop overlay -->
       <div class="drag-overlay" id="drag-overlay">
         <div class="drag-box">
-          <div class="drag-icon">üìÅ</div>
-          <div class="drag-text" data-en="Drop your STL, OBJ, GLB, DXF, or SVG file here" data-fr="D√©posez votre fichier STL, OBJ, GLB, DXF ou SVG ici">Drop your STL, OBJ, GLB, DXF, or SVG file here</div>
+          <div class="drag-icon">??</div>
+          <div class="drag-text" data-en="Drop your STL, OBJ, GLB, DXF, or SVG file here" data-fr="DÈposez votre fichier STL, OBJ, GLB, DXF ou SVG ici">Drop your STL, OBJ, GLB, DXF, or SVG file here</div>
         </div>
       </div>
     </div>
   </div>
   <script src="app.js"></script>
 
-  <script src="/community/share-bridge.js"></script>
+  <script src="/community/share-bridge.js?v=5"></script>
 </body>
 </html>

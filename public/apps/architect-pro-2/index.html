@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"> <!-- v3.0 -->
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>ArchitectPro — Intelligent House Builder</title>
+  <title>ArchitectPro � Intelligent House Builder</title>
   <meta name="description"
     content="Professional interactive house construction planner with 2D editor, 3D model, materials calculator and cost estimator." />
   <link rel="stylesheet" href="style.css?v=3" />
@@ -543,8 +543,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
+            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'T�l�charger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1282,10 +1282,10 @@
   
 
 
-  <!-- ═══════════════════ WIZARD ═══════════════════ -->
+  <!-- ------------------- WIZARD ------------------- -->
   <div id="wizard-screen">
     <div class="wizard-brand">
-      <div class="wizard-brand-icon">🏗️</div>
+      <div class="wizard-brand-icon">???</div>
       <h1 id="wiz-title">ArchitectPro</h1>
     </div>
     <p class="wizard-subtitle" id="wiz-subtitle">Build your dream home, step by step</p>
@@ -1333,13 +1333,13 @@
           </select>
         </div>
       </div>
-      <button class="btn-primary" onclick="startApp()"><span>🔨</span><span id="wiz-btn-text">Generate My Plan
-          →</span></button>
+      <button class="btn-primary" onclick="startApp()"><span>??</span><span id="wiz-btn-text">Generate My Plan
+          ?</span></button>
     </div>
     <div style="margin-top:1.5rem">
       <div class="lang-toggle">
-        <button class="lang-btn active" id="wiz-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
-        <button class="lang-btn" id="wiz-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+        <button class="lang-btn active" id="wiz-lang-en" onclick="setLang('en')">???? EN</button>
+        <button class="lang-btn" id="wiz-lang-fr" onclick="setLang('fr')">???? FR</button>
       </div>
       <div class="lang-toggle mt-2">
         <button class="lang-btn active" id="wiz-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
@@ -1348,25 +1348,25 @@
     </div>
   </div>
 
-  <!-- ═══════════════════ APP ═══════════════════════ -->
+  <!-- ------------------- APP ----------------------- -->
   <div id="app-screen">
 
     <!-- HEADER -->
     <header class="app-header">
       <div class="header-brand">
-        <div class="header-brand-icon">🏗️</div>
+        <div class="header-brand-icon">???</div>
         <span>ArchitectPro</span>
       </div>
       <div class="header-actions">
-        <button class="btn-sm" onclick="resetApp()">🔄 <span data-i18n="newProject">New Project</span></button>
-        <button class="btn-sm" onclick="exportToPrint()">🖨️ <span data-i18n="printProject">Print</span></button>
-        <button class="btn-sm" onclick="exportToPDF()">📄 <span data-i18n="exportPDF">Download PDF</span></button>
-        <button class="btn-sm" onclick="exportGLB()" id="btn-export-glb">📦 <span data-i18n="exportGLB">Download GLB</span></button>
-        <button class="btn-sm" onclick="exportSTL()" id="btn-export-stl">📦 <span data-i18n="exportSTL">Download STL</span></button>
-        <button class="btn-sm" onclick="exportOBJ()" id="btn-export-obj">📦 <span data-i18n="exportOBJ">Download OBJ</span></button>
+        <button class="btn-sm" onclick="resetApp()">?? <span data-i18n="newProject">New Project</span></button>
+        <button class="btn-sm" onclick="exportToPrint()">??? <span data-i18n="printProject">Print</span></button>
+        <button class="btn-sm" onclick="exportToPDF()">?? <span data-i18n="exportPDF">Download PDF</span></button>
+        <button class="btn-sm" onclick="exportGLB()" id="btn-export-glb">?? <span data-i18n="exportGLB">Download GLB</span></button>
+        <button class="btn-sm" onclick="exportSTL()" id="btn-export-stl">?? <span data-i18n="exportSTL">Download STL</span></button>
+        <button class="btn-sm" onclick="exportOBJ()" id="btn-export-obj">?? <span data-i18n="exportOBJ">Download OBJ</span></button>
         <div class="lang-toggle">
-          <button class="lang-btn active" id="app-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
-          <button class="lang-btn" id="app-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+          <button class="lang-btn active" id="app-lang-en" onclick="setLang('en')">???? EN</button>
+          <button class="lang-btn" id="app-lang-fr" onclick="setLang('fr')">???? FR</button>
         </div>
         <div class="lang-toggle">
           <button class="lang-btn active" id="app-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
@@ -1413,7 +1413,7 @@
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span class="budget-pct" id="budget-pct-text">0%</span>
-            <span class="budget-over-text" id="budget-over" style="display:none" data-i18n="overBudget">⚠️ Over
+            <span class="budget-over-text" id="budget-over" style="display:none" data-i18n="overBudget">?? Over
               budget!</span>
           </div>
         </div>
@@ -1424,21 +1424,21 @@
 
         <!-- Overview -->
         <div class="overview-bar">
-          <div class="overview-stat"><span class="ov-label">📐 Area</span><span class="ov-val" id="ov-area">—</span>
+          <div class="overview-stat"><span class="ov-label">?? Area</span><span class="ov-val" id="ov-area">�</span>
           </div>
-          <div class="overview-stat"><span class="ov-label">🏠 Phases</span><span class="ov-val">7</span></div>
-          <div class="overview-stat"><span class="ov-label">💲 <span
-                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">—</span></div>
-          <div class="overview-stat"><span class="ov-label">👷 <span data-i18n="laborCost">Labor</span></span><span
-              class="ov-val" id="ov-lab-cost">—</span></div>
-          <div class="overview-stat"><span class="ov-label">📊 Total Est.</span><span class="ov-val green"
-              id="ov-total">—</span></div>
+          <div class="overview-stat"><span class="ov-label">?? Phases</span><span class="ov-val">7</span></div>
+          <div class="overview-stat"><span class="ov-label">?? <span
+                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">�</span></div>
+          <div class="overview-stat"><span class="ov-label">?? <span data-i18n="laborCost">Labor</span></span><span
+              class="ov-val" id="ov-lab-cost">�</span></div>
+          <div class="overview-stat"><span class="ov-label">?? Total Est.</span><span class="ov-val green"
+              id="ov-total">�</span></div>
           <div style="margin-left:auto">
             <span id="hdr-dims" style="font-size:0.88rem;color:var(--text-muted);font-weight:600"></span>
           </div>
         </div>
 
-        <!-- ═══ SPLIT SCREEN ═══ -->
+        <!-- --- SPLIT SCREEN --- -->
         <div class="split-container">
 
           <!-- LEFT: 2D EDITOR -->
@@ -1447,22 +1447,22 @@
             <!-- Toolbar -->
             <div class="editor-toolbar" id="editor-toolbar">
               <div class="tool-group">
-                <button class="tool-btn active" id="tool-select" onclick="setTool('select')" title="Select element">↖
+                <button class="tool-btn active" id="tool-select" onclick="setTool('select')" title="Select element">?
                   <span data-i18n="toolSelect">Select</span></button>
               </div>
               <div class="tool-sep"></div>
               <div class="tool-group">
-                <button class="tool-btn" id="tool-wall" onclick="setTool('wall')" title="Draw interior wall">▬ <span
+                <button class="tool-btn" id="tool-wall" onclick="setTool('wall')" title="Draw interior wall">? <span
                     data-i18n="toolWall">Wall</span></button>
-                <button class="tool-btn" id="tool-window" onclick="setTool('window')" title="Place window">🪟 <span
+                <button class="tool-btn" id="tool-window" onclick="setTool('window')" title="Place window">?? <span
                     data-i18n="toolWindow">Window</span></button>
-                <button class="tool-btn" id="tool-door" onclick="setTool('door')" title="Place door">🚪 <span
+                <button class="tool-btn" id="tool-door" onclick="setTool('door')" title="Place door">?? <span
                     data-i18n="toolDoor">Door</span></button>
-                <button class="tool-btn" id="tool-stairs" onclick="setTool('stairs')" title="Place staircase">🪜 <span
+                <button class="tool-btn" id="tool-stairs" onclick="setTool('stairs')" title="Place staircase">?? <span
                     data-i18n="toolStairs">Stairs</span></button>
               </div>
               <div class="tool-sep"></div>
-              <button class="tool-btn" id="tool-erase" onclick="setTool('erase')" title="Erase element">🗑️ <span
+              <button class="tool-btn" id="tool-erase" onclick="setTool('erase')" title="Erase element">??? <span
                   data-i18n="toolErase">Erase</span></button>
             </div>
 
@@ -1481,9 +1481,9 @@
             <div class="editor-footer">
               <div class="floor-tabs" id="floor-tabs"></div>
               <div class="editor-controls">
-                <button class="ctrl-btn" id="btn-undo" onclick="editorUndo()" disabled>↩ Undo</button>
-                <button class="ctrl-btn" id="btn-redo" onclick="editorRedo()" disabled>↪ Redo</button>
-                <button class="ctrl-btn active" id="btn-grid" onclick="toggleGrid()">⊞ Grid</button>
+                <button class="ctrl-btn" id="btn-undo" onclick="editorUndo()" disabled>? Undo</button>
+                <button class="ctrl-btn" id="btn-redo" onclick="editorRedo()" disabled>? Redo</button>
+                <button class="ctrl-btn active" id="btn-grid" onclick="toggleGrid()">? Grid</button>
               </div>
             </div>
           </div>
@@ -1491,10 +1491,10 @@
           <!-- RIGHT: 3D MODEL -->
           <div class="view-3d-panel">
             <canvas id="canvas-3d"></canvas>
-            <div class="view-3d-label">🏠 3D Model — drag to rotate · scroll to zoom</div>
+            <div class="view-3d-label">?? 3D Model � drag to rotate � scroll to zoom</div>
             <div class="canvas-overlay">
-              <button class="canvas-btn" onclick="resetCamera()">⟳ Reset</button>
-              <button class="canvas-btn" id="btn-wireframe" onclick="toggleWireframe()">⬡ Wire</button>
+              <button class="canvas-btn" onclick="resetCamera()">? Reset</button>
+              <button class="canvas-btn" id="btn-wireframe" onclick="toggleWireframe()">? Wire</button>
             </div>
           </div>
 
@@ -1502,20 +1502,20 @@
 
         <!-- Phase header -->
         <div class="phase-header" id="phase-header">
-          <div class="phase-header-icon" id="ph-icon">⛏️</div>
+          <div class="phase-header-icon" id="ph-icon">??</div>
           <div class="phase-header-text">
             <h2 id="ph-name">Foundation</h2>
             <p id="ph-sub">Phase 1 of 7</p>
           </div>
           <div class="phase-nav">
-            <button class="btn-phase-nav" onclick="changePhase(-1)">‹</button>
-            <button class="btn-phase-nav" onclick="changePhase(1)">›</button>
+            <button class="btn-phase-nav" onclick="changePhase(-1)">�</button>
+            <button class="btn-phase-nav" onclick="changePhase(1)">�</button>
           </div>
         </div>
 
         <!-- Steps -->
         <div class="panel-card">
-          <div class="panel-title">🪜 <span data-i18n="steps">Steps</span> — <span class="pton"
+          <div class="panel-title">?? <span data-i18n="steps">Steps</span> � <span class="pton"
               id="steps-phase-name">Foundation</span></div>
           <div class="steps-grid" id="steps-grid" style="padding:10px"></div>
         </div>
@@ -1523,7 +1523,7 @@
         <!-- Materials + Costs -->
         <div class="data-grid">
           <div class="panel-card">
-            <div class="panel-title">🧮 <span data-i18n="materials">Materials Calculator</span></div>
+            <div class="panel-title">?? <span data-i18n="materials">Materials Calculator</span></div>
             <div style="overflow-x:auto">
               <table class="mat-table">
                 <thead>
@@ -1539,7 +1539,7 @@
             </div>
           </div>
           <div class="panel-card">
-            <div class="panel-title">💲 <span data-i18n="costs">Cost Estimator</span></div>
+            <div class="panel-title">?? <span data-i18n="costs">Cost Estimator</span></div>
             <div class="cost-rows" id="cost-rows"></div>
           </div>
         </div>
@@ -1563,7 +1563,7 @@
   <script src="export-handler.js?v=3"></script>
   <script src="app.js?v=3"></script>
 
-  <script src="/community/share-bridge.js"></script>
+  <script src="/community/share-bridge.js?v=5"></script>
 </body>
 
 </html>
