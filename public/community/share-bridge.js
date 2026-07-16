@@ -1,4 +1,4 @@
-/* Studios-PRO → Community Share Bridge v5.0 — ping/pong via storage events */
+/* Studios-PRO → Community Share Bridge v6.0 — BroadcastChannel ack + storage event fallback */
 (function () {
   'use strict';
 
@@ -54,11 +54,8 @@
     if (iframe && iframe.contentWindow && iframe.src && iframe.src !== 'about:blank') {
       captureViaIframe(iframe, function(dataUrl) {
         setFab(true);
-        if (dataUrl) {
-          sendShare(dataUrl);
-        } else {
-          toast('No 3D preview loaded yet', 'err');
-        }
+        if (dataUrl) { sendShare(dataUrl); }
+        else { toast('No 3D preview loaded yet', 'err'); }
       });
       return;
     }
@@ -78,98 +75,74 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const dataUrl = captureCanvas();
       setFab(true);
-      if (dataUrl) {
-        sendShare(dataUrl);
-      } else {
-        toast('No canvas found in this tool', 'err');
-      }
+      if (dataUrl) { sendShare(dataUrl); }
+      else { toast('No canvas found in this tool', 'err'); }
     }));
   }
 
   /* ── Capture Methods ──────────────────────────────────── */
 
-  // For Studio Pro 4D (iframe-based): use existing capture3d postMessage
   function captureViaIframe(iframe, cb) {
     toast('Capturing from 3D preview…', 'info');
     let done = false;
     const timeout = setTimeout(function() {
       if (!done) { done = true; cb(null); }
     }, 3000);
-
     window.addEventListener('message', function handler(e) {
       if (e.data && e.data.type === 'captureOK') {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
+        clearTimeout(timeout); window.removeEventListener('message', handler);
         if (!done) { done = true; cb(e.data.url || null); }
       }
       if (e.data && e.data.type === 'captureERR') {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
+        clearTimeout(timeout); window.removeEventListener('message', handler);
         if (!done) { done = true; cb(null); }
       }
     });
     iframe.contentWindow.postMessage('capture3d', '*');
   }
 
-  // WebGL readPixels — bypasses canvas taint (works with cross-origin textures)
   function captureViaGLReadPixels(renderer, scene, camera) {
     try {
       renderer.render(scene, camera);
       const gl = renderer.getContext();
-      const W  = gl.drawingBufferWidth;
-      const H  = gl.drawingBufferHeight;
+      const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
       if (!W || !H) return null;
-
       const pixels = new Uint8Array(W * H * 4);
       gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
       let bright = 0;
-      for (let i = 0; i < Math.min(pixels.length, 400); i += 4) {
+      for (let i = 0; i < Math.min(pixels.length, 400); i += 4)
         bright += pixels[i] + pixels[i+1] + pixels[i+2];
-      }
       if (bright < 100) return null;
-
-      const MAX = 1100;
-      const ratio = Math.min(MAX / W, MAX / H, 1);
-      const tW = Math.round(W * ratio);
-      const tH = Math.round(H * ratio);
-
+      const MAX = 1100, ratio = Math.min(MAX/W, MAX/H, 1);
+      const tW = Math.round(W*ratio), tH = Math.round(H*ratio);
       const full = document.createElement('canvas');
       full.width = W; full.height = H;
       const fctx = full.getContext('2d');
       const imgData = fctx.createImageData(W, H);
       for (let row = 0; row < H; row++) {
-        const src = (H - 1 - row) * W * 4;
-        const dst = row * W * 4;
-        imgData.data.set(pixels.subarray(src, src + W * 4), dst);
+        const src = (H-1-row)*W*4, dst = row*W*4;
+        imgData.data.set(pixels.subarray(src, src+W*4), dst);
       }
       fctx.putImageData(imgData, 0, 0);
-
       const tmp = document.createElement('canvas');
       tmp.width = tW; tmp.height = tH;
       tmp.getContext('2d').drawImage(full, 0, 0, tW, tH);
       return tmp.toDataURL('image/jpeg', 0.85);
-    } catch(e) {
-      return null;
-    }
+    } catch(e) { return null; }
   }
 
-  // Fallback: normal canvas capture
   function captureCanvas() {
     const all = Array.from(document.querySelectorAll('canvas'));
     if (!all.length) return null;
-    const cv = all.reduce((a, b) => (a.width * a.height >= b.width * b.height ? a : b));
+    const cv = all.reduce((a, b) => (a.width*a.height >= b.width*b.height ? a : b));
     if (!cv.width || !cv.height) return null;
     try {
-      const MAX = 1100;
-      const ratio = Math.min(MAX / cv.width, MAX / cv.height, 1);
-      const W = Math.round(cv.width * ratio);
-      const H = Math.round(cv.height * ratio);
+      const MAX = 1100, ratio = Math.min(MAX/cv.width, MAX/cv.height, 1);
+      const W = Math.round(cv.width*ratio), H = Math.round(cv.height*ratio);
       const tmp = document.createElement('canvas');
       tmp.width = W; tmp.height = H;
       const ctx = tmp.getContext('2d');
-      ctx.fillStyle = '#0d1117';
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#0d1117'; ctx.fillRect(0, 0, W, H);
       ctx.drawImage(cv, 0, 0, W, H);
       return tmp.toDataURL('image/jpeg', 0.85);
     } catch(e) { return null; }
@@ -177,12 +150,13 @@
 
   /* ── Send to Community ────────────────────────────────── */
   /*
-   * PING-PONG via localStorage storage events (NOT throttled in background tabs).
-   * 1. Tool writes share data + ping token to localStorage.
-   * 2. Community receives the 'storage' event (fires even if tab is sleeping).
-   * 3. Community writes pong token back to localStorage + shows modal.
-   * 4. Tool reads pong after 350ms — if it matches, community is open → NO window.open.
-   * 5. If no pong → community is NOT open → window.open to open it.
+   * Strategy (two complementary channels):
+   * 1. BroadcastChannel: if community tab is open it replies 'ack' within 400ms → no window.open
+   * 2. Storage event ping: community also writes pong to localStorage (for cross-window cases)
+   * 3. If neither ack nor pong → community is closed → open with window.open('_blank')
+   *
+   * We use '_blank' (not a named target) because named target reuse is blocked
+   * in modern browsers when the target tab was NOT opened via window.open originally.
    */
   function sendShare(dataUrl) {
     const pingToken = Date.now().toString();
@@ -194,50 +168,64 @@
       ts: Date.now()
     };
 
-    // 1. Save share data to localStorage
+    // Save data to localStorage (community reads this on load if opened fresh)
     try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e) {}
 
-    // 2. Send ping — community's storage event listener will respond
+    // Send storage ping (community responds with pong via storage event)
     try { localStorage.setItem('studios_community_ping', pingToken); } catch(e) {}
 
-    // 3. Also send via BroadcastChannel (redundant but helps in same-window tabs)
+    // Try BroadcastChannel first — fast path when community is in same browser window
+    let responded = false;
     try {
       const bc = new BroadcastChannel(BC_NAME);
-      bc.postMessage({ type: 'share', data: payload });
-      setTimeout(function() { try { bc.close(); } catch(x) {} }, 1500);
-    } catch(e) {}
-
-    toast('Sending to Community…', 'info');
-
-    // 4. Wait 350ms — enough for storage event to fire and pong to be written
-    setTimeout(function() {
-      let pongReceived = false;
-      try {
-        const pong = localStorage.getItem('studios_community_pong');
-        // Pong must be within 2 seconds and match our ping era
-        if (pong && (Date.now() - parseInt(pong)) < 2000) {
-          pongReceived = true;
+      bc.onmessage = function(e) {
+        if (e.data === 'ack' && !responded) {
+          responded = true;
+          try { bc.close(); } catch(x) {}
+          toast('✦ Sent! Switch to your Community tab', 'ok');
         }
-      } catch(e) {}
+      };
+      bc.postMessage({ type: 'share', data: payload });
 
-      if (pongReceived) {
-        // Community is open and received the data
-        toast('✦ Sent! Switch to your Community tab', 'ok');
-      } else {
-        // Community is NOT open — open it (it will read from localStorage on load)
-        toast('✦ Opening Community…', 'ok');
-        setTimeout(function() {
-          window.open(COMM_URL + '?share=1', 'studios_community_tab');
-        }, 200);
-      }
-    }, 350);
+      // After 400ms — check if either BroadcastChannel ack OR storage pong arrived
+      setTimeout(function() {
+        try { bc.close(); } catch(x) {}
+        if (responded) return; // Already handled by BroadcastChannel
+
+        // Check storage pong (works across separate windows, even when timers are throttled)
+        try {
+          const pong = parseInt(localStorage.getItem('studios_community_pong') || '0', 10);
+          if (pong && (Date.now() - pong) < 2000) {
+            responded = true;
+            toast('✦ Sent! Switch to your Community tab', 'ok');
+            return;
+          }
+        } catch(x) {}
+
+        // Neither channel responded — community is not open → open it
+        if (!responded) {
+          responded = true;
+          toast('✦ Opening Community…', 'ok');
+          setTimeout(function() {
+            window.open(COMM_URL + '?share=1', '_blank');
+          }, 200);
+        }
+      }, 400);
+
+    } catch(e) {
+      // BroadcastChannel not supported — fall back to opening community
+      toast('✦ Opening Community…', 'ok');
+      setTimeout(function() {
+        window.open(COMM_URL + '?share=1', '_blank');
+      }, 300);
+    }
   }
 
   /* ── Utils ────────────────────────────────────────────── */
   function setFab(enabled) {
     const fab = document.getElementById('_sp_fab');
     if (!fab) return;
-    fab.style.opacity   = enabled ? '' : '.5';
+    fab.style.opacity = enabled ? '' : '.5';
     fab.style.pointerEvents = enabled ? '' : 'none';
   }
 
