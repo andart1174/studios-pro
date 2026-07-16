@@ -883,9 +883,7 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('
-  <script src="/community/share-bridge.js?v=14"></script>
-</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -4738,5 +4736,7 @@
 
     </script>
     
+
+  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>
