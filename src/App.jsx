@@ -133,6 +133,8 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         return;
       }
       setLoading(true);
+
+      // 1. Fetch Users
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
         const usersList = usersSnapshot.docs.map(doc => ({
@@ -140,7 +142,13 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           ...doc.data()
         }));
         setUsers(usersList);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        alert(lang === 'fr' ? "Erreur Admin (Firestore Users): " + error.message : "Admin Error (Firestore Users): " + error.message);
+      }
 
+      // 2. Fetch Messages
+      try {
         const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
         const messagesSnapshot = await getDocs(q);
         const messagesList = messagesSnapshot.docs.map(doc => ({
@@ -148,8 +156,13 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           ...doc.data()
         }));
         setMessages(messagesList);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        alert(lang === 'fr' ? "Erreur Admin (Firestore Messages): " + error.message : "Admin Error (Firestore Messages): " + error.message);
+      }
 
-        // Fetch current announcement for editing
+      // 3. Fetch Announcement
+      try {
         const annDoc = await getDoc(doc(db, "announcements", "current"));
         if (annDoc.exists()) {
           const data = annDoc.data();
@@ -158,9 +171,10 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
           setAnnActive(data.active || false);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
-        alert(lang === 'fr' ? "Erreur Admin (Firestore): " + error.message : "Admin Error (Firestore): " + error.message);
+        console.error("Error fetching announcement:", error);
+        alert(lang === 'fr' ? "Erreur Admin (Firestore Announcement): " + error.message : "Admin Error (Firestore Announcement): " + error.message);
       }
+
       setLoading(false);
     };
     fetchData();
