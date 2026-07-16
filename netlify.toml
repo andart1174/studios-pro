@@ -73,3 +73,19 @@
   to = "/index.html"
   status = 200
 
+# Disable cache for share-bridge.js and community index to prevent cached popup logic
+[[headers]]
+  for = "/community/share-bridge.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/community/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+
