@@ -28,7 +28,9 @@
   /* ── Extract 3D Model Geometry (Safe for Firestore) ────── */
   function get3DModelData() {
     try {
-      let mesh = null;
+      const THREE = window.THREE;
+      if (!THREE) return null;
+
       const sc = window.spScene || window.scene || window.threeScene;
       let candidates = [];
 
@@ -39,12 +41,12 @@
         return name.includes('grid') || name.includes('helper') || name.includes('ground') || 
                name.includes('floor') || name.includes('plane') || name.includes('sky') ||
                name.includes('background') || materialName.includes('grid') || 
-               o.isGridHelper || o.isAxesHelper;
+               o.isGridHelper || o.isAxesHelper || o.type === 'LineSegments' || o.type === 'GridHelper';
       }
 
       if (sc) {
         sc.traverse(function(o) {
-          if (o.isMesh && o.geometry && !isHelper(o)) {
+          if (o.isMesh && o.geometry && !isHelper(o) && o.visible) {
             candidates.push(o);
           }
         });
@@ -55,7 +57,7 @@
         for (const k of Object.keys(window)) {
           try {
             const v = window[k];
-            if (v && v.isMesh && v.geometry && !isHelper(v)) {
+            if (v && v.isMesh && v.geometry && !isHelper(v) && v.visible) {
               candidates.push(v);
             }
           } catch(x){}
@@ -64,50 +66,75 @@
 
       if (candidates.length === 0) return null;
 
-      // Sort candidate meshes by vertex count (descending) to find the primary subject
-      candidates.sort(function(a, b) {
-        const countA = (a.geometry.attributes && a.geometry.attributes.position) ? a.geometry.attributes.position.count : 0;
-        const countB = (b.geometry.attributes && b.geometry.attributes.position) ? b.geometry.attributes.position.count : 0;
-        return countB - countA;
-      });
+      // Extract and merge all candidates into a single non-indexed geometry array
+      const MAX_FLOATS = 120000; // Limit to ~40,000 vertices to prevent exceeding 1MB Firestore limit
+      let mergedPositions = [];
+      let stop = false;
+      let mainColor = '#d4af37'; // Default gold color for jewelry/3D
 
-      // Find the first mesh that has valid positions and is within size limits
-      const MAX_FLOATS = 90000; // 30,000 vertices * 3 coordinates
-      for (let i = 0; i < candidates.length; i++) {
-        const m = candidates[i];
-        const geo = m.geometry;
-        if (geo.attributes && geo.attributes.position) {
-          const pos = Array.from(geo.attributes.position.array);
-          if (pos.length > 0 && pos.length <= MAX_FLOATS) {
-            mesh = m;
-            break;
+      for (let k = 0; k < candidates.length; k++) {
+        if (stop) break;
+        const mesh = candidates[k];
+        const geo = mesh.geometry;
+        if (!geo || !geo.attributes || !geo.attributes.position) continue;
+
+        const posAttr = geo.attributes.position;
+        const indexAttr = geo.index;
+
+        // Force update matrixWorld to ensure we have the latest transformation
+        mesh.updateMatrixWorld(true);
+        const matrix = mesh.matrixWorld;
+
+        // Save the color of the largest mesh to represent the whole model
+        if (k === 0 && mesh.material) {
+          if (mesh.material.color) {
+            mainColor = '#' + mesh.material.color.getHexString();
+          } else if (Array.isArray(mesh.material) && mesh.material[0] && mesh.material[0].color) {
+            mainColor = '#' + mesh.material[0].color.getHexString();
+          }
+        }
+
+        const tempV = new THREE.Vector3();
+
+        if (indexAttr) {
+          // Indexed geometry: map indices to raw positions to create a non-indexed merged mesh
+          for (let i = 0; i < indexAttr.count; i++) {
+            if (mergedPositions.length >= MAX_FLOATS) { stop = true; break; }
+            const idx = indexAttr.getX(i);
+            tempV.set(posAttr.getX(idx), posAttr.getY(idx), posAttr.getZ(idx));
+            tempV.applyMatrix4(matrix);
+            // Precision optimization: round to 4 decimal places to drastically reduce JSON payload size
+            mergedPositions.push(
+              Math.round(tempV.x * 10000) / 10000,
+              Math.round(tempV.y * 10000) / 10000,
+              Math.round(tempV.z * 10000) / 10000
+            );
+          }
+        } else {
+          // Non-indexed geometry: extract positions directly
+          for (let i = 0; i < posAttr.count; i++) {
+            if (mergedPositions.length >= MAX_FLOATS) { stop = true; break; }
+            tempV.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+            tempV.applyMatrix4(matrix);
+            mergedPositions.push(
+              Math.round(tempV.x * 10000) / 10000,
+              Math.round(tempV.y * 10000) / 10000,
+              Math.round(tempV.z * 10000) / 10000
+            );
           }
         }
       }
 
-      if (!mesh) return null;
-
-      const geo = mesh.geometry;
-      const pos = Array.from(geo.attributes.position.array);
-      const nor = geo.attributes.normal ? Array.from(geo.attributes.normal.array) : null;
-      const idx = geo.index ? Array.from(geo.index.array) : null;
-
-      let color = '#6366f1';
-      if (mesh.material) {
-        if (mesh.material.color) color = '#' + mesh.material.color.getHexString();
-        else if (Array.isArray(mesh.material) && mesh.material[0] && mesh.material[0].color) {
-          color = '#' + mesh.material[0].color.getHexString();
-        }
-      }
+      if (mergedPositions.length === 0) return null;
 
       return {
-        positions: pos,
-        normals: nor,
-        indices: idx,
-        color: color
+        positions: mergedPositions,
+        normals: null, // Let community view compute normals on client side to save 50% data space
+        indices: null,   // We're sending raw non-indexed triangles
+        color: mainColor
       };
     } catch(e) {
-      console.warn('Could not extract 3D geometry:', e);
+      console.warn('Could not extract merged 3D geometry:', e);
       return null;
     }
   }
