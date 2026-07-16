@@ -67,7 +67,7 @@
       if (candidates.length === 0) return null;
 
       // Extract and merge all candidates into a single non-indexed geometry array
-      const MAX_FLOATS = 120000; // Limit to ~40,000 vertices to prevent exceeding 1MB Firestore limit
+      const MAX_FLOATS = 90000; // Limit to ~30,000 vertices to prevent exceeding 1MB Firestore limit
       let mergedPositions = [];
       let stop = false;
       let mainColor = '#d4af37'; // Default gold color for jewelry/3D
@@ -79,7 +79,11 @@
         if (!geo || !geo.attributes || !geo.attributes.position) continue;
 
         const posAttr = geo.attributes.position;
+        const posArray = posAttr.array;
         const indexAttr = geo.index;
+        const indexArray = indexAttr ? indexAttr.array : null;
+
+        if (!posArray || posArray.length === 0) continue;
 
         // Force update matrixWorld to ensure we have the latest transformation
         mesh.updateMatrixWorld(true);
@@ -96,12 +100,15 @@
 
         const tempV = new THREE.Vector3();
 
-        if (indexAttr) {
+        if (indexArray) {
           // Indexed geometry: map indices to raw positions to create a non-indexed merged mesh
-          for (let i = 0; i < indexAttr.count; i++) {
+          for (let i = 0; i < indexArray.length; i++) {
             if (mergedPositions.length >= MAX_FLOATS) { stop = true; break; }
-            const idx = indexAttr.getX(i);
-            tempV.set(posAttr.getX(idx), posAttr.getY(idx), posAttr.getZ(idx));
+            const idx = indexArray[i];
+            const idx3 = idx * 3;
+            if (idx3 + 2 >= posArray.length) continue;
+            
+            tempV.set(posArray[idx3], posArray[idx3 + 1], posArray[idx3 + 2]);
             tempV.applyMatrix4(matrix);
             // Precision optimization: round to 4 decimal places to drastically reduce JSON payload size
             mergedPositions.push(
@@ -112,9 +119,11 @@
           }
         } else {
           // Non-indexed geometry: extract positions directly
-          for (let i = 0; i < posAttr.count; i++) {
+          for (let i = 0; i < posArray.length; i += 3) {
             if (mergedPositions.length >= MAX_FLOATS) { stop = true; break; }
-            tempV.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+            if (i + 2 >= posArray.length) continue;
+            
+            tempV.set(posArray[i], posArray[i + 1], posArray[i + 2]);
             tempV.applyMatrix4(matrix);
             mergedPositions.push(
               Math.round(tempV.x * 10000) / 10000,
