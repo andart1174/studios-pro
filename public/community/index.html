@@ -1707,13 +1707,16 @@ function injectPreviewDataUrl(dataUrl) {
   });
 }
 
-// ─── BroadcastChannel — receive shares from tool pages ─────
+// ─── BroadcastChannel & Heartbeat — receive shares from tool pages ─────
 try {
+  const updateHeartbeat = () => { try { localStorage.setItem('studios_community_active', Date.now().toString()); } catch(x){} };
+  updateHeartbeat();
+  setInterval(updateHeartbeat, 2000);
+
   const _spBC = new BroadcastChannel('sp_community_channel');
   _spBC.onmessage = function(e) {
     if (e.data && e.data.type === 'share') {
       _spBC.postMessage('ack'); // tell tool page "I'm open, got it"
-      // Also save to localStorage so the receiver works normally
       try { localStorage.setItem('studios_community_share', JSON.stringify(e.data.data)); } catch(x){}
       applyIncomingShare(e.data.data);
     }

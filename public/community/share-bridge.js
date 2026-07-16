@@ -183,6 +183,8 @@
   }
 
   /* ── Send to Community ────────────────────────────────── */
+
+  /* ── Send to Community ────────────────────────────────── */
   function sendShare(dataUrl) {
     const payload = {
       type: 'screenshot',
@@ -195,35 +197,29 @@
     // Save to localStorage (fallback)
     try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e) {}
 
-    // BroadcastChannel: if Community tab is open → instant delivery, no new tab
-    let ackReceived = false;
+    // Check if Community tab is active based on heartbeat (updated every 2s)
+    let isCommOpen = false;
     try {
-      const bc = new BroadcastChannel(BC_NAME);
-      bc.onmessage = function(e) {
-        if (e.data === 'ack') {
-          ackReceived = true;
-          toast('✦ Sent! Switch to Community tab', 'ok');
-        }
-        bc.close();
-      };
-      bc.postMessage({ type: 'share', data: payload });
+      const activeTime = parseInt(localStorage.getItem('studios_community_active') || '0', 10);
+      isCommOpen = (Date.now() - activeTime) < 4000;
+    } catch(e) {}
 
-      // 500ms window — if no ack, Community not open → open new tab
-      setTimeout(function() {
-        try { bc.close(); } catch(x) {}
-        if (!ackReceived) {
-          toast('✦ Opening Community…', 'ok');
-          setTimeout(function() {
-            window.open(COMM_URL + '?share=1', 'studios_community_tab');
-          }, 300);
-        }
-      }, 500);
-    } catch(e) {
-      toast('✦ Opening Community…', 'ok');
-      setTimeout(function() {
-        window.open(COMM_URL + '?share=1', 'studios_community_tab');
-      }, 300);
+    if (isCommOpen) {
+      // Just broadcast via BroadcastChannel, do not call window.open
+      try {
+        const bc = new BroadcastChannel(BC_NAME);
+        bc.postMessage({ type: 'share', data: payload });
+        bc.close();
+      } catch(e) {}
+      toast('✦ Sent! Switch to your Community tab', 'ok');
+      return;
     }
+
+    // Community is closed: open a new tab
+    toast('✦ Opening Community…', 'ok');
+    setTimeout(function() {
+      window.open(COMM_URL + '?share=1', 'studios_community_tab');
+    }, 300);
   }
 
   /* ── Utils ────────────────────────────────────────────── */
