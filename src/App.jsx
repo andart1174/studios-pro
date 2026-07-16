@@ -172,7 +172,6 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         }
       } catch (error) {
         console.error("Error fetching announcement:", error);
-        alert(lang === 'fr' ? "Erreur Admin (Firestore Announcement): " + error.message : "Admin Error (Firestore Announcement): " + error.message);
       }
 
       setLoading(false);
