@@ -158,7 +158,7 @@ const AdminModal = ({ isOpen, onClose, lang }) => {
         setMessages(messagesList);
       } catch (error) {
         console.error("Error fetching messages:", error);
-        alert(lang === 'fr' ? "Erreur Admin (Firestore Messages): " + error.message : "Admin Error (Firestore Messages): " + error.message);
+        setMessages([]);
       }
 
       // 3. Fetch Announcement
