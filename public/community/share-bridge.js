@@ -174,51 +174,46 @@
     // Send storage ping (community responds with pong via storage event)
     try { localStorage.setItem('studios_community_ping', pingToken); } catch(e) {}
 
-    // Try BroadcastChannel first — fast path when community is in same browser window
+    // Try BroadcastChannel + storage event listener simultaneously
     let responded = false;
+
+    function onCommunityResponse() {
+      if (responded) return;
+      responded = true;
+      try { if (typeof bc !== 'undefined') bc.close(); } catch(x) {}
+      window.removeEventListener('storage', storageWatcher);
+      toast('✦ Sent! Switch to your Community tab', 'ok');
+    }
+
+    // Watch for pong via storage event (fires even if community tab is sleeping)
+    function storageWatcher(e) {
+      if (e.key === 'studios_community_pong' && e.newValue) {
+        onCommunityResponse();
+      }
+    }
+    window.addEventListener('storage', storageWatcher);
+
+    let bc;
     try {
-      const bc = new BroadcastChannel(BC_NAME);
+      bc = new BroadcastChannel(BC_NAME);
       bc.onmessage = function(e) {
-        if (e.data === 'ack' && !responded) {
-          responded = true;
-          try { bc.close(); } catch(x) {}
-          toast('✦ Sent! Switch to your Community tab', 'ok');
-        }
+        if (e.data === 'ack') onCommunityResponse();
       };
       bc.postMessage({ type: 'share', data: payload });
+    } catch(e) { bc = null; }
 
-      // After 400ms — check if either BroadcastChannel ack OR storage pong arrived
-      setTimeout(function() {
-        try { bc.close(); } catch(x) {}
-        if (responded) return; // Already handled by BroadcastChannel
-
-        // Check storage pong (works across separate windows, even when timers are throttled)
-        try {
-          const pong = parseInt(localStorage.getItem('studios_community_pong') || '0', 10);
-          if (pong && (Date.now() - pong) < 2000) {
-            responded = true;
-            toast('✦ Sent! Switch to your Community tab', 'ok');
-            return;
-          }
-        } catch(x) {}
-
-        // Neither channel responded — community is not open → open it
-        if (!responded) {
-          responded = true;
-          toast('✦ Opening Community…', 'ok');
-          setTimeout(function() {
-            window.open(COMM_URL + '?share=1', '_blank');
-          }, 200);
-        }
-      }, 400);
-
-    } catch(e) {
-      // BroadcastChannel not supported — fall back to opening community
-      toast('✦ Opening Community…', 'ok');
-      setTimeout(function() {
-        window.open(COMM_URL + '?share=1', '_blank');
-      }, 300);
-    }
+    // After 1200ms — if still no response, community is not open → open it
+    setTimeout(function() {
+      window.removeEventListener('storage', storageWatcher);
+      try { if (bc) bc.close(); } catch(x) {}
+      if (!responded) {
+        responded = true;
+        toast('✦ Opening Community…', 'ok');
+        setTimeout(function() {
+          window.open(COMM_URL + '?share=1', '_blank');
+        }, 200);
+      }
+    }, 1200);
   }
 
   /* ── Utils ────────────────────────────────────────────── */
