@@ -749,7 +749,7 @@ const T = {
 let curLang='en', curUser=null, isAdmin=false, curCat='all', curPostId=null;
 let uploadedFiles=[], unsub=null, unsubCmt=null;
 let replyParentId=null, replyParentName=null;
-let allPosts=[], transferred3D=null;
+let allPosts=[], transferred3D=null, sharedSourcePage=null;
 
 // ─── i18n ─────────────────────────────────────────────────
 function setLang(l, btn) {
@@ -1433,6 +1433,10 @@ async function publish() {
     userPostCount: ud.postCount || 0,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   };
+  if (sharedSourcePage) {
+    postData.sourcePage = sharedSourcePage;
+    sharedSourcePage = null;
+  }
   if (transferred3D) { postData.modelData=transferred3D; transferred3D=null; document.getElementById('transferBadge').style.display='none'; }
 
   await db.collection(COLL).add(postData);
@@ -1537,7 +1541,7 @@ function closeAuth(e) { if (e&&e.target!==document.getElementById('authOverlay')
 function closeAuthDirect() { document.getElementById('authOverlay').classList.remove('open'); }
 function openCreate() { if (!curUser) { openAuth(); return; } document.getElementById('createOverlay').classList.add('open'); }
 function closeCreate(e) { if (e&&e.target!==document.getElementById('createOverlay')) return; closeCreateDirect(); }
-function closeCreateDirect() { document.getElementById('createOverlay').classList.remove('open'); }
+function closeCreateDirect() { document.getElementById('createOverlay').classList.remove('open'); sharedSourcePage = null; }
 
 // ─── Lightbox ──────────────────────────────────────────────
 function openLb(src) { document.getElementById('lb').classList.add('open'); document.getElementById('lbImg').src=src; }
@@ -1606,6 +1610,7 @@ function applyIncomingShare(data) {
   openCreate(); // opens modal (may show auth if not logged in)
   setTimeout(() => {
     const src = data.source || data.sourcePage || 'Studios-PRO Tool';
+    sharedSourcePage = data.sourcePage || null;
 
     // ── Pre-fill text content ────────────────────────────
     const ta = document.getElementById('postContent');

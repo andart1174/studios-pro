@@ -2,6 +2,21 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    // Native Canvas getContext wrapper to force preserveDrawingBuffer: true on main page
+    (function() {
+      try {
+        const orig = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+          if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+            attributes = attributes || {};
+            attributes.preserveDrawingBuffer = true;
+          }
+          return orig.call(this, type, attributes);
+        };
+      } catch(e) {}
+    })();
+  </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Studio 3D/4D Pro — 2D to 3D Composer</title>
