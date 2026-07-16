@@ -542,8 +542,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -628,7 +628,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1218,6 +1220,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
   <!-- Back Button -->
   <style>
     .back-to-studios {
@@ -1341,7 +1347,7 @@
   <div id="local-payment-modal">
     <div class="local-modal-content">
       <button class="close-local-modal" id="modal-close-btn">&times;</button>
-      <div style="font-size: 40px; margin-bottom: 20px;">??</div>
+      <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
       <h2 id="modal-title">Paiement requis</h2>
       <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</p>
       <div class="btn-group">
@@ -1352,8 +1358,6 @@
 
   <div id="root"></div>
   
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 
 </html>

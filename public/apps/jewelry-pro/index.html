@@ -657,7 +657,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -800,7 +802,7 @@
     scene.background = new THREE.Color(0x0b1329);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
@@ -970,8 +972,6 @@
     
     function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
     animate();
-    // Expose for Share to Community
-    window.spRenderer = renderer; window.spScene = scene; window.spCamera = camera;
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   <\/script>
 </body>
@@ -1133,6 +1133,10 @@
       }
     })();
   </script>
+<!-- Back Button and Payment logic -->
+  
+  
+  
 <!-- Back Button and Payment logic -->
   
   
@@ -2969,12 +2973,6 @@ updateUI();
 createGeometry();
 animate();
 
-// Expose variables for Share to Community screenshot bridge
-window.spRenderer = renderer;
-window.spScene = scene;
-window.spCamera = camera;
 </script>
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>

@@ -797,8 +797,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -883,7 +883,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1529,9 +1531,13 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
     <div id="local-payment-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;justify-content:center;align-items:center;backdrop-filter:blur(8px);">
         <div style="background:#0f172a;padding:40px;border-radius:20px;text-align:center;max-width:400px;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
-            <div style="font-size:40px;margin-bottom:15px;">??</div>
+            <div style="font-size:40px;margin-bottom:15px;">🔒</div>
             <h2 style="font-size:24px;margin-bottom:15px;color:var(--accent);">Premium Mode Required</h2>
             <p style="color:#94a3b8;margin-bottom:25px;font-size:15px;line-height:1.5;">This export feature requires an active Premium plan. Please upgrade to continue.</p>
             <div style="display:flex;gap:15px;justify-content:center;">
@@ -1549,93 +1555,93 @@
         
         <div class="nav-modules">
             <button class="module-btn active" onclick="setModule('gear')" id="nav-gear">
-                <span data-lang="en">?? Gears</span><span data-lang="fr">?? Engrenages</span>
+                <span data-lang="en">⚙️ Gears</span><span data-lang="fr">⚙️ Engrenages</span>
             </button>
             <button class="module-btn" onclick="setModule('sprocket')" id="nav-sprocket">
-                <span data-lang="en">??? Sprockets</span><span data-lang="fr">??? Pignons</span>
+                <span data-lang="en">🗂️ Sprockets</span><span data-lang="fr">🗂️ Pignons</span>
             </button>
             <button class="module-btn" onclick="setModule('bracket')" id="nav-bracket">
-                <span data-lang="en">?? Brackets</span><span data-lang="fr">?? Supports</span>
+                <span data-lang="en">📐 Brackets</span><span data-lang="fr">📐 Supports</span>
             </button>
             <button class="module-btn" onclick="setModule('screw')" id="nav-screw">
-                <span data-lang="en">?? Screws</span><span data-lang="fr">?? Vis</span>
+                <span data-lang="en">🔩 Screws</span><span data-lang="fr">🔩 Vis</span>
             </button>
             <button class="module-btn" onclick="setModule('spring')" id="nav-spring">
-                <span data-lang="en">?? Springs</span><span data-lang="fr">?? Ressorts</span>
+                <span data-lang="en">🌀 Springs</span><span data-lang="fr">🌀 Ressorts</span>
             </button>
             <button class="module-btn" onclick="setModule('bearing')" id="nav-bearing">
-                <span data-lang="en">??? Bearings</span><span data-lang="fr">??? Roulements</span>
+                <span data-lang="en">🛠️ Bearings</span><span data-lang="fr">🛠️ Roulements</span>
             </button>
             <button class="module-btn" onclick="setModule('connect')" id="nav-connect">
-                <span data-lang="en">?? Connect</span><span data-lang="fr">?? Connecteur</span>
+                <span data-lang="en">🧲 Connect</span><span data-lang="fr">🧲 Connecteur</span>
             </button>
             <button class="module-btn" onclick="setModule('pulley')" id="nav-pulley">
-                <span data-lang="en">?? Pulleys</span><span data-lang="fr">?? Poulies</span>
+                <span data-lang="en">🔄 Pulleys</span><span data-lang="fr">🔄 Poulies</span>
             </button>
             <button class="module-btn" onclick="setModule('hinge')" id="nav-hinge">
-                <span data-lang="en">?? Hinge</span><span data-lang="fr">?? Charni�re</span>
+                <span data-lang="en">🚪 Hinge</span><span data-lang="fr">🚪 Charnière</span>
             </button>
             <button class="module-btn" onclick="setModule('planetary')" id="nav-planetary">
-                <span data-lang="en">?? Planetary</span><span data-lang="fr">?? Plan�taire</span>
+                <span data-lang="en">🌍 Planetary</span><span data-lang="fr">🌍 Planétaire</span>
             </button>
             <button class="module-btn" onclick="setModule('geneva')" id="nav-geneva">
-                <span data-lang="en">?? Geneva</span><span data-lang="fr">?? Gen�ve</span>
+                <span data-lang="en">🎡 Geneva</span><span data-lang="fr">🎡 Genève</span>
             </button>
             <button class="module-btn" onclick="setModule('rack')" id="nav-rack">
-                <span data-lang="en">??? Rack</span><span data-lang="fr">??? Cr�maill�re</span>
+                <span data-lang="en">🏗️ Rack</span><span data-lang="fr">🏗️ Crémaillère</span>
             </button>
             <button class="module-btn" onclick="setModule('worm')" id="nav-worm">
-                <span data-lang="en">?? Worm</span><span data-lang="fr">?? Vis Sans Fin</span>
+                <span data-lang="en">🐌 Worm</span><span data-lang="fr">🐌 Vis Sans Fin</span>
             </button>
             <button class="module-btn" onclick="setModule('tslot')" id="nav-tslot">
-                <span data-lang="en">??? T-Slot</span><span data-lang="fr">??? Profil� T</span>
+                <span data-lang="en">🏗️ T-Slot</span><span data-lang="fr">🏗️ Profilé T</span>
             </button>
             <button class="module-btn" onclick="setModule('coupler')" id="nav-coupler">
-                <span data-lang="en">?? Coupler</span><span data-lang="fr">?? Accouplement</span>
+                <span data-lang="en">🔗 Coupler</span><span data-lang="fr">🔗 Accouplement</span>
             </button>
             <button class="module-btn" onclick="setModule('bevel')" id="nav-bevel">
-                <span data-lang="en">?? Bevel Gear</span><span data-lang="fr">?? Engrenage Conique</span>
+                <span data-lang="en">📐 Bevel Gear</span><span data-lang="fr">📐 Engrenage Conique</span>
             </button>
             <button class="module-btn" onclick="setModule('pillow')" id="nav-pillow">
-                <span data-lang="en">?? Pillow Block</span><span data-lang="fr">?? Palier</span>
+                <span data-lang="en">🧱 Pillow Block</span><span data-lang="fr">🧱 Palier</span>
             </button>
             <button class="module-btn" onclick="setModule('handwheel')" id="nav-handwheel">
-                <span data-lang="en">?? Handwheel</span><span data-lang="fr">?? Volant</span>
+                <span data-lang="en">🎡 Handwheel</span><span data-lang="fr">🎡 Volant</span>
             </button>
             <button class="module-btn" onclick="setModule('standoff')" id="nav-standoff">
-                <span data-lang="en">?? Standoff</span><span data-lang="fr">?? Entretoise</span>
+                <span data-lang="en">🔩 Standoff</span><span data-lang="fr">🔩 Entretoise</span>
             </button>
             <button class="module-btn" onclick="setModule('cardan')" id="nav-cardan">
-                <span data-lang="en">?? U-Joint</span><span data-lang="fr">?? Cardan</span>
+                <span data-lang="en">🦴 U-Joint</span><span data-lang="fr">🦴 Cardan</span>
             </button>
             <button class="module-btn" onclick="setModule('linbear')" id="nav-linbear">
-                <span data-lang="en">?? Lin Bear</span><span data-lang="fr">?? Douille L.</span>
+                <span data-lang="en">🧊 Lin Bear</span><span data-lang="fr">🧊 Douille L.</span>
             </button>
             <button class="module-btn" onclick="setModule('nema')" id="nav-nema">
-                <span data-lang="en">? Nema Mount</span><span data-lang="fr">? Sup. Moteur</span>
+                <span data-lang="en">⚡ Nema Mount</span><span data-lang="fr">⚡ Sup. Moteur</span>
             </button>
             <button class="module-btn" onclick="setModule('leadscrew')" id="nav-leadscrew">
-                <span data-lang="en">?? Lead Screw</span><span data-lang="fr">?? Vis M�re Z</span>
+                <span data-lang="en">🔩 Lead Screw</span><span data-lang="fr">🔩 Vis Mère Z</span>
             </button>
             <button class="module-btn" onclick="setModule('chain')" id="nav-chain">
-                <span data-lang="en">?? Drag Chain</span><span data-lang="fr">?? Cha�ne C�ble</span>
+                <span data-lang="en">⛓️ Drag Chain</span><span data-lang="fr">⛓️ Chaîne Câble</span>
             </button>
             <button class="module-btn" onclick="setModule('idler')" id="nav-idler">
-                <span data-lang="en">?? Idler</span><span data-lang="fr">?? Poulie Folle</span>
+                <span data-lang="en">🛞 Idler</span><span data-lang="fr">🛞 Poulie Folle</span>
             </button>
             <button class="module-btn" onclick="setModule('collar')" id="nav-collar">
-                <span data-lang="en">? Shaft Collar</span><span data-lang="fr">? Bague d'Arr�t</span>
+                <span data-lang="en">⭕ Shaft Collar</span><span data-lang="fr">⭕ Bague d'Arrêt</span>
             </button>
             <button class="module-btn" onclick="setModule('balljoint')" id="nav-balljoint">
-                <span data-lang="en">?? Ball Joint</span><span data-lang="fr">?? Rotule</span>
+                <span data-lang="en">🔮 Ball Joint</span><span data-lang="fr">🔮 Rotule</span>
             </button>
         </div>
 
         <div class="header-actions">
-            <button class="action-btn" onclick="toggleExploded()" id="btn-explode" title="Exploded View">??</button>
-            <button class="action-btn" onclick="toggleAnimation()" id="btn-anim" title="Animate Model">??</button>
-            <button class="action-btn" onclick="savePreset()" title="Save Preset">??</button>
-            <button class="action-btn" onclick="loadPreset()" title="Load Preset">??</button>
+            <button class="action-btn" onclick="toggleExploded()" id="btn-explode" title="Exploded View">📂</button>
+            <button class="action-btn" onclick="toggleAnimation()" id="btn-anim" title="Animate Model">▶️</button>
+            <button class="action-btn" onclick="savePreset()" title="Save Preset">💾</button>
+            <button class="action-btn" onclick="loadPreset()" title="Load Preset">📁</button>
         </div>
     </header>
 
@@ -1646,7 +1652,7 @@
                 <!-- GEAR MODULE -->
                 <div id="mod-gear" class="control-group generator-mod">
                     <div class="group-title">
-                        <span data-lang="en">Spur Gear Generator</span><span data-lang="fr">G�n�rateur R. Dent�e</span>
+                        <span data-lang="en">Spur Gear Generator</span><span data-lang="fr">Générateur R. Dentée</span>
                     </div>
                     
                     <div class="ctrl-row">
@@ -1669,7 +1675,7 @@
 
                     <div class="ctrl-row">
                         <div class="ctrl-label">
-                            <span><span data-lang="en">Thickness (z) [mm]</span><span data-lang="fr">�paisseur (z) [mm]</span></span>
+                            <span><span data-lang="en">Thickness (z) [mm]</span><span data-lang="fr">Épaisseur (z) [mm]</span></span>
                             <span class="val-display" id="val-gear-thick">5.0</span>
                         </div>
                         <input type="range" id="gear-thick" min="1" max="50" step="0.5" value="5" oninput="updateVal('gear-thick'); generate()" title="Gear Thickness">
@@ -1677,7 +1683,7 @@
                     
                     <div class="ctrl-row">
                         <div class="ctrl-label">
-                            <span><span data-lang="en">Bore Diameter [mm]</span><span data-lang="fr">Diam�tre Al�sage [mm]</span></span>
+                            <span><span data-lang="en">Bore Diameter [mm]</span><span data-lang="fr">Diamètre Alésage [mm]</span></span>
                             <span class="val-display" id="val-gear-bore">10.0</span>
                         </div>
                         <input type="range" id="gear-bore" min="2" max="50" step="0.5" value="10" oninput="updateVal('gear-bore'); generate()" title="Bore Diameter">
@@ -1703,7 +1709,7 @@
                 <!-- BRACKET MODULE -->
                 <div id="mod-bracket" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Parametric Bracket</span><span data-lang="fr">Support Param�trique</span>
+                        <span data-lang="en">Parametric Bracket</span><span data-lang="fr">Support Paramétrique</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Type</span><span data-lang="fr">Type</span></span></div>
@@ -1725,11 +1731,11 @@
                         <input type="range" id="brk-d" min="10" max="100" step="1" value="20" oninput="updateVal('brk-d'); generate()" title="Bracket Depth">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">�paisseur</span></span><span class="val-display" id="val-brk-t">3.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-brk-t">3.0</span></div>
                         <input type="range" id="brk-t" min="1" max="10" step="0.5" value="3" oninput="updateVal('brk-t'); generate()" title="Bracket Thickness">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Hole Diameter</span><span data-lang="fr">Diam�tre Trou</span></span><span class="val-display" id="val-brk-hd">4.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Hole Diameter</span><span data-lang="fr">Diamètre Trou</span></span><span class="val-display" id="val-brk-hd">4.0</span></div>
                         <input type="range" id="brk-hd" min="0" max="15" step="0.5" value="4" oninput="updateVal('brk-hd'); generate()" title="Hole Diameter">
                     </div>
                 </div>
@@ -1737,18 +1743,18 @@
                 <!-- SPRING MODULE -->
                 <div id="mod-spring" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Helical Spring</span><span data-lang="fr">Ressort H�lico�dal</span>
+                        <span data-lang="en">Helical Spring</span><span data-lang="fr">Ressort Hélicoïdal</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Turns (N)</span><span data-lang="fr">Spires (N)</span></span><span class="val-display" id="val-spr-turns">10.0</span></div>
                         <input type="range" id="spr-turns" min="2" max="50" step="0.5" value="10" oninput="updateVal('spr-turns'); generate()" title="Spring Turns">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diam�tre Ext�rieur</span></span><span class="val-display" id="val-spr-od">20.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-spr-od">20.0</span></div>
                         <input type="range" id="spr-od" min="5" max="100" step="1" value="20" oninput="updateVal('spr-od'); generate()" title="Spring Outer Diameter">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Wire Diameter</span><span data-lang="fr">Diam�tre Fil</span></span><span class="val-display" id="val-spr-wd">2.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Wire Diameter</span><span data-lang="fr">Diamètre Fil</span></span><span class="val-display" id="val-spr-wd">2.0</span></div>
                         <input type="range" id="spr-wd" min="0.5" max="10" step="0.1" value="2.0" oninput="updateVal('spr-wd'); generate()" title="Spring Wire Diameter">
                     </div>
                     <div class="ctrl-row">
@@ -1763,19 +1769,19 @@
                         <span data-lang="en">Print-in-Place Bearing</span><span data-lang="fr">Roulement Imprimable</span>
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Inner Diameter (Bore)</span><span data-lang="fr">Diam�tre Int�rieur</span></span><span class="val-display" id="val-brg-id">8.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Inner Diameter (Bore)</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-brg-id">8.0</span></div>
                         <input type="range" id="brg-id" min="3" max="50" step="1" value="8" oninput="updateVal('brg-id'); generate()" title="Bearing Inner Diameter">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diam�tre Ext�rieur</span></span><span class="val-display" id="val-brg-od">22.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-brg-od">22.0</span></div>
                         <input type="range" id="brg-od" min="10" max="100" step="1" value="22" oninput="updateVal('brg-od'); generate()" title="Bearing Outer Diameter">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Width)</span><span data-lang="fr">�paisseur</span></span><span class="val-display" id="val-brg-w">7.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Width)</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-brg-w">7.0</span></div>
                         <input type="range" id="brg-w" min="4" max="30" step="1" value="7" oninput="updateVal('brg-w'); generate()" title="Bearing Thickness">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Tolerance (Clearance)</span><span data-lang="fr">Jeu / Tol�rance</span></span><span class="val-display" id="val-brg-tol">0.3</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Tolerance (Clearance)</span><span data-lang="fr">Jeu / Tolérance</span></span><span class="val-display" id="val-brg-tol">0.3</span></div>
                         <input type="range" id="brg-tol" min="0.1" max="1.0" step="0.05" value="0.3" oninput="updateVal('brg-tol'); generate()" title="Bearing Tolerance">
                     </div>
                 </div>
@@ -1783,7 +1789,7 @@
                 <!-- SPROCKET MODULE -->
                 <div id="mod-sprocket" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Sprocket Generator</span><span data-lang="fr">G�n�rateur Pignon</span>
+                        <span data-lang="en">Sprocket Generator</span><span data-lang="fr">Générateur Pignon</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Teeth Count</span><span data-lang="fr">Nombre de Dents</span></span><span class="val-display" id="val-spk-t">16</span></div>
@@ -1795,7 +1801,7 @@
                         <input type="range" id="spk-p" min="4" max="25" step="0.5" value="8" oninput="updateVal('spk-p'); generate()" title="Sprocket Pitch">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Z)</span><span data-lang="fr">�paisseur (Z)</span></span><span class="val-display" id="val-spk-tk">3.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (Z)</span><span data-lang="fr">Épaisseur (Z)</span></span><span class="val-display" id="val-spk-tk">3.0</span></div>
                         <input type="range" id="spk-tk" min="1" max="15" step="0.5" value="3" oninput="updateVal('spk-tk'); generate()" title="Sprocket Thickness">
                     </div>
                     <div class="ctrl-row">
@@ -1811,16 +1817,16 @@
                 <!-- SCREW MODULE -->
                 <div id="mod-screw" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Screw & Nut Builder</span><span data-lang="fr">Vis & �crou</span>
+                        <span data-lang="en">Screw & Nut Builder</span><span data-lang="fr">Vis & Écrou</span>
                     </div>
                     <div class="ctrl-row">
                         <select id="scw-type" onchange="generate()" title="Screw Type">
                             <option value="bolt">Hex Bolt (Vis Hex)</option>
-                            <option value="nut">Hex Nut (�crou)</option>
+                            <option value="nut">Hex Nut (Écrou)</option>
                         </select>
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Thread Dia. (M)</span><span data-lang="fr">Diam�tre (M)</span></span><span class="val-display" id="val-scw-d">8.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Thread Dia. (M)</span><span data-lang="fr">Diamètre (M)</span></span><span class="val-display" id="val-scw-d">8.0</span></div>
                         <input type="range" id="scw-d" min="3" max="30" step="1" value="8" oninput="updateVal('scw-d'); generate()" title="Thread Diameter">
                     </div>
                     <div class="ctrl-row">
@@ -1832,7 +1838,7 @@
                         <input type="range" id="scw-hw" min="4" max="50" step="1" value="14" oninput="updateVal('scw-hw'); generate()" title="Head Width">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Head Thick</span><span data-lang="fr">�p. T�te</span></span><span class="val-display" id="val-scw-ht">5.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Head Thick</span><span data-lang="fr">Ép. Tête</span></span><span class="val-display" id="val-scw-ht">5.0</span></div>
                         <input type="range" id="scw-ht" min="1" max="25" step="0.5" value="5" oninput="updateVal('scw-ht'); generate()" title="Head Thickness">
                     </div>
                 </div>
@@ -1854,7 +1860,7 @@
                         <input type="range" id="con-s" min="5" max="30" step="1" value="10" oninput="updateVal('con-s'); generate()" title="Connector Size">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tol�rance</span></span><span class="val-display" id="val-con-t">0.2</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tolérance</span></span><span class="val-display" id="val-con-t">0.2</span></div>
                         <input type="range" id="con-t" min="0" max="0.5" step="0.05" value="0.2" oninput="updateVal('con-t'); generate()" title="Tolerance">
                     </div>
                     <div class="ctrl-row">
@@ -1870,7 +1876,7 @@
                 <!-- PLANETARY MODULE -->
                 <div id="mod-planetary" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Planetary Gearset</span><span data-lang="fr">Syst�me Plan�taire</span>
+                        <span data-lang="en">Planetary Gearset</span><span data-lang="fr">Système Planétaire</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Module (m)</span></span><span class="val-display" id="val-plan-m">2.0</span></div>
@@ -1881,27 +1887,27 @@
                         <input type="range" id="plan-zs" min="8" max="40" step="1" value="12" oninput="updateVal('plan-zs'); generate()" title="Sun Teeth">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Planet Teeth (Zp)</span><span data-lang="fr">Dents Plan�tes</span></span><span class="val-display" id="val-plan-zp">12</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Planet Teeth (Zp)</span><span data-lang="fr">Dents Planètes</span></span><span class="val-display" id="val-plan-zp">12</span></div>
                         <input type="range" id="plan-zp" min="8" max="40" step="1" value="12" oninput="updateVal('plan-zp'); generate()" title="Planet Teeth">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Planet Count</span><span data-lang="fr">Nombre Plan�tes</span></span><span class="val-display" id="val-plan-n">3</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Planet Count</span><span data-lang="fr">Nombre Planètes</span></span><span class="val-display" id="val-plan-n">3</span></div>
                         <input type="range" id="plan-n" min="2" max="6" step="1" value="3" oninput="updateVal('plan-n'); generate()" title="Planet Count">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">�paisseur (z)</span></span><span class="val-display" id="val-plan-z">5.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-plan-z">5.0</span></div>
                         <input type="range" id="plan-z" min="2" max="20" step="1" value="5" oninput="updateVal('plan-z'); generate()" title="Planetary Thickness">
                     </div>
                     <div class="plan-note">
                         <span data-lang="en">Ring gear teeth (Zr) is automatically calculated as Zs + 2*Zp.</span>
-                        <span data-lang="fr">Le nombre de dents de la couronne (Zr) est calcul� comme Zs + 2*Zp.</span>
+                        <span data-lang="fr">Le nombre de dents de la couronne (Zr) est calculé comme Zs + 2*Zp.</span>
                     </div>
                 </div>
 
                 <!-- PULLEY MODULE -->
                 <div id="mod-pulley" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Timing Pulley (GT2)</span><span data-lang="fr">Poulie Crant�e (GT2)</span>
+                        <span data-lang="en">Timing Pulley (GT2)</span><span data-lang="fr">Poulie Crantée (GT2)</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Teeth Count</span><span data-lang="fr">Nombre de Dents</span></span><span class="val-display" id="val-pul-t">20</span></div>
@@ -1912,7 +1918,7 @@
                         <input type="range" id="pul-w" min="4" max="25" step="0.5" value="6" oninput="updateVal('pul-w'); generate()" title="Belt Width">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Bore Diameter</span><span data-lang="fr">Al�sage Axe</span></span><span class="val-display" id="val-pul-b">5.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Bore Diameter</span><span data-lang="fr">Alésage Axe</span></span><span class="val-display" id="val-pul-b">5.0</span></div>
                         <input type="range" id="pul-b" min="3" max="20" step="0.5" value="5" oninput="updateVal('pul-b'); generate()" title="Pulley Bore">
                     </div>
                     <div class="ctrl-row">
@@ -1920,7 +1926,7 @@
                         <input type="range" id="pul-fd" min="0" max="10" step="0.5" value="3" oninput="updateVal('pul-fd'); generate()" title="Flange Diameter">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Flange Thick</span><span data-lang="fr">�p. Bride</span></span><span class="val-display" id="val-pul-ft">1.0</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Flange Thick</span><span data-lang="fr">Ép. Bride</span></span><span class="val-display" id="val-pul-ft">1.0</span></div>
                         <input type="range" id="pul-ft" min="0" max="5" step="0.1" value="1.0" oninput="updateVal('pul-ft'); generate()" title="Flange Thickness">
                     </div>
                 </div>
@@ -1928,7 +1934,7 @@
                 <!-- HINGE MODULE -->
                 <div id="mod-hinge" class="control-group generator-mod hidden">
                     <div class="group-title">
-                        <span data-lang="en">Para-Hinge</span><span data-lang="fr">Charni�re Param�trique</span>
+                        <span data-lang="en">Para-Hinge</span><span data-lang="fr">Charnière Paramétrique</span>
                     </div>
                     <div class="ctrl-row">
                         <div class="ctrl-label"><span><span data-lang="en">Length (L)</span><span data-lang="fr">Longueur (L)</span></span><span class="val-display" id="val-hin-l">40.0</span></div>
@@ -1939,7 +1945,7 @@
                         <input type="range" id="hin-w" min="10" max="80" step="1" value="30" oninput="updateVal('hin-w'); generate()" title="Hinge Width">
                     </div>
                     <div class="ctrl-row">
-                        <div class="ctrl-label"><span><span data-lang="en">Clearance</span><span data-lang="fr">Jeu / Tol�rance</span></span><span class="val-display" id="val-hin-c">0.3</span></div>
+                        <div class="ctrl-label"><span><span data-lang="en">Clearance</span><span data-lang="fr">Jeu / Tolérance</span></span><span class="val-display" id="val-hin-c">0.3</span></div>
                         <input type="range" id="hin-c" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateVal('hin-c'); generate()" title="Hinge Clearance">
                     </div>
                 </div>
@@ -1947,7 +1953,7 @@
                 <!-- GLOBAL SETTINGS -->
                 <div class="control-group">
                     <div class="group-title">
-                        <span data-lang="en">Render Material</span><span data-lang="fr">Mat�riau de Rendu</span>
+                        <span data-lang="en">Render Material</span><span data-lang="fr">Matériau de Rendu</span>
                     </div>
                     <div class="ctrl-row">
                         <select id="mat-type" onchange="updateMaterial()" title="Material Type">
@@ -1977,7 +1983,7 @@
                     <input type="range" id="gen-m" min="1" max="10" step="0.5" value="5" oninput="updateVal('gen-m'); generate()" title="Geneva Module">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">�paisseur (z)</span></span><span class="val-display" id="val-gen-z">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-gen-z">5</span></div>
                     <input type="range" id="gen-z" min="1" max="20" step="1" value="5" oninput="updateVal('gen-z'); generate()" title="Geneva Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -1989,7 +1995,7 @@
             <!-- Rack & Pinion -->
             <div id="mod-rack" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Rack & Pinion</span><span data-lang="fr">Cr�maill�re</span>
+                    <span data-lang="en">Rack & Pinion</span><span data-lang="fr">Crémaillère</span>
                 </div>
                 <div class="ctrl-row">
                     <div class="ctrl-label"><span><span data-lang="en">Module (m)</span><span data-lang="fr">Modul (m)</span></span><span class="val-display" id="val-rack-m">2.0</span></div>
@@ -2000,11 +2006,11 @@
                     <input type="range" id="rack-z" min="8" max="40" step="1" value="12" oninput="updateVal('rack-z'); generate()" title="Pinion Teeth">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Rack Length</span><span data-lang="fr">Longueur Cr�maill�re</span></span><span class="val-display" id="val-rack-l">150</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Rack Length</span><span data-lang="fr">Longueur Crémaillère</span></span><span class="val-display" id="val-rack-l">150</span></div>
                     <input type="range" id="rack-l" min="50" max="300" step="10" value="150" oninput="updateVal('rack-l'); generate()" title="Rack Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">�paisseur (z)</span></span><span class="val-display" id="val-rack-thick">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-rack-thick">5</span></div>
                     <input type="range" id="rack-thick" min="1" max="20" step="1" value="5" oninput="updateVal('rack-thick'); generate()" title="Rack Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -2031,7 +2037,7 @@
                     <input type="range" id="worm-len" min="20" max="100" step="5" value="40" oninput="updateVal('worm-len'); generate()" title="Worm Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">�paisseur (z)</span></span><span class="val-display" id="val-worm-thick">10</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness (z)</span><span data-lang="fr">Épaisseur (z)</span></span><span class="val-display" id="val-worm-thick">10</span></div>
                     <input type="range" id="worm-thick" min="1" max="20" step="1" value="10" oninput="updateVal('worm-thick'); generate()" title="Worm Thickness">
                 </div>
             </div>
@@ -2042,7 +2048,7 @@
                     <span data-lang="en">T-Slot Profile</span><span data-lang="fr">Profil T-Slot</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Profile Size (X/Y)</span><span data-lang="fr">Taille Profil�</span></span><span class="val-display" id="val-tslot-s">20</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Profile Size (X/Y)</span><span data-lang="fr">Taille Profilé</span></span><span class="val-display" id="val-tslot-s">20</span></div>
                     <input type="range" id="tslot-s" min="10" max="100" step="5" value="20" oninput="updateVal('tslot-s'); generate()" title="Profile Size">
                 </div>
                 <div class="ctrl-row">
@@ -2057,7 +2063,7 @@
                     <input type="range" id="tslot-l" min="20" max="500" step="10" value="100" oninput="updateVal('tslot-l'); generate()" title="Profile Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Wall Thick</span><span data-lang="fr">�p. Paroi</span></span><span class="val-display" id="val-tslot-w">2.0</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Wall Thick</span><span data-lang="fr">Ép. Paroi</span></span><span class="val-display" id="val-tslot-w">2.0</span></div>
                     <input type="range" id="tslot-w" min="1" max="5" step="0.5" value="2" oninput="updateVal('tslot-w'); generate()" title="Wall Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -2087,11 +2093,11 @@
                     <input type="range" id="coup-od" min="10" max="80" step="1" value="19" oninput="updateVal('coup-od'); generate()" title="Outer Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore 1</span><span data-lang="fr">Al�sage 1</span></span><span class="val-display" id="val-coup-b1">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore 1</span><span data-lang="fr">Alésage 1</span></span><span class="val-display" id="val-coup-b1">5</span></div>
                     <input type="range" id="coup-b1" min="3" max="50" step="0.5" value="5" oninput="updateVal('coup-b1'); generate()" title="Bore Diameter 1">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore 2</span><span data-lang="fr">Al�sage 2</span></span><span class="val-display" id="val-coup-b2">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore 2</span><span data-lang="fr">Alésage 2</span></span><span class="val-display" id="val-coup-b2">8</span></div>
                     <input type="range" id="coup-b2" min="3" max="50" step="0.5" value="8" oninput="updateVal('coup-b2'); generate()" title="Bore Diameter 2">
                 </div>
             </div>
@@ -2114,11 +2120,11 @@
                     <input type="range" id="bevg-fw" min="2" max="30" step="1" value="10" oninput="updateVal('bevg-fw'); generate()" title="Face Width">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Cone Angle (deg)</span><span data-lang="fr">Angle C�ne</span></span><span class="val-display" id="val-bevg-ang">45</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Cone Angle (deg)</span><span data-lang="fr">Angle Cône</span></span><span class="val-display" id="val-bevg-ang">45</span></div>
                     <input type="range" id="bevg-ang" min="10" max="80" step="1" value="45" oninput="updateVal('bevg-ang'); generate()" title="Cone Angle">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Al�sage Ax</span></span><span class="val-display" id="val-bevg-b">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Ax</span></span><span class="val-display" id="val-bevg-b">8</span></div>
                     <input type="range" id="bevg-b" min="2" max="30" step="0.5" value="8" oninput="updateVal('bevg-b'); generate()" title="Bore Diameter">
                 </div>
             </div>
@@ -2126,10 +2132,10 @@
             <!-- PILLOW BLOCK -->
             <div id="mod-pillow" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Pillow Block Mount</span><span data-lang="fr">Suport Lagar</span>
+                    <span data-lang="en">Pillow Block Mount</span><span data-lang="fr">Suport Lagăr</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bearing Dia (OD)</span><span data-lang="fr">Diam�tre Rulment</span></span><span class="val-display" id="val-pil-od">22</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bearing Dia (OD)</span><span data-lang="fr">Diamètre Rulment</span></span><span class="val-display" id="val-pil-od">22</span></div>
                     <input type="range" id="pil-od" min="10" max="100" step="1" value="22" oninput="updateVal('pil-od'); generate()" title="Bearing Outer Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2141,11 +2147,11 @@
                     <input type="range" id="pil-bw" min="30" max="200" step="5" value="60" oninput="updateVal('pil-bw'); generate()" title="Base Width">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">�paisseur Base</span></span><span class="val-display" id="val-pil-t">12</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur Base</span></span><span class="val-display" id="val-pil-t">12</span></div>
                     <input type="range" id="pil-t" min="5" max="50" step="1" value="12" oninput="updateVal('pil-t'); generate()" title="Embase Thickness">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Mount Hole Dia</span><span data-lang="fr">Diam�tre Fixation</span></span><span class="val-display" id="val-pil-hd">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Mount Hole Dia</span><span data-lang="fr">Diamètre Fixation</span></span><span class="val-display" id="val-pil-hd">5</span></div>
                     <input type="range" id="pil-hd" min="2" max="15" step="0.5" value="5" oninput="updateVal('pil-hd'); generate()" title="Mount Hole Diameter">
                 </div>
             </div>
@@ -2153,14 +2159,14 @@
             <!-- HANDWHEEL -->
             <div id="mod-handwheel" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Handwheel</span><span data-lang="fr">Volanta</span>
+                    <span data-lang="en">Handwheel</span><span data-lang="fr">Volantă</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diam�tre Ext�rieur</span></span><span class="val-display" id="val-hw-od">80</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Diameter</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-hw-od">80</span></div>
                     <input type="range" id="hw-od" min="30" max="300" step="5" value="80" oninput="updateVal('hw-od'); generate()" title="Handwheel Outer Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Rim Thickness</span><span data-lang="fr">�paisseur Jante</span></span><span class="val-display" id="val-hw-rt">10</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Rim Thickness</span><span data-lang="fr">Épaisseur Jante</span></span><span class="val-display" id="val-hw-rt">10</span></div>
                     <input type="range" id="hw-rt" min="4" max="30" step="1" value="10" oninput="updateVal('hw-rt'); generate()" title="Rim Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -2168,11 +2174,11 @@
                     <input type="range" id="hw-sc" min="2" max="8" step="1" value="4" oninput="updateVal('hw-sc'); generate()" title="Spoke Count">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Handle Length</span><span data-lang="fr">Longueur Poign�e</span></span><span class="val-display" id="val-hw-hl">30</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Handle Length</span><span data-lang="fr">Longueur Poignée</span></span><span class="val-display" id="val-hw-hl">30</span></div>
                     <input type="range" id="hw-hl" min="0" max="100" step="5" value="30" oninput="updateVal('hw-hl'); generate()" title="Handle Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Al�sage Central</span></span><span class="val-display" id="val-hw-b">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Central</span></span><span class="val-display" id="val-hw-b">8</span></div>
                     <input type="range" id="hw-b" min="3" max="40" step="1" value="8" oninput="updateVal('hw-b'); generate()" title="Bore Diameter">
                 </div>
             </div>
@@ -2180,7 +2186,7 @@
             <!-- STANDOFF / SPACER -->
             <div id="mod-standoff" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Standoff & Spacer</span><span data-lang="fr">Distan?ier</span>
+                    <span data-lang="en">Standoff & Spacer</span><span data-lang="fr">Distanțier</span>
                 </div>
                 <div class="ctrl-row">
                     <div class="ctrl-label"><span><span data-lang="en">Shape</span><span data-lang="fr">Forme</span></span></div>
@@ -2194,11 +2200,11 @@
                     <input type="range" id="sof-l" min="2" max="150" step="1" value="15" oninput="updateVal('sof-l'); generate()" title="Standoff Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Outer Size</span><span data-lang="fr">Taille Ext�rieure</span></span><span class="val-display" id="val-sof-o">6</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Size</span><span data-lang="fr">Taille Extérieure</span></span><span class="val-display" id="val-sof-o">6</span></div>
                     <input type="range" id="sof-o" min="3" max="30" step="0.5" value="6" oninput="updateVal('sof-o'); generate()" title="Outer Size">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore / Thread</span><span data-lang="fr">Al�sage / Filetage</span></span><span class="val-display" id="val-sof-b">3.2</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore / Thread</span><span data-lang="fr">Alésage / Filetage</span></span><span class="val-display" id="val-sof-b">3.2</span></div>
                     <input type="range" id="sof-b" min="0" max="20" step="0.1" value="3.2" oninput="updateVal('sof-b'); generate()" title="Bore Diameter">
                 </div>
             </div>
@@ -2210,15 +2216,15 @@
                     <span data-lang="en">Universal Joint (U-Joint)</span><span data-lang="fr">Joint de Cardan</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pi�ce</span></span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
                     <select id="crd-mode" onchange="generate()" title="U-Joint Part Selector">
                         <option value="asm">Assembled / Complet</option>
-                        <option value="yoke">Yoke Only / M�choire</option>
+                        <option value="yoke">Yoke Only / Mâchoire</option>
                         <option value="spider">Spider / Croisillon</option>
                     </select>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia</span><span data-lang="fr">Diam�tre d'Axe</span></span><span class="val-display" id="val-crd-sd">10</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia</span><span data-lang="fr">Diamètre d'Axe</span></span><span class="val-display" id="val-crd-sd">10</span></div>
                     <input type="range" id="crd-sd" min="5" max="50" step="1" value="10" oninput="updateVal('crd-sd'); generate()" title="Shaft Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2226,7 +2232,7 @@
                     <input type="range" id="crd-l" min="20" max="150" step="5" value="40" oninput="updateVal('crd-l'); generate()" title="Joint Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Yoke Thickness</span><span data-lang="fr">�paisseur M�choire</span></span><span class="val-display" id="val-crd-yt">4</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Yoke Thickness</span><span data-lang="fr">Épaisseur Mâchoire</span></span><span class="val-display" id="val-crd-yt">4</span></div>
                     <input type="range" id="crd-yt" min="2" max="20" step="1" value="4" oninput="updateVal('crd-yt'); generate()" title="Yoke Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -2238,14 +2244,14 @@
             <!-- LINEAR BEARING -->
             <div id="mod-linbear" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Linear Bearing (LM8UU)</span><span data-lang="fr">Roulement Lin�aire</span>
+                    <span data-lang="en">Linear Bearing (LM8UU)</span><span data-lang="fr">Roulement Linéaire</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (OD)</span><span data-lang="fr">Diam�tre Ext�rieur</span></span><span class="val-display" id="val-lb-od">15</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (OD)</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-lb-od">15</span></div>
                     <input type="range" id="lb-od" min="6" max="50" step="1" value="15" oninput="updateVal('lb-od'); generate()" title="Outer Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia (ID)</span><span data-lang="fr">Diam�tre Int�rieur</span></span><span class="val-display" id="val-lb-id">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Shaft Dia (ID)</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-lb-id">8</span></div>
                     <input type="range" id="lb-id" min="3" max="40" step="0.5" value="8" oninput="updateVal('lb-id'); generate()" title="Inner Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2253,7 +2259,7 @@
                     <input type="range" id="lb-l" min="10" max="100" step="1" value="24" oninput="updateVal('lb-l'); generate()" title="Bearing Length">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Relief Slots</span><span data-lang="fr">Rainures de D�charge</span></span><span class="val-display" id="val-lb-s">4</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Relief Slots</span><span data-lang="fr">Rainures de Décharge</span></span><span class="val-display" id="val-lb-s">4</span></div>
                     <input type="range" id="lb-s" min="0" max="12" step="1" value="4" oninput="updateVal('lb-s'); generate()" title="Relief Slots">
                 </div>
             </div>
@@ -2264,7 +2270,7 @@
                     <span data-lang="en">NEMA Motor bracket</span><span data-lang="fr">Support Moteur NEMA</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Standard</span><span data-lang="fr">Mod�le Standard</span></span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Standard</span><span data-lang="fr">Modèle Standard</span></span></div>
                     <select id="nem-type" onchange="generate()" title="NEMA Standard Selector">
                         <option value="17">NEMA 17 (31mm)</option>
                         <option value="14">NEMA 14 (26mm)</option>
@@ -2273,7 +2279,7 @@
                     </select>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">�paisseur</span></span><span class="val-display" id="val-nem-t">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Thickness</span><span data-lang="fr">Épaisseur</span></span><span class="val-display" id="val-nem-t">5</span></div>
                     <input type="range" id="nem-t" min="2" max="15" step="0.5" value="5" oninput="updateVal('nem-t'); generate()" title="Bracket Thickness">
                 </div>
                 <div class="ctrl-row">
@@ -2281,7 +2287,7 @@
                     <input type="range" id="nem-b" min="10" max="100" step="1" value="30" oninput="updateVal('nem-b'); generate()" title="Base Width">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Slot Travel</span><span data-lang="fr">Course de R�glage</span></span><span class="val-display" id="val-nem-s">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Slot Travel</span><span data-lang="fr">Course de Réglage</span></span><span class="val-display" id="val-nem-s">5</span></div>
                     <input type="range" id="nem-s" min="0" max="20" step="1" value="5" oninput="updateVal('nem-s'); generate()" title="Slot Travel">
                 </div>
             </div>
@@ -2289,17 +2295,17 @@
             <!-- LEAD SCREW -->
             <div id="mod-leadscrew" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Lead Screw (Tr)</span><span data-lang="fr">Vis M�re (Tr)</span>
+                    <span data-lang="en">Lead Screw (Tr)</span><span data-lang="fr">Vis Mère (Tr)</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pi�ce</span></span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
                     <select id="ls-mode" onchange="generate()" title="Lead Screw Part Selector">
                         <option value="rod">Rod Only / Tige</option>
-                        <option value="nut">Nut Only / �crou</option>
+                        <option value="nut">Nut Only / Écrou</option>
                     </select>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (Tr)</span><span data-lang="fr">Diam�tre Externe</span></span><span class="val-display" id="val-ls-d">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia (Tr)</span><span data-lang="fr">Diamètre Externe</span></span><span class="val-display" id="val-ls-d">8</span></div>
                     <input type="range" id="ls-d" min="4" max="30" step="1" value="8" oninput="updateVal('ls-d'); generate()" title="Outer Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2315,7 +2321,7 @@
             <!-- DRAG CHAIN -->
             <div id="mod-chain" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Drag Chain</span><span data-lang="fr">Cha�ne Porte-C�ble</span>
+                    <span data-lang="en">Drag Chain</span><span data-lang="fr">Chaîne Porte-Câble</span>
                 </div>
                 <div class="ctrl-row">
                     <div class="ctrl-label"><span><span data-lang="en">Links Count</span><span data-lang="fr">Nombre de Maillons</span></span><span class="val-display" id="val-ch-n">3</span></div>
@@ -2330,7 +2336,7 @@
                     <input type="range" id="ch-h" min="5" max="30" step="1" value="10" oninput="updateVal('ch-h'); generate()" title="Inner Height">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tol�rance de Jeu</span></span><span class="val-display" id="val-ch-t">0.3</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Tolerance</span><span data-lang="fr">Tolérance de Jeu</span></span><span class="val-display" id="val-ch-t">0.3</span></div>
                     <input type="range" id="ch-t" min="0.1" max="1.0" step="0.1" value="0.3" oninput="updateVal('ch-t'); generate()" title="Tolerance">
                 </div>
             </div>
@@ -2349,7 +2355,7 @@
                     </select>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Working Dia</span><span data-lang="fr">Diam�tre de Roulement</span></span><span class="val-display" id="val-idl-d">12.2</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Working Dia</span><span data-lang="fr">Diamètre de Roulement</span></span><span class="val-display" id="val-idl-d">12.2</span></div>
                     <input type="range" id="idl-d" min="8" max="40" step="0.2" value="12.2" oninput="updateVal('idl-d'); generate()" title="Working Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2357,7 +2363,7 @@
                     <input type="range" id="idl-w" min="4" max="25" step="0.5" value="6" oninput="updateVal('idl-w'); generate()" title="Belt Width">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Al�sage Central</span></span><span class="val-display" id="val-idl-b">5</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Central</span></span><span class="val-display" id="val-idl-b">5</span></div>
                     <input type="range" id="idl-b" min="3" max="20" step="0.5" value="5" oninput="updateVal('idl-b'); generate()" title="Bore Diameter">
                 </div>
             </div>
@@ -2365,18 +2371,18 @@
             <!-- SHAFT COLLAR -->
             <div id="mod-collar" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Shaft Collar</span><span data-lang="fr">Bague d'Arr�t</span>
+                    <span data-lang="en">Shaft Collar</span><span data-lang="fr">Bague d'Arrêt</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Inner Dia</span><span data-lang="fr">Diam�tre Int�rieur</span></span><span class="val-display" id="val-col-id">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Inner Dia</span><span data-lang="fr">Diamètre Intérieur</span></span><span class="val-display" id="val-col-id">8</span></div>
                     <input type="range" id="col-id" min="4" max="50" step="1" value="8" oninput="updateVal('col-id'); generate()" title="Inner Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia</span><span data-lang="fr">Diam�tre Ext�rieur</span></span><span class="val-display" id="val-col-od">16</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Outer Dia</span><span data-lang="fr">Diamètre Extérieur</span></span><span class="val-display" id="val-col-od">16</span></div>
                     <input type="range" id="col-od" min="10" max="80" step="1" value="16" oninput="updateVal('col-od'); generate()" title="Outer Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Width</span><span data-lang="fr">�paisseur Bague</span></span><span class="val-display" id="val-col-w">8</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Width</span><span data-lang="fr">Épaisseur Bague</span></span><span class="val-display" id="val-col-w">8</span></div>
                     <input type="range" id="col-w" min="4" max="30" step="1" value="8" oninput="updateVal('col-w'); generate()" title="Collar Width">
                 </div>
                 <div class="ctrl-row">
@@ -2388,26 +2394,26 @@
             <!-- BALL JOINT -->
             <div id="mod-balljoint" class="control-group generator-mod hidden">
                 <div class="group-title">
-                    <span data-lang="en">Ball Joint (Rod End)</span><span data-lang="fr">Embout � Rotule</span>
+                    <span data-lang="en">Ball Joint (Rod End)</span><span data-lang="fr">Embout à Rotule</span>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pi�ce</span></span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Part Mode</span><span data-lang="fr">Mode Pièce</span></span></div>
                     <select id="bj-mode" onchange="generate()" title="Ball Joint Part Selector">
                         <option value="asm">Assembled / Complet</option>
-                        <option value="housing">Housing Only / Bo�tier</option>
+                        <option value="housing">Housing Only / Boîtier</option>
                         <option value="ball">Ball Only / Rotule</option>
                     </select>
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Ball Dia</span><span data-lang="fr">Diam�tre Rotule</span></span><span class="val-display" id="val-bj-bd">12</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Ball Dia</span><span data-lang="fr">Diamètre Rotule</span></span><span class="val-display" id="val-bj-bd">12</span></div>
                     <input type="range" id="bj-bd" min="6" max="40" step="1" value="12" oninput="updateVal('bj-bd'); generate()" title="Ball Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Al�sage Rotule</span></span><span class="val-display" id="val-bj-b">4</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Bore</span><span data-lang="fr">Alésage Rotule</span></span><span class="val-display" id="val-bj-b">4</span></div>
                     <input type="range" id="bj-b" min="2" max="20" step="1" value="4" oninput="updateVal('bj-b'); generate()" title="Bore Diameter">
                 </div>
                 <div class="ctrl-row">
-                    <div class="ctrl-label"><span><span data-lang="en">Housing OD</span><span data-lang="fr">Diam�tre Bo�tier</span></span><span class="val-display" id="val-bj-od">18</span></div>
+                    <div class="ctrl-label"><span><span data-lang="en">Housing OD</span><span data-lang="fr">Diamètre Boîtier</span></span><span class="val-display" id="val-bj-od">18</span></div>
                     <input type="range" id="bj-od" min="10" max="60" step="1" value="18" oninput="updateVal('bj-od'); generate()" title="Housing Outer Diameter">
                 </div>
                 <div class="ctrl-row">
@@ -2425,13 +2431,13 @@
             </div>
             
             <div class="export-grid">
-                <button class="btn btn-primary" onclick="exportSTL()">?? STL</button>
-                <button class="btn" onclick="exportOBJ()">?? OBJ</button>
-                <button class="btn" onclick="exportGLB()">?? GLB</button>
-                <button class="btn btn-dxf" onclick="exportDXF()">?? DXF</button>
-                <button class="btn btn-svg" onclick="exportSVG()">?? SVG</button>
-                <button class="btn btn-html" onclick="exportHTML()" style="background:linear-gradient(135deg, #6366f1, #a855f7);color:#fff;border:none;">?? HTML</button>
-                <button class="btn btn-png" onclick="exportPNG()">??? PNG</button>
+                <button class="btn btn-primary" onclick="exportSTL()">📦 STL</button>
+                <button class="btn" onclick="exportOBJ()">📄 OBJ</button>
+                <button class="btn" onclick="exportGLB()">🌐 GLB</button>
+                <button class="btn btn-dxf" onclick="exportDXF()">📐 DXF</button>
+                <button class="btn btn-svg" onclick="exportSVG()">🎨 SVG</button>
+                <button class="btn btn-html" onclick="exportHTML()" style="background:linear-gradient(135deg, #6366f1, #a855f7);color:#fff;border:none;">🌐 HTML</button>
+                <button class="btn btn-png" onclick="exportPNG()">🖼️ PNG</button>
             </div>
         </aside>
         
@@ -2482,7 +2488,7 @@
 
         function toggleAnimation() {
             isAnimating = !isAnimating;
-            document.getElementById('btn-anim').innerText = isAnimating ? "??" : "??";
+            document.getElementById('btn-anim').innerText = isAnimating ? "⏸️" : "▶️";
             document.getElementById('btn-anim').classList.toggle('active', isAnimating);
         }
 
@@ -2494,8 +2500,8 @@
 
         function savePreset() {
             const isFr = document.body.classList.contains('lang-fr');
-            const promptMsg = isFr ? "Nom du pr�r�glage (ex: engrenage_moteur) :" : "Preset name (e.g., motor_gear):";
-            const successMsg = isFr ? "Pr�r�glage enregistr� !" : "Preset saved!";
+            const promptMsg = isFr ? "Nom du préréglage (ex: engrenage_moteur) :" : "Preset name (e.g., motor_gear):";
+            const successMsg = isFr ? "Préréglage enregistré !" : "Preset saved!";
             
             const presetName = prompt(promptMsg, "My Preset");
             if(!presetName) return;
@@ -2511,11 +2517,11 @@
             const isFr = document.body.classList.contains('lang-fr');
             const keys = Object.keys(localStorage).filter(k => k.startsWith('mechgen_preset_'));
             if(keys.length === 0) {
-                alert(isFr ? "Aucun pr�r�glage trouv�." : "No presets found.");
+                alert(isFr ? "Aucun préréglage trouvé." : "No presets found.");
                 return;
             }
             const names = keys.map(k => k.replace('mechgen_preset_', ''));
-            const promptMsg = isFr ? "Entrez le nom du pr�r�glage � charger :\n" : "Enter name to load:\n";
+            const promptMsg = isFr ? "Entrez le nom du préréglage à charger :\n" : "Enter name to load:\n";
             const toLoad = prompt(promptMsg + names.join(", "));
             if(toLoad && keys.includes('mechgen_preset_' + toLoad)) {
                 ['gear', 'bracket', 'spring', 'bearing', 'sprocket', 'screw', 'connect', 'pulley', 'hinge',
@@ -4256,7 +4262,7 @@
                 
                 const btn = event.target.parentElement;
                 const oldTxt = btn.innerText;
-                btn.innerText = "? Processing...";
+                btn.innerText = "⏳ Processing...";
                 
                 setTimeout(() => {
                     generate();
@@ -4732,7 +4738,5 @@
 
     </script>
     
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>

@@ -4395,47 +4395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init3D();
     initLang();
     initAdvancedCADEvents();
-    checkStartupFile();
   } catch (err) {
     showRuntimeError("Initialization Error", err);
   }
-
-  // Check if a file_url parameter is passed to auto-load a file
-  async function checkStartupFile() {
-    const params = new URLSearchParams(window.location.search);
-    let fileUrl = params.get('file_url');
-    if (!fileUrl && window.parent) {
-      try {
-        const parentParams = new URLSearchParams(window.parent.location.search);
-        fileUrl = parentParams.get('file_url');
-      } catch (e) {}
-    }
-    
-    if (fileUrl) {
-      try {
-        showLoading(currentLang === 'fr' ? "Téléchargement..." : "Downloading file...");
-        const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error("Network response was not OK");
-        const blob = await response.blob();
-        
-        // Extract file name from URL
-        let name = "model.stl";
-        try {
-          const urlObj = new URL(fileUrl);
-          const pathName = urlObj.pathname;
-          const baseName = pathName.substring(pathName.lastIndexOf('/') + 1);
-          if (baseName && baseName.includes('.')) {
-            name = decodeURIComponent(baseName);
-          }
-        } catch (e) {}
-        
-        blob.name = name;
-        loadFile(blob);
-      } catch (err) {
-        console.error("Failed to load startup file:", err);
-        hideLoading();
-      }
-    }
-  }
 });
-

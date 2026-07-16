@@ -16,7 +16,7 @@ window.Engine3D = {
     init(canvas) {
         this.container = canvas.parentElement;
 
-        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -31,11 +31,6 @@ window.Engine3D = {
         // Camera
         this.camera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 1, 10000);
         this.camera.position.set(-500, 500, 500);
-
-        // Expose variables for Share to Community screenshot bridge
-        window.spRenderer = this.renderer;
-        window.spScene = this.scene;
-        window.spCamera = this.camera;
 
         // Grid Base
         const gridHelper = new THREE.GridHelper(2000, 40, 0x333333, 0x222222);

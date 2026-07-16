@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>4D Figure Builder PRO | Constructeur de Figures 4D</title>
-    <meta name="description" content="Build and animate unique 4D hyperdimensional figures in real-time. / Construisez et animez des figures hyperspaciales 4D en temps r�el.">
+    <meta name="description" content="Build and animate unique 4D hyperdimensional figures in real-time. / Construisez et animez des figures hyperspaciales 4D en temps réel.">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Orbitron:wght@400;700;900&family=Syncopate:wght@400;700&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./css/style.css?v=2">
@@ -540,8 +540,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -626,7 +626,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1272,6 +1274,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
 
   <!-- Back Button and Payment logic -->
   
@@ -1279,7 +1285,7 @@
   
 
 
-    <!-- -- HEADER -- -->
+    <!-- ── HEADER ── -->
     <header class="top-bar">
         <h1 class="brand-title">
             <i class="fa-solid fa-cube fa-spin-pulse"></i>
@@ -1291,7 +1297,7 @@
                 <i class="fa-solid fa-shuffle"></i> <span data-i18n="random">Random</span>
             </button>
             <button id="btn-present" class="hdr-btn" title="Presentation Mode" style="border-color:#ffcc00;color:#ffcc00;">
-                <i class="fa-solid fa-play-circle"></i> <span data-i18n="presentBtn">Pr�sentation</span>
+                <i class="fa-solid fa-play-circle"></i> <span data-i18n="presentBtn">Présentation</span>
             </button>
             <button id="btn-music-toggle" class="hdr-btn glow-purple" title="Music Studio">
                 <i class="fa-solid fa-music"></i> <span data-i18n="musicBtn">Musique</span>
@@ -1309,7 +1315,7 @@
                 <i class="fa-solid fa-camera"></i> <span data-i18n="screenshot">PNG</span>
             </button>
             <button id="btn-cinematic" class="hdr-btn" title="Cinematic Snapshot" style="border-color:#ff88cc;color:#ff88cc;">
-                <i class="fa-solid fa-clapperboard"></i> ??
+                <i class="fa-solid fa-clapperboard"></i> 🎬
             </button>
             <button id="btn-share" class="hdr-btn" title="Share URL + QR">
                 <i class="fa-solid fa-share-nodes"></i>
@@ -1317,13 +1323,13 @@
             <button id="btn-fullscreen" class="hdr-btn">
                 <i class="fa-solid fa-expand"></i>
             </button>
-            <button id="btn-lang" class="hdr-btn lang-btn">???? EN | ???? FR</button>
+            <button id="btn-lang" class="hdr-btn lang-btn">🇺🇸 EN | 🇫🇷 FR</button>
         </div>
     </header>
 
     <div class="main-layout">
 
-        <!-- --- LEFT PANEL --- -->
+        <!-- ═══ LEFT PANEL ═══ -->
         <aside class="panel left-panel glass-panel">
             <h2><i class="fa-solid fa-atom"></i> <span data-i18n="labTitle">Laboratoire 4D</span></h2>
 
@@ -1332,8 +1338,8 @@
                 <button class="tab-btn" data-cat="surfaces">Surfaces</button>
                 <button class="tab-btn" data-cat="organic">Organic</button>
                 <button class="tab-btn" data-cat="abstract">Abstract</button>
-                <button class="tab-btn alien-tab" data-cat="aliens">?? Aliens</button>
-                <button class="tab-btn robot-tab" data-cat="robots">?? Robots</button>
+                <button class="tab-btn alien-tab" data-cat="aliens">👽 Aliens</button>
+                <button class="tab-btn robot-tab" data-cat="robots">🤖 Robots</button>
             </div>
 
             <div class="figure-list" id="figure-list"></div>
@@ -1347,7 +1353,7 @@
 
             <div class="separator"></div>
 
-            <h3 class="sub-heading" data-i18n="parametersTitle">Param�tres</h3>
+            <h3 class="sub-heading" data-i18n="parametersTitle">Paramètres</h3>
             <div class="param-grid">
                 <div class="param-row">
                     <label data-i18n="paramRadius">Radius</label>
@@ -1379,10 +1385,10 @@
             <div class="separator"></div>
 
             <!-- MORPH SLIDER -->
-            <h3 class="sub-heading">? <span data-i18n="morphSliderTitle">Morphose A?B</span></h3>
+            <h3 class="sub-heading">⟷ <span data-i18n="morphSliderTitle">Morphose A↔B</span></h3>
             <div class="morph-row">
                 <select id="morph-fig-a" class="glass-select" style="flex:1;font-size:0.72rem;padding:4px 6px;"></select>
-                <span style="color:var(--muted);font-size:0.7rem;">?</span>
+                <span style="color:var(--muted);font-size:0.7rem;">↔</span>
                 <select id="morph-fig-b" class="glass-select" style="flex:1;font-size:0.72rem;padding:4px 6px;"></select>
             </div>
             <div class="param-row" style="margin-top:4px;">
@@ -1392,19 +1398,19 @@
             </div>
 
             <div class="separator"></div>
-            <h3 class="sub-heading" data-i18n="projTitle">Projection 4D?3D</h3>
+            <h3 class="sub-heading" data-i18n="projTitle">Projection 4D→3D</h3>
             <div class="btn-group-horiz">
-                <button class="mode-btn active" data-proj="stereo"  data-i18n="projStereo">St�r�o</button>
+                <button class="mode-btn active" data-proj="stereo"  data-i18n="projStereo">Stéréo</button>
                 <button class="mode-btn" data-proj="ortho"   data-i18n="projOrtho">Ortho</button>
                 <button class="mode-btn" data-proj="slice"   data-i18n="projSlice">Tranche W</button>
             </div>
 
             <div class="separator"></div>
-            <h3 class="sub-heading" data-i18n="presetsTitle">Pr�r�glages</h3>
+            <h3 class="sub-heading" data-i18n="presetsTitle">Préréglages</h3>
             <div class="preset-grid" id="preset-grid"></div>
         </aside>
 
-        <!-- --- CENTER STAGE --- -->
+        <!-- ═══ CENTER STAGE ═══ -->
         <main class="center-stage" id="stage-container">
             <div class="hud-overlay">
                 <div class="hud-figure-name" id="hud-name">Tesseract</div>
@@ -1452,7 +1458,7 @@
                     <i class="fa-solid fa-globe"></i> HTML
                 </button>
                 <button id="btn-mic" class="pro-tool-btn" title="Microphone Voice Sculptor" style="border-color:#ff4488;color:#ff4488;">
-                    ??
+                    🎤
                 </button>
             </div>
             <!-- Mic Spectrum Visualizer -->
@@ -1509,18 +1515,18 @@
             <div class="axis-label" id="axis-w">W</div>
         </main>
 
-        <!-- --- RIGHT PANEL --- -->
+        <!-- ═══ RIGHT PANEL ═══ -->
         <aside class="panel right-panel glass-panel">
             <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="fxTitle">Animation & FX</span></h2>
 
             <h3 class="sub-heading" data-i18n="animMode">Mode Animation</h3>
             <select id="anim-mode" class="glass-select">
-                <option value="w-rotation"   data-i18n="animW">? W-Rotation</option>
-                <option value="double"        data-i18n="animDouble">? Double Rotation</option>
-                <option value="breathing"     data-i18n="animBreath">?? Breathing 4D</option>
-                <option value="kaleidoscope"  data-i18n="animKaleid">?? Kaleidoscope</option>
-                <option value="morph-loop"    data-i18n="animMorph">?? Living Morph</option>
-                <option value="isoclinic"     data-i18n="animIso">? Isoclinic Spin</option>
+                <option value="w-rotation"   data-i18n="animW">↗ W-Rotation</option>
+                <option value="double"        data-i18n="animDouble">⊕ Double Rotation</option>
+                <option value="breathing"     data-i18n="animBreath">💨 Breathing 4D</option>
+                <option value="kaleidoscope"  data-i18n="animKaleid">🔮 Kaleidoscope</option>
+                <option value="morph-loop"    data-i18n="animMorph">🌊 Living Morph</option>
+                <option value="isoclinic"     data-i18n="animIso">♾ Isoclinic Spin</option>
             </select>
 
             <div class="fx-row">
@@ -1540,7 +1546,7 @@
             </div>
 
             <div class="separator"></div>
-            <h3 class="sub-heading" data-i18n="colorTheme">Th�me Couleur</h3>
+            <h3 class="sub-heading" data-i18n="colorTheme">Thème Couleur</h3>
             <div class="theme-grid" id="theme-grid">
                 <button class="theme-dot active" data-theme="cyberpunk" style="--c:#00f3ff" title="Cyberpunk"></button>
                 <button class="theme-dot" data-theme="matrix"   style="--c:#00ff44" title="Matrix"></button>
@@ -1557,7 +1563,7 @@
             <div class="btn-group-horiz">
                 <button class="mode-btn active" data-render="wireframe" data-i18n="rWire">Fil</button>
                 <button class="mode-btn" data-render="solid"     data-i18n="rSolid">Solide</button>
-                <button class="mode-btn" data-render="ghost"     data-i18n="rGhost">Fant�me</button>
+                <button class="mode-btn" data-render="ghost"     data-i18n="rGhost">Fantôme</button>
                 <button class="mode-btn" data-render="hologram"  data-i18n="rHolo">Hologram</button>
             </div>
 
@@ -1595,16 +1601,16 @@
 
             <div class="separator"></div>
             <div class="info-box">
-                <h4 data-i18n="infoTitle">� propos</h4>
-                <p id="info-text" data-i18n="infoDefault">S�lectionnez une figure.</p>
+                <h4 data-i18n="infoTitle">À propos</h4>
+                <p id="info-text" data-i18n="infoDefault">Sélectionnez une figure.</p>
             </div>
         </aside>
     </div>
 
-    <!-- --- CINEMATIC PANEL --- -->
+    <!-- ═══ CINEMATIC PANEL ═══ -->
     <div id="cinematic-panel" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;gap:18px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-            <span style="font-size:1.4rem;font-weight:800;color:#ff88cc;letter-spacing:3px;text-transform:uppercase;">?? Cinematic Gallery</span>
+            <span style="font-size:1.4rem;font-weight:800;color:#ff88cc;letter-spacing:3px;text-transform:uppercase;">🎬 Cinematic Gallery</span>
             <button id="btn-cinematic-close" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:0.82rem;">
                 <i class="fa-solid fa-xmark"></i> Close
             </button>
@@ -1613,7 +1619,7 @@
         <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin-top:4px;">3 cinematic angles captured automatically</p>
     </div>
 
-    <!-- --- W-SLICER BAR --- -->
+    <!-- ═══ W-SLICER BAR ═══ -->
     <div class="slicer-bar glass-panel" id="slicer-bar">
         <span class="slicer-label"><i class="fa-solid fa-layer-group"></i> <span data-i18n="slicerLabel">Tranche W</span></span>
         <div class="slicer-track-wrap">
@@ -1628,23 +1634,23 @@
         </button>
     </div>
 
-    <!-- --- MUSIC STUDIO DRAWER --- -->
+    <!-- ═══ MUSIC STUDIO DRAWER ═══ -->
     <div id="music-drawer" class="music-drawer glass-panel" style="display:none;">
         <div class="music-header">
             <span class="music-title"><i class="fa-solid fa-headphones"></i> <span data-i18n="musicTitle">Studio Musical 4D</span></span>
             <div class="music-ai-section">
                 <select id="ai-theme-select" class="glass-select" style="width:140px;padding:5px 8px;font-size:0.78rem;">
-                    <option value="cosmic">?? Cosmic</option>
-                    <option value="dark">?? Dark</option>
-                    <option value="alien">?? Alien</option>
-                    <option value="tech">?? Tech</option>
-                    <option value="nature">?? Nature</option>
-                    <option value="battle">?? Battle</option>
-                    <option value="dream">?? Dream</option>
-                    <option value="tribal">?? Tribal</option>
+                    <option value="cosmic">🌌 Cosmic</option>
+                    <option value="dark">🌑 Dark</option>
+                    <option value="alien">👽 Alien</option>
+                    <option value="tech">🤖 Tech</option>
+                    <option value="nature">🌿 Nature</option>
+                    <option value="battle">⚔️ Battle</option>
+                    <option value="dream">💭 Dream</option>
+                    <option value="tribal">🥁 Tribal</option>
                 </select>
                 <button id="btn-ai-music" class="hdr-btn glow-purple" style="padding:5px 12px;font-size:0.78rem;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="aiGenMusic">IA G�n�rer</span>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="aiGenMusic">IA Générer</span>
                 </button>
             </div>
             <div class="music-transport">
@@ -1666,13 +1672,13 @@
         </div>
         <div id="music-now-playing" class="music-now-playing" style="display:none;">
             <div class="music-wave-bars"><div></div><div></div><div></div><div></div><div></div></div>
-            <span id="music-playing-name">�</span>
+            <span id="music-playing-name">—</span>
             <span id="music-bpm-badge" class="bpm-badge"></span>
         </div>
         <div class="melody-grid" id="melody-grid"></div>
     </div>
 
-    <!-- --- SCREENSHOT GALLERY PANEL --- -->
+    <!-- ═══ SCREENSHOT GALLERY PANEL ═══ -->
     <div id="gallery-panel" class="gallery-panel glass-panel" style="display:none;">
         <div class="gallery-header">
             <span class="gallery-title"><i class="fa-solid fa-images"></i> <span data-i18n="galleryTitle">Galerie</span></span>
@@ -1686,7 +1692,7 @@
         <div class="gallery-grid" id="gallery-grid"></div>
     </div>
 
-    <!-- --- QR / SHARE MODAL --- -->
+    <!-- ═══ QR / SHARE MODAL ═══ -->
     <div id="qr-modal" class="qr-modal" style="display:none;">
         <div class="qr-modal-inner glass-panel">
             <h3 class="qr-title"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="shareTitle">Partager</span></h3>
@@ -1703,8 +1709,8 @@
     <!-- Hyper-Sketch Pad -->
     <div id="sketch-overlay" class="glass" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:610px; min-height:640px; height:auto; z-index:9999; padding:20px; border: 1px solid rgba(0,243,255,0.4); border-radius:20px; box-shadow:0 0 40px rgba(0,0,0,0.8); background:rgba(10,10,30,0.95); backdrop-filter:blur(20px); max-height:95vh; overflow-y:auto;">
         <div class="sketch-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
-            <h3 style="margin:0; color:#00f3ff; font-family:'Orbitron', sans-serif; letter-spacing:2px;">?? HYPER-SKETCH STUDIO</h3>
-            <button id="btn-sketch-close" style="background:none; border:none; color:#ff00ea; font-size:1.8em; cursor:pointer; line-height:1;">?</button>
+            <h3 style="margin:0; color:#00f3ff; font-family:'Orbitron', sans-serif; letter-spacing:2px;">🎨 HYPER-SKETCH STUDIO</h3>
+            <button id="btn-sketch-close" style="background:none; border:none; color:#ff00ea; font-size:1.8em; cursor:pointer; line-height:1;">✕</button>
         </div>
         <div style="text-align:center; color:#888; font-size:0.95em; margin-bottom:15px; font-weight:600;" data-i18n="sketchHint">Sketch your 4D figure... release its energy!</div>
         
@@ -1750,8 +1756,8 @@
         </div>
         <canvas id="sketch-canvas" width="570" height="420" style="background:rgba(0,0,0,0.4); border:2px solid rgba(0,243,255,0.2); border-radius:12px; cursor:crosshair; display:block; margin:0 auto;"></canvas>
         <div style="display:flex; justify-content:space-between; margin-top:20px; padding: 0 10px;">
-            <button id="btn-sketch-clear" style="background:rgba(255,50,50,0.15); border:1px solid #ff3333; color:#ff9999; border-radius:30px; padding:10px 25px; cursor:pointer; font-weight:800; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">??? Reset</button>
-            <button id="btn-sketch-apply" style="background:linear-gradient(45deg, #00f3ff, #ff00ea); border:none; color:white; font-weight:900; border-radius:30px; padding:12px 40px; cursor:pointer; text-transform:uppercase; letter-spacing:2px; box-shadow:0 0 20px rgba(0,243,255,0.4); transition:0.3s;" onmouseover="this.style.boxShadow='0 0 35px rgba(0,243,255,0.8)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,243,255,0.4)'">LIFT TO 4D ?</button>
+            <button id="btn-sketch-clear" style="background:rgba(255,50,50,0.15); border:1px solid #ff3333; color:#ff9999; border-radius:30px; padding:10px 25px; cursor:pointer; font-weight:800; text-transform:uppercase; letter-spacing:1px; transition:0.3s;">🗑️ Reset</button>
+            <button id="btn-sketch-apply" style="background:linear-gradient(45deg, #00f3ff, #ff00ea); border:none; color:white; font-weight:900; border-radius:30px; padding:12px 40px; cursor:pointer; text-transform:uppercase; letter-spacing:2px; box-shadow:0 0 20px rgba(0,243,255,0.4); transition:0.3s;" onmouseover="this.style.boxShadow='0 0 35px rgba(0,243,255,0.8)'" onmouseout="this.style.boxShadow='0 0 20px rgba(0,243,255,0.4)'">LIFT TO 4D ✨</button>
         </div>
     </div>
 
@@ -1775,7 +1781,5 @@
     <script src="./js/extras.js?v=6"></script>
     <script src="./js/sketch.js?v=6"></script>
     <script src="./js/app.js?v=6"></script>
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>

@@ -341,7 +341,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* -- Preset Buttons -- */
+        /* ── Preset Buttons ── */
         .presets-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -765,7 +765,7 @@
             color: var(--muted)
         }
 
-        /* -- Comparison Slider -- */
+        /* ── Comparison Slider ── */
         .compare-wrap {
             position: relative;
             overflow: hidden;
@@ -810,7 +810,7 @@
         }
 
         .compare-handle::before {
-            content: '?';
+            content: '⇔';
             position: absolute;
             top: 50%;
             left: 50%;
@@ -827,7 +827,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, .4)
         }
 
-        /* -- Histogram -- */
+        /* ── Histogram ── */
         .histogram-wrap {
             padding: 20px;
             background: var(--surface);
@@ -854,7 +854,7 @@
             border-radius: 8px
         }
 
-        /* -- Bokeh Simulator -- */
+        /* ── Bokeh Simulator ── */
         .bokeh-wrap {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -888,7 +888,7 @@
             align-items: center
         }
 
-        /* -- Depth Mask -- */
+        /* ── Depth Mask ── */
         .mask-wrap {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -926,7 +926,7 @@
             height: 24px
         }
 
-        /* -- Toggle btn -- */
+        /* ── Toggle btn ── */
         .btn-toggle {
             padding: 6px 14px;
             font-size: 12px;
@@ -946,7 +946,7 @@
             background: rgba(6, 214, 160, .1)
         }
 
-        /* -- Section title bar -- */
+        /* ── Section title bar ── */
         .section-header {
             display: flex;
             align-items: center;
@@ -1503,8 +1503,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1589,7 +1589,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -2235,13 +2237,17 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
     <div class="bg-grid"></div>
     
 
     <div id="local-payment-modal">
         <div class="local-modal-content">
             <button class="close-local-modal" id="modal-close-btn">&times;</button>
-            <div style="font-size: 40px; margin-bottom: 20px;">??</div>
+            <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
             <h2 id="modal-title">Paiement requis</h2>
             <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</p>
             <div class="btn-group">
@@ -2252,10 +2258,10 @@
 
     <header>
         <div class="logo">
-            <div class="logo-icon">??</div>
+            <div class="logo-icon">🌊</div>
             <span class="logo-text">DepthMap AI</span>
         </div>
-        <div class="badge">? AI POWERED</div>
+        <div class="badge">✨ AI POWERED</div>
     </header>
 
     <main class="app">
@@ -2266,10 +2272,10 @@
         </div>
 
         <div class="upload-zone" id="uploadZone">
-            <span class="upload-icon">???</span>
+            <span class="upload-icon">🖼️</span>
             <h3>Drop an image here</h3>
-            <p>PNG, JPG, WEBP supported � Max 10MB</p>
-            <button class="btn-upload" id="uploadBtn">?? Choose Image</button>
+            <p>PNG, JPG, WEBP supported · Max 10MB</p>
+            <button class="btn-upload" id="uploadBtn">📁 Choose Image</button>
             <input type="file" id="fileInput" accept="image/*" />
         </div>
 
@@ -2277,13 +2283,13 @@
 
         <div class="header">Material Presets</div>
         <div class="presets-grid">
-            <button class="preset-btn" onclick="applyPreset('wood')"><span class="preset-icon">??</span>Laser
+            <button class="preset-btn" onclick="applyPreset('wood')"><span class="preset-icon">🪵</span>Laser
                 Wood</button>
-            <button class="preset-btn" onclick="applyPreset('acrylic')"><span class="preset-icon">??</span>Acrylic
+            <button class="preset-btn" onclick="applyPreset('acrylic')"><span class="preset-icon">🧊</span>Acrylic
                 Etch</button>
             <button class="preset-btn" onclick="applyPreset('mold')"><span
-                    class="preset-icon">??</span>Stamp/Mold</button>
-            <button class="preset-btn" onclick="applyPreset('print')"><span class="preset-icon">???</span>3D
+                    class="preset-icon">📥</span>Stamp/Mold</button>
+            <button class="preset-btn" onclick="applyPreset('print')"><span class="preset-icon">🖨️</span>3D
                 Print</button>
         </div>
 
@@ -2370,13 +2376,13 @@
                 </div>
             </div>
             <button class="btn-generate" id="generateBtn" disabled>
-                <span id="generateIcon">?</span> Generate Depth Map
+                <span id="generateIcon">⚡</span> Generate Depth Map
             </button>
         </div>
 
         <div class="progress-container" id="progressContainer">
             <div class="progress-label">
-                <span id="progressLabel">Initializing AI model�</span>
+                <span id="progressLabel">Initializing AI model…</span>
                 <span id="progressPct">0%</span>
             </div>
             <div class="progress-bar">
@@ -2386,23 +2392,23 @@
         <div class="stats" id="stats" style="display:none">
             <div class="stat-card">
                 <div class="label">Image Size</div>
-                <div class="value" id="imgSize">�</div>
+                <div class="value" id="imgSize">—</div>
             </div>
             <div class="stat-card">
                 <div class="label">Min Depth</div>
-                <div class="value" id="minDepth" style="color:var(--accent3)">�</div>
+                <div class="value" id="minDepth" style="color:var(--accent3)">—</div>
             </div>
             <div class="stat-card">
                 <div class="label">Max Depth</div>
-                <div class="value" id="maxDepth" style="color:var(--accent)">�</div>
+                <div class="value" id="maxDepth" style="color:var(--accent)">—</div>
             </div>
             <div class="stat-card">
                 <div class="label">Avg Depth</div>
-                <div class="value" id="avgDepth" style="color:var(--accent2)">�</div>
+                <div class="value" id="avgDepth" style="color:var(--accent2)">—</div>
             </div>
             <div class="stat-card">
                 <div class="label">Processing Time</div>
-                <div class="value" id="procTime" style="color:#fbbf24">�</div>
+                <div class="value" id="procTime" style="color:#fbbf24">—</div>
             </div>
         </div>
 
@@ -2411,7 +2417,7 @@
             <div class="panel-header">
                 <div class="panel-dot" style="background:#4f8eff"></div>
                 <span>Compare: Original vs Depth Map</span>
-                <span style="margin-left:auto;font-size:12px;color:var(--muted)">? Drag to compare ?</span>
+                <span style="margin-left:auto;font-size:12px;color:var(--muted)">← Drag to compare →</span>
             </div>
             <div class="panel-body" style="padding:16px">
                 <div class="compare-wrap" id="compareWrap">
@@ -2433,7 +2439,7 @@
                 </div>
                 <div class="panel-body" id="originalPanel">
                     <div class="placeholder">
-                        <div class="icon">???</div>
+                        <div class="icon">🖼️</div>
                         <p>No image loaded</p>
                     </div>
                 </div>
@@ -2444,7 +2450,7 @@
                 </div>
                 <div class="panel-body" id="depthPanel">
                     <div class="placeholder">
-                        <div class="icon">??</div>
+                        <div class="icon">🌊</div>
                         <p>Depth map will appear here</p>
                     </div>
                 </div>
@@ -2453,7 +2459,7 @@
 
         <!-- Depth Histogram -->
         <div class="histogram-wrap" id="histWrap">
-            <h3>?? Depth Distribution Histogram</h3>
+            <h3>📊 Depth Distribution Histogram</h3>
             <canvas id="histCanvas" height="120"></canvas>
         </div>
 
@@ -2462,8 +2468,8 @@
             <div class="panel-header">
                 <div class="panel-dot" style="background:#06d6a0"></div>
                 <span>3D Point Cloud Preview</span>
-                <span style="font-size:12px;color:var(--muted)">Drag to rotate � Scroll to zoom</span>
-                <button class="btn-toggle" id="autoRotateBtn" title="Auto Rotate">? Auto Rotate</button>
+                <span style="font-size:12px;color:var(--muted)">Drag to rotate · Scroll to zoom</span>
+                <button class="btn-toggle" id="autoRotateBtn" title="Auto Rotate">↻ Auto Rotate</button>
             </div>
             <div class="panel-body" style="padding:0"><canvas id="canvas3d"></canvas></div>
         </div>
@@ -2472,7 +2478,7 @@
         <div class="bokeh-wrap" id="bokehWrap">
             <div class="panel-header" style="border-bottom:1px solid var(--border)">
                 <div class="panel-dot" style="background:#f59e0b"></div>
-                <span>?? Bokeh / Depth-of-Field Simulator</span>
+                <span>🎭 Bokeh / Depth-of-Field Simulator</span>
             </div>
             <div class="bokeh-body"><canvas id="bokehCanvas"></canvas></div>
             <div class="bokeh-controls">
@@ -2493,7 +2499,7 @@
                         <option value="far">Far Sharp (landscape)</option>
                     </select>
                 </div>
-                <button class="btn-export" id="exportBokeh" style="margin-left:auto">?? Save Bokeh</button>
+                <button class="btn-export" id="exportBokeh" style="margin-left:auto">💾 Save Bokeh</button>
             </div>
         </div>
 
@@ -2501,7 +2507,7 @@
         <div class="mask-wrap" id="maskWrap">
             <div class="panel-header" style="border-bottom:1px solid var(--border)">
                 <div class="panel-dot" style="background:#ec4899"></div>
-                <span>?? Depth Range Mask</span>
+                <span>✂️ Depth Range Mask</span>
                 <span style="margin-left:auto;font-size:12px;color:var(--muted)">Isolate objects by depth</span>
             </div>
             <div class="mask-body"><canvas id="maskCanvas"></canvas></div>
@@ -2523,26 +2529,26 @@
                         <option value="1">Inverted</option>
                     </select>
                 </div>
-                <button class="btn-export" id="exportMask" style="margin-left:auto">?? Save Mask</button>
+                <button class="btn-export" id="exportMask" style="margin-left:auto">💾 Save Mask</button>
             </div>
         </div>
 
 
         <div class="export-row">
-            <button class="btn-export" id="exportDepth" disabled>?? Export Depth Map (PNG)</button>
-            <button class="btn-export" id="exportGrayscale" disabled>? Export Grayscale</button>
-            <button class="btn-export" id="exportSideBySide" disabled>??? Export Side-by-Side</button>
-            <button class="btn-export" id="exportOBJ" disabled>?? Export 3D (.obj)</button>
+            <button class="btn-export" id="exportDepth" disabled>💾 Export Depth Map (PNG)</button>
+            <button class="btn-export" id="exportGrayscale" disabled>⬛ Export Grayscale</button>
+            <button class="btn-export" id="exportSideBySide" disabled>🖼️ Export Side-by-Side</button>
+            <button class="btn-export" id="exportOBJ" disabled>📦 Export 3D (.obj)</button>
         </div>
     </main>
 
-    <div class="toast" id="toast"><span id="toastIcon">?</span><span id="toastMsg">Done!</span></div>
+    <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastMsg">Done!</span></div>
 
     <script type="module">
         import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers';
         env.allowLocalModels = false;
 
-        // -- Color Maps ------------------------------------------------------
+        // ── Color Maps ──────────────────────────────────────────────────────
         const COLOR_MAPS = {
             Turbo: t => {
                 const r = Math.round(255 * Math.max(0, Math.min(1, 0.1357 + 4.5974 * t - 9.0576 * t * t + 4.4619 * t * t * t)));
@@ -2575,20 +2581,20 @@
             'Cool-Warm': t => [Math.round(255 * t), Math.round(255 * (1 - Math.abs(2 * t - 1))), Math.round(255 * (1 - t))],
         };
 
-        // -- State ------------------------------------------------------------
+        // ── State ────────────────────────────────────────────────────────────
         let selectedCM = 'Turbo';
         let inferencer = null;
         let rawDepth = null;
         let originalImageEl = null;
         let currentModel = 'onnx-community/depth-anything-v2-small';
 
-        // Persistent WebGL state � initialized once, reused across images
+        // Persistent WebGL state — initialized once, reused across images
         let _rafId = null;
         let _gl = null, _prog = null, _posBuf = null, _colBuf = null, _uMVP = null;
         let _rot = { x: 0.3, y: 0, zoom: 1.8, dr: false, lx: 0, ly: 0 };
         let _npts = 0;
 
-        // -- Color map UI -----------------------------------------------------
+        // ── Color map UI ─────────────────────────────────────────────────────
         function buildColorMapUI() {
             const c = document.getElementById('colorMapOptions');
             Object.keys(COLOR_MAPS).forEach(name => {
@@ -2611,20 +2617,20 @@
             });
         }
 
-        // -- Helpers ----------------------------------------------------------
+        // ── Helpers ──────────────────────────────────────────────────────────
         function setProgress(pct, label) {
             document.getElementById('progressFill').style.width = pct + '%';
             document.getElementById('progressPct').textContent = pct + '%';
             if (label) document.getElementById('progressLabel').textContent = label;
         }
         function showProgress(v) { document.getElementById('progressContainer').classList.toggle('active', v); }
-        function showToast(msg, icon = '?') {
+        function showToast(msg, icon = '✅') {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').textContent = msg;
             document.getElementById('toastIcon').textContent = icon;
             t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
         }
-        function showLoading(id, text = 'Processing�') {
+        function showLoading(id, text = 'Processing…') {
             const p = document.getElementById(id);
             const ex = p.querySelector('.loading-overlay'); if (ex) ex.remove();
             const ov = document.createElement('div'); ov.className = 'loading-overlay';
@@ -2662,7 +2668,7 @@
             return dst;
         }
 
-        // -- Apply Color & Features -------------------------------------------
+        // ── Apply Color & Features ───────────────────────────────────────────
         function applyColorMap() {
             if (!rawDepth) return;
             const { data, width, height } = rawDepth;
@@ -2760,7 +2766,7 @@
             document.getElementById('minDepth').textContent = mn.toFixed(3);
             document.getElementById('maxDepth').textContent = mx.toFixed(3);
             document.getElementById('avgDepth').textContent = (processedData.reduce((a, b) => a + b, 0) / processedData.length).toFixed(3); // Avg of processed data
-            document.getElementById('imgSize').textContent = `${width}�${height}`;
+            document.getElementById('imgSize').textContent = `${width}×${height}`;
             document.getElementById('stats').style.display = 'flex';
 
             const offscreenCanvas = document.createElement('canvas');
@@ -2804,7 +2810,7 @@
 
             render3D(fc, finalWidth, finalHeight, data, mn, range, width, height);
 
-            // -- Update new feature panels ----------------------------------
+            // ── Update new feature panels ──────────────────────────────────
             if (window._currentObjectURL) URL.revokeObjectURL(window._currentObjectURL);
             window._currentObjectURL = URL.createObjectURL(window._currentFile);
             updateCompare(window._currentObjectURL, fc);
@@ -2815,7 +2821,7 @@
             renderMask();
         }
 
-        // -- 3D Point Cloud � persistent WebGL context ------------------------
+        // ── 3D Point Cloud — persistent WebGL context ────────────────────────
         function render3D(depthCanvas, w, h, rawData, mn, range, rawWidth, rawHeight) {
             // Stop previous loop
             if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
@@ -2847,7 +2853,7 @@
             requestAnimationFrame(() => {
                 const cv = document.getElementById('canvas3d');
 
-                // -- Init GL once ----------------------------------------------
+                // ── Init GL once ──────────────────────────────────────────────
                 if (!_gl) {
                     cv.width = cv.offsetWidth || cv.parentElement.clientWidth || 800;
                     cv.height = cv.offsetHeight || 360;
@@ -2869,7 +2875,7 @@
                     _colBuf = _gl.createBuffer();
                     _uMVP = _gl.getUniformLocation(_prog, 'u_mvp');
 
-                    // Mouse/touch events � registered once
+                    // Mouse/touch events – registered once
                     cv.onmousedown = e => { _rot.dr = true; _rot.lx = e.clientX; _rot.ly = e.clientY; };
                     window.addEventListener('mouseup', () => _rot.dr = false);
                     cv.onmousemove = e => {
@@ -2930,30 +2936,30 @@
             });
         }
 
-        // -- Generate ---------------------------------------------------------
+        // ── Generate ─────────────────────────────────────────────────────────
         async function generate() {
             const btn = document.getElementById('generateBtn');
-            btn.disabled = true; document.getElementById('generateIcon').textContent = '?';
-            showProgress(true); setProgress(5, 'Loading depth estimation model�');
+            btn.disabled = true; document.getElementById('generateIcon').textContent = '⏳';
+            showProgress(true); setProgress(5, 'Loading depth estimation model…');
             try {
                 const t0 = performance.now();
                 const selectedModel = document.getElementById('modelSelect').value;
                 if (!inferencer || currentModel !== selectedModel) {
                     currentModel = selectedModel;
-                    setProgress(10, 'Downloading AI model (first time can take a while)�');
+                    setProgress(10, 'Downloading AI model (first time can take a while)…');
                     inferencer = await pipeline('depth-estimation', currentModel, {
                         progress_callback: p => {
                             if (p.status === 'downloading') {
                                 const pct = Math.round(10 + (p.progress || 0) * .6);
-                                setProgress(pct, `Downloading model: ${p.name || '�'} (${Math.round(p.progress || 0)}%)`);
+                                setProgress(pct, `Downloading model: ${p.name || '…'} (${Math.round(p.progress || 0)}%)`);
                             }
                         }
                     });
                     setProgress(72, 'Model ready!');
-                } else { setProgress(72, 'Using cached model�'); }
+                } else { setProgress(72, 'Using cached model…'); }
 
-                setProgress(78, 'Running depth estimation�');
-                showLoading('depthPanel', 'Running AI inference�');
+                setProgress(78, 'Running depth estimation…');
+                showLoading('depthPanel', 'Running AI inference…');
 
                 const url = URL.createObjectURL(window._currentFile);
 
@@ -2989,10 +2995,10 @@
                 const result = await inferencer(url, options);
                 URL.revokeObjectURL(url); // clear out original file url
 
-                setProgress(95, 'Applying color map�');
+                setProgress(95, 'Applying color map…');
 
                 const tensor = result.predicted_depth;
-                const data = tensor.data; // TypedArray � NOT a function
+                const data = tensor.data; // TypedArray — NOT a function
 
                 // Fix: V3 tensors might expose dimensions directly or via ort_tensor
                 let height, width;
@@ -3038,23 +3044,23 @@
 
                 const t1 = performance.now();
                 document.getElementById('procTime').textContent = ((t1 - t0) / 1000).toFixed(1) + 's';
-                setProgress(100, 'Done! ?');
+                setProgress(100, 'Done! ✨');
                 setTimeout(() => showProgress(false), 1200);
-                showToast('Depth map generated successfully!', '?');
+                showToast('Depth map generated successfully!', '✅');
             } catch (err) {
                 console.error(err);
                 hideLoading('depthPanel');
                 showProgress(false);
-                showToast('Error: ' + err.message, '?');
+                showToast('Error: ' + err.message, '❌');
             }
-            btn.disabled = false; document.getElementById('generateIcon').textContent = '?';
+            btn.disabled = false; document.getElementById('generateIcon').textContent = '⚡';
         }
 
-        // -- Export -----------------------------------------------------------
+        // ── Export ───────────────────────────────────────────────────────────
         function dl(canvas, name) {
             const a = document.createElement('a');
             a.href = canvas.toDataURL('image/png'); a.download = name; a.click();
-            showToast(`Exported ${name}`, '??');
+            showToast(`Exported ${name}`, '💾');
         }
         document.getElementById('exportDepth').addEventListener('click', () => { if (window._depthCanvas) dl(window._depthCanvas, 'depth_map.png'); });
         document.getElementById('exportGrayscale').addEventListener('click', () => {
@@ -3135,10 +3141,10 @@
             dl(sc, 'depth_sidebyside.png');
         });
 
-        // -- File input -------------------------------------------------------
+        // ── File input ───────────────────────────────────────────────────────
         function handleFile(file) {
-            if (!file || !file.type.startsWith('image/')) { showToast('Please upload a valid image file', '??'); return; }
-            if (file.size > 10 * 1024 * 1024) { showToast('File too large (max 10MB)', '??'); return; }
+            if (!file || !file.type.startsWith('image/')) { showToast('Please upload a valid image file', '⚠️'); return; }
+            if (file.size > 10 * 1024 * 1024) { showToast('File too large (max 10MB)', '⚠️'); return; }
             window._currentFile = file;
             const url = URL.createObjectURL(file);
             const op = document.getElementById('originalPanel'); op.innerHTML = '';
@@ -3146,7 +3152,7 @@
             img.src = url; img.style.maxWidth = '100%'; img.style.maxHeight = '420px'; img.style.borderRadius = '8px';
             img.onload = () => { originalImageEl = img; URL.revokeObjectURL(url); };
             op.appendChild(img); originalImageEl = img;
-            document.getElementById('depthPanel').innerHTML = '<div class="placeholder"><div class="icon">??</div><p>Click Generate to process</p></div>';
+            document.getElementById('depthPanel').innerHTML = '<div class="placeholder"><div class="icon">🌊</div><p>Click Generate to process</p></div>';
             document.getElementById('generateBtn').disabled = false;
             rawDepth = null;
             ['exportDepth', 'exportGrayscale', 'exportSideBySide', 'exportOBJ'].forEach(id => document.getElementById(id).disabled = true);
@@ -3160,7 +3166,7 @@
             document.getElementById('histWrap').style.display = 'none';
             document.getElementById('bokehWrap').style.display = 'none';
             document.getElementById('maskWrap').style.display = 'none';
-            showToast('Image loaded! Ready to generate.', '???');
+            showToast('Image loaded! Ready to generate.', '🖼️');
         }
 
         const fi = document.getElementById('fileInput');
@@ -3172,7 +3178,7 @@
         zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
         zone.addEventListener('click', e => { if (e.target !== document.getElementById('uploadBtn')) fi.click(); });
         document.getElementById('generateBtn').addEventListener('click', generate);
-        // -- Sliders & Options Events -----------------------------------------
+        // ── Sliders & Options Events ─────────────────────────────────────────
         function updateSliderVal(id, val, textNode, formatFunc) {
             document.getElementById(id).value = val;
             document.getElementById(textNode).textContent = formatFunc(val);
@@ -3229,7 +3235,7 @@
         document.getElementById('contourSlider').addEventListener('input', e => { document.getElementById('contourVal').textContent = e.target.value == 0 ? 'Off' : e.target.value; if (rawDepth) applyColorMap(); });
         document.getElementById('invertSelect').addEventListener('change', () => { if (rawDepth) applyColorMap(); });
 
-        // -- Comparison Slider ------------------------------------------------
+        // ── Comparison Slider ────────────────────────────────────────────────
         function initCompareSlider() {
             const wrap = document.getElementById('compareWrap');
             const handle = document.getElementById('compareHandle');
@@ -3268,7 +3274,7 @@
             document.getElementById('compareDepth').style.clipPath = 'inset(0 50% 0 0)';
         }
 
-        // -- Depth Histogram --------------------------------------------------
+        // ── Depth Histogram ──────────────────────────────────────────────────
         function drawHistogram(data, mn, range) {
             const wrap = document.getElementById('histWrap');
             const cv = document.getElementById('histCanvas');
@@ -3291,17 +3297,17 @@
             }
         }
 
-        // -- Auto Rotate 3D ---------------------------------------------------
+        // ── Auto Rotate 3D ───────────────────────────────────────────────────
         let _autoRotate = false;
         document.getElementById('autoRotateBtn').addEventListener('click', function () {
             _autoRotate = !_autoRotate;
             this.classList.toggle('on', _autoRotate);
-            this.textContent = _autoRotate ? '? Auto Rotate' : '? Auto Rotate';
+            this.textContent = _autoRotate ? '⏸ Auto Rotate' : '↻ Auto Rotate';
         });
-        // Modify draw loop externally via a global flag � _rot.autoY
+        // Modify draw loop externally via a global flag — _rot.autoY
         // The 3D draw function reads _autoRotate and increments _rot.y if true
 
-        // -- OBJ Export -------------------------------------------------------
+        // ── OBJ Export ───────────────────────────────────────────────────────
         function exportOBJ() {
             if (!rawDepth) return;
             const { data, width, height } = rawDepth;
@@ -3341,11 +3347,11 @@
             const blob = new Blob([obj], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob); a.download = 'depth_cloud.obj'; a.click();
-            showToast('Exported depth_cloud.obj', '??');
+            showToast('Exported depth_cloud.obj', '📦');
         }
         document.getElementById('exportOBJ').addEventListener('click', exportOBJ);
 
-        // -- Bokeh Simulator --------------------------------------------------
+        // ── Bokeh Simulator ──────────────────────────────────────────────────
         function renderBokeh() {
             if (!rawDepth || !originalImageEl) return;
             const { data, width, height } = rawDepth;
@@ -3402,7 +3408,7 @@
             dl(cv, 'bokeh_effect.png');
         });
 
-        // -- Depth Mask -------------------------------------------------------
+        // ── Depth Mask ───────────────────────────────────────────────────────
         function renderMask() {
             if (!rawDepth) return;
             const { data, width, height } = rawDepth;
@@ -3448,8 +3454,6 @@
 
     </script>
     
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 
 </html>

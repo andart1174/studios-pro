@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -243,16 +243,8 @@
             </p>
         </div>
 
-        <div class="dropzone-mockup" onclick="location.href='/?ref=vcnc'">
-            <div class="dropzone-icon">📥</div>
-            <div class="dropzone-text">
-                <span data-en>Click or Drag File Here to Open Viewer</span>
-                <span data-fr>Cliquez ou glissez le fichier ici pour ouvrir le visualiseur</span>
-            </div>
-            <div class="dropzone-sub">
-                <span data-en>No installation required. Works 100% inside your web browser.</span>
-                <span data-fr>Aucune installation requise. Fonctionne à 100% dans votre navigateur web.</span>
-            </div>
+        <div class="viewer-frame-container" style="width: 100%; height: 650px; border-radius: 18px; border: 1px solid rgba(59,130,246,0.25); overflow: hidden; margin: 40px 0; background: #000; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+            <iframe src="/?ref=vcnc" style="width: 100%; height: 100%; border: none;" title="Interactive Studios-Pro App Widget"></iframe>
         </div>
 
         <div class="features-grid">
@@ -336,7 +328,5 @@
         const saved = localStorage.getItem('sp_lang') || 'en';
         setLang(saved);
     </script>
-
-  <script src="/community/share-bridge.js"></script>
 </body>
 </html>

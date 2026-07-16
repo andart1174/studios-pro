@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maker Studio 7 � All-in-One Generator</title>
+    <title>Maker Studio 7 — All-in-One Generator</title>
     <!-- Three.js from CDN as requested in standard structures -->
     <script src="https://unpkg.com/three@0.145.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
@@ -671,8 +671,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -757,7 +757,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1403,6 +1405,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
   <!-- Back Button and Payment logic -->
   
   
@@ -1507,27 +1513,27 @@
                     <!-- Compartment 1: AI PBR Texture -->
                     <div id="comp-texture" class="compartment-ui">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>AI Texture Generator</span><span data-lang-fr>G�n�rateur de Texture IA</span></div>
+                            <div class="group-title"><span data-lang-en>AI Texture Generator</span><span data-lang-fr>Générateur de Texture IA</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span data-lang-en>Text Prompt</span><span data-lang-fr>Texte Descriptif</span></div>
                                 <input type="text" placeholder="ex: old distressed leather...">
                             </div>
-                            <button class="btn-action btn-primary" onclick="generateSimulatedTexture()">? <span data-lang-en>Generate Maps</span><span data-lang-fr>G�n�rer les Cartes</span></button>
+                            <button class="btn-action btn-primary" onclick="generateSimulatedTexture()">✨ <span data-lang-en>Generate Maps</span><span data-lang-fr>Générer les Cartes</span></button>
                         </div>
                         <!-- Material Image Prompt Source -->
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Material Source</span><span data-lang-fr>Source Mat�riel</span></div>
+                            <div class="group-title"><span data-lang-en>Material Source</span><span data-lang-fr>Source Matériel</span></div>
                             <p style="font-size: 0.75rem; color: #10b981; margin-bottom:10px;">Upload an image (e.g., wood, brick, fabric) using the main Upload button, then 'Generate Maps' to extract 3D depth geometry!</p>
                         </div>
                         
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Material Tweaks</span><span data-lang-fr>Ajustements Mat�riel</span></div>
+                            <div class="group-title"><span data-lang-en>Material Tweaks</span><span data-lang-fr>Ajustements Matériel</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Material Tint / Color</span><span data-lang-fr>Couleur / Teinte</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-texture" value="#ffffff" oninput="updateColor('texture', this.value);">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Roughness</span><span data-lang-fr>Rugosit�</span></span> <span class="ctrl-val" id="val-tex-rough">0.5</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Roughness</span><span data-lang-fr>Rugosité</span></span> <span class="ctrl-val" id="val-tex-rough">0.5</span></div>
                                 <input type="range" id="tex-roughness" min="0" max="1" step="0.05" value="0.5" oninput="updateVal('val-tex-rough', this.value); updateTextureMaterial();">
                             </div>
                             <div class="ctrl-item">
@@ -1540,29 +1546,29 @@
                     <!-- Compartment 2: Lithophane Creator -->
                     <div id="comp-litho" class="compartment-ui hidden">
                         <div class="upload-section" onclick="triggerFile()">
-                            <span class="upload-icon">??</span>
+                            <span class="upload-icon">📷</span>
                             <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload Photo</span><span data-lang-fr>Importer une Photo</span></p>
                             <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:5px;">JPG/PNG Max 10MB</p>
                         </div>
                         <div class="control-group" style="margin-top: 15px;">
-                            <div class="group-title"><span data-lang-en>Lithophane Settings</span><span data-lang-fr>Param�tres Lithophanie</span></div>
+                            <div class="group-title"><span data-lang-en>Lithophane Settings</span><span data-lang-fr>Paramètres Lithophanie</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Base Color</span><span data-lang-fr>Couleur de Base</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-litho" value="#ffffff" oninput="updateColor('litho', this.value);">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Max Thickness</span><span data-lang-fr>�paisseur Max</span></span> <span class="ctrl-val" id="val-litho-thick">3.2mm</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Max Thickness</span><span data-lang-fr>Épaisseur Max</span></span> <span class="ctrl-val" id="val-litho-thick">3.2mm</span></div>
                                 <input type="range" id="litho-thick" min="1" max="10" step="0.1" value="3.2" oninput="updateVal('val-litho-thick', this.value+'mm'); buildLitho();">
                             </div>
                             <div class="ctrl-item" style="margin-top: 5px;">
                                 <div class="ctrl-label"><span><span data-lang-en>Invert Relief</span><span data-lang-fr>Inverser le Relief</span></span></div>
                                 <label style="display:flex; align-items:center; cursor:pointer;">
                                     <input type="checkbox" id="litho-inv" onchange="buildLitho()" style="width:16px; height:16px; margin-right: 8px;">
-                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosit�</span></span>
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosité</span></span>
                                 </label>
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>R�solution</span></span> <span class="ctrl-val" id="val-litho-res">2</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>Résolution</span></span> <span class="ctrl-val" id="val-litho-res">2</span></div>
                                 <input type="range" id="litho-res" min="1" max="4" step="1" value="2" oninput="updateVal('val-litho-res', this.value); buildLitho();">
                             </div>
                             <div class="ctrl-item">
@@ -1579,9 +1585,9 @@
                     <!-- Compartment 3: Box Maker -->
                     <div id="comp-box" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Parametric Box</span><span data-lang-fr>Bo�te Param�trique</span></div>
+                            <div class="group-title"><span data-lang-en>Parametric Box</span><span data-lang-fr>Boîte Paramétrique</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur du Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur du Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-box" value="#d97706" oninput="updateColor('box', this.value);">
                             </div>
                             <div class="ctrl-item">
@@ -1597,7 +1603,7 @@
                                 <input type="range" id="box-d" min="20" max="300" step="5" value="80" oninput="updateVal('val-box-d', this.value+'mm'); buildBox();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Thickness</span><span data-lang-fr>�paisseur Mat�riau</span></span> <span class="ctrl-val" id="val-box-thick">3.0mm</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Thickness</span><span data-lang-fr>Épaisseur Matériau</span></span> <span class="ctrl-val" id="val-box-thick">3.0mm</span></div>
                                 <input type="range" id="box-thick" min="1" max="10" step="0.5" value="3" oninput="updateVal('val-box-thick', this.value+'mm'); buildBox();">
                             </div>
                         </div>
@@ -1606,7 +1612,7 @@
                     <!-- Compartment 4: Halftone Art -->
                     <div id="comp-halftone" class="compartment-ui hidden">
                         <div class="upload-section" onclick="triggerFile()">
-                            <span class="upload-icon">??</span>
+                            <span class="upload-icon">🔆</span>
                             <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload Photo</span><span data-lang-fr>Importer une Photo</span></p>
                         </div>
                         <div class="control-group" style="margin-top: 15px;">
@@ -1627,7 +1633,7 @@
                                 </label>
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Grid Density (Quality)</span><span data-lang-fr>Densit�</span></span> <span class="ctrl-val" id="val-half-grid">2.0</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Grid Density (Quality)</span><span data-lang-fr>Densité</span></span> <span class="ctrl-val" id="val-half-grid">2.0</span></div>
                                 <input type="range" id="half-grid" min="1.5" max="5" step="0.5" value="2.0" oninput="updateVal('val-half-grid', this.value); buildHalftone();">
                             </div>
                             <div class="ctrl-item">
@@ -1667,7 +1673,7 @@
                     <!-- Compartment 6: Mandala Generator -->
                     <div id="comp-mandala" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Procedural Geometry</span><span data-lang-fr>G�om�trie Proc�durale</span></div>
+                            <div class="group-title"><span data-lang-en>Procedural Geometry</span><span data-lang-fr>Géométrie Procédurale</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Combine Shapes</span><span data-lang-fr>Combiner Formes</span></span></div>
                                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">
@@ -1692,15 +1698,15 @@
                                 </div>
                             </div>
                             <div class="ctrl-item" style="margin-top: 5px;">
-                                <div class="ctrl-label"><span><span data-lang-en>Geometry Color</span><span data-lang-fr>Couleur de la G�om�trie</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Geometry Color</span><span data-lang-fr>Couleur de la Géométrie</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-mandala" value="#c026d3" oninput="updateColor('mandala', this.value);">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Elements / Symmetry</span><span data-lang-fr>�l�ments / Sym�trie</span></span> <span class="ctrl-val" id="val-man-sym">8</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Elements / Symmetry</span><span data-lang-fr>Éléments / Symétrie</span></span> <span class="ctrl-val" id="val-man-sym">8</span></div>
                                 <input type="range" id="man-sym" min="3" max="32" step="1" value="8" oninput="updateVal('val-man-sym', this.value); buildMandala();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Layers Complexity</span><span data-lang-fr>Complexit� Couches</span></span> <span class="ctrl-val" id="val-man-layers">5</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Layers Complexity</span><span data-lang-fr>Complexité Couches</span></span> <span class="ctrl-val" id="val-man-layers">5</span></div>
                                 <input type="range" id="man-layers" min="1" max="10" step="1" value="5" oninput="updateVal('val-man-layers', this.value); buildMandala();">
                             </div>
                             <div class="ctrl-item">
@@ -1713,7 +1719,7 @@
                     <!-- Compartment 7: G-Code Visualizer -->
                     <div id="comp-gcode" class="compartment-ui hidden">
                         <div class="upload-section" onclick="triggerFile()">
-                            <span class="upload-icon">??</span>
+                            <span class="upload-icon">⚙️</span>
                             <p style="font-weight:800; color: #fff;"><span data-lang-en>Upload .gcode</span><span data-lang-fr>Importer .gcode</span></p>
                         </div>
                         <div class="control-group" style="margin-top: 15px;">
@@ -1734,7 +1740,7 @@
                         <div class="control-group">
                             <div class="group-title"><span data-lang-en>Vase Profile</span><span data-lang-fr>Profil du Vase</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-vase" value="#14b8a6" oninput="updateColor('vase', this.value);">
                             </div>
                             <div class="ctrl-item">
@@ -1754,7 +1760,7 @@
                                 <input type="range" id="vase-m" min="10" max="150" step="1" value="45" oninput="updateVal('val-vase-m', this.value); buildVase();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Resolution (Faces)</span><span data-lang-fr>Fa�ettes</span></span> <span class="ctrl-val" id="val-vase-res">32</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution (Faces)</span><span data-lang-fr>Façettes</span></span> <span class="ctrl-val" id="val-vase-res">32</span></div>
                                 <input type="range" id="vase-res" min="4" max="128" step="1" value="32" oninput="updateVal('val-vase-res', this.value); buildVase();">
                             </div>
                         </div>
@@ -1763,9 +1769,9 @@
                     <!-- Compartment 9: Gear Maker -->
                     <div id="comp-gear" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Gear Parameters</span><span data-lang-fr>Param�tres Engrenage</span></div>
+                            <div class="group-title"><span data-lang-en>Gear Parameters</span><span data-lang-fr>Paramètres Engrenage</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-gear" value="#64748b" oninput="updateColor('gear', this.value);">
                             </div>
                             <div class="ctrl-item">
@@ -1773,7 +1779,7 @@
                                 <input type="range" id="gear-t" min="6" max="100" step="1" value="20" oninput="updateVal('val-gear-t', this.value); buildGear();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Diameter</span><span data-lang-fr>Diam�tre</span></span> <span class="ctrl-val" id="val-gear-r">50</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Diameter</span><span data-lang-fr>Diamètre</span></span> <span class="ctrl-val" id="val-gear-r">50</span></div>
                                 <input type="range" id="gear-r" min="10" max="150" step="1" value="50" oninput="updateVal('val-gear-r', this.value); buildGear();">
                             </div>
                             <div class="ctrl-item">
@@ -1781,7 +1787,7 @@
                                 <input type="range" id="gear-h" min="0" max="60" step="1" value="10" oninput="updateVal('val-gear-h', this.value); buildGear();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>�paisseur</span></span> <span class="ctrl-val" id="val-gear-d">10</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span> <span class="ctrl-val" id="val-gear-d">10</span></div>
                                 <input type="range" id="gear-d" min="1" max="50" step="1" value="10" oninput="updateVal('val-gear-d', this.value); buildGear();">
                             </div>
                         </div>
@@ -1792,14 +1798,14 @@
                         <div class="control-group">
                             <div class="group-title"><span data-lang-en>Globe Shape</span><span data-lang-fr>Forme du Globe</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-globe" value="#ffffff" oninput="updateColor('globe', this.value);">
                             </div>
                             <div class="ctrl-item" style="margin-top: 5px;">
                                 <div class="ctrl-label"><span><span data-lang-en>Invert Relief</span><span data-lang-fr>Inverser le Relief</span></span></div>
                                 <label style="display:flex; align-items:center; cursor:pointer;">
                                     <input type="checkbox" id="globe-inv" onchange="buildGlobe()" style="width:16px; height:16px; margin-right: 8px;">
-                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosit�</span></span>
+                                    <span style="font-size: 0.8rem; color: #fff;"><span data-lang-en>Extrude Brightness</span><span data-lang-fr>Extruder Luminosité</span></span>
                                 </label>
                             </div>
                             <div class="ctrl-item">
@@ -1811,7 +1817,7 @@
                                 <input type="range" id="globe-t" min="1" max="25" step="0.5" value="4" oninput="updateVal('val-globe-t', this.value); buildGlobe();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>R�solution</span></span> <span class="ctrl-val" id="val-globe-res">128</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Resolution Quality</span><span data-lang-fr>Résolution</span></span> <span class="ctrl-val" id="val-globe-res">128</span></div>
                                 <input type="range" id="globe-res" min="32" max="256" step="16" value="128" oninput="updateVal('val-globe-res', this.value); buildGlobe();">
                             </div>
                         </div>
@@ -1822,7 +1828,7 @@
                         <div class="control-group">
                             <div class="group-title"><span data-lang-en>Terrace Levels</span><span data-lang-fr>Niveaux de Terrasse</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-topo" value="#8b5cf6" oninput="updateColor('topo', this.value);">
                             </div>
                             <div class="ctrl-item" style="margin-top: 5px;">
@@ -1837,11 +1843,11 @@
                                 <input type="range" id="topo-s" min="2" max="40" step="1" value="10" oninput="updateVal('val-topo-s', this.value); buildTopo();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Z-Thickness</span><span data-lang-fr>�paisseur Z</span></span> <span class="ctrl-val" id="val-topo-t">20</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Z-Thickness</span><span data-lang-fr>Épaisseur Z</span></span> <span class="ctrl-val" id="val-topo-t">20</span></div>
                                 <input type="range" id="topo-t" min="1" max="100" step="1" value="20" oninput="updateVal('val-topo-t', this.value); buildTopo();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Precision Quality</span><span data-lang-fr>Pr�cision</span></span> <span class="ctrl-val" id="val-topo-res">2</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Precision Quality</span><span data-lang-fr>Précision</span></span> <span class="ctrl-val" id="val-topo-res">2</span></div>
                                 <input type="range" id="topo-res" min="1" max="4" step="1" value="2" oninput="updateVal('val-topo-res', this.value); buildTopo();">
                             </div>
                         </div>
@@ -1852,7 +1858,7 @@
                         <div class="control-group">
                             <div class="group-title"><span data-lang-en>Organic Structure</span><span data-lang-fr>Structure Organique</span></div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Mat�riau</span></span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur Matériau</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-voronoi" value="#e2e8f0" oninput="updateColor('voronoi', this.value);">
                             </div>
                             <div class="ctrl-item">
@@ -1873,7 +1879,7 @@
                                 </div>
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Cell Density</span><span data-lang-fr>Densit� Cellules</span></span> <span class="ctrl-val" id="val-voro-c">8</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Cell Density</span><span data-lang-fr>Densité Cellules</span></span> <span class="ctrl-val" id="val-voro-c">8</span></div>
                                 <input type="range" id="voro-c" min="3" max="25" step="1" value="8" oninput="updateVal('val-voro-c', this.value); buildVoronoi();">
                             </div>
                             <div class="ctrl-item">
@@ -1881,7 +1887,7 @@
                                 <input type="range" id="voro-n" min="0" max="1" step="0.05" value="0.5" oninput="updateVal('val-voro-n', this.value); buildVoronoi();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Web Thickness</span><span data-lang-fr>�paisseur Toile</span></span> <span class="ctrl-val" id="val-voro-t">5</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Web Thickness</span><span data-lang-fr>Épaisseur Toile</span></span> <span class="ctrl-val" id="val-voro-t">5</span></div>
                                 <input type="range" id="voro-t" min="1" max="20" step="0.5" value="5" oninput="updateVal('val-voro-t', this.value); buildVoronoi();">
                             </div>
                         </div>
@@ -1890,7 +1896,7 @@
                     <!-- Compartment 13: 3D QR Code -->
                     <div id="comp-qrcode" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>QR Settings</span><span data-lang-fr>Param�tres QR</span></div>
+                            <div class="group-title"><span data-lang-en>QR Settings</span><span data-lang-fr>Paramètres QR</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Base Color</span><span data-lang-fr>Couleur Base</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-qr-base" value="#f8fafc" oninput="buildQR();">
@@ -1904,7 +1910,7 @@
                                 <input type="text" id="qr-input" value="https://maker7.com" onkeyup="buildQR()">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Base Thickness</span><span data-lang-fr>�paisseur Base</span></span> <span class="ctrl-val" id="val-qr-b">2.0</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Base Thickness</span><span data-lang-fr>Épaisseur Base</span></span> <span class="ctrl-val" id="val-qr-b">2.0</span></div>
                                 <input type="range" id="qr-base" min="1" max="10" step="0.5" value="2.0" oninput="updateVal('val-qr-b', this.value); buildQR();">
                             </div>
                             <div class="ctrl-item">
@@ -1917,14 +1923,14 @@
                     <!-- Compartment 14: Cookie Cutter -->
                     <div id="comp-cookie" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Cutter Shape</span><span data-lang-fr>Forme Emporte-Pi�ce</span></div>
+                            <div class="group-title"><span data-lang-en>Cutter Shape</span><span data-lang-fr>Forme Emporte-Pièce</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Type</span><span data-lang-fr>Type</span></span></div>
                                 <select id="cookie-shape" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; outline: none;" onchange="buildCookie()">
                                     <option value="heart">Heart / Coeur</option>
-                                    <option value="star">Star / �toile</option>
+                                    <option value="star">Star / Étoile</option>
                                     <option value="circle">Circle / Cercle</option>
-                                    <option value="rect">Square / Carr�</option>
+                                    <option value="rect">Square / Carré</option>
                                     <option value="hex">Hexagon / Hexagone</option>
                                     <option value="tri">Triangle</option>
                                     <option value="pent">Pentagon / Pentagone</option>
@@ -1951,17 +1957,17 @@
                     <!-- Compartment 15: Phone Stand -->
                     <div id="comp-stand" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Stand Specs</span><span data-lang-fr>Sp�cifications du Support</span></div>
+                            <div class="group-title"><span data-lang-en>Stand Specs</span><span data-lang-fr>Spécifications du Support</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Material Color</span><span data-lang-fr>Couleur</span></span></div>
                                 <input type="color" class="color-input-custom" id="col-stand" value="#3b82f6" oninput="updateColor('stand', this.value);">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Viewing Angle</span><span data-lang-fr>Angle de Vue</span></span> <span class="ctrl-val" id="val-st-a">60�</span></div>
-                                <input type="range" id="stand-angle" min="45" max="85" step="5" value="60" oninput="updateVal('val-st-a', this.value+'�'); buildStand();">
+                                <div class="ctrl-label"><span><span data-lang-en>Viewing Angle</span><span data-lang-fr>Angle de Vue</span></span> <span class="ctrl-val" id="val-st-a">60°</span></div>
+                                <input type="range" id="stand-angle" min="45" max="85" step="5" value="60" oninput="updateVal('val-st-a', this.value+'°'); buildStand();">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Device Thickness</span><span data-lang-fr>�paisseur Appareil</span></span> <span class="ctrl-val" id="val-st-t">12mm</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Device Thickness</span><span data-lang-fr>Épaisseur Appareil</span></span> <span class="ctrl-val" id="val-st-t">12mm</span></div>
                                 <input type="range" id="stand-thick" min="8" max="25" step="1" value="12" oninput="updateVal('val-st-t', this.value+'mm'); buildStand();">
                             </div>
                             <div class="ctrl-item">
@@ -1980,7 +1986,7 @@
                                 <input type="color" class="color-input-custom" id="col-maze" value="#f59e0b" oninput="updateColor('maze', this.value);">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Grid Complexity</span><span data-lang-fr>Complexit�</span></span> <span class="ctrl-val" id="val-mz-c">12</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Grid Complexity</span><span data-lang-fr>Complexité</span></span> <span class="ctrl-val" id="val-mz-c">12</span></div>
                                 <input type="range" id="maze-cols" min="5" max="30" step="1" value="12" oninput="updateVal('val-mz-c', this.value); buildMaze();">
                             </div>
                             <div class="ctrl-item">
@@ -1988,7 +1994,7 @@
                                 <input type="range" id="maze-height" min="2" max="30" step="1" value="10" oninput="updateVal('val-mz-h', this.value); buildMaze();">
                             </div>
                             <div class="ctrl-item">
-                                <button class="btn-action btn-primary" onclick="buildMaze()" style="margin-top: 10px;">?? Randomize</button>
+                                <button class="btn-action btn-primary" onclick="buildMaze()" style="margin-top: 10px;">🎲 Randomize</button>
                             </div>
                         </div>
                     </div>
@@ -1996,7 +2002,7 @@
                     <!-- Compartment 17: Keychain Maker -->
                     <div id="comp-keychain" class="compartment-ui hidden">
                         <div class="control-group">
-                            <div class="group-title"><span data-lang-en>Keychain Tag</span><span data-lang-fr>�tiquette</span></div>
+                            <div class="group-title"><span data-lang-en>Keychain Tag</span><span data-lang-fr>Étiquette</span></div>
                             <div class="ctrl-item">
                                 <div class="ctrl-label"><span><span data-lang-en>Base Shape</span><span data-lang-fr>Forme de Base</span></span></div>
                                 <select id="kc-shape" style="width: 100%; padding: 8px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; outline: none; margin-bottom: 5px;" onchange="buildKeychain()">
@@ -2019,7 +2025,7 @@
                                 <input type="text" id="kc-input" value="Maker 7" onkeyup="buildKeychain()">
                             </div>
                             <div class="ctrl-item">
-                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>�paisseur</span></span> <span class="ctrl-val" id="val-kc-t">3.0</span></div>
+                                <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span> <span class="ctrl-val" id="val-kc-t">3.0</span></div>
                                 <input type="range" id="kc-thick" min="1" max="10" step="0.5" value="3.0" oninput="updateVal('val-kc-t', this.value); buildKeychain();">
                             </div>
                             <div class="ctrl-item">
@@ -2046,10 +2052,10 @@
                 <!-- Tab: Export -->
                 <div id="tab-export" class="tab-panel">
                     <div class="control-group">
-                        <div class="group-title"><span data-lang-en>Format & Geometry</span><span data-lang-fr>Format & G�om�trie</span></div>
+                        <div class="group-title"><span data-lang-en>Format & Geometry</span><span data-lang-fr>Format & Géométrie</span></div>
                         <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px;">
                             <span data-lang-en>Export your generated asset for 3D Printing (STL), Web Rendering (GLB), or Laser/CNC paths (DXF/SVG where applicable).</span>
-                            <span data-lang-fr>Exportez votre actif g�n�r� pour impression 3D (STL), rendu Web (GLB), ou trac�s Laser/CNC (DXF/SVG o� applicable).</span>
+                            <span data-lang-fr>Exportez votre actif généré pour impression 3D (STL), rendu Web (GLB), ou tracés Laser/CNC (DXF/SVG où applicable).</span>
                         </p>
                         <button class="btn-action btn-primary" onclick="exportSTL()" style="margin-bottom: 8px;">EXPORT STL Mesh</button>
                         <button class="btn-action btn-primary" onclick="exportGLB()" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 8px;">EXPORT GLB Model</button>
@@ -2544,11 +2550,11 @@
                 let oldText = btn.innerHTML;
                 
                 if(!loadedImageCanvas) {
-                    alert("Nu ai nicio poza �ncarcata! Apasa pe butonul '+' (Upload File) din bara de unelte, alege o textura de pe calculator (ex: lemn, roca, p�nza), apoi apasa pe 'Generate Maps'.");
+                    alert("Nu ai nicio poză încărcată! Apasă pe butonul '+' (Upload File) din bara de unelte, alege o textură de pe calculator (ex: lemn, rocă, pânză), apoi apasă pe 'Generate Maps'.");
                     return;
                 }
 
-                btn.innerHTML = '?? <span data-lang-en>Processing Texture...</span><span data-lang-fr>Traitement Texture...</span>';
+                btn.innerHTML = '⚙️ <span data-lang-en>Processing Texture...</span><span data-lang-fr>Traitement Texture...</span>';
                 
                 setTimeout(() => {
                     const roughInput = document.getElementById('tex-roughness');
@@ -2770,7 +2776,7 @@
             const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.8 });
             
             if(!globalFont) {
-                // Daca fontul extern �nca se descarca de pe net, vom pune un patrat albastru sa zica "loading"
+                // Dacă fontul extern încă se descarcă de pe net, vom pune un pătrat albastru să zică "loading"
                 const geoMock = new THREE.BoxGeometry(20,20,20);
                 const mesh = new THREE.Mesh(geoMock, mat);
                 currentObject.add(mesh);
@@ -3616,7 +3622,5 @@
         });
 
     </script>
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>

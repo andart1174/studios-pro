@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>app-123</title>
     
+
+  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>`;
       }
@@ -599,8 +601,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -1355,6 +1357,10 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
   <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
   <div class="panel"><h3>\${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
   <script>
@@ -1423,7 +1429,5 @@
   </script>
 
     <div id="root"></div>
-  
-  <script src="/community/share-bridge.js?v=14"></script>
-</body>
+  </body>
 </html>

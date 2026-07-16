@@ -793,8 +793,8 @@
             let btnText = 'Save HTML';
             if (baseText.length <= 5) {
               btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('t�l�charger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'T�l�charger HTML';
+            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
+              btnText = 'Télécharger HTML';
             } else if (baseText.toLowerCase().includes('export')) {
               btnText = 'Export HTML';
             } else if (baseText.toLowerCase().includes('sauvegarder')) {
@@ -879,7 +879,9 @@
     });
   <\/script>
   `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
+                      cleanHtml = cleanHtml.replace('
+  <script src="/community/share-bridge.js?v=14"></script>
+</body>', playbackScript + '</body>');
                       const blob = new Blob([cleanHtml], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
@@ -1525,9 +1527,13 @@
   
   
   
+<!-- Back Button and Payment logic -->
+  
+  
+  
     <div id="local-payment-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;justify-content:center;align-items:center;backdrop-filter:blur(8px);">
         <div style="background:#0f172a;padding:40px;border-radius:20px;text-align:center;max-width:400px;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
-            <div style="font-size:40px;margin-bottom:15px;">??</div>
+            <div style="font-size:40px;margin-bottom:15px;">🔒</div>
             <h2 style="font-size:24px;margin-bottom:15px;color:var(--accent);">Premium Mode Required</h2>
             <p style="color:#94a3b8;margin-bottom:25px;font-size:15px;line-height:1.5;">This export feature requires an active Premium plan. Please upgrade to continue.</p>
             <div style="display:flex;gap:15px;justify-content:center;">
@@ -1544,70 +1550,70 @@
         </div>
         <nav class="studio-nav">
             <button class="nav-item active" onclick="setStudio('builder')" id="nav-builder">
-                <span data-lang-en>?? Game Builder</span><span data-lang-fr>?? �diteur de Jeu</span>
+                <span data-lang-en>🎮 Game Builder</span><span data-lang-fr>🎮 Éditeur de Jeu</span>
             </button>
             <button class="nav-item" onclick="setStudio('ui_asset')" id="nav-ui_asset">
-                <span data-lang-en>?? UI Asset</span><span data-lang-fr>?? Asset UI</span>
+                <span data-lang-en>💎 UI Asset</span><span data-lang-fr>💎 Asset UI</span>
             </button>
             <button class="nav-item" onclick="setStudio('parallax')" id="nav-parallax">
-                <span data-lang-en>??? Parallax 2.5D</span><span data-lang-fr>??? Bande Dessin�e</span>
+                <span data-lang-en>🖼️ Parallax 2.5D</span><span data-lang-fr>🖼️ Bande Dessinée</span>
             </button>
             <button class="nav-item" onclick="setStudio('typography')" id="nav-typography">
-                <span data-lang-en>?? Typography</span><span data-lang-fr>?? Texte 3D</span>
+                <span data-lang-en>🔠 Typography</span><span data-lang-fr>🔠 Texte 3D</span>
             </button>
             <button class="nav-item" onclick="setStudio('organic')" id="nav-organic">
-                <span data-lang-en>?? Organic Art</span><span data-lang-fr>?? Art Organique</span>
+                <span data-lang-en>🧬 Organic Art</span><span data-lang-fr>🧬 Art Organique</span>
             </button>
             <button class="nav-item" onclick="setStudio('wave')" id="nav-wave">
-                <span data-lang-en>?? Wave Ocean</span><span data-lang-fr>?? Oc�an</span>
+                <span data-lang-en>🌊 Wave Ocean</span><span data-lang-fr>🌊 Océan</span>
             </button>
             <button class="nav-item" onclick="setStudio('mosaic')" id="nav-mosaic">
-                <span data-lang-en>?? Mosaic 3D</span><span data-lang-fr>?? Mosa�que</span>
+                <span data-lang-en>🧡 Mosaic 3D</span><span data-lang-fr>🧡 Mosaïque</span>
             </button>
             <button class="nav-item" onclick="setStudio('galaxy')" id="nav-galaxy">
-                <span data-lang-en>?? Galaxy</span><span data-lang-fr>?? Galaxie</span>
+                <span data-lang-en>🌌 Galaxy</span><span data-lang-fr>🌌 Galaxie</span>
             </button>
             <button class="nav-item" onclick="setStudio('qrcode')" id="nav-qrcode">
-                <span data-lang-en>?? QR Code 3D</span><span data-lang-fr>?? Code QR 3D</span>
+                <span data-lang-en>🎯 QR Code 3D</span><span data-lang-fr>🎯 Code QR 3D</span>
             </button>
             <button class="nav-item" onclick="setStudio('diamond')" id="nav-diamond">
-                <span data-lang-en>?? Diamond Cut</span><span data-lang-fr>?? Diamant</span>
+                <span data-lang-en>💎 Diamond Cut</span><span data-lang-fr>💎 Diamant</span>
             </button>
             <button class="nav-item" onclick="setStudio('chain')" id="nav-chain">
-                <span data-lang-en>?? Chain Link</span><span data-lang-fr>?? Cha�ne</span>
+                <span data-lang-en>🔗 Chain Link</span><span data-lang-fr>🔗 Chaîne</span>
             </button>
             <button class="nav-item" onclick="setStudio('gear')" id="nav-gear">
-                <span data-lang-en>?? Gear Lab</span><span data-lang-fr>?? Engrenage PRO</span>
+                <span data-lang-en>⚙️ Gear Lab</span><span data-lang-fr>⚙️ Engrenage PRO</span>
             </button>
             <button class="nav-item" onclick="setStudio('bracket')" id="nav-bracket">
-                <span data-lang-en>?? Bracket</span><span data-lang-fr>?? Support</span>
+                <span data-lang-en>🔩 Bracket</span><span data-lang-fr>🔩 Support</span>
             </button>
             <button class="nav-item" onclick="setStudio('terrain')" id="nav-terrain">
-                <span data-lang-en>?? Terrain</span><span data-lang-fr>?? Relief</span>
+                <span data-lang-en>🗻 Terrain</span><span data-lang-fr>🗻 Relief</span>
             </button>
             <button class="nav-item" onclick="setStudio('fractal')" id="nav-fractal">
-                <span data-lang-en>?? Fractal</span><span data-lang-fr>?? Fractal</span>
+                <span data-lang-en>❄️ Fractal</span><span data-lang-fr>❄️ Fractal</span>
             </button>
             <button class="nav-item" onclick="setStudio('neon')" id="nav-neon">
-                <span data-lang-en>??? Neon FX</span><span data-lang-fr>??? Neon FX</span>
+                <span data-lang-en>🌩️ Neon FX</span><span data-lang-fr>🌩️ Neon FX</span>
             </button>
             <button class="nav-item" onclick="setStudio('spring')" id="nav-spring">
-                <span data-lang-en>?? Spring/Coil</span><span data-lang-fr>?? Ressort</span>
+                <span data-lang-en>🌀 Spring/Coil</span><span data-lang-fr>🌀 Ressort</span>
             </button>
             <button class="nav-item" onclick="setStudio('lattice')" id="nav-lattice">
-                <span data-lang-en>?? Lattice</span><span data-lang-fr>?? Treillis</span>
+                <span data-lang-en>🔷 Lattice</span><span data-lang-fr>🔷 Treillis</span>
             </button>
             <button class="nav-item" onclick="setStudio('mandala')" id="nav-mandala">
-                <span data-lang-en>?? Mandala</span><span data-lang-fr>?? Mandala</span>
+                <span data-lang-en>🌸 Mandala</span><span data-lang-fr>🌸 Mandala</span>
             </button>
             <button class="nav-item" onclick="setStudio('polyhedra')" id="nav-polyhedra">
-                <span data-lang-en>?? Polyhedra</span><span data-lang-fr>?? Poly�dres</span>
+                <span data-lang-en>🎲 Polyhedra</span><span data-lang-fr>🎲 Polyèdres</span>
             </button>
             <button class="nav-item" onclick="setStudio('vase')" id="nav-vase">
-                <span data-lang-en>?? Potter Studio</span><span data-lang-fr>?? Potterie</span>
+                <span data-lang-en>🏺 Potter Studio</span><span data-lang-fr>🏺 Potterie</span>
             </button>
             <button class="nav-item" onclick="setStudio('sprocket')" id="nav-sprocket">
-                <span data-lang-en>??? Sprocket</span><span data-lang-fr>??? Pignon</span>
+                <span data-lang-en>🗂️ Sprocket</span><span data-lang-fr>🗂️ Pignon</span>
             </button>
         </nav>
         </nav>
@@ -1622,7 +1628,7 @@
             <!-- Universal Project Settings -->
             <div class="control-group">
                 <div class="upload-section" onclick="document.getElementById('file-in').click()">
-                    ? <br>
+                    ✨ <br>
                     <span data-lang-en>Upload Image/Logo</span><span data-lang-fr>Importer Image/Logo</span>
                     <input type="file" id="file-in" class="hidden" accept="image/*" onchange="handleImage(event)">
                 </div>
@@ -1630,7 +1636,7 @@
 
             <!-- COMPARTMENT 1: GAME BUILDER -->
             <div id="ctrl-builder" class="control-group studio-ctrl">
-                <div class="group-title"><span data-lang-en>Voxel Grid Generator</span><span data-lang-fr>G�n�rateur
+                <div class="group-title"><span data-lang-en>Voxel Grid Generator</span><span data-lang-fr>Générateur
                         Voxel</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Height Level</span><span
@@ -1639,13 +1645,13 @@
                 </div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Grid Width (Random)</span><span
-                                data-lang-fr>Largeur (Al�atoire)</span></span><span class="ctrl-val"
+                                data-lang-fr>Largeur (Aléatoire)</span></span><span class="ctrl-val"
                             id="val-b-w">10</span></div>
                     <input type="range" id="b-w" min="5" max="50" step="1" value="10" oninput="generateVoxelTerrain()">
                 </div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Grid Length (Random)</span><span
-                                data-lang-fr>Longueur (Al�atoire)</span></span><span class="ctrl-val"
+                                data-lang-fr>Longueur (Aléatoire)</span></span><span class="ctrl-val"
                             id="val-b-l">10</span></div>
                     <input type="range" id="b-l" min="5" max="50" step="1" value="10" oninput="generateVoxelTerrain()">
                 </div>
@@ -1657,13 +1663,13 @@
                 </div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Resolution (Image)</span><span
-                                data-lang-fr>R�solution (Image)</span></span><span class="ctrl-val"
+                                data-lang-fr>Résolution (Image)</span></span><span class="ctrl-val"
                             id="val-b-res">60</span></div>
                     <input type="range" id="b-res" min="10" max="150" step="5" value="60"
                         oninput="generateVoxelTerrain()">
                 </div>
                 <button class="btn-primary" onclick="generateVoxelTerrain()"><span data-lang-en>Generate
-                        Terrain</span><span data-lang-fr>G�n�rer Terrain</span></button>
+                        Terrain</span><span data-lang-fr>Générer Terrain</span></button>
             </div>
 
             <!-- COMPARTMENT 2: UI ASSET -->
@@ -1702,7 +1708,7 @@
 
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Material</span><span
-                                data-lang-fr>Mat�riau</span></span></div>
+                                data-lang-fr>Matériau</span></span></div>
                     <select id="ui-mat" class="select-dark" onchange="updateAsset()">
                         <option value="glass">Glassmorphism</option>
                         <option value="clay">Claymorphism</option>
@@ -1731,12 +1737,12 @@
                 </div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Logo Quality (Mesh)</span><span
-                                data-lang-fr>Qualit� Logo</span></span><span class="ctrl-val"
+                                data-lang-fr>Qualité Logo</span></span><span class="ctrl-val"
                             id="val-ui-logo-q">120</span></div>
                     <input type="range" id="ui-logo-q" min="10" max="300" step="10" value="120" oninput="updateAsset()">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>�paisseur
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>Épaisseur
                                 Logo</span></span><span class="ctrl-val" id="val-ui-logo-th">0.5</span></div>
                     <input type="range" id="ui-logo-th" min="0.1" max="5.0" step="0.1" value="0.5"
                         oninput="updateAsset()">
@@ -1749,7 +1755,7 @@
 
             <!-- COMPARTMENT 6: PARALLAX -->
             <div id="ctrl-parallax" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>2.5D Comic Layout</span><span data-lang-fr>Bande Dessin�e
+                <div class="group-title"><span data-lang-en>2.5D Comic Layout</span><span data-lang-fr>Bande Dessinée
                         2.5D</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Depth Separation</span><span
@@ -1777,13 +1783,13 @@
                         title="Logo Size" placeholder="24">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Logo Quality</span><span data-lang-fr>Qualit�
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Quality</span><span data-lang-fr>Qualité
                                 Logo</span></span><span class="ctrl-val" id="val-plx-logo-q">120</span></div>
                     <input type="range" id="plx-logo-q" min="10" max="300" step="10" value="120"
                         oninput="updateParallax()" title="Logo Quality" placeholder="120">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>�paisseur
+                    <div class="ctrl-label"><span><span data-lang-en>Logo Thickness</span><span data-lang-fr>Épaisseur
                                 Logo</span></span><span class="ctrl-val" id="val-plx-logo-th">1.0</span></div>
                     <input type="range" id="plx-logo-th" min="0.1" max="5.0" step="0.1" value="1.0"
                         oninput="updateParallax()" title="Logo Thickness" placeholder="1">
@@ -1792,7 +1798,7 @@
 
             <!-- COMPARTMENT 7: TYPOGRAPHY -->
             <div id="ctrl-typography" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>3D Text Generator</span><span data-lang-fr>G�n�rateur Texte 3D</span></div>
+                <div class="group-title"><span data-lang-en>3D Text Generator</span><span data-lang-fr>Générateur Texte 3D</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Text Content</span><span data-lang-fr>Texte</span></span></div>
                     <input type="text" id="typo-text" value="3D STUDIO" class="select-dark" oninput="updateTypography()" style="width:100%; border:1px solid rgba(255,255,255,0.1); padding:8px;">
@@ -1811,7 +1817,7 @@
                     <input type="range" id="typo-sz" min="2" max="30" step="0.5" value="10" oninput="updateTypography()">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>�paisseur</span></span><span class="ctrl-val" id="val-typo-th">2</span></div>
+                    <div class="ctrl-label"><span><span data-lang-en>Thickness</span><span data-lang-fr>Épaisseur</span></span><span class="ctrl-val" id="val-typo-th">2</span></div>
                     <input type="range" id="typo-th" min="0.1" max="10" step="0.1" value="2" oninput="updateTypography()">
                 </div>
                 <div class="ctrl-item">
@@ -1826,35 +1832,35 @@
 
             <!-- COMPARTMENT 10: ORGANIC ART -->
             <div id="ctrl-organic" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>Organic Form Generator</span><span data-lang-fr>Art Param�trique</span></div>
+                <div class="group-title"><span data-lang-en>Organic Form Generator</span><span data-lang-fr>Art Paramétrique</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Base Shape</span><span data-lang-fr>Forme Base</span></span></div>
                     <select id="org-shape" class="select-dark" onchange="updateOrganic()">
-                        <option value="sphere">?? Sphere (Blob)</option>
-                        <option value="torus">?? Torus (Ring)</option>
-                        <option value="tube">?? Capsule (Pill)</option>
-                        <option value="torusKnot">??? Torus Knot</option>
-                        <option value="icosahedron">?? Icosahedron (Crystal)</option>
-                        <option value="octahedron">?? Octahedron (Diamond)</option>
-                        <option value="dodecahedron">?? Dodecahedron (Gem)</option>
-                        <option value="cone">?? Cone (Spike)</option>
-                        <option value="cylinder">?? Cylinder</option>
-                        <option value="tetrahedron">?? Tetrahedron (Pyramid)</option>
-                        <option value="lathe">?? Vase (Lathe)</option>
-                        <option value="spring">?? Spring (Helix)</option>
-                        <option value="star">? Star Burst</option>
+                        <option value="sphere">🌐 Sphere (Blob)</option>
+                        <option value="torus">👍 Torus (Ring)</option>
+                        <option value="tube">💊 Capsule (Pill)</option>
+                        <option value="torusKnot">🛤️ Torus Knot</option>
+                        <option value="icosahedron">🔷 Icosahedron (Crystal)</option>
+                        <option value="octahedron">🔸 Octahedron (Diamond)</option>
+                        <option value="dodecahedron">🔶 Dodecahedron (Gem)</option>
+                        <option value="cone">🔺 Cone (Spike)</option>
+                        <option value="cylinder">👠 Cylinder</option>
+                        <option value="tetrahedron">🔻 Tetrahedron (Pyramid)</option>
+                        <option value="lathe">🎺 Vase (Lathe)</option>
+                        <option value="spring">🌀 Spring (Helix)</option>
+                        <option value="star">⭐ Star Burst</option>
                     </select>
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Noise Scale (Folds)</span><span data-lang-fr>�chelle Bruit</span></span><span class="ctrl-val" id="val-org-s">3.0</span></div>
+                    <div class="ctrl-label"><span><span data-lang-en>Noise Scale (Folds)</span><span data-lang-fr>Échelle Bruit</span></span><span class="ctrl-val" id="val-org-s">3.0</span></div>
                     <input type="range" id="org-s" min="0.1" max="10" step="0.1" value="3.0" oninput="updateOrganic()">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Displacement (Spikes)</span><span data-lang-fr>D�formation</span></span><span class="ctrl-val" id="val-org-d">2.0</span></div>
+                    <div class="ctrl-label"><span><span data-lang-en>Displacement (Spikes)</span><span data-lang-fr>Déformation</span></span><span class="ctrl-val" id="val-org-d">2.0</span></div>
                     <input type="range" id="org-d" min="0" max="10" step="0.1" value="2.0" oninput="updateOrganic()">
                 </div>
                 <div class="ctrl-item">
-                    <div class="ctrl-label"><span><span data-lang-en>Complexity (Polygons)</span><span data-lang-fr>Complexit�</span></span><span class="ctrl-val" id="val-org-res">64</span></div>
+                    <div class="ctrl-label"><span><span data-lang-en>Complexity (Polygons)</span><span data-lang-fr>Complexité</span></span><span class="ctrl-val" id="val-org-res">64</span></div>
                     <input type="range" id="org-res" min="16" max="256" step="16" value="64" oninput="updateOrganic()">
                 </div>
                 <div class="ctrl-item">
@@ -1868,7 +1874,7 @@
 
             <!-- COMPARTMENT 11: WAVE OCEAN -->
             <div id="ctrl-wave" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>?? Wave / Ocean Simulator</span><span data-lang-fr>Simulateur Oc�an</span></div>
+                <div class="group-title"><span data-lang-en>🌊 Wave / Ocean Simulator</span><span data-lang-fr>Simulateur Océan</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span>Amplitude</span><span class="ctrl-val" id="val-wave-a">3</span></div>
                     <input type="range" id="wave-a" min="0.5" max="10" step="0.5" value="3" oninput="updateWave()">
@@ -1896,7 +1902,7 @@
 
             <!-- COMPARTMENT 12: MOSAIC -->
             <div id="ctrl-mosaic" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>?? Mosaic / Brick Generator</span><span data-lang-fr>G�n�rateur Mosa�que</span></div>
+                <div class="group-title"><span data-lang-en>🧡 Mosaic / Brick Generator</span><span data-lang-fr>Générateur Mosaïque</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span>Upload Image</span></div>
                     <button class="btn-primary" onclick="document.getElementById('file-in').click()">Import Image</button>
@@ -1924,7 +1930,7 @@
 
             <!-- COMPARTMENT 13: GALAXY -->
             <div id="ctrl-galaxy" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>?? Galaxy Cloud</span><span data-lang-fr>Nuage Galactique</span></div>
+                <div class="group-title"><span data-lang-en>🌌 Galaxy Cloud</span><span data-lang-fr>Nuage Galactique</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span>Stars Count</span><span class="ctrl-val" id="val-gal-n">5000</span></div>
                     <input type="range" id="gal-n" min="500" max="30000" step="500" value="5000" oninput="updateGalaxy()">
@@ -1949,7 +1955,7 @@
 
             <!-- COMPARTMENT 14: QR CODE 3D -->
             <div id="ctrl-qrcode" class="control-group studio-ctrl hidden">
-                <div class="group-title"><span data-lang-en>?? QR Code 3D Generator</span><span data-lang-fr>G�n�rateur QR 3D</span></div>
+                <div class="group-title"><span data-lang-en>🎯 QR Code 3D Generator</span><span data-lang-fr>Générateur QR 3D</span></div>
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span>Text / URL</span></div>
                     <input type="text" id="qr-text" value="https://studio6d.app" class="select-dark" style="width:100%;padding:8px;" oninput="scheduleQRUpdate()">
@@ -1969,7 +1975,7 @@
 
             <!-- COMPARTMENT 14: DIAMOND CUT -->
             <div id="ctrl-diamond" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Diamond Cut</div>
+                <div class="group-title">💎 Diamond Cut</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Facets</span><span class="ctrl-val" id="val-dia-f">8</span></div>
                     <input type="range" id="dia-f" min="4" max="32" step="1" value="8" oninput="updateDiamond()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Radius</span><span class="ctrl-val" id="val-dia-r">10</span></div>
@@ -1982,7 +1988,7 @@
 
             <!-- COMPARTMENT 15: CHAIN LINK -->
             <div id="ctrl-chain" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Chain Link</div>
+                <div class="group-title">🔗 Chain Link</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Link Count</span><span class="ctrl-val" id="val-chn-n">5</span></div>
                     <input type="range" id="chn-n" min="2" max="15" step="1" value="5" oninput="updateChain()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Link Radius</span><span class="ctrl-val" id="val-chn-r">4</span></div>
@@ -1995,7 +2001,7 @@
 
             <!-- COMPARTMENT 16: GEAR BUILDER -->
             <div id="ctrl-gear" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Gear Builder</div>
+                <div class="group-title">⚙️ Gear Builder</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Teeth Count</span><span class="ctrl-val" id="val-gear-t">20</span></div>
                     <input type="range" id="gear-t" min="5" max="80" step="1" value="20" oninput="updateGear()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Outer Radius</span><span class="ctrl-val" id="val-gear-r">10</span></div>
@@ -2010,7 +2016,7 @@
 
             <!-- COMPARTMENT 17: BRACKET -->
             <div id="ctrl-bracket" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Parametric Bracket</div>
+                <div class="group-title">🔩 Parametric Bracket</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Width</span><span class="ctrl-val" id="val-brk-w">10</span></div>
                     <input type="range" id="brk-w" min="4" max="40" step="1" value="10" oninput="updateBracket()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Height</span><span class="ctrl-val" id="val-brk-h">10</span></div>
@@ -2033,7 +2039,7 @@
 
             <!-- COMPARTMENT 16: GEAR LAB -->
             <div id="ctrl-gear" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Mechanical Gear Lab</div>
+                <div class="group-title">⚙️ Mechanical Gear Lab</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Teeth</span><span class="ctrl-val" id="val-gear-t">20</span></div>
                     <input type="range" id="gear-t" min="8" max="100" step="1" value="20" oninput="updateGear()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Module</span><span class="ctrl-val" id="val-gear-m">1.5</span></div>
@@ -2048,7 +2054,7 @@
 
             <!-- COMPARTMENT 18: TERRAIN -->
             <div id="ctrl-terrain" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Landscape Builder</div>
+                <div class="group-title">🗻 Landscape Builder</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Scale</span><span class="ctrl-val" id="val-ter-s">60</span></div>
                     <input type="range" id="ter-s" min="20" max="150" step="5" value="60" oninput="updateTerrain()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Amplitude</span><span class="ctrl-val" id="val-ter-a">10</span></div>
@@ -2061,7 +2067,7 @@
 
             <!-- COMPARTMENT 19: FRACTAL -->
             <div id="ctrl-fractal" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Fractal Studio</div>
+                <div class="group-title">❄️ Fractal Studio</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Iterations</span><span class="ctrl-val" id="val-fra-i">3</span></div>
                     <input type="range" id="fra-i" min="1" max="6" step="1" value="3" oninput="updateFractal()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Sub-Scale</span><span class="ctrl-val" id="val-fra-s">0.5</span></div>
@@ -2072,7 +2078,7 @@
 
             <!-- COMPARTMENT 20: NEON FX -->
             <div id="ctrl-neon" class="control-group studio-ctrl hidden">
-                <div class="group-title">??? Neon FX Studio</div>
+                <div class="group-title">🌩️ Neon FX Studio</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Text/Message</span></div>
                     <input type="text" id="neo-txt" class="select-dark" value="STUDIO" oninput="updateNeon()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Glow Intensity</span><span class="ctrl-val" id="val-neo-g">2.0</span></div>
@@ -2086,7 +2092,7 @@
 
             <!-- COMPARTMENT 24: SPRING/COIL -->
             <div id="ctrl-spring" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Spring / Coil</div>
+                <div class="group-title">🌀 Spring / Coil</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Turns</span><span class="ctrl-val" id="val-spr-t">8</span></div>
                     <input type="range" id="spr-t" min="2" max="30" step="1" value="8" oninput="updateSpring()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Coil Radius</span><span class="ctrl-val" id="val-spr-r">5</span></div>
@@ -2103,7 +2109,7 @@
 
             <!-- COMPARTMENT 26: LATTICE -->
             <div id="ctrl-lattice" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Lattice / Infill</div>
+                <div class="group-title">🔷 Lattice / Infill</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Pattern</span></div>
                     <select id="lat-pat" class="select-dark" onchange="updateLattice()">
                         <option value="grid">Grid</option>
@@ -2125,7 +2131,7 @@
 
             <!-- COMPARTMENT 28: MANDALA -->
             <div id="ctrl-mandala" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Professional Mandala Studio</div>
+                <div class="group-title">🌸 Professional Mandala Studio</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Symmetry Arms</span><span class="ctrl-val" id="val-man-a">8</span></div>
                     <input type="range" id="man-a" min="3" max="32" step="1" value="8" oninput="updateMandala()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Rings</span><span class="ctrl-val" id="val-man-r">4</span></div>
@@ -2144,15 +2150,15 @@
                     <input type="range" id="man-z" min="-20" max="20" step="1" value="0" oninput="updateMandala()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Shape Pattern</span></div>
                     <select id="man-pat" class="select-dark" onchange="updateMandala()">
-                        <option value="petal">?? Classic Petal</option>
-                        <option value="star">? Star Points</option>
-                        <option value="circle">? Rings</option>
-                        <option value="leaf">?? Leaf Pattern</option>
-                        <option value="crystal">?? Crystal Prism</option>
-                        <option value="heart">?? Heart</option>
-                        <option value="spike">?? Sharp Spike</option>
-                        <option value="diamond">?? Diamond</option>
-                        <option value="geo">? Geometric Box</option>
+                        <option value="petal">🌸 Classic Petal</option>
+                        <option value="star">⭐ Star Points</option>
+                        <option value="circle">⭕ Rings</option>
+                        <option value="leaf">🍃 Leaf Pattern</option>
+                        <option value="crystal">💎 Crystal Prism</option>
+                        <option value="heart">💖 Heart</option>
+                        <option value="spike">📍 Sharp Spike</option>
+                        <option value="diamond">💠 Diamond</option>
+                        <option value="geo">⬛ Geometric Box</option>
                     </select></div>
                 <div class="ctrl-item" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
                     <button class="btn-primary" onclick="addMandalaLayer()"><span data-lang-en>Add Layer</span><span data-lang-fr>Ajouter Couche</span></button>
@@ -2162,7 +2168,7 @@
 
             <!-- COMPARTMENT 29: POLYHEDRA -->
             <div id="ctrl-polyhedra" class="control-group studio-ctrl hidden">
-                <div class="group-title">?? Polyhedra Explorer</div>
+                <div class="group-title">🎲 Polyhedra Explorer</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Shape</span></div>
                     <select id="pol-shape" class="select-dark" onchange="updatePolyhedra()">
                         <option value="tetra">Tetrahedron (4)</option>
@@ -2200,7 +2206,7 @@
 
             <!-- COMPARTMENT 31: VASE MODE -->
             <div id="ctrl-vase" class="control-group studio-ctrl hidden">
-                <div class="group-title">??? Vase Mode / Spiral</div>
+                <div class="group-title">🌡️ Vase Mode / Spiral</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Profile</span></div>
                     <select id="vas-pro" class="select-dark" onchange="updateVase()">
                         <option value="sine">Sinusoidal</option>
@@ -2221,7 +2227,7 @@
 
             <!-- COMPARTMENT 32: SPROCKET -->
             <div id="ctrl-sprocket" class="control-group studio-ctrl hidden">
-                <div class="group-title">??? Sprocket / Chain Wheel</div>
+                <div class="group-title">🗂️ Sprocket / Chain Wheel</div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Teeth</span><span class="ctrl-val" id="val-spk-t">16</span></div>
                     <input type="range" id="spk-t" min="6" max="60" step="1" value="16" oninput="updateSprocket()"></div>
                 <div class="ctrl-item"><div class="ctrl-label"><span>Pitch (mm)</span><span class="ctrl-val" id="val-spk-p">8</span></div>
@@ -2235,7 +2241,7 @@
             <div class="control-group" style="margin-top:auto;">
                 <div class="ctrl-item">
                     <div class="ctrl-label"><span><span data-lang-en>Model Color</span><span data-lang-fr>Couleur
-                                Mod�le</span></span></div>
+                                Modèle</span></span></div>
                     <input type="color" id="global-c" class="color-picker" value="#ffffff"
                         oninput="updateGlobalColor()">
                 </div>
@@ -2401,7 +2407,7 @@
                 objectGroup.add(instancedMesh);
 
             } else {
-                // Generare random daca nu exista imagine
+                // Generare random dacă nu există imagine
                 const w = getVal('b-w');
                 const l = getVal('b-l');
                 const geo = new THREE.BoxGeometry(vSize * 4, vSize * 4, vSize * 4);
@@ -2431,7 +2437,7 @@
         function updateAsset() {
             objectGroup.clear();
 
-            // Asiguram ca getVal nu da crash daca nu exista parametrii imediat
+            // Asigurăm că getVal nu dă crash dacă nu există parametrii imediat
             const ex = getVal('ui-ex');
             const bev = getVal('ui-bev') || 0;
             const pwr = getVal('ui-pwr') || 1;
@@ -2527,7 +2533,7 @@
             backplate.castShadow = true; backplate.receiveShadow = true;
             objectGroup.add(backplate);
 
-            // Daca este �ncarcata o imagine (Logo), o plasam deasupra
+            // Dacă este încărcată o imagine (Logo), o plasăm deasupra
             const logoSz = getVal('ui-logo-sz') || 20;
             const logoQ = getVal('ui-logo-q') || 120;
             const logoTh = getVal('ui-logo-th') || 0.5;
@@ -3006,7 +3012,7 @@
             objectGroup.add(floor);
         }
 
-        // ===== COMPARTMENTS 24�32 =====
+        // ===== COMPARTMENTS 24–32 =====
 
         // 24: Spring / Coil
         function updateSpring() {
@@ -3312,7 +3318,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ===== COMPARTMENTS 16�23 =====
+        // ===== COMPARTMENTS 16–23 =====
 
         // 16: Gear Builder
         // 16: Mechanical Gear Lab (Professional Involute)
@@ -3734,8 +3740,6 @@
         animate();
     </script>
     
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 
 </html>
