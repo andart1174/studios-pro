@@ -18175,7 +18175,7 @@ const SketchExtruder = (() => {
   }
   window._nn3UpdateModel = updateNeuralNetModel;
 
-  return { init, addExtraModule, getScene: () => scene, getGroup: () => globalGroup, addMeshToScene, getActiveModel: () => getActiveModel(), getModels: () => models, buildSteampunkChronoProGeo, buildClockUltraGeo, exportScene };
+  return { init, addExtraModule, getScene: () => scene, getCamera: () => camera, getRenderer: () => renderer, getGroup: () => globalGroup, addMeshToScene, getActiveModel: () => getActiveModel(), getModels: () => models, buildSteampunkChronoProGeo, buildClockUltraGeo, exportScene };
 })();
 
 window.SketchExtruder = SketchExtruder;

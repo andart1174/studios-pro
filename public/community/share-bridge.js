@@ -287,7 +287,21 @@
     _curToolState = typeof window.getAppState === 'function' ? window.getAppState() : null;
     _curToolTags = typeof window.getAppTags === 'function' ? window.getAppTags() : null;
 
-    // Case 1: Studio Pro 4D iframe
+    // Case 1: Studio Pro 4D — 3D Scene Composer (sketch-extruder renderer)
+    if (window.SketchExtruder && typeof window.SketchExtruder.getRenderer === 'function') {
+      const rend = window.SketchExtruder.getRenderer();
+      const sc   = window.SketchExtruder.getScene ? window.SketchExtruder.getScene() : null;
+      const cam  = window.SketchExtruder.getCamera ? window.SketchExtruder.getCamera() : null;
+      if (rend && sc && cam) {
+        // Render one more frame to make sure buffer is fresh
+        try { rend.render(sc, cam); } catch(e) {}
+        const dataUrl = captureViaGLReadPixels(rend, sc, cam);
+        setFab(true);
+        if (dataUrl) { showShareModal(dataUrl); return; }
+      }
+    }
+
+    // Case 2: Studio Pro 4D — code preview iframe
     const iframe = document.getElementById('preview-iframe');
     if (iframe && iframe.contentWindow && iframe.src && iframe.src !== 'about:blank') {
       captureViaIframe(iframe, function(dataUrl) {
@@ -298,7 +312,7 @@
       return;
     }
 
-    // Case 2: Three.js exposed renderer
+    // Case 3: Three.js exposed renderer (other tools)
     const rend = window.spRenderer || window.renderer || window.threeRenderer;
     const sc   = window.spScene   || window.scene    || window.threeScene;
     const cam  = window.spCamera  || window.camera   || window.threeCamera;
@@ -308,7 +322,7 @@
       if (dataUrl) { showShareModal(dataUrl); return; }
     }
 
-    // Case 3: Any canvas
+    // Case 4: Any canvas fallback
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const dataUrl = captureCanvas();
       setFab(true);
