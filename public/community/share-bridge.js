@@ -329,6 +329,16 @@
   function captureViaGLReadPixels(renderer, scene, camera) {
     try {
       renderer.render(scene, camera);
+      if (renderer.domElement && typeof renderer.domElement.toDataURL === 'function') {
+        const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.85);
+        if (dataUrl && dataUrl.length > 1000) return dataUrl;
+      }
+    } catch(e) {
+      console.warn("toDataURL capture failed, trying readPixels fallback:", e);
+    }
+
+    try {
+      renderer.render(scene, camera);
       const gl = renderer.getContext();
       const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
       if (!W || !H) return null;
@@ -355,7 +365,8 @@
   function captureCanvas() {
     const all = Array.from(document.querySelectorAll('canvas'));
     if (!all.length) return null;
-    const cv = all.reduce((a,b) => (a.width*a.height >= b.width*b.height ? a : b));
+    const filtered = all.filter(c => c.id !== 'sculpt-canvas' && c.id !== 'paint-canvas' && !c.classList.contains('utility-canvas'));
+    const cv = (filtered.length ? filtered : all).reduce((a,b) => (a.width*a.height >= b.width*b.height ? a : b));
     if (!cv.width || !cv.height) return null;
     try {
       const MAX = 1100, r = Math.min(MAX/cv.width, MAX/cv.height, 1);
