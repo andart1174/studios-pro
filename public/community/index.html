@@ -440,6 +440,94 @@
       line-height: 1.3;
     }
 
+    /* ── TRENDING NOW ───────────────────────────────────────── */
+    .tn-wrap{
+      background:rgba(11,17,32,.8);
+      border:1px solid rgba(99,102,241,.18);
+      border-radius:16px;
+      padding:12px 16px 14px;
+      margin-bottom:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .tn-wrap::before{
+      content:'';
+      position:absolute;top:0;left:0;bottom:0;width:48px;
+      background:linear-gradient(to right,rgba(11,17,32,1),transparent);
+      pointer-events:none;z-index:2;
+    }
+    .tn-wrap::after{
+      content:'';
+      position:absolute;top:0;right:0;bottom:0;width:48px;
+      background:linear-gradient(to left,rgba(11,17,32,1),transparent);
+      pointer-events:none;z-index:2;
+    }
+    .tn-hdr{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .tn-title{
+      font-family:'Outfit',sans-serif;font-weight:900;
+      font-size:.8rem;letter-spacing:.1em;
+      background:linear-gradient(90deg,#f59e0b,#ef4444,#ec4899);
+      -webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .tn-arrows{display:flex;gap:4px;}
+    .tn-arr{
+      width:26px;height:26px;border-radius:50%;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1);
+      color:var(--muted);font-size:1rem;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .18s;font-family:inherit;line-height:1;
+    }
+    .tn-arr:hover{background:rgba(99,102,241,.2);color:#a78bfa;border-color:rgba(99,102,241,.4);}
+    .tn-strip{
+      display:flex;gap:10px;
+      overflow-x:auto;scroll-behavior:smooth;
+      scrollbar-width:none;padding:2px 0 4px;
+    }
+    .tn-strip::-webkit-scrollbar{display:none;}
+    .tn-loading{color:var(--muted);font-size:.8rem;padding:8px 0;}
+    .tn-card{
+      flex:0 0 110px;
+      border-radius:12px;overflow:hidden;
+      position:relative;cursor:pointer;
+      transition:transform .2s,box-shadow .2s;
+      background:var(--bg3);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .tn-card:hover{
+      transform:translateY(-4px) scale(1.03);
+      box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 0 1px rgba(99,102,241,.4);
+    }
+    .tn-thumb{
+      width:110px;height:88px;object-fit:cover;display:block;
+    }
+    .tn-placeholder{
+      width:110px;height:88px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:2rem;
+      background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(139,92,246,.08));
+    }
+    .tn-meta{
+      padding:5px 7px 7px;
+    }
+    .tn-author{
+      font-size:.65rem;font-weight:700;
+      color:var(--accent3);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .tn-likes{font-size:.62rem;color:var(--muted);margin-top:1px;}
+    .tn-hot-badge{
+      position:absolute;top:5px;right:5px;
+      background:linear-gradient(135deg,#f59e0b,#ef4444);
+      color:#fff;font-size:.55rem;font-weight:900;
+      padding:2px 5px;border-radius:999px;
+      pointer-events:none;
+    }
+
     /* ── NEXUS CREATORS HUB ─────────────────────────────── */
     .nch-trigger{
       display:flex;align-items:center;gap:10px;
@@ -750,14 +838,17 @@
       </div>
       <div class="nch-panel" id="nchPanel"></div>
     </div>
-    <!-- Stories -->
-    <div>
-      <div class="story-hdr"><span data-t="stories">Stories</span><span data-t="seeAll">See all</span></div>
-      <div class="s-row" id="storiesRow">
-        <div class="story-bubble" id="addStoryBubble" style="display:none" onclick="openCreate()">
-          <div class="story-add-ring">+</div>
-          <span class="story-name" data-t="yourStory">Your Story</span>
+    <!-- TRENDING NOW -->
+    <div class="tn-wrap" id="trendingWrap">
+      <div class="tn-hdr">
+        <span class="tn-title" data-t="trendingNow">🔥 TRENDING NOW</span>
+        <div class="tn-arrows">
+          <button class="tn-arr" onclick="trendingScroll(-1)" title="Previous">‹</button>
+          <button class="tn-arr" onclick="trendingScroll(1)" title="Next">›</button>
         </div>
+      </div>
+      <div class="tn-strip" id="trendingStrip">
+        <div class="tn-loading">Loading…</div>
       </div>
     </div>
     <!-- Login prompt -->
@@ -1045,7 +1136,8 @@ const T = {
     nexusCreators:'NEXUS CREATORS', creatorsOnline:'active', showCreators:'Show Creators',
     hideCreators:'Hide', viewProfile:'View', crPostsLabel:'posts',
     creatorProfile:'Creator Profile', allPostsOf:'All posts by', noPostsYet:'No posts yet.',
-    closeProfile:'Close'
+    closeProfile:'Close',
+    trendingNow:'🔥 TRENDING NOW', trendingEmpty:'No trending posts yet — be the first!'
   },
   fr:{
     community:'SP Nexus', categories:'Catégories', allPosts:'Tous les posts', posts:'Posts', likes:'Likes',
@@ -1075,7 +1167,8 @@ const T = {
     nexusCreators:'NEXUS CRÉATEURS', creatorsOnline:'actifs', showCreators:'Voir les créateurs',
     hideCreators:'Masquer', viewProfile:'Voir', crPostsLabel:'posts',
     creatorProfile:'Profil Créateur', allPostsOf:'Tous les posts de', noPostsYet:'Aucun post encore.',
-    closeProfile:'Fermer'
+    closeProfile:'Fermer',
+    trendingNow:'🔥 TENDANCES', trendingEmpty:'Aucun post tendance — soyez le premier!'
   }
 };
 
@@ -2277,6 +2370,98 @@ function remixPost(sourcePage, postId, stateB64) {
 applyLang();
 // Run share receiver after a tick so auth can initialize
 setTimeout(loadIncomingShare, 200);
+
+// ─── TRENDING NOW ──────────────────────────────────────────
+async function loadTrendingNow() {
+  if (!db) return;
+  const strip = document.getElementById('trendingStrip');
+  if (!strip) return;
+  try {
+    // Fetch recent posts sorted by likes — client side top 15
+    const snap = await db.collection(COLL).orderBy('likesCount','desc').limit(20).get();
+    let posts = [];
+    snap.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+
+    // Fallback: if no likesCount field, fetch recent posts
+    if (!posts.length) {
+      const snap2 = await db.collection(COLL).orderBy('createdAt','desc').limit(15).get();
+      snap2.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+    }
+
+    strip.innerHTML = '';
+    if (!posts.length) {
+      strip.innerHTML = `<div class="tn-loading">${t('trendingEmpty')}</div>`;
+      return;
+    }
+
+    const maxLikes = Math.max(...posts.map(p => p.likesCount || 0), 1);
+
+    posts.forEach((p, idx) => {
+      const likes = p.likesCount || (Array.isArray(p.likes) ? p.likes.length : 0);
+      const isHot = likes >= 3 || (maxLikes > 0 && likes / maxLikes >= 0.5);
+      const author = (p.displayName || 'User').split(' ')[0];
+
+      const card = document.createElement('div');
+      card.className = 'tn-card';
+
+      let thumbHtml = '';
+      if (p.images && p.images.length) {
+        thumbHtml = `<img class="tn-thumb" src="${esc(p.images[0])}" alt="" loading="lazy">`;
+      } else if (p.modelData) {
+        thumbHtml = `<div class="tn-placeholder">🔮</div>`;
+      } else if (p.videoUrl) {
+        thumbHtml = `<div class="tn-placeholder">🎥</div>`;
+      } else {
+        thumbHtml = `<div class="tn-placeholder">💬</div>`;
+      }
+
+      card.innerHTML = `
+        ${thumbHtml}
+        ${isHot ? '<div class="tn-hot-badge">🔥 HOT</div>' : ''}
+        <div class="tn-meta">
+          <div class="tn-author">${esc(author)}</div>
+          <div class="tn-likes">❤️ ${likes}</div>
+        </div>
+      `;
+      card.onclick = () => openStory(p);
+      strip.appendChild(card);
+    });
+  } catch(e) {
+    // Fallback without index: fetch recent and sort client-side
+    try {
+      const snap = await db.collection(COLL).get();
+      let posts = [];
+      snap.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+      posts.sort((a,b) => {
+        const la = a.likesCount || (Array.isArray(a.likes)?a.likes.length:0);
+        const lb = b.likesCount || (Array.isArray(b.likes)?b.likes.length:0);
+        return lb - la;
+      });
+      posts = posts.slice(0, 15);
+      strip.innerHTML = '';
+      if (!posts.length) { strip.innerHTML = `<div class="tn-loading">${t('trendingEmpty')}</div>`; return; }
+      posts.forEach(p => {
+        const likes = p.likesCount || (Array.isArray(p.likes)?p.likes.length:0);
+        const author = (p.displayName||'User').split(' ')[0];
+        const card = document.createElement('div');
+        card.className = 'tn-card';
+        let thumbHtml = p.images&&p.images.length ? `<img class="tn-thumb" src="${esc(p.images[0])}" alt="" loading="lazy">` : p.modelData ? `<div class="tn-placeholder">🔮</div>` : p.videoUrl ? `<div class="tn-placeholder">🎥</div>` : `<div class="tn-placeholder">💬</div>`;
+        card.innerHTML = `${thumbHtml}<div class="tn-meta"><div class="tn-author">${esc(author)}</div><div class="tn-likes">❤️ ${likes}</div></div>`;
+        card.onclick = () => openStory(p);
+        strip.appendChild(card);
+      });
+    } catch(e2) {
+      strip.innerHTML = `<div class="tn-loading">${t('trendingEmpty')}</div>`;
+    }
+  }
+}
+
+function trendingScroll(dir) {
+  const strip = document.getElementById('trendingStrip');
+  if (strip) strip.scrollLeft += dir * 240;
+}
+
+setTimeout(loadTrendingNow, 1000);
 </script>
 
 <!-- NEXUS CREATORS DRAWER -->
