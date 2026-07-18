@@ -1283,9 +1283,10 @@ function buildCard(p) {
 
   let remixHtml = '';
   if (p.sourcePage) {
-    const toolStateJson = p.toolState ? JSON.stringify(p.toolState).replace(/'/g, "&#39;") : '';
+    const toolStateJson = p.toolState ? JSON.stringify(p.toolState) : '';
     if (toolStateJson) {
-      remixHtml = `<button onclick="remixPost('${escAttr(p.sourcePage)}', '${p.id}', '${toolStateJson}')" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</button>`;
+      const stateB64 = btoa(unescape(encodeURIComponent(toolStateJson)));
+      remixHtml = `<button onclick="remixPost('${escAttr(p.sourcePage)}', '${p.id}', '${stateB64}')" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</button>`;
     } else {
       remixHtml = `<a href="${escAttr(p.sourcePage)}" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</a>`;
     }
@@ -1993,13 +1994,14 @@ function toggleHotspots(event, postId) {
   }
 }
 
-function remixPost(sourcePage, postId, stateJson) {
-  if (!stateJson) {
+function remixPost(sourcePage, postId, stateB64) {
+  if (!stateB64) {
     window.location.href = sourcePage;
     return;
   }
   try {
-    localStorage.setItem('sp_remix_state', stateJson);
+    const decodedJson = decodeURIComponent(escape(atob(stateB64)));
+    localStorage.setItem('sp_remix_state', decodedJson);
     localStorage.setItem('sp_remix_from_post', postId);
   } catch(e) {
     console.error('Could not save remix state:', e);
