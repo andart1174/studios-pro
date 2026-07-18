@@ -719,7 +719,14 @@
     window.mediaRecorder = null;
     window.recordedChunks = [];
     window.addEventListener('message', function(e) {
-      var c = document.querySelector('canvas');
+      var all = Array.from(document.querySelectorAll('canvas'));
+      var filtered = all.filter(function(canvas) {
+        return canvas.id !== 'sculpt-canvas' && canvas.id !== 'paint-canvas' && !canvas.classList.contains('utility-canvas');
+      });
+      var c = (filtered.length ? filtered : all).reduce(function(a, b) {
+        return (a.width * a.height >= b.width * b.height) ? a : b;
+      }, all[0]);
+
       if (!c) {
         if(e.data === 'capture3d' || e.data === 'startVideoRecording') {
            window.parent.postMessage({type:'captureERR', msg:'No canvas in scene'}, '*');
@@ -769,10 +776,14 @@
       if (!code) return;
       const iframe = document.getElementById('preview-iframe');
       
-      // Inject PRE_SCRIPT right after <head> or at start, and CAPTURE_SCRIPT at end
+      // Inject PRE_SCRIPT right after <head> or <body>, or at the very start
       let injected = code;
-      if (injected.indexOf('<head>') > -1) {
-        injected = injected.replace('<head>', '<head>' + PRE_SCRIPT);
+      const headMatch = injected.match(/<head[^>]*>/i);
+      const bodyMatch = injected.match(/<body[^>]*>/i);
+      if (headMatch) {
+        injected = injected.replace(headMatch[0], headMatch[0] + PRE_SCRIPT);
+      } else if (bodyMatch) {
+        injected = injected.replace(bodyMatch[0], bodyMatch[0] + PRE_SCRIPT);
       } else {
         injected = PRE_SCRIPT + injected;
       }
