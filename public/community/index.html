@@ -356,6 +356,89 @@
     /* Responsive */
     @media(max-width:1100px){.wrap{grid-template-columns:1fr}.sl,.sr{display:none}}
     @media(max-width:640px){.wrap{padding:12px}.header{padding:0 12px}.hcenter{display:none}.overlay{align-items:flex-end;padding:0}.modal{border-radius:20px 20px 0 0;max-height:94vh}}
+
+    /* Hotspots & Spec Tags */
+    .p-img-hotspot-container {
+      position: relative;
+    }
+    .sp-hotspots-toggle {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      user-select: none;
+    }
+    .sp-hotspots-toggle:hover {
+      background: var(--accent) !important;
+      transform: scale(1.08);
+    }
+    .sp-hotspots-overlay {
+      opacity: 0;
+      pointer-events: none !important;
+      transition: opacity 0.3s ease;
+    }
+    .sp-hotspots-overlay.active {
+      opacity: 1;
+      pointer-events: auto !important;
+    }
+    .sp-hotspot {
+      cursor: pointer;
+      z-index: 10;
+    }
+    .sp-hotspot-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid white;
+      box-shadow: 0 0 8px var(--accent);
+      position: relative;
+    }
+    .sp-hotspot-dot::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: sp-hotspot-pulse 1.8s infinite ease-in-out;
+      opacity: 0;
+    }
+    @keyframes sp-hotspot-pulse {
+      0% { transform: scale(0.6); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+    .sp-hotspot-tooltip {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      width: max-content;
+      max-width: 220px;
+      background: rgba(11, 17, 32, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      z-index: 12;
+    }
+    .sp-hotspot:hover .sp-hotspot-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .sp-tooltip-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .sp-tooltip-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.3;
+    }
   </style>
 </head>
 <body>
@@ -779,6 +862,23 @@ function applyLang() {
     const val = t(key);
     if (val) el.placeholder = val;
   });
+
+  // Dynamically update spec hotspots translation
+  document.querySelectorAll('.sp-hotspot-tooltip').forEach(el => {
+    const title = curLang === 'fr' ? el.getAttribute('data-fr') : el.getAttribute('data-en');
+    const desc = curLang === 'fr' ? el.getAttribute('data-desc-fr') : el.getAttribute('data-desc-en');
+    const titleEl = el.querySelector('.sp-tooltip-title');
+    const descEl = el.querySelector('.sp-tooltip-desc');
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) {
+      if (desc) {
+        descEl.textContent = desc;
+        descEl.style.display = 'block';
+      } else {
+        descEl.style.display = 'none';
+      }
+    }
+  });
 }
 
 // ─── Rank helpers ──────────────────────────────────────────
@@ -1145,13 +1245,17 @@ function buildCard(p) {
   const vid = ytId(p.videoUrl);
   const has3D = p.modelData && (p.modelData.positions || p.modelData.vertices);
   const postCnt = p.userPostCount || 0;
+  const hasTags = p.tags && Array.isArray(p.tags) && p.tags.length > 0;
 
   let mediaHtml = '';
   if (has3D) {
     const mainImg = p.images && p.images[0] ? p.images[0] : '';
     mediaHtml = `
       <div class="p-3d-card-wrapper" id="wrap-${p.id}" style="position:relative; border-radius:14px; overflow:hidden; margin-bottom:14px; background:#0b0f19; border:1px solid var(--border);">
-        <img src="${mainImg}" id="img-${p.id}" style="width:100%; height:320px; object-fit:cover; display:block;">
+        <div class="p-img-hotspot-container" style="position:relative; width:100%; height:320px;">
+          <img src="${mainImg}" id="img-${p.id}" style="width:100%; height:100%; object-fit:cover; display:block;">
+          ${hasTags ? renderHotspots(p.tags, p.id) : ''}
+        </div>
         <div class="p-3d-play-btn" id="play-${p.id}" onclick="start3DPreview('${p.id}')" style="position:absolute; bottom:14px; right:14px; z-index:3; cursor:pointer;">
           <div class="p-3d-play-inner">
             <span class="p-3d-play-icon">🔮</span>
@@ -1165,7 +1269,26 @@ function buildCard(p) {
         </div>
       </div>`;
   } else {
-    mediaHtml = imgsHtml(p.images) + (vid ? `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>` : '');
+    if (p.images && p.images.length === 1 && hasTags) {
+      const imgUrl = p.images[0];
+      mediaHtml = `
+        <div class="p-img-hotspot-container" style="position:relative; width:100%; border-radius:14px; overflow:hidden; margin-bottom:14px; background:#0b0f19; border:1px solid var(--border);">
+          <img src="${esc(imgUrl)}" alt="" loading="lazy" style="width:100%; display:block; object-fit:cover; max-height:450px;" onclick="openLb('${esc(imgUrl)}')">
+          ${renderHotspots(p.tags, p.id)}
+        </div>`;
+    } else {
+      mediaHtml = imgsHtml(p.images) + (vid ? `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>` : '');
+    }
+  }
+
+  let remixHtml = '';
+  if (p.sourcePage) {
+    const toolStateJson = p.toolState ? JSON.stringify(p.toolState).replace(/'/g, "&#39;") : '';
+    if (toolStateJson) {
+      remixHtml = `<button onclick="remixPost('${escAttr(p.sourcePage)}', '${p.id}', '${toolStateJson}')" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</button>`;
+    } else {
+      remixHtml = `<a href="${escAttr(p.sourcePage)}" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</a>`;
+    }
   }
 
   div.innerHTML = `
@@ -1179,7 +1302,7 @@ function buildCard(p) {
           <span style="font-weight:700;color:#fff;">${esc(p.displayName||'User')}</span>
           ${rankHtml(postCnt)}
           ${catBadge(p.category)}
-          ${p.sourcePage ? `<a href="${escAttr(p.sourcePage)}" class="p-remix-btn" title="Open in the original tool to edit and customize!">🛠️ Remix</a>` : ''}
+          ${remixHtml}
         </div>
         <div class="p-time">${timeAgo(p.createdAt)}</div>
       </div>
@@ -1829,6 +1952,60 @@ try {
     }
   };
 } catch(e) { /* BroadcastChannel not supported */ }
+
+// ─── Spec Tags & Hotspots helpers ───────────────────────────
+function renderHotspots(tags, postId) {
+  if (!tags || !tags.length) return '';
+  let html = `<div class="sp-hotspots-toggle" onclick="toggleHotspots(event, '${postId}')" title="Toggle info tags" style="position:absolute; top:12px; right:12px; z-index:5; background:rgba(15,23,42,0.85); border:1px solid rgba(255,255,255,0.15); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:white; font-size:16px; backdrop-filter:blur(4px); transition: all 0.2s;">🏷️</div>`;
+  html += `<div class="sp-hotspots-overlay active" id="hotspots-overlay-${postId}" style="position:absolute; inset:0; pointer-events:none; z-index:4;">`;
+  
+  tags.forEach((tag, idx) => {
+    const x = tag.x;
+    const y = tag.y;
+    const labelEn = escAttr(tag.label_en || tag.label || '');
+    const labelFr = escAttr(tag.label_fr || tag.label || '');
+    const descEn = escAttr(tag.desc_en || tag.desc || '');
+    const descFr = escAttr(tag.desc_fr || tag.desc || '');
+    
+    // Dynamic translations resolved initially
+    const title = curLang === 'fr' ? labelFr : labelEn;
+    const desc = curLang === 'fr' ? descFr : descEn;
+    
+    html += `
+      <div class="sp-hotspot" style="position:absolute; left:${x}%; top:${y}%; pointer-events:auto; transform:translate(-50%, -50%);" data-idx="${idx}">
+        <div class="sp-hotspot-dot"></div>
+        <div class="sp-hotspot-tooltip" data-en="${labelEn}" data-fr="${labelFr}" data-desc-en="${descEn}" data-desc-fr="${descFr}">
+          <div class="sp-tooltip-title">${title}</div>
+          ${(tag.desc_en || tag.desc_fr || tag.desc) ? `<div class="sp-tooltip-desc" style="${desc ? 'display:block;' : 'display:none;'}">${desc}</div>` : ''}
+        </div>
+      </div>`;
+  });
+  
+  html += `</div>`;
+  return html;
+}
+
+function toggleHotspots(event, postId) {
+  event.stopPropagation();
+  const overlay = document.getElementById(`hotspots-overlay-${postId}`);
+  if (overlay) {
+    overlay.classList.toggle('active');
+  }
+}
+
+function remixPost(sourcePage, postId, stateJson) {
+  if (!stateJson) {
+    window.location.href = sourcePage;
+    return;
+  }
+  try {
+    localStorage.setItem('sp_remix_state', stateJson);
+    localStorage.setItem('sp_remix_from_post', postId);
+  } catch(e) {
+    console.error('Could not save remix state:', e);
+  }
+  window.location.href = sourcePage + '?remix=true';
+}
 
 // ─── Init ──────────────────────────────────────────────────
 applyLang();

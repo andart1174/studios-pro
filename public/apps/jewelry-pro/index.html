@@ -2969,10 +2969,98 @@ D('btn-sculpt-close').addEventListener('click', () => {
     if (state.hasSculpted) createGeometry(); // apply changes
 });
 
+// Check for remix state at launch
+function checkRemixState() {
+    try {
+        const stateStr = localStorage.getItem('sp_remix_state');
+        if (stateStr) {
+            const remixData = JSON.parse(stateStr);
+            if (remixData) {
+                // Clear state from localStorage
+                localStorage.removeItem('sp_remix_state');
+                localStorage.removeItem('sp_remix_from_post');
+                
+                // 1. Load active values into state object
+                if (remixData.vals) {
+                    for (let key in remixData.vals) {
+                        state[key] = remixData.vals[key];
+                    }
+                }
+                
+                // 2. Sync DOM inputs
+                if (remixData.domVals) {
+                    for (let id in remixData.domVals) {
+                        const el = D(id);
+                        if (el) {
+                            if (el.type === 'checkbox') el.checked = remixData.domVals[id];
+                            else el.value = remixData.domVals[id];
+                        }
+                    }
+                }
+            }
+        }
+    } catch(e) {
+        console.error('Error loading remix state:', e);
+    }
+}
+checkRemixState();
+
 // Initialize
 updateUI();
 createGeometry();
 animate();
+
+// Expose state and tags for Community Share Bridge
+window.getAppState = function() {
+    const serializableKeys = [
+        'category', 'profile', 'ringSize', 'stoneType', 'stoneMaterial', 
+        'stoneCarat', 'material', 'radius', 'thickness', 'width', 
+        'finish', 'stoneLayout', 'innerMaterial', 'imgMode', 'threshold', 
+        'contrast', 'brightness', 'depth', 'blur', 'quality', 
+        'repX', 'repY', 'offX', 'offY', 'engraveText', 'engraveSize', 'engraveInside'
+    ];
+    const vals = {};
+    serializableKeys.forEach(k => {
+        if (state[k] !== undefined) vals[k] = state[k];
+    });
+    const domVals = {};
+    document.querySelectorAll('input[type=range], select, input[type=number], input[type=text], input[type=checkbox]').forEach(el => {
+        if (el.id) {
+            if (el.type === 'checkbox') domVals[el.id] = el.checked;
+            else domVals[el.id] = el.value;
+        }
+    });
+    return { vals: vals, domVals: domVals };
+};
+
+window.getAppTags = function() {
+    const tags = [];
+    const size = state.ringSize === 'custom' ? `${(state.radius * 2).toFixed(1)}mm` : state.ringSize;
+    
+    // 1. Shank tag
+    tags.push({
+        x: 50,
+        y: 72,
+        label_en: `Ring Shank (Size ${size})`,
+        label_fr: `Corps de bague (Taille ${size})`,
+        desc_en: `Width: ${state.width}mm, Thickness: ${state.thickness}mm. Material: ${state.material} (${state.finish}).`,
+        desc_fr: `Largeur : ${state.width}mm, Épaisseur : ${state.thickness}mm. Matériau : ${state.material} (${state.finish}).`
+    });
+    
+    // 2. Stone tag
+    if (state.stoneType && state.stoneType !== 'none') {
+        tags.push({
+            x: 50,
+            y: 28,
+            label_en: `${state.stoneCarat.toFixed(1)}ct ${state.stoneMaterial.toUpperCase()}`,
+            label_fr: `${state.stoneMaterial.toUpperCase()} ${state.stoneCarat.toFixed(1)}ct`,
+            desc_en: `Cut: ${state.stoneType}, Layout: ${state.stoneLayout}.`,
+            desc_fr: `Taille : ${state.stoneType}, Disposition : ${state.stoneLayout}.`
+        });
+    }
+    
+    return tags;
+};
 
 </script>
 

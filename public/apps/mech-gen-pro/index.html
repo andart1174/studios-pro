@@ -4575,8 +4575,114 @@
             camera.updateProjectionMatrix();
         });
 
-        // Initialize first module
-        setTimeout(generate, 100);
+        // Initialize first module or load remix state
+        function checkRemixState() {
+            try {
+                const stateStr = localStorage.getItem('sp_remix_state');
+                if (stateStr) {
+                    const state = JSON.parse(stateStr);
+                    if (state && state.module) {
+                        // Remove state from localStorage immediately
+                        localStorage.removeItem('sp_remix_state');
+                        localStorage.removeItem('sp_remix_from_post');
+                        
+                        // Set the active module
+                        currentModule = state.module;
+                        document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+                        const navBtn = document.getElementById('nav-' + state.module);
+                        if (navBtn) navBtn.classList.add('active');
+                        
+                        document.querySelectorAll('.generator-mod').forEach(el => el.classList.add('hidden'));
+                        const modEl = document.getElementById('mod-' + state.module);
+                        if (modEl) modEl.classList.remove('hidden');
+                        
+                        // Load input values
+                        for (let id in state.vals) {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.value = state.vals[id];
+                                updateVal(id);
+                            }
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Error loading remix state:', e);
+            }
+            generate();
+        }
+        setTimeout(checkRemixState, 100);
+
+        // Expose state and tags for Community Share Bridge
+        window.getAppState = function() {
+            const state = { module: currentModule, vals: {} };
+            document.querySelectorAll('input[type=range], select, input[type=number]').forEach(el => {
+                if(el.id) state.vals[el.id] = el.value;
+            });
+            return state;
+        };
+
+        window.getAppTags = function() {
+            if (currentModule === 'gear') {
+                const teeth = getV('gear-teeth');
+                const mod = getV('gear-module');
+                const bore = getV('gear-bore');
+                const thick = getV('gear-thick');
+                const od = (teeth + 2) * mod;
+                return [
+                    {
+                        x: 50,
+                        y: 50,
+                        label_en: `Center Bore: ⌀${bore}mm`,
+                        label_fr: `Alésage central : ⌀${bore}mm`,
+                        desc_en: `Mounting hole for shaft connection. Thickness: ${thick}mm.`,
+                        desc_fr: `Trou de montage pour liaison d'arbre. Épaisseur : ${thick}mm.`
+                    },
+                    {
+                        x: 50,
+                        y: 22,
+                        label_en: `Gear Teeth: ${teeth}T (m: ${mod})`,
+                        label_fr: `Dents d'engrenage : ${teeth} d. (m : ${mod})`,
+                        desc_en: `Spur gear design with outer diameter: ${od.toFixed(1)}mm.`,
+                        desc_fr: `Engrenage droit avec diamètre extérieur : ${od.toFixed(1)}mm.`
+                    }
+                ];
+            } else if (currentModule === 'planetary') {
+                const sun = getV('plan-zs');
+                const planet = getV('plan-zp');
+                const mod = getV('plan-m');
+                const n = getV('plan-n');
+                const ring = sun + 2 * planet;
+                return [
+                    {
+                        x: 50,
+                        y: 50,
+                        label_en: `Sun Gear: ${sun}T`,
+                        label_fr: `Pignon central : ${sun} d.`,
+                        desc_en: `Center sun gear driven at module ${mod}.`,
+                        desc_fr: `Pignon central entraîné au module ${mod}.`
+                    },
+                    {
+                        x: 50,
+                        y: 20,
+                        label_en: `Outer Ring: ${ring}T`,
+                        label_fr: `Couronne externe : ${ring} d.`,
+                        desc_en: `Planetary system with ${n} planet gears (${planet}T each).`,
+                        desc_fr: `Système planétaire avec ${n} satellites (${planet} d. chacun).`
+                    }
+                ];
+            }
+            return [
+                {
+                    x: 50,
+                    y: 50,
+                    label_en: `${currentModule.charAt(0).toUpperCase() + currentModule.slice(1)} Assembly`,
+                    label_fr: `Assemblage ${currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}`,
+                    desc_en: `Generated with custom parameters in MechGen Pro.`,
+                    desc_fr: `Généré cu parametri personalizați în MechGen Pro.`
+                }
+            ];
+        };
 
         // --- EXPORT FUNCTIONS ---
         // Exporter objects (assumed loaded from unpkg scripts)

@@ -24,6 +24,8 @@
   let _authReadyPromise = null;
   let _authReadyResolve = null;
   let _curModelData = null;
+  let _curToolState = null;
+  let _curToolTags = null;
 
   /* ── Extract 3D Model Geometry (Safe for Firestore) ────── */
   function get3DModelData() {
@@ -282,6 +284,8 @@
     setFab(false);
     toast('Capturing…', 'info');
     _curModelData = get3DModelData();
+    _curToolState = typeof window.getAppState === 'function' ? window.getAppState() : null;
+    _curToolTags = typeof window.getAppTags === 'function' ? window.getAppTags() : null;
 
     // Case 1: Studio Pro 4D iframe
     const iframe = document.getElementById('preview-iframe');
@@ -478,8 +482,16 @@
       if (_curModelData) {
         postPayload.modelData = _curModelData;
       }
+      if (_curToolState) {
+        postPayload.toolState = _curToolState;
+      }
+      if (_curToolTags) {
+        postPayload.tags = _curToolTags;
+      }
       await _db.collection(COLL).add(postPayload);
       _curModelData = null; // reset
+      _curToolState = null;
+      _curToolTags = null;
 
       // 3. Increment user post count
       try { await _db.collection('users').doc(_curUser.uid).update({ postCount: firebase.firestore.FieldValue.increment(1) }); } catch(x){}
@@ -492,6 +504,8 @@
 
     } catch(err) {
       _curModelData = null; // reset on error
+      _curToolState = null;
+      _curToolTags = null;
       console.error('Share publish error:', err);
       btn.disabled = false; btn.textContent = '✦ Publish Post';
       hideProgress();
