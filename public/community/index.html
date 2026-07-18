@@ -838,6 +838,12 @@
       </div>
       <div class="nch-panel" id="nchPanel"></div>
     </div>
+    <!-- Stories (hidden - required by JS) -->
+    <div style="display:none">
+      <div class="s-row" id="storiesRow">
+        <div class="story-bubble" id="addStoryBubble"></div>
+      </div>
+    </div>
     <!-- Login prompt -->
     <div class="login-prompt" id="loginPrompt" style="display:none">
       <div class="lp-icon">🚀</div>
@@ -1805,6 +1811,7 @@ function init3D(container, postId) {
 // ─── Stories ───────────────────────────────────────────────
 function loadStories(posts) {
   const row = document.getElementById('storiesRow'), add = document.getElementById('addStoryBubble');
+  if (!row) return; // Stories bar removed - safe exit
   Array.from(row.children).forEach(c => { if (c!==add) c.remove(); });
   posts.filter(p => p.images&&p.images.length).slice(0,12).forEach(p => {
     const a = av(p);
