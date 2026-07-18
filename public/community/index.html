@@ -1045,16 +1045,34 @@ function loadPublicStats() {
 async function loadUserStats(uid) {
   if (!db) return;
   try {
-    const d = (await db.collection('users').doc(uid).get()).data() || {};
-    const posts = d.postCount || 0, lks = d.totalLikes || 0;
+    // Count posts directly from the posts collection (always accurate)
+    const postsSnap = await db.collection(COLL).where('uid', '==', uid).get();
+    const posts = postsSnap.size;
+
+    // Sum total likes received across all posts
+    let lks = 0;
+    postsSnap.forEach(doc => {
+      const d = doc.data();
+      lks += (d.likesCount || (Array.isArray(d.likes) ? d.likes.length : 0));
+    });
+
+    // Sync back to user document so leaderboard is accurate
+    try {
+      await db.collection('users').doc(uid).update({ postCount: posts, totalLikes: lks });
+    } catch(e) {}
+
     document.getElementById('uPostsCnt').textContent = posts;
     document.getElementById('uLikesCnt').textContent = lks;
     const rank = getRank(posts);
     document.getElementById('slRank').innerHTML = rankHtml(posts);
-    
-    const bioText = d.bio || (curLang === 'fr' ? 'Ajouter une biographie... 📝' : 'Click to add status/bio... 📝');
-    document.getElementById('slBio').textContent = bioText;
-    
+
+    const bioEl = document.getElementById('slBio');
+    if (bioEl && !bioEl.dataset.userSet) {
+      const d = (await db.collection('users').doc(uid).get()).data() || {};
+      const bioText = d.bio || (curLang === 'fr' ? 'Ajouter une biographie... 📝' : 'Click to add status/bio... 📝');
+      bioEl.textContent = bioText;
+    }
+
     const idx = RANKS.findIndex(r => r.id === rank.id);
     const next = RANKS[idx+1];
     if (next) {
@@ -1067,7 +1085,7 @@ async function loadUserStats(uid) {
       document.getElementById('rpFill').style.width = '100%';
       document.getElementById('rp-cur').textContent = '👑 MAX';
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadUserStats error:', e); }
 }
 
 async function editBio() {
@@ -1677,8 +1695,12 @@ async function publish() {
 // ─── Delete post ───────────────────────────────────────────
 async function delPost(pid) {
   if (!confirm('Delete this post?')) return;
+  // Get the post to know whose counter to update
+  const postDoc = await db.collection(COLL).doc(pid).get().catch(() => null);
   await db.collection(COLL).doc(pid).delete();
   document.getElementById(`post-${pid}`)?.remove();
+  // Reload user stats to recount from source of truth
+  if (curUser) loadUserStats(curUser.uid);
   toast('Post deleted','info');
 }
 
