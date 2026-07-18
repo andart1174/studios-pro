@@ -2447,20 +2447,29 @@ async function openCreatorProfile(cr, isOnline) {
   document.body.style.overflow = 'hidden';
 
   try {
-    const snap = await db.collection(COLL).where('uid', '==', cr.uid).orderBy('createdAt', 'desc').get();
+    const snap = await db.collection(COLL).where('uid', '==', cr.uid).get();
     grid.innerHTML = '';
     if (snap.empty) {
       grid.innerHTML = `<div style="grid-column:1/-1" class="cr-drawer-empty">${t('noPostsYet')}</div>`;
       return;
     }
-    snap.forEach(doc => {
-      const p = { id: doc.id, ...doc.data() };
+    // Sort client-side newest first (avoids composite index requirement)
+    const docs = [];
+    snap.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+    docs.sort((a, b) => {
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    docs.forEach(p => {
       const item = document.createElement('div');
       item.className = 'cr-grid-item';
       if (p.images && p.images.length) {
         item.innerHTML = `<img src="${esc(p.images[0])}" alt="" loading="lazy">`;
       } else if (p.modelData) {
         item.innerHTML = `<div class="cr-grid-item-placeholder">🔮</div>`;
+      } else if (p.videoUrl) {
+        item.innerHTML = `<div class="cr-grid-item-placeholder">🎥</div>`;
       } else {
         item.innerHTML = `<div class="cr-grid-item-placeholder">💬</div>`;
       }
