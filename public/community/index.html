@@ -439,6 +439,226 @@
       margin-top: 3px;
       line-height: 1.3;
     }
+
+    /* ── NEXUS CREATORS HUB ─────────────────────────────── */
+    .nch-trigger{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 18px;
+      background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(0,243,255,.07));
+      border:1px solid rgba(99,102,241,.35);
+      border-radius:14px;
+      cursor:pointer;transition:all .25s;
+      margin-bottom:12px;
+      position:relative;overflow:hidden;
+    }
+    .nch-trigger::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(90deg,transparent,rgba(99,102,241,.08),transparent);
+      transform:translateX(-100%);
+      transition:transform .5s;
+    }
+    .nch-trigger:hover::before{transform:translateX(100%);}
+    .nch-trigger:hover{border-color:rgba(0,243,255,.55);box-shadow:0 0 18px rgba(99,102,241,.3);}
+    .nch-icon{
+      width:34px;height:34px;border-radius:50%;
+      background:linear-gradient(135deg,#6366f1,#00f3ff);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1rem;flex-shrink:0;
+      box-shadow:0 0 12px rgba(99,102,241,.5);
+      animation:nch-spin 8s linear infinite;
+    }
+    @keyframes nch-spin{
+      0%,100%{box-shadow:0 0 10px rgba(99,102,241,.5);}
+      50%{box-shadow:0 0 22px rgba(0,243,255,.7);}
+    }
+    .nch-info{flex:1;min-width:0;}
+    .nch-title{
+      font-family:'Outfit',sans-serif;font-weight:900;
+      font-size:.82rem;letter-spacing:.12em;
+      background:linear-gradient(90deg,#a78bfa,#00f3ff);
+      -webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .nch-sub{font-size:.69rem;color:var(--muted);margin-top:1px;}
+    .nch-count{
+      background:linear-gradient(135deg,#f59e0b,#ef4444);
+      color:#fff;font-size:.62rem;font-weight:900;
+      padding:2px 8px;border-radius:999px;
+      box-shadow:0 0 8px rgba(239,68,68,.5);
+      flex-shrink:0;
+    }
+    .nch-arrow{color:var(--muted);font-size:.75rem;transition:transform .3s;flex-shrink:0;}
+    .nch-arrow.open{transform:rotate(180deg);}
+
+    /* Panel */
+    .nch-panel{
+      display:none;
+      grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+      gap:10px;
+      padding:14px;
+      background:rgba(11,17,32,.97);
+      border:1px solid rgba(99,102,241,.2);
+      border-radius:14px;
+      margin-bottom:14px;
+      animation:nch-open .22s ease;
+      max-height:320px;
+      overflow-y:auto;
+    }
+    .nch-panel.visible{display:grid;}
+    @keyframes nch-open{
+      from{opacity:0;transform:translateY(-8px);}
+      to{opacity:1;transform:none;}
+    }
+
+    /* Creator Card */
+    .ncr-card{
+      display:flex;flex-direction:column;align-items:center;
+      padding:12px 8px;border-radius:12px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.07);
+      cursor:pointer;transition:all .2s;
+      text-align:center;
+      position:relative;
+    }
+    .ncr-card:hover{
+      background:rgba(99,102,241,.1);
+      border-color:rgba(99,102,241,.35);
+      transform:translateY(-2px);
+      box-shadow:0 4px 16px rgba(99,102,241,.2);
+    }
+    .ncr-av-wrap{position:relative;margin-bottom:7px;}
+    .ncr-av{
+      width:44px;height:44px;border-radius:50%;
+      border:2px solid var(--accent);
+      object-fit:cover;display:block;
+    }
+    .ncr-av-init{
+      width:44px;height:44px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff;
+      border:2px solid var(--accent);
+    }
+    .ncr-online{
+      position:absolute;bottom:1px;right:1px;
+      width:11px;height:11px;border-radius:50%;
+      background:var(--green);border:2px solid var(--bg2);
+      box-shadow:0 0 6px var(--green);
+    }
+    .ncr-offline{background:var(--muted);box-shadow:none;}
+    .ncr-name{
+      font-weight:700;font-size:.73rem;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:100%;margin-bottom:2px;
+    }
+    .ncr-posts{font-size:.66rem;color:var(--muted);margin-bottom:4px;}
+    .ncr-rank{font-size:.62rem;}
+    .ncr-view-btn{
+      margin-top:6px;padding:4px 10px;border-radius:8px;
+      background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.3);
+      color:#a78bfa;font-size:.66rem;font-weight:700;
+      cursor:pointer;transition:all .18s;font-family:inherit;
+    }
+    .ncr-view-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+    /* Creator Profile Drawer */
+    .cr-drawer-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.65);
+      backdrop-filter:blur(6px);
+      z-index:3000;opacity:0;
+      transition:opacity .25s;
+      pointer-events:none;
+    }
+    .cr-drawer-overlay.open{opacity:1;pointer-events:all;}
+    .cr-drawer{
+      position:fixed;top:0;right:0;bottom:0;
+      width:min(480px,100vw);
+      background:var(--bg2);
+      border-left:1px solid rgba(99,102,241,.25);
+      z-index:3001;
+      overflow-y:auto;
+      transform:translateX(100%);
+      transition:transform .3s cubic-bezier(.32,.72,0,1);
+      box-shadow:-8px 0 48px rgba(0,0,0,.6);
+    }
+    .cr-drawer.open{transform:translateX(0);}
+    .cr-drawer-head{
+      padding:20px 22px 16px;
+      border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:14px;
+      background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(0,243,255,.04));
+      position:sticky;top:0;z-index:10;
+      backdrop-filter:blur(16px);
+    }
+    .cr-drawer-av-wrap{position:relative;flex-shrink:0;}
+    .cr-drawer-av{
+      width:56px;height:56px;border-radius:50%;
+      border:3px solid var(--accent);
+      object-fit:cover;
+    }
+    .cr-drawer-av-init{
+      width:56px;height:56px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Outfit',sans-serif;font-weight:900;font-size:1.3rem;color:#fff;
+      border:3px solid var(--accent);
+    }
+    .cr-drawer-online{
+      position:absolute;bottom:2px;right:2px;
+      width:14px;height:14px;border-radius:50%;
+      background:var(--green);border:2px solid var(--bg2);
+      box-shadow:0 0 8px var(--green);
+    }
+    .cr-drawer-info{flex:1;min-width:0;}
+    .cr-drawer-name{
+      font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;
+      color:#fff;margin-bottom:3px;
+    }
+    .cr-drawer-close{
+      width:34px;height:34px;border-radius:50%;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+      color:var(--muted);font-size:1.1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;transition:all .2s;font-family:inherit;
+    }
+    .cr-drawer-close:hover{background:rgba(239,68,68,.15);color:#f87171;border-color:rgba(239,68,68,.3);}
+    .cr-drawer-stats{
+      display:flex;gap:24px;padding:14px 22px;
+      border-bottom:1px solid var(--border);
+    }
+    .cr-drawer-stat{text-align:center;}
+    .cr-drawer-stat-n{
+      font-family:'Outfit',sans-serif;font-weight:800;
+      font-size:1.2rem;color:var(--accent3);
+    }
+    .cr-drawer-stat-l{font-size:.68rem;color:var(--muted);}
+    .cr-drawer-feed-title{
+      padding:14px 22px 8px;
+      font-size:.71rem;font-weight:700;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.1em;
+    }
+    .cr-drawer-grid{
+      display:grid;grid-template-columns:repeat(3,1fr);
+      gap:3px;padding:0 22px 22px;
+    }
+    .cr-grid-item{
+      aspect-ratio:1;border-radius:8px;overflow:hidden;
+      background:var(--bg3);
+      cursor:pointer;position:relative;
+      transition:opacity .2s;
+    }
+    .cr-grid-item:hover{opacity:.8;}
+    .cr-grid-item img{width:100%;height:100%;object-fit:cover;display:block;}
+    .cr-grid-item-placeholder{
+      width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;
+      background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(0,243,255,.05));
+    }
+    .cr-drawer-empty{
+      text-align:center;padding:40px 22px;
+      color:var(--muted);font-size:.85rem;
+    }
   </style>
 </head>
 <body>
@@ -516,6 +736,20 @@
 
   <!-- FEED -->
   <main class="feed">
+    <!-- Stories -->
+    <!-- NEXUS CREATORS HUB -->
+    <div id="nchSection">
+      <div class="nch-trigger" onclick="toggleCreatorsHub()" id="nchTrigger">
+        <div class="nch-icon">👥</div>
+        <div class="nch-info">
+          <div class="nch-title" data-t="nexusCreators">NEXUS CREATORS</div>
+          <div class="nch-sub"><span id="nchCount">…</span> <span data-t="creatorsOnline">active</span></div>
+        </div>
+        <div class="nch-count" id="nchBadge">…</div>
+        <div class="nch-arrow" id="nchArrow">▼</div>
+      </div>
+      <div class="nch-panel" id="nchPanel"></div>
+    </div>
     <!-- Stories -->
     <div>
       <div class="story-hdr"><span data-t="stories">Stories</span><span data-t="seeAll">See all</span></div>
@@ -807,7 +1041,11 @@ const T = {
     communityStats:'Nexus Stats', members:'Members', onlineNow:'Online Now',
     topCreators:'🏆 Top Creators', studioTools:'Studios-PRO Tools',
     loading:'Loading posts...', all:'All', photos:'Photos', videos:'Videos', general:'General',
-    search:'Search posts...'
+    search:'Search posts...',
+    nexusCreators:'NEXUS CREATORS', creatorsOnline:'active', showCreators:'Show Creators',
+    hideCreators:'Hide', viewProfile:'View', crPostsLabel:'posts',
+    creatorProfile:'Creator Profile', allPostsOf:'All posts by', noPostsYet:'No posts yet.',
+    closeProfile:'Close'
   },
   fr:{
     community:'SP Nexus', categories:'Catégories', allPosts:'Tous les posts', posts:'Posts', likes:'Likes',
@@ -833,7 +1071,11 @@ const T = {
     communityStats:'Statistiques', members:'Membres', onlineNow:'En ligne',
     topCreators:'🏆 Top Créateurs', studioTools:'Outils Studios-PRO',
     loading:'Chargement...', all:'Tous', photos:'Photos', videos:'Vidéos', general:'Général',
-    search:'Rechercher...'
+    search:'Rechercher...',
+    nexusCreators:'NEXUS CRÉATEURS', creatorsOnline:'actifs', showCreators:'Voir les créateurs',
+    hideCreators:'Masquer', viewProfile:'Voir', crPostsLabel:'posts',
+    creatorProfile:'Profil Créateur', allPostsOf:'Tous les posts de', noPostsYet:'Aucun post encore.',
+    closeProfile:'Fermer'
   }
 };
 
@@ -2035,6 +2277,220 @@ function remixPost(sourcePage, postId, stateB64) {
 applyLang();
 // Run share receiver after a tick so auth can initialize
 setTimeout(loadIncomingShare, 200);
+</script>
+
+<!-- NEXUS CREATORS DRAWER -->
+<div class="cr-drawer-overlay" id="crDrawerOverlay" onclick="closeCreatorProfile()"></div>
+<div class="cr-drawer" id="crDrawer">
+  <div class="cr-drawer-head">
+    <div class="cr-drawer-av-wrap">
+      <div class="cr-drawer-av-init" id="crDrawerAvInit"></div>
+      <img class="cr-drawer-av" id="crDrawerAv" src="" alt="" style="display:none">
+      <div class="cr-drawer-online" id="crDrawerOnline" style="display:none"></div>
+    </div>
+    <div class="cr-drawer-info">
+      <div class="cr-drawer-name" id="crDrawerName"></div>
+      <div id="crDrawerRank"></div>
+    </div>
+    <button class="cr-drawer-close" onclick="closeCreatorProfile()">✕</button>
+  </div>
+  <div class="cr-drawer-stats">
+    <div class="cr-drawer-stat">
+      <div class="cr-drawer-stat-n" id="crDrawerPosts">0</div>
+      <div class="cr-drawer-stat-l" data-t="posts">Posts</div>
+    </div>
+    <div class="cr-drawer-stat">
+      <div class="cr-drawer-stat-n" id="crDrawerLikes">0</div>
+      <div class="cr-drawer-stat-l" data-t="likes">Likes</div>
+    </div>
+  </div>
+  <div class="cr-drawer-feed-title" id="crDrawerFeedTitle"></div>
+  <div class="cr-drawer-grid" id="crDrawerGrid"></div>
+</div>
+
+<script>
+// ─── NEXUS CREATORS HUB ────────────────────────────────────
+let nchOpen = false;
+let nchLoaded = false;
+let onlineUids = new Set();
+
+function toggleCreatorsHub() {
+  nchOpen = !nchOpen;
+  const panel = document.getElementById('nchPanel');
+  const arrow = document.getElementById('nchArrow');
+  if (nchOpen) {
+    panel.classList.add('visible');
+    arrow.classList.add('open');
+    if (!nchLoaded) { loadCreatorsHub(); nchLoaded = true; }
+  } else {
+    panel.classList.remove('visible');
+    arrow.classList.remove('open');
+  }
+}
+
+async function loadCreatorsHub() {
+  if (!db) return;
+  const panel = document.getElementById('nchPanel');
+  panel.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">Loading creators…</div>';
+
+  try {
+    // Get all users with at least 1 post — use posts collection to find unique UIDs
+    const postsSnap = await db.collection(COLL).orderBy('createdAt','desc').get();
+
+    // Build a map: uid → { displayName, photoURL, postCount, totalLikes }
+    const creatorsMap = {};
+    postsSnap.forEach(doc => {
+      const d = doc.data();
+      if (!d.uid) return;
+      if (!creatorsMap[d.uid]) {
+        creatorsMap[d.uid] = {
+          uid: d.uid,
+          displayName: d.displayName || 'Unknown',
+          photoURL: d.photoURL || '',
+          postCount: 0,
+          totalLikes: 0
+        };
+      }
+      creatorsMap[d.uid].postCount++;
+      creatorsMap[d.uid].totalLikes += (d.likesCount || (Array.isArray(d.likes) ? d.likes.length : 0));
+    });
+
+    const creators = Object.values(creatorsMap).sort((a, b) => b.postCount - a.postCount);
+
+    // Update badge counts
+    const count = creators.length;
+    document.getElementById('nchCount').textContent = count;
+    document.getElementById('nchBadge').textContent = count;
+
+    // Load online UIDs from presence
+    try {
+      const presSnap = await db.collection(PRESENCE_COLL).where('online', '==', true).get();
+      onlineUids = new Set();
+      presSnap.forEach(d => onlineUids.add(d.id));
+    } catch(e) {}
+
+    panel.innerHTML = '';
+    if (!creators.length) {
+      panel.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">${t('noPostsYet')}</div>`;
+      return;
+    }
+
+    creators.forEach(cr => {
+      const isOnline = onlineUids.has(cr.uid);
+      const rank = getRank(cr.postCount);
+      const initials = (cr.displayName || '?').substring(0, 2).toUpperCase();
+
+      const card = document.createElement('div');
+      card.className = 'ncr-card';
+      card.innerHTML = `
+        <div class="ncr-av-wrap">
+          ${cr.photoURL
+            ? `<img class="ncr-av" src="${esc(cr.photoURL)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+            : ''}
+          <div class="ncr-av-init" style="${cr.photoURL ? 'display:none' : ''}">${esc(initials)}</div>
+          <div class="ncr-online ${isOnline ? '' : 'ncr-offline'}"></div>
+        </div>
+        <div class="ncr-name">${esc(cr.displayName)}</div>
+        <div class="ncr-posts">${cr.postCount} ${t('crPostsLabel')}</div>
+        <div class="ncr-rank">${rank.label}</div>
+        <button class="ncr-view-btn" data-t="viewProfile">${t('viewProfile')}</button>
+      `;
+      card.onclick = () => openCreatorProfile(cr, isOnline);
+      panel.appendChild(card);
+    });
+
+  } catch(e) {
+    console.warn('loadCreatorsHub error:', e);
+    panel.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">Error loading creators.</div>';
+  }
+}
+
+async function openCreatorProfile(cr, isOnline) {
+  const overlay = document.getElementById('crDrawerOverlay');
+  const drawer  = document.getElementById('crDrawer');
+
+  // Avatar
+  const avImg  = document.getElementById('crDrawerAv');
+  const avInit = document.getElementById('crDrawerAvInit');
+  const initials = (cr.displayName || '?').substring(0, 2).toUpperCase();
+  avInit.textContent = initials;
+  if (cr.photoURL) {
+    avImg.src = cr.photoURL;
+    avImg.style.display = 'block';
+    avInit.style.display = 'none';
+  } else {
+    avImg.style.display = 'none';
+    avInit.style.display = 'flex';
+  }
+
+  // Online dot
+  const onlineDot = document.getElementById('crDrawerOnline');
+  onlineDot.style.display = isOnline ? 'block' : 'none';
+
+  // Name & rank
+  document.getElementById('crDrawerName').textContent = cr.displayName || 'Unknown';
+  document.getElementById('crDrawerRank').innerHTML = rankHtml(cr.postCount);
+
+  // Stats
+  document.getElementById('crDrawerPosts').textContent = cr.postCount;
+  document.getElementById('crDrawerLikes').textContent = cr.totalLikes;
+
+  // Feed title
+  document.getElementById('crDrawerFeedTitle').textContent = `${t('allPostsOf')} ${cr.displayName}`;
+
+  // Grid of posts
+  const grid = document.getElementById('crDrawerGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">Loading…</div>';
+
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const snap = await db.collection(COLL).where('uid', '==', cr.uid).orderBy('createdAt', 'desc').get();
+    grid.innerHTML = '';
+    if (snap.empty) {
+      grid.innerHTML = `<div style="grid-column:1/-1" class="cr-drawer-empty">${t('noPostsYet')}</div>`;
+      return;
+    }
+    snap.forEach(doc => {
+      const p = { id: doc.id, ...doc.data() };
+      const item = document.createElement('div');
+      item.className = 'cr-grid-item';
+      if (p.images && p.images.length) {
+        item.innerHTML = `<img src="${esc(p.images[0])}" alt="" loading="lazy">`;
+      } else if (p.modelData) {
+        item.innerHTML = `<div class="cr-grid-item-placeholder">🔮</div>`;
+      } else {
+        item.innerHTML = `<div class="cr-grid-item-placeholder">💬</div>`;
+      }
+      item.onclick = () => { closeCreatorProfile(); setTimeout(() => openStory(p), 350); };
+      grid.appendChild(item);
+    });
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1" class="cr-drawer-empty">${t('noPostsYet')}</div>`;
+  }
+}
+
+function closeCreatorProfile() {
+  document.getElementById('crDrawerOverlay').classList.remove('open');
+  document.getElementById('crDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Also load hub counts on initial load (without opening panel)
+async function initCreatorsHubCount() {
+  if (!db) return;
+  try {
+    const postsSnap = await db.collection(COLL).get();
+    const uids = new Set();
+    postsSnap.forEach(d => { if (d.data().uid) uids.add(d.data().uid); });
+    const count = uids.size;
+    document.getElementById('nchCount').textContent = count;
+    document.getElementById('nchBadge').textContent = count;
+  } catch(e) {}
+}
+setTimeout(initCreatorsHubCount, 1500);
 </script>
 </body>
 </html>
