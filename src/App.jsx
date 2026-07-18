@@ -807,6 +807,17 @@ const StudiosPro = () => {
 
   // Social share copy feedback
   const [linkCopied, setLinkCopied] = useState(false);
+  const [communityCount, setCommunityCount] = useState(null);
+
+  // Live community post count
+  useEffect(() => {
+    if (!db) return;
+    const q = query(collection(db, 'studios_community_posts'));
+    const unsub = onSnapshot(q, (snap) => {
+      setCommunityCount(snap.size);
+    }, () => {});
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!db) return;
@@ -1568,9 +1579,19 @@ const StudiosPro = () => {
               <span style={{ fontWeight: 'bold' }}>?</span>
               <span>{currentT.faqBtn}</span>
             </a>
-            <a href="/community/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12))', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '10px', padding: '7px 14px', color: '#a78bfa', fontWeight: '700' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
-              <span>{currentT.communityBtn}</span>
+            <a href="/community/" className="sp-nexus-btn" style={{ textDecoration: 'none' }}>
+              <span className="sp-nexus-orbit">
+                <span className="sp-nexus-orbit-dot" style={{ '--d': '0deg' }}></span>
+                <span className="sp-nexus-orbit-dot" style={{ '--d': '120deg' }}></span>
+                <span className="sp-nexus-orbit-dot" style={{ '--d': '240deg' }}></span>
+              </span>
+              <span className="sp-nexus-inner">
+                <span className="sp-nexus-icon">⊕</span>
+                <span className="sp-nexus-label">SP NEXUS</span>
+              </span>
+              {communityCount !== null && (
+                <span className="sp-nexus-badge">{communityCount > 999 ? '999+' : communityCount}</span>
+              )}
             </a>
           </div>
 

@@ -211,6 +211,120 @@ body {
   50% { opacity: 0.6; transform: scale(1.4); }
 }
 
+/* ── SP NEXUS Community Button ─────────────────────────────── */
+.sp-nexus-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 7px 14px 7px 38px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(0,243,255,0.1));
+  border: 1px solid rgba(99,102,241,0.5);
+  border-radius: 12px;
+  color: #c4b5fd;
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 14px rgba(99,102,241,0.25), inset 0 0 10px rgba(99,102,241,0.06);
+  overflow: visible;
+  text-decoration: none !important;
+}
+
+.sp-nexus-btn:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, rgba(99,102,241,0.38), rgba(0,243,255,0.18));
+  border-color: rgba(0,243,255,0.7);
+  box-shadow: 0 0 28px rgba(99,102,241,0.55), 0 0 12px rgba(0,243,255,0.3), inset 0 0 16px rgba(99,102,241,0.1);
+  color: #e0d7ff;
+}
+
+/* Orbit ring */
+.sp-nexus-orbit {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0,243,255,0.4);
+  animation: sp-nexus-spin 4s linear infinite;
+}
+
+@keyframes sp-nexus-spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to   { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Orbit dots */
+.sp-nexus-orbit-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00f3ff;
+  box-shadow: 0 0 6px #00f3ff;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+  transform: rotate(var(--d)) translateX(11px) translateY(-50%);
+}
+
+/* Inner content */
+.sp-nexus-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sp-nexus-icon {
+  font-size: 1rem;
+  line-height: 1;
+  background: linear-gradient(135deg, #6366f1, #00f3ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 4px rgba(0,243,255,0.5));
+}
+
+.sp-nexus-label {
+  background: linear-gradient(90deg, #a78bfa, #00f3ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  font-size: 0.78rem;
+}
+
+/* Notification badge */
+.sp-nexus-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(239,68,68,0.7);
+  border: 1.5px solid rgba(5,8,21,0.8);
+  animation: sp-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes sp-badge-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
 /* Header */
 .header {
   text-align: center;
