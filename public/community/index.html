@@ -2157,63 +2157,109 @@ async function delCmt(cid) {
 // ─── Publish ───────────────────────────────────────────────
 async function publish() {
   if (!curUser || !db) return;
+
   const content = document.getElementById('postContent').value.trim();
-  const cat = document.getElementById('postCat').value;
+  const cat = document.getElementById('postCat') ? document.getElementById('postCat').value : 'general';
+  const vidUrl = document.getElementById('vidUrl') ? document.getElementById('vidUrl').value.trim() : '';
   const audioInp = document.getElementById('audioUrl');
   const audioUrl = audioInp ? audioInp.value.trim() : '';
 
-  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !transferred3D) { toast('Add some content first!','error'); return; }
+  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !transferred3D) {
+    toast('Add some content first!', 'error');
+    return;
+  }
 
   const btn = document.getElementById('btnPub');
-  btn.disabled=true; btn.textContent='Publishing...';
+  btn.disabled = true;
+  btn.textContent = 'Publishing...';
 
-  // Upload images
-  const finalUrls = [];
-  for (let i=0; i<uploadedFiles.length; i++) {
-    const f = uploadedFiles[i];
-    try {
-      document.getElementById('upProg').style.display='block';
-      const ref = storage.ref(`studios_community_images/${curUser.uid}/${Date.now()}_${i}`);
-      const snap = await ref.put(f);
-      document.getElementById('upBar').style.width=`${((i+1)/uploadedFiles.length)*100}%`;
-      finalUrls.push(await snap.ref.getDownloadURL());
-    } catch(e) { console.error(e); toast('Image upload error','error'); }
+  try {
+    // 1. Process image uploads with fast timeout + Base64 fallback
+    const finalUrls = [];
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const f = uploadedFiles[i];
+      if (!f) continue;
+
+      let imgUrl = null;
+      try {
+        if (storage) {
+          document.getElementById('upProg').style.display = 'block';
+          const uploadTask = storage.ref(`studios_community_images/${curUser.uid}/${Date.now()}_${i}`).put(f);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 3500));
+          const snap = await Promise.race([uploadTask, timeoutPromise]);
+          document.getElementById('upBar').style.width = `${((i + 1) / uploadedFiles.length) * 100}%`;
+          imgUrl = await snap.ref.getDownloadURL();
+        }
+      } catch(e) {
+        console.warn('Storage upload bypassed/failed, converting to Base64:', e);
+      }
+
+      if (!imgUrl) {
+        imgUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(f);
+        });
+      }
+
+      if (imgUrl) finalUrls.push(imgUrl);
+    }
+
+    const uDoc = await db.collection('users').doc(curUser.uid).get().catch(() => null);
+    const ud = uDoc && uDoc.exists ? uDoc.data() : {};
+
+    const postData = {
+      uid: curUser.uid,
+      displayName: curUser.displayName || 'Creator',
+      photoURL: curUser.photoURL || '',
+      content,
+      category: transferred3D ? '3dmodel' : cat,
+      images: finalUrls,
+      videoUrl: vidUrl,
+      likes: [],
+      likesCount: 0,
+      commentsCount: 0,
+      userPostCount: ud.postCount || 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (audioUrl) {
+      postData.audioUrl = audioUrl;
+      postData.audioTitle = 'Audio Track / Sound';
+    }
+    if (sharedSourcePage) {
+      postData.sourcePage = sharedSourcePage;
+      sharedSourcePage = null;
+    }
+    if (transferred3D) {
+      postData.modelData = transferred3D;
+      transferred3D = null;
+      document.getElementById('transferBadge').style.display = 'none';
+    }
+
+    await db.collection(COLL).add(postData);
+    await db.collection('users').doc(curUser.uid).set({ postCount: firebase.firestore.FieldValue.increment(1) }, { merge: true }).catch(()=>{});
+
+    // Reset form
+    document.getElementById('postContent').value = '';
+    if (document.getElementById('vidUrl')) document.getElementById('vidUrl').value = '';
+    if (audioInp) audioInp.value = '';
+    uploadedFiles = [];
+    document.getElementById('imgPreviews').innerHTML = '';
+    document.getElementById('upProg').style.display = 'none';
+    document.getElementById('upBar').style.width = '0%';
+    closeCreateDirect();
+    toast('Post published! 🎉', 'success');
+    loadUserStats(curUser.uid);
+
+  } catch(e) {
+    console.error('Publish error:', e);
+    toast('Could not publish post: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('publishPost');
   }
-
-  const ud = (await db.collection('users').doc(curUser.uid).get()).data() || {};
-  const postData = {
-    uid:curUser.uid, displayName:curUser.displayName, photoURL:curUser.photoURL,
-    content, category: transferred3D ? '3dmodel' : cat,
-    images:finalUrls, videoUrl:vidUrl,
-    likes:[], likesCount:0, commentsCount:0,
-    userPostCount: ud.postCount || 0,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  };
-  if (audioUrl) {
-    postData.audioUrl = audioUrl;
-    postData.audioTitle = 'Audio Track / Sound';
-  }
-  if (sharedSourcePage) {
-    postData.sourcePage = sharedSourcePage;
-    sharedSourcePage = null;
-  }
-  if (transferred3D) { postData.modelData=transferred3D; transferred3D=null; document.getElementById('transferBadge').style.display='none'; }
-
-  await db.collection(COLL).add(postData);
-  await db.collection('users').doc(curUser.uid).update({ postCount:firebase.firestore.FieldValue.increment(1) });
-
-  // Reset form
-  document.getElementById('postContent').value='';
-  document.getElementById('vidUrl').value='';
-  if (audioInp) audioInp.value='';
-  uploadedFiles=[];
-  document.getElementById('imgPreviews').innerHTML='';
-  document.getElementById('upProg').style.display='none';
-  document.getElementById('upBar').style.width='0%';
-  closeCreateDirect();
-  toast('Post published! 🎉','success');
-  loadUserStats(curUser.uid);
-  btn.disabled=false; btn.textContent=t('publishPost');
 }
 
 // Audio Player Global Control
