@@ -1344,6 +1344,39 @@ if (auth) {
         displayName: u.displayName, photoURL: u.photoURL,
         email: u.email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).catch(()=>{});
+
+      // Auto-detect real location via IP geolocation and save to user doc
+      fetch('https://ipapi.co/json/')
+        .then(r => r.json())
+        .then(geo => {
+          if (geo && geo.latitude && geo.longitude) {
+            db.collection('users').doc(u.uid).set({
+              location: {
+                lat: geo.latitude,
+                lng: geo.longitude,
+                country: geo.country_code || 'CA',
+                countryName: geo.country_name || 'Canada',
+                city: geo.city || ''
+              }
+            }, { merge: true }).catch(()=>{});
+          }
+        }).catch(()=>{
+          fetch('https://ip-api.com/json/')
+            .then(r => r.json())
+            .then(geo2 => {
+              if (geo2 && geo2.lat && geo2.lon) {
+                db.collection('users').doc(u.uid).set({
+                  location: {
+                    lat: geo2.lat,
+                    lng: geo2.lon,
+                    country: geo2.countryCode || 'CA',
+                    countryName: geo2.country || 'Canada',
+                    city: geo2.city || ''
+                  }
+                }, { merge: true }).catch(()=>{});
+              }
+            }).catch(()=>{});
+        });
       loadUserStats(u.uid);
       setPresence(u.uid, true);
       loadLeaderboard();
