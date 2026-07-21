@@ -62,6 +62,36 @@
   force = false
 
 [[redirects]]
+  from = "/community/map"
+  to = "/community/map.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/map/"
+  to = "/community/map.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/u/:uid"
+  to = "/community/profile.html?u=:uid"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/post/:id"
+  to = "/community/post.html?id=:id"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/post/"
+  to = "/community/post.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/community/*"
   to = "/community/:splat"
   status = 200
