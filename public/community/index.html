@@ -3121,27 +3121,57 @@ async function generateSocialCard() {
   }
 }
 
-// PWA Install prompt listener
+// ─── PWA Mobile App Install Logic ─────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
 let deferredPrompt = null;
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  const banner = document.getElementById('pwaBanner');
-  if (banner) banner.style.display = 'flex';
+  showPWABanner();
 });
 
+function showPWABanner() {
+  if (localStorage.getItem('sp_pwa_dismissed')) return;
+  const banner = document.getElementById('pwaBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function checkMobilePWA() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  if (isMobile && !isStandalone && !localStorage.getItem('sp_pwa_dismissed')) {
+    setTimeout(showPWABanner, 1000);
+  }
+}
+setTimeout(checkMobilePWA, 1200);
+
 function installPWA() {
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isIOS) {
+    alert("📲 Pentru a adăuga pe ecranul iPhone/iPad:\n\n1. Apasă butonul Share (Partajează) 📤 din josul Safari.\n2. Selectează 'Adaugă pe ecranul principal' (+ Add to Home Screen).");
+    return;
+  }
+
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(() => {
       deferredPrompt = null;
       closePWABanner();
     });
+  } else {
+    alert("📲 Pentru a adăuga pe ecranul telefonului:\n\nDeschide meniul browserului (⋮) și alege 'Adaugă pe ecranul de pornire' / 'Install App'.");
   }
 }
+
 function closePWABanner() {
   const banner = document.getElementById('pwaBanner');
   if (banner) banner.style.display = 'none';
+  localStorage.setItem('sp_pwa_dismissed', '1');
 }
 
 // ─── Public Profile Navigation ────────────────────────────
