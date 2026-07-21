@@ -1475,47 +1475,47 @@ function setPresence(uid, online) {
 function loadPublicStats() {
   if (!db) return;
   db.collection('users').get().then(s => {
-    document.getElementById('statMembers').textContent = s.size;
+    const membersEl = document.getElementById('statMembers'); if (membersEl) membersEl.textContent = s.size;
     const el = document.getElementById('sTotalMembers'); if (el) el.textContent = s.size;
-  }).catch(()=>{});
+  }).catch(e => console.warn('loadPublicStats users err:', e));
+
   db.collection(COLL).get().then(s => {
-    document.getElementById('statPosts').textContent = s.size;
+    const postsEl = document.getElementById('statPosts'); if (postsEl) postsEl.textContent = s.size;
     const el = document.getElementById('sTotalPosts'); if (el) el.textContent = s.size;
-  }).catch(()=>{});
+  }).catch(e => console.warn('loadPublicStats posts err:', e));
+
   db.collection(PRESENCE_COLL).where('online','==',true).get().then(s => {
-    document.getElementById('statOnline').textContent = s.size;
+    const onlineEl = document.getElementById('statOnline'); if (onlineEl) onlineEl.textContent = s.size;
     const oc = document.getElementById('onlineCnt'); if (oc && s.size > 0) oc.textContent = `${s.size} online`;
-  }).catch(()=>{});
+  }).catch(e => console.warn('loadPublicStats presence err:', e));
 }
 
 // ─── User stats ────────────────────────────────────────────
 async function loadUserStats(uid) {
-  if (!db) return;
+  if (!db || !uid) return;
   try {
-    // Count posts directly from the posts collection (always accurate)
     const postsSnap = await db.collection(COLL).where('uid', '==', uid).get();
     const posts = postsSnap.size;
 
-    // Sum total likes received across all posts
     let lks = 0;
     postsSnap.forEach(doc => {
       const d = doc.data();
       lks += (d.likesCount || (Array.isArray(d.likes) ? d.likes.length : 0));
     });
 
-    // Sync back to user document so leaderboard is accurate
     try {
-      await db.collection('users').doc(uid).update({ postCount: posts, totalLikes: lks });
+      await db.collection('users').doc(uid).set({ postCount: posts, totalLikes: lks }, { merge: true });
     } catch(e) {}
 
-    document.getElementById('uPostsCnt').textContent = posts;
-    document.getElementById('uLikesCnt').textContent = lks;
+    const uPostsEl = document.getElementById('uPostsCnt'); if (uPostsEl) uPostsEl.textContent = posts;
+    const uLikesEl = document.getElementById('uLikesCnt'); if (uLikesEl) uLikesEl.textContent = lks;
     const rank = getRank(posts);
-    document.getElementById('slRank').innerHTML = rankHtml(posts);
+    const slRankEl = document.getElementById('slRank'); if (slRankEl) slRankEl.innerHTML = rankHtml(posts);
 
     const bioEl = document.getElementById('slBio');
     if (bioEl && !bioEl.dataset.userSet) {
-      const d = (await db.collection('users').doc(uid).get()).data() || {};
+      const uDoc = await db.collection('users').doc(uid).get().catch(() => null);
+      const d = uDoc && uDoc.exists ? uDoc.data() : {};
       const bioText = d.bio || (curLang === 'fr' ? 'Ajouter une biographie... 📝' : 'Click to add status/bio... 📝');
       bioEl.textContent = bioText;
     }
@@ -1524,13 +1524,13 @@ async function loadUserStats(uid) {
     const next = RANKS[idx+1];
     if (next) {
       const pct = Math.min(((posts - rank.min) / (next.min - rank.min)) * 100, 100);
-      document.getElementById('rpFill').style.width = pct + '%';
-      document.getElementById('rp-cur').textContent = posts;
-      document.getElementById('rp-max').textContent = next.min;
-      document.getElementById('rp-next-lbl').textContent = next.label;
+      const rpFill = document.getElementById('rpFill'); if (rpFill) rpFill.style.width = pct + '%';
+      const rpCur = document.getElementById('rp-cur'); if (rpCur) rpCur.textContent = posts;
+      const rpMax = document.getElementById('rp-max'); if (rpMax) rpMax.textContent = next.min;
+      const rpLbl = document.getElementById('rp-next-lbl'); if (rpLbl) rpLbl.textContent = next.label;
     } else {
-      document.getElementById('rpFill').style.width = '100%';
-      document.getElementById('rp-cur').textContent = '👑 MAX';
+      const rpFill = document.getElementById('rpFill'); if (rpFill) rpFill.style.width = '100%';
+      const rpCur = document.getElementById('rp-cur'); if (rpCur) rpCur.textContent = '👑 MAX';
     }
   } catch(e) { console.warn('loadUserStats error:', e); }
 }
@@ -1552,7 +1552,6 @@ async function editBio() {
   }
 }
 
-
 async function loadAdminStats() {
   if (!db) return;
   try {
@@ -1561,9 +1560,9 @@ async function loadAdminStats() {
       db.collection('users').get(),
       db.collection(CMT_COLL).get()
     ]);
-    document.getElementById('sTotalPosts').textContent = posts.size;
-    document.getElementById('sTotalMembers').textContent = users.size;
-    document.getElementById('sTotalComments').textContent = cmts.size;
+    const pEl = document.getElementById('sTotalPosts'); if (pEl) pEl.textContent = posts.size;
+    const uEl = document.getElementById('sTotalMembers'); if (uEl) uEl.textContent = users.size;
+    const cEl = document.getElementById('sTotalComments'); if (cEl) cEl.textContent = cmts.size;
   } catch(e) {}
 }
 
@@ -1571,13 +1570,15 @@ async function loadAdminStats() {
 function loadLeaderboard() {
   if (!db) return;
   const medals = ['🥇','🥈','🥉'];
-  db.collection('users').orderBy('postCount','desc').limit(5).get().then(snap => {
+  db.collection('users').get().then(snap => {
     const lb = document.getElementById('leaderboard');
+    if (!lb) return;
     if (snap.empty) { lb.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.81rem;padding:10px 0">No creators yet</div>`; return; }
+    const users = [];
+    snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+    users.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
     lb.innerHTML = '';
-    let i = 0;
-    snap.forEach(doc => {
-      const d = doc.data();
+    users.slice(0, 5).forEach((d, i) => {
       const a = d.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.displayName||'U')}&background=6366f1&color=fff&bold=true`;
       const medal = medals[i] || `${i+1}.`;
       lb.innerHTML += `<div class="lb-item">
@@ -1587,44 +1588,44 @@ function loadLeaderboard() {
           <div class="lb-name">${esc(d.displayName||'User')}</div>
           <div class="lb-score">${d.postCount||0} posts · ${d.totalLikes||0} likes</div>
         </div>
-        <button onclick="openPublicProfile('${doc.id}')" title="View public profile" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--accent3);padding:5px 9px;border-radius:8px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all .2s">👤</button>
+        <button onclick="openPublicProfile('${d.id}')" title="View public profile" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--accent3);padding:5px 9px;border-radius:8px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;transition:all .2s">👤</button>
       </div>`;
-
-      i++;
     });
-  }).catch(()=>{});
+  }).catch(e => console.warn('loadLeaderboard error:', e));
 }
 
 // ─── Feed ──────────────────────────────────────────────────
 function loadFeed() {
   if (!db) return;
   const el = document.getElementById('feedEl');
+  if (!el) return;
   el.innerHTML = `<div class="feed-loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
   if (unsub) unsub();
-  const makeQuery = () => {
-    let q = db.collection(COLL).orderBy('createdAt','desc').limit(60);
-    if (curCat !== 'all') q = db.collection(COLL).where('category','==',curCat).orderBy('createdAt','desc').limit(60);
-    return q;
-  };
-  const onSnap = snap => {
+
+  const processSnap = snap => {
     allPosts = [];
     snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
     allPosts.sort((a,b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
-      return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+      return tb - ta;
     });
-    renderFeed(allPosts);
-    loadStories(allPosts);
-  };
-  unsub = makeQuery().onSnapshot(onSnap, err => {
-    if (err.code === 'failed-precondition') {
-      let q2 = db.collection(COLL).limit(60);
-      if (curCat !== 'all') q2 = db.collection(COLL).where('category','==',curCat).limit(60);
-      unsub = q2.onSnapshot(onSnap);
-    } else {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Error</div><div class="empty-text">${err.message}</div></div>`;
+
+    let filtered = allPosts;
+    if (curCat !== 'all') {
+      filtered = allPosts.filter(p => p.category === curCat);
     }
+    renderFeed(filtered);
+    loadStories(filtered);
+  };
+
+  unsub = db.collection(COLL).limit(100).onSnapshot(processSnap, err => {
+    console.warn('loadFeed snapshot error, falling back to get():', err);
+    db.collection(COLL).get().then(processSnap).catch(e => {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Error</div><div class="empty-text">${e.message}</div></div>`;
+    });
   });
 }
 
@@ -2809,6 +2810,276 @@ function ssShareTwitter() {
 // ─── Public Profile Navigation ────────────────────────────
 function openPublicProfile(uid) {
   window.open(`/community/u/${uid}`, '_blank');
+}
+
+// ─── DIRECT MESSAGING (DM / REALTIME CHAT) ─────────────────
+let activeChatId = null;
+let activePartnerUid = null;
+let activePartnerData = null;
+let unsubUserChats = null;
+let unsubChatMessages = null;
+let userChats = [];
+
+function initUserChatsListener(uid) {
+  if (!db || !uid) return;
+  if (unsubUserChats) unsubUserChats();
+
+  const processChatsSnap = snap => {
+    userChats = [];
+    let totalUnread = 0;
+    snap.forEach(doc => {
+      const d = { id: doc.id, ...doc.data() };
+      userChats.push(d);
+      if (d.unread && d.unread[uid]) totalUnread++;
+    });
+
+    userChats.sort((a, b) => {
+      const ta = a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0;
+      const tb = b.updatedAt && b.updatedAt.toMillis ? b.updatedAt.toMillis() : 0;
+      return tb - ta;
+    });
+
+    const badge = document.getElementById('dmUnreadBadge');
+    if (badge) {
+      badge.textContent = totalUnread;
+      badge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
+    }
+
+    const listEl = document.getElementById('dmChatsList');
+    const viewEl = document.getElementById('dmChatsListView');
+    if (listEl && viewEl && viewEl.style.display !== 'none') {
+      renderChatsList(userChats);
+    }
+  };
+
+  unsubUserChats = db.collection(CHATS_COLL)
+    .where('participants', 'array-contains', uid)
+    .onSnapshot(processChatsSnap, err => {
+      console.warn('initUserChatsListener snapshot error, falling back to get():', err);
+      db.collection(CHATS_COLL).where('participants', 'array-contains', uid).get().then(processChatsSnap).catch(()=>{});
+    });
+}
+
+function toggleDMDrawer() {
+  if (!curUser) { openAuth(); return; }
+  const overlay = document.getElementById('dmDrawerOverlay');
+  const drawer = document.getElementById('dmDrawer');
+  const isOpen = drawer && drawer.classList.contains('open');
+
+  if (isOpen) {
+    closeDMDrawer();
+  } else {
+    if (overlay) overlay.classList.add('open');
+    if (drawer) drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    backToChatsList();
+    renderChatsList(userChats);
+  }
+}
+
+function closeDMDrawer() {
+  const overlay = document.getElementById('dmDrawerOverlay');
+  const drawer = document.getElementById('dmDrawer');
+  if (overlay) overlay.classList.remove('open');
+  if (drawer) drawer.classList.remove('open');
+  document.body.style.overflow = '';
+  if (unsubChatMessages) { unsubChatMessages(); unsubChatMessages = null; }
+  activeChatId = null;
+  activePartnerUid = null;
+}
+
+function backToChatsList() {
+  const listView = document.getElementById('dmChatsListView');
+  const winView = document.getElementById('dmChatWindowView');
+  if (listView) listView.style.display = 'block';
+  if (winView) winView.style.display = 'none';
+  if (unsubChatMessages) { unsubChatMessages(); unsubChatMessages = null; }
+  activeChatId = null;
+  activePartnerUid = null;
+}
+
+function renderChatsList(chats) {
+  const container = document.getElementById('dmChatsList');
+  if (!container) return;
+
+  if (!chats || !chats.length) {
+    container.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.84rem;padding:40px 0;">${t('noMessagesYet')}</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  chats.forEach(c => {
+    const partnerUid = (c.participants || []).find(id => id !== curUser.uid);
+    const pData = (c.participantData && partnerUid) ? (c.participantData[partnerUid] || {}) : {};
+    const name = pData.displayName || 'Creator';
+    const photo = pData.photoURL || '';
+    const initial = (name[0] || 'C').toUpperCase();
+    const lastMsg = c.lastMessage || '...';
+    const isUnread = c.unread && c.unread[curUser.uid];
+
+    const avatarHtml = photo
+      ? `<img src="${esc(photo)}" style="width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff;border:2px solid var(--accent);flex-shrink:0;">${initial}</div>`;
+
+    const div = document.createElement('div');
+    div.className = 'dm-chat-item';
+    div.innerHTML = `
+      ${avatarHtml}
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:.86rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+        <div style="font-size:.75rem;color:${isUnread?'var(--text)':'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${isUnread?'font-weight:700':''}">${esc(lastMsg)}</div>
+      </div>
+      ${isUnread ? '<div class="dm-badge">NEW</div>' : `<div style="font-size:.65rem;color:var(--muted);">${timeAgo(c.updatedAt)}</div>`}
+    `;
+    div.onclick = () => openChatConversation(c.id, partnerUid, pData);
+    container.appendChild(div);
+  });
+}
+
+async function openDirectChat(partnerUid, partnerName, partnerPhoto) {
+  if (!curUser) { openAuth(); return; }
+  if (partnerUid === curUser.uid) { toast('You cannot message yourself', 'info'); return; }
+
+  const chatId = [curUser.uid, partnerUid].sort().join('_');
+  const pData = { displayName: partnerName || 'Creator', photoURL: partnerPhoto || '' };
+
+  const chatRef = db.collection(CHATS_COLL).doc(chatId);
+  const snap = await chatRef.get().catch(() => null);
+  if (!snap || !snap.exists) {
+    const myData = { displayName: curUser.displayName || 'User', photoURL: curUser.photoURL || '' };
+    await chatRef.set({
+      participants: [curUser.uid, partnerUid],
+      participantData: { [curUser.uid]: myData, [partnerUid]: pData },
+      lastMessage: '',
+      lastSenderId: '',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      unread: { [curUser.uid]: false, [partnerUid]: false }
+    }).catch(()=>{});
+  }
+
+  const drawer = document.getElementById('dmDrawer');
+  if (drawer && !drawer.classList.contains('open')) {
+    const overlay = document.getElementById('dmDrawerOverlay');
+    if (overlay) overlay.classList.add('open');
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  openChatConversation(chatId, partnerUid, pData);
+}
+
+async function openChatConversation(chatId, partnerUid, partnerData) {
+  activeChatId = chatId;
+  activePartnerUid = partnerUid;
+  activePartnerData = partnerData || {};
+
+  const listView = document.getElementById('dmChatsListView');
+  const winView = document.getElementById('dmChatWindowView');
+  if (listView) listView.style.display = 'none';
+  if (winView) winView.style.display = 'flex';
+
+  const name = partnerData.displayName || 'Creator';
+  const photo = partnerData.photoURL || '';
+  const initial = (name[0] || 'C').toUpperCase();
+
+  const avImg = document.getElementById('dmActiveAv');
+  const avInit = document.getElementById('dmActiveAvInit');
+  if (avImg && avInit) {
+    if (photo) {
+      avImg.src = photo; avImg.style.display = 'block'; avInit.style.display = 'none';
+    } else {
+      avInit.textContent = initial; avInit.style.display = 'flex'; avImg.style.display = 'none';
+    }
+  }
+
+  const nameEl = document.getElementById('dmActiveName'); if (nameEl) nameEl.textContent = name;
+  const pBtn = document.getElementById('dmActiveProfileBtn'); if (pBtn) pBtn.onclick = () => openPublicProfile(partnerUid);
+
+  try {
+    const presDoc = await db.collection(PRESENCE_COLL).doc(partnerUid).get();
+    const online = presDoc.exists && presDoc.data().online;
+    const onlineEl = document.getElementById('dmActiveOnline'); if (onlineEl) onlineEl.style.display = online ? 'block' : 'none';
+    const statusEl = document.getElementById('dmActiveStatus'); if (statusEl) statusEl.textContent = online ? '🟢 Online' : 'Offline';
+  } catch(e) {}
+
+  const streamEl = document.getElementById('dmMessageStream');
+  if (streamEl) streamEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.82rem;margin:auto;">Loading messages...</div>`;
+
+  if (unsubChatMessages) unsubChatMessages();
+
+  unsubChatMessages = db.collection(CHATS_COLL).doc(chatId).collection('messages')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      if (!streamEl) return;
+      if (snap.empty) {
+        streamEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.82rem;margin:auto;">${t('noMessagesYet')}</div>`;
+        return;
+      }
+      streamEl.innerHTML = '';
+      snap.forEach(doc => {
+        const m = doc.data();
+        const isMe = m.senderId === (curUser ? curUser.uid : '');
+        const div = document.createElement('div');
+        div.className = `dm-msg-item ${isMe ? 'me' : 'other'}`;
+        div.innerHTML = `
+          <div class="dm-bubble">${esc(m.text)}</div>
+          <div class="dm-msg-time">${timeAgo(m.createdAt)}</div>
+        `;
+        streamEl.appendChild(div);
+      });
+      streamEl.scrollTop = streamEl.scrollHeight;
+
+      if (curUser) {
+        db.collection(CHATS_COLL).doc(chatId).set({
+          unread: { [curUser.uid]: false }
+        }, { merge: true }).catch(()=>{});
+      }
+    }, err => {
+      console.warn('messages stream error:', err);
+    });
+}
+
+async function sendDirectMessage() {
+  if (!curUser || !activeChatId || !activePartnerUid) return;
+  const input = document.getElementById('dmInputText');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.focus();
+
+  try {
+    await db.collection(CHATS_COLL).doc(activeChatId).collection('messages').add({
+      senderId: curUser.uid,
+      senderName: curUser.displayName || 'User',
+      text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection(CHATS_COLL).doc(activeChatId).set({
+      lastMessage: text,
+      lastSenderId: curUser.uid,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      unread: { [activePartnerUid]: true }
+    }, { merge: true });
+
+  } catch(e) {
+    toast('Could not send message: ' + e.message, 'error');
+  }
+}
+
+function checkUrlParamsForDM() {
+  const params = new URLSearchParams(location.search);
+  const dmTargetUid = params.get('dm');
+  if (dmTargetUid && curUser) {
+    db.collection('users').doc(dmTargetUid).get().then(doc => {
+      const d = doc.data() || {};
+      openDirectChat(dmTargetUid, d.displayName || 'Creator', d.photoURL || '');
+    }).catch(() => {
+      openDirectChat(dmTargetUid, 'Creator', '');
+    });
+  }
 }
 </script>
 </body>
