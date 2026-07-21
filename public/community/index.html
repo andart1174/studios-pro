@@ -1674,7 +1674,7 @@ function loadFeed() {
   el.innerHTML = `<div class="feed-loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
   if (unsub) unsub();
 
-  const processSnap = snap => {
+  const processSnap = async snap => {
     allPosts = [];
     snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
     allPosts.sort((a,b) => {
@@ -1684,6 +1684,18 @@ function loadFeed() {
       const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
       return tb - ta;
     });
+
+    // ─── Enrich posts with foundingMember from users collection ───
+    // Only load once; find UIDs of posts that don't have foundingMember set
+    const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
+    if (unknownUids.length > 0) {
+      try {
+        const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get()));
+        const fmMap = {};
+        userSnaps.forEach(s => { if (s.exists) fmMap[s.id] = s.data().foundingMember || false; });
+        allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
+      } catch(e) {}
+    }
 
     let filtered = allPosts;
     if (curCat !== 'all') {
@@ -2246,6 +2258,7 @@ async function publish() {
       likesCount: 0,
       commentsCount: 0,
       userPostCount: ud.postCount || 0,
+      foundingMember: ud.foundingMember || false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
