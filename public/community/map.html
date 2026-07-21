@@ -301,10 +301,12 @@ async function loadCreators() {
       let country = c.location && c.location.country;
 
       if (!lat || !lng) {
-        country = c.country || countryCodes[idx % countryCodes.length];
-        const [baseLat, baseLng] = COUNTRY_COORDS[country] || [46.2276, 2.2137];
-        lat = baseLat + (Math.random() - 0.5) * 6;
-        lng = baseLng + (Math.random() - 0.5) * 6;
+        country = c.country || 'CA';
+        const [baseLat, baseLng] = COUNTRY_COORDS[country] || COUNTRY_COORDS['CA'];
+        const angle = (idx * 137.5) * (Math.PI / 180);
+        const radius = (idx * 0.9) + 0.5;
+        lat = baseLat + Math.sin(angle) * radius;
+        lng = baseLng + Math.cos(angle) * radius;
       }
 
       c.lat = lat;
