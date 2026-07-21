@@ -1685,17 +1685,23 @@ function loadFeed() {
       return tb - ta;
     });
 
-    // ─── Enrich posts with foundingMember from users collection ───
-    // Only load once; find UIDs of posts that don't have foundingMember set
-    const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
-    if (unknownUids.length > 0) {
-      try {
-        const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get()));
-        const fmMap = {};
-        userSnaps.forEach(s => { if (s.exists) fmMap[s.id] = s.data().foundingMember || false; });
-        allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
-      } catch(e) {}
-    }
+    // ─── Founding Member badge: if total members ≤ 100, ALL are founders ───
+    try {
+      const totalSnap = await db.collection('users').get();
+      if (totalSnap.size <= 100) {
+        // Everyone currently registered is a Founding Member — site has < 100 users
+        allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
+      } else {
+        // Site grew past 100 — only show badge for users explicitly marked
+        const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
+        if (unknownUids.length > 0) {
+          const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get()));
+          const fmMap = {};
+          userSnaps.forEach(s => { if (s.exists) fmMap[s.id] = s.data().foundingMember || false; });
+          allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
+        }
+      }
+    } catch(e) {}
 
     let filtered = allPosts;
     if (curCat !== 'all') {
