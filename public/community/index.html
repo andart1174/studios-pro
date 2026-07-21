@@ -3123,7 +3123,7 @@ async function generateSocialCard() {
 
 // ─── PWA Mobile App Install Logic ─────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  navigator.serviceWorker.register('/sw.js', { scope: '/community/' }).catch(()=>{});
 }
 
 let deferredPrompt = null;

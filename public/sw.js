@@ -1,4 +1,6 @@
-const CACHE_NAME = 'sp-nexus-v3';
+// SP Nexus PWA Service Worker — scope: /community/ ONLY
+// Version 4 — AR Viewer safe (never intercepts /apps/ or cross-origin)
+const CACHE_NAME = 'sp-nexus-v4';
 const urlsToCache = [
   '/community/',
   '/manifest.json',
@@ -13,10 +15,13 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  // Remove ALL old caches when activating new SW version
+  // Delete ALL old caches to force clean update
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => {
+        console.log('[SW] Deleting old cache:', k);
+        return caches.delete(k);
+      }))
     ).then(() => self.clients.claim())
   );
 });
@@ -24,23 +29,19 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // CRITICAL: Never intercept cross-origin requests.
-  // This allows AR viewer model downloads, Firebase, catbox.moe, tmpfiles.org to work normally.
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+  // SAFETY 1: Never intercept cross-origin requests
+  if (url.origin !== self.location.origin) return;
 
-  // Skip non-GET requests
-  if (e.request.method !== 'GET') {
-    return;
-  }
+  // SAFETY 2: Never intercept /apps/, /ar-viewer/, /viewer/, /convert/ paths
+  const blockedPaths = ['/apps/', '/ar-viewer/', '/viewer/', '/convert/', '/ar-viewer'];
+  if (blockedPaths.some(p => url.pathname.startsWith(p))) return;
 
-  // Skip AR viewer and apps paths — never cache these, always fetch fresh
-  if (url.pathname.startsWith('/apps/') || url.pathname.startsWith('/ar-viewer/')) {
-    return;
-  }
+  // SAFETY 3: Only handle GET requests
+  if (e.request.method !== 'GET') return;
 
-  // For same-origin GET requests on community pages: serve from cache, fallback to network
+  // Only cache /community/ related requests
+  if (!url.pathname.startsWith('/community') && url.pathname !== '/manifest.json' && url.pathname !== '/logo_studios_pro.png') return;
+
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request)).catch(() => fetch(e.request))
   );
