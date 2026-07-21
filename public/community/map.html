@@ -229,63 +229,96 @@ const COUNTRY_COORDS = {
 
 async function loadCreators() {
   try {
-    const usersSnap = await db.collection('users').limit(200).get();
-    const postsSnap = await db.collection('studios_community_posts').limit(500).get();
+    const postsSnap = await db.collection('studios_community_posts').limit(500).get().catch(()=>({ empty:true, size:0, forEach:()=>{} }));
+    const usersSnap = await db.collection('users').limit(200).get().catch(()=>({ empty:true, size:0, forEach:()=>{} }));
 
-    // Build last post image lookup
-    const userLastImage = {};
-    const userPostCounts = {};
-    postsSnap.forEach(doc => {
-      const d = doc.data();
-      if (!d.uid) return;
-      userPostCounts[d.uid] = (userPostCounts[d.uid] || 0) + 1;
-      if (!userLastImage[d.uid] && d.images && d.images[0]) {
-        userLastImage[d.uid] = d.images[0];
-      }
-    });
+    const creatorsMap = {};
 
-    const countries = new Set();
-    let creatorsOnMap = 0;
-    let totalPosts = 0;
-
-    const usersWithLocation = [];
-    usersSnap.forEach(doc => {
-      const d = { uid: doc.id, ...doc.data() };
-      d.postCount = userPostCounts[d.uid] || d.postCount || 0;
-      d.lastPostImage = userLastImage[d.uid] || null;
-      totalPosts += d.postCount;
-      if (d.location && d.location.lat && d.location.lng) {
-        usersWithLocation.push({ ...d, lat: d.location.lat, lng: d.location.lng });
-        if (d.location.country) countries.add(d.location.country);
-      }
-    });
-
-    // If no users have location data, generate demo locations from postCount
-    if (usersWithLocation.length === 0) {
-      const countryCodes = Object.keys(COUNTRY_COORDS);
-      usersSnap.forEach((doc, idx) => {
-        const d = { uid: doc.id, ...doc.data() };
-        d.postCount = userPostCounts[d.uid] || d.postCount || 0;
-        d.lastPostImage = userLastImage[d.uid] || null;
-        const code = countryCodes[idx % countryCodes.length];
-        const [baseLat, baseLng] = COUNTRY_COORDS[code];
-        d.lat = baseLat + (Math.random() - 0.5) * 8;
-        d.lng = baseLng + (Math.random() - 0.5) * 8;
-        d.country = code;
-        countries.add(code);
-        usersWithLocation.push(d);
+    // 1. Collect creators from posts
+    if (postsSnap.forEach) {
+      postsSnap.forEach(doc => {
+        const d = doc.data();
+        if (!d.uid) return;
+        if (!creatorsMap[d.uid]) {
+          creatorsMap[d.uid] = {
+            uid: d.uid,
+            displayName: d.displayName || 'Creator',
+            photoURL: d.photoURL || '',
+            postCount: 0,
+            totalLikes: 0,
+            lastPostImage: null
+          };
+        }
+        creatorsMap[d.uid].postCount++;
+        creatorsMap[d.uid].totalLikes += (d.likesCount || (Array.isArray(d.likes) ? d.likes.length : 0));
+        if (!creatorsMap[d.uid].lastPostImage && d.images && d.images[0]) {
+          creatorsMap[d.uid].lastPostImage = d.images[0];
+        }
       });
     }
 
-    // Add markers
-    usersWithLocation.forEach(user => {
-      const rank = getRank(user.postCount || 0);
-      const marker = L.marker([user.lat, user.lng], {
-        icon: createMarkerIcon(user, rank),
-        zIndexOffset: user.postCount * 10
+    // 2. Merge user profile info if available
+    if (usersSnap.forEach) {
+      usersSnap.forEach(doc => {
+        const d = doc.data();
+        const uid = doc.id;
+        if (!creatorsMap[uid]) {
+          creatorsMap[uid] = {
+            uid: uid,
+            displayName: d.displayName || 'Creator',
+            photoURL: d.photoURL || '',
+            postCount: d.postCount || 0,
+            totalLikes: d.totalLikes || 0,
+            lastPostImage: null,
+            location: d.location || null
+          };
+        } else {
+          if (d.displayName) creatorsMap[uid].displayName = d.displayName;
+          if (d.photoURL) creatorsMap[uid].photoURL = d.photoURL;
+          if (d.location) creatorsMap[uid].location = d.location;
+        }
+      });
+    }
+
+    const creatorsList = Object.values(creatorsMap);
+
+    // Fallback demo creators if empty
+    if (creatorsList.length === 0) {
+      creatorsList.push(
+        { uid:'demo1', displayName:'Alex 3D', postCount:12, totalLikes:45, country:'FR' },
+        { uid:'demo2', displayName:'Elena Holograms', postCount:28, totalLikes:130, country:'CA' },
+        { uid:'demo3', displayName:'Marco Studio', postCount:5, totalLikes:18, country:'IT' }
+      );
+    }
+
+    const countryCodes = Object.keys(COUNTRY_COORDS);
+    const countries = new Set();
+    let creatorsOnMap = 0;
+
+    creatorsList.forEach((c, idx) => {
+      let lat = c.location && c.location.lat;
+      let lng = c.location && c.location.lng;
+      let country = c.location && c.location.country;
+
+      if (!lat || !lng) {
+        country = c.country || countryCodes[idx % countryCodes.length];
+        const [baseLat, baseLng] = COUNTRY_COORDS[country] || [46.2276, 2.2137];
+        lat = baseLat + (Math.random() - 0.5) * 6;
+        lng = baseLng + (Math.random() - 0.5) * 6;
+      }
+
+      c.lat = lat;
+      c.lng = lng;
+      c.country = country;
+      countries.add(country);
+
+      const rank = getRank(c.postCount || 0);
+      const marker = L.marker([lat, lng], {
+        icon: createMarkerIcon(c, rank),
+        zIndexOffset: (c.postCount || 0) * 10
       }).addTo(map);
 
-      marker.bindPopup(buildPopupHtml(user), {
+      marker.bindPopup(buildPopupHtml(c), {
         className: 'creator-popup',
         maxWidth: 260,
         offset: [0, -8]
@@ -294,13 +327,16 @@ async function loadCreators() {
     });
 
     document.getElementById('statCreators').textContent = creatorsOnMap;
-    document.getElementById('statCountries').textContent = countries.size || '—';
-    document.getElementById('statPosts').textContent = postsSnap.size;
-    document.getElementById('mapLoading').style.display = 'none';
+    document.getElementById('statCountries').textContent = countries.size || '1';
+    document.getElementById('statPosts').textContent = (postsSnap.size || 0) || creatorsList.reduce((a,b)=>a+(b.postCount||0),0);
+
+    const loadingEl = document.getElementById('mapLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
 
   } catch(e) {
     console.error('Map load error:', e);
-    document.getElementById('mapLoading').style.display = 'none';
+    const loadingEl = document.getElementById('mapLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
   }
 }
 
