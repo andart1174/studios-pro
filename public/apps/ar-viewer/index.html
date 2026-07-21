@@ -417,22 +417,60 @@
     if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
-          const directUrl = decodeURIComponent(queryUrl);
-          let name = directUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
-          if (name.includes('#')) {
-            name = name.split('#').pop();
+          const rawUrl = decodeURIComponent(queryUrl);
+          const fetchUrl = rawUrl.split('#')[0];
+          let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
+          if (rawUrl.includes('#')) {
+            name = rawUrl.split('#').pop();
           }
-          showLoader(currentLang === 'fr' ? "Tlchargement du modèle de transfert..." : "Downloading transfer model...");
-          const fetchUrl = directUrl.split('#')[0];
-          const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-          const res = await fetch(proxiedUrl);
+
+          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
+
+          let res = null;
+
+          // 1. If tmpfiles.org URL, try via proxy first, then direct
+          if (fetchUrl.includes('tmpfiles.org')) {
+            const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+            try {
+              res = await fetch(proxiedUrl);
+            } catch (e) {
+              console.warn("Proxy fetch failed, attempting direct fetch:", e);
+            }
+            if (!res || !res.ok) {
+              try {
+                res = await fetch(fetchUrl);
+              } catch (e2) {
+                console.warn("Direct fetch failed:", e2);
+              }
+            }
+          } else {
+            // 2. Direct fetch for Catbox/Litterbox or other CORS-enabled sources
+            try {
+              res = await fetch(fetchUrl);
+            } catch (e) {
+              console.warn("Direct fetch failed, attempting proxy fallback:", e);
+              try {
+                const proxiedUrl = '/api/proxy/' + fetchUrl.replace(/^https?:\/\//, '');
+                res = await fetch(proxiedUrl);
+              } catch (e2) {}
+            }
+          }
+
+          if (!res || !res.ok) {
+            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
+          }
+
           const blob = await res.blob();
+          if (!blob || blob.size < 100) {
+            throw new Error("Invalid or empty file downloaded.");
+          }
+
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
-          alert(currentLang === 'fr' ? "Erreur de chargement du modle AR partagé." : "Error loading shared AR model.");
+          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
         }
       })();
     }
