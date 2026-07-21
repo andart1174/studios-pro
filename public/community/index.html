@@ -15,7 +15,9 @@
   <link rel="canonical" href="https://studios-pro.com/community/">
   <link rel="alternate" hreflang="en" href="https://studios-pro.com/community/?lang=en">
   <link rel="alternate" hreflang="fr" href="https://studios-pro.com/community/?lang=fr">
-  <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/community/">
+  <!-- ═══ PWA Manifest ════════════════════════════════════════════ -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6366f1">
 
   <!-- ═══ Open Graph (Facebook / WhatsApp / LinkedIn / Telegram) ═ -->
   <meta property="og:type" content="website">
@@ -1173,9 +1175,25 @@
       <button class="ss-share-btn" onclick="ssShareWhatsApp()">💬 WhatsApp</button>
       <button class="ss-share-btn" onclick="ssShareFacebook()">👥 Facebook</button>
       <button class="ss-share-btn" onclick="ssShareTwitter()">🐦 Twitter / X</button>
+      <button class="ss-share-btn" onclick="ssSharePinterest()" style="background:rgba(230,0,35,.15);border:1px solid rgba(230,0,35,.3);color:#e60023;">📌 Pinterest</button>
+      <button class="ss-share-btn" onclick="ssShareReddit()" style="background:rgba(255,69,0,.15);border:1px solid rgba(255,69,0,.3);color:#ff4500;">🔴 Reddit</button>
     </div>
+    <button onclick="generateSocialCard()" style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--pink));border:none;color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      🎨 Generate Story Card (with QR Code)
+    </button>
     <button onclick="closeShareSheetDirect()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Close</button>
   </div>
+</div>
+
+<!-- PWA APP INSTALL BANNER -->
+<div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(11,17,32,.95);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(99,102,241,.4);backdrop-filter:blur(16px);border-radius:16px;padding:12px 18px;align-items:center;gap:14px;max-width:90%;width:420px;">
+  <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📲</div>
+  <div style="flex:1;min-width:0;">
+    <div style="font-weight:800;font-size:.85rem;color:#fff;">Install SP Nexus App</div>
+    <div style="font-size:.72rem;color:var(--muted);">Add to home screen for instant 1-tap access!</div>
+  </div>
+  <button onclick="installPWA()" style="background:linear-gradient(135deg,var(--accent),var(--pink));border:none;color:#fff;padding:8px 14px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;">Install</button>
+  <button onclick="closePWABanner()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
 </div>
 
 <!-- FIREBASE -->
@@ -2976,6 +2994,154 @@ function ssShareTwitter() {
   const url = document.getElementById('shareSheetOverlay').dataset.url;
   const title = document.getElementById('shareSheetOverlay').dataset.title || 'Amazing 3D creation';
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔮 ${title} — on SP Nexus 👇`)}&url=${encodeURIComponent(url)}`, '_blank');
+}
+function ssSharePinterest() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  const url = overlay.dataset.url || location.href;
+  const img = overlay.dataset.img || 'https://studios-pro.com/sp_nexus_og.jpg';
+  const title = overlay.dataset.title || 'Creation on SP Nexus';
+  window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(img)}&description=${encodeURIComponent(title)}`, '_blank');
+}
+function ssShareReddit() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  const url = overlay.dataset.url || location.href;
+  const title = overlay.dataset.title || 'Check out this creation on SP Nexus!';
+  window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
+}
+
+async function generateSocialCard() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  const url = overlay ? (overlay.dataset.url || location.href) : location.href;
+  const title = overlay ? (overlay.dataset.title || 'Creation on SP Nexus') : 'Creation on SP Nexus';
+  const author = overlay ? (overlay.dataset.author || 'Creator') : 'Creator';
+  const postImg = overlay ? (overlay.dataset.img || '') : '';
+
+  toast('Generating Story Card... 🎨', 'info');
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+
+    // Background Gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    bgGrad.addColorStop(0, '#050812');
+    bgGrad.addColorStop(0.5, '#0b1120');
+    bgGrad.addColorStop(1, '#050812');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Glow Accent
+    const glowGrad = ctx.createRadialGradient(540, 300, 50, 540, 300, 600);
+    glowGrad.addColorStop(0, 'rgba(99,102,241,0.3)');
+    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, 1080, 900);
+
+    // Top Logo Banner
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fillRect(80, 100, 920, 120);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillText('SP NEXUS', 130, 175);
+
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '600 28px sans-serif';
+    ctx.fillText('Studios-PRO Creator Network', 380, 175);
+
+    // Image Container
+    let imgLoaded = false;
+    if (postImg) {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = postImg;
+        await new Promise((resolve) => {
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          setTimeout(() => resolve(false), 3000);
+        });
+        if (img.complete && img.naturalWidth !== 0) {
+          ctx.drawImage(img, 80, 260, 920, 920);
+          imgLoaded = true;
+        }
+      } catch(e) {}
+    }
+
+    if (!imgLoaded) {
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(80, 260, 920, 920);
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 80px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔮 SP NEXUS', 540, 720);
+      ctx.textAlign = 'left';
+    }
+
+    // Title & Author Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 44px sans-serif';
+    ctx.fillText(title.slice(0, 35) + (title.length > 35 ? '...' : ''), 80, 1260);
+
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '600 34px sans-serif';
+    ctx.fillText(`By ${author}  •  Studios-PRO`, 80, 1330);
+
+    // QR Code
+    const qrImg = new Image();
+    qrImg.crossOrigin = 'Anonymous';
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
+    await new Promise(r => { qrImg.onload = r; qrImg.onerror = r; setTimeout(r, 2500); });
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(80, 1420, 240, 240);
+    ctx.drawImage(qrImg, 90, 1430, 220, 220);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.fillText('Scan to View Creation', 360, 1510);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '26px sans-serif';
+    ctx.fillText('3D, AR, Music & Plans on SP Nexus', 360, 1560);
+
+    // Download PNG
+    const dataUri = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `sp_nexus_story_${Date.now()}.png`;
+    link.href = dataUri;
+    link.click();
+    toast('Story Card downloaded! 📸', 'success');
+
+  } catch(e) {
+    console.error('Story Card error:', e);
+    toast('Could not generate card: ' + e.message, 'error');
+  }
+}
+
+// PWA Install prompt listener
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('pwaBanner');
+  if (banner) banner.style.display = 'flex';
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      closePWABanner();
+    });
+  }
+}
+function closePWABanner() {
+  const banner = document.getElementById('pwaBanner');
+  if (banner) banner.style.display = 'none';
 }
 
 // ─── Public Profile Navigation ────────────────────────────

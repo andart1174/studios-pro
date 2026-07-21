@@ -1,0 +1,17 @@
+{
+  "short_name": "SP Nexus",
+  "name": "SP Nexus — Universal Creator Social Network",
+  "description": "Share 3D models, music, architecture plans, sand art & DXF schematics with creators worldwide.",
+  "icons": [
+    {
+      "src": "/logo_studios_pro.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/community/",
+  "background_color": "#050812",
+  "theme_color": "#6366f1",
+  "display": "standalone",
+  "orientation": "portrait"
+}
