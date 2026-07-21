@@ -1374,6 +1374,16 @@ if (auth) {
         email: u.email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).catch(()=>{});
 
+      // ─── Founding Member: grant badge to first 100 users ───
+      db.collection('users').doc(u.uid).get().then(snap => {
+        if (snap.exists && snap.data().foundingMember) return; // already has it
+        db.collection('users').get().then(all => {
+          if (all.size <= 100) {
+            db.collection('users').doc(u.uid).set({ foundingMember: true }, { merge: true });
+          }
+        }).catch(()=>{});
+      }).catch(()=>{});
+
       // Auto-detect real location via IP geolocation and save to user doc
       fetch('https://ipapi.co/json/')
         .then(r => r.json())
@@ -1848,6 +1858,7 @@ function buildCard(p) {
       <div class="pm">
         <div class="p-author" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-weight:700;color:#fff;cursor:pointer;" onclick="openPublicProfile('${p.uid}')" title="View profile">${esc(p.displayName||'User')}</span>
+          ${p.foundingMember ? '<span title="Founding Member — One of the first 100 members of SP Nexus!" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:.65rem;font-weight:800;background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(251,191,36,.15));border:1px solid rgba(245,158,11,.5);color:#fbbf24;cursor:default">⭐ Founding Member</span>' : ''}
           ${rankHtml(postCnt)}
           ${catBadge(p.category)}
           ${remixHtml}

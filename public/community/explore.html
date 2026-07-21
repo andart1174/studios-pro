@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore Creators — SP Nexus Social Network | Studios-PRO</title>
+  <meta name="description" content="Discover 3D models, architecture, music, sand art and more created by the SP Nexus community. A free social network for creators worldwide.">
+  <meta name="keywords" content="SP Nexus, social network for creators, 3D models, architecture plans, music sharing, AR viewer, Studios-PRO, free creative community">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Explore Creators — SP Nexus | Studios-PRO">
+  <meta property="og:description" content="Discover 3D models, architecture, music and more. Join the SP Nexus creator community — free, no ads.">
+  <meta property="og:image" content="https://studios-pro.com/sp_nexus_og.jpg">
+  <meta property="og:url" content="https://studios-pro.com/community/explore">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Explore SP Nexus — Free Social Network for Creators">
+  <meta name="twitter:image" content="https://studios-pro.com/sp_nexus_og.jpg">
+  <link rel="canonical" href="https://studios-pro.com/community/explore">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Schema.org Structured Data for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "SP Nexus — Studios-PRO",
+    "url": "https://studios-pro.com/community/",
+    "description": "Free social network for creators — 3D models, architecture, music, AR viewer",
+    "potentialAction": { "@type": "SearchAction", "target": "https://studios-pro.com/community/?q={search_term_string}", "query-input": "required name=search_term_string" }
+  }
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#050812;--bg2:#0b1120;--bg3:#111827;
+      --accent:#6366f1;--accent2:#8b5cf6;--accent3:#a78bfa;
+      --gold:#f59e0b;--green:#10b981;--pink:#ec4899;
+      --text:#e2e8f0;--muted:#64748b;
+      --border:rgba(99,102,241,.25);--border2:rgba(255,255,255,.07);
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 10%,rgba(99,102,241,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 85%,rgba(139,92,246,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+
+    /* HEADER */
+    .hdr{position:sticky;top:0;z-index:100;background:rgba(5,8,18,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:62px;display:flex;align-items:center;gap:14px}
+    .hlogo{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .hlogo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-weight:700;font-size:.75rem;color:#fff;box-shadow:0 0 16px rgba(99,102,241,.5)}
+    .hlogo-text{font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff}
+    .hlogo-text span{background:linear-gradient(135deg,var(--accent3),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hdr-actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+    .btn-join{padding:8px 20px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:800;font-size:.82rem;cursor:pointer;font-family:inherit;text-decoration:none;transition:all .2s}
+    .btn-join:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.4)}
+    .btn-login{padding:8px 16px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit;text-decoration:none;transition:all .2s}
+    .btn-login:hover{background:rgba(255,255,255,.1)}
+    .lang-btn{padding:5px 10px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--muted);font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+    .lang-btn:hover{background:rgba(99,102,241,.15);color:var(--accent3)}
+
+    /* HERO */
+    .hero{position:relative;z-index:1;text-align:center;padding:80px 20px 60px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:rgba(99,102,241,.15);border:1px solid var(--border);font-size:.78rem;font-weight:700;color:var(--accent3);margin-bottom:20px}
+    .hero-badge span{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+    .hero h1{font-family:'Outfit',sans-serif;font-weight:900;font-size:clamp(2.2rem,6vw,4rem);color:#fff;line-height:1.1;margin-bottom:16px}
+    .hero h1 span{background:linear-gradient(135deg,var(--accent3),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-sub{font-size:clamp(.95rem,2.5vw,1.15rem);color:#94a3b8;max-width:600px;margin:0 auto 32px;line-height:1.7}
+    .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .cta-primary{padding:14px 32px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:800;font-size:1rem;cursor:pointer;font-family:inherit;text-decoration:none;transition:all .25s;box-shadow:0 8px 24px rgba(99,102,241,.35)}
+    .cta-primary:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(99,102,241,.5)}
+    .cta-secondary{padding:14px 32px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;text-decoration:none;transition:all .25s}
+    .cta-secondary:hover{background:rgba(255,255,255,.1);border-color:var(--border)}
+
+    /* STATS BAR */
+    .stats-bar{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;padding:24px;background:var(--bg2);border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);margin-bottom:48px;position:relative;z-index:1}
+    .stat-item{text-align:center}
+    .stat-num{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.8rem;color:#fff}
+    .stat-lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+    /* FEATURES */
+    .features{max-width:1100px;margin:0 auto 64px;padding:0 20px;position:relative;z-index:1}
+    .sec-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.5rem;color:#fff;margin-bottom:6px}
+    .sec-sub{color:var(--muted);font-size:.9rem;margin-bottom:28px}
+    .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+    .feat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:22px;transition:all .25s}
+    .feat-card:hover{border-color:var(--border);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
+    .feat-icon{font-size:2rem;margin-bottom:12px}
+    .feat-title{font-weight:700;font-size:.95rem;color:#fff;margin-bottom:6px}
+    .feat-desc{font-size:.83rem;color:#94a3b8;line-height:1.6}
+
+    /* EXPLORE GRID */
+    .explore-wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
+    .cat-section{margin-bottom:48px}
+    .cat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .cat-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.2rem;color:#fff;display:flex;align-items:center;gap:8px}
+    .cat-see-all{font-size:.78rem;color:var(--accent3);font-weight:700;text-decoration:none;padding:4px 12px;border-radius:8px;background:rgba(99,102,241,.1);border:1px solid var(--border);transition:all .2s}
+    .cat-see-all:hover{background:rgba(99,102,241,.2)}
+    .posts-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+    .post-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;overflow:hidden;cursor:pointer;transition:all .25s;animation:fadeUp .4s ease}
+    .post-card:hover{border-color:var(--border);box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateY(-3px)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .pc-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2rem}
+    .pc-body{padding:12px}
+    .pc-name{font-size:.78rem;font-weight:700;color:var(--accent3);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+    .pc-text{font-size:.82rem;color:#cbd5e1;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-operator:vertical;-webkit-box-orient:vertical}
+    .pc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)}
+    .pc-likes{font-size:.72rem;color:var(--muted)}
+    .founding-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:10px;font-size:.6rem;font-weight:800;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
+
+    /* JOIN CTA BANNER */
+    .join-banner{position:relative;z-index:1;margin:0 20px 64px;max-width:1060px;margin-left:auto;margin-right:auto}
+    .join-card{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border:1px solid var(--border);border-radius:24px;padding:48px 40px;text-align:center}
+    .join-card h2{font-family:'Outfit',sans-serif;font-weight:900;font-size:clamp(1.5rem,4vw,2.5rem);color:#fff;margin-bottom:12px}
+    .join-card h2 span{background:linear-gradient(135deg,var(--gold),#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .join-card p{color:#94a3b8;font-size:.98rem;max-width:500px;margin:0 auto 28px;line-height:1.7}
+    .founding-counter{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:20px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:var(--gold);font-size:.85rem;font-weight:700;margin-bottom:24px}
+    .founding-counter span{font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:900}
+
+    /* LOADING */
+    .spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:30px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-cat{color:var(--muted);font-size:.85rem;padding:20px 0}
+
+    /* FOOTER */
+    footer{background:var(--bg2);border-top:1px solid var(--border2);padding:32px 20px;text-align:center;position:relative;z-index:1}
+    footer p{color:var(--muted);font-size:.83rem;line-height:1.8}
+    footer a{color:var(--accent3);text-decoration:none}footer a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <a href="https://studios-pro.com" class="hlogo">
+    <div class="hlogo-icon">SP</div>
+    <div class="hlogo-text">SP <span>NEXUS</span></div>
+  </a>
+  <button class="lang-btn" onclick="toggleLang()" id="langBtn">🇫🇷 FR</button>
+  <div class="hdr-actions">
+    <a href="/community/" class="btn-login" id="btnLogin">Sign In</a>
+    <a href="/community/" class="btn-join" id="btnJoin">Join Free ✨</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span></span>
+    <span id="heroBadge">Live Community</span>
+  </div>
+  <h1 id="heroH1">The Social Network<br>for <span id="heroSpan">Creative Minds</span></h1>
+  <p class="hero-sub" id="heroSub">Share 3D models, architecture plans, music, sand art and more. View everything in Augmented Reality on your phone. Free, no ads, forever.</p>
+  <div class="hero-cta">
+    <a href="/community/" class="cta-primary" id="ctaJoin">🚀 Join SP Nexus — It's Free</a>
+    <a href="#explore" class="cta-secondary" id="ctaExplore">👁️ Explore Creations</a>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="statMembers">...</div><div class="stat-lbl" id="lblMembers">Members</div></div>
+  <div class="stat-item"><div class="stat-num" id="statPosts">...</div><div class="stat-lbl" id="lblPosts">Projects Shared</div></div>
+  <div class="stat-item"><div class="stat-num" id="statSpots">...</div><div class="stat-lbl" id="lblSpots">Founding Spots Left</div></div>
+  <div class="stat-item"><div class="stat-num">🌍</div><div class="stat-lbl" id="lblCountries">Countries</div></div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div style="text-align:center;margin-bottom:40px">
+    <div class="sec-title" id="featTitle">Why creators love SP Nexus</div>
+    <div class="sec-sub" id="featSub">Everything you need to share, discover and collaborate</div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🔮</div>
+      <div class="feat-title" id="f1t">AR Viewer</div>
+      <div class="feat-desc" id="f1d">Load any 3D model and view it in Augmented Reality on your table. Share with a QR Code in 1 click.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📸</div>
+      <div class="feat-title" id="f2t">Share Anything</div>
+      <div class="feat-desc" id="f2d">Photos, videos, 3D models, music, architecture plans — all in one place, organized by category.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">💬</div>
+      <div class="feat-title" id="f3t">Direct Messages</div>
+      <div class="feat-desc" id="f3d">Chat privately with any creator. Collaborate, give feedback, build together.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📱</div>
+      <div class="feat-title" id="f4t">Install as App</div>
+      <div class="feat-desc" id="f4d">Add SP Nexus to your phone's home screen in 2 seconds. No App Store needed.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎨</div>
+      <div class="feat-title" id="f5t">20+ Creative Tools</div>
+      <div class="feat-desc" id="f5d">Music studio, 3D modeler, architecture planner, sand art, depth maps and more — all included.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌟</div>
+      <div class="feat-title" id="f6t">Founding Member Badge</div>
+      <div class="feat-desc" id="f6d">Join now and get the exclusive ⭐ Founding Member badge — only for the first 100 members, forever!</div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLORE -->
+<section class="explore-wrap" id="explore">
+  <div style="text-align:center;margin-bottom:40px">
+    <div class="sec-title" id="expTitle">Explore Creations</div>
+    <div class="sec-sub" id="expSub">Browse the latest projects from our community</div>
+  </div>
+  <div id="exploreContent"><div class="spinner"></div></div>
+</section>
+
+<!-- JOIN CTA BANNER -->
+<div class="join-banner">
+  <div class="join-card">
+    <div class="founding-counter">⭐ <span id="spotsLeft">...</span> <span id="spotsLbl">Founding Member spots remaining!</span></div>
+    <h2 id="joinH2">Be One of the <span>First 100</span> Members</h2>
+    <p id="joinP">Join SP Nexus now and get your exclusive ⭐ Founding Member badge — a permanent mark of honor on your profile, forever.</p>
+    <a href="/community/" class="cta-primary" id="ctaJoin2">🚀 Claim My Founding Member Spot</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p id="footerTxt">
+    <strong style="color:#fff">SP Nexus</strong> — The free social network for creators worldwide.<br>
+    Part of <a href="https://studios-pro.com">Studios-PRO</a> · 
+    <a href="/community/">Community</a> · 
+    <a href="/community/explore">Explore</a> · 
+    <a href="/faq.html">FAQ</a> · 
+    <a href="/contact.html">Contact</a>
+  </p>
+</footer>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ─── i18n ──────────────────────────────────────────────────
+let lang = localStorage.getItem('sp_lang') || 'en';
+const T = {
+  en: {
+    live:'Live Community', h1a:'The Social Network', h1b:'Creative Minds',
+    sub:'Share 3D models, architecture plans, music, sand art and more. View everything in Augmented Reality on your phone. Free, no ads, forever.',
+    join:'🚀 Join SP Nexus — It\'s Free', explore:'👁️ Explore Creations',
+    members:'Members', posts:'Projects Shared', spots:'Founding Spots Left', countries:'Countries',
+    featTitle:'Why creators love SP Nexus', featSub:'Everything you need to share, discover and collaborate',
+    f1t:'AR Viewer', f1d:'Load any 3D model and view it in Augmented Reality on your table. Share with a QR Code in 1 click.',
+    f2t:'Share Anything', f2d:'Photos, videos, 3D models, music, architecture plans — all in one place, organized by category.',
+    f3t:'Direct Messages', f3d:'Chat privately with any creator. Collaborate, give feedback, build together.',
+    f4t:'Install as App', f4d:'Add SP Nexus to your phone\'s home screen in 2 seconds. No App Store needed.',
+    f5t:'20+ Creative Tools', f5d:'Music studio, 3D modeler, architecture planner, sand art, depth maps and more — all included.',
+    f6t:'Founding Member Badge', f6d:'Join now and get the exclusive ⭐ Founding Member badge — only for the first 100 members, forever!',
+    expTitle:'Explore Creations', expSub:'Browse the latest projects from our community',
+    spotsLbl:'Founding Member spots remaining!',
+    joinH2a:'Be One of the', joinH2b:'First 100', joinH2c:'Members',
+    joinP:'Join SP Nexus now and get your exclusive ⭐ Founding Member badge — a permanent mark of honor on your profile, forever.',
+    cta2:'🚀 Claim My Founding Member Spot',
+    signin:'Sign In', joinfree:'Join Free ✨',
+    seeAll:'See all →', noPost:'No posts yet — be the first!',
+    catAll:'All',catMusic:'🎵 Music',catArch:'🏛️ Architecture',catSand:'⏳ Sand Art',
+    catMech:'⚙️ Mechanics',catDepth:'🖼️ Depth Maps',cat3d:'🔮 3D Models',
+    catPhoto:'📸 Photos',catVideo:'🎥 Videos',catGen:'💬 General'
+  },
+  fr: {
+    live:'Communauté en Direct', h1a:'Le Réseau Social', h1b:'des Créateurs',
+    sub:'Partagez modèles 3D, plans d\'architecture, musique, art du sable et plus. Visualisez tout en Réalité Augmentée. Gratuit, sans publicité, pour toujours.',
+    join:'🚀 Rejoindre SP Nexus — Gratuit', explore:'👁️ Explorer les Créations',
+    members:'Membres', posts:'Projets Partagés', spots:'Places Fondateurs Restantes', countries:'Pays',
+    featTitle:'Pourquoi les créateurs aiment SP Nexus', featSub:'Tout ce qu\'il faut pour partager, découvrir et collaborer',
+    f1t:'Visualiseur AR', f1d:'Chargez n\'importe quel modèle 3D et visualisez-le en Réalité Augmentée. Partagez avec un QR Code en 1 clic.',
+    f2t:'Partagez Tout', f2d:'Photos, vidéos, modèles 3D, musique, plans d\'architecture — tout au même endroit, organisé par catégorie.',
+    f3t:'Messages Directs', f3d:'Chattez en privé avec n\'importe quel créateur. Collaborez, donnez des retours, construisez ensemble.',
+    f4t:'Installer comme App', f4d:'Ajoutez SP Nexus à l\'écran d\'accueil de votre téléphone en 2 secondes. Pas besoin d\'App Store.',
+    f5t:'20+ Outils Créatifs', f5d:'Studio musical, modéliseur 3D, planificateur architectural, art du sable, cartes de profondeur et plus.',
+    f6t:'Badge Membre Fondateur', f6d:'Rejoignez maintenant et obtenez le badge exclusif ⭐ Membre Fondateur — uniquement pour les 100 premiers membres, pour toujours!',
+    expTitle:'Explorer les Créations', expSub:'Parcourez les derniers projets de notre communauté',
+    spotsLbl:'places Membre Fondateur restantes!',
+    joinH2a:'Soyez Parmi les', joinH2b:'100 Premiers', joinH2c:'Membres',
+    joinP:'Rejoignez SP Nexus maintenant et obtenez votre badge exclusif ⭐ Membre Fondateur — une marque d\'honneur permanente sur votre profil.',
+    cta2:'🚀 Réclamer Ma Place de Membre Fondateur',
+    signin:'Se Connecter', joinfree:'Rejoindre Gratuitement ✨',
+    seeAll:'Voir tout →', noPost:'Aucun projet encore — soyez le premier!',
+    catAll:'Tous',catMusic:'🎵 Musique',catArch:'🏛️ Architecture',catSand:'⏳ Art du Sable',
+    catMech:'⚙️ Mécanique',catDepth:'🖼️ Profondeur',cat3d:'🔮 Modèles 3D',
+    catPhoto:'📸 Photos',catVideo:'🎥 Vidéos',catGen:'💬 Général'
+  }
+};
+function t(k){ return (T[lang]||T.en)[k] || k; }
+function toggleLang(){
+  lang = lang==='en'?'fr':'en';
+  localStorage.setItem('sp_lang', lang);
+  applyLang();
+  renderExplore(cachedPosts);
+}
+function applyLang(){
+  const L = document.getElementById('langBtn');
+  if(L) L.textContent = lang==='en'?'🇫🇷 FR':'🇬🇧 EN';
+  const ids = {
+    heroBadge:'live',heroH1:null,heroSpan:'h1b',heroSub:'sub',
+    ctaJoin:'join',ctaExplore:'explore',
+    lblMembers:'members',lblPosts:'posts',lblSpots:'spots',lblCountries:'countries',
+    featTitle:'featTitle',featSub:'featSub',
+    f1t:'f1t',f1d:'f1d',f2t:'f2t',f2d:'f2d',f3t:'f3t',f3d:'f3d',
+    f4t:'f4t',f4d:'f4d',f5t:'f5t',f5d:'f5d',f6t:'f6t',f6d:'f6d',
+    expTitle:'expTitle',expSub:'expSub',
+    spotsLbl:'spotsLbl',joinP:'joinP',ctaJoin2:'cta2',
+    btnLogin:'signin',btnJoin:'joinfree'
+  };
+  Object.entries(ids).forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(!el||!key) return;
+    el.textContent=t(key);
+  });
+  const h2=document.getElementById('joinH2');
+  if(h2) h2.innerHTML=`${t('joinH2a')} <span>${t('joinH2b')}</span> ${t('joinH2c')}`;
+  document.getElementById('heroH1').innerHTML=`${t('h1a')}<br><span id="heroSpan">${t('h1b')}</span>`;
+  const hs=document.getElementById('heroSpan');
+  if(hs) hs.style.background='linear-gradient(135deg,var(--accent3),var(--pink))';
+}
+
+// ─── Helpers ───────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ytId(url){
+  if(!url) return null;
+  const m=url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+function catKey(c){
+  const m={music:'catMusic',architecture:'catArch',sandart:'catSand',mechanics:'catMech',
+    depthmap:'catDepth','3dmodel':'cat3d',photo:'catPhoto',video:'catVideo',general:'catGen'};
+  return m[c]||'catGen';
+}
+
+// ─── Firebase ──────────────────────────────────────────────
+const FB = {
+  apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
+  authDomain:"studios-pro.firebaseapp.com",
+  projectId:"studios-pro",
+  storageBucket:"studios-pro.firebasestorage.app",
+  messagingSenderId:"337301506363",
+  appId:"1:337301506363:web:68b84724390b830bbf4f1e"
+};
+let db;
+try{ firebase.initializeApp(FB); db=firebase.firestore(); }catch(e){}
+
+const COLL='studios_community_posts';
+const CATS=['music','architecture','sandart','mechanics','depthmap','3dmodel','photo','video','general'];
+let cachedPosts=[];
+
+// ─── Load stats ────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const [usersSnap, postsSnap] = await Promise.all([
+      db.collection('users').get(),
+      db.collection(COLL).get()
+    ]);
+    const total = usersSnap.size;
+    const left = Math.max(0, 100 - total);
+    document.getElementById('statMembers').textContent = total;
+    document.getElementById('statPosts').textContent = postsSnap.size;
+    document.getElementById('statSpots').textContent = left > 0 ? left : '🎉 Full';
+    document.getElementById('spotsLeft').textContent = left > 0 ? left : '0';
+    if(left===0) document.getElementById('spotsLbl').textContent = lang==='fr'?'Places épuisées!':'Spots filled!';
+  }catch(e){}
+}
+
+// ─── Load & Render Explore ─────────────────────────────────
+async function loadExplore(){
+  if(!db){ document.getElementById('exploreContent').innerHTML=''; return; }
+  try{
+    const snap = await db.collection(COLL).orderBy('createdAt','desc').limit(80).get();
+    cachedPosts = [];
+    snap.forEach(d => cachedPosts.push({ id:d.id, ...d.data() }));
+    renderExplore(cachedPosts);
+  }catch(e){
+    document.getElementById('exploreContent').innerHTML='<div style="color:var(--muted);text-align:center;padding:40px">Could not load posts.</div>';
+  }
+}
+
+function renderExplore(posts){
+  const container = document.getElementById('exploreContent');
+  if(!container) return;
+
+  // Group by category
+  const byCat = {};
+  posts.forEach(p => {
+    const c = p.category||'general';
+    if(!byCat[c]) byCat[c] = [];
+    if(byCat[c].length < 4) byCat[c].push(p);
+  });
+
+  let html = '';
+  // "Latest" section first (mixed)
+  const latest = posts.slice(0,4);
+  if(latest.length){
+    html += `<div class="cat-section">
+      <div class="cat-header">
+        <div class="cat-title">✨ ${lang==='fr'?'Derniers Projets':'Latest Projects'}</div>
+        <a href="/community/" class="cat-see-all">${t('seeAll')}</a>
+      </div>
+      <div class="posts-row">${latest.map(p=>postCardHtml(p)).join('')}</div>
+    </div>`;
+  }
+
+  // Category sections
+  CATS.forEach(cat => {
+    const items = byCat[cat];
+    if(!items||!items.length) return;
+    html += `<div class="cat-section">
+      <div class="cat-header">
+        <div class="cat-title">${t(catKey(cat))}</div>
+        <a href="/community/" class="cat-see-all">${t('seeAll')}</a>
+      </div>
+      <div class="posts-row">${items.map(p=>postCardHtml(p)).join('')}</div>
+    </div>`;
+  });
+
+  if(!html) html = `<div style="text-align:center;padding:60px;color:var(--muted)">
+    <div style="font-size:3rem;margin-bottom:12px">🎨</div>
+    <p>${t('noPost')}</p>
+    <a href="/community/" class="cta-primary" style="display:inline-block;margin-top:20px">${t('join')}</a>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function postCardHtml(p){
+  const img = p.images&&p.images[0] ? p.images[0] : null;
+  const vid = ytId(p.videoUrl);
+  const thumb = img
+    ? `<img src="${esc(img)}" class="pc-thumb" style="display:block" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : vid
+      ? `<img src="https://img.youtube.com/vi/${vid}/mqdefault.jpg" class="pc-thumb" style="display:block" alt="" loading="lazy">`
+      : `<div class="pc-thumb" style="font-size:2.5rem;background:var(--bg3)">${catEmoji(p.category)}</div>`;
+  const likes = p.likesCount||(Array.isArray(p.likes)?p.likes.length:0);
+  const fm = p.foundingMember?`<span class="founding-badge">⭐ Founding</span>`:'';
+  return `<div class="post-card" onclick="window.location.href='/community/u/${esc(p.uid)}'">
+    ${thumb}
+    <div class="pc-body">
+      <div class="pc-name">${esc((p.displayName||'Creator').split(' ')[0])} ${fm}</div>
+      ${p.content?`<div class="pc-text">${esc(p.content)}</div>`:''}
+      <div class="pc-footer"><span class="pc-likes">❤️ ${likes}</span><span style="font-size:.68rem;color:var(--muted)">${t(catKey(p.category))}</span></div>
+    </div>
+  </div>`;
+}
+
+function catEmoji(c){
+  const m={music:'🎵',architecture:'🏛️',sandart:'⏳',mechanics:'⚙️',depthmap:'🖼️','3dmodel':'🔮',photo:'📸',video:'🎥',general:'💬'};
+  return m[c]||'🎨';
+}
+
+// ─── Start ─────────────────────────────────────────────────
+document.getElementById('statCountries')?.remove();
+applyLang();
+loadStats();
+loadExplore();
+</script>
+</body>
+</html>
