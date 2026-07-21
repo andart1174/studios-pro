@@ -2840,13 +2840,13 @@ function initUserChatsListener(uid) {
   if (!db || !uid) return;
   if (unsubUserChats) unsubUserChats();
 
-  const processChatsSnap = snap => {
+  const processChats = snap => {
     userChats = [];
     let totalUnread = 0;
     snap.forEach(doc => {
       const d = { id: doc.id, ...doc.data() };
       userChats.push(d);
-      if (d.unread && d.unread[uid]) totalUnread++;
+      if (d.unread) totalUnread++;
     });
 
     userChats.sort((a, b) => {
@@ -2868,12 +2868,10 @@ function initUserChatsListener(uid) {
     }
   };
 
-  unsubUserChats = db.collection(CHATS_COLL)
-    .where('participants', 'array-contains', uid)
-    .onSnapshot(processChatsSnap, err => {
-      console.warn('initUserChatsListener snapshot error, falling back to get():', err);
-      db.collection(CHATS_COLL).where('participants', 'array-contains', uid).get().then(processChatsSnap).catch(()=>{});
-    });
+  unsubUserChats = db.collection('users').doc(uid).collection('chats').onSnapshot(processChats, err => {
+    console.warn('user chats snapshot error:', err);
+    db.collection('users').doc(uid).collection('chats').get().then(processChats).catch(()=>{});
+  });
 }
 
 function toggleDMDrawer() {
@@ -2925,13 +2923,12 @@ function renderChatsList(chats) {
 
   container.innerHTML = '';
   chats.forEach(c => {
-    const partnerUid = (c.participants || []).find(id => id !== curUser.uid);
-    const pData = (c.participantData && partnerUid) ? (c.participantData[partnerUid] || {}) : {};
-    const name = pData.displayName || 'Creator';
-    const photo = pData.photoURL || '';
+    const partnerUid = c.partnerUid || c.id;
+    const name = c.partnerName || 'Creator';
+    const photo = c.partnerPhoto || '';
     const initial = (name[0] || 'C').toUpperCase();
     const lastMsg = c.lastMessage || '...';
-    const isUnread = c.unread && c.unread[curUser.uid];
+    const isUnread = c.unread;
 
     const avatarHtml = photo
       ? `<img src="${esc(photo)}" style="width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0;">`
@@ -2947,7 +2944,7 @@ function renderChatsList(chats) {
       </div>
       ${isUnread ? '<div class="dm-badge">NEW</div>' : `<div style="font-size:.65rem;color:var(--muted);">${timeAgo(c.updatedAt)}</div>`}
     `;
-    div.onclick = () => openChatConversation(c.id, partnerUid, pData);
+    div.onclick = () => openChatConversation([curUser.uid, partnerUid].sort().join('_'), partnerUid, { displayName: name, photoURL: photo });
     container.appendChild(div);
   });
 }
@@ -2958,20 +2955,6 @@ async function openDirectChat(partnerUid, partnerName, partnerPhoto) {
 
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   const pData = { displayName: partnerName || 'Creator', photoURL: partnerPhoto || '' };
-
-  const chatRef = db.collection(CHATS_COLL).doc(chatId);
-  const snap = await chatRef.get().catch(() => null);
-  if (!snap || !snap.exists) {
-    const myData = { displayName: curUser.displayName || 'User', photoURL: curUser.photoURL || '' };
-    await chatRef.set({
-      participants: [curUser.uid, partnerUid],
-      participantData: { [curUser.uid]: myData, [partnerUid]: pData },
-      lastMessage: '',
-      lastSenderId: '',
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      unread: { [curUser.uid]: false, [partnerUid]: false }
-    }).catch(()=>{});
-  }
 
   const drawer = document.getElementById('dmDrawer');
   if (drawer && !drawer.classList.contains('open')) {
@@ -3023,35 +3006,43 @@ async function openChatConversation(chatId, partnerUid, partnerData) {
 
   if (unsubChatMessages) unsubChatMessages();
 
-  unsubChatMessages = db.collection(CHATS_COLL).doc(chatId).collection('messages')
-    .orderBy('createdAt', 'asc')
-    .onSnapshot(snap => {
-      if (!streamEl) return;
-      if (snap.empty) {
-        streamEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.82rem;margin:auto;">${t('noMessagesYet')}</div>`;
-        return;
-      }
-      streamEl.innerHTML = '';
-      snap.forEach(doc => {
-        const m = doc.data();
-        const isMe = m.senderId === (curUser ? curUser.uid : '');
-        const div = document.createElement('div');
-        div.className = `dm-msg-item ${isMe ? 'me' : 'other'}`;
-        div.innerHTML = `
-          <div class="dm-bubble">${esc(m.text)}</div>
-          <div class="dm-msg-time">${timeAgo(m.createdAt)}</div>
-        `;
-        streamEl.appendChild(div);
-      });
-      streamEl.scrollTop = streamEl.scrollHeight;
+  const renderMessages = snap => {
+    if (!streamEl) return;
+    if (snap.empty) {
+      streamEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.82rem;margin:auto;">${t('noMessagesYet')}</div>`;
+      return;
+    }
+    const msgs = [];
+    snap.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
+    msgs.sort((a, b) => {
+      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return ta - tb;
+    });
 
-      if (curUser) {
-        db.collection(CHATS_COLL).doc(chatId).set({
-          unread: { [curUser.uid]: false }
-        }, { merge: true }).catch(()=>{});
-      }
-    }, err => {
-      console.warn('messages stream error:', err);
+    streamEl.innerHTML = '';
+    msgs.forEach(m => {
+      const isMe = m.senderId === (curUser ? curUser.uid : '');
+      const div = document.createElement('div');
+      div.className = `dm-msg-item ${isMe ? 'me' : 'other'}`;
+      div.innerHTML = `
+        <div class="dm-bubble">${esc(m.text)}</div>
+        <div class="dm-msg-time">${timeAgo(m.createdAt)}</div>
+      `;
+      streamEl.appendChild(div);
+    });
+    streamEl.scrollTop = streamEl.scrollHeight;
+
+    if (curUser) {
+      db.collection('users').doc(curUser.uid).collection('chats').doc(partnerUid).set({ unread: false }, { merge: true }).catch(()=>{});
+    }
+  };
+
+  unsubChatMessages = db.collection(CMT_COLL)
+    .where('chatId', '==', chatId)
+    .onSnapshot(renderMessages, err => {
+      console.warn('messages stream error, fallback to get:', err);
+      db.collection(CMT_COLL).where('chatId', '==', chatId).get().then(renderMessages).catch(()=>{});
     });
 }
 
@@ -3066,21 +3057,38 @@ async function sendDirectMessage() {
   input.focus();
 
   try {
-    await db.collection(CHATS_COLL).doc(activeChatId).collection('messages').add({
+    // 1. Add message document to CMT_COLL (allowed for all authenticated users)
+    await db.collection(CMT_COLL).add({
+      isDM: true,
+      chatId: activeChatId,
       senderId: curUser.uid,
       senderName: curUser.displayName || 'User',
-      text,
+      text: text,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    await db.collection(CHATS_COLL).doc(activeChatId).set({
+    // 2. Update my conversation list
+    await db.collection('users').doc(curUser.uid).collection('chats').doc(activePartnerUid).set({
+      partnerUid: activePartnerUid,
+      partnerName: activePartnerData.displayName || 'Creator',
+      partnerPhoto: activePartnerData.photoURL || '',
       lastMessage: text,
-      lastSenderId: curUser.uid,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      unread: { [activePartnerUid]: true }
-    }, { merge: true });
+      unread: false
+    }, { merge: true }).catch(()=>{});
+
+    // 3. Update partner's conversation list
+    await db.collection('users').doc(activePartnerUid).collection('chats').doc(curUser.uid).set({
+      partnerUid: curUser.uid,
+      partnerName: curUser.displayName || 'User',
+      partnerPhoto: curUser.photoURL || '',
+      lastMessage: text,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      unread: true
+    }, { merge: true }).catch(()=>{});
 
   } catch(e) {
+    console.error('Send DM error:', e);
     toast('Could not send message: ' + e.message, 'error');
   }
 }
@@ -3097,6 +3105,7 @@ function checkUrlParamsForDM() {
     });
   }
 }
+
 </script>
 </body>
 </html>
