@@ -1374,12 +1374,17 @@ if (auth) {
         email: u.email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).catch(()=>{});
 
-      // ─── Founding Member: grant badge to first 100 users ───
+      // ─── Founding Member: grant badge + update public stats counter ───
       db.collection('users').doc(u.uid).get().then(snap => {
-        if (snap.exists && snap.data().foundingMember) return; // already has it
+        if (snap.exists && snap.data().foundingMember) return;
         db.collection('users').get().then(all => {
-          if (all.size <= 100) {
-            db.collection('users').doc(u.uid).set({ foundingMember: true }, { merge: true });
+          const total = all.size;
+          // Update public stats counter (readable by everyone)
+          db.collection('community_stats').doc('global').set(
+            { memberCount: total }, { merge: true }
+          ).catch(()=>{});
+          if (total <= 100) {
+            db.collection('users').doc(u.uid).set({ foundingMember: true }, { merge: true }).catch(()=>{});
           }
         }).catch(()=>{});
       }).catch(()=>{});
@@ -1546,10 +1551,21 @@ function setPresence(uid, online) {
 // ─── Public stats ──────────────────────────────────────────
 function loadPublicStats() {
   if (!db) return;
+  // Read from public community_stats doc first (works for all users)
+  db.collection('community_stats').doc('global').get().then(s => {
+    if (s.exists) {
+      const d = s.data();
+      const membersEl = document.getElementById('statMembers'); if (membersEl && d.memberCount) membersEl.textContent = d.memberCount;
+      const el = document.getElementById('sTotalMembers'); if (el && d.memberCount) el.textContent = d.memberCount;
+    }
+  }).catch(()=>{});
+  // Also try direct count (works for admin)
   db.collection('users').get().then(s => {
     const membersEl = document.getElementById('statMembers'); if (membersEl) membersEl.textContent = s.size;
     const el = document.getElementById('sTotalMembers'); if (el) el.textContent = s.size;
-  }).catch(e => console.warn('loadPublicStats users err:', e));
+    // Keep public stats doc in sync
+    db.collection('community_stats').doc('global').set({ memberCount: s.size }, { merge: true }).catch(()=>{});
+  }).catch(()=>{});
 
   db.collection(COLL).get().then(s => {
     const postsEl = document.getElementById('statPosts'); if (postsEl) postsEl.textContent = s.size;
@@ -1685,11 +1701,12 @@ function loadFeed() {
       return tb - ta;
     });
 
-    // ─── Founding Member badge: if total members ≤ 100, ALL are founders ───
+    // ─── Founding Member badge via public community_stats doc ───
     try {
-      const totalSnap = await db.collection('users').get();
-      if (totalSnap.size <= 100) {
-        // Everyone currently registered is a Founding Member — site has < 100 users
+      const statsDoc = await db.collection('community_stats').doc('global').get();
+      const memberCount = (statsDoc.exists && statsDoc.data().memberCount) || 999;
+      if (memberCount <= 100) {
+        // All registered users are Founding Members while site has < 100 members
         allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
       } else {
         // Site grew past 100 — only show badge for users explicitly marked
