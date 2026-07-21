@@ -12,6 +12,13 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/community/u/*"
+  to = "/community/u.html"
+  status = 200
+  force = false
+
+
 # Static HTML pages — serve them as-is (MUST be before the SPA catch-all)
 [[redirects]]
   from = "/faq.html"
