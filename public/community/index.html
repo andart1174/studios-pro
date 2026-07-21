@@ -3122,8 +3122,12 @@ async function generateSocialCard() {
 }
 
 // ─── PWA Mobile App Install Logic ─────────────────────────
+// Note: SW registration removed to prevent interference with AR Viewer model downloads
+// Unregister any previously installed service workers
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/community/sw.js', { scope: '/community/' }).catch(()=>{});
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
 }
 
 let deferredPrompt = null;
