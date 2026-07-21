@@ -585,3 +585,26 @@ body, html {
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
   }
 }
+
+/* Material Studio preset buttons */
+.mat-btn {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.mat-btn:hover {
+  border-color: rgba(6, 182, 212, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.mat-btn.active {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
