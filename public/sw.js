@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sp-nexus-v1';
+const CACHE_NAME = 'sp-nexus-v3';
 const urlsToCache = [
   '/community/',
   '/manifest.json',
@@ -13,25 +13,34 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+  // Remove ALL old caches when activating new SW version
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // CRITICAL: Only intercept same-origin requests (studios-pro.com).
-  // Never intercept cross-origin fetches (catbox.moe, tmpfiles.org, firebase, etc.)
-  // to avoid breaking AR model downloads, Firebase, and external APIs.
+  // CRITICAL: Never intercept cross-origin requests.
+  // This allows AR viewer model downloads, Firebase, catbox.moe, tmpfiles.org to work normally.
   if (url.origin !== self.location.origin) {
-    return; // Let browser handle cross-origin requests normally
+    return;
   }
 
-  // Also skip non-GET requests (POST, PUT, etc.)
+  // Skip non-GET requests
   if (e.request.method !== 'GET') {
     return;
   }
 
-  // For same-origin GET requests: serve from cache, fallback to network
+  // Skip AR viewer and apps paths — never cache these, always fetch fresh
+  if (url.pathname.startsWith('/apps/') || url.pathname.startsWith('/ar-viewer/')) {
+    return;
+  }
+
+  // For same-origin GET requests on community pages: serve from cache, fallback to network
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request)).catch(() => fetch(e.request))
   );
