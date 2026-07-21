@@ -326,6 +326,7 @@ async function loadProfile() {
           </div>
           <div class="profile-actions">
             <button class="btn-share-profile" onclick="openShareSheet()">🔗 Share Profile</button>
+            <button class="btn-share-profile" style="background:rgba(99,102,241,.18);border-color:var(--accent);color:var(--accent3)" onclick="openDirectMessageFromProfile()">💬 Message</button>
             <a href="/community/" class="btn-view-nexus">🚀 View on SP Nexus</a>
           </div>
         </div>
@@ -421,6 +422,11 @@ function shareToFacebook() {
 function shareToTwitter() {
   const userName = document.querySelector('.profile-name')?.childNodes[0]?.textContent?.trim() || 'a creator';
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔮 ${userName} is creating amazing 3D models on SP Nexus! Check it out 👇`)}&url=${encodeURIComponent(shareCurrentUrl)}`, '_blank');
+}
+
+function openDirectMessageFromProfile() {
+  if (!targetUid) return;
+  window.location.href = `/community/?dm=${targetUid}`;
 }
 
 // Init

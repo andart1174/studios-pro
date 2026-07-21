@@ -424,6 +424,19 @@
     .share-sheet-overlay.open .share-sheet-inner{transform:translateY(0)}
     .ss-share-btn{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
     .ss-share-btn:hover{border-color:var(--accent);background:rgba(99,102,241,.12);color:var(--accent3);transform:translateY(-1px)}
+    /* Direct Messaging */
+    .btn-dm-hdr{position:relative;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:var(--accent3);padding:7px 12px;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;font-family:inherit}
+    .btn-dm-hdr:hover{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 14px rgba(99,102,241,.4)}
+    .dm-badge{background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;font-size:.65rem;font-weight:900;padding:1px 6px;border-radius:999px;box-shadow:0 0 8px rgba(239,68,68,.6);line-height:1.2}
+    .dm-chat-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .2s}
+    .dm-chat-item:hover{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);transform:translateY(-1px)}
+    .dm-msg-item{display:flex;flex-direction:column;max-width:80%}
+    .dm-msg-item.me{align-self:flex-end;align-items:flex-end}
+    .dm-msg-item.other{align-self:flex-start;align-items:flex-start}
+    .dm-bubble{padding:10px 14px;border-radius:16px;font-size:.86rem;line-height:1.5;word-break:break-word}
+    .dm-msg-item.me .dm-bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+    .dm-msg-item.other .dm-bubble{background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-bottom-left-radius:4px}
+    .dm-msg-time{font-size:.65rem;color:var(--muted);margin-top:3px;padding:0 4px}
     /* Responsive */
     @media(max-width:1100px){.wrap{grid-template-columns:1fr}.sl,.sr{display:none}}
     @media(max-width:640px){.wrap{padding:12px}.header{padding:0 12px}.hcenter{display:none}.overlay{align-items:flex-end;padding:0}.modal{border-radius:20px 20px 0 0;max-height:94vh}}
@@ -1163,8 +1176,6 @@
 <script>
 // ═══════════════════════════════════════════════════════════
 //  ⚠️  FIREBASE CONFIG — Studios-PRO
-//  Adaugă credentialele proiectului tău Firebase Studios-PRO!
-//  Le găsești în: Firebase Console → Project Settings → General
 // ═══════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
@@ -1187,6 +1198,7 @@ const ADMIN_EMAILS = ['andart1174@gmail.com'];
 const COLL = 'studios_community_posts';
 const CMT_COLL = 'studios_community_comments';
 const PRESENCE_COLL = 'studios_community_presence';
+const CHATS_COLL = 'studios_community_chats';
 
 const RANKS = [
   { id:'starter', label:'🌱 Starter', min:0, max:5 },
@@ -1226,7 +1238,10 @@ const T = {
     hideCreators:'Hide', viewProfile:'View', crPostsLabel:'posts',
     creatorProfile:'Creator Profile', allPostsOf:'All posts by', noPostsYet:'No posts yet.',
     closeProfile:'Close',
-    trendingNow:'🔥 TRENDING NOW', trendingEmpty:'No trending posts yet — be the first!'
+    trendingNow:'🔥 TRENDING NOW', trendingEmpty:'No trending posts yet — be the first!',
+    directMessages:'Direct Messages', noMessagesYet:'No messages yet. Say hi! 👋',
+    typeMessage:'Type a message...', messages:'Messages', conversations:'Conversations',
+    selectChat:'Select a conversation to start chatting'
   },
   fr:{
     community:'SP Nexus', categories:'Catégories', allPosts:'Tous les posts', posts:'Posts', likes:'Likes',
@@ -1257,7 +1272,10 @@ const T = {
     hideCreators:'Masquer', viewProfile:'Voir', crPostsLabel:'posts',
     creatorProfile:'Profil Créateur', allPostsOf:'Tous les posts de', noPostsYet:'Aucun post encore.',
     closeProfile:'Fermer',
-    trendingNow:'🔥 TENDANCES', trendingEmpty:'Aucun post tendance — soyez le premier!'
+    trendingNow:'🔥 TENDANCES', trendingEmpty:'Aucun post tendance — soyez le premier!',
+    directMessages:'Messages Privés', noMessagesYet:'Aucun message encore. Dites bonjour! 👋',
+    typeMessage:'Écrivez un message...', messages:'Messages', conversations:'Conversations',
+    selectChat:'Sélectionnez une conversation pour commencer'
   }
 };
 
@@ -1416,6 +1434,9 @@ function av(u) {
 function renderLoggedIn(u) {
   const a = av(u);
   document.getElementById('hdrActions').innerHTML = `
+    <button class="btn-dm-hdr" onclick="toggleDMDrawer()" title="Direct Messages">
+      💬 <span class="dm-badge" id="dmUnreadBadge" style="display:none">0</span>
+    </button>
     <img src="${a}" class="hdr-avatar" alt="">
     <span class="hdr-name">${esc(u.displayName)}</span>
     ${isAdmin ? '<span class="rank-badge rk-legend">🛡️ ADMIN</span>' : ''}
@@ -1431,6 +1452,8 @@ function renderLoggedIn(u) {
   document.getElementById('slAv').src = a;
   document.getElementById('slName').textContent = u.displayName;
   if (isAdmin) { const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='block'; }
+  initUserChatsListener(u.uid);
+  checkUrlParamsForDM();
 }
 
 function renderLoggedOut() {
@@ -2509,9 +2532,69 @@ setTimeout(loadIncomingShare, 200);
       <div class="cr-drawer-stat-l" data-t="likes">Likes</div>
     </div>
   </div>
+  <div style="display:flex; gap:8px; padding:0 22px 14px; border-bottom:1px solid var(--border);">
+    <button id="crDrawerMsgBtn" style="flex:1; padding:8px 12px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff; font-weight:700; font-size:.78rem; cursor:pointer; font-family:inherit;">💬 Message</button>
+    <button id="crDrawerProfileBtn" style="flex:1; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,.06); border:1px solid var(--border2); color:var(--text); font-weight:600; font-size:.78rem; cursor:pointer; font-family:inherit;">👤 Public Profile</button>
+  </div>
   <div class="cr-drawer-feed-title" id="crDrawerFeedTitle"></div>
   <div class="cr-drawer-grid" id="crDrawerGrid"></div>
 </div>
+
+<!-- DIRECT MESSAGES DRAWER -->
+<div class="cr-drawer-overlay" id="dmDrawerOverlay" onclick="closeDMDrawer()"></div>
+<div class="cr-drawer" id="dmDrawer" style="width:min(520px, 100vw); display:flex; flex-direction:column;">
+  <!-- DM Header -->
+  <div class="cr-drawer-head" style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="font-size:1.3rem;">💬</div>
+      <div>
+        <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.05rem; color:#fff;" data-t="directMessages">Direct Messages</div>
+        <div style="font-size:.7rem; color:var(--muted);" id="dmSubTitle">SP Nexus Realtime Chat</div>
+      </div>
+    </div>
+    <button class="cr-drawer-close" onclick="closeDMDrawer()">✕</button>
+  </div>
+
+  <!-- DM Main Body -->
+  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; min-height:0;">
+    <!-- CHATS LIST VIEW -->
+    <div id="dmChatsListView" style="flex:1; overflow-y:auto; padding:12px;">
+      <div id="dmChatsList" style="display:flex; flex-direction:column; gap:8px;">
+        <div style="text-align:center; color:var(--muted); font-size:.84rem; padding:40px 0;" data-t="loading">Loading conversations...</div>
+      </div>
+    </div>
+
+    <!-- CONVERSATION WINDOW VIEW -->
+    <div id="dmChatWindowView" style="position:absolute; inset:0; background:var(--bg2); display:none; flex-direction:column; z-index:5;">
+      <!-- Active Chat Header -->
+      <div style="padding:10px 16px; border-bottom:1px solid var(--border); background:rgba(11,17,32,.95); backdrop-filter:blur(10px); display:flex; align-items:center; gap:10px;">
+        <button onclick="backToChatsList()" style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); color:var(--text); padding:5px 10px; border-radius:8px; font-size:.78rem; font-weight:700; cursor:pointer; font-family:inherit;">←</button>
+        <div style="position:relative; flex-shrink:0;">
+          <img id="dmActiveAv" src="" style="width:36px; height:36px; border-radius:50%; border:2px solid var(--accent); object-fit:cover; display:none;">
+          <div id="dmActiveAvInit" style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); align-items:center; justify-content:center; font-family:'Outfit',sans-serif; font-weight:800; font-size:.9rem; color:#fff; border:2px solid var(--accent); display:none;"></div>
+          <div id="dmActiveOnline" style="position:absolute; bottom:0; right:0; width:10px; height:10px; border-radius:50%; background:var(--green); border:2px solid var(--bg2); display:none;"></div>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div id="dmActiveName" style="font-weight:700; font-size:.88rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+          <div id="dmActiveStatus" style="font-size:.68rem; color:var(--muted);">Offline</div>
+        </div>
+        <button id="dmActiveProfileBtn" style="background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.3); color:var(--accent3); padding:5px 10px; border-radius:8px; font-size:.72rem; font-weight:700; cursor:pointer; font-family:inherit;">👤 Profile</button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="dmMessageStream" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; min-height:0;">
+        <div style="text-align:center; color:var(--muted); font-size:.82rem; margin:auto;" data-t="noMessagesYet">No messages yet. Say hi! 👋</div>
+      </div>
+
+      <!-- Message Input Composer -->
+      <div style="padding:12px 16px; border-top:1px solid var(--border); background:rgba(11,17,32,.95); display:flex; align-items:center; gap:8px;">
+        <input type="text" id="dmInputText" data-t-placeholder="typeMessage" placeholder="Type a message..." style="flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:12px; padding:10px 14px; color:var(--text); font-size:.85rem; font-family:inherit; outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDirectMessage();}">
+        <button onclick="sendDirectMessage()" style="background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff; padding:10px 16px; border-radius:12px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.88rem; transition:transform .2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 // ─── NEXUS CREATORS HUB ────────────────────────────────────
@@ -2539,10 +2622,7 @@ async function loadCreatorsHub() {
   panel.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:.8rem;">Loading creators…</div>';
 
   try {
-    // Get all users with at least 1 post — use posts collection to find unique UIDs
     const postsSnap = await db.collection(COLL).orderBy('createdAt','desc').get();
-
-    // Build a map: uid → { displayName, photoURL, postCount, totalLikes }
     const creatorsMap = {};
     postsSnap.forEach(doc => {
       const d = doc.data();
@@ -2562,12 +2642,10 @@ async function loadCreatorsHub() {
 
     const creators = Object.values(creatorsMap).sort((a, b) => b.postCount - a.postCount);
 
-    // Update badge counts
     const count = creators.length;
     document.getElementById('nchCount').textContent = count;
     document.getElementById('nchBadge').textContent = count;
 
-    // Load online UIDs from presence
     try {
       const presSnap = await db.collection(PRESENCE_COLL).where('online', '==', true).get();
       onlineUids = new Set();
