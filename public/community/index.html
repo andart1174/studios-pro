@@ -1763,12 +1763,12 @@ function buildCard(p) {
   div.innerHTML = `
     ${p.pinned ? '<div class="pinned-tag">📌 Pinned</div>' : ''}
     <div class="ph">
-      <div class="p-av-wrap">
+      <div class="p-av-wrap" onclick="openPublicProfile('${p.uid}')" style="cursor:pointer" title="View profile">
         <img src="${a}" class="p-av" alt="">
       </div>
       <div class="pm">
         <div class="p-author" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-weight:700;color:#fff;">${esc(p.displayName||'User')}</span>
+          <span style="font-weight:700;color:#fff;cursor:pointer;" onclick="openPublicProfile('${p.uid}')" title="View profile">${esc(p.displayName||'User')}</span>
           ${rankHtml(postCnt)}
           ${catBadge(p.category)}
           ${remixHtml}
@@ -2721,6 +2721,22 @@ async function openCreatorProfile(cr, isOnline) {
 
   // Feed title
   document.getElementById('crDrawerFeedTitle').textContent = `${t('allPostsOf')} ${cr.displayName}`;
+
+  // Bind Action Buttons
+  const msgBtn = document.getElementById('crDrawerMsgBtn');
+  if (msgBtn) {
+    msgBtn.onclick = () => {
+      closeCreatorProfile();
+      openDirectChat(cr.uid, cr.displayName, cr.photoURL);
+    };
+  }
+
+  const profileBtn = document.getElementById('crDrawerProfileBtn');
+  if (profileBtn) {
+    profileBtn.onclick = () => {
+      openPublicProfile(cr.uid);
+    };
+  }
 
   // Grid of posts
   const grid = document.getElementById('crDrawerGrid');
