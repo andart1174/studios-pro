@@ -2481,6 +2481,7 @@ function sharePost(pid) {
     document.getElementById('shareSheetOverlay').dataset.title = postTitle;
     document.getElementById('shareSheetOverlay').dataset.author = postAuthor;
     document.getElementById('shareSheetOverlay').dataset.img = (post && post.images && post.images[0]) || '';
+    document.getElementById('shareSheetOverlay').dataset.modelUrl = (post && (post.modelUrl || post.glbUrl || (post.toolState && post.toolState.modelUrl))) || '';
     el.classList.add('open');
     return;
   }
@@ -3475,9 +3476,11 @@ async function generateARPoster() {
     ctx.font = '600 32px sans-serif';
     ctx.fillText(`By ${author}  •  Founding Member`, 80, 1225);
 
-    // 5. AR QR Code Section (Points directly to AR Viewer with model/photo)
-    const arTargetUrl = postImg
-      ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(postImg)}`
+    // 5. AR QR Code Section
+    const modelUrl = overlay ? (overlay.dataset.modelUrl || '') : '';
+    const is3DModel = modelUrl && /\.(glb|gltf|stl|obj)($|\?)/i.test(modelUrl);
+    const arTargetUrl = is3DModel
+      ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(modelUrl)}`
       : url;
 
     const qrImg = new Image();
