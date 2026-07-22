@@ -426,79 +426,65 @@
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          // Helper function to fetch target URL safely without CORS crash
-          async function fetchWithHtmlResolve(targetUrl) {
+          // Normalize fetchUrl to relative proxy path if it's pointing to our domain or external services
+          let proxyUrl = fetchUrl;
+          if (proxyUrl.includes('litter.catbox.moe')) {
+            proxyUrl = proxyUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
+          } else if (proxyUrl.includes('files.catbox.moe')) {
+            proxyUrl = proxyUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
+          } else if (proxyUrl.includes('tmpfiles.org')) {
+            proxyUrl = proxyUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
+              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+            }
+          } else if (proxyUrl.includes('studios-pro.com/api/')) {
+            proxyUrl = proxyUrl.replace(/^https?:\/\/studios-pro\.com/, '');
+          }
+
+          async function tryDownload(urlToFetch) {
             try {
-              let response = await fetch(targetUrl);
-              if (!response || !response.ok) return response;
-              const cType = (response.headers.get('content-type') || '').toLowerCase();
+              let r = await fetch(urlToFetch);
+              if (!r || !r.ok) return null;
+              const cType = (r.headers.get('content-type') || '').toLowerCase();
               if (cType.includes('html')) {
-                const htmlText = await response.text();
+                // If it's tmpfiles html landing page, resolve the download link
+                const htmlText = await r.text();
                 const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
                 if (m) {
                   let realLink = m[1];
                   if (!realLink.startsWith('http')) {
-                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
+                    realLink = '/api/proxy/' + (realLink.startsWith('/') ? realLink.slice(1) : realLink);
                   }
-                  if (targetUrl.includes('/api/proxy/')) {
-                    realLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
-                  }
-                  response = await fetch(realLink).catch(() => null);
+                  return await fetch(realLink).catch(() => null);
                 }
+                // HTML error page or Cloudflare challenge - return null
+                return null;
               }
-              return response;
+              return r;
             } catch(e) {
-              console.warn('fetchWithHtmlResolve error for', targetUrl, e);
               return null;
             }
           }
 
-          let res = null;
-
-          // 1. Try Netlify Proxy first (bypasses mobile CORS completely for all services)
-          if (fetchUrl.includes('litter.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('files.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            res = await fetchWithHtmlResolve(proxyUrl);
-          }
-
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
+          let res = await tryDownload(proxyUrl);
           if (!res || !res.ok) {
-            let directUrl = fetchUrl;
-            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
-              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            res = await fetchWithHtmlResolve(directUrl);
+            res = await tryDownload(fetchUrl);
           }
-
-          // 3. Fallback: Try CORS proxy (corsproxy.io)
           if (!res || !res.ok) {
-            let cleanUrl = fetchUrl;
-            if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
-              cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
-            res = await fetchWithHtmlResolve(corsUrl);
+            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(fetchUrl)}`;
+            res = await tryDownload(corsUrl);
           }
 
           if (!res || !res.ok) {
-            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
+            throw new Error("Unable to download 3D file from proxy or direct link.");
           }
 
           const blob = await res.blob();
-          if (!blob || blob.size < 50) {
-            throw new Error("Invalid or empty file downloaded.");
+          if (!blob || blob.size < 100) {
+            throw new Error("Downloaded file is invalid or empty.");
           }
 
-          const file = new File([blob], name, { type: 'application/octet-stream' });
+          const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
           handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
