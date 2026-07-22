@@ -909,6 +909,14 @@
         <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
         <div class="rp-bot"><span id="rp-cur">0</span><span id="rp-max">5</span></div>
       </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
+        <span style="font-size:.7rem;color:var(--muted)">Theme:</span>
+        <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
+        <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
+        <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
+        <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
+        <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
+      </div>
     </div>
     <div class="scard">
       <div class="stitle" data-t="categories">Categories & Compartments</div>
@@ -1133,11 +1141,18 @@
         ↩ <span id="replyingTo"></span>
         <button onclick="hideReplyBar()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;margin-left:auto;padding:0">✕</button>
       </div>
+      <div id="voiceRecStatus" style="display:none;font-size:.75rem;color:#ef4444;align-items:center;gap:6px;padding:6px 12px;background:rgba(239,68,68,.12);border-radius:10px;margin-bottom:8px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;animation:pulse 1s infinite"></span>
+        <span id="voiceRecTime" style="font-weight:700">0:00</span>
+        <span style="color:var(--muted);margin-left:4px">(recording max 15s)</span>
+        <button onclick="cancelVoiceRecord()" style="background:none;border:none;color:var(--muted);cursor:pointer;margin-left:auto;font-size:14px">✕</button>
+      </div>
       <div class="c-compose" id="cmtCompose" style="display:none">
         <img src="" alt="" class="c-compose-av" id="cmtAv">
         <textarea class="c-inp" id="cmtInp" data-t-placeholder="writeComment" placeholder="Write a comment..." rows="1"
           oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCmt()}"></textarea>
+        <button class="c-send" id="voiceRecBtn" onclick="toggleVoiceRecord()" title="Record 15s voice note" style="margin-right:4px">🎙️</button>
         <button class="c-send" onclick="sendCmt()">➤</button>
       </div>
       <div id="cmtLoginMsg" style="display:none;text-align:center;padding:16px;color:var(--muted);font-size:.83rem" data-t="loginComment">Sign in to leave a comment</div>
@@ -1932,6 +1947,10 @@ function buildCard(p) {
         <svg viewBox="0 0 24 24" fill="${liked?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span id="lk-${p.id}">${p.likesCount||0}</span>
       </button>
+      <button class="act-btn" onclick="spawnReaction('${p.id}', '🔥', event)" title="Fire Reaction">🔥 <span id="react-fire-${p.id}">${p.reactions?.fire||0}</span></button>
+      <button class="act-btn" onclick="spawnReaction('${p.id}', '🔮', event)" title="Hologram Reaction">🔮 <span id="react-holo-${p.id}">${p.reactions?.holo||0}</span></button>
+      <button class="act-btn" onclick="spawnReaction('${p.id}', '💎', event)" title="Gem Reaction">💎 <span id="react-gem-${p.id}">${p.reactions?.gem||0}</span></button>
+      <button class="act-btn" onclick="spawnReaction('${p.id}', '🚀', event)" title="Launch Reaction">🚀 <span id="react-launch-${p.id}">${p.reactions?.launch||0}</span></button>
       <button class="act-btn" onclick="openCmts('${p.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span id="cm-${p.id}">${p.commentsCount||0}</span>
@@ -2190,7 +2209,8 @@ function buildCmt(c, isReply) {
     <img src="${a}" class="c-av" alt="">
     <div class="c-body">
       <div class="c-author-row"><span class="c-name">${esc(c.displayName||'User')}</span><span class="c-time">${timeAgo(c.createdAt)}</span></div>
-      <div class="c-text">${esc(c.text)}</div>
+      ${c.text ? `<div class="c-text">${esc(c.text)}</div>` : ''}
+      ${c.voiceNote ? `<div style="margin-top:6px"><audio controls src="${esc(c.voiceNote)}" style="height:32px;border-radius:20px;max-width:240px"></audio></div>` : ''}
       <div class="c-acts">
         ${!isReply&&curUser?`<button class="c-act" onclick="setReply('${c.id}','${escAttr(c.displayName||'User')}')">↩ Reply</button>`:''}
         ${canDel?`<button class="c-act" style="color:var(--red)" onclick="delCmt('${c.id}')">🗑️</button>`:''}
@@ -2214,7 +2234,7 @@ function hideReplyBar() {
 async function sendCmt() {
   if (!curUser || !db) return;
   const txt = document.getElementById('cmtInp').value.trim();
-  if (!txt) return;
+  if (!txt && !voiceNoteBase64) return;
   document.getElementById('cmtInp').value='';
   document.getElementById('cmtInp').style.height='auto';
   const data = {
@@ -2222,6 +2242,11 @@ async function sendCmt() {
     photoURL:curUser.photoURL, text:txt,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   };
+  if (voiceNoteBase64) {
+    data.voiceNote = voiceNoteBase64;
+    voiceNoteBase64 = null;
+    cancelVoiceRecord();
+  }
   if (replyParentId) { data.parentId=replyParentId; data.replyTo=replyParentName; }
   await db.collection(CMT_COLL).add(data);
   await db.collection(COLL).doc(curPostId).update({ commentsCount:firebase.firestore.FieldValue.increment(1) });
@@ -3119,6 +3144,117 @@ function resetHoloTilt(wrap) {
   if (card) card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
   if (glare) glare.style.background = 'transparent';
 }
+
+// ─── Particle Reactions ────────────────────────────────────
+async function spawnReaction(pid, emoji, e) {
+  if (!curUser) { openAuth(); return; }
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+  const originX = e.clientX + scrollX;
+  const originY = e.clientY + scrollY;
+
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'sp-like-particle';
+    p.textContent = emoji;
+    p.style.left = (originX - 10 + (Math.random() * 40 - 20)) + 'px';
+    p.style.top = (originY - 10) + 'px';
+    p.style.setProperty('--rot', (Math.random() * 100 - 50) + 'deg');
+    p.style.animationDelay = (Math.random() * 0.1) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 950);
+  }
+
+  if (!db) return;
+  const mapKey = emoji === '🔥' ? 'fire' : emoji === '🔮' ? 'holo' : emoji === '💎' ? 'gem' : 'launch';
+  try {
+    await db.collection(COLL).doc(pid).update({
+      [`reactions.${mapKey}`]: firebase.firestore.FieldValue.increment(1)
+    });
+    const el = document.getElementById(`react-${mapKey}-${pid}`);
+    if (el) el.textContent = parseInt(el.textContent || '0') + 1;
+  } catch(err) {}
+}
+
+// ─── Voice Recorder for Comments ───────────────────────────
+let mediaRecorder = null;
+let audioChunks = [];
+let voiceNoteBase64 = null;
+let voiceTimer = null;
+let voiceSeconds = 0;
+
+async function toggleVoiceRecord() {
+  const btn = document.getElementById('voiceRecBtn');
+  const status = document.getElementById('voiceRecStatus');
+  const timeEl = document.getElementById('voiceRecTime');
+
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(voiceTimer);
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        voiceNoteBase64 = reader.result;
+        toast('Voice note recorded! 🎙️ Click send.', 'success');
+        if (btn) btn.style.background = 'rgba(16,185,129,.2)';
+      };
+      reader.readAsDataURL(audioBlob);
+    };
+
+    mediaRecorder.start();
+    voiceSeconds = 0;
+    if (status) status.style.display = 'flex';
+    if (btn) btn.style.background = 'rgba(239,68,68,.3)';
+
+    voiceTimer = setInterval(() => {
+      voiceSeconds++;
+      if (timeEl) timeEl.textContent = `0:${voiceSeconds < 10 ? '0' : ''}${voiceSeconds}`;
+      if (voiceSeconds >= 15) mediaRecorder.stop();
+    }, 1000);
+
+  } catch(err) {
+    toast('Microphone access required for voice notes 🎙️', 'error');
+  }
+}
+
+function cancelVoiceRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+  voiceNoteBase64 = null;
+  audioChunks = [];
+  const status = document.getElementById('voiceRecStatus');
+  const btn = document.getElementById('voiceRecBtn');
+  if (status) status.style.display = 'none';
+  if (btn) btn.style.background = 'none';
+}
+
+// ─── Accent Themes ─────────────────────────────────────────
+function setTheme(name, hex) {
+  document.documentElement.style.setProperty('--accent', hex);
+  document.documentElement.style.setProperty('--accent2', hex);
+  localStorage.setItem('sp_user_theme', hex);
+  if (curUser && db) {
+    db.collection('users').doc(curUser.uid).set({ themeHex: hex }, { merge: true }).catch(()=>{});
+  }
+  toast('Profile Accent Theme updated! 🎨', 'success');
+}
+
+const savedTheme = localStorage.getItem('sp_user_theme');
+if (savedTheme) {
+  document.documentElement.style.setProperty('--accent', savedTheme);
+  document.documentElement.style.setProperty('--accent2', savedTheme);
+}
+
 
 async function generateSocialCard() {
   const overlay = document.getElementById('shareSheetOverlay');
