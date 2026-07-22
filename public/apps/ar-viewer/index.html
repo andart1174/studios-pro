@@ -1124,7 +1124,22 @@
     // Shared QR code generator helper incorporating dynamic color params
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
+
+      // Route the download URL through our server-side proxy so mobile never hits CORS-blocked hosts directly
+      let proxiedDlUrl = directDlUrl;
+      if (directDlUrl.startsWith('http')) {
+        if (directDlUrl.includes('litter.catbox.moe')) {
+          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
+        } else if (directDlUrl.includes('files.catbox.moe')) {
+          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
+        } else if (directDlUrl.includes('litterbox.catbox.moe')) {
+          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/litterbox\.catbox\.moe\//, `${baseOrigin}/api/proxy-litterbox/`);
+        } else if (directDlUrl.includes('tmpfiles.org')) {
+          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/tmpfiles\.org\//, `${baseOrigin}/api/proxy/`);
+        }
+      }
+
+      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(proxiedDlUrl)}`;
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }
