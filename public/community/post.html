@@ -245,7 +245,7 @@ async function loadPost() {
     const postUrl = `${location.origin}/community/post/?id=${postId}`;
     curShareUrl = postUrl;
 
-    // Update meta tags
+    // Update meta tags & Schema.org Structured Data
     const title = p.content ? p.content.slice(0,80) : (p.category ? p.category : 'Post');
     const desc = `${p.displayName||'Creator'} on SP Nexus · ${p.likesCount||0} likes · ${p.commentsCount||0} comments`;
     document.getElementById('pgTitle').textContent = `${title} — SP Nexus`;
@@ -254,10 +254,48 @@ async function loadPost() {
     document.getElementById('ogDesc').setAttribute('content', desc);
     document.getElementById('ogUrl').setAttribute('content', postUrl);
     document.getElementById('twTitle').setAttribute('content', title);
+    const postImg = (p.images && p.images[0]) ? p.images[0] : "https://studios-pro.com/sp_nexus_og.jpg";
     if (p.images && p.images[0]) {
       document.getElementById('ogImage').setAttribute('content', p.images[0]);
       document.getElementById('twImage').setAttribute('content', p.images[0]);
     }
+
+    // Inject Google Schema.org VisualArtwork structured data for Google Rich Snippets
+    try {
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "VisualArtwork",
+        "name": title,
+        "description": desc,
+        "image": postImg,
+        "artMedium": "Render 3D / Poster",
+        "artworkSurface": "Digital",
+        "creator": {
+          "@type": "Person",
+          "name": p.displayName || "Creator"
+        },
+        "interactionStatistic": [
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": p.likesCount || 0
+          },
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/CommentAction",
+            "userInteractionCount": p.commentsCount || 0
+          }
+        ]
+      };
+      let scriptTag = document.getElementById('schemaJsonLd');
+      if (!scriptTag) {
+        scriptTag = document.createElement('script');
+        scriptTag.id = 'schemaJsonLd';
+        scriptTag.type = 'application/ld+json';
+        document.head.appendChild(scriptTag);
+      }
+      scriptTag.textContent = JSON.stringify(schemaData);
+    } catch(e) { console.warn("Schema LD injection error:", e); }
 
     renderPost(p, container);
     loadMoreFrom(p.uid, p.id);
@@ -270,6 +308,7 @@ function renderPost(p, container) {
   const has3D = p.modelData && (p.modelData.positions || p.modelData.vertices);
   const vid = ytId(p.videoUrl);
   const liked = false; // Simplified — full like functionality in community/index.html
+  const postAlt = esc(`${p.content ? p.content.slice(0, 50) : 'Render 3D'} - ${p.displayName || 'Creator'} SP Nexus Studios-Pro`);
 
   let mediaHtml = '';
   if (has3D) {
@@ -278,13 +317,13 @@ function renderPost(p, container) {
       <div class="p-3d-hint">Drag to rotate</div>
     </div>`;
   } else if (p.images && p.images.length) {
-    mediaHtml = `<div class="pc-imgs">` + p.images.slice(0,4).map(img => `<img src="${esc(img)}" alt="" loading="lazy" onclick="openLb('${esc(img)}')" style="margin-bottom:3px">`).join('') + `</div>`;
+    mediaHtml = `<div class="pc-imgs">` + p.images.slice(0,4).map(img => `<img src="${esc(img)}" alt="${postAlt}" loading="lazy" onclick="openLb('${esc(img)}')" style="margin-bottom:3px">`).join('') + `</div>`;
   } else if (vid) {
-    mediaHtml = `<div class="pc-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>`;
+    mediaHtml = `<div class="pc-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy" title="${postAlt}"></iframe></div>`;
   }
 
   const avatarHtml = p.photoURL
-    ? `<img src="${esc(p.photoURL)}" class="pc-av" alt="">`
+    ? `<img src="${esc(p.photoURL)}" class="pc-av" alt="${esc(p.displayName || 'Creator')}">`
     : `<div class="pc-av-init">${(p.displayName||'U')[0].toUpperCase()}</div>`;
 
   container.innerHTML = `<div class="post-card">

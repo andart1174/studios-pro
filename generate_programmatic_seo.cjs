@@ -658,6 +658,25 @@ if (fs.existsSync(blogDir)) {
   </url>\n`).join('');
 }
 
+const spNexusUrls = `  <url>
+    <loc>https://studios-pro.com/community/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/community/explore.html</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/community/map.html</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>\n`;
+
 const baseUrls = `  <url>
     <loc>https://studios-pro.com/</loc>
     <lastmod>${date}</lastmod>
@@ -679,8 +698,8 @@ const baseUrls = `  <url>
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}</urlset>
+${baseUrls}${spNexusUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}</urlset>
 `;
 
 fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
-console.log('Regenerated sitemap.xml with programmatic SEO routes');
+console.log('Regenerated sitemap.xml with programmatic SEO routes and SP NEXUS community hub');
