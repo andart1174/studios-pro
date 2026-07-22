@@ -442,6 +442,20 @@
       }, 100);
     }
 
+    function resolveProxyUrl(url) {
+      if (!url) return url;
+      if (url.includes('files.catbox.moe')) {
+        return url.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
+      }
+      if (url.includes('litterbox.catbox.moe')) {
+        return url.replace(/^https?:\/\/litterbox\.catbox\.moe\//, '/api/proxy-litterbox/');
+      }
+      if (url.includes('tmpfiles.org')) {
+        return url.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+      }
+      return url;
+    }
+
     async function fetchMediaBlob(mediaUrl) {
       if (!mediaUrl) return null;
       if (mediaUrl.startsWith('data:')) {
@@ -463,9 +477,11 @@
       } catch(e) {}
 
       try {
-        const proxied = '/api/proxy/' + mediaUrl.replace(/^https?:\/\//, '');
-        const r2 = await fetch(proxied);
-        if (r2.ok) return await r2.blob();
+        const proxied = resolveProxyUrl(mediaUrl);
+        if (proxied !== mediaUrl) {
+          const r2 = await fetch(proxied);
+          if (r2.ok) return await r2.blob();
+        }
       } catch(e) {}
 
       return null;
@@ -578,20 +594,13 @@
 
           // 2. Try proxy fallback if direct fetch failed or non-200 OK
           if (!res || !res.ok) {
-            if (fetchUrl.includes('tmpfiles.org')) {
-              const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-              try {
+            try {
+              const proxiedUrl = resolveProxyUrl(fetchUrl);
+              if (proxiedUrl !== fetchUrl) {
                 res = await fetchWithHtmlResolve(proxiedUrl);
-              } catch (e) {
-                console.warn("Proxy fetch failed:", e);
               }
-            } else if (fetchUrl.includes('catbox.moe')) {
-              const proxiedUrl = fetchUrl.replace('https://catbox.moe/', '/api/proxy/').replace('https://litterbox.catbox.moe/', '/api/proxy/');
-              try {
-                res = await fetchWithHtmlResolve(proxiedUrl);
-              } catch (e) {
-                console.warn("Catbox proxy fetch failed:", e);
-              }
+            } catch (e) {
+              console.warn("Proxy fallback fetch failed:", e);
             }
           }
 
