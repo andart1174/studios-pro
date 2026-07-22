@@ -3476,12 +3476,10 @@ async function generateARPoster() {
     ctx.font = '600 32px sans-serif';
     ctx.fillText(`By ${author}  •  Founding Member`, 80, 1225);
 
-    // 5. AR QR Code Section (Only route to AR viewer if post contains a true 3D model file; otherwise route to post page)
-    const modelUrl = overlay ? (overlay.dataset.modelUrl || '') : '';
-    const is3DModel = modelUrl && (modelUrl.startsWith('http://') || modelUrl.startsWith('https://')) && /\.(glb|gltf|stl|obj)($|\?)/i.test(modelUrl);
-
-    const arTargetUrl = is3DModel
-      ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(modelUrl)}`
+    // 5. AR QR Code Section (Always route to AR Viewer using lightweight post ID)
+    const postId = overlay ? (overlay.dataset.id || '') : '';
+    const arTargetUrl = postId
+      ? `https://studios-pro.com/apps/ar-viewer/?post=${postId}`
       : url;
 
     const qrImg = new Image();

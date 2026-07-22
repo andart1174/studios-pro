@@ -12,6 +12,9 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Firebase SDK for loading community posts in AR -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -411,6 +414,63 @@
         })();
       }
     };
+
+    // ─── Firebase Firestore for AR Post Loader ─────────────────
+    const FB_AR = {
+      apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
+      authDomain:"studios-pro.firebaseapp.com",
+      projectId:"studios-pro",
+      storageBucket:"studios-pro.firebasestorage.app",
+      messagingSenderId:"337301506363",
+      appId:"1:337301506363:web:68b84724390b830bbf4f1e"
+    };
+    let dbAr = null;
+    try { if (window.firebase) { firebase.initializeApp(FB_AR); dbAr = firebase.firestore(); } } catch(e){}
+
+    const queryPostId = urlParams.get('post');
+    if (queryPostId && dbAr) {
+      (async () => {
+        showLoader(currentLang === 'fr' ? "Chargement du projet AR..." : "Loading AR project...");
+        try {
+          const doc = await dbAr.collection('studios_community_posts').doc(queryPostId).get();
+          if (doc.exists) {
+            const p = doc.data();
+            const mUrl = p.modelUrl || p.glbUrl || (p.toolState && p.toolState.modelUrl);
+            if (mUrl) {
+              const fileRes = await fetch(mUrl);
+              const blob = await fileRes.blob();
+              const file = new File([blob], 'model.glb', { type: 'application/octet-stream' });
+              handleFile(file);
+            } else if (p.images && p.images.length) {
+              const imgUrl = p.images[0];
+              if (imgUrl.startsWith('data:')) {
+                const parts = imgUrl.split(',');
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                const bstr = atob(parts[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+                const file = new File([new Blob([u8arr], { type: mime })], 'photo.png', { type: mime });
+                handleFile(file);
+              } else {
+                const imgRes = await fetch(imgUrl);
+                const blob = await imgRes.blob();
+                const file = new File([blob], 'photo.png', { type: 'image/png' });
+                handleFile(file);
+              }
+            } else {
+              hideLoader();
+            }
+          } else {
+            hideLoader();
+          }
+        } catch(err) {
+          console.warn("Firestore post AR load error:", err);
+          hideLoader();
+        }
+      })();
+    }
 
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
