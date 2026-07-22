@@ -455,8 +455,14 @@
 
           let res = null;
 
-          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
-          if (fetchUrl.includes('tmpfiles.org')) {
+          // 1. Try Netlify Proxy first for Catbox / Litterbox / tmpfiles (bypasses mobile CORS completely)
+          if (fetchUrl.includes('files.catbox.moe')) {
+            const proxyUrl = fetchUrl.replace('https://files.catbox.moe/', '/api/proxy-catbox/').replace('http://files.catbox.moe/', '/api/proxy-catbox/');
+            res = await fetchWithHtmlResolve(proxyUrl);
+          } else if (fetchUrl.includes('litterbox.catbox.moe')) {
+            const proxyUrl = fetchUrl.replace('https://litterbox.catbox.moe/', '/api/proxy-litterbox/').replace('http://litterbox.catbox.moe/', '/api/proxy-litterbox/');
+            res = await fetchWithHtmlResolve(proxyUrl);
+          } else if (fetchUrl.includes('tmpfiles.org')) {
             let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
             if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
               proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
@@ -464,7 +470,7 @@
             res = await fetchWithHtmlResolve(proxyUrl);
           }
 
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
+          // 2. Direct fetch (if proxy didn't succeed)
           if (!res || !res.ok) {
             let directUrl = fetchUrl;
             if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
