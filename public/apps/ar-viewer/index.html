@@ -417,63 +417,28 @@
     if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
-          const rawUrl = decodeURIComponent(queryUrl);
-          let fetchUrl = rawUrl.split('#')[0];
-          let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
-          if (rawUrl.includes('#')) {
-            name = rawUrl.split('#').pop();
+          const directUrl = decodeURIComponent(queryUrl);
+          let name = directUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
+          if (directUrl.includes('#')) {
+            name = directUrl.split('#').pop();
           }
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          // Helper: fetch URL, return null if it's an HTML error/challenge page
-          async function fetchBinary(url) {
-            try {
-              const r = await fetch(url);
-              if (!r || !r.ok) return null;
-              const ct = (r.headers.get('content-type') || '').toLowerCase();
-              if (ct.includes('html')) {
-                // tmpfiles landing page: try to extract the real /dl/ link
-                const html = await r.text();
-                const m = html.match(/href="([^"]*\/dl\/[^"]+)"/i) || html.match(/href="([^"]+)">Download/i);
-                if (m) {
-                  let link = m[1];
-                  if (!link.startsWith('http')) link = '/api/proxy/' + link.replace(/^\//, '');
-                  return await fetch(link).catch(() => null);
-                }
-                return null; // HTML error/challenge page - reject it
-              }
-              return r;
-            } catch(e) { return null; }
+          // Use same-origin server proxy (Netlify rewrites / Vite server proxy) to download binary without corruption or CORS blocks
+          let proxiedUrl = directUrl;
+          if (proxiedUrl.includes('tmpfiles.org')) {
+            if (!proxiedUrl.includes('/dl/')) {
+              proxiedUrl = proxiedUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+            proxiedUrl = proxiedUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
           }
 
-          let res = null;
-
-          // Build proxy URL for known services
-          if (fetchUrl.includes('litter.catbox.moe')) {
-            res = await fetchBinary(fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/'));
-          } else if (fetchUrl.includes('files.catbox.moe')) {
-            res = await fetchBinary(fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/'));
-          } else if (fetchUrl.includes('tmpfiles.org')) {
-            let p = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!p.includes('/dl/') && !p.includes('/api/v1/')) p = p.replace('/api/proxy/', '/api/proxy/dl/');
-            res = await fetchBinary(p);
-          }
-
-          // 2. Direct fetch fallback
-          if (!res || !res.ok) res = await fetchBinary(fetchUrl);
-
-          // 3. corsproxy.io last resort
-          if (!res || !res.ok) res = await fetchBinary(`https://corsproxy.io/?${encodeURIComponent(fetchUrl)}`);
-
-          if (!res || !res.ok) {
-            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
-          }
+          const res = await fetch(proxiedUrl);
+          if (!res || !res.ok) throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
 
           const blob = await res.blob();
-          if (!blob || blob.size < 50) {
-            throw new Error("Invalid or empty file downloaded.");
-          }
+          if (!blob || blob.size < 50) throw new Error("Invalid or empty file downloaded.");
 
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
@@ -1118,15 +1083,15 @@
             qrSection.querySelector('.qr-container').appendChild(localHint);
           }
           localHint.innerHTML = currentLang === 'fr'
-            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquéee par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
+            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
             : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
         }
       };
     }
 
-    // Upload to generate temporary AR shareable link (dual-service fallback)
+    // Upload to tmpfiles.org to generate temporary AR shareable link
     async function generateARShareLink(file, fileName) {
-      // If mobile, skip QR generation (user is already on mobile!)
+      // If mobile, don't show or generate QR code since user is already on mobile!
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
@@ -1136,40 +1101,33 @@
       qrSection.style.display = 'block';
       qrLoading.style.display = 'flex';
       qrCodeImg.style.display = 'none';
-      // Remove any previous error messages
       qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
-      let directDlUrl = null;
-
-      // -- Upload to tmpfiles.org (no Cloudflare, CORS enabled, works from desktop browser) --
       try {
-        const fd = new FormData();
-        fd.append('file', file, fileName);
-        const r = await fetch('https://tmpfiles.org/api/v1/upload', {
-          method: 'POST',
-          body: fd,
-          signal: AbortSignal.timeout(30000)
-        });
-        if (r.ok) {
-          const json = await r.json();
-          if (json.status === 'success' && json.data && json.data.url) {
-            // Convert to direct download URL (tmpfiles.org/dl/... serves the binary)
-            directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          }
-        }
-      } catch(e) {
-        console.warn('Upload to tmpfiles.org failed:', e.message);
-      }
+        const formData = new FormData();
+        formData.append('file', file, fileName);
 
-      // -- Result --------------------------------------------------------
-      if (directDlUrl) {
-        lastShareUrl = directDlUrl;
-        updateQRCodeWithColorParam(directDlUrl, 'original');
-      } else {
+        const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const json = await response.json();
+        if (json.status === 'success') {
+          const rawUrl = json.data.url;
+          const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          lastShareUrl = directDlUrl;
+          
+          updateQRCodeWithColorParam(directDlUrl, 'original');
+        } else {
+          throw new Error("Upload response failed");
+        }
+      } catch (err) {
+        console.error("Failed to generate QR transfer link:", err);
         qrLoading.style.display = 'none';
         const fallbackText = document.createElement('p');
         fallbackText.className = 'qr-error-msg';
-        fallbackText.textContent = currentLang === 'fr'
+        fallbackText.textContent = currentLang === 'fr' 
           ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
           : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
         qrSection.appendChild(fallbackText);
