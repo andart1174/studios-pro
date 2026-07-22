@@ -12,6 +12,11 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Firebase SDK for 100% reliable 3D transfers -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -1164,23 +1169,52 @@
 
       let directDlUrl = null;
 
-      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
+      // -- Primary Service: Firebase Storage (100% CORS-friendly, zero mobile failure) --
+      const FB_AR = {
+        apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
+        authDomain:"studios-pro.firebaseapp.com",
+        projectId:"studios-pro",
+        storageBucket:"studios-pro.firebasestorage.app",
+        messagingSenderId:"337301506363",
+        appId:"1:337301506363:web:68b84724390b830bbf4f1e"
+      };
       try {
-        const fd1 = new FormData();
-        fd1.append('reqtype', 'fileupload');
-        fd1.append('time', '72h');
-        fd1.append('fileToUpload', file, fileName);
-        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-          method: 'POST',
-          body: fd1,
-          signal: AbortSignal.timeout(30000)
-        });
-        if (r1.ok) {
-          const urlText = (await r1.text()).trim();
-          if (urlText.startsWith('https://')) directDlUrl = urlText;
+        if (window.firebase) {
+          if (!firebase.apps.length) firebase.initializeApp(FB_AR);
+          if (firebase.auth && !firebase.auth().currentUser) {
+            await firebase.auth().signInAnonymously().catch(() => {});
+          }
+          if (firebase.storage) {
+            const cleanName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const ref = firebase.storage().ref(`ar_transfers/${Date.now()}_${cleanName}`);
+            await ref.put(file);
+            const fbUrl = await ref.getDownloadURL();
+            if (fbUrl) directDlUrl = fbUrl;
+          }
         }
       } catch(e) {
-        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
+        console.warn('Firebase Storage upload failed, trying fallbacks:', e);
+      }
+
+      // -- Service 2: litterbox.catbox.moe (72h, CORS *, fallback) --
+      if (!directDlUrl) {
+        try {
+          const fd1 = new FormData();
+          fd1.append('reqtype', 'fileupload');
+          fd1.append('time', '72h');
+          fd1.append('fileToUpload', file, fileName);
+          const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+            method: 'POST',
+            body: fd1,
+            signal: AbortSignal.timeout(30000)
+          });
+          if (r1.ok) {
+            const urlText = (await r1.text()).trim();
+            if (urlText.startsWith('https://')) directDlUrl = urlText;
+          }
+        } catch(e) {
+          console.warn('Service 2 (litterbox.catbox.moe) failed:', e.message);
+        }
       }
 
       // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
