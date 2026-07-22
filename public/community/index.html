@@ -1200,8 +1200,11 @@
       <button class="ss-share-btn" onclick="ssShareReddit()" style="background:rgba(255,69,0,.15);border:1px solid rgba(255,69,0,.3);color:#ff4500;">🔴 Reddit</button>
       <button class="ss-share-btn" onclick="ssShareEmbed()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#a78bfa;grid-column:span 2;">&lt;/&gt; Embed Code (for blogs &amp; sites)</button>
     </div>
-    <button onclick="generateSocialCard()" style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--pink));border:none;color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+    <button onclick="generateSocialCard()" style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--pink));border:none;color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
       🎨 Generate Story Card (with QR Code)
+    </button>
+    <button onclick="generateARPoster()" style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      📜 Generate HD AR Poster (Print / Story)
     </button>
     <button onclick="closeShareSheetDirect()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:none;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">Close</button>
   </div>
@@ -2477,6 +2480,7 @@ function sharePost(pid) {
     document.getElementById('shareSheetOverlay').dataset.url = postUrl;
     document.getElementById('shareSheetOverlay').dataset.title = postTitle;
     document.getElementById('shareSheetOverlay').dataset.author = postAuthor;
+    document.getElementById('shareSheetOverlay').dataset.img = (post && post.images && post.images[0]) || '';
     el.classList.add('open');
     return;
   }
@@ -3365,6 +3369,163 @@ async function generateSocialCard() {
   } catch(e) {
     console.error('Story Card error:', e);
     toast('Could not generate card: ' + e.message, 'error');
+  }
+}
+
+async function generateARPoster() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  const url = overlay ? (overlay.dataset.url || location.href) : location.href;
+  const title = overlay ? (overlay.dataset.title || 'Creation on SP Nexus') : 'Creation on SP Nexus';
+  const author = overlay ? (overlay.dataset.author || 'Creator') : 'Creator';
+  const postImg = overlay ? (overlay.dataset.img || '') : '';
+
+  toast('Generating HD AR Poster... 📜', 'info');
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Dark Futuristic Cyber Gradient Background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    bgGrad.addColorStop(0, '#050814');
+    bgGrad.addColorStop(0.3, '#0b1124');
+    bgGrad.addColorStop(0.7, '#080c1b');
+    bgGrad.addColorStop(1, '#050814');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Neon Radial Glow Top & Bottom
+    const glow1 = ctx.createRadialGradient(540, 200, 50, 540, 200, 650);
+    glow1.addColorStop(0, 'rgba(99,102,241,0.35)');
+    glow1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, 1080, 900);
+
+    const glow2 = ctx.createRadialGradient(540, 1600, 50, 540, 1600, 650);
+    glow2.addColorStop(0, 'rgba(236,72,153,0.25)');
+    glow2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 1000, 1080, 920);
+
+    // 2. Top Header Banner Frame
+    ctx.fillStyle = 'rgba(15,23,42,0.8)';
+    ctx.strokeStyle = 'rgba(99,102,241,0.4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(80, 80, 920, 130, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 44px sans-serif';
+    ctx.fillText('SP NEXUS', 130, 160);
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '800 26px sans-serif';
+    ctx.fillText('⭐ OFFICIAL CREATOR POSTER', 420, 160);
+
+    // 3. Central Image Frame
+    let imgLoaded = false;
+    if (postImg) {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = postImg;
+        await new Promise((r) => { img.onload = () => r(true); img.onerror = () => r(false); setTimeout(() => r(false), 3000); });
+        if (img.complete && img.naturalWidth !== 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(80, 250, 920, 860, 24);
+          ctx.clip();
+          ctx.drawImage(img, 80, 250, 920, 860);
+          ctx.restore();
+
+          // Stroke Frame
+          ctx.strokeStyle = 'rgba(167,139,250,0.5)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.roundRect(80, 250, 920, 860, 24);
+          ctx.stroke();
+
+          imgLoaded = true;
+        }
+      } catch(e) {}
+    }
+
+    if (!imgLoaded) {
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(80, 250, 920, 860, 24);
+      ctx.fill();
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 84px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔮 SP NEXUS 3D', 540, 680);
+      ctx.textAlign = 'left';
+    }
+
+    // 4. Creation Title & Creator Badge
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.fillText(title.slice(0, 32) + (title.length > 32 ? '...' : ''), 80, 1170);
+
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '600 32px sans-serif';
+    ctx.fillText(`By ${author}  •  Founding Member`, 80, 1225);
+
+    // 5. AR QR Code Section (Points directly to AR Viewer with model/photo)
+    const arTargetUrl = postImg
+      ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(postImg)}`
+      : url;
+
+    const qrImg = new Image();
+    qrImg.crossOrigin = 'Anonymous';
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(arTargetUrl)}`;
+    await new Promise(r => { qrImg.onload = r; qrImg.onerror = r; setTimeout(r, 2500); });
+
+    // White QR container box
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(80, 1300, 300, 300, 20);
+    ctx.fill();
+    ctx.drawImage(qrImg, 95, 1315, 270, 270);
+
+    // Call to Action Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px sans-serif';
+    ctx.fillText('📱 SCAN FOR REALITY 3D/AR', 420, 1370);
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText('Project this creation on your table!', 420, 1430);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '26px sans-serif';
+    ctx.fillText('Open camera on your mobile phone', 420, 1480);
+    ctx.fillText('No app download required', 420, 1525);
+
+    // 6. Footer Branding Line
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(80, 1660, 920, 90);
+
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '700 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SP NEXUS — Studios-PRO Creator Community • studios-pro.com', 540, 1715);
+
+    // Trigger PNG Download
+    const dataUri = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `sp_nexus_ar_poster_${Date.now()}.png`;
+    link.href = dataUri;
+    link.click();
+    toast('HD AR Poster Downloaded! 📜 Printable & Story ready', 'success');
+
+  } catch(e) {
+    console.error('AR Poster error:', e);
+    toast('Could not generate AR Poster: ' + e.message, 'error');
   }
 }
 
