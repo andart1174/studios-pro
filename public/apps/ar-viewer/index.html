@@ -426,65 +426,73 @@
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          // Normalize fetchUrl to relative proxy path if it's pointing to our domain or external services
-          let proxyUrl = fetchUrl;
-          if (proxyUrl.includes('litter.catbox.moe')) {
-            proxyUrl = proxyUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
-          } else if (proxyUrl.includes('files.catbox.moe')) {
-            proxyUrl = proxyUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
-          } else if (proxyUrl.includes('tmpfiles.org')) {
-            proxyUrl = proxyUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-          } else if (proxyUrl.includes('studios-pro.com/api/')) {
-            proxyUrl = proxyUrl.replace(/^https?:\/\/studios-pro\.com/, '');
-          }
-
-          async function tryDownload(urlToFetch) {
+          // Helper function to fetch target URL safely without CORS crash
+          async function fetchWithHtmlResolve(targetUrl) {
             try {
-              let r = await fetch(urlToFetch);
-              if (!r || !r.ok) return null;
-              const cType = (r.headers.get('content-type') || '').toLowerCase();
+              let response = await fetch(targetUrl);
+              if (!response || !response.ok) return response;
+              const cType = (response.headers.get('content-type') || '').toLowerCase();
               if (cType.includes('html')) {
-                // If it's tmpfiles html landing page, resolve the download link
-                const htmlText = await r.text();
+                const htmlText = await response.text();
                 const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
                 if (m) {
                   let realLink = m[1];
                   if (!realLink.startsWith('http')) {
-                    realLink = '/api/proxy/' + (realLink.startsWith('/') ? realLink.slice(1) : realLink);
+                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
                   }
-                  return await fetch(realLink).catch(() => null);
+                  if (targetUrl.includes('/api/proxy/')) {
+                    realLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
+                  }
+                  response = await fetch(realLink).catch(() => null);
                 }
-                // HTML error page or Cloudflare challenge - return null
-                return null;
               }
-              return r;
+              return response;
             } catch(e) {
+              console.warn('fetchWithHtmlResolve error for', targetUrl, e);
               return null;
             }
           }
 
-          let res = await tryDownload(proxyUrl);
-          if (!res || !res.ok) {
-            res = await tryDownload(fetchUrl);
+          let res = null;
+
+          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
+          if (fetchUrl.includes('tmpfiles.org')) {
+            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
+              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+            }
+            res = await fetchWithHtmlResolve(proxyUrl);
           }
+
+          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
           if (!res || !res.ok) {
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(fetchUrl)}`;
-            res = await tryDownload(corsUrl);
+            let directUrl = fetchUrl;
+            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
+              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+            res = await fetchWithHtmlResolve(directUrl);
+          }
+
+          // 3. Fallback: Try CORS proxy (corsproxy.io)
+          if (!res || !res.ok) {
+            let cleanUrl = fetchUrl;
+            if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
+              cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
+            res = await fetchWithHtmlResolve(corsUrl);
           }
 
           if (!res || !res.ok) {
-            throw new Error("Unable to download 3D file from proxy or direct link.");
+            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
           }
 
           const blob = await res.blob();
-          if (!blob || blob.size < 100) {
-            throw new Error("Downloaded file is invalid or empty.");
+          if (!blob || blob.size < 50) {
+            throw new Error("Invalid or empty file downloaded.");
           }
 
-          const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+          const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
@@ -1106,21 +1114,7 @@
     // Shared QR code generator helper incorporating dynamic color params
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-
-      // Convert external upload URLs to same-origin Netlify proxy URLs so mobile has 0 CORS issues
-      let dlUrl = directDlUrl;
-      if (dlUrl && dlUrl.startsWith('http')) {
-        if (dlUrl.includes('litter.catbox.moe')) {
-          dlUrl = dlUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
-        } else if (dlUrl.includes('files.catbox.moe')) {
-          dlUrl = dlUrl.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
-        } else if (dlUrl.includes('tmpfiles.org')) {
-          let clean = dlUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          dlUrl = clean.replace(/^https?:\/\/tmpfiles\.org\//, `${baseOrigin}/api/proxy/`);
-        }
-      }
-
-      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(dlUrl)}`;
+      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }
