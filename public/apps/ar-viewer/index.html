@@ -423,6 +423,10 @@
           if (rawUrl.includes('#')) {
             name = rawUrl.split('#').pop();
           }
+          let extCheck = name.split('.').pop().toLowerCase();
+          if (!['glb', 'gltf', 'stl', 'obj', 'jpg', 'jpeg', 'png', 'webp'].includes(extCheck)) {
+            name += '.glb';
+          }
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
@@ -462,6 +466,13 @@
                 res = await fetchWithHtmlResolve(proxiedUrl);
               } catch (e) {
                 console.warn("Proxy fetch failed:", e);
+              }
+            } else if (fetchUrl.includes('catbox.moe')) {
+              const proxiedUrl = fetchUrl.replace('https://catbox.moe/', '/api/proxy/').replace('https://litterbox.catbox.moe/', '/api/proxy/');
+              try {
+                res = await fetchWithHtmlResolve(proxiedUrl);
+              } catch (e) {
+                console.warn("Catbox proxy fetch failed:", e);
               }
             }
           }
@@ -640,6 +651,53 @@
             }
           };
           reader.readAsText(file);
+        } else if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
+          showLoader(currentLang === 'fr' ? "Conversion de l'image en carte 3D AR..." : "Converting image to 3D AR Card...");
+          const reader = new FileReader();
+          reader.onload = async function (e) {
+            try {
+              const img = new Image();
+              img.crossOrigin = 'Anonymous';
+              img.src = e.target.result;
+              img.onload = () => {
+                const aspect = (img.width || 1) / (img.height || 1);
+                const planeW = aspect >= 1 ? 1.6 : 1.6 * aspect;
+                const planeH = aspect >= 1 ? 1.6 / aspect : 1.6;
+
+                const geo = new THREE.PlaneGeometry(planeW, planeH);
+                const canvas2d = document.createElement('canvas');
+                canvas2d.width = img.width || 512;
+                canvas2d.height = img.height || 512;
+                const ctx2d = canvas2d.getContext('2d');
+                ctx2d.drawImage(img, 0, 0);
+
+                const texture = new THREE.CanvasTexture(canvas2d);
+                texture.needsUpdate = true;
+
+                const mat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.1 });
+                const mesh = new THREE.Mesh(geo, mat);
+
+                const scene = new THREE.Scene();
+                scene.add(mesh);
+                normalizeObjectScale(mesh);
+
+                currentThreeScene = scene;
+                currentModelName = name;
+                currentModelExtension = extension;
+
+                exportAndUploadScene(scene, name, true);
+              };
+              img.onerror = () => {
+                hideLoader();
+                alert(currentLang === 'fr' ? "Erreur de chargement de l'image AR." : "Error loading image for AR.");
+              };
+            } catch (err) {
+              console.error("Image parse error:", err);
+              hideLoader();
+              alert("Error parsing image file.");
+            }
+          };
+          reader.readAsDataURL(file);
         } else {
           hideLoader();
           alert(currentLang === 'fr' ? "Format de fichier non pris en charge !" : "Unsupported file format!");

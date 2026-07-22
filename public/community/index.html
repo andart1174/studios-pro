@@ -3481,7 +3481,7 @@ async function generateARPoster() {
     const is3DModel = modelUrl && /\.(glb|gltf|stl|obj)($|\?)/i.test(modelUrl);
     const arTargetUrl = is3DModel
       ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(modelUrl)}`
-      : url;
+      : (postImg ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(postImg)}` : url);
 
     const qrImg = new Image();
     qrImg.crossOrigin = 'Anonymous';
