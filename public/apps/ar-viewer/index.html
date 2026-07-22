@@ -12,10 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Firebase SDK for loading community posts in AR -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -416,115 +412,6 @@
       }
     };
 
-    // ─── Firebase Firestore for AR Post Loader ─────────────────
-    const FB_AR = {
-      apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
-      authDomain:"studios-pro.firebaseapp.com",
-      projectId:"studios-pro",
-      storageBucket:"studios-pro.firebasestorage.app",
-      messagingSenderId:"337301506363",
-      appId:"1:337301506363:web:68b84724390b830bbf4f1e"
-    };
-
-    const queryPostId = urlParams.get('post');
-    if (queryPostId) {
-      showLoader(currentLang === 'fr' ? "Chargement du projet AR..." : "Loading AR project...");
-      let pollCount = 0;
-      const pollInterval = setInterval(() => {
-        pollCount++;
-        if (window.firebase && window.firebase.firestore) {
-          clearInterval(pollInterval);
-          loadARPostDoc(queryPostId);
-        } else if (pollCount > 40) {
-          clearInterval(pollInterval);
-          hideLoader();
-        }
-      }, 100);
-    }
-
-    function resolveProxyUrl(url) {
-      if (!url) return url;
-      if (url.includes('files.catbox.moe')) {
-        return url.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
-      }
-      if (url.includes('litterbox.catbox.moe')) {
-        return url.replace(/^https?:\/\/litterbox\.catbox\.moe\//, '/api/proxy-litterbox/');
-      }
-      if (url.includes('tmpfiles.org')) {
-        return url.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-      }
-      return url;
-    }
-
-    async function fetchMediaBlob(mediaUrl) {
-      if (!mediaUrl) return null;
-      if (mediaUrl.startsWith('data:')) {
-        try {
-          const parts = mediaUrl.split(',');
-          const mimeMatch = parts[0].match(/:(.*?);/);
-          const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-          const bstr = atob(parts[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-          return new Blob([u8arr], { type: mime });
-        } catch(e) { return null; }
-      }
-
-      try {
-        const r = await fetch(mediaUrl);
-        if (r.ok) return await r.blob();
-      } catch(e) {}
-
-      try {
-        const proxied = resolveProxyUrl(mediaUrl);
-        if (proxied !== mediaUrl) {
-          const r2 = await fetch(proxied);
-          if (r2.ok) return await r2.blob();
-        }
-      } catch(e) {}
-
-      return null;
-    }
-
-    async function loadARPostDoc(postId) {
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(FB_AR);
-        }
-        if (firebase.auth) {
-          try { await firebase.auth().signInAnonymously(); } catch(e){}
-        }
-        const dbAr = firebase.firestore();
-        const doc = await dbAr.collection('studios_community_posts').doc(postId).get();
-        if (doc.exists) {
-          const p = doc.data();
-          const mUrl = p.modelUrl || p.glbUrl || (p.toolState && p.toolState.modelUrl);
-          if (mUrl) {
-            const blob = await fetchMediaBlob(mUrl);
-            if (blob) {
-              const file = new File([blob], 'model.glb', { type: 'application/octet-stream' });
-              handleFile(file);
-              return;
-            }
-          }
-          if (p.images && p.images.length) {
-            const imgUrl = p.images[0];
-            const blob = await fetchMediaBlob(imgUrl);
-            if (blob) {
-              const file = new File([blob], 'photo.png', { type: 'image/png' });
-              handleFile(file);
-              return;
-            }
-          }
-        }
-        hideLoader();
-      } catch(err) {
-        console.warn("Firestore post AR load error:", err);
-        hideLoader();
-      }
-    }
-
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
     if (queryUrl && queryUrl !== 'broadcast') {
@@ -532,34 +419,9 @@
         try {
           const rawUrl = decodeURIComponent(queryUrl);
           let fetchUrl = rawUrl.split('#')[0];
-
-          if (fetchUrl.startsWith('data:')) {
-            try {
-              const parts = fetchUrl.split(',');
-              const mimeMatch = parts[0].match(/:(.*?);/);
-              const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-              const bstr = atob(parts[1]);
-              let n = bstr.length;
-              const u8arr = new Uint8Array(n);
-              while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-              const isImg = mime.includes('image') || mime.includes('png') || mime.includes('jpeg');
-              const ext = isImg ? 'png' : 'glb';
-              const blob = new Blob([u8arr], { type: mime });
-              const file = new File([blob], `shared_media.${ext}`, { type: mime });
-              handleFile(file);
-              return;
-            } catch(e) {
-              console.warn("Data URI decode error:", e);
-            }
-          }
-
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           if (rawUrl.includes('#')) {
             name = rawUrl.split('#').pop();
-          }
-          let extCheck = name.split('.').pop().toLowerCase();
-          if (!['glb', 'gltf', 'stl', 'obj', 'jpg', 'jpeg', 'png', 'webp'].includes(extCheck)) {
-            name += '.glb';
           }
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
@@ -594,13 +456,13 @@
 
           // 2. Try proxy fallback if direct fetch failed or non-200 OK
           if (!res || !res.ok) {
-            try {
-              const proxiedUrl = resolveProxyUrl(fetchUrl);
-              if (proxiedUrl !== fetchUrl) {
+            if (fetchUrl.includes('tmpfiles.org')) {
+              const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+              try {
                 res = await fetchWithHtmlResolve(proxiedUrl);
+              } catch (e) {
+                console.warn("Proxy fetch failed:", e);
               }
-            } catch (e) {
-              console.warn("Proxy fallback fetch failed:", e);
             }
           }
 
@@ -618,6 +480,7 @@
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
+          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
         }
       })();
     }
@@ -777,53 +640,6 @@
             }
           };
           reader.readAsText(file);
-        } else if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
-          showLoader(currentLang === 'fr' ? "Conversion de l'image en carte 3D AR..." : "Converting image to 3D AR Card...");
-          const reader = new FileReader();
-          reader.onload = async function (e) {
-            try {
-              const img = new Image();
-              img.crossOrigin = 'Anonymous';
-              img.src = e.target.result;
-              img.onload = () => {
-                const aspect = (img.width || 1) / (img.height || 1);
-                const planeW = aspect >= 1 ? 1.6 : 1.6 * aspect;
-                const planeH = aspect >= 1 ? 1.6 / aspect : 1.6;
-
-                const geo = new THREE.PlaneGeometry(planeW, planeH);
-                const canvas2d = document.createElement('canvas');
-                canvas2d.width = img.width || 512;
-                canvas2d.height = img.height || 512;
-                const ctx2d = canvas2d.getContext('2d');
-                ctx2d.drawImage(img, 0, 0);
-
-                const texture = new THREE.CanvasTexture(canvas2d);
-                texture.needsUpdate = true;
-
-                const mat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, roughness: 0.3, metalness: 0.1 });
-                const mesh = new THREE.Mesh(geo, mat);
-
-                const scene = new THREE.Scene();
-                scene.add(mesh);
-                normalizeObjectScale(mesh);
-
-                currentThreeScene = scene;
-                currentModelName = name;
-                currentModelExtension = extension;
-
-                exportAndUploadScene(scene, name, true);
-              };
-              img.onerror = () => {
-                hideLoader();
-                alert(currentLang === 'fr' ? "Erreur de chargement de l'image AR." : "Error loading image for AR.");
-              };
-            } catch (err) {
-              console.error("Image parse error:", err);
-              hideLoader();
-              alert("Error parsing image file.");
-            }
-          };
-          reader.readAsDataURL(file);
         } else {
           hideLoader();
           alert(currentLang === 'fr' ? "Format de fichier non pris en charge !" : "Unsupported file format!");
