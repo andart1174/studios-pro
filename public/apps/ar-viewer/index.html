@@ -12,11 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Firebase SDK for 100% reliable 3D transfers -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -417,58 +412,6 @@
       }
     };
 
-    // ─── Firebase Config for 100% Reliable 3D Transfers ─────────
-    const FB_AR = {
-      apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
-      authDomain:"studios-pro.firebaseapp.com",
-      projectId:"studios-pro",
-      storageBucket:"studios-pro.firebasestorage.app",
-      messagingSenderId:"337301506363",
-      appId:"1:337301506363:web:68b84724390b830bbf4f1e"
-    };
-
-    // Load Firestore 3D transfer if passed in URL query param (?transfer=...)
-    const queryTransferId = urlParams.get('transfer');
-    if (queryTransferId) {
-      (async () => {
-        showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
-        try {
-          let pollCount = 0;
-          while ((!window.firebase || !window.firebase.firestore) && pollCount < 40) {
-            await new Promise(r => setTimeout(r, 100));
-            pollCount++;
-          }
-
-          if (!firebase.apps.length) firebase.initializeApp(FB_AR);
-          if (firebase.auth && !firebase.auth().currentUser) {
-            await firebase.auth().signInAnonymously().catch(() => {});
-          }
-
-          const db = firebase.firestore();
-          const doc = await db.collection('ar_transfers').doc(queryTransferId).get();
-          if (doc.exists) {
-            const data = doc.data();
-            const base64 = (data.chunks || []).join('');
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-              bytes[i] = binary.charCodeAt(i);
-            }
-            const mime = data.mimeType || 'application/octet-stream';
-            const blob = new Blob([bytes], { type: mime });
-            const file = new File([blob], data.fileName || 'model.glb', { type: mime });
-            handleFile(file);
-          } else {
-            hideLoader();
-            alert(currentLang === 'fr' ? "Transfert expiré ou introuvable." : "Transfer expired or not found.");
-          }
-        } catch(err) {
-          console.error("Firestore transfer download error:", err);
-          hideLoader();
-          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR." : "Error loading AR model.");
-        }
-      })();
-    }
 
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
@@ -513,12 +456,15 @@
 
           let res = null;
 
-          // 1. Try Netlify Proxy first for Catbox / Litterbox / tmpfiles (bypasses mobile CORS completely)
-          if (fetchUrl.includes('files.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace('https://files.catbox.moe/', '/api/proxy-catbox/').replace('http://files.catbox.moe/', '/api/proxy-catbox/');
+          // 1. Try Netlify server-side proxy first (bypasses all mobile CORS blocks)
+          if (fetchUrl.includes('litter.catbox.moe')) {
+            const proxyUrl = fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
+            res = await fetchWithHtmlResolve(proxyUrl);
+          } else if (fetchUrl.includes('files.catbox.moe')) {
+            const proxyUrl = fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
             res = await fetchWithHtmlResolve(proxyUrl);
           } else if (fetchUrl.includes('litterbox.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace('https://litterbox.catbox.moe/', '/api/proxy-litterbox/').replace('http://litterbox.catbox.moe/', '/api/proxy-litterbox/');
+            const proxyUrl = fetchUrl.replace(/^https?:\/\/litterbox\.catbox\.moe\//, '/api/proxy-litterbox/');
             res = await fetchWithHtmlResolve(proxyUrl);
           } else if (fetchUrl.includes('tmpfiles.org')) {
             let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
@@ -1222,78 +1168,26 @@
 
       let directDlUrl = null;
 
-      // -- Primary Service: Firestore AR Transfers (100% CORS-friendly, zero external dependency) --
+      // -- Service 1: litterbox.catbox.moe (72h) - uploads return litter.catbox.moe download URLs --
       try {
-        if (window.firebase && window.firebase.firestore) {
-          if (!firebase.apps.length) firebase.initializeApp(FB_AR);
-          if (firebase.auth && !firebase.auth().currentUser) {
-            await firebase.auth().signInAnonymously().catch(() => {});
-          }
-          const transferId = 'tr_' + Math.random().toString(36).substring(2, 10);
-          const buffer = await file.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          
-          let binary = '';
-          const chunkLength = 0x8000;
-          for (let i = 0; i < bytes.length; i += chunkLength) {
-            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkLength));
-          }
-          const base64 = btoa(binary);
-
-          const chunkSize = 700000;
-          const chunks = [];
-          for (let i = 0; i < base64.length; i += chunkSize) {
-            chunks.push(base64.substring(i, i + chunkSize));
-          }
-
-          const db = firebase.firestore();
-          await db.collection('ar_transfers').doc(transferId).set({
-            fileName: fileName,
-            chunks: chunks,
-            mimeType: file.type || 'application/octet-stream',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-          const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-          const targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&transfer=${transferId}`;
-          const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
-
-          qrCodeImg.src = qrApiUrl;
-          qrCodeImg.onload = () => {
-            qrLoading.style.display = 'none';
-            qrCodeImg.style.display = 'block';
-          };
-          return;
+        const fd1 = new FormData();
+        fd1.append('reqtype', 'fileupload');
+        fd1.append('time', '72h');
+        fd1.append('fileToUpload', file, fileName);
+        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+          method: 'POST',
+          body: fd1,
+          signal: AbortSignal.timeout(30000)
+        });
+        if (r1.ok) {
+          const urlText = (await r1.text()).trim();
+          if (urlText.startsWith('https://')) directDlUrl = urlText;
         }
       } catch(e) {
-        console.warn('Firestore transfer upload failed, trying external fallbacks:', e);
+        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
       }
 
-      // -- Service 2: litterbox.catbox.moe (72h, CORS *, fallback) --
-      if (!directDlUrl) {
-        try {
-          const fd1 = new FormData();
-          fd1.append('reqtype', 'fileupload');
-          fd1.append('time', '72h');
-          fd1.append('fileToUpload', file, fileName);
-          const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-            method: 'POST',
-            body: fd1,
-            signal: AbortSignal.timeout(30000)
-          });
-          if (r1.ok) {
-            const urlText = (await r1.text()).trim();
-            if (urlText.startsWith('https://')) directDlUrl = urlText;
-          }
-        } catch(e) {
-          console.warn('Service 2 (litterbox.catbox.moe) failed:', e.message);
-        }
-      }
-
-      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
-      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
-      // We upload via proxy, extract the real binary link, and encode it in the QR.
-      // On mobile the phone will fetch it direct - only use as last resort.
+      // -- Service 2: tmpfiles.org via Netlify proxy (fallback) ---------------
       if (!directDlUrl) {
         try {
           const fd2 = new FormData();
@@ -1306,7 +1200,9 @@
           if (r2.ok) {
             const json = await r2.json();
             if (json.status === 'success') {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+              // Use absolute URL — mobile will download through our proxy (no CORS issues)
+              const rawUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+              directDlUrl = rawUrl.replace('https://tmpfiles.org/', 'https://studios-pro.com/api/proxy/');
             }
           }
         } catch(e) {
