@@ -1,0 +1,16 @@
+# Workspace Guidelines & Module Protection Rules
+
+## 1. Modular Decoupling & Protection of Core Apps
+- **AR Viewer (`public/apps/ar-viewer/index.html`) is a STABLE CORE MODULE**:
+  - NEVER modify, refactor, or rewrite internal transfer logic, proxy handlers, or UI structure in `public/apps/ar-viewer/index.html` when building or editing features in other applications (such as SP NEXUS, Community, Blog, etc.).
+  - Other modules must interact with AR Viewer ONLY via standard external contracts:
+    - URL query parameters (e.g. `?url=...`, `?post=...`, `?lang=...`).
+    - Standard `postMessage` / iframe bridge events (`CLOSE_STUDIO`, etc.).
+
+## 2. Netlify Proxy Rules Stability
+- Do NOT alter or remove working `/api/proxy/*`, `/api/proxy-litter/*`, or `/api/proxy-catbox/*` redirect rules in `netlify.toml`.
+- Network proxy endpoints serve critical cross-origin (CORS) mobile 3D model downloads.
+
+## 3. Experimental Feature Scoping
+- All experimental features (such as AR posters, new export options, etc.) must be built in dedicated files or isolated modules (`public/community/`, `public/apps/sp-nexus/`, etc.) without modifying core baseline HTML/JS files of existing working tools.
+- Maintain backwards compatibility for all existing URL parameters and share links.
