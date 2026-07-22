@@ -1132,9 +1132,27 @@
         const json = await response.json();
         if (json.status === 'success') {
           const rawUrl = json.data.url;
-          const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          let directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+
+          // Pre-resolve tmpfiles session landing page on desktop to embed the direct binary link into the QR code
+          try {
+            const pageRes = await fetch(directDlUrl);
+            if (pageRes.ok) {
+              const htmlText = await pageRes.text();
+              const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
+              if (m) {
+                let link = m[1];
+                if (!link.startsWith('http')) {
+                  link = 'https://tmpfiles.org' + (link.startsWith('/') ? '' : '/') + link;
+                }
+                directDlUrl = link;
+              }
+            }
+          } catch(e) {
+            console.warn("Pre-resolve session download link notice:", e);
+          }
+
           lastShareUrl = directDlUrl;
-          
           updateQRCodeWithColorParam(directDlUrl, 'original');
         } else {
           throw new Error("Upload response failed");
