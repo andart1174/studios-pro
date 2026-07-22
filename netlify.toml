@@ -7,20 +7,14 @@
   SECRETS_SCAN_ENABLED = "false"
 
 [[redirects]]
-  from = "/api/proxy-catbox/*"
-  to = "https://files.catbox.moe/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/proxy-litterbox/*"
-  to = "https://litterbox.catbox.moe/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/api/proxy-litter/*"
   to = "https://litter.catbox.moe/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/proxy-catbox/*"
+  to = "https://files.catbox.moe/:splat"
   status = 200
   force = true
 

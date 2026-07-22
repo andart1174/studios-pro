@@ -412,7 +412,6 @@
       }
     };
 
-
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
     if (queryUrl && queryUrl !== 'broadcast') {
@@ -456,17 +455,8 @@
 
           let res = null;
 
-          // 1. Try Netlify server-side proxy first (bypasses all mobile CORS blocks)
-          if (fetchUrl.includes('litter.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('files.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('litterbox.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/litterbox\.catbox\.moe\//, '/api/proxy-litterbox/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('tmpfiles.org')) {
+          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
+          if (fetchUrl.includes('tmpfiles.org')) {
             let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
             if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
               proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
@@ -474,7 +464,7 @@
             res = await fetchWithHtmlResolve(proxyUrl);
           }
 
-          // 2. Direct fetch (if proxy didn't succeed)
+          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
           if (!res || !res.ok) {
             let directUrl = fetchUrl;
             if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
@@ -1125,21 +1115,18 @@
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
 
-      // Route the download URL through our server-side proxy so mobile never hits CORS-blocked hosts directly
-      let proxiedDlUrl = directDlUrl;
-      if (directDlUrl.startsWith('http')) {
-        if (directDlUrl.includes('litter.catbox.moe')) {
-          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
-        } else if (directDlUrl.includes('files.catbox.moe')) {
-          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
-        } else if (directDlUrl.includes('litterbox.catbox.moe')) {
-          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/litterbox\.catbox\.moe\//, `${baseOrigin}/api/proxy-litterbox/`);
-        } else if (directDlUrl.includes('tmpfiles.org')) {
-          proxiedDlUrl = directDlUrl.replace(/^https?:\/\/tmpfiles\.org\//, `${baseOrigin}/api/proxy/`);
+      // Convert catbox URLs → our same-origin Netlify proxy so mobile has zero CORS issues
+      let dlUrl = directDlUrl;
+      if (dlUrl && dlUrl.startsWith('http')) {
+        if (dlUrl.includes('litter.catbox.moe')) {
+          dlUrl = dlUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
+        } else if (dlUrl.includes('files.catbox.moe')) {
+          dlUrl = dlUrl.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
         }
+        // tmpfiles URLs already use /api/proxy/ path - no change needed
       }
 
-      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(proxiedDlUrl)}`;
+      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(dlUrl)}`;
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }
@@ -1182,58 +1169,47 @@
       qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
       let directDlUrl = null;
-      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
 
-      // -- Service 1: tmpfiles.org via Netlify proxy (100% same-origin, no CORS issues) --
+      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
       try {
-        const fd = new FormData();
-        fd.append('file', file, fileName);
-        const r = await fetch('/api/proxy/api/v1/upload', {
+        const fd1 = new FormData();
+        fd1.append('reqtype', 'fileupload');
+        fd1.append('time', '72h');
+        fd1.append('fileToUpload', file, fileName);
+        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
-          body: fd,
-          signal: AbortSignal.timeout(20000)
+          body: fd1,
+          signal: AbortSignal.timeout(30000)
         });
-        if (r.ok) {
-          const json = await r.json();
-          if (json.status === 'success' && json.data && json.data.url) {
-            let rawUrl = json.data.url;
-            if (!rawUrl.includes('/dl/')) {
-              rawUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            const cleanPath = rawUrl.replace(/^https?:\/\/tmpfiles\.org\//, '').replace(/^dl\//, '');
-            directDlUrl = `${baseOrigin}/api/proxy/dl/${cleanPath}`;
-          }
+        if (r1.ok) {
+          const urlText = (await r1.text()).trim();
+          if (urlText.startsWith('https://')) directDlUrl = urlText;
         }
       } catch(e) {
-        console.warn('Service 1 (tmpfiles.org) failed:', e.message);
+        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
       }
 
-      // -- Service 2: litterbox.catbox.moe (fallback) -------------------------
+      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
+      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
+      // We upload via proxy, extract the real binary link, and encode it in the QR.
+      // On mobile the phone will fetch it direct - only use as last resort.
       if (!directDlUrl) {
         try {
-          const fd1 = new FormData();
-          fd1.append('reqtype', 'fileupload');
-          fd1.append('time', '72h');
-          fd1.append('fileToUpload', file, fileName);
-          const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+          const fd2 = new FormData();
+          fd2.append('file', file, fileName);
+          const r2 = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
-            body: fd1,
-            signal: AbortSignal.timeout(30000)
+            body: fd2,
+            signal: AbortSignal.timeout(18000)
           });
-          if (r1.ok) {
-            const urlText = (await r1.text()).trim();
-            if (urlText.startsWith('https://')) {
-              if (urlText.includes('litter.catbox.moe')) {
-                directDlUrl = urlText.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
-              } else if (urlText.includes('files.catbox.moe')) {
-                directDlUrl = urlText.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
-              } else {
-                directDlUrl = urlText;
-              }
+          if (r2.ok) {
+            const json = await r2.json();
+            if (json.status === 'success') {
+              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
           }
         } catch(e) {
-          console.warn('Service 2 (litterbox.catbox.moe) failed:', e.message);
+          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
         }
       }
 
