@@ -453,40 +453,22 @@
             }
           }
 
-          let res = null;
-
-          // 1. Try Netlify Proxy first (bypasses mobile CORS completely for all services)
-          if (fetchUrl.includes('litter.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('files.catbox.moe')) {
-            const proxyUrl = fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/');
-            res = await fetchWithHtmlResolve(proxyUrl);
-          } else if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+          // 1. Resolve target URL for tmpfiles proxy
+          let targetUrl = fetchUrl;
+          if (targetUrl.includes('tmpfiles.org')) {
+            if (!targetUrl.includes('/dl/') && !targetUrl.includes('/api/v1/')) {
+              targetUrl = targetUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
-            res = await fetchWithHtmlResolve(proxyUrl);
+            targetUrl = targetUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+          } else if (targetUrl.includes('studios-pro.com/api/proxy/')) {
+            targetUrl = targetUrl.replace(/^https?:\/\/studios-pro\.com/, '');
           }
 
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
-          if (!res || !res.ok) {
-            let directUrl = fetchUrl;
-            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
-              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            res = await fetchWithHtmlResolve(directUrl);
-          }
+          let res = await fetch(targetUrl).catch(() => null);
 
-          // 3. Fallback: Try CORS proxy (corsproxy.io)
+          // Fallback: try raw fetchUrl if proxied fetch failed
           if (!res || !res.ok) {
-            let cleanUrl = fetchUrl;
-            if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
-              cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
-            res = await fetchWithHtmlResolve(corsUrl);
+            res = await fetch(fetchUrl).catch(() => null);
           }
 
           if (!res || !res.ok) {
@@ -1178,47 +1160,27 @@
 
       let directDlUrl = null;
 
-      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
+      // -- Service 1: tmpfiles.org via Netlify proxy (100% reliable server proxy) --
       try {
-        const fd1 = new FormData();
-        fd1.append('reqtype', 'fileupload');
-        fd1.append('time', '72h');
-        fd1.append('fileToUpload', file, fileName);
-        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        const r = await fetch('/api/proxy/api/v1/upload', {
           method: 'POST',
-          body: fd1,
-          signal: AbortSignal.timeout(30000)
+          body: fd,
+          signal: AbortSignal.timeout(25000)
         });
-        if (r1.ok) {
-          const urlText = (await r1.text()).trim();
-          if (urlText.startsWith('https://')) directDlUrl = urlText;
+        if (r.ok) {
+          const json = await r.json();
+          if (json.status === 'success' && json.data && json.data.url) {
+            let rawUrl = json.data.url;
+            if (!rawUrl.includes('/dl/')) {
+              rawUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+            directDlUrl = rawUrl;
+          }
         }
       } catch(e) {
-        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
-      }
-
-      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
-      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
-      // We upload via proxy, extract the real binary link, and encode it in the QR.
-      // On mobile the phone will fetch it direct - only use as last resort.
-      if (!directDlUrl) {
-        try {
-          const fd2 = new FormData();
-          fd2.append('file', file, fileName);
-          const r2 = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fd2,
-            signal: AbortSignal.timeout(18000)
-          });
-          if (r2.ok) {
-            const json = await r2.json();
-            if (json.status === 'success') {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-          }
-        } catch(e) {
-          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
-        }
+        console.warn('Service 1 (tmpfiles.org) failed:', e.message);
       }
 
       // -- Result --------------------------------------------------------
@@ -1230,8 +1192,8 @@
         const fallbackText = document.createElement('p');
         fallbackText.className = 'qr-error-msg';
         fallbackText.textContent = currentLang === 'fr'
-          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
-          : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
+          ? "Impossible de générer le QR code de transfert. Veuillez re-essayer."
+          : "Unable to generate transfer QR code. Please try again.";
         qrSection.appendChild(fallbackText);
       }
     }
