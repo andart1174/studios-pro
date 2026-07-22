@@ -419,6 +419,27 @@
         try {
           const rawUrl = decodeURIComponent(queryUrl);
           let fetchUrl = rawUrl.split('#')[0];
+
+          if (fetchUrl.startsWith('data:')) {
+            try {
+              const parts = fetchUrl.split(',');
+              const mimeMatch = parts[0].match(/:(.*?);/);
+              const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+              const bstr = atob(parts[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+              const isImg = mime.includes('image') || mime.includes('png') || mime.includes('jpeg');
+              const ext = isImg ? 'png' : 'glb';
+              const blob = new Blob([u8arr], { type: mime });
+              const file = new File([blob], `shared_media.${ext}`, { type: mime });
+              handleFile(file);
+              return;
+            } catch(e) {
+              console.warn("Data URI decode error:", e);
+            }
+          }
+
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           if (rawUrl.includes('#')) {
             name = rawUrl.split('#').pop();
