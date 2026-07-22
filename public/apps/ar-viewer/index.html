@@ -426,62 +426,45 @@
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          // Helper function to fetch target URL safely without CORS crash
-          async function fetchWithHtmlResolve(targetUrl) {
+          // Helper: fetch URL, return null if it's an HTML error/challenge page
+          async function fetchBinary(url) {
             try {
-              let response = await fetch(targetUrl);
-              if (!response || !response.ok) return response;
-              const cType = (response.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) {
-                const htmlText = await response.text();
-                const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
+              const r = await fetch(url);
+              if (!r || !r.ok) return null;
+              const ct = (r.headers.get('content-type') || '').toLowerCase();
+              if (ct.includes('html')) {
+                // tmpfiles landing page: try to extract the real /dl/ link
+                const html = await r.text();
+                const m = html.match(/href="([^"]*\/dl\/[^"]+)"/i) || html.match(/href="([^"]+)">Download/i);
                 if (m) {
-                  let realLink = m[1];
-                  if (!realLink.startsWith('http')) {
-                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
-                  }
-                  if (targetUrl.includes('/api/proxy/')) {
-                    realLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
-                  }
-                  response = await fetch(realLink).catch(() => null);
+                  let link = m[1];
+                  if (!link.startsWith('http')) link = '/api/proxy/' + link.replace(/^\//, '');
+                  return await fetch(link).catch(() => null);
                 }
+                return null; // HTML error/challenge page - reject it
               }
-              return response;
-            } catch(e) {
-              console.warn('fetchWithHtmlResolve error for', targetUrl, e);
-              return null;
-            }
+              return r;
+            } catch(e) { return null; }
           }
 
           let res = null;
 
-          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
-          if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            res = await fetchWithHtmlResolve(proxyUrl);
+          // Build proxy URL for known services
+          if (fetchUrl.includes('litter.catbox.moe')) {
+            res = await fetchBinary(fetchUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, '/api/proxy-litter/'));
+          } else if (fetchUrl.includes('files.catbox.moe')) {
+            res = await fetchBinary(fetchUrl.replace(/^https?:\/\/files\.catbox\.moe\//, '/api/proxy-catbox/'));
+          } else if (fetchUrl.includes('tmpfiles.org')) {
+            let p = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+            if (!p.includes('/dl/') && !p.includes('/api/v1/')) p = p.replace('/api/proxy/', '/api/proxy/dl/');
+            res = await fetchBinary(p);
           }
 
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
-          if (!res || !res.ok) {
-            let directUrl = fetchUrl;
-            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
-              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            res = await fetchWithHtmlResolve(directUrl);
-          }
+          // 2. Direct fetch fallback
+          if (!res || !res.ok) res = await fetchBinary(fetchUrl);
 
-          // 3. Fallback: Try CORS proxy (corsproxy.io)
-          if (!res || !res.ok) {
-            let cleanUrl = fetchUrl;
-            if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
-              cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
-            res = await fetchWithHtmlResolve(corsUrl);
-          }
+          // 3. corsproxy.io last resort
+          if (!res || !res.ok) res = await fetchBinary(`https://corsproxy.io/?${encodeURIComponent(fetchUrl)}`);
 
           if (!res || !res.ok) {
             throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
