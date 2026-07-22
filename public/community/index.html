@@ -3476,18 +3476,13 @@ async function generateARPoster() {
     ctx.font = '600 32px sans-serif';
     ctx.fillText(`By ${author}  •  Founding Member`, 80, 1225);
 
-    // 5. AR QR Code Section (Only encode clean HTTP URLs under 1000 chars to avoid Base64 QR truncation)
+    // 5. AR QR Code Section (Only route to AR viewer if post contains a true 3D model file; otherwise route to post page)
     const modelUrl = overlay ? (overlay.dataset.modelUrl || '') : '';
-    const isHttpUrl = (s) => s && (s.startsWith('http://') || s.startsWith('https://')) && s.length < 1000;
+    const is3DModel = modelUrl && (modelUrl.startsWith('http://') || modelUrl.startsWith('https://')) && /\.(glb|gltf|stl|obj)($|\?)/i.test(modelUrl);
 
-    let arTargetUrl = url;
-    if (isHttpUrl(modelUrl) && /\.(glb|gltf|stl|obj)($|\?)/i.test(modelUrl)) {
-      arTargetUrl = `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(modelUrl)}`;
-    } else if (isHttpUrl(postImg)) {
-      arTargetUrl = `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(postImg)}`;
-    } else {
-      arTargetUrl = url;
-    }
+    const arTargetUrl = is3DModel
+      ? `https://studios-pro.com/apps/ar-viewer/?url=${encodeURIComponent(modelUrl)}`
+      : url;
 
     const qrImg = new Image();
     qrImg.crossOrigin = 'Anonymous';
