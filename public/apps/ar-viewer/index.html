@@ -1141,47 +1141,24 @@
 
       let directDlUrl = null;
 
-      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
+      // -- Upload to tmpfiles.org (no Cloudflare, CORS enabled, works from desktop browser) --
       try {
-        const fd1 = new FormData();
-        fd1.append('reqtype', 'fileupload');
-        fd1.append('time', '72h');
-        fd1.append('fileToUpload', file, fileName);
-        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        const r = await fetch('https://tmpfiles.org/api/v1/upload', {
           method: 'POST',
-          body: fd1,
+          body: fd,
           signal: AbortSignal.timeout(30000)
         });
-        if (r1.ok) {
-          const urlText = (await r1.text()).trim();
-          if (urlText.startsWith('https://')) directDlUrl = urlText;
+        if (r.ok) {
+          const json = await r.json();
+          if (json.status === 'success' && json.data && json.data.url) {
+            // Convert to direct download URL (tmpfiles.org/dl/... serves the binary)
+            directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          }
         }
       } catch(e) {
-        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
-      }
-
-      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
-      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
-      // We upload via proxy, extract the real binary link, and encode it in the QR.
-      // On mobile the phone will fetch it direct - only use as last resort.
-      if (!directDlUrl) {
-        try {
-          const fd2 = new FormData();
-          fd2.append('file', file, fileName);
-          const r2 = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fd2,
-            signal: AbortSignal.timeout(18000)
-          });
-          if (r2.ok) {
-            const json = await r2.json();
-            if (json.status === 'success') {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-          }
-        } catch(e) {
-          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
-        }
+        console.warn('Upload to tmpfiles.org failed:', e.message);
       }
 
       // -- Result --------------------------------------------------------
