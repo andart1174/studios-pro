@@ -217,11 +217,17 @@
     .ig-3 .main-img img{height:373px}
     .ig-4{display:grid;grid-template-columns:1fr 1fr;gap:3px}
     .ig-4 img{width:100%;height:185px;object-fit:cover;cursor:pointer}
-    .p-imgs img:hover{opacity:.9}
     /* 3D Viewer */
     .p-3dv{overflow:hidden;height:100%;background:#030712;position:relative;cursor:grab}
     .p-3dv:active{cursor:grabbing}
     .p-3dv canvas{display:block;width:100%;height:100%}
+    /* 3D Photo Hologram & Tilt CSS */
+    .holo-wrap{position:relative;margin-bottom:12px;perspective:1000px}
+    .holo-tilt-card{position:relative;border-radius:14px;overflow:hidden;transform-style:preserve-3d;transition:transform .15s ease-out;will-change:transform}
+    .holo-glare{position:absolute;inset:0;pointer-events:none;z-index:3;transition:background .15s ease-out;border-radius:14px}
+    .holo-bar{position:absolute;bottom:10px;right:10px;z-index:4;display:flex;gap:6px}
+    .holo-btn{background:rgba(15,23,42,.85);backdrop-filter:blur(8px);border:1px solid rgba(99,102,241,.4);color:#fff;font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .2s;font-family:inherit}
+    .holo-btn:hover{background:rgba(99,102,241,.85);border-color:rgba(255,255,255,.3);transform:scale(1.04)}
     .p-3d-badge{position:absolute;top:10px;left:10px;background:rgba(99,102,241,.85);backdrop-filter:blur(6px);border:1px solid rgba(99,102,241,.5);color:#fff;font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:5px;font-family:'Orbitron',monospace;z-index:2}
     .p-3d-hint{position:absolute;bottom:10px;right:10px;color:rgba(255,255,255,.5);font-size:.68rem;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);padding:3px 8px;border-radius:6px;z-index:2;pointer-events:none}
     
@@ -1186,6 +1192,27 @@
   </div>
 </div>
 
+<!-- 3D PHOTO MESH RELIEF MODAL -->
+<div class="share-sheet-overlay" id="photo3dOverlay" onclick="closePhoto3DModal(event)">
+  <div class="share-sheet-inner" style="width:680px;max-width:95vw;padding:20px" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;display:flex;align-items:center;gap:8px">
+        🗿 3D Photo Relief Sculpture
+      </div>
+      <button onclick="closePhoto3DModalDirect()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%">✕</button>
+    </div>
+    <div id="photo3dCanvasWrap" style="width:100%;height:380px;background:#030712;border-radius:14px;overflow:hidden;position:relative;margin-bottom:14px">
+      <div id="photo3dLoader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--accent3);font-size:.85rem;background:rgba(0,0,0,.7);z-index:2">
+        <div class="spinner"></div><span style="margin-left:10px">Converting Photo to 3D Mesh...</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center">
+      <span style="font-size:.75rem;color:var(--muted)">Drag to rotate 360° · Scroll to zoom</span>
+      <button onclick="openARFromRelief()" style="padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:6px">📱 View in AR</button>
+    </div>
+  </div>
+</div>
+
 <!-- PWA APP INSTALL BANNER -->
 <div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(11,17,32,.95);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(99,102,241,.4);backdrop-filter:blur(16px);border-radius:16px;padding:12px 18px;align-items:center;gap:14px;max-width:90%;width:420px;">
   <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📲</div>
@@ -1808,10 +1835,23 @@ function imgsHtml(images) {
   const imgs = images.slice(0,4);
   const n = imgs.length;
   const tag = (s,i) => `<img src="${esc(s)}" alt="" loading="lazy" onclick="openLb('${esc(s)}')" data-idx="${i}">`;
-  if (n===1) return `<div class="p-imgs ig-1">${tag(imgs[0],0)}</div>`;
-  if (n===2) return `<div class="p-imgs ig-2">${imgs.map(tag).join('')}</div>`;
-  if (n===3) return `<div class="p-imgs ig-3"><div class="main-img">${tag(imgs[0],0)}</div>${tag(imgs[1],1)}${tag(imgs[2],2)}</div>`;
-  return `<div class="p-imgs ig-4">${imgs.map(tag).join('')}</div>`;
+  let gridContent = '';
+  if (n===1) gridContent = `<div class="p-imgs ig-1">${tag(imgs[0],0)}</div>`;
+  else if (n===2) gridContent = `<div class="p-imgs ig-2">${imgs.map(tag).join('')}</div>`;
+  else if (n===3) gridContent = `<div class="p-imgs ig-3"><div class="main-img">${tag(imgs[0],0)}</div>${tag(imgs[1],1)}${tag(imgs[2],2)}</div>`;
+  else gridContent = `<div class="p-imgs ig-4">${imgs.map(tag).join('')}</div>`;
+
+  const mainImg = imgs[0];
+  return `
+    <div class="holo-wrap" onmousemove="initHoloTilt(this, event)" onmouseleave="resetHoloTilt(this)">
+      <div class="holo-tilt-card">
+        ${gridContent}
+        <div class="holo-glare"></div>
+      </div>
+      <div class="holo-bar">
+        <button class="holo-btn" onclick="event.stopPropagation();open3DReliefModal('${esc(mainImg)}')">🗿 3D Relief</button>
+      </div>
+    </div>`;
 }
 
 function ytId(url) {
@@ -3070,6 +3110,161 @@ function ssShareEmbed() {
   }).catch(() => {
     toast('Failed to copy embed code', 'error');
   });
+}
+
+// ─── 3D Photo Hologram & Mesh Relief Engine ────────────────
+function initHoloTilt(wrap, e) {
+  const card = wrap.querySelector('.holo-tilt-card');
+  const glare = wrap.querySelector('.holo-glare');
+  if (!card) return;
+
+  const rect = wrap.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+
+  const rotX = -((y - centerY) / centerY) * 12;
+  const rotY = ((x - centerX) / centerX) * 12;
+
+  card.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`;
+
+  if (glare) {
+    const px = (x / rect.width) * 100;
+    const py = (y / rect.height) * 100;
+    glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.25) 0%, rgba(99,102,241,0.12) 45%, transparent 80%)`;
+  }
+}
+
+function resetHoloTilt(wrap) {
+  const card = wrap.querySelector('.holo-tilt-card');
+  const glare = wrap.querySelector('.holo-glare');
+  if (card) card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+  if (glare) glare.style.background = 'transparent';
+}
+
+let reliefScene, reliefCamera, reliefRenderer, reliefAnimId, reliefMesh;
+
+function open3DReliefModal(imgUrl) {
+  const overlay = document.getElementById('photo3dOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  overlay.dataset.img = imgUrl;
+
+  const container = document.getElementById('photo3dCanvasWrap');
+  container.innerHTML = `<div id="photo3dLoader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--accent3);font-size:.85rem;background:rgba(0,0,0,.7);z-index:2"><div class="spinner"></div><span style="margin-left:10px">Converting Photo to 3D Mesh...</span></div>`;
+
+  const width = container.clientWidth || 640;
+  const height = container.clientHeight || 380;
+
+  if (reliefAnimId) cancelAnimationFrame(reliefAnimId);
+
+  reliefScene = new THREE.Scene();
+  reliefScene.background = new THREE.Color(0x030712);
+
+  reliefCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  reliefCamera.position.set(0, 0, 3.8);
+
+  reliefRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  reliefRenderer.setSize(width, height);
+  reliefRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(reliefRenderer.domElement);
+
+  let isDragging = false;
+  let previousMousePosition = { x: 0, y: 0 };
+  let rotX = 0, rotY = 0;
+
+  const canvasEl = reliefRenderer.domElement;
+  canvasEl.style.cursor = 'grab';
+
+  canvasEl.onmousedown = (e) => { isDragging = true; canvasEl.style.cursor = 'grabbing'; previousMousePosition = { x: e.clientX, y: e.clientY }; };
+  window.onmouseup = () => { isDragging = false; if (canvasEl) canvasEl.style.cursor = 'grab'; };
+  canvasEl.onmousemove = (e) => {
+    if (!isDragging || !reliefMesh) return;
+    const deltaX = e.clientX - previousMousePosition.x;
+    const deltaY = e.clientY - previousMousePosition.y;
+    rotY += deltaX * 0.01;
+    rotX += deltaY * 0.01;
+    reliefMesh.rotation.y = rotY;
+    reliefMesh.rotation.x = rotX;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+  };
+
+  const ambLight = new THREE.AmbientLight(0xffffff, 0.75);
+  reliefScene.add(ambLight);
+
+  const dirLight = new THREE.DirectionalLight(0x6366f1, 1.2);
+  dirLight.position.set(2, 4, 5);
+  reliefScene.add(dirLight);
+
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+  img.src = imgUrl;
+  img.onload = () => {
+    try {
+      const canvas2d = document.createElement('canvas');
+      const ctx = canvas2d.getContext('2d');
+      const w = 120, h = 120;
+      canvas2d.width = w; canvas2d.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const imgData = ctx.getImageData(0, 0, w, h).data;
+      const aspect = (img.width || 1) / (img.height || 1);
+      const planeW = aspect >= 1 ? 2.6 : 2.6 * aspect;
+      const planeH = aspect >= 1 ? 2.6 / aspect : 2.6;
+
+      const geo = new THREE.PlaneGeometry(planeW, planeH, w - 1, h - 1);
+      const pos = geo.attributes.position;
+
+      for (let i = 0; i < pos.count; i++) {
+        const r = imgData[i * 4] || 0;
+        const g = imgData[i * 4 + 1] || 0;
+        const b = imgData[i * 4 + 2] || 0;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        pos.setZ(i, lum * 0.4);
+      }
+      geo.computeVertexNormals();
+
+      const texture = new THREE.Texture(img);
+      texture.needsUpdate = true;
+
+      const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.35, metalness: 0.15, side: THREE.DoubleSide });
+      reliefMesh = new THREE.Mesh(geo, mat);
+      reliefScene.add(reliefMesh);
+    } catch(err) {
+      console.warn('Relief mesh error:', err);
+    }
+    const loader = document.getElementById('photo3dLoader');
+    if (loader) loader.remove();
+  };
+
+  const animate = () => {
+    reliefAnimId = requestAnimationFrame(animate);
+    if (reliefMesh && !isDragging) reliefMesh.rotation.y += 0.004;
+    if (reliefRenderer && reliefScene && reliefCamera) reliefRenderer.render(reliefScene, reliefCamera);
+  };
+  animate();
+}
+
+function closePhoto3DModal(e) {
+  if (e.target === document.getElementById('photo3dOverlay')) closePhoto3DModalDirect();
+}
+
+function closePhoto3DModalDirect() {
+  const overlay = document.getElementById('photo3dOverlay');
+  if (overlay) overlay.classList.remove('open');
+  if (reliefAnimId) cancelAnimationFrame(reliefAnimId);
+  if (reliefRenderer) {
+    try { reliefRenderer.dispose(); } catch(e){}
+    const container = document.getElementById('photo3dCanvasWrap');
+    if (container) container.innerHTML = '';
+  }
+}
+
+function openARFromRelief() {
+  const overlay = document.getElementById('photo3dOverlay');
+  const imgUrl = overlay ? (overlay.dataset.img || '') : '';
+  if (imgUrl) window.open(`/apps/ar-viewer/?url=${encodeURIComponent(imgUrl)}`, '_blank');
 }
 
 async function generateSocialCard() {
