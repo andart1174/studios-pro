@@ -323,13 +323,6 @@
         if (e) { e.preventDefault(); e.stopPropagation(); }
         channel.postMessage({ type: 'CLOSE_STUDIO' });
         window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        if (window.self === window.top) {
-          window.location.href = '/';
-        } else if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.location.href = '/';
-        }
       };
     }
 
@@ -1165,43 +1158,47 @@
 
       let directDlUrl = null;
 
-      // Upload to tmpfiles.org and pre-resolve direct binary session link for QR code
+      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
       try {
-        const fd = new FormData();
-        fd.append('file', file, fileName);
-        const r = await fetch('https://tmpfiles.org/api/v1/upload', {
+        const fd1 = new FormData();
+        fd1.append('reqtype', 'fileupload');
+        fd1.append('time', '72h');
+        fd1.append('fileToUpload', file, fileName);
+        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
-          body: fd,
+          body: fd1,
           signal: AbortSignal.timeout(30000)
         });
-        if (r.ok) {
-          const json = await r.json();
-          if (json.status === 'success' && json.data && json.data.url) {
-            let initialUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-
-            // Pre-resolve tmpfiles session landing page to get the direct binary download link
-            try {
-              const pageRes = await fetch(initialUrl);
-              if (pageRes.ok) {
-                const htmlText = await pageRes.text();
-                const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
-                if (m) {
-                  let link = m[1];
-                  if (!link.startsWith('http')) {
-                    link = 'https://tmpfiles.org' + (link.startsWith('/') ? '' : '/') + link;
-                  }
-                  initialUrl = link;
-                }
-              }
-            } catch(e) {
-              console.warn("Pre-resolve session link notice:", e);
-            }
-
-            directDlUrl = initialUrl;
-          }
+        if (r1.ok) {
+          const urlText = (await r1.text()).trim();
+          if (urlText.startsWith('https://')) directDlUrl = urlText;
         }
       } catch(e) {
-        console.warn('Upload to tmpfiles.org failed:', e.message);
+        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
+      }
+
+      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
+      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
+      // We upload via proxy, extract the real binary link, and encode it in the QR.
+      // On mobile the phone will fetch it direct - only use as last resort.
+      if (!directDlUrl) {
+        try {
+          const fd2 = new FormData();
+          fd2.append('file', file, fileName);
+          const r2 = await fetch('/api/proxy/api/v1/upload', {
+            method: 'POST',
+            body: fd2,
+            signal: AbortSignal.timeout(18000)
+          });
+          if (r2.ok) {
+            const json = await r2.json();
+            if (json.status === 'success') {
+              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+          }
+        } catch(e) {
+          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
+        }
       }
 
       // -- Result --------------------------------------------------------
