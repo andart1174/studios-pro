@@ -27,7 +27,7 @@
         <div class="logo">AR</div>
         <div>
           <h1 class="app-title lang-text" data-fr="Studio AR Viewer" data-en="AR Viewer 3D">AR Viewer 3D</h1>
-          <p class="app-subtitle lang-text" data-fr="Visualisez vos modles 3D en Ralit Augmente" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
+          <p class="app-subtitle lang-text" data-fr="Visualisez vos modèles 3D en Réalité Augmentée" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
         </div>
       </div>
 
@@ -38,7 +38,7 @@
           <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
           </svg>
-          <p class="drop-text lang-text" data-fr="Glissez-déposez un fichier 3D ou cliquez pour parcourir" data-en="Drag & drop a 3D file or click to browse">Drag & drop a 3D file or click to browse</p>
+          <p class="drop-text lang-text" data-fr="Glissez-déposez un fichier 3D ou cliquez pentru parcourir" data-en="Drag & drop a 3D file or click to browse">Drag & drop a 3D file or click to browse</p>
           <span class="formats-text">GLB, GLTF, STL, OBJ</span>
           <input type="file" id="file-input" accept=".glb,.gltf,.stl,.obj" style="display: none;">
         </div>
@@ -103,94 +103,8 @@
           </div>
           <input type="range" id="exposure-slider" min="0.2" max="2" step="0.1" value="1.0" class="custom-slider">
         </div>
-
-        <!-- CAD Dimensions & Grid Toggles -->
-        <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Inspection CAD:" data-en="CAD Inspection:">CAD Inspection:</label>
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
-            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
-              <input type="checkbox" id="cad-box-toggle" style="accent-color: #06b6d4;">
-              <span class="lang-text" data-fr="Afficher les cotes 3D (Boîte CAD)" data-en="Show Bounding Box (CAD 3D)">Show Bounding Box (CAD 3D)</span>
-            </label>
-            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
-              <input type="checkbox" id="cad-grid-toggle" style="accent-color: #06b6d4;">
-              <span class="lang-text" data-fr="Grille au sol lumineuse (Blueprint)" data-en="Glowing floor grid (Blueprint)">Glowing floor grid (Blueprint)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Advanced Rotation Controls -->
-        <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Contrôles de Rotation:" data-en="Rotation Controls:">Rotation Controls:</label>
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <label style="font-size: 11px; color: #9ca3af;" class="lang-text" data-fr="Style de rotation:" data-en="Rotation style:">Rotation style:</label>
-              <select id="rot-style-select" style="font-size: 11px; background: #111827; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 4px;">
-                <option value="continuous" data-fr="Continu" data-en="Continuous">Continuous</option>
-                <option value="swing" data-fr="Oscillation" data-en="Swing / Pendulum">Swing / Pendulum</option>
-              </select>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af;">
-                <span class="lang-text" data-fr="Vitesse de rotation:" data-en="Rotation speed:">Rotation speed:</span>
-                <span id="rot-speed-val">1.0x</span>
-              </div>
-              <input type="range" id="rot-speed-slider" min="0.1" max="3" step="0.1" value="1.0" class="custom-slider" style="height: 4px;">
-            </div>
-          </div>
-        </div>
-
-        <!-- Mockup Capture Options -->
-        <div class="custom-control-group">
-          <label class="control-label lang-text" data-fr="Options Export PNG:" data-en="PNG Export Options:">PNG Export Options:</label>
-          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
-              <input type="checkbox" id="mockup-transparent-toggle" checked style="accent-color: #06b6d4;">
-              <span class="lang-text" data-fr="Fond transparent" data-en="Transparent background">Transparent background</span>
-            </label>
-            <label style="font-size: 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #9ca3af;">
-              <input type="checkbox" id="mockup-shadows-toggle" checked style="accent-color: #06b6d4;">
-              <span class="lang-text" data-fr="Conserver les ombres douces" data-en="Keep soft shadows">Keep soft shadows</span>
-            </label>
-          </div>
-        </div>
       </div>
 
-      <!-- --- Material Studio PBR --------------------------------------- -->
-      <div id="material-studio-section" class="panel-section" style="display: none;">
-        <h2 class="lang-text" data-fr="Material Studio" data-en="Material Studio">Material Studio</h2>
-        <p style="font-size:10px;color:#6b7280;margin:-4px 0 10px;" class="lang-text"
-           data-fr="Appliquez un matériau réaliste au modèle instantanément."
-           data-en="Apply a realistic material to the model instantly.">Apply a realistic material to the model instantly.</p>
-        <div id="material-presets" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-          <button class="mat-btn active" data-mat="original" title="Original"
-            style="background:linear-gradient(135deg,#374151,#1f2937);border:2px dashed #06b6d4;"
-            ><span style="font-size:9px;color:#9ca3af;" class="lang-text" data-fr="Original" data-en="Original">Original</span></button>
-          <button class="mat-btn" data-mat="chrome" title="Chrome"
-            style="background:linear-gradient(135deg,#e8eaf0,#9ea7b8);"
-            ><span style="font-size:9px;">Chrome</span></button>
-          <button class="mat-btn" data-mat="gold" title="Gold"
-            style="background:linear-gradient(135deg,#ffd700,#b8860b);"
-            ><span style="font-size:9px;">Gold</span></button>
-          <button class="mat-btn" data-mat="copper" title="Copper"
-            style="background:linear-gradient(135deg,#b87333,#7c4a1e);"
-            ><span style="font-size:9px;">Copper</span></button>
-          <button class="mat-btn" data-mat="carbon" title="Carbon Fiber"
-            style="background:repeating-linear-gradient(45deg,#111,#111 4px,#222 4px,#222 8px);"
-            ><span style="font-size:9px;">Carbon</span></button>
-          <button class="mat-btn" data-mat="ceramic" title="White Ceramic"
-            style="background:linear-gradient(135deg,#f8f9fa,#dee2e6);"
-            ><span style="font-size:9px;color:#333;">Ceramic</span></button>
-          <button class="mat-btn" data-mat="rubber" title="Black Rubber"
-            style="background:linear-gradient(135deg,#1a1a1a,#333);"
-            ><span style="font-size:9px;">Rubber</span></button>
-          <button class="mat-btn" data-mat="wood" title="Oak Wood"
-            style="background:linear-gradient(135deg,#8B6914,#5c4008);"
-            ><span style="font-size:9px;">Wood</span></button>
-        </div>
-      </div>
-
-      <!-- --- Exploded View ---------------------------------------------- -->
       <!-- QR Code (for Desktop to Mobile Transfer) -->
       <div id="qr-section" class="panel-section" style="display: none;">
         <h2 class="lang-text" data-fr="Scanner avec votre Téléphone" data-en="Scan with your Phone">Scan with your Phone</h2>
@@ -259,25 +173,16 @@
         ar-scale="auto"
         interaction-prompt="auto"
         auto-rotate
-        autoplay
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
         
-
-
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span class="lang-text" data-fr="VOIR EN RALIT AUGMENTE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
+          <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
       </model-viewer>
-
-      <!-- Holographic HUD CAD Dimension Labels (overlay on canvas) -->
-      <div id="hud-overlay" style="display:none; position:absolute; inset:0; pointer-events:none; z-index:8;">
-        <div id="hud-label-x" class="hud-dim-label" style="position:absolute; bottom:80px; left:16px;">X: -</div>
-        <div id="hud-label-y" class="hud-dim-label" style="position:absolute; bottom:80px; left:50%; transform:translateX(-50%);">Y: -</div>
-        <div id="hud-label-z" class="hud-dim-label" style="position:absolute; bottom:80px; right:16px;">Z: -</div>
-      </div>
+      
     </div>
   </div>
 
@@ -297,7 +202,6 @@
     let currentModelExtension = "";
     let lastExportedBlob = null;
     let lastShareUrl = "";
-    let hasReceivedFile = false;
 
     // Apply translations
     function translateUI() {
@@ -414,84 +318,16 @@
 
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
-    if (queryUrl && queryUrl !== 'broadcast') {
+    if (queryUrl) {
       (async () => {
         try {
-          const rawUrl = decodeURIComponent(queryUrl);
-          let fetchUrl = rawUrl.split('#')[0];
-          let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
-          if (rawUrl.includes('#')) {
-            name = rawUrl.split('#').pop();
-          }
-
+          const directUrl = decodeURIComponent(queryUrl);
+          const name = directUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
-
-          // Helper function to fetch target URL safely without CORS crash
-          async function fetchWithHtmlResolve(targetUrl) {
-            try {
-              let response = await fetch(targetUrl);
-              if (!response || !response.ok) return response;
-              const cType = (response.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) {
-                const htmlText = await response.text();
-                const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
-                if (m) {
-                  let realLink = m[1];
-                  if (!realLink.startsWith('http')) {
-                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
-                  }
-                  if (targetUrl.includes('/api/proxy/')) {
-                    realLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
-                  }
-                  response = await fetch(realLink).catch(() => null);
-                }
-              }
-              return response;
-            } catch(e) {
-              console.warn('fetchWithHtmlResolve error for', targetUrl, e);
-              return null;
-            }
-          }
-
-          let res = null;
-
-          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
-          if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            res = await fetchWithHtmlResolve(proxyUrl);
-          }
-
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
-          if (!res || !res.ok) {
-            let directUrl = fetchUrl;
-            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
-              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            res = await fetchWithHtmlResolve(directUrl);
-          }
-
-          // 3. Fallback: Try CORS proxy (corsproxy.io)
-          if (!res || !res.ok) {
-            let cleanUrl = fetchUrl;
-            if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
-              cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
-            res = await fetchWithHtmlResolve(corsUrl);
-          }
-
-          if (!res || !res.ok) {
-            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
-          }
-
+          // Use same-origin server proxy (Netlify rewrites / Vite server proxy) to download binary without corruption or CORS blocks
+          const proxiedUrl = directUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+          const res = await fetch(proxiedUrl);
           const blob = await res.blob();
-          if (!blob || blob.size < 50) {
-            throw new Error("Invalid or empty file downloaded.");
-          }
-
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
         } catch (err) {
@@ -501,26 +337,6 @@
         }
       })();
     }
-
-    // Check if parent window has passed model data directly
-    if (window.parent && window.parent.lastArModelData) {
-      const modelData = window.parent.lastArModelData;
-      window.parent.lastArModelData = null; // clear after reading
-      
-      const file = new File([modelData], 'model.obj', { type: 'text/plain' });
-      setTimeout(() => {
-        handleFile(file);
-      }, 100);
-    }
-
-    // Send ready signal to parent/sibling to request model transfer repeatedly
-    const readyInterval = setInterval(() => {
-      if (hasReceivedFile) {
-        clearInterval(readyInterval);
-        return;
-      }
-      channel.postMessage({ type: 'AR_VIEWER_READY' });
-    }, 250);
 
     // Helper: show/hide loading screen
     function showLoader(msg) {
@@ -564,7 +380,6 @@
     // Main file processor
     async function handleFile(file) {
       if (!file) return;
-      hasReceivedFile = true;
 
       const name = file.name;
       const extension = name.split('.').pop().toLowerCase();
@@ -718,15 +533,8 @@
       viewer.src = url;
       placeholder.style.display = 'none';
       viewer.style.display = 'block';
-      infoSection.style.display = 'block';
-      hideLoader();
-    }
-
-    // Customization & Premium Controls Integration
+      infoSection.style.display     // Customization & Premium Controls Integration
     let originalColors = [];
-    let originalMetalness = [];
-    let originalRoughness = [];
-    let activeMaterial = 'original';
     viewer.addEventListener('load', () => {
       // 1. Calculate & display dimensions
       try {
@@ -739,57 +547,26 @@
               return `${(val * 100).toFixed(1)} cm`;
             }
           };
-          const formattedText = `${formatDim(dimensions.x)} x ${formatDim(dimensions.y)} x ${formatDim(dimensions.z)}`;
-          document.getElementById('model-dimensions').textContent = formattedText;
-
-          // Holographic HUD labels text
-          document.getElementById('hud-label-x').textContent = `X: ${formatDim(dimensions.x)}`;
-          document.getElementById('hud-label-y').textContent = `Y: ${formatDim(dimensions.y)}`;
-          document.getElementById('hud-label-z').textContent = `Z: ${formatDim(dimensions.z)}`;
-
-          // Position HUD hotspots on model bounding box faces
-          viewer.updateHotspot({
-            name: 'hotspot-hud-x',
-            position: `0 ${-dimensions.y / 2} ${dimensions.z / 2}`
-          });
-          viewer.updateHotspot({
-            name: 'hotspot-hud-y',
-            position: `${dimensions.x / 2} 0 0`
-          });
-          viewer.updateHotspot({
-            name: 'hotspot-hud-z',
-            position: `0 ${-dimensions.y / 2} ${-dimensions.z / 2}`
-          });
+          document.getElementById('model-dimensions').textContent = `${formatDim(dimensions.x)} x ${formatDim(dimensions.y)} x ${formatDim(dimensions.z)}`;
         }
       } catch (err) {
         console.error("Error reading model dimensions:", err);
         document.getElementById('model-dimensions').textContent = "-";
       }
 
-      // 2. Store original PBR values (color, metalness, roughness)
+      // 2. Store original material colors for reset functionality
       originalColors = [];
-      originalMetalness = [];
-      originalRoughness = [];
       if (viewer.model && viewer.model.materials) {
         viewer.model.materials.forEach((material, index) => {
-          if (material.pbrMetallicRoughness) {
-            if (material.pbrMetallicRoughness.baseColorFactor)
-              originalColors[index] = [...material.pbrMetallicRoughness.baseColorFactor];
-            originalMetalness[index] = material.pbrMetallicRoughness.metallicFactor ?? 0;
-            originalRoughness[index] = material.pbrMetallicRoughness.roughnessFactor ?? 0.5;
+          if (material.pbrMetallicRoughness && material.pbrMetallicRoughness.baseColorFactor) {
+            originalColors[index] = [...material.pbrMetallicRoughness.baseColorFactor];
           }
         });
       }
 
       // 3. Show custom panels & floating action controls
       document.getElementById('customize-section').style.display = 'block';
-      document.getElementById('material-studio-section').style.display = 'block';
       document.querySelector('.floating-controls').style.display = 'flex';
-      activeMaterial = 'original';
-      document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
-      const origBtn = document.querySelector('.mat-btn[data-mat="original"]');
-      if (origBtn) origBtn.classList.add('active');
-
       
       // 4. Apply color from query parameters if present (for shared links)
       if (queryColor) {
@@ -923,210 +700,50 @@
       exposureVal.textContent = val.toFixed(1);
     };
 
-    // -- Rotation speed & style state ------------------------------
-    let rotSpeedVal = 1.0;
-    let rotStyleVal = 'continuous';
-    let swingAngle = 0;
-    let swingDir = 1;
-    let swingRafId = null;
-
-    function applyRotationDelay() {
-      // model-viewer auto-rotate-delay controls perceived speed (lower = faster)
-      const base = 3000;
-      viewer.setAttribute('auto-rotate-delay', String(Math.round(base / rotSpeedVal)));
-    }
-
-    function startSwingMode() {
-      viewer.removeAttribute('auto-rotate');
-      const maxAngle = 40; // degrees
-      const step = 0.5 * rotSpeedVal;
-      function swing() {
-        swingAngle += step * swingDir;
-        if (Math.abs(swingAngle) >= maxAngle) swingDir *= -1;
-        viewer.cameraOrbit = `${swingAngle}deg 75deg auto`;
-        swingRafId = requestAnimationFrame(swing);
-      }
-      swingRafId = requestAnimationFrame(swing);
-    }
-
-    function stopSwingMode() {
-      if (swingRafId) { cancelAnimationFrame(swingRafId); swingRafId = null; }
-      viewer.cameraOrbit = 'auto auto auto';
-    }
-
     // Auto-Rotate floating button binding
     const rotateBtn = document.getElementById('rotate-btn');
     rotateBtn.onclick = () => {
       const active = rotateBtn.classList.toggle('active');
       if (active) {
-        stopSwingMode();
-        if (rotStyleVal === 'swing') {
-          startSwingMode();
-        } else {
-          viewer.setAttribute('auto-rotate', '');
-          applyRotationDelay();
-        }
+        viewer.setAttribute('auto-rotate', '');
       } else {
-        stopSwingMode();
         viewer.removeAttribute('auto-rotate');
       }
     };
 
-    // Rotation speed slider
-    const rotSpeedSlider = document.getElementById('rot-speed-slider');
-    const rotSpeedDisplay = document.getElementById('rot-speed-val');
-    rotSpeedSlider.oninput = (e) => {
-      rotSpeedVal = parseFloat(e.target.value);
-      rotSpeedDisplay.textContent = rotSpeedVal.toFixed(1) + 'x';
-      if (rotateBtn.classList.contains('active')) {
-        if (rotStyleVal === 'swing') {
-          stopSwingMode(); startSwingMode();
-        } else {
-          applyRotationDelay();
-        }
-      }
-    };
-
-    // Rotation style selector (continuous / swing)
-    const rotStyleSelect = document.getElementById('rot-style-select');
-    rotStyleSelect.onchange = (e) => {
-      rotStyleVal = e.target.value;
-      if (rotateBtn.classList.contains('active')) {
-        stopSwingMode();
-        viewer.removeAttribute('auto-rotate');
-        if (rotStyleVal === 'swing') {
-          startSwingMode();
-        } else {
-          viewer.setAttribute('auto-rotate', '');
-          applyRotationDelay();
-        }
-      }
-    };
-
-    // -- Screenshot / Mockup PNG capture ---------------------------
+    // Screenshot floating button binding
     const screenshotBtn = document.getElementById('screenshot-btn');
     screenshotBtn.onclick = async () => {
       try {
         showLoader(currentLang === 'fr' ? "Capture de la photo..." : "Capturing photo...");
+        // Tiny timeout to let UI update and show spinner
         await new Promise(resolve => setTimeout(resolve, 200));
-
-        const wantTransparent = document.getElementById('mockup-transparent-toggle').checked;
-        const wantShadows    = document.getElementById('mockup-shadows-toggle').checked;
-
-        // Temporarily adjust shadows if transparent bg requested
-        const origShadow = viewer.shadowIntensity;
-        if (wantTransparent && !wantShadows) viewer.shadowIntensity = 0;
-
-        // toBlob supports withCredentials - transparency depends on renderer bg
+        
+        // Render current 3D canvas view to high-quality PNG Blob
         const blob = await viewer.toBlob({ mimeType: 'image/png', idealAspect: true });
-
-        // Restore shadows
-        if (wantTransparent && !wantShadows) viewer.shadowIntensity = origShadow;
-
+        
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const baseName = modelNameEl.textContent.replace(/\.[^/.]+$/, '');
-        const suffix = wantTransparent ? '_transparent' : '_render';
-        a.download = `${baseName}${suffix}.png`;
+        const baseName = modelNameEl.textContent.replace(/\.[^/.]+$/, "");
+        a.download = `${baseName}_ar_capture.png`;
         document.body.appendChild(a);
         a.click();
+        
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         hideLoader();
       } catch (err) {
-        console.error('Failed to capture image:', err);
+        console.error("Failed to capture image:", err);
         hideLoader();
-        alert(currentLang === 'fr' ? "Erreur lors de la capture d'image." : 'Error while capturing image.');
+        alert(currentLang === 'fr' ? "Erreur lors de la capture d'image." : "Error while capturing image.");
       }
     };
-
-    // -- CAD Bounding Box Toggle ------------------------------------
-    document.getElementById('cad-box-toggle').onchange = (e) => {
-      const overlay = document.getElementById('hud-overlay');
-      if (overlay) overlay.style.display = e.target.checked ? 'block' : 'none';
-    };
-
-    // -- Blueprint Grid Toggle ------------------------------------------
-    document.getElementById('cad-grid-toggle').onchange = (e) => {
-      const previewArea = document.querySelector('.preview-area');
-      if (previewArea) previewArea.classList.toggle('grid-active', e.target.checked);
-    };
-
-    // ----------------------------------------------------------------------
-    // MATERIAL STUDIO PBR
-    // ----------------------------------------------------------------------
-    const MATERIAL_PRESETS = {
-      original: null,
-      chrome:  { metalness: 1.0, roughness: 0.05, color: [0.88, 0.90, 0.95, 1.0] },
-      gold:    { metalness: 1.0, roughness: 0.12, color: [1.00, 0.78, 0.10, 1.0] },
-      copper:  { metalness: 1.0, roughness: 0.28, color: [0.72, 0.45, 0.20, 1.0] },
-      carbon:  { metalness: 0.6, roughness: 0.08, color: [0.04, 0.04, 0.05, 1.0] },
-      ceramic: { metalness: 0.0, roughness: 0.04, color: [0.96, 0.96, 0.97, 1.0] },
-      rubber:  { metalness: 0.0, roughness: 0.98, color: [0.08, 0.08, 0.08, 1.0] },
-      wood:    { metalness: 0.0, roughness: 0.88, color: [0.55, 0.30, 0.10, 1.0] }
-    };
-
-    function applyMaterialPreset(presetKey) {
-      activeMaterial = presetKey;
-      if (!viewer.model || !viewer.model.materials) return;
-      const preset = MATERIAL_PRESETS[presetKey];
-      viewer.model.materials.forEach((mat, idx) => {
-        if (!mat.pbrMetallicRoughness) return;
-        if (preset === null) {
-          // Restore original
-          const origC = originalColors[idx] || [1,1,1,1];
-          mat.pbrMetallicRoughness.setBaseColorFactor(origC);
-          if (mat.pbrMetallicRoughness.setMetallicFactor)  mat.pbrMetallicRoughness.setMetallicFactor(originalMetalness[idx] ?? 0);
-          if (mat.pbrMetallicRoughness.setRoughnessFactor) mat.pbrMetallicRoughness.setRoughnessFactor(originalRoughness[idx] ?? 0.5);
-        } else {
-          if (preset.color) mat.pbrMetallicRoughness.setBaseColorFactor(preset.color);
-          if (mat.pbrMetallicRoughness.setMetallicFactor)  mat.pbrMetallicRoughness.setMetallicFactor(preset.metalness);
-          if (mat.pbrMetallicRoughness.setRoughnessFactor) mat.pbrMetallicRoughness.setRoughnessFactor(preset.roughness);
-        }
-      });
-    }
-
-    document.querySelectorAll('.mat-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        applyMaterialPreset(btn.getAttribute('data-mat'));
-      };
-    });
-
-
-    // -- Live dimension update on camera change ---------------------
-    viewer.addEventListener('camera-change', () => {
-      try {
-        const dims = viewer.getDimensions();
-        if (!dims) return;
-        const fmt = (v) => v >= 1.0 ? `${v.toFixed(2)} m` : `${(v * 100).toFixed(1)} cm`;
-        const lx = document.getElementById('hud-label-x');
-        const ly = document.getElementById('hud-label-y');
-        const lz = document.getElementById('hud-label-z');
-        if (lx) lx.textContent = `X: ${fmt(dims.x)}`;
-        if (ly) ly.textContent = `Y: ${fmt(dims.y)}`;
-        if (lz) lz.textContent = `Z: ${fmt(dims.z)}`;
-      } catch(_) {}
-    });
 
     // Shared QR code generator helper incorporating dynamic color params
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-
-      // Convert catbox URLs → our same-origin Netlify proxy so mobile has zero CORS issues
-      let dlUrl = directDlUrl;
-      if (dlUrl && dlUrl.startsWith('http')) {
-        if (dlUrl.includes('litter.catbox.moe')) {
-          dlUrl = dlUrl.replace(/^https?:\/\/litter\.catbox\.moe\//, `${baseOrigin}/api/proxy-litter/`);
-        } else if (dlUrl.includes('files.catbox.moe')) {
-          dlUrl = dlUrl.replace(/^https?:\/\/files\.catbox\.moe\//, `${baseOrigin}/api/proxy-catbox/`);
-        }
-        // tmpfiles URLs already use /api/proxy/ path - no change needed
-      }
-
-      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(dlUrl)}`;
+      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }
@@ -1147,88 +764,55 @@
             qrSection.querySelector('.qr-container').appendChild(localHint);
           }
           localHint.innerHTML = currentLang === 'fr'
-            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquéee par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
+            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
             : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
         }
       };
     }
 
-    // Upload to generate temporary AR shareable link (dual-service fallback)
+    // Upload to tmpfiles.org to generate temporary AR shareable link
     async function generateARShareLink(file, fileName) {
-      // If mobile, skip QR generation (user is already on mobile!)
+      // If mobile, don't show or generate QR code since user is already on mobile!
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
         return;
       }
-
+ 
       qrSection.style.display = 'block';
       qrLoading.style.display = 'flex';
       qrCodeImg.style.display = 'none';
-      // Remove any previous error messages
-      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
-
-      let directDlUrl = null;
-
-      // -- Service 1: litterbox.catbox.moe (72h, CORS *, works on mobile) --
+ 
       try {
-        const fd1 = new FormData();
-        fd1.append('reqtype', 'fileupload');
-        fd1.append('time', '72h');
-        fd1.append('fileToUpload', file, fileName);
-        const r1 = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+        const formData = new FormData();
+        formData.append('file', file, fileName);
+ 
+        const response = await fetch('https://tmpfiles.org/api/v1/upload', {
           method: 'POST',
-          body: fd1,
-          signal: AbortSignal.timeout(30000)
+          body: formData
         });
-        if (r1.ok) {
-          const urlText = (await r1.text()).trim();
-          if (urlText.startsWith('https://')) directDlUrl = urlText;
+ 
+        const json = await response.json();
+        if (json.status === 'success') {
+          const rawUrl = json.data.url;
+          const directDlUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          lastShareUrl = directDlUrl;
+          
+          updateQRCodeWithColorParam(directDlUrl, 'original');
+        } else {
+          throw new Error("Upload response failed");
         }
-      } catch(e) {
-        console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
-      }
-
-      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
-      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
-      // We upload via proxy, extract the real binary link, and encode it in the QR.
-      // On mobile the phone will fetch it direct - only use as last resort.
-      if (!directDlUrl) {
-        try {
-          const fd2 = new FormData();
-          fd2.append('file', file, fileName);
-          const r2 = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fd2,
-            signal: AbortSignal.timeout(18000)
-          });
-          if (r2.ok) {
-            const json = await r2.json();
-            if (json.status === 'success') {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-          }
-        } catch(e) {
-          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
-        }
-      }
-
-      // -- Result --------------------------------------------------------
-      if (directDlUrl) {
-        lastShareUrl = directDlUrl;
-        updateQRCodeWithColorParam(directDlUrl, 'original');
-      } else {
+      } catch (err) {
+        console.error("Failed to generate QR transfer link:", err);
         qrLoading.style.display = 'none';
         const fallbackText = document.createElement('p');
         fallbackText.className = 'qr-error-msg';
-        fallbackText.textContent = currentLang === 'fr'
+        fallbackText.textContent = currentLang === 'fr' 
           ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
           : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
         qrSection.appendChild(fallbackText);
       }
     }
   </script>
-
-  <script src="/community/share-bridge.js?v=14"></script>
 </body>
 </html>
