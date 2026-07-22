@@ -183,6 +183,7 @@
       <button class="share-btn" onclick="shareTwitter()">🐦 Twitter / X</button>
       <button class="share-btn" onclick="sharePinterest()" style="color:#e60023;border-color:rgba(230,0,35,.3)">📌 Pinterest</button>
       <button class="share-btn" onclick="shareReddit()" style="color:#ff4500;border-color:rgba(255,69,0,.3)">🔴 Reddit</button>
+      <button class="share-btn" onclick="shareEmbed()" style="grid-column:span 2;color:#a78bfa;border-color:rgba(99,102,241,.4)">&lt;/&gt; Embed Gallery Code</button>
     </div>
     <button class="modal-close" onclick="closeShareModal()" id="sMClose">Close</button>
   </div>
@@ -564,6 +565,11 @@ function shareFacebook(){ window.open(`https://www.facebook.com/sharer/sharer.ph
 function shareTwitter(){ window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t('shareMsg'))}&url=${encodeURIComponent(shareUrl())}`, '_blank'); }
 function sharePinterest(){ window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl())}`, '_blank'); }
 function shareReddit(){ window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl())}&title=${encodeURIComponent(t('shareMsg'))}`, '_blank'); }
+function shareEmbed(){
+  const uid = getUid();
+  const embedCode = `<iframe src="https://studios-pro.com/community/u.html?uid=${uid}" width="100%" height="600" frameborder="0" style="border-radius:16px;overflow:hidden;" allowfullscreen></iframe>`;
+  navigator.clipboard.writeText(embedCode).then(()=>toast('Gallery Embed Code copied! 📋','success')).catch(()=>{});
+}
 
 // ─── Start ─────────────────────────────────────────────────
 loadProfile();
