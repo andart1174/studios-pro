@@ -433,7 +433,7 @@
             const cType = response.headers.get('content-type') || '';
             if (cType.includes('html')) {
               const htmlText = await response.text();
-              const m = htmlText.match(/href="([^"]+)">Download/);
+              const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)"[^>]*>Download/i);
               if (m) {
                 let realLink = m[1];
                 if (targetUrl.includes('/api/proxy/')) {
@@ -454,10 +454,24 @@
             console.warn("Direct fetch failed, attempting proxy:", e);
           }
 
-          // 2. Try proxy fallback if direct fetch failed or non-200 OK
-          if (!res || !res.ok) {
-            if (fetchUrl.includes('tmpfiles.org')) {
-              const proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+          // 2. Try proxy fallback if direct fetch failed, non-200, or returned HTML page
+          let isHtmlResponse = false;
+          if (res && res.ok) {
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('html')) isHtmlResponse = true;
+          }
+
+          if (!res || !res.ok || isHtmlResponse) {
+            let proxiedUrl = null;
+            if (fetchUrl.includes('files.catbox.moe')) {
+              proxiedUrl = fetchUrl.replace('https://files.catbox.moe/', '/api/proxy-catbox/');
+            } else if (fetchUrl.includes('litterbox.catbox.moe')) {
+              proxiedUrl = fetchUrl.replace('https://litterbox.catbox.moe/', '/api/proxy-litterbox/');
+            } else if (fetchUrl.includes('tmpfiles.org')) {
+              proxiedUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+            }
+
+            if (proxiedUrl) {
               try {
                 res = await fetchWithHtmlResolve(proxiedUrl);
               } catch (e) {
@@ -473,6 +487,12 @@
           const blob = await res.blob();
           if (!blob || blob.size < 50) {
             throw new Error("Invalid or empty file downloaded.");
+          }
+
+          // Ensure downloaded blob is not an unparsed HTML page
+          const textPreview = await blob.slice(0, 100).text();
+          if (textPreview.includes('<!DOCTYPE') || textPreview.includes('<html')) {
+            throw new Error("Downloaded file is an HTML page, not a 3D model.");
           }
 
           const file = new File([blob], name, { type: 'application/octet-stream' });
