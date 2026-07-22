@@ -417,6 +417,59 @@
       }
     };
 
+    // ─── Firebase Config for 100% Reliable 3D Transfers ─────────
+    const FB_AR = {
+      apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
+      authDomain:"studios-pro.firebaseapp.com",
+      projectId:"studios-pro",
+      storageBucket:"studios-pro.firebasestorage.app",
+      messagingSenderId:"337301506363",
+      appId:"1:337301506363:web:68b84724390b830bbf4f1e"
+    };
+
+    // Load Firestore 3D transfer if passed in URL query param (?transfer=...)
+    const queryTransferId = urlParams.get('transfer');
+    if (queryTransferId) {
+      (async () => {
+        showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
+        try {
+          let pollCount = 0;
+          while ((!window.firebase || !window.firebase.firestore) && pollCount < 40) {
+            await new Promise(r => setTimeout(r, 100));
+            pollCount++;
+          }
+
+          if (!firebase.apps.length) firebase.initializeApp(FB_AR);
+          if (firebase.auth && !firebase.auth().currentUser) {
+            await firebase.auth().signInAnonymously().catch(() => {});
+          }
+
+          const db = firebase.firestore();
+          const doc = await db.collection('ar_transfers').doc(queryTransferId).get();
+          if (doc.exists) {
+            const data = doc.data();
+            const base64 = (data.chunks || []).join('');
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            const mime = data.mimeType || 'application/octet-stream';
+            const blob = new Blob([bytes], { type: mime });
+            const file = new File([blob], data.fileName || 'model.glb', { type: mime });
+            handleFile(file);
+          } else {
+            hideLoader();
+            alert(currentLang === 'fr' ? "Transfert expiré ou introuvable." : "Transfer expired or not found.");
+          }
+        } catch(err) {
+          console.error("Firestore transfer download error:", err);
+          hideLoader();
+          alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR." : "Error loading AR model.");
+        }
+      })();
+    }
+
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
     if (queryUrl && queryUrl !== 'broadcast') {
@@ -1169,31 +1222,51 @@
 
       let directDlUrl = null;
 
-      // -- Primary Service: Firebase Storage (100% CORS-friendly, zero mobile failure) --
-      const FB_AR = {
-        apiKey:"AIzaSyBNB1Whl4DCQPLGiCmAOpW7yXK1uGZXc9c",
-        authDomain:"studios-pro.firebaseapp.com",
-        projectId:"studios-pro",
-        storageBucket:"studios-pro.firebasestorage.app",
-        messagingSenderId:"337301506363",
-        appId:"1:337301506363:web:68b84724390b830bbf4f1e"
-      };
+      // -- Primary Service: Firestore AR Transfers (100% CORS-friendly, zero external dependency) --
       try {
-        if (window.firebase) {
+        if (window.firebase && window.firebase.firestore) {
           if (!firebase.apps.length) firebase.initializeApp(FB_AR);
           if (firebase.auth && !firebase.auth().currentUser) {
             await firebase.auth().signInAnonymously().catch(() => {});
           }
-          if (firebase.storage) {
-            const cleanName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const ref = firebase.storage().ref(`ar_transfers/${Date.now()}_${cleanName}`);
-            await ref.put(file);
-            const fbUrl = await ref.getDownloadURL();
-            if (fbUrl) directDlUrl = fbUrl;
+          const transferId = 'tr_' + Math.random().toString(36).substring(2, 10);
+          const buffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          
+          let binary = '';
+          const chunkLength = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunkLength) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkLength));
           }
+          const base64 = btoa(binary);
+
+          const chunkSize = 700000;
+          const chunks = [];
+          for (let i = 0; i < base64.length; i += chunkSize) {
+            chunks.push(base64.substring(i, i + chunkSize));
+          }
+
+          const db = firebase.firestore();
+          await db.collection('ar_transfers').doc(transferId).set({
+            fileName: fileName,
+            chunks: chunks,
+            mimeType: file.type || 'application/octet-stream',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+          const targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&transfer=${transferId}`;
+          const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
+
+          qrCodeImg.src = qrApiUrl;
+          qrCodeImg.onload = () => {
+            qrLoading.style.display = 'none';
+            qrCodeImg.style.display = 'block';
+          };
+          return;
         }
       } catch(e) {
-        console.warn('Firebase Storage upload failed, trying fallbacks:', e);
+        console.warn('Firestore transfer upload failed, trying external fallbacks:', e);
       }
 
       // -- Service 2: litterbox.catbox.moe (72h, CORS *, fallback) --
