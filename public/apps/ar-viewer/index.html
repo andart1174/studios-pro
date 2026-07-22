@@ -434,7 +434,24 @@
             proxiedUrl = proxiedUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
           }
 
-          const res = await fetch(proxiedUrl);
+          let res = await fetch(proxiedUrl);
+          if (!res || !res.ok) throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
+
+          // Handle tmpfiles.org HTML landing page (extract the real session binary link if HTML is returned)
+          const cType = (res.headers.get('content-type') || '').toLowerCase();
+          if (cType.includes('html')) {
+            const htmlText = await res.text();
+            const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
+            if (m) {
+              let realLink = m[1];
+              if (!realLink.startsWith('http')) {
+                realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
+              }
+              const realProxy = realLink.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+              res = await fetch(realProxy);
+            }
+          }
+
           if (!res || !res.ok) throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
 
           const blob = await res.blob();
