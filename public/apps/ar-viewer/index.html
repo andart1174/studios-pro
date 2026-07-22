@@ -441,6 +441,35 @@
       }, 100);
     }
 
+    async function fetchMediaBlob(mediaUrl) {
+      if (!mediaUrl) return null;
+      if (mediaUrl.startsWith('data:')) {
+        try {
+          const parts = mediaUrl.split(',');
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+          const bstr = atob(parts[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+          return new Blob([u8arr], { type: mime });
+        } catch(e) { return null; }
+      }
+
+      try {
+        const r = await fetch(mediaUrl);
+        if (r.ok) return await r.blob();
+      } catch(e) {}
+
+      try {
+        const proxied = '/api/proxy/' + mediaUrl.replace(/^https?:\/\//, '');
+        const r2 = await fetch(proxied);
+        if (r2.ok) return await r2.blob();
+      } catch(e) {}
+
+      return null;
+    }
+
     async function loadARPostDoc(postId) {
       try {
         if (!firebase.apps.length) {
@@ -452,34 +481,24 @@
           const p = doc.data();
           const mUrl = p.modelUrl || p.glbUrl || (p.toolState && p.toolState.modelUrl);
           if (mUrl) {
-            const fileRes = await fetch(mUrl);
-            const blob = await fileRes.blob();
-            const file = new File([blob], 'model.glb', { type: 'application/octet-stream' });
-            handleFile(file);
-          } else if (p.images && p.images.length) {
-            const imgUrl = p.images[0];
-            if (imgUrl.startsWith('data:')) {
-              const parts = imgUrl.split(',');
-              const mimeMatch = parts[0].match(/:(.*?);/);
-              const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-              const bstr = atob(parts[1]);
-              let n = bstr.length;
-              const u8arr = new Uint8Array(n);
-              while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-              const file = new File([new Blob([u8arr], { type: mime })], 'photo.png', { type: mime });
+            const blob = await fetchMediaBlob(mUrl);
+            if (blob) {
+              const file = new File([blob], 'model.glb', { type: 'application/octet-stream' });
               handleFile(file);
-            } else {
-              const imgRes = await fetch(imgUrl);
-              const blob = await imgRes.blob();
+              return;
+            }
+          }
+          if (p.images && p.images.length) {
+            const imgUrl = p.images[0];
+            const blob = await fetchMediaBlob(imgUrl);
+            if (blob) {
               const file = new File([blob], 'photo.png', { type: 'image/png' });
               handleFile(file);
+              return;
             }
-          } else {
-            hideLoader();
           }
-        } else {
-          hideLoader();
         }
+        hideLoader();
       } catch(err) {
         console.warn("Firestore post AR load error:", err);
         hideLoader();
