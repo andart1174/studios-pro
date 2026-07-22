@@ -1192,26 +1192,7 @@
   </div>
 </div>
 
-<!-- 3D PHOTO MESH RELIEF MODAL -->
-<div class="share-sheet-overlay" id="photo3dOverlay" onclick="closePhoto3DModal(event)">
-  <div class="share-sheet-inner" style="width:680px;max-width:95vw;padding:20px" onclick="event.stopPropagation()">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;display:flex;align-items:center;gap:8px">
-        🗿 3D Photo Relief Sculpture
-      </div>
-      <button onclick="closePhoto3DModalDirect()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%">✕</button>
-    </div>
-    <div id="photo3dCanvasWrap" style="width:100%;height:380px;background:#030712;border-radius:14px;overflow:hidden;position:relative;margin-bottom:14px">
-      <div id="photo3dLoader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--accent3);font-size:.85rem;background:rgba(0,0,0,.7);z-index:2">
-        <div class="spinner"></div><span style="margin-left:10px">Converting Photo to 3D Mesh...</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center">
-      <span style="font-size:.75rem;color:var(--muted)">Drag to rotate 360° · Scroll to zoom</span>
-      <button onclick="openARFromRelief()" style="padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:6px">📱 View in AR</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- PWA APP INSTALL BANNER -->
 <div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(11,17,32,.95);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(99,102,241,.4);backdrop-filter:blur(16px);border-radius:16px;padding:12px 18px;align-items:center;gap:14px;max-width:90%;width:420px;">
@@ -1841,15 +1822,11 @@ function imgsHtml(images) {
   else if (n===3) gridContent = `<div class="p-imgs ig-3"><div class="main-img">${tag(imgs[0],0)}</div>${tag(imgs[1],1)}${tag(imgs[2],2)}</div>`;
   else gridContent = `<div class="p-imgs ig-4">${imgs.map(tag).join('')}</div>`;
 
-  const mainImg = imgs[0];
   return `
     <div class="holo-wrap" onmousemove="initHoloTilt(this, event)" onmouseleave="resetHoloTilt(this)">
       <div class="holo-tilt-card">
         ${gridContent}
         <div class="holo-glare"></div>
-      </div>
-      <div class="holo-bar">
-        <button class="holo-btn" onclick="event.stopPropagation();open3DReliefModal('${esc(mainImg)}')">🗿 3D Relief</button>
       </div>
     </div>`;
 }
@@ -3141,130 +3118,6 @@ function resetHoloTilt(wrap) {
   const glare = wrap.querySelector('.holo-glare');
   if (card) card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
   if (glare) glare.style.background = 'transparent';
-}
-
-let reliefScene, reliefCamera, reliefRenderer, reliefAnimId, reliefMesh;
-
-function open3DReliefModal(imgUrl) {
-  const overlay = document.getElementById('photo3dOverlay');
-  if (!overlay) return;
-  overlay.classList.add('open');
-  overlay.dataset.img = imgUrl;
-
-  const container = document.getElementById('photo3dCanvasWrap');
-  container.innerHTML = `<div id="photo3dLoader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--accent3);font-size:.85rem;background:rgba(0,0,0,.7);z-index:2"><div class="spinner"></div><span style="margin-left:10px">Converting Photo to 3D Mesh...</span></div>`;
-
-  const width = container.clientWidth || 640;
-  const height = container.clientHeight || 380;
-
-  if (reliefAnimId) cancelAnimationFrame(reliefAnimId);
-
-  reliefScene = new THREE.Scene();
-  reliefScene.background = new THREE.Color(0x030712);
-
-  reliefCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-  reliefCamera.position.set(0, 0, 3.8);
-
-  reliefRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  reliefRenderer.setSize(width, height);
-  reliefRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  container.appendChild(reliefRenderer.domElement);
-
-  let isDragging = false;
-  let previousMousePosition = { x: 0, y: 0 };
-  let rotX = 0, rotY = 0;
-
-  const canvasEl = reliefRenderer.domElement;
-  canvasEl.style.cursor = 'grab';
-
-  canvasEl.onmousedown = (e) => { isDragging = true; canvasEl.style.cursor = 'grabbing'; previousMousePosition = { x: e.clientX, y: e.clientY }; };
-  window.onmouseup = () => { isDragging = false; if (canvasEl) canvasEl.style.cursor = 'grab'; };
-  canvasEl.onmousemove = (e) => {
-    if (!isDragging || !reliefMesh) return;
-    const deltaX = e.clientX - previousMousePosition.x;
-    const deltaY = e.clientY - previousMousePosition.y;
-    rotY += deltaX * 0.01;
-    rotX += deltaY * 0.01;
-    reliefMesh.rotation.y = rotY;
-    reliefMesh.rotation.x = rotX;
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-  };
-
-  const ambLight = new THREE.AmbientLight(0xffffff, 0.75);
-  reliefScene.add(ambLight);
-
-  const dirLight = new THREE.DirectionalLight(0x6366f1, 1.2);
-  dirLight.position.set(2, 4, 5);
-  reliefScene.add(dirLight);
-
-  const img = new Image();
-  img.crossOrigin = 'Anonymous';
-  img.src = imgUrl;
-  img.onload = () => {
-    try {
-      const canvas2d = document.createElement('canvas');
-      const ctx = canvas2d.getContext('2d');
-      const w = 120, h = 120;
-      canvas2d.width = w; canvas2d.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-
-      const imgData = ctx.getImageData(0, 0, w, h).data;
-      const aspect = (img.width || 1) / (img.height || 1);
-      const planeW = aspect >= 1 ? 2.6 : 2.6 * aspect;
-      const planeH = aspect >= 1 ? 2.6 / aspect : 2.6;
-
-      const geo = new THREE.PlaneGeometry(planeW, planeH, w - 1, h - 1);
-      const pos = geo.attributes.position;
-
-      for (let i = 0; i < pos.count; i++) {
-        const r = imgData[i * 4] || 0;
-        const g = imgData[i * 4 + 1] || 0;
-        const b = imgData[i * 4 + 2] || 0;
-        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        pos.setZ(i, lum * 0.4);
-      }
-      geo.computeVertexNormals();
-
-      const texture = new THREE.Texture(img);
-      texture.needsUpdate = true;
-
-      const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.35, metalness: 0.15, side: THREE.DoubleSide });
-      reliefMesh = new THREE.Mesh(geo, mat);
-      reliefScene.add(reliefMesh);
-    } catch(err) {
-      console.warn('Relief mesh error:', err);
-    }
-    const loader = document.getElementById('photo3dLoader');
-    if (loader) loader.remove();
-  };
-
-  const animate = () => {
-    reliefAnimId = requestAnimationFrame(animate);
-    if (reliefMesh && !isDragging) reliefMesh.rotation.y += 0.004;
-    if (reliefRenderer && reliefScene && reliefCamera) reliefRenderer.render(reliefScene, reliefCamera);
-  };
-  animate();
-}
-
-function closePhoto3DModal(e) {
-  if (e.target === document.getElementById('photo3dOverlay')) closePhoto3DModalDirect();
-}
-
-function closePhoto3DModalDirect() {
-  const overlay = document.getElementById('photo3dOverlay');
-  if (overlay) overlay.classList.remove('open');
-  if (reliefAnimId) cancelAnimationFrame(reliefAnimId);
-  if (reliefRenderer) {
-    try { reliefRenderer.dispose(); } catch(e){}
-    const container = document.getElementById('photo3dCanvasWrap');
-    if (container) container.innerHTML = '';
-  }
-}
-
-function openARFromRelief() {
-  const overlay = document.getElementById('photo3dOverlay');
-  const imgUrl = overlay ? (overlay.dataset.img || '') : '';
-  if (imgUrl) window.open(`/apps/ar-viewer/?url=${encodeURIComponent(imgUrl)}`, '_blank');
 }
 
 async function generateSocialCard() {
