@@ -1704,9 +1704,10 @@ function loadFeed() {
     // ─── Founding Member badge via public community_stats doc ───
     try {
       const statsDoc = await db.collection('community_stats').doc('global').get();
-      const memberCount = (statsDoc.exists && statsDoc.data().memberCount) || 999;
+      // If doc doesn't exist yet → 0 members → definitely founding period
+      const memberCount = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
       if (memberCount <= 100) {
-        // All registered users are Founding Members while site has < 100 members
+        // All registered users are Founding Members while site has ≤ 100 members
         allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
       } else {
         // Site grew past 100 — only show badge for users explicitly marked
@@ -1718,7 +1719,10 @@ function loadFeed() {
           allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
         }
       }
-    } catch(e) {}
+    } catch(e) {
+      // If query fails for any reason → show badge (founding period assumed)
+      allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
+    }
 
     let filtered = allPosts;
     if (curCat !== 'all') {
