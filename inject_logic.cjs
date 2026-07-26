@@ -368,6 +368,8 @@ const scriptTemplate = (ref) => {
         const titleAttr = (target.getAttribute('title') || "").toLowerCase();
         const aria = (target.getAttribute('aria-label') || "").toLowerCase();
         const id = (target.id || "").toLowerCase();
+        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
+        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
         
         const cls = target.className;
         let clsStr = '';
@@ -377,13 +379,13 @@ const scriptTemplate = (ref) => {
           clsStr = cls.baseVal.toLowerCase();
         }
 
-        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
+        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
         if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
-        if (isExport) {
+        if (isExport && !isPremiumUser && !window.isPremiumUser) {
           e.stopImmediatePropagation();
           e.preventDefault();
           pendingTarget = target;
