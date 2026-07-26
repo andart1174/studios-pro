@@ -377,7 +377,7 @@ const scriptTemplate = (ref) => {
           clsStr = cls.baseVal.toLowerCase();
         }
 
-        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];
+        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign'];
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
@@ -1139,6 +1139,7 @@ subdirs.forEach(dir => {
         if (dir === 'dfx') ref = 'dfx';
         if (dir === 'aura-gen') ref = 'aurg';
         if (dir === 'ia-architecte') ref = 'iaar';
+        if (dir === 'artgen') ref = 'artgen';
       }
     }
 

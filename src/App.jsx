@@ -100,7 +100,7 @@ import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy
+  Megaphone, Copy, Palette
 } from 'lucide-react';
 import './App.css';
 
@@ -788,6 +788,7 @@ const StudiosPro = () => {
   const [isMechGenProOpen, setIsMechGenProOpen] = useState(false);
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
+  const [isArtGenOpen, setIsArtGenOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -1163,6 +1164,7 @@ const StudiosPro = () => {
       if (ref === 'spro2') setIsStudioPro2Open(true);
       if (ref === 'mechgen') setIsMechGenProOpen(true);
       if (ref === 'sandbox') setIsSandboxOpen(true);
+      if (ref === 'artgen') setIsArtGenOpen(true);
     }
   }, [lang, user]);
 
@@ -1254,6 +1256,7 @@ const StudiosPro = () => {
         setIsMechGenProOpen(false);
         setIsScriptingOpen(false);
         setIsSandboxOpen(false);
+        setIsArtGenOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -1337,6 +1340,7 @@ const StudiosPro = () => {
       if (ref === 'spro2') setIsStudioPro2Open(true);
       if (ref === 'mechgen') setIsMechGenProOpen(true);
       if (ref === 'sandbox') setIsSandboxOpen(true);
+      if (ref === 'artgen') setIsArtGenOpen(true);
       if (ref === 'scripting') setIsScriptingOpen(true);
       if (ref === 'arviewer') setIsARViewerOpen(true);
     }
@@ -1438,6 +1442,7 @@ const StudiosPro = () => {
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Studio Scripting",
       sandbox: "Zen Sandscape",
+      artGenStudio: "ArtGen Studio",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -1487,6 +1492,7 @@ const StudiosPro = () => {
       mechGenPro: "Mech Gen Pro",
       scriptingStudio: "Scripting Studio",
       sandbox: "Zen Sandscape",
+      artGenStudio: "ArtGen Studio",
       faqBtn: "FAQ",
       communityBtn: "Community"
     }
@@ -1495,7 +1501,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -1969,6 +1975,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.sandbox}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArtGenOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #f472b6)' }} />
+            <Palette size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="ArtGen Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.artGenStudio}</div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
@@ -2238,6 +2256,11 @@ const StudiosPro = () => {
         {isSandboxOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/sandbox/index.html" className="studio-iframe" title="Zen Sandscape" />
+          </motion.div>
+        )}
+        {isArtGenOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/artgen/index.html" className="studio-iframe" title="ArtGen Studio" />
           </motion.div>
         )}
       </AnimatePresence>
