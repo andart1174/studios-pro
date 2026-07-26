@@ -208,6 +208,42 @@ const converters = [
     h1Fr: 'Convertisseur de Tracés Vectoriels SVG en 3D Gratuit',
     featureEn: 'Accurate vector path scaling, extrusion depth adjuster, live PBR rendering, and standalone HTML export.',
     featureFr: 'Mise à l\'échelle des tracés SVG, ajustement de la profondeur, rendu PBR en direct et export HTML.'
+  },
+  {
+    id: 'ai-art-generator',
+    ref: 'artgen',
+    titleEn: 'Free Online AI Art & Procedural Vector Studio | Studios-Pro',
+    titleFr: 'Générateur d\'Art IA & Studio Vectoriel Gratuit | Studios-Pro',
+    descEn: 'Generate procedural AI artwork, 3D relief models (STL/OBJ/GLB), vector logos, and recolor DXF CAD files online.',
+    descFr: 'Générez des œuvres d\'art IA procédurales, des reliefs 3D (STL/OBJ/GLB), des logos vectoriels et recolorez des fichiers DXF.',
+    h1En: 'Free Online AI Art Generator & 3D Relief Studio',
+    h1Fr: 'Générateur d\'Art IA Gratuit & Studio de Relief 3D',
+    featureEn: '45+ AI generation styles, 35+ vector tools, 3D relief printing export (STL/OBJ/GLB), and DXF CAD layer recoloring.',
+    featureFr: '45+ styles de génération IA, 35+ outils vectoriels, export de relief 3D (STL/OBJ/GLB) et recoloration DXF.'
+  },
+  {
+    id: 'procedural-logo-maker',
+    ref: 'artgen',
+    titleEn: 'Free AI Vector Brand Logo Generator | Studios-Pro',
+    titleFr: 'Générateur de Logo Vectoriel IA Gratuit | Studios-Pro',
+    descEn: 'Create unique themed vector brand logos (Dragon, Lion, Crown, Rocket, Guitar) and export as 3D printable STL or OBJ.',
+    descFr: 'Créez des logos vectoriels thématiques uniques (Dragon, Lion, Couronne, Riquette, Guitare) et exportez en STL ou OBJ 3D.',
+    h1En: 'Free AI Vector Brand Logo & 3D Emblem Generator',
+    h1Fr: 'Générateur de Logos Vectoriels IA & Emblèmes 3D Gratuit',
+    featureEn: 'Themed vector emblem algorithms, customizable brand & tagline text, high-res PNG, SVG, and 3D STL export.',
+    featureFr: 'Algorithmes d\'emblèmes thématiques, texte personnalisable, PNG haute rés, SVG et export STL 3D.'
+  },
+  {
+    id: '2d-canvas-to-3d-relief',
+    ref: 'artgen',
+    titleEn: 'Free 2D Canvas to 3D Relief Printer Generator | Studios-Pro',
+    titleFr: 'Générateur de Relief 3D à partir de Dessin 2D Gratuit | Studios-Pro',
+    descEn: 'Convert 2D canvas artwork into high-precision 3D printable relief models (STL, OBJ, GLB) with watertight geometry.',
+    descFr: 'Convertissez des dessins 2D en modèles de relief 3D haute précision (STL, OBJ, GLB) étanches pour l\'impression 3D.',
+    h1En: 'Free 2D Canvas to 3D Relief STL Exporter',
+    h1Fr: 'Générateur de Relief 3D STL à partir de Dessin 2D Gratuit',
+    featureEn: 'Watertight 3D mesh generation, normal calculation, vertex coloring, and high-fidelity STL, OBJ, GLB export.',
+    featureFr: 'Maillage 3D étanche, calcul de normales, coloration de sommets et export STL, OBJ, GLB haute fidélité.'
   }
 ];
 
