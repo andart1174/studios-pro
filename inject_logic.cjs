@@ -400,6 +400,11 @@ const scriptTemplate = (ref) => {
       const originalAnchorClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.download && this.href && !this.dataset.bypassed) {
+          if (!isPremiumUser && !window.isPremiumUser) {
+            if (localModal) localModal.style.display = 'flex';
+            channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: '${ref}' } });
+            return;
+          }
           const fileUrl = this.href;
           const fileName = this.download;
 
@@ -421,6 +426,11 @@ const scriptTemplate = (ref) => {
       EventTarget.prototype.dispatchEvent = function(event) {
         if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
           if (this.download && this.href && !this.dataset.bypassed) {
+            if (!isPremiumUser && !window.isPremiumUser) {
+              if (localModal) localModal.style.display = 'flex';
+              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: '${ref}' } });
+              return false;
+            }
             const fileUrl = this.href;
             const fileName = this.download;
 
@@ -1103,7 +1113,7 @@ const scriptTemplate = (ref) => {
 };
 
 const oldKeywordsRegex = /const keywords \= \['export', 'download'[^\]]+\];/;
-const newKeywordsLine = "        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html'];";
+const newKeywordsLine = "        const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];";
 
 // Automatically process discovered apps
 subdirs.forEach(dir => {
