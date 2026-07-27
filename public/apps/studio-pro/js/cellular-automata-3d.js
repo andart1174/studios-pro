@@ -12,7 +12,7 @@ window.CellularAutomata3D = (() => {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;border-bottom:1px solid #1e293b;padding-bottom:10px;">
         <div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#fb923c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🧬</div>
         <div>
-          <div style="font-size:14px;font-weight:700;">${isEN ? 'Cellular Automata Tower' : 'Tour d\\'Automates Cellulaires'}</div>
+          <div style="font-size:14px;font-weight:700;">${isEN ? 'Cellular Automata Tower' : "Tour d'Automates Cellulaires"}</div>
           <div style="font-size:10px;color:#64748b;">${isEN ? 'Game of Life extruded in Z' : 'Jeu de la vie extrudé en Z'}</div>
         </div>
       </div>
@@ -26,7 +26,7 @@ window.CellularAutomata3D = (() => {
           <input type="range" id="auto3d-gen" min="5" max="25" value="15" style="width:100%;accent-color:#fb923c;">
         </div>
       </div>
-      <div style="font-size:10px;color:#94a3b8;margin-bottom:4px;">${isEN ? 'Initial State Density:' : 'Densité de l\\'État Initial:'} <b id="auto-dv">30%</b></div>
+      <div style="font-size:10px;color:#94a3b8;margin-bottom:4px;">${isEN ? 'Initial State Density:' : "Densité de l'État Initial:"} <b id="auto-dv">30%</b></div>
       <input type="range" id="auto3d-dens" min="5" max="60" value="30" style="width:100%;accent-color:#e11d48;margin-bottom:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div>

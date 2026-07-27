@@ -13,7 +13,7 @@ window.ForceShield3D = (() => {
         <div style="width:36px;height:36px;background:linear-gradient(135deg,#38bdf8,#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🛡️</div>
         <div>
           <div style="font-size:14px;font-weight:700;">${isEN ? 'Holographic Force Shield' : 'Bouclier de Force Holographique'}</div>
-          <div style="font-size:10px;color:#64748b;">${isEN ? 'Energy barriers & sci-fi domes' : 'Barrières d\\'énergie & dômes sci-fi'}</div>
+          <div style="font-size:10px;color:#64748b;">${isEN ? 'Energy barriers & sci-fi domes' : "Barrières d'énergie & dômes sci-fi"}</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -22,7 +22,7 @@ window.ForceShield3D = (() => {
           <select id="shield3d-shape" style="width:100%;padding:5px;background:#1e293b;border:1px solid #333;border-radius:4px;color:#fff;font-size:10px;">
             <option value="dome">${isEN ? 'Protective Dome' : 'Dôme Protecteur'}</option>
             <option value="sphere">${isEN ? 'Full Sphere' : 'Sphère Complète'}</option>
-            <option value="wall">${isEN ? 'Energy Wall' : 'Mur d\\'Énergie'}</option>
+            <option value="wall">${isEN ? 'Energy Wall' : "Mur d'Énergie"}</option>
             <option value="hex">${isEN ? 'Hexagon Matrix' : 'Matrice Hexagonale'}</option>
           </select>
         </div>
@@ -42,7 +42,7 @@ window.ForceShield3D = (() => {
         </div>
       </div>
       <label style="display:flex;align-items:center;cursor:pointer;font-size:11px;color:#93c5fd;margin-bottom:10px;">
-        <input type="checkbox" id="shield3d-impact" checked style="width:auto;margin-right:8px;"> ⚡ ${isEN ? 'Simulate impact ripples' : 'Simuler ondes d\\'impact'}
+        <input type="checkbox" id="shield3d-impact" checked style="width:auto;margin-right:8px;"> ⚡ ${isEN ? 'Simulate impact ripples' : "Simuler ondes d'impact"}
       </label>
       <button id="shield3d-add" style="width:100%;padding:12px;background:linear-gradient(135deg,#38bdf8,#818cf8);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">
         ${isEN ? '🛡️ ACTIVATE SHIELD' : '🛡️ ACTIVER BOUCLIER'}
