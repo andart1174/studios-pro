@@ -457,6 +457,55 @@
     @media(max-width:1100px){.wrap{grid-template-columns:1fr}.sl,.sr{display:none}}
     @media(max-width:640px){.wrap{padding:12px}.header{padding:0 12px}.hcenter{display:none}.overlay{align-items:flex-end;padding:0}.modal{border-radius:20px 20px 0 0;max-height:94vh}}
 
+    /* ── DAILY STREAK ──────────────────────────────────────── */
+    .streak-card{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:12px 14px;margin-bottom:12px;}
+    .streak-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+    .streak-icon{font-size:1.5rem;animation:streak-pulse 2s ease-in-out infinite;}
+    @keyframes streak-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2) rotate(-5deg);}}
+    .streak-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:.82rem;background:linear-gradient(90deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+    .streak-count{font-family:'Orbitron',monospace;font-weight:700;font-size:1.6rem;color:#fbbf24;text-shadow:0 0 12px rgba(245,158,11,.6);line-height:1;}
+    .streak-sub{font-size:.67rem;color:var(--muted);margin-top:2px;}
+    .streak-dots{display:flex;gap:5px;margin-top:8px;}
+    .streak-dot{width:26px;height:26px;border-radius:50%;border:2px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:.72rem;background:var(--bg3);transition:all .3s;}
+    .streak-dot.done{background:linear-gradient(135deg,#f59e0b,#ef4444);border-color:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.5);}
+    .streak-dot.today{border-color:#fbbf24;box-shadow:0 0 12px rgba(251,191,36,.6);animation:streak-today .9s ease-in-out infinite alternate;}
+    @keyframes streak-today{from{box-shadow:0 0 6px rgba(251,191,36,.4);}to{box-shadow:0 0 18px rgba(251,191,36,.8);}}
+    .streak-claim-btn{width:100%;margin-top:9px;padding:7px;border-radius:10px;border:none;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#000;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;display:none;}
+    .streak-claim-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(245,158,11,.5);}
+    .streak-claimed{width:100%;margin-top:9px;padding:7px;border-radius:10px;border:1px solid rgba(16,185,129,.35);background:rgba(16,185,129,.08);color:#34d399;font-size:.78rem;font-weight:700;text-align:center;display:none;}
+
+    /* ── CREATOR QUÊTES ────────────────────────────────────── */
+    .quest-card{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.06));border:1px solid rgba(99,102,241,.3);border-radius:14px;padding:14px;margin-bottom:12px;}
+    .quest-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:.78rem;letter-spacing:.08em;background:linear-gradient(90deg,#a78bfa,#ec4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;}
+    .quest-item{margin-bottom:9px;}
+    .quest-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+    .quest-item-name{font-size:.78rem;color:#cbd5e1;font-weight:600;display:flex;align-items:center;gap:5px;}
+    .quest-item-xp{font-size:.67rem;font-weight:800;color:#fbbf24;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:1px 7px;border-radius:999px;}
+    .quest-bar{background:var(--bg3);border-radius:999px;height:5px;overflow:hidden;}
+    .quest-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s ease;}
+    .quest-count{font-size:.65rem;color:var(--muted);margin-top:2px;text-align:right;}
+    .quest-done{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:5px 8px;font-size:.72rem;color:#34d399;font-weight:700;text-align:center;margin-bottom:9px;}
+
+    /* ── REFERRAL SYSTEM ────────────────────────────────────── */
+    .ref-card{background:linear-gradient(135deg,rgba(236,72,153,.08),rgba(99,102,241,.06));border:1px solid rgba(236,72,153,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;transition:all .22s;}
+    .ref-card:hover{border-color:rgba(236,72,153,.5);box-shadow:0 0 18px rgba(236,72,153,.18);transform:translateY(-1px);}
+    .ref-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .ref-icon{font-size:1.2rem;}
+    .ref-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:.78rem;background:linear-gradient(90deg,#ec4899,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+    .ref-desc{font-size:.71rem;color:var(--muted);line-height:1.4;margin-bottom:8px;}
+    .ref-count-row{display:flex;align-items:center;justify-content:space-between;}
+    .ref-count{font-family:'Orbitron',monospace;font-weight:700;font-size:1.1rem;color:#ec4899;}
+    .ref-count-lbl{font-size:.65rem;color:var(--muted);}
+    .ref-btn{padding:5px 12px;border-radius:8px;border:none;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-size:.72rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;}
+    .ref-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(236,72,153,.4);}
+    /* Referral Modal */
+    .ref-link-box{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:.82rem;color:var(--accent3);font-family:'Courier New',monospace;word-break:break-all;margin-bottom:10px;}
+    .ref-copy-btn{width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-bottom:8px;}
+    .ref-copy-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(236,72,153,.5);}
+    .ref-share-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .ref-share-btn{padding:9px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center;}
+    .ref-share-btn:hover{border-color:var(--accent);color:var(--accent3);background:rgba(99,102,241,.1);}
+
 
     /* Hotspots & Spec Tags */
     .p-img-hotspot-container {
@@ -909,6 +958,34 @@
         <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
         <div class="rp-bot"><span id="rp-cur">0</span><span id="rp-max">5</span></div>
       </div>
+      <!-- DAILY STREAK WIDGET -->
+      <div class="streak-card" id="streakCard" style="display:none">
+        <div class="streak-header">
+          <div class="streak-icon">🔥</div>
+          <div>
+            <div class="streak-title">DAILY STREAK</div>
+            <div style="display:flex;align-items:baseline;gap:5px">
+              <div class="streak-count" id="streakCount">0</div>
+              <div class="streak-sub" id="streakSub">days in a row</div>
+            </div>
+          </div>
+        </div>
+        <div class="streak-dots" id="streakDots"></div>
+        <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+        <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
+      </div>
+      <!-- REFERRAL WIDGET -->
+      <div class="ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
+        <div class="ref-header">
+          <div class="ref-icon">🚀</div>
+          <div class="ref-title">INVITE &amp; EARN XP</div>
+        </div>
+        <div class="ref-desc">Invite friends → you earn +100 XP, they earn +50 XP on signup!</div>
+        <div class="ref-count-row">
+          <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
+          <button class="ref-btn">📤 Share Link</button>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
         <span style="font-size:.7rem;color:var(--muted)">Theme:</span>
         <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
@@ -1016,6 +1093,12 @@
       <div class="ch-desc" data-t="chDesc">Share your best holographic 3D model! Community votes for the winner 🏆</div>
       <div class="ch-timer">⏱️ <span id="chTimer">6 days left</span></div>
       <button class="btn-ch" onclick="openCreate()" data-t="joinChallenge">✦ Join Challenge</button>
+    </div>
+    <!-- CREATOR QUESTS WIDGET -->
+    <div class="quest-card" id="questCard" style="display:none">
+      <div class="quest-title">🎯 CREATOR QUESTS</div>
+      <div id="questList"></div>
+      <div style="font-size:.68rem;color:var(--muted);margin-top:4px;text-align:center">Resets every Monday 🗓️</div>
     </div>
     <!-- Stats -->
     <div class="sc">
@@ -1207,7 +1290,36 @@
   </div>
 </div>
 
-
+<!-- REFERRAL MODAL -->
+<div class="overlay" id="referralOverlay" onclick="closeReferralModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+    <div class="mh">
+      <div class="mt">🚀 Invite Friends &amp; Earn XP</div>
+      <button class="mc" onclick="closeReferralDirect()">✕</button>
+    </div>
+    <div class="mb">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:2.5rem;margin-bottom:8px">🎁</div>
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin-bottom:6px">Share your unique invite link</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.5">You earn <strong style="color:#fbbf24">+100 XP</strong> for each friend who joins!<br>They earn <strong style="color:#34d399">+50 XP</strong> bonus on signup.</div>
+      </div>
+      <div class="opt-lbl" style="margin-bottom:6px">🔗 Your Invite Link</div>
+      <div class="ref-link-box" id="refLinkDisplay">Loading...</div>
+      <button class="ref-copy-btn" id="refCopyBtn" onclick="copyRefLink()">📋 Copy Link</button>
+      <div class="ref-share-row">
+        <button class="ref-share-btn" onclick="refShareWhatsApp()">💬 WhatsApp</button>
+        <button class="ref-share-btn" onclick="refShareTwitter()">🐦 X / Twitter</button>
+        <button class="ref-share-btn" onclick="refShareFacebook()">📘 Facebook</button>
+        <button class="ref-share-btn" onclick="refShareTelegram()">✈️ Telegram</button>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);text-align:center">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:6px">Friends you've invited</div>
+        <div style="font-family:'Orbitron',monospace;font-weight:700;font-size:1.8rem;color:#ec4899" id="refModalCount">0</div>
+        <div style="font-size:.72rem;color:var(--muted)">= <span id="refXPEarned" style="color:#fbbf24;font-weight:700">0</span> XP earned from referrals!</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PWA APP INSTALL BANNER -->
 <div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(11,17,32,.95);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(99,102,241,.4);backdrop-filter:blur(16px);border-radius:16px;padding:12px 18px;align-items:center;gap:14px;max-width:90%;width:420px;">
@@ -1412,6 +1524,16 @@ if (auth) {
           }
         }).catch(()=>{});
       }).catch(()=>{});
+
+      // ─── Check referral on signup ───────────────────────────────────────
+      checkReferralOnLogin(u);
+
+      // ─── Daily Streak + Creator Quests ──────────────────────────────────
+      checkDailyStreak(u);
+      loadCreatorQuests(u.uid);
+      document.getElementById('streakCard').style.display = 'block';
+      document.getElementById('refCard').style.display = 'block';
+      document.getElementById('questCard').style.display = 'block';
 
       // Auto-detect real location via IP geolocation and save to user doc
       fetch('https://ipapi.co/json/')
@@ -2184,6 +2306,8 @@ async function toggleLike(pid) {
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 950);
       }
+      // 🎯 Quest: track like given
+      updateQuestProgress(curUser.uid, 'likeGiven', 1);
     }
   }
 }
@@ -2270,6 +2394,8 @@ async function sendCmt() {
   await db.collection(COLL).doc(curPostId).update({ commentsCount:firebase.firestore.FieldValue.increment(1) });
   const el=document.getElementById(`cm-${curPostId}`); if(el) el.textContent=parseInt(el.textContent||0)+1;
   hideReplyBar();
+  // 🎯 Quest: track comment
+  updateQuestProgress(curUser.uid, 'commentCount', 1);
 }
 
 async function delCmt(cid) {
@@ -2366,6 +2492,8 @@ async function publish() {
 
     await db.collection(COLL).add(postData);
     await db.collection('users').doc(curUser.uid).set({ postCount: firebase.firestore.FieldValue.increment(1) }, { merge: true }).catch(()=>{});
+    // 🎯 Quest: track post published
+    updateQuestProgress(curUser.uid, 'postCount', 1);
 
     // Reset form
     document.getElementById('postContent').value = '';
@@ -2487,6 +2615,9 @@ function sharePost(pid) {
   const postTitle = post && post.content ? post.content.slice(0,80) : 'Check out this 3D creation';
   const postAuthor = post && post.displayName ? post.displayName : 'a creator';
 
+  // 🎯 Quest: track share
+  if (curUser) updateQuestProgress(curUser.uid, 'shareCount', 1);
+
   // Show share sheet
   const el = document.getElementById('shareSheetOverlay');
   if (el) {
@@ -2508,6 +2639,7 @@ function sharePost(pid) {
     navigator.clipboard.writeText(postUrl).then(() => toast('Link copied! 📋','info'));
   }
 }
+
 
 // ─── Admin ─────────────────────────────────────────────────
 async function adminWipeAll() {
@@ -3194,6 +3326,273 @@ async function spawnReaction(pid, emoji, e) {
     const el = document.getElementById(`react-${mapKey}-${pid}`);
     if (el) el.textContent = parseInt(el.textContent || '0') + 1;
   } catch(err) {}
+}
+
+// ════════════════════════════════════════════════════════════
+// 🔥 DAILY STREAK SYSTEM
+// ════════════════════════════════════════════════════════════
+async function checkDailyStreak(u) {
+  if (!db || !u) return;
+  try {
+    const doc = await db.collection('users').doc(u.uid).get();
+    const d = doc.exists ? doc.data() : {};
+    const today = new Date().toDateString();
+    const lastLogin = d.lastLoginDate || '';
+    const streak = d.streakCount || 0;
+    const lastLoginDate = lastLogin ? new Date(lastLogin) : null;
+    const todayDate = new Date();
+    const diffMs = lastLoginDate ? todayDate - lastLoginDate : Infinity;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    let newStreak = streak;
+    let claimedToday = d.streakClaimedDate === today;
+
+    if (lastLogin !== today) {
+      if (diffDays <= 1) {
+        // Consecutive — streak continues (don't increment yet, wait for claim)
+      } else if (diffDays > 1) {
+        // Broke streak — reset
+        newStreak = 0;
+        await db.collection('users').doc(u.uid).set({ streakCount: 0, lastLoginDate: today }, { merge: true });
+      }
+    }
+
+    // Update UI
+    document.getElementById('streakCount').textContent = newStreak;
+    const isFR = curLang === 'fr';
+    document.getElementById('streakSub').textContent = isFR 
+      ? `jour${newStreak !== 1 ? 's' : ''} consécutif${newStreak !== 1 ? 's' : ''}`
+      : `day${newStreak !== 1 ? 's' : ''} in a row`;
+
+    // Render last 7 days dots
+    const dotsEl = document.getElementById('streakDots');
+    if (dotsEl) {
+      dotsEl.innerHTML = '';
+      for (let i = 6; i >= 0; i--) {
+        const dot = document.createElement('div');
+        const dayLabel = ['S','M','T','W','T','F','S'];
+        const dayIdx = (todayDate.getDay() - i + 7) % 7;
+        dot.className = 'streak-dot' + (i === 0 ? ' today' : (i <= (newStreak - 1) ? ' done' : ''));
+        dot.textContent = i === 0 ? (claimedToday ? '✅' : '🔥') : (i <= (newStreak - 1) ? '🔥' : dayLabel[dayIdx]);
+        dot.title = i === 0 ? 'Today' : `${i} day${i > 1 ? 's' : ''} ago`;
+        dotsEl.appendChild(dot);
+      }
+    }
+
+    // Show claim or claimed
+    if (claimedToday) {
+      document.getElementById('streakClaimBtn').style.display = 'none';
+      document.getElementById('streakClaimed').style.display = 'block';
+    } else {
+      document.getElementById('streakClaimBtn').style.display = 'block';
+      document.getElementById('streakClaimed').style.display = 'none';
+    }
+  } catch(e) { console.warn('checkDailyStreak error:', e); }
+}
+
+async function claimDailyStreak() {
+  if (!curUser || !db) { openAuth(); return; }
+  const today = new Date().toDateString();
+  try {
+    const doc = await db.collection('users').doc(curUser.uid).get();
+    const d = doc.exists ? doc.data() : {};
+    if (d.streakClaimedDate === today) {
+      toast(curLang === 'fr' ? '✅ Déjà réclamé aujourd\'hui !' : '✅ Already claimed today!', 'info');
+      return;
+    }
+    const newStreak = (d.streakCount || 0) + 1;
+    const xpBonus = newStreak >= 7 ? 25 : newStreak >= 3 ? 15 : 10;
+    await db.collection('users').doc(curUser.uid).set({
+      streakCount: newStreak,
+      streakClaimedDate: today,
+      lastLoginDate: today,
+      totalXP: firebase.firestore.FieldValue.increment(xpBonus)
+    }, { merge: true });
+
+    // Explosion animation
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement('div');
+      p.className = 'sp-like-particle';
+      p.textContent = ['🔥','⭐','💥','✨','🎉'][Math.floor(Math.random()*5)];
+      p.style.left = (Math.random() * window.innerWidth) + 'px';
+      p.style.top = (window.scrollY + 200 + Math.random() * 100) + 'px';
+      p.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
+      p.style.animationDelay = (Math.random() * 0.2) + 's';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1000);
+    }
+
+    document.getElementById('streakCount').textContent = newStreak;
+    document.getElementById('streakClaimBtn').style.display = 'none';
+    document.getElementById('streakClaimed').style.display = 'block';
+    // Update today dot
+    const todayDot = document.querySelector('.streak-dot.today');
+    if (todayDot) { todayDot.textContent = '✅'; }
+
+    const msgs = {
+      fr: `🔥 Série de ${newStreak} jour${newStreak>1?'s':''}! +${xpBonus} XP gagné${newStreak>=7?' 👑 SEMAINE COMPLÈTE!':newStreak>=3?' 🌟':''}`,
+      en: `🔥 ${newStreak}-day streak! +${xpBonus} XP earned${newStreak>=7?' 👑 FULL WEEK!':newStreak>=3?' 🌟':''}`
+    };
+    toast(msgs[curLang] || msgs.en, 'success');
+
+    // Check quest progress
+    updateQuestProgress(curUser.uid, 'dailyLogin', 1);
+  } catch(e) { console.warn('claimDailyStreak error:', e); toast('Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// 🎯 CREATOR QUESTS SYSTEM
+// ════════════════════════════════════════════════════════════
+const QUESTS = [
+  { id: 'post3', icon: '📝', en: 'Publish 3 creations', fr: 'Publier 3 créations', field: 'postCount', target: 3, xp: 50 },
+  { id: 'like10', icon: '❤️', en: 'Give 10 likes', fr: 'Donner 10 likes', field: 'likeGiven', target: 10, xp: 30 },
+  { id: 'comment5', icon: '💬', en: 'Comment 5 times', fr: 'Commenter 5 fois', field: 'commentCount', target: 5, xp: 40 },
+  { id: 'dailyLogin', icon: '🔥', en: 'Log in 5 days', fr: 'Connexion 5 jours', field: 'weeklyLogins', target: 5, xp: 60 },
+  { id: 'share1', icon: '📤', en: 'Share a post', fr: 'Partager un post', field: 'shareCount', target: 1, xp: 20 }
+];
+
+async function loadCreatorQuests(uid) {
+  if (!db || !uid) return;
+  try {
+    // Get week key (ISO week)
+    const now = new Date();
+    const onejan = new Date(now.getFullYear(), 0, 1);
+    const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+    const weekKey = `${now.getFullYear()}-W${weekNum}`;
+
+    const questRef = db.collection('user_quests').doc(`${uid}_${weekKey}`);
+    const questSnap = await questRef.get();
+    const progress = questSnap.exists ? questSnap.data() : {};
+    const isFR = curLang === 'fr';
+
+    const listEl = document.getElementById('questList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    QUESTS.forEach(q => {
+      const cur = Math.min(progress[q.field] || 0, q.target);
+      const pct = Math.round((cur / q.target) * 100);
+      const done = cur >= q.target;
+      const div = document.createElement('div');
+      if (done) {
+        div.className = 'quest-done';
+        div.textContent = `${q.icon} ${isFR ? q.fr : q.en} — ✅ +${q.xp} XP`;
+      } else {
+        div.className = 'quest-item';
+        div.innerHTML = `
+          <div class="quest-item-header">
+            <div class="quest-item-name">${q.icon} ${isFR ? q.fr : q.en}</div>
+            <div class="quest-item-xp">+${q.xp} XP</div>
+          </div>
+          <div class="quest-bar"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
+          <div class="quest-count">${cur} / ${q.target}</div>`;
+      }
+      listEl.appendChild(div);
+    });
+  } catch(e) { console.warn('loadCreatorQuests error:', e); }
+}
+
+async function updateQuestProgress(uid, field, increment) {
+  if (!db || !uid) return;
+  try {
+    const now = new Date();
+    const onejan = new Date(now.getFullYear(), 0, 1);
+    const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+    const weekKey = `${now.getFullYear()}-W${weekNum}`;
+    const questRef = db.collection('user_quests').doc(`${uid}_${weekKey}`);
+    await questRef.set({ [field]: firebase.firestore.FieldValue.increment(increment) }, { merge: true });
+    // Refresh quest UI
+    loadCreatorQuests(uid);
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════
+// 📢 REFERRAL SYSTEM
+// ════════════════════════════════════════════════════════════
+function getReferralLink() {
+  if (!curUser) return '';
+  return `${location.origin}/community/?ref=${curUser.uid}`;
+}
+
+async function checkReferralOnLogin(u) {
+  if (!db || !u) return;
+  try {
+    // Check if user came from a referral link
+    const params = new URLSearchParams(location.search);
+    const refUid = params.get('ref');
+    const userDoc = await db.collection('users').doc(u.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+
+    // Only reward once
+    if (refUid && refUid !== u.uid && !userData.referredBy) {
+      // Give +50 XP to new user
+      await db.collection('users').doc(u.uid).set({
+        referredBy: refUid,
+        totalXP: firebase.firestore.FieldValue.increment(50)
+      }, { merge: true });
+      // Give +100 XP to referrer
+      await db.collection('users').doc(refUid).set({
+        totalXP: firebase.firestore.FieldValue.increment(100),
+        referralCount: firebase.firestore.FieldValue.increment(1)
+      }, { merge: true });
+      toast(curLang === 'fr' ? '🎁 +50 XP offerts grâce à une invitation !' : '🎁 +50 XP bonus from referral!', 'success');
+    }
+
+    // Load referral count for display
+    const fresh = await db.collection('users').doc(u.uid).get();
+    const count = (fresh.exists ? fresh.data().referralCount : 0) || 0;
+    const el = document.getElementById('refInviteCount');
+    if (el) el.textContent = count;
+
+    // Clean URL
+    if (refUid) history.replaceState(null, '', location.pathname);
+  } catch(e) { console.warn('checkReferralOnLogin error:', e); }
+}
+
+function openReferralModal() {
+  if (!curUser) { openAuth(); return; }
+  const link = getReferralLink();
+  const linkEl = document.getElementById('refLinkDisplay');
+  if (linkEl) linkEl.textContent = link;
+  // Load count
+  db.collection('users').doc(curUser.uid).get().then(doc => {
+    const count = (doc.exists ? doc.data().referralCount : 0) || 0;
+    const countEl = document.getElementById('refModalCount');
+    const xpEl = document.getElementById('refXPEarned');
+    if (countEl) countEl.textContent = count;
+    if (xpEl) xpEl.textContent = count * 100;
+  }).catch(() => {});
+  document.getElementById('referralOverlay').classList.add('open');
+}
+function closeReferralModal(e) { if (e && e.target !== document.getElementById('referralOverlay')) return; closeReferralDirect(); }
+function closeReferralDirect() { document.getElementById('referralOverlay').classList.remove('open'); }
+
+async function copyRefLink() {
+  const link = getReferralLink();
+  try {
+    await navigator.clipboard.writeText(link);
+    const btn = document.getElementById('refCopyBtn');
+    if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = '📋 Copy Link', 2000); }
+    toast(curLang === 'fr' ? '🔗 Lien copié !' : '🔗 Link copied!', 'success');
+  } catch(e) {
+    toast('Copy failed: ' + link, 'error');
+  }
+}
+
+function refShareWhatsApp() {
+  const msg = `🚀 Join me on SP Nexus — the 3D Creator Community! ${getReferralLink()}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function refShareTwitter() {
+  const msg = `🚀 Creating 3D models, music & holograms on SP Nexus! Come join me 👇`;
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(msg)}&url=${encodeURIComponent(getReferralLink())}`, '_blank');
+}
+function refShareFacebook() {
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getReferralLink())}`, '_blank');
+}
+function refShareTelegram() {
+  const msg = `🚀 Join SP Nexus — 3D Creator Community! ${getReferralLink()}`;
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(getReferralLink())}&text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ─── Voice Recorder for Comments ───────────────────────────
