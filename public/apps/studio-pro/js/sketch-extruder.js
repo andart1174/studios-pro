@@ -6295,7 +6295,7 @@ const SketchExtruder = (() => {
   function buildModels() {
       if(!globalGroup) return;
       const activeModel = getActiveModel();
-      const hasSteampunkActive = activeModel && (activeModel.format === 'steampunk-chrono' || activeModel.format === 'steampunk-chrono-pro' || activeModel.format === 'clock-ultra');
+      const hasSteampunkActive = activeModel && (activeModel.format === 'steampunk-chrono' || activeModel.format === 'steampunk-chrono-pro');
       
       models.forEach(m => {
           if(!m.meshGroup) {

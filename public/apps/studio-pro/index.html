@@ -1046,13 +1046,11 @@
       e.preventDefault();
       channel.postMessage({ type: 'CLOSE_STUDIO' });
       window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+      // Only navigate if we are NOT in an iframe (standalone mode)
       if (window.self === window.top) {
         window.location.href = '/';
-      } else if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = '/';
       }
+      // If in iframe, the parent handles the close via postMessage above
     });
 
     // Hook for SketchExtruder 'Generate' completion
