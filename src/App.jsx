@@ -686,8 +686,15 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'login', { method: 'Email' });
+        }
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'sign_up', { method: 'Email' });
+          window.gtag('event', 'conversion', { 'send_to': 'AW-18273639003' });
+        }
         // Initialize user profile in Firestore if it doesn't already exist to avoid overwriting premium status
         const userRef = doc(db, "users", userCredential.user.uid);
         const existingDoc = await getDoc(userRef);

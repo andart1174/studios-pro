@@ -1464,7 +1464,14 @@ function signInGoogle() {
   if (!auth) { toast('Firebase not configured', 'error'); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  auth.signInWithPopup(provider).then(() => { closeAuthDirect(); toast('Welcome! 🎉', 'success'); }).catch(e => toast(e.message, 'error'));
+  auth.signInWithPopup(provider).then(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'conversion', { 'send_to': 'AW-18273639003' });
+      window.gtag('event', 'sign_up', { method: 'Google' });
+    }
+    closeAuthDirect();
+    toast('Welcome! 🎉', 'success');
+  }).catch(e => toast(e.message, 'error'));
 }
 
 function doLogin() {
@@ -1475,7 +1482,11 @@ function doLogin() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = '…';
   auth.signInWithEmailAndPassword(email, pw)
-    .then(() => { closeAuthDirect(); toast('Welcome back! 🎉', 'success'); })
+    .then(() => {
+      if (typeof window.gtag === 'function') { window.gtag('event', 'login', { method: 'Email' }); }
+      closeAuthDirect();
+      toast('Welcome back! 🎉', 'success');
+    })
     .catch(e => { toast(e.message.replace('Firebase: ',''), 'error'); btn.disabled = false; btn.textContent = t('signin'); });
 }
 
@@ -1490,7 +1501,14 @@ function doRegister() {
   btn.disabled = true; btn.textContent = '…';
   auth.createUserWithEmailAndPassword(email, pw)
     .then(c => c.user.updateProfile({ displayName: name }))
-    .then(() => { closeAuthDirect(); toast('Account created! Welcome 🚀', 'success'); })
+    .then(() => {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'conversion', { 'send_to': 'AW-18273639003' });
+        window.gtag('event', 'sign_up', { method: 'Email' });
+      }
+      closeAuthDirect();
+      toast('Account created! Welcome 🚀', 'success');
+    })
     .catch(e => { toast(e.message.replace('Firebase: ',''), 'error'); btn.disabled = false; btn.textContent = t('createAccount'); });
 }
 
