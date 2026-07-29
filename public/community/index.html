@@ -3507,35 +3507,76 @@ function renderQuestList(progress) {
 
 async function loadCreatorQuests(uid) {
   if (!uid) return;
-  // 1. Render INSTANTLY from localStorage (always works, no Firebase needed)
+
+  // 1. Render instantly from localStorage first (fast, no wait)
   const localProgress = getLocalQuestProgress(uid);
   renderQuestList(localProgress);
 
-  // 2. Try to sync with Firebase (optional — fails gracefully)
   if (!db) return;
+
+  // 2. Load REAL data from Firebase to seed real progress per user
   try {
+    // Week boundaries: Monday 00:00 to Sunday 23:59
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...6=Sat
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayOffset);
+    monday.setHours(0, 0, 0, 0);
+    const mondayTs = firebase.firestore.Timestamp.fromDate(monday);
+
+    // Run all queries in parallel
+    const [userSnap, postsSnap, cmtsSnap, questSnap] = await Promise.all([
+      // User doc → streak count (weeklyLogins)
+      db.collection('users').doc(uid).get().catch(() => null),
+      // Posts this week by this user
+      db.collection(COLL)
+        .where('uid', '==', uid)
+        .where('createdAt', '>=', mondayTs)
+        .get().catch(() => null),
+      // Comments this week by this user
+      db.collection(CMT_COLL)
+        .where('uid', '==', uid)
+        .where('createdAt', '>=', mondayTs)
+        .get().catch(() => null),
+      // Existing quest tracking doc (for likes, shares tracked incrementally)
+      db.collection('user_quests').doc(`${uid}_${getQuestWeekKey()}`).get().catch(() => null)
+    ]);
+
     const weekKey = getQuestWeekKey();
-    const questRef = db.collection('user_quests').doc(`${uid}_${weekKey}`);
-    const questSnap = await questRef.get();
-    if (questSnap.exists) {
-      const fbProgress = questSnap.data();
-      // Merge: take the highest value between localStorage and Firebase
-      const merged = {};
-      QUESTS.forEach(q => {
-        const localVal = localProgress[q.field] || 0;
-        const fbVal = fbProgress[q.field] || 0;
-        merged[q.field] = Math.max(localVal, fbVal);
-      });
-      // Update localStorage with merged data
-      try {
-        const weekKey2 = getQuestWeekKey();
-        localStorage.setItem(`sp_quests_${uid}_${weekKey2}`, JSON.stringify(merged));
-      } catch(e) {}
-      renderQuestList(merged);
-    }
+    const realProgress = {};
+
+    // 📝 Posts this week (REAL count)
+    realProgress.postCount = postsSnap ? postsSnap.size : 0;
+
+    // 💬 Comments this week (REAL count)
+    realProgress.commentCount = cmtsSnap ? cmtsSnap.size : 0;
+
+    // 🔥 Weekly logins — use streak count capped at 5
+    const streakCount = userSnap && userSnap.exists ? (userSnap.data().streakCount || 0) : 0;
+    realProgress.weeklyLogins = Math.min(streakCount, 5);
+
+    // ❤️ Likes given & 📤 Shares — from quest tracking doc (incremental)
+    const fbQuestData = questSnap && questSnap.exists ? questSnap.data() : {};
+    realProgress.likeGiven = Math.max(
+      localProgress.likeGiven || 0,
+      fbQuestData.likeGiven || 0
+    );
+    realProgress.shareCount = Math.max(
+      localProgress.shareCount || 0,
+      fbQuestData.shareCount || 0
+    );
+
+    // Save to localStorage so UI stays in sync on next load
+    try {
+      localStorage.setItem(`sp_quests_${uid}_${weekKey}`, JSON.stringify(realProgress));
+    } catch(e) {}
+
+    renderQuestList(realProgress);
+
   } catch(e) {
-    console.warn('loadCreatorQuests Firebase sync skipped:', e.message);
-    // Already rendered from localStorage above — no action needed
+    console.warn('loadCreatorQuests real-data fetch skipped:', e.message);
+    // Already showing localStorage data — no action needed
   }
 }
 
