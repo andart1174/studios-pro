@@ -948,6 +948,12 @@
         <button onclick="editDisplayName()" style="background:none;border:none;cursor:pointer;color:var(--accent3);font-size:0.85rem;padding:2px;display:flex;align-items:center;justify-content:center;" title="Edit Name">✏️</button>
       </div>
       <div class="u-rank" id="slRank"></div>
+      <!-- XP COUNTER -->
+      <div id="xpDisplay" style="display:none;margin:5px auto 8px;padding:4px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
+        <span style="font-size:.85rem">⚡</span>
+        <span style="font-family:'Orbitron',monospace;font-weight:700;font-size:.92rem;color:#fbbf24" id="xpCount">0</span>
+        <span style="font-size:.68rem;color:var(--muted);font-weight:600">XP</span>
+      </div>
       <div class="u-bio" id="slBio" onclick="editBio()" title="Click to edit status/bio"></div>
       <div class="u-stats">
         <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
@@ -3514,49 +3520,62 @@ async function loadCreatorQuests(uid) {
 
   if (!db) return;
 
-  // 2. Load REAL data from Firebase to seed real progress per user
+  // 2. Load REAL data from Firebase — NO compound index needed
   try {
-    // Week boundaries: Monday 00:00 to Sunday 23:59
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...6=Sat
+    // Monday of current week at 00:00
+    const dayOfWeek = now.getDay(); // 0=Sun
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = new Date(now);
     monday.setDate(now.getDate() + mondayOffset);
     monday.setHours(0, 0, 0, 0);
-    const mondayTs = firebase.firestore.Timestamp.fromDate(monday);
 
-    // Run all queries in parallel
-    const [userSnap, postsSnap, cmtsSnap, questSnap] = await Promise.all([
-      // User doc → streak count (weeklyLogins)
+    // Run queries in parallel — single-field only (no composite index required)
+    const [userSnap, allUserPostsSnap, allUserCmtsSnap, questSnap] = await Promise.all([
       db.collection('users').doc(uid).get().catch(() => null),
-      // Posts this week by this user
-      db.collection(COLL)
-        .where('uid', '==', uid)
-        .where('createdAt', '>=', mondayTs)
-        .get().catch(() => null),
-      // Comments this week by this user
-      db.collection(CMT_COLL)
-        .where('uid', '==', uid)
-        .where('createdAt', '>=', mondayTs)
-        .get().catch(() => null),
-      // Existing quest tracking doc (for likes, shares tracked incrementally)
+      // Single where clause — no composite index needed
+      db.collection(COLL).where('uid', '==', uid).get().catch(() => null),
+      db.collection(CMT_COLL).where('uid', '==', uid).get().catch(() => null),
       db.collection('user_quests').doc(`${uid}_${getQuestWeekKey()}`).get().catch(() => null)
     ]);
 
     const weekKey = getQuestWeekKey();
     const realProgress = {};
 
-    // 📝 Posts this week (REAL count)
-    realProgress.postCount = postsSnap ? postsSnap.size : 0;
+    // 📝 Posts this week — filter client-side (no index needed!)
+    let postsThisWeek = 0;
+    if (allUserPostsSnap) {
+      allUserPostsSnap.forEach(doc => {
+        const d = doc.data();
+        const ts = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+        if (ts && ts >= monday) postsThisWeek++;
+      });
+    }
+    realProgress.postCount = postsThisWeek;
 
-    // 💬 Comments this week (REAL count)
-    realProgress.commentCount = cmtsSnap ? cmtsSnap.size : 0;
+    // 💬 Comments this week — filter client-side
+    let cmtsThisWeek = 0;
+    if (allUserCmtsSnap) {
+      allUserCmtsSnap.forEach(doc => {
+        const d = doc.data();
+        const ts = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+        if (ts && ts >= monday) cmtsThisWeek++;
+      });
+    }
+    realProgress.commentCount = cmtsThisWeek;
 
     // 🔥 Weekly logins — use streak count capped at 5
-    const streakCount = userSnap && userSnap.exists ? (userSnap.data().streakCount || 0) : 0;
-    realProgress.weeklyLogins = Math.min(streakCount, 5);
+    const userData = userSnap && userSnap.exists ? userSnap.data() : {};
+    realProgress.weeklyLogins = Math.min(userData.streakCount || 0, 5);
 
-    // ❤️ Likes given & 📤 Shares — from quest tracking doc (incremental)
+    // ⚡ Update XP display in sidebar
+    const xp = userData.totalXP || 0;
+    const xpEl = document.getElementById('xpCount');
+    const xpDisplay = document.getElementById('xpDisplay');
+    if (xpEl) xpEl.textContent = xp.toLocaleString();
+    if (xpDisplay) xpDisplay.style.display = 'flex';
+
+    // ❤️ Likes given & 📤 Shares — from quest tracking doc
     const fbQuestData = questSnap && questSnap.exists ? questSnap.data() : {};
     realProgress.likeGiven = Math.max(
       localProgress.likeGiven || 0,
@@ -3567,7 +3586,7 @@ async function loadCreatorQuests(uid) {
       fbQuestData.shareCount || 0
     );
 
-    // Save to localStorage so UI stays in sync on next load
+    // Save merged result to localStorage
     try {
       localStorage.setItem(`sp_quests_${uid}_${weekKey}`, JSON.stringify(realProgress));
     } catch(e) {}
@@ -3575,8 +3594,7 @@ async function loadCreatorQuests(uid) {
     renderQuestList(realProgress);
 
   } catch(e) {
-    console.warn('loadCreatorQuests real-data fetch skipped:', e.message);
-    // Already showing localStorage data — no action needed
+    console.warn('loadCreatorQuests fetch error:', e.message);
   }
 }
 
