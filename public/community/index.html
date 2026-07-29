@@ -950,9 +950,9 @@
       <div class="u-rank" id="slRank"></div>
       <!-- XP COUNTER -->
       <div id="xpDisplay" style="display:none;margin:5px auto 8px;padding:4px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
-        <span style="font-size:.85rem">⚡</span>
-        <span style="font-family:'Orbitron',monospace;font-weight:700;font-size:.92rem;color:#fbbf24" id="xpCount">0</span>
-        <span style="font-size:.68rem;color:var(--muted);font-weight:600">XP</span>
+        <span style="font-size:.9rem">⚡</span>
+        <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="xpCount">0</span>
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
       </div>
       <div class="u-bio" id="slBio" onclick="editBio()" title="Click to edit status/bio"></div>
       <div class="u-stats">
@@ -3484,15 +3484,54 @@ function setLocalQuestProgress(uid, field, value) {
   } catch(e) {}
 }
 
+function updateUserXPDisplay(additionalXP = 0) {
+  if (!curUser) return;
+  try {
+    const localProgress = getLocalQuestProgress(curUser.uid);
+    let questXP = 0;
+    QUESTS.forEach(q => {
+      if ((localProgress[q.field] || 0) >= q.target) {
+        questXP += q.xp;
+      }
+    });
+
+    db.collection('users').doc(curUser.uid).get().then(doc => {
+      const d = doc.exists ? doc.data() : {};
+      const storedXP = d.totalXP || 0;
+      const refXP = (d.referralCount || 0) * 100;
+      const totalXP = Math.max(storedXP, questXP + refXP + additionalXP);
+
+      const xpEl = document.getElementById('xpCount');
+      const xpDisplay = document.getElementById('xpDisplay');
+      if (xpEl) xpEl.textContent = totalXP.toLocaleString();
+      if (xpDisplay) xpDisplay.style.display = 'flex';
+
+      if (totalXP > storedXP && db) {
+        db.collection('users').doc(curUser.uid).set({ totalXP: totalXP }, { merge: true }).catch(() => {});
+      }
+    }).catch(() => {
+      const xpEl = document.getElementById('xpCount');
+      const xpDisplay = document.getElementById('xpDisplay');
+      if (xpEl) xpEl.textContent = questXP.toLocaleString();
+      if (xpDisplay) xpDisplay.style.display = 'flex';
+    });
+  } catch(e) {}
+}
+
 function renderQuestList(progress) {
   const listEl = document.getElementById('questList');
   if (!listEl) return;
   const isFR = curLang === 'fr';
   listEl.innerHTML = '';
+
+  let calculatedQuestXP = 0;
+
   QUESTS.forEach(q => {
     const cur = Math.min(progress[q.field] || 0, q.target);
     const pct = Math.round((cur / q.target) * 100);
     const done = cur >= q.target;
+    if (done) calculatedQuestXP += q.xp;
+
     const div = document.createElement('div');
     if (done) {
       div.className = 'quest-done';
@@ -3509,6 +3548,9 @@ function renderQuestList(progress) {
     }
     listEl.appendChild(div);
   });
+
+  // Update profile XP badge immediately with total earned XP!
+  updateUserXPDisplay();
 }
 
 async function loadCreatorQuests(uid) {
@@ -3516,24 +3558,23 @@ async function loadCreatorQuests(uid) {
 
   // 1. Render instantly from localStorage first (fast, no wait)
   const localProgress = getLocalQuestProgress(uid);
-  renderQuestList(localProgress);
 
-  if (!db) return;
+  if (!db) {
+    renderQuestList(localProgress);
+    return;
+  }
 
   // 2. Load REAL data from Firebase — NO compound index needed
   try {
     const now = new Date();
-    // Monday of current week at 00:00
     const dayOfWeek = now.getDay(); // 0=Sun
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = new Date(now);
     monday.setDate(now.getDate() + mondayOffset);
     monday.setHours(0, 0, 0, 0);
 
-    // Run queries in parallel — single-field only (no composite index required)
     const [userSnap, allUserPostsSnap, allUserCmtsSnap, questSnap] = await Promise.all([
       db.collection('users').doc(uid).get().catch(() => null),
-      // Single where clause — no composite index needed
       db.collection(COLL).where('uid', '==', uid).get().catch(() => null),
       db.collection(CMT_COLL).where('uid', '==', uid).get().catch(() => null),
       db.collection('user_quests').doc(`${uid}_${getQuestWeekKey()}`).get().catch(() => null)
@@ -3542,7 +3583,7 @@ async function loadCreatorQuests(uid) {
     const weekKey = getQuestWeekKey();
     const realProgress = {};
 
-    // 📝 Posts this week — filter client-side (no index needed!)
+    // 📝 Posts this week — filter client-side
     let postsThisWeek = 0;
     if (allUserPostsSnap) {
       allUserPostsSnap.forEach(doc => {
@@ -3568,13 +3609,6 @@ async function loadCreatorQuests(uid) {
     const userData = userSnap && userSnap.exists ? userSnap.data() : {};
     realProgress.weeklyLogins = Math.min(userData.streakCount || 0, 5);
 
-    // ⚡ Update XP display in sidebar
-    const xp = userData.totalXP || 0;
-    const xpEl = document.getElementById('xpCount');
-    const xpDisplay = document.getElementById('xpDisplay');
-    if (xpEl) xpEl.textContent = xp.toLocaleString();
-    if (xpDisplay) xpDisplay.style.display = 'flex';
-
     // ❤️ Likes given & 📤 Shares — from quest tracking doc
     const fbQuestData = questSnap && questSnap.exists ? questSnap.data() : {};
     realProgress.likeGiven = Math.max(
@@ -3595,6 +3629,7 @@ async function loadCreatorQuests(uid) {
 
   } catch(e) {
     console.warn('loadCreatorQuests fetch error:', e.message);
+    renderQuestList(localProgress);
   }
 }
 
