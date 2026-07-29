@@ -3451,59 +3451,149 @@ const QUESTS = [
   { id: 'share1', icon: '📤', en: 'Share a post', fr: 'Partager un post', field: 'shareCount', target: 1, xp: 20 }
 ];
 
-async function loadCreatorQuests(uid) {
-  if (!db || !uid) return;
-  try {
-    // Get week key (ISO week)
-    const now = new Date();
-    const onejan = new Date(now.getFullYear(), 0, 1);
-    const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
-    const weekKey = `${now.getFullYear()}-W${weekNum}`;
+// ─── Quest week key helper ─────────────────────────────────
+function getQuestWeekKey() {
+  const now = new Date();
+  const onejan = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${weekNum}`;
+}
 
+// ─── Read quest progress (localStorage first, Firebase optional) ────────────
+function getLocalQuestProgress(uid) {
+  try {
+    const weekKey = getQuestWeekKey();
+    const raw = localStorage.getItem(`sp_quests_${uid}_${weekKey}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+function setLocalQuestProgress(uid, field, value) {
+  try {
+    const weekKey = getQuestWeekKey();
+    const key = `sp_quests_${uid}_${weekKey}`;
+    const cur = getLocalQuestProgress(uid);
+    cur[field] = value;
+    localStorage.setItem(key, JSON.stringify(cur));
+  } catch(e) {}
+}
+
+function renderQuestList(progress) {
+  const listEl = document.getElementById('questList');
+  if (!listEl) return;
+  const isFR = curLang === 'fr';
+  listEl.innerHTML = '';
+  QUESTS.forEach(q => {
+    const cur = Math.min(progress[q.field] || 0, q.target);
+    const pct = Math.round((cur / q.target) * 100);
+    const done = cur >= q.target;
+    const div = document.createElement('div');
+    if (done) {
+      div.className = 'quest-done';
+      div.innerHTML = `${q.icon} <strong>${isFR ? q.fr : q.en}</strong> — ✅ +${q.xp} XP`;
+    } else {
+      div.className = 'quest-item';
+      div.innerHTML = `
+        <div class="quest-item-header">
+          <div class="quest-item-name">${q.icon} ${isFR ? q.fr : q.en}</div>
+          <div class="quest-item-xp">+${q.xp} XP</div>
+        </div>
+        <div class="quest-bar"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
+        <div class="quest-count">${cur} / ${q.target}</div>`;
+    }
+    listEl.appendChild(div);
+  });
+}
+
+async function loadCreatorQuests(uid) {
+  if (!uid) return;
+  // 1. Render INSTANTLY from localStorage (always works, no Firebase needed)
+  const localProgress = getLocalQuestProgress(uid);
+  renderQuestList(localProgress);
+
+  // 2. Try to sync with Firebase (optional — fails gracefully)
+  if (!db) return;
+  try {
+    const weekKey = getQuestWeekKey();
     const questRef = db.collection('user_quests').doc(`${uid}_${weekKey}`);
     const questSnap = await questRef.get();
-    const progress = questSnap.exists ? questSnap.data() : {};
-    const isFR = curLang === 'fr';
-
-    const listEl = document.getElementById('questList');
-    if (!listEl) return;
-    listEl.innerHTML = '';
-
-    QUESTS.forEach(q => {
-      const cur = Math.min(progress[q.field] || 0, q.target);
-      const pct = Math.round((cur / q.target) * 100);
-      const done = cur >= q.target;
-      const div = document.createElement('div');
-      if (done) {
-        div.className = 'quest-done';
-        div.textContent = `${q.icon} ${isFR ? q.fr : q.en} — ✅ +${q.xp} XP`;
-      } else {
-        div.className = 'quest-item';
-        div.innerHTML = `
-          <div class="quest-item-header">
-            <div class="quest-item-name">${q.icon} ${isFR ? q.fr : q.en}</div>
-            <div class="quest-item-xp">+${q.xp} XP</div>
-          </div>
-          <div class="quest-bar"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
-          <div class="quest-count">${cur} / ${q.target}</div>`;
-      }
-      listEl.appendChild(div);
-    });
-  } catch(e) { console.warn('loadCreatorQuests error:', e); }
+    if (questSnap.exists) {
+      const fbProgress = questSnap.data();
+      // Merge: take the highest value between localStorage and Firebase
+      const merged = {};
+      QUESTS.forEach(q => {
+        const localVal = localProgress[q.field] || 0;
+        const fbVal = fbProgress[q.field] || 0;
+        merged[q.field] = Math.max(localVal, fbVal);
+      });
+      // Update localStorage with merged data
+      try {
+        const weekKey2 = getQuestWeekKey();
+        localStorage.setItem(`sp_quests_${uid}_${weekKey2}`, JSON.stringify(merged));
+      } catch(e) {}
+      renderQuestList(merged);
+    }
+  } catch(e) {
+    console.warn('loadCreatorQuests Firebase sync skipped:', e.message);
+    // Already rendered from localStorage above — no action needed
+  }
 }
 
 async function updateQuestProgress(uid, field, increment) {
-  if (!db || !uid) return;
+  if (!uid) return;
+
+  // 1. Update localStorage IMMEDIATELY (always works)
+  const cur = getLocalQuestProgress(uid);
+  const newVal = (cur[field] || 0) + increment;
+  setLocalQuestProgress(uid, field, newVal);
+
+  // 2. Re-render quest UI right away
+  renderQuestList(getLocalQuestProgress(uid));
+
+  // Check if quest just completed
+  const quest = QUESTS.find(q => q.field === field);
+  if (quest && newVal >= quest.target && (newVal - increment) < quest.target) {
+    const isFR = curLang === 'fr';
+    setTimeout(() => {
+      // Particle burst for quest completion
+      for (let i = 0; i < 14; i++) {
+        const p = document.createElement('div');
+        p.className = 'sp-like-particle';
+        p.textContent = ['🎯','⭐','✨','🏆','🎉'][Math.floor(Math.random()*5)];
+        p.style.left = (Math.random() * window.innerWidth) + 'px';
+        p.style.top = (window.scrollY + 150 + Math.random() * 100) + 'px';
+        p.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
+        p.style.animationDelay = (Math.random() * 0.2) + 's';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+      }
+      toast(isFR
+        ? `🏆 Quête complétée : ${quest.fr} ! +${quest.xp} XP`
+        : `🏆 Quest done: ${quest.en}! +${quest.xp} XP`,
+        'success');
+      // Award XP in Firebase
+      if (db && curUser) {
+        db.collection('users').doc(uid).set(
+          { totalXP: firebase.firestore.FieldValue.increment(quest.xp) },
+          { merge: true }
+        ).catch(() => {});
+      }
+    }, 300);
+  }
+
+  // 3. Sync to Firebase (optional, fails gracefully)
+  if (!db) return;
   try {
-    const now = new Date();
-    const onejan = new Date(now.getFullYear(), 0, 1);
-    const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
-    const weekKey = `${now.getFullYear()}-W${weekNum}`;
+    const weekKey = getQuestWeekKey();
     const questRef = db.collection('user_quests').doc(`${uid}_${weekKey}`);
-    await questRef.set({ [field]: firebase.firestore.FieldValue.increment(increment) }, { merge: true });
-    // Refresh quest UI
-    loadCreatorQuests(uid);
-  } catch(e) {}
+    await questRef.set(
+      { [field]: firebase.firestore.FieldValue.increment(increment) },
+      { merge: true }
+    );
+  } catch(e) {
+    // Firebase sync failed — localStorage is the source of truth
+    console.warn('updateQuestProgress Firebase sync skipped:', e.message);
+  }
 }
 
 // ════════════════════════════════════════════════════════════
