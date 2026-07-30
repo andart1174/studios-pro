@@ -282,6 +282,42 @@
     .adm-btn:hover{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.5)}
     .adm-btn.warn{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25);color:#fca5a5}
     .adm-btn.warn:hover{background:rgba(239,68,68,.18)}
+
+    /* ── ADMIN COLLAPSIBLE TOGGLE ─────────────────────────── */
+    .adm-toggle-bar{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.08));border:1px solid rgba(245,158,11,.4);border-radius:14px;padding:11px 16px;cursor:pointer;margin-bottom:8px;transition:all .2s;}
+    .adm-toggle-bar:hover{background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(239,68,68,.12));box-shadow:0 4px 16px rgba(245,158,11,.2);}
+    .adm-toggle-bar-left{display:flex;align-items:center;gap:9px;}
+    .adm-toggle-bar-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:.85rem;background:linear-gradient(90deg,#fbbf24,#f97316);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+    .adm-toggle-bar-arrow{color:#fbbf24;font-size:.75rem;transition:transform .3s;}
+    .adm-toggle-bar-arrow.open{transform:rotate(180deg);}
+    .adm-collapsible-body{display:none;}
+    .adm-collapsible-body.open{display:block;}
+
+    /* ── USER PROFILE PANEL (right side dropdown) ─────────── */
+    .user-panel-overlay{position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;}
+    .user-panel-overlay.open{opacity:1;pointer-events:all;}
+    .user-panel{position:fixed;top:66px;right:0;bottom:0;width:320px;background:var(--bg2);border-left:1px solid var(--border);z-index:1401;overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);box-shadow:-8px 0 32px rgba(0,0,0,.5);}
+    .user-panel.open{transform:translateX(0);}
+    .user-panel-header{background:linear-gradient(135deg,rgba(99,102,241,.18),rgba(139,92,246,.1));padding:20px 18px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;backdrop-filter:blur(12px);}
+    .user-panel-av-row{display:flex;align-items:center;gap:13px;margin-bottom:10px;}
+    .user-panel-av{width:52px;height:52px;border-radius:50%;border:3px solid var(--accent);object-fit:cover;}
+    .user-panel-name{font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff;}
+    .user-panel-close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .user-panel-close:hover{background:rgba(239,68,68,.18);color:#f87171;border-color:rgba(239,68,68,.3);}
+    .user-panel-body{padding:14px;}
+    /* Header user button */
+    .hdr-user-btn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);cursor:pointer;transition:all .2s;}
+    .hdr-user-btn:hover{background:rgba(99,102,241,.22);border-color:rgba(99,102,241,.5);box-shadow:0 4px 14px rgba(99,102,241,.25);}
+    .hdr-user-btn-name{font-size:.82rem;font-weight:700;color:var(--text);white-space:nowrap;}
+    .hdr-user-btn-caret{font-size:.7rem;color:var(--muted);transition:transform .2s;}
+    .hdr-user-btn.open .hdr-user-btn-caret{transform:rotate(180deg);}
+
+    /* ── 2-COLUMN POST GRID ───────────────────────────────── */
+    #feedEl{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    #feedEl .post-card{margin-bottom:0;}
+    #feedEl .feed-loading,#feedEl .empty{grid-column:1/-1;}
+    @media(max-width:900px){#feedEl{grid-template-columns:1fr;}}
+
     /* Rank colors */
     .rk-starter{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
     .rk-creator{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)}
@@ -982,93 +1018,121 @@
   🔴 SP Nexus is currently under maintenance. Only admins can see the full feed.
 </div>
 
-<!-- MAIN LAYOUT -->
-<div class="wrap">
-  <!-- LEFT SIDEBAR -->
-  <aside class="sl">
-    <div class="scard" id="userCard" style="display:none">
-      <div class="u-av-wrap">
-        <img src="" alt="" class="u-av" id="slAv">
-        <div class="u-av-online"></div>
+<!-- USER PROFILE PANEL (slide from right) -->
+<div class="user-panel-overlay" id="userPanelOverlay" onclick="closeUserPanel()"></div>
+<div class="user-panel" id="userPanel">
+  <div class="user-panel-header">
+    <div class="user-panel-av-row">
+      <img src="" alt="" class="user-panel-av" id="upAv">
+      <div>
+        <div class="user-panel-name" id="upName"></div>
+        <div id="upRank" style="margin-top:3px"></div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:5px 0;">
-        <div class="u-name" id="slName" style="margin:0"></div>
-        <button onclick="editDisplayName()" style="background:none;border:none;cursor:pointer;color:var(--accent3);font-size:0.85rem;padding:2px;display:flex;align-items:center;justify-content:center;" title="Edit Name">✏️</button>
-      </div>
-      <div class="u-rank" id="slRank"></div>
-      <!-- XP COUNTER -->
-      <div id="xpDisplay" style="display:none;margin:5px auto 8px;padding:4px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
-        <span style="font-size:.9rem">⚡</span>
-        <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="xpCount">0</span>
-        <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
-      </div>
-      <div class="u-bio" id="slBio" onclick="editBio()" title="Click to edit status/bio"></div>
-      <div class="u-stats">
-        <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
-        <div class="u-stat"><div class="u-stat-n" id="uLikesCnt">0</div><div class="u-stat-l" data-t="likes">Likes</div></div>
-      </div>
-      <div id="rankProgress">
-        <div class="rp-top"><span data-t="progress">Progress to next rank</span><span id="rp-next-lbl"></span></div>
-        <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
-        <div class="rp-bot"><span id="rp-cur">0</span><span id="rp-max">5</span></div>
-      </div>
-      </div>
+      <button class="user-panel-close" onclick="closeUserPanel()">✕</button>
     </div>
-    <div class="scard">
-      <div class="stitle" data-t="categories">Categories & Compartments</div>
-      <button class="cat-btn active" data-cat="all" onclick="filterCat('all',this)">🌐 <span data-t="allPosts">All Posts</span></button>
-      <button class="cat-btn" data-cat="music" onclick="filterCat('music',this)">🎵 Music & Audio Studio</button>
-      <button class="cat-btn" data-cat="architecture" onclick="filterCat('architecture',this)">🏛️ Architecture & Floor Plans</button>
-      <button class="cat-btn" data-cat="sandart" onclick="filterCat('sandart',this)">⏳ Sand Art & Patterns</button>
-      <button class="cat-btn" data-cat="mechanics" onclick="filterCat('mechanics',this)">⚙️ Mechanics & DXF/CNC</button>
-      <button class="cat-btn" data-cat="depthmap" onclick="filterCat('depthmap',this)">🖼️ Depth Maps & 3D Photos</button>
-      <button class="cat-btn" data-cat="3dmodel" onclick="filterCat('3dmodel',this)">🔮 3D Models & Holograms</button>
-      <button class="cat-btn" data-cat="photo" onclick="filterCat('photo',this)">📸 <span data-t="photos">Photos</span></button>
-      <button class="cat-btn" data-cat="video" onclick="filterCat('video',this)">🎥 <span data-t="videos">Videos</span></button>
-      <button class="cat-btn" data-cat="general" onclick="filterCat('general',this)">💬 <span data-t="general">General Lounge</span></button>
+    <!-- XP -->
+    <div id="upXpDisplay" style="display:none;margin:6px 0;padding:5px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
+      <span style="font-size:.9rem">⚡</span>
+      <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="upXpCount">0</span>
+      <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
     </div>
-
-    <!-- DAILY STREAK WIDGET (standalone card) -->
-    <div class="scard streak-card" id="streakCard" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border-color:rgba(245,158,11,.3);">
+    <div class="u-bio" id="upBio" onclick="editBio()" title="Click to edit"></div>
+    <div class="u-stats" style="margin-bottom:0">
+      <div class="u-stat"><div class="u-stat-n" id="upPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
+      <div class="u-stat"><div class="u-stat-n" id="upLikesCnt">0</div><div class="u-stat-l" data-t="likes">Likes</div></div>
+    </div>
+  </div>
+  <div class="user-panel-body">
+    <!-- Rank progress -->
+    <div id="upRankProgress" style="margin-bottom:14px">
+      <div class="rp-top"><span data-t="progress">Progress to next rank</span><span id="up-rp-next"></span></div>
+      <div class="rp-bar"><div class="rp-fill" id="upRpFill" style="width:0%"></div></div>
+      <div class="rp-bot"><span id="up-rp-cur">0</span><span id="up-rp-max">5</span></div>
+    </div>
+    <!-- Edit Name -->
+    <button onclick="editDisplayName();closeUserPanel()" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border2);background:rgba(255,255,255,.04);color:var(--text);font-size:.83rem;font-weight:600;cursor:pointer;margin-bottom:6px;font-family:inherit;transition:all .2s" onmouseover="this.style.background='rgba(99,102,241,.12)'" onmouseout="this.style.background='rgba(255,255,255,.04)'">
+      ✏️ <span data-t="displayName">Edit Name</span>
+    </button>
+    <!-- Daily Streak (in panel) -->
+    <div class="streak-card" id="upStreakCard" style="display:none;margin-bottom:10px">
       <div class="streak-header">
         <div class="streak-icon">🔥</div>
         <div>
           <div class="streak-title">DAILY STREAK</div>
           <div style="display:flex;align-items:baseline;gap:5px">
-            <div class="streak-count" id="streakCount">0</div>
-            <div class="streak-sub" id="streakSub">days in a row</div>
+            <div class="streak-count" id="upStreakCount">0</div>
+            <div class="streak-sub" id="upStreakSub">days in a row</div>
           </div>
         </div>
       </div>
-      <div class="streak-dots" id="streakDots"></div>
-      <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
-      <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
+      <div class="streak-dots" id="upStreakDots"></div>
+      <button class="streak-claim-btn" id="upStreakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+      <div class="streak-claimed" id="upStreakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
     </div>
-
-    <!-- REFERRAL WIDGET (standalone card) -->
-    <div class="scard ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
-      <div class="ref-header">
-        <div class="ref-icon">🚀</div>
-        <div class="ref-title">INVITE &amp; EARN XP</div>
-      </div>
-      <div class="ref-desc">Invite friends → you earn +100 XP, they earn +50 XP on signup!</div>
+    <!-- Invite & Earn -->
+    <div class="ref-card" id="upRefCard" style="display:none;margin-bottom:10px" onclick="openReferralModal()">
+      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN XP</div></div>
+      <div class="ref-desc">Invite friends → +100 XP for you, +50 XP for them!</div>
       <div class="ref-count-row">
-        <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
-        <button class="ref-btn">📤 Share Link</button>
+        <div><div class="ref-count" id="upRefCount">0</div><div class="ref-count-lbl">friends invited</div></div>
+        <button class="ref-btn">📤 Share</button>
+      </div>
+    </div>
+    <!-- Theme -->
+    <div style="padding:10px 0;border-top:1px solid var(--border2)">
+      <div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🎨 Theme</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+      </div>
+    </div>
+    <!-- Sign Out -->
+    <button class="btn-logout" onclick="doSignOut()" style="width:100%;margin-top:10px;text-align:center">Sign Out</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="wrap">
+  <!-- LEFT SIDEBAR (nav + categories only) -->
+  <aside class="sl">
+    <!-- NAVIGATION MENU -->
+    <div class="scard" id="navMenuCard">
+      <div class="nav-menu">
+        <div class="nav-section-title">Menu</div>
+        <button class="nav-item active" id="navHome" onclick="setActiveNav(this);filterCat('all',document.querySelector('[data-cat=all].cat-btn'));scrollToFeed()">
+          <span class="nav-item-icon">🏠</span><span data-t="navHome">Home</span>
+        </button>
+        <button class="nav-item" id="navTrending" onclick="setActiveNav(this);showTrendingView()">
+          <span class="nav-item-icon">🔥</span><span data-t="navTrending">Trending</span>
+        </button>
+        <button class="nav-item" id="navSaved" onclick="setActiveNav(this);showSavedPosts()">
+          <span class="nav-item-icon">🔖</span><span data-t="navSaved">Saved Posts</span>
+        </button>
+        <button class="nav-item" id="navMsg" onclick="setActiveNav(this);openDM()">
+          <span class="nav-item-icon">💬</span><span data-t="navMessages">Messages</span>
+          <span class="nav-item-badge" id="navMsgBadge" style="display:none"></span>
+        </button>
       </div>
     </div>
 
-    <!-- THEME CHOOSER -->
-    <div class="scard" id="themeCard" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">🎨 Theme</span>
-        <div style="display:flex;gap:7px;">
-          <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
-          <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
-          <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
-          <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
-          <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
-        </div>
+    <!-- CATEGORIES (detailed list for desktop) -->
+    <div class="scard">
+      <div class="stitle" data-t="categories">Categories</div>
+      <button class="cat-btn active" data-cat="all" onclick="filterCat('all',this)">🌐 <span data-t="allPosts">All Posts</span></button>
+      <button class="cat-btn" data-cat="music" onclick="filterCat('music',this)">🎵 Music &amp; Audio Studio</button>
+      <button class="cat-btn" data-cat="architecture" onclick="filterCat('architecture',this)">🏗️ Architecture &amp; Floor Plans</button>
+      <button class="cat-btn" data-cat="sandart" onclick="filterCat('sandart',this)">⏳ Sand Art &amp; Patterns</button>
+      <button class="cat-btn" data-cat="mechanics" onclick="filterCat('mechanics',this)">⚙️ Mechanics &amp; DXF/CNC</button>
+      <button class="cat-btn" data-cat="depthmap" onclick="filterCat('depthmap',this)">🖼️ Depth Maps &amp; 3D Photos</button>
+      <button class="cat-btn" data-cat="3dmodel" onclick="filterCat('3dmodel',this)">🔮 3D Models &amp; Holograms</button>
+      <button class="cat-btn" data-cat="photo" onclick="filterCat('photo',this)">📸 <span data-t="photos">Photos</span></button>
+      <button class="cat-btn" data-cat="video" onclick="filterCat('video',this)">🎥 <span data-t="videos">Videos</span></button>
+      <button class="cat-btn" data-cat="general" onclick="filterCat('general',this)">💬 <span data-t="general">General Lounge</span></button>
+    </div>
+
       </div>
     </div>
 
@@ -1141,96 +1205,100 @@
 
   <!-- RIGHT SIDEBAR -->
   <aside class="sr">
-    <!-- Admin Dashboard (expanded) -->
+    <!-- Admin Dashboard (collapsible) -->
     <div id="adminPanel" style="display:none">
-      <!-- Live Stats Grid -->
-      <div class="sc adm-sc">
-        <div class="sc-title" style="color:#fbbf24">🛡️ Admin Dashboard</div>
-        <div class="adm-stat-grid">
-          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalPosts">—</div><div class="adm-stat-tile-l">📝 Posts</div></div>
-          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalMembers">—</div><div class="adm-stat-tile-l">👥 Members</div></div>
-          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalLikes">—</div><div class="adm-stat-tile-l">❤️ Likes</div></div>
-          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalComments">—</div><div class="adm-stat-tile-l">💬 Comments</div></div>
-        </div>
-
-        <!-- Maintenance Mode toggle -->
-        <div class="adm-toggle">
-          <span class="adm-toggle-lbl">🔴 Maintenance Mode</span>
-          <label class="adm-switch">
-            <input type="checkbox" id="maintenanceToggle" onchange="toggleMaintenanceMode(this.checked)">
-            <span class="adm-switch-slider"></span>
-          </label>
-        </div>
-
-        <!-- Broadcast (enhanced) -->
-        <div class="adm-section">
-          <div class="adm-section-title">📣 Broadcast</div>
-          <div class="adm-broadcast-type">
-            <button class="adm-type-btn active" onclick="setAdmBroadcastType(this,'info')">Info</button>
-            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'success')">Success</button>
-            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'warning')">Warning</button>
-            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'announce')">Announce</button>
-          </div>
-          <textarea id="adminMsg" data-t-placeholder="broadcastPlaceholder" placeholder="Write announcement..." rows="2" class="adm-inp" style="border-radius:8px;padding:8px 10px;resize:vertical;"></textarea>
-          <button class="adm-btn" onclick="adminBroadcast()">📢 Post Announcement</button>
-        </div>
-
-        <!-- Ban User -->
-        <div class="adm-section">
-          <div class="adm-section-title">🔇 Ban / Suspend User</div>
-          <input class="adm-inp" id="banEmail" data-t-placeholder="banEmailPlaceholder" placeholder="User email to ban...">
-          <div style="display:flex;gap:5px">
-            <button class="adm-btn" style="flex:1" onclick="adminBanUser()">Ban</button>
-            <button class="adm-btn" style="flex:1;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399" onclick="adminUnbanUser()">Unban</button>
+      <!-- Toggle bar (always visible) -->
+      <div class="adm-toggle-bar" onclick="toggleAdminPanel()" id="admToggleBar">
+        <div class="adm-toggle-bar-left">
+          <span style="font-size:1.1rem">🛡️</span>
+          <span class="adm-toggle-bar-title">Admin Dashboard</span>
+          <div class="adm-stat-grid" style="display:flex;gap:10px;margin:0">
+            <span style="font-size:.7rem;color:#fbbf24;font-weight:800"><span id="sTotalPosts">—</span> posts</span>
+            <span style="font-size:.7rem;color:#fbbf24;font-weight:800"><span id="sTotalMembers">—</span> members</span>
           </div>
         </div>
-
-        <!-- Change User Rank -->
-        <div class="adm-section">
-          <div class="adm-section-title">🏷️ Change User Rank</div>
-          <input class="adm-inp" id="rankEmail" data-t-placeholder="rankEmailPlaceholder" placeholder="User email...">
-          <select class="adm-sel" id="rankSelect">
-            <option value="">Select rank...</option>
-            <option value="starter">🌱 Starter (0+ posts)</option>
-            <option value="creator">🏆 Creator (5+ posts)</option>
-            <option value="expert">⭐ Expert (20+ posts)</option>
-            <option value="master">🔮 Master (50+ posts)</option>
-            <option value="legend">🌟 Legend (100+ posts)</option>
-            <option value="founding">🏅 Founding Member</option>
-          </select>
-          <button class="adm-btn" onclick="adminChangeRank()">🏷️ Apply Rank</button>
-        </div>
-
-        <!-- Force Pin Post -->
-        <div class="adm-section">
-          <div class="adm-section-title">📌 Pin / Unpin Post</div>
-          <input class="adm-inp" id="pinPostId" data-t-placeholder="pinIdPlaceholder" placeholder="Post ID to pin...">
-          <div style="display:flex;gap:5px">
-            <button class="adm-btn" style="flex:1" onclick="adminPinPost()">Pin</button>
-            <button class="adm-btn" style="flex:1" onclick="adminUnpinPost()">Unpin</button>
+        <span class="adm-toggle-bar-arrow" id="admArrow">▼</span>
+      </div>
+      <!-- Collapsible body -->
+      <div class="adm-collapsible-body" id="admBody">
+        <div class="sc adm-sc">
+          <!-- Stats grid -->
+          <div class="adm-stat-grid" style="margin-bottom:10px">
+            <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalLikes">—</div><div class="adm-stat-tile-l">❤️ Likes</div></div>
+            <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalComments">—</div><div class="adm-stat-tile-l">💬 Comments</div></div>
           </div>
-        </div>
-
-        <!-- Create Challenge -->
-        <div class="adm-section">
-          <div class="adm-section-title">🏅 Create Weekly Challenge</div>
-          <input class="adm-inp" id="challengeTitle" data-t-placeholder="challengeTitlePlaceholder" placeholder="Challenge title...">
-          <textarea class="adm-inp" id="challengeDesc" data-t-placeholder="challengeDescPlaceholder" placeholder="Challenge description..." rows="2" style="resize:vertical;"></textarea>
-          <button class="adm-btn" onclick="adminCreateChallenge()">🏅 Create Challenge</button>
-        </div>
-
-        <!-- Export CSV -->
-        <div class="adm-section">
-          <div class="adm-section-title">📥 Export Data</div>
-          <div style="display:flex;gap:5px">
-            <button class="adm-btn" style="flex:1" onclick="adminExportMembersCSV()">👥 Members CSV</button>
-            <button class="adm-btn" style="flex:1" onclick="adminExportPostsCSV()">📝 Posts CSV</button>
+          <!-- Maintenance Mode toggle -->
+          <div class="adm-toggle">
+            <span class="adm-toggle-lbl">🔴 Maintenance Mode</span>
+            <label class="adm-switch">
+              <input type="checkbox" id="maintenanceToggle" onchange="toggleMaintenanceMode(this.checked)">
+              <span class="adm-switch-slider"></span>
+            </label>
           </div>
-        </div>
-
-        <!-- Wipe Feed -->
-        <div class="adm-section">
-          <button class="adm-btn warn" onclick="adminWipeAll()">⚠️ Wipe Entire Feed</button>
+          <!-- Broadcast -->
+          <div class="adm-section">
+            <div class="adm-section-title">📣 Broadcast</div>
+            <div class="adm-broadcast-type">
+              <button class="adm-type-btn active" onclick="setAdmBroadcastType(this,'info')">Info</button>
+              <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'success')">Success</button>
+              <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'warning')">Warning</button>
+              <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'announce')">Announce</button>
+            </div>
+            <textarea id="adminMsg" placeholder="Write announcement..." rows="2" class="adm-inp" style="border-radius:8px;padding:8px 10px;resize:vertical;"></textarea>
+            <button class="adm-btn" onclick="adminBroadcast()">📢 Post Announcement</button>
+          </div>
+          <!-- Ban User -->
+          <div class="adm-section">
+            <div class="adm-section-title">🔇 Ban / Suspend User</div>
+            <input class="adm-inp" id="banEmail" placeholder="User email to ban...">
+            <div style="display:flex;gap:5px">
+              <button class="adm-btn" style="flex:1" onclick="adminBanUser()">Ban</button>
+              <button class="adm-btn" style="flex:1;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399" onclick="adminUnbanUser()">Unban</button>
+            </div>
+          </div>
+          <!-- Change User Rank -->
+          <div class="adm-section">
+            <div class="adm-section-title">🏷️ Change User Rank</div>
+            <input class="adm-inp" id="rankEmail" placeholder="User email...">
+            <select class="adm-sel" id="rankSelect">
+              <option value="">Select rank...</option>
+              <option value="starter">🌱 Starter</option>
+              <option value="creator">🏆 Creator</option>
+              <option value="expert">⭐ Expert</option>
+              <option value="master">🔮 Master</option>
+              <option value="legend">🌟 Legend</option>
+              <option value="founding">🏅 Founding Member</option>
+            </select>
+            <button class="adm-btn" onclick="adminChangeRank()">🏷️ Apply Rank</button>
+          </div>
+          <!-- Pin Post -->
+          <div class="adm-section">
+            <div class="adm-section-title">📌 Pin / Unpin Post</div>
+            <input class="adm-inp" id="pinPostId" placeholder="Post ID...">
+            <div style="display:flex;gap:5px">
+              <button class="adm-btn" style="flex:1" onclick="adminPinPost()">Pin</button>
+              <button class="adm-btn" style="flex:1" onclick="adminUnpinPost()">Unpin</button>
+            </div>
+          </div>
+          <!-- Create Challenge -->
+          <div class="adm-section">
+            <div class="adm-section-title">🏅 Create Weekly Challenge</div>
+            <input class="adm-inp" id="challengeTitle" placeholder="Challenge title...">
+            <textarea class="adm-inp" id="challengeDesc" placeholder="Challenge description..." rows="2" style="resize:vertical;"></textarea>
+            <button class="adm-btn" onclick="adminCreateChallenge()">🏅 Create Challenge</button>
+          </div>
+          <!-- Export CSV -->
+          <div class="adm-section">
+            <div class="adm-section-title">📥 Export Data</div>
+            <div style="display:flex;gap:5px">
+              <button class="adm-btn" style="flex:1" onclick="adminExportMembersCSV()">👥 Members</button>
+              <button class="adm-btn" style="flex:1" onclick="adminExportPostsCSV()">📝 Posts</button>
+            </div>
+          </div>
+          <!-- Wipe Feed -->
+          <div class="adm-section">
+            <button class="adm-btn warn" onclick="adminWipeAll()">⚠️ Wipe Entire Feed</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1262,9 +1330,38 @@
     </div>
     </div>
   </aside>
+</div><!-- /wrap -->
+
+<!-- Hidden compatibility layer: JS writes to these IDs, syncUserPanel() reads from them -->
+<div style="display:none" aria-hidden="true">
+  <img id="slAv" src="" alt="">
+  <span id="slName"></span>
+  <div id="slRank"></div>
+  <div id="slBio"></div>
+  <div id="xpDisplay"><span id="xpCount">0</span></div>
+  <div id="uPostsCnt">0</div>
+  <div id="uLikesCnt">0</div>
+  <div id="rankProgress">
+    <span id="rp-next-lbl"></span>
+    <div id="rpFill" style="width:0%"></div>
+    <span id="rp-cur">0</span>
+    <span id="rp-max">5</span>
+  </div>
+  <div id="streakCard">
+    <div id="streakCount">0</div>
+    <div id="streakSub">days in a row</div>
+    <div id="streakDots"></div>
+    <button id="streakClaimBtn" onclick="claimDailyStreak()"></button>
+    <div id="streakClaimed"></div>
+  </div>
+  <div id="refCard">
+    <div id="refInviteCount">0</div>
+  </div>
+  <div id="userCard"></div>
+  <div id="themeCard"></div>
 </div>
 
-<!-- AUTH MODAL -->
+
 <div class="overlay" id="authOverlay" onclick="closeAuth(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
     <div class="mh">
@@ -1848,10 +1945,12 @@ function renderLoggedIn(u) {
     <button class="btn-dm-hdr" onclick="toggleDMDrawer()" title="Direct Messages">
       💬 <span class="dm-badge" id="dmUnreadBadge" style="display:none">0</span>
     </button>
-    <img src="${a}" class="hdr-avatar" alt="">
-    <span class="hdr-name">${esc(u.displayName)}</span>
-    ${isAdmin ? '<span class="rank-badge rk-legend">🛡️ ADMIN</span>' : ''}
-    <button class="btn-logout" onclick="doSignOut()">Sign Out</button>`;
+    <button class="hdr-user-btn" id="hdrUserBtn" onclick="openUserPanel()">
+      <img src="${a}" style="width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0" alt="">
+      <span class="hdr-user-btn-name">${esc(u.displayName)}</span>
+      ${isAdmin ? '<span class="rank-badge rk-legend" style="font-size:.6rem">🛡️ ADMIN</span>' : ''}
+      <span class="hdr-user-btn-caret">▾</span>
+    </button>`;
   document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('createBar').style.display = 'flex';
   document.getElementById('addStoryBubble').style.display = 'flex';
@@ -1859,11 +1958,16 @@ function renderLoggedIn(u) {
   document.getElementById('compAv').src = a;
   document.getElementById('compName').textContent = u.displayName;
   document.getElementById('cmtAv').src = a;
-  document.getElementById('userCard').style.display = 'block';
-  document.getElementById('slAv').src = a;
-  document.getElementById('slName').textContent = u.displayName;
-  const themeCard = document.getElementById('themeCard');
-  if (themeCard) themeCard.style.display = 'block';
+  // Sync user panel
+  const upAv = document.getElementById('upAv'); if(upAv) upAv.src = a;
+  const upName = document.getElementById('upName'); if(upName) upName.textContent = u.displayName;
+  const upBio = document.getElementById('upBio'); if(upBio && u.bio) upBio.textContent = u.bio;
+  const upXpD = document.getElementById('upXpDisplay'); if(upXpD) upXpD.style.display = 'flex';
+  const upStk = document.getElementById('upStreakCard'); if(upStk) upStk.style.display = 'block';
+  const upRef = document.getElementById('upRefCard'); if(upRef) upRef.style.display = 'block';
+  // Keep hidden IDs for JS compatibility
+  const slAv = document.getElementById('slAv'); if(slAv) slAv.src = a;
+  const slName = document.getElementById('slName'); if(slName) slName.textContent = u.displayName;
   if (isAdmin) { const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='block'; }
   initUserChatsListener(u.uid);
   checkUrlParamsForDM();
@@ -2996,7 +3100,89 @@ async function adminExportPostsCSV() {
 }
 
 // ─── Navigation helpers ────────────────────────────────────
+// ─── User Profile Panel (slide-out) ───────────────────────
+function openUserPanel() {
+  document.getElementById('userPanel').classList.add('open');
+  document.getElementById('userPanelOverlay').classList.add('open');
+  const btn = document.getElementById('hdrUserBtn');
+  if (btn) btn.classList.add('open');
+  // Sync data from main user card to panel
+  syncUserPanel();
+}
+function closeUserPanel() {
+  const p = document.getElementById('userPanel');
+  const o = document.getElementById('userPanelOverlay');
+  const btn = document.getElementById('hdrUserBtn');
+  if (p) p.classList.remove('open');
+  if (o) o.classList.remove('open');
+  if (btn) btn.classList.remove('open');
+}
+function syncUserPanel() {
+  // XP count
+  const xpCount = document.getElementById('xpCount');
+  const upXpCount = document.getElementById('upXpCount');
+  if (xpCount && upXpCount) upXpCount.textContent = xpCount.textContent;
+  // Posts / Likes
+  const uPost = document.getElementById('uPostsCnt');
+  const upPost = document.getElementById('upPostsCnt');
+  if (uPost && upPost) upPost.textContent = uPost.textContent;
+  const uLikes = document.getElementById('uLikesCnt');
+  const upLikes = document.getElementById('upLikesCnt');
+  if (uLikes && upLikes) upLikes.textContent = uLikes.textContent;
+  // Rank
+  const slRank = document.getElementById('slRank');
+  const upRank = document.getElementById('upRank');
+  if (slRank && upRank) upRank.innerHTML = slRank.innerHTML;
+  // Rank progress bar
+  const rpFill = document.getElementById('rpFill');
+  const upRpFill = document.getElementById('upRpFill');
+  if (rpFill && upRpFill) upRpFill.style.width = rpFill.style.width;
+  const rpNext = document.getElementById('rp-next-lbl');
+  const upRpNext = document.getElementById('up-rp-next');
+  if (rpNext && upRpNext) upRpNext.textContent = rpNext.textContent;
+  const rpCur = document.getElementById('rp-cur');
+  const upRpCur = document.getElementById('up-rp-cur');
+  if (rpCur && upRpCur) upRpCur.textContent = rpCur.textContent;
+  const rpMax = document.getElementById('rp-max');
+  const upRpMax = document.getElementById('up-rp-max');
+  if (rpMax && upRpMax) upRpMax.textContent = rpMax.textContent;
+  // Bio
+  const slBio = document.getElementById('slBio');
+  const upBio = document.getElementById('upBio');
+  if (slBio && upBio) upBio.textContent = slBio.textContent;
+  // Streak
+  const streakCount = document.getElementById('streakCount');
+  const upStreakCount = document.getElementById('upStreakCount');
+  if (streakCount && upStreakCount) upStreakCount.textContent = streakCount.textContent;
+  const streakDots = document.getElementById('streakDots');
+  const upStreakDots = document.getElementById('upStreakDots');
+  if (streakDots && upStreakDots) upStreakDots.innerHTML = streakDots.innerHTML;
+  const streakClaimed = document.getElementById('streakClaimed');
+  const upStreakClaimed = document.getElementById('upStreakClaimed');
+  const streakClaimBtn = document.getElementById('streakClaimBtn');
+  const upStreakClaimBtn = document.getElementById('upStreakClaimBtn');
+  if (streakClaimed && upStreakClaimed) {
+    const isHidden = streakClaimed.style.display === 'none' || streakClaimed.style.display === '';
+    upStreakClaimed.style.display = streakClaimed.style.display;
+    if (upStreakClaimBtn) upStreakClaimBtn.style.display = streakClaimBtn ? streakClaimBtn.style.display : '';
+  }
+  // Referral count
+  const refCount = document.getElementById('refInviteCount');
+  const upRefCount = document.getElementById('upRefCount');
+  if (refCount && upRefCount) upRefCount.textContent = refCount.textContent;
+}
+
+// ─── Admin Panel Toggle ────────────────────────────────────
+function toggleAdminPanel() {
+  const body = document.getElementById('admBody');
+  const arrow = document.getElementById('admArrow');
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', isOpen);
+}
+
 function setActiveNav(btn) {
+
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
