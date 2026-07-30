@@ -1096,8 +1096,36 @@
 
 <!-- MAIN LAYOUT -->
 <div class="wrap">
-  <!-- LEFT SIDEBAR (nav + categories only) -->
+  <!-- LEFT SIDEBAR -->
   <aside class="sl">
+    <!-- USER PROFILE CARD -->
+    <div class="scard" id="userCard" style="display:none">
+      <div class="u-av-wrap">
+        <img src="" alt="" class="u-av" id="slAv">
+        <div class="u-av-online"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:5px 0;">
+        <div class="u-name" id="slName" style="margin:0"></div>
+        <button onclick="editDisplayName()" style="background:none;border:none;cursor:pointer;color:var(--accent3);font-size:0.85rem;padding:2px;" title="Edit Name">✏️</button>
+      </div>
+      <div class="u-rank" id="slRank"></div>
+      <div id="xpDisplay" style="display:none;margin:5px auto 8px;padding:4px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
+        <span style="font-size:.9rem">⚡</span>
+        <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="xpCount">0</span>
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
+      </div>
+      <div class="u-bio" id="slBio" onclick="editBio()" title="Click to edit status/bio"></div>
+      <div class="u-stats">
+        <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
+        <div class="u-stat"><div class="u-stat-n" id="uLikesCnt">0</div><div class="u-stat-l" data-t="likes">Likes</div></div>
+      </div>
+      <div id="rankProgress">
+        <div class="rp-top"><span data-t="progress">Progress to next rank</span><span id="rp-next-lbl"></span></div>
+        <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
+        <div class="rp-bot"><span id="rp-cur">0</span><span id="rp-max">5</span></div>
+      </div>
+    </div>
+
     <!-- NAVIGATION MENU -->
     <div class="scard" id="navMenuCard">
       <div class="nav-menu">
@@ -1115,10 +1143,13 @@
           <span class="nav-item-icon">💬</span><span data-t="navMessages">Messages</span>
           <span class="nav-item-badge" id="navMsgBadge" style="display:none"></span>
         </button>
+        <button class="nav-item" onclick="setActiveNav(this);scrollToProfile()">
+          <span class="nav-item-icon">👤</span><span data-t="navProfile">My Profile</span>
+        </button>
       </div>
     </div>
 
-    <!-- CATEGORIES (detailed list for desktop) -->
+    <!-- CATEGORIES -->
     <div class="scard">
       <div class="stitle" data-t="categories">Categories</div>
       <button class="cat-btn active" data-cat="all" onclick="filterCat('all',this)">🌐 <span data-t="allPosts">All Posts</span></button>
@@ -1133,6 +1164,44 @@
       <button class="cat-btn" data-cat="general" onclick="filterCat('general',this)">💬 <span data-t="general">General Lounge</span></button>
     </div>
 
+    <!-- DAILY STREAK -->
+    <div class="scard streak-card" id="streakCard" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border-color:rgba(245,158,11,.3);">
+      <div class="streak-header">
+        <div class="streak-icon">🔥</div>
+        <div>
+          <div class="streak-title">DAILY STREAK</div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <div class="streak-count" id="streakCount">0</div>
+            <div class="streak-sub" id="streakSub">days in a row</div>
+          </div>
+        </div>
+      </div>
+      <div class="streak-dots" id="streakDots"></div>
+      <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+      <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
+    </div>
+
+    <!-- REFERRAL -->
+    <div class="scard ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
+      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN XP</div></div>
+      <div class="ref-desc">Invite friends → +100 XP for you, +50 XP for them!</div>
+      <div class="ref-count-row">
+        <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
+        <button class="ref-btn">📤 Share Link</button>
+      </div>
+    </div>
+
+    <!-- THEME CHOOSER -->
+    <div class="scard" id="themeCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">🎨 Theme</span>
+        <div style="display:flex;gap:7px;">
+          <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        </div>
       </div>
     </div>
 
@@ -1331,35 +1400,6 @@
     </div>
   </aside>
 </div><!-- /wrap -->
-
-<!-- Hidden compatibility layer: JS writes to these IDs, syncUserPanel() reads from them -->
-<div style="display:none" aria-hidden="true">
-  <img id="slAv" src="" alt="">
-  <span id="slName"></span>
-  <div id="slRank"></div>
-  <div id="slBio"></div>
-  <div id="xpDisplay"><span id="xpCount">0</span></div>
-  <div id="uPostsCnt">0</div>
-  <div id="uLikesCnt">0</div>
-  <div id="rankProgress">
-    <span id="rp-next-lbl"></span>
-    <div id="rpFill" style="width:0%"></div>
-    <span id="rp-cur">0</span>
-    <span id="rp-max">5</span>
-  </div>
-  <div id="streakCard">
-    <div id="streakCount">0</div>
-    <div id="streakSub">days in a row</div>
-    <div id="streakDots"></div>
-    <button id="streakClaimBtn" onclick="claimDailyStreak()"></button>
-    <div id="streakClaimed"></div>
-  </div>
-  <div id="refCard">
-    <div id="refInviteCount">0</div>
-  </div>
-  <div id="userCard"></div>
-  <div id="themeCard"></div>
-</div>
 
 
 <div class="overlay" id="authOverlay" onclick="closeAuth(event)">
@@ -1958,16 +1998,18 @@ function renderLoggedIn(u) {
   document.getElementById('compAv').src = a;
   document.getElementById('compName').textContent = u.displayName;
   document.getElementById('cmtAv').src = a;
-  // Sync user panel
+  // Show sidebar user card with full info
+  document.getElementById('userCard').style.display = 'block';
+  document.getElementById('slAv').src = a;
+  document.getElementById('slName').textContent = u.displayName;
+  const themeCard = document.getElementById('themeCard');
+  if (themeCard) themeCard.style.display = 'block';
+  // Sync user panel slide-out
   const upAv = document.getElementById('upAv'); if(upAv) upAv.src = a;
   const upName = document.getElementById('upName'); if(upName) upName.textContent = u.displayName;
-  const upBio = document.getElementById('upBio'); if(upBio && u.bio) upBio.textContent = u.bio;
   const upXpD = document.getElementById('upXpDisplay'); if(upXpD) upXpD.style.display = 'flex';
   const upStk = document.getElementById('upStreakCard'); if(upStk) upStk.style.display = 'block';
   const upRef = document.getElementById('upRefCard'); if(upRef) upRef.style.display = 'block';
-  // Keep hidden IDs for JS compatibility
-  const slAv = document.getElementById('slAv'); if(slAv) slAv.src = a;
-  const slName = document.getElementById('slName'); if(slName) slName.textContent = u.displayName;
   if (isAdmin) { const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='block'; }
   initUserChatsListener(u.uid);
   checkUrlParamsForDM();
