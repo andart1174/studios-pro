@@ -506,6 +506,49 @@
     .ref-share-btn{padding:9px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center;}
     .ref-share-btn:hover{border-color:var(--accent);color:var(--accent3);background:rgba(99,102,241,.1);}
 
+    /* ── NAVIGATION MENU (left sidebar) ──────────────────────── */
+    .nav-menu{margin-bottom:12px;}
+    .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 13px;border-radius:12px;border:none;background:none;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit;text-decoration:none;margin-bottom:2px;}
+    .nav-item:hover{background:rgba(99,102,241,.12);color:var(--text);transform:translateX(2px);}
+    .nav-item.active{background:rgba(99,102,241,.2);color:var(--accent3);border:1px solid rgba(99,102,241,.3);box-shadow:0 2px 12px rgba(99,102,241,.15);}
+    .nav-item-icon{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
+    .nav-item-badge{margin-left:auto;background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;font-size:.62rem;font-weight:900;padding:1px 7px;border-radius:999px;box-shadow:0 0 8px rgba(239,68,68,.5);}
+    .nav-section-title{font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;padding:6px 13px 4px;margin-top:4px;}
+
+    /* ── SAVED POSTS ─────────────────────────────────────────── */
+    .save-btn{padding:5px 9px;border-radius:8px;border:1px solid rgba(99,102,241,.25);background:rgba(99,102,241,.07);color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:4px;}
+    .save-btn:hover{background:rgba(99,102,241,.18);color:var(--accent3);border-color:rgba(99,102,241,.5);}
+    .save-btn.saved{background:rgba(99,102,241,.2);color:var(--accent3);border-color:var(--accent);}
+
+    /* ── ADMIN EXPANDED PANEL ────────────────────────────────── */
+    .adm-section{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,.12);}
+    .adm-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+    .adm-section-title{font-size:.67rem;font-weight:700;color:rgba(245,158,11,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+    .adm-inp{width:100%;background:var(--bg3);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:7px 10px;color:var(--text);font-size:.78rem;font-family:inherit;outline:none;margin-bottom:5px;transition:border-color .2s;}
+    .adm-inp:focus{border-color:rgba(245,158,11,.5);}
+    .adm-inp::placeholder{color:var(--muted);}
+    .adm-sel{width:100%;background:var(--bg3);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:7px 10px;color:var(--text);font-size:.78rem;font-family:inherit;outline:none;margin-bottom:5px;cursor:pointer;}
+    .adm-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+    .adm-stat-tile{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:8px;text-align:center;}
+    .adm-stat-tile-n{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.1rem;color:#fbbf24;}
+    .adm-stat-tile-l{font-size:.62rem;color:var(--muted);margin-top:1px;}
+    .adm-broadcast-type{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
+    .adm-type-btn{padding:4px 10px;border-radius:999px;border:1px solid rgba(245,158,11,.25);background:none;color:var(--muted);font-size:.71rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;}
+    .adm-type-btn.active{background:rgba(245,158,11,.2);color:#fbbf24;border-color:rgba(245,158,11,.5);}
+    .adm-toggle{display:flex;align-items:center;justify-content:space-between;padding:7px 0;}
+    .adm-toggle-lbl{font-size:.79rem;color:#fcd34d;}
+    .adm-switch{position:relative;width:36px;height:20px;cursor:pointer;}
+    .adm-switch input{opacity:0;width:0;height:0;}
+    .adm-switch-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:999px;transition:.3s;border:1px solid rgba(255,255,255,.1);}
+    .adm-switch-slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:2px;background:#fff;border-radius:50%;transition:.3s;}
+    .adm-switch input:checked + .adm-switch-slider{background:#ef4444;}
+    .adm-switch input:checked + .adm-switch-slider::before{transform:translateX(16px);}
+
+    /* ── MAINTENANCE BANNER ───────────────────────────────────── */
+    .maintenance-banner{display:none;position:fixed;top:66px;left:0;right:0;z-index:999;background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;text-align:center;padding:10px;font-weight:700;font-size:.9rem;box-shadow:0 4px 20px rgba(239,68,68,.5);}
+
+
+
 
     /* Hotspots & Spec Tags */
     .p-img-hotspot-container {
@@ -934,6 +977,11 @@
   </div>
 </header>
 
+<!-- MAINTENANCE BANNER -->
+<div class="maintenance-banner" id="maintenanceBanner">
+  🔴 SP Nexus is currently under maintenance. Only admins can see the full feed.
+</div>
+
 <!-- MAIN LAYOUT -->
 <div class="wrap">
   <!-- LEFT SIDEBAR -->
@@ -964,41 +1012,6 @@
         <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
         <div class="rp-bot"><span id="rp-cur">0</span><span id="rp-max">5</span></div>
       </div>
-      <!-- DAILY STREAK WIDGET -->
-      <div class="streak-card" id="streakCard" style="display:none">
-        <div class="streak-header">
-          <div class="streak-icon">🔥</div>
-          <div>
-            <div class="streak-title">DAILY STREAK</div>
-            <div style="display:flex;align-items:baseline;gap:5px">
-              <div class="streak-count" id="streakCount">0</div>
-              <div class="streak-sub" id="streakSub">days in a row</div>
-            </div>
-          </div>
-        </div>
-        <div class="streak-dots" id="streakDots"></div>
-        <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
-        <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
-      </div>
-      <!-- REFERRAL WIDGET -->
-      <div class="ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
-        <div class="ref-header">
-          <div class="ref-icon">🚀</div>
-          <div class="ref-title">INVITE &amp; EARN XP</div>
-        </div>
-        <div class="ref-desc">Invite friends → you earn +100 XP, they earn +50 XP on signup!</div>
-        <div class="ref-count-row">
-          <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
-          <button class="ref-btn">📤 Share Link</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
-        <span style="font-size:.7rem;color:var(--muted)">Theme:</span>
-        <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
-        <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
-        <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
-        <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
-        <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:18px;height:18px;border-radius:50%;border:1px solid #fff;cursor:pointer"></button>
       </div>
     </div>
     <div class="scard">
@@ -1014,11 +1027,85 @@
       <button class="cat-btn" data-cat="video" onclick="filterCat('video',this)">🎥 <span data-t="videos">Videos</span></button>
       <button class="cat-btn" data-cat="general" onclick="filterCat('general',this)">💬 <span data-t="general">General Lounge</span></button>
     </div>
+
+    <!-- DAILY STREAK WIDGET (standalone card) -->
+    <div class="scard streak-card" id="streakCard" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border-color:rgba(245,158,11,.3);">
+      <div class="streak-header">
+        <div class="streak-icon">🔥</div>
+        <div>
+          <div class="streak-title">DAILY STREAK</div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <div class="streak-count" id="streakCount">0</div>
+            <div class="streak-sub" id="streakSub">days in a row</div>
+          </div>
+        </div>
+      </div>
+      <div class="streak-dots" id="streakDots"></div>
+      <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+      <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
+    </div>
+
+    <!-- REFERRAL WIDGET (standalone card) -->
+    <div class="scard ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
+      <div class="ref-header">
+        <div class="ref-icon">🚀</div>
+        <div class="ref-title">INVITE &amp; EARN XP</div>
+      </div>
+      <div class="ref-desc">Invite friends → you earn +100 XP, they earn +50 XP on signup!</div>
+      <div class="ref-count-row">
+        <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
+        <button class="ref-btn">📤 Share Link</button>
+      </div>
+    </div>
+
+    <!-- THEME CHOOSER -->
+    <div class="scard" id="themeCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">🎨 Theme</span>
+        <div style="display:flex;gap:7px;">
+          <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+          <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
+        </div>
+      </div>
+    </div>
+
   </aside>
 
   <!-- FEED -->
   <main class="feed">
-    <!-- Stories -->
+    <!-- Filter tabs (above create bar like YouTube) -->
+    <div class="ftabs" id="mainFtabs">
+      <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
+      <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
+      <button class="ftab" data-cat="3dmodel" onclick="filterTab('3dmodel',this)">🔮 3D Models</button>
+      <button class="ftab" data-cat="hologram" onclick="filterTab('hologram',this)">✨ Hologram</button>
+      <button class="ftab" data-cat="photo" onclick="filterTab('photo',this)">📸 <span data-t="photos">Photos</span></button>
+      <button class="ftab" data-cat="video" onclick="filterTab('video',this)">🎥 <span data-t="videos">Videos</span></button>
+      <button class="ftab" data-cat="music" onclick="filterTab('music',this)">🎵 Music</button>
+      <button class="ftab" data-cat="challenge" onclick="filterTab('challenge',this)">🏅 Challenge</button>
+    </div>
+    <!-- Create bar -->
+    <div class="create-bar" id="createBar" style="display:none">
+      <img src="" alt="" class="cb-av" id="cbAv">
+      <div class="cb-inp" onclick="openCreate()" id="cbInpEl" data-t="whatCreating">What are you creating today? ✨</div>
+      <div class="cb-actions">
+        <div class="cb-act" onclick="openCreate()" title="Photo">📸</div>
+        <div class="cb-act" onclick="openCreate()" title="Video">🎥</div>
+        <div class="cb-act" onclick="openCreate()" title="3D">🔮</div>
+      </div>
+      <button class="cb-btn" onclick="openCreate()">✦ <span data-t="post">Post</span></button>
+    </div>
+    <!-- Saved posts view (hidden by default) -->
+    <div id="savedPostsView" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;">🔖 <span data-t="savedPosts">Saved Posts</span></div>
+        <button onclick="hideSavedPosts()" style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;">← Back to feed</button>
+      </div>
+      <div id="savedPostsList"></div>
+    </div>
     <!-- NEXUS CREATORS HUB -->
     <div id="nchSection">
       <div class="nch-trigger" onclick="toggleCreatorsHub()" id="nchTrigger">
@@ -1048,48 +1135,103 @@
         <button class="btn-email" onclick="openAuth()"><span data-t="emailSignin">Sign in with Email</span></button>
       </div>
     </div>
-    <!-- Create bar -->
-    <div class="create-bar" id="createBar" style="display:none">
-      <img src="" alt="" class="cb-av" id="cbAv">
-      <div class="cb-inp" onclick="openCreate()" id="cbInpEl" data-t="whatCreating">What are you creating today? ✨</div>
-      <div class="cb-actions">
-        <div class="cb-act" onclick="openCreate()" title="Photo">📸</div>
-        <div class="cb-act" onclick="openCreate()" title="Video">🎥</div>
-        <div class="cb-act" onclick="openCreate()" title="3D">🔮</div>
-      </div>
-      <button class="cb-btn" onclick="openCreate()">✦ <span data-t="post">Post</span></button>
-    </div>
-    <!-- Filter tabs -->
-    <div class="ftabs">
-      <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
-      <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
-      <button class="ftab" data-cat="3dmodel" onclick="filterTab('3dmodel',this)">🔮 3D Models</button>
-      <button class="ftab" data-cat="hologram" onclick="filterTab('hologram',this)">✨ Hologram</button>
-      <button class="ftab" data-cat="photo" onclick="filterTab('photo',this)">📸 <span data-t="photos">Photos</span></button>
-      <button class="ftab" data-cat="video" onclick="filterTab('video',this)">🎥 <span data-t="videos">Videos</span></button>
-      <button class="ftab" data-cat="challenge" onclick="filterTab('challenge',this)">🏅 Challenge</button>
-    </div>
     <div id="feedEl"><div class="feed-loading"><div class="spinner"></div><div data-t="loading">Loading posts...</div></div></div>
   </main>
 
+
   <!-- RIGHT SIDEBAR -->
   <aside class="sr">
-    <!-- Admin -->
+    <!-- Admin Dashboard (expanded) -->
     <div id="adminPanel" style="display:none">
+      <!-- Live Stats Grid -->
       <div class="sc adm-sc">
         <div class="sc-title" style="color:#fbbf24">🛡️ Admin Dashboard</div>
-        <div class="stat-row"><span class="sr-lbl">📝 Posts</span><span class="sr-val" id="sTotalPosts">—</span></div>
-        <div class="stat-row"><span class="sr-lbl">👥 Members</span><span class="sr-val" id="sTotalMembers">—</span></div>
-        <div class="stat-row"><span class="sr-lbl">❤️ Likes</span><span class="sr-val" id="sTotalLikes">—</span></div>
-        <div class="stat-row"><span class="sr-lbl">💬 Comments</span><span class="sr-val" id="sTotalComments">—</span></div>
-      </div>
-      <div class="sc" style="border-color:rgba(245,158,11,.2)">
-        <div class="sc-title" style="color:#f59e0b">⚙️ Controls</div>
-        <button class="adm-btn warn" onclick="adminWipeAll()">⚠️ Wipe Entire Feed</button>
-        <div style="height:1px;background:rgba(245,158,11,.12);margin:8px 0"></div>
-        <div class="sc-title" style="color:#f59e0b;margin-top:2px">📣 Broadcast</div>
-        <textarea id="adminMsg" placeholder="Write announcement..." rows="3" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:8px 10px;color:var(--text);font-size:.79rem;font-family:inherit;resize:vertical;outline:none"></textarea>
-        <button class="adm-btn" style="margin-top:6px" onclick="adminBroadcast()">📢 Post Announcement</button>
+        <div class="adm-stat-grid">
+          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalPosts">—</div><div class="adm-stat-tile-l">📝 Posts</div></div>
+          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalMembers">—</div><div class="adm-stat-tile-l">👥 Members</div></div>
+          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalLikes">—</div><div class="adm-stat-tile-l">❤️ Likes</div></div>
+          <div class="adm-stat-tile"><div class="adm-stat-tile-n" id="sTotalComments">—</div><div class="adm-stat-tile-l">💬 Comments</div></div>
+        </div>
+
+        <!-- Maintenance Mode toggle -->
+        <div class="adm-toggle">
+          <span class="adm-toggle-lbl">🔴 Maintenance Mode</span>
+          <label class="adm-switch">
+            <input type="checkbox" id="maintenanceToggle" onchange="toggleMaintenanceMode(this.checked)">
+            <span class="adm-switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- Broadcast (enhanced) -->
+        <div class="adm-section">
+          <div class="adm-section-title">📣 Broadcast</div>
+          <div class="adm-broadcast-type">
+            <button class="adm-type-btn active" onclick="setAdmBroadcastType(this,'info')">Info</button>
+            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'success')">Success</button>
+            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'warning')">Warning</button>
+            <button class="adm-type-btn" onclick="setAdmBroadcastType(this,'announce')">Announce</button>
+          </div>
+          <textarea id="adminMsg" data-t-placeholder="broadcastPlaceholder" placeholder="Write announcement..." rows="2" class="adm-inp" style="border-radius:8px;padding:8px 10px;resize:vertical;"></textarea>
+          <button class="adm-btn" onclick="adminBroadcast()">📢 Post Announcement</button>
+        </div>
+
+        <!-- Ban User -->
+        <div class="adm-section">
+          <div class="adm-section-title">🔇 Ban / Suspend User</div>
+          <input class="adm-inp" id="banEmail" data-t-placeholder="banEmailPlaceholder" placeholder="User email to ban...">
+          <div style="display:flex;gap:5px">
+            <button class="adm-btn" style="flex:1" onclick="adminBanUser()">Ban</button>
+            <button class="adm-btn" style="flex:1;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399" onclick="adminUnbanUser()">Unban</button>
+          </div>
+        </div>
+
+        <!-- Change User Rank -->
+        <div class="adm-section">
+          <div class="adm-section-title">🏷️ Change User Rank</div>
+          <input class="adm-inp" id="rankEmail" data-t-placeholder="rankEmailPlaceholder" placeholder="User email...">
+          <select class="adm-sel" id="rankSelect">
+            <option value="">Select rank...</option>
+            <option value="starter">🌱 Starter (0+ posts)</option>
+            <option value="creator">🏆 Creator (5+ posts)</option>
+            <option value="expert">⭐ Expert (20+ posts)</option>
+            <option value="master">🔮 Master (50+ posts)</option>
+            <option value="legend">🌟 Legend (100+ posts)</option>
+            <option value="founding">🏅 Founding Member</option>
+          </select>
+          <button class="adm-btn" onclick="adminChangeRank()">🏷️ Apply Rank</button>
+        </div>
+
+        <!-- Force Pin Post -->
+        <div class="adm-section">
+          <div class="adm-section-title">📌 Pin / Unpin Post</div>
+          <input class="adm-inp" id="pinPostId" data-t-placeholder="pinIdPlaceholder" placeholder="Post ID to pin...">
+          <div style="display:flex;gap:5px">
+            <button class="adm-btn" style="flex:1" onclick="adminPinPost()">Pin</button>
+            <button class="adm-btn" style="flex:1" onclick="adminUnpinPost()">Unpin</button>
+          </div>
+        </div>
+
+        <!-- Create Challenge -->
+        <div class="adm-section">
+          <div class="adm-section-title">🏅 Create Weekly Challenge</div>
+          <input class="adm-inp" id="challengeTitle" data-t-placeholder="challengeTitlePlaceholder" placeholder="Challenge title...">
+          <textarea class="adm-inp" id="challengeDesc" data-t-placeholder="challengeDescPlaceholder" placeholder="Challenge description..." rows="2" style="resize:vertical;"></textarea>
+          <button class="adm-btn" onclick="adminCreateChallenge()">🏅 Create Challenge</button>
+        </div>
+
+        <!-- Export CSV -->
+        <div class="adm-section">
+          <div class="adm-section-title">📥 Export Data</div>
+          <div style="display:flex;gap:5px">
+            <button class="adm-btn" style="flex:1" onclick="adminExportMembersCSV()">👥 Members CSV</button>
+            <button class="adm-btn" style="flex:1" onclick="adminExportPostsCSV()">📝 Posts CSV</button>
+          </div>
+        </div>
+
+        <!-- Wipe Feed -->
+        <div class="adm-section">
+          <button class="adm-btn warn" onclick="adminWipeAll()">⚠️ Wipe Entire Feed</button>
+        </div>
       </div>
     </div>
     <!-- Weekly challenge -->
@@ -1412,7 +1554,18 @@ const T = {
     trendingNow:'🔥 TRENDING NOW', trendingEmpty:'No trending posts yet — be the first!',
     directMessages:'Direct Messages', noMessagesYet:'No messages yet. Say hi! 👋',
     typeMessage:'Type a message...', messages:'Messages', conversations:'Conversations',
-    selectChat:'Select a conversation to start chatting'
+    selectChat:'Select a conversation to start chatting',
+    navHome:'Home', navTrending:'Trending', navSaved:'Saved Posts', navMessages:'Messages',
+    navProfile:'My Profile', navSettings:'Settings',
+    adminBanUser:'🔇 Ban / Suspend User', adminChangeRank:'🏷️ Change User Rank',
+    adminForcePin:'📌 Force Pin a Post', adminExportCSV:'📥 Export Members CSV',
+    adminMaintenance:'🔴 Maintenance Mode', adminCreateChallenge:'🏅 Create Challenge',
+    adminBroadcastType:'📣 Broadcast Message', adminLiveStats:'📊 Live Stats',
+    banEmailPlaceholder:'User email to ban...', rankEmailPlaceholder:'User email...',
+    pinIdPlaceholder:'Post ID to pin...', challengeTitlePlaceholder:'Challenge title...',
+    challengeDescPlaceholder:'Challenge description...', broadcastPlaceholder:'Write announcement...',
+    savedPosts:'Saved Posts', noSavedPosts:'No saved posts yet. Click 🔖 on any post to save it!',
+    savePost:'Save', unsavePost:'Unsave'
   },
   fr:{
     community:'SP Nexus', categories:'Catégories', allPosts:'Tous les posts', posts:'Posts', likes:'Likes',
@@ -1446,7 +1599,18 @@ const T = {
     trendingNow:'🔥 TENDANCES', trendingEmpty:'Aucun post tendance — soyez le premier!',
     directMessages:'Messages Privés', noMessagesYet:'Aucun message encore. Dites bonjour! 👋',
     typeMessage:'Écrivez un message...', messages:'Messages', conversations:'Conversations',
-    selectChat:'Sélectionnez une conversation pour commencer'
+    selectChat:'Sélectionnez une conversation pour commencer',
+    navHome:'Accueil', navTrending:'Tendances', navSaved:'Posts sauvegardés', navMessages:'Messages',
+    navProfile:'Mon Profil', navSettings:'Paramètres',
+    adminBanUser:'🔇 Bannir / Suspendre', adminChangeRank:'🏷️ Changer le rang',
+    adminForcePin:'📌 Épingler un post', adminExportCSV:'📥 Exporter CSV membres',
+    adminMaintenance:'🔴 Mode maintenance', adminCreateChallenge:'🏅 Créer un défi',
+    adminBroadcastType:'📣 Diffusion', adminLiveStats:'📊 Stats en direct',
+    banEmailPlaceholder:'Email du compte à bannir...', rankEmailPlaceholder:'Email de l\'utilisateur...',
+    pinIdPlaceholder:'ID du post à épingler...', challengeTitlePlaceholder:'Titre du défi...',
+    challengeDescPlaceholder:'Description du défi...', broadcastPlaceholder:'Écrire une annonce...',
+    savedPosts:'Posts sauvegardés', noSavedPosts:'Aucun post sauvegardé. Cliquez 🔖 sur un post pour le sauvegarder!',
+    savePost:'Sauvegarder', unsavePost:'Retirer'
   }
 };
 
@@ -1698,6 +1862,8 @@ function renderLoggedIn(u) {
   document.getElementById('userCard').style.display = 'block';
   document.getElementById('slAv').src = a;
   document.getElementById('slName').textContent = u.displayName;
+  const themeCard = document.getElementById('themeCard');
+  if (themeCard) themeCard.style.display = 'block';
   if (isAdmin) { const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='block'; }
   initUserChatsListener(u.uid);
   checkUrlParamsForDM();
@@ -1708,6 +1874,8 @@ function renderLoggedOut() {
   document.getElementById('loginPrompt').style.display = 'block';
   document.getElementById('createBar').style.display = 'none';
   document.getElementById('userCard').style.display = 'none';
+  const themeCard = document.getElementById('themeCard');
+  if (themeCard) themeCard.style.display = 'none';
   const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='none';
   applyLang();
 }
@@ -2105,7 +2273,9 @@ function buildCard(p) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
       </button>
+      <button class="save-btn${(()=>{try{return JSON.parse(localStorage.getItem('sp_saved_posts')||'[]').includes(p.id)?' saved':''}catch(e){return ''}})()} " onclick="toggleSavePost('${p.id}',this)" title="Save post">🔖</button>
     </div>`;
+
   return div;
 }
 
@@ -2662,14 +2832,256 @@ async function adminBroadcast() {
   if (!isAdmin||!db) return;
   const msg = document.getElementById('adminMsg').value.trim();
   if (!msg) return;
+  const typeEl = document.querySelector('.adm-type-btn.active');
+  const bType = typeEl ? typeEl.textContent.toLowerCase() : 'info';
+  const icons = {info:'ℹ️', success:'✅', warning:'⚠️', announce:'📣'};
+  const icon = icons[bType] || '📣';
   await db.collection(COLL).add({
-    uid:curUser.uid, displayName:'📣 Studios-PRO Team', photoURL:'',
+    uid:curUser.uid, displayName:`${icon} Studios-PRO Team`, photoURL:'',
     content:msg, category:'general', images:[], videoUrl:'',
     likes:[], likesCount:0, commentsCount:0, pinned:true,
+    broadcastType: bType,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   document.getElementById('adminMsg').value='';
   toast('Announcement posted!','success');
+}
+
+// ─── Admin: Broadcast type selector ────────────────────────
+let _admBroadcastType = 'info';
+function setAdmBroadcastType(btn, type) {
+  document.querySelectorAll('.adm-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _admBroadcastType = type;
+}
+
+// ─── Admin: Maintenance mode ────────────────────────────────
+async function toggleMaintenanceMode(on) {
+  if (!isAdmin||!db) return;
+  try {
+    await db.collection('settings').doc('maintenance').set({ active: on, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    const banner = document.getElementById('maintenanceBanner');
+    banner.style.display = on ? 'block' : 'none';
+    toast(on ? '🔴 Maintenance mode ON' : '✅ Maintenance mode OFF', on ? 'error' : 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Admin: Ban / Unban user ────────────────────────────────
+async function adminBanUser() {
+  if (!isAdmin||!db) return;
+  const email = document.getElementById('banEmail').value.trim();
+  if (!email) return toast('Enter a user email', 'error');
+  try {
+    const snap = await db.collection('users').where('email','==',email).limit(1).get();
+    if (snap.empty) return toast('User not found', 'error');
+    const uid = snap.docs[0].id;
+    await db.collection('users').doc(uid).update({ banned: true, bannedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('banEmail').value = '';
+    toast('✅ User banned: ' + email, 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+async function adminUnbanUser() {
+  if (!isAdmin||!db) return;
+  const email = document.getElementById('banEmail').value.trim();
+  if (!email) return toast('Enter a user email', 'error');
+  try {
+    const snap = await db.collection('users').where('email','==',email).limit(1).get();
+    if (snap.empty) return toast('User not found', 'error');
+    await db.collection('users').doc(snap.docs[0].id).update({ banned: false });
+    document.getElementById('banEmail').value = '';
+    toast('✅ User unbanned: ' + email, 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Admin: Change user rank ────────────────────────────────
+async function adminChangeRank() {
+  if (!isAdmin||!db) return;
+  const email = document.getElementById('rankEmail').value.trim();
+  const rank = document.getElementById('rankSelect').value;
+  if (!email || !rank) return toast('Fill email and rank', 'error');
+  const rankPostsMap = { starter:0, creator:5, expert:20, master:50, legend:100, founding:0 };
+  try {
+    const snap = await db.collection('users').where('email','==',email).limit(1).get();
+    if (snap.empty) return toast('User not found', 'error');
+    await db.collection('users').doc(snap.docs[0].id).update({ rank, postsCount: rankPostsMap[rank] || 0 });
+    document.getElementById('rankEmail').value = '';
+    document.getElementById('rankSelect').value = '';
+    toast(`✅ Rank changed to "${rank}" for ${email}`, 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Admin: Pin / Unpin a post ──────────────────────────────
+async function adminPinPost() {
+  if (!isAdmin||!db) return;
+  const id = document.getElementById('pinPostId').value.trim();
+  if (!id) return toast('Enter a post ID', 'error');
+  try {
+    await db.collection(COLL).doc(id).update({ pinned: true });
+    document.getElementById('pinPostId').value = '';
+    toast('📌 Post pinned!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+async function adminUnpinPost() {
+  if (!isAdmin||!db) return;
+  const id = document.getElementById('pinPostId').value.trim();
+  if (!id) return toast('Enter a post ID', 'error');
+  try {
+    await db.collection(COLL).doc(id).update({ pinned: false });
+    document.getElementById('pinPostId').value = '';
+    toast('✅ Post unpinned!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Admin: Create weekly challenge ────────────────────────
+async function adminCreateChallenge() {
+  if (!isAdmin||!db) return;
+  const title = document.getElementById('challengeTitle').value.trim();
+  const desc = document.getElementById('challengeDesc').value.trim();
+  if (!title || !desc) return toast('Fill title and description', 'error');
+  try {
+    await db.collection('challenges').doc('weekly').set({
+      title, description: desc, active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: curUser.uid
+    });
+    // Also update UI
+    const chTitleEl = document.querySelector('.ch-title');
+    const chDescEl = document.querySelector('.ch-desc');
+    if (chTitleEl) chTitleEl.textContent = title;
+    if (chDescEl) chDescEl.textContent = desc;
+    document.getElementById('challengeTitle').value = '';
+    document.getElementById('challengeDesc').value = '';
+    toast('🏅 Challenge created!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Admin: Export CSV ─────────────────────────────────────
+async function adminExportMembersCSV() {
+  if (!isAdmin||!db) return;
+  toast('Fetching members...', 'info');
+  try {
+    const snap = await db.collection('users').get();
+    const rows = [['Name','Email','Rank','Posts','XP','Joined']];
+    snap.forEach(d => {
+      const u = d.data();
+      rows.push([u.displayName||'', u.email||'', u.rank||'starter', u.postsCount||0, u.totalXP||0, u.createdAt?.toDate?.()?.toLocaleDateString()||'']);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'sp_nexus_members.csv';
+    a.click();
+    toast('✅ Members CSV downloaded!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+async function adminExportPostsCSV() {
+  if (!isAdmin||!db) return;
+  toast('Fetching posts...', 'info');
+  try {
+    const snap = await db.collection(COLL).orderBy('createdAt','desc').limit(500).get();
+    const rows = [['Author','Category','Likes','Comments','Date','Content']];
+    snap.forEach(d => {
+      const p = d.data();
+      rows.push([p.displayName||'', p.category||'', p.likesCount||0, p.commentsCount||0,
+        p.createdAt?.toDate?.()?.toLocaleDateString()||'',
+        (p.content||'').substring(0,100)]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'sp_nexus_posts.csv';
+    a.click();
+    toast('✅ Posts CSV downloaded!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ─── Navigation helpers ────────────────────────────────────
+function setActiveNav(btn) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function scrollToFeed() {
+  const sv = document.getElementById('savedPostsView');
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  if (sv) sv.style.display = 'none';
+  if (feed) feed.style.display = '';
+  if (ftabs) ftabs.style.display = '';
+  const createBar = document.getElementById('createBar');
+  if (createBar && curUser) createBar.style.display = 'flex';
+  window.scrollTo({top: document.querySelector('.feed')?.offsetTop - 100 || 200, behavior:'smooth'});
+}
+function showTrendingView() {
+  // Filter feed to show trending (most liked posts)
+  const sv = document.getElementById('savedPostsView');
+  if (sv) sv.style.display = 'none';
+  const feed = document.getElementById('feedEl');
+  if (feed) feed.style.display = '';
+  // Sort allPosts by likesCount desc
+  const sorted = [...allPosts].sort((a,b) => (b.likesCount||0) - (a.likesCount||0));
+  renderPosts(sorted);
+  window.scrollTo({top: 0, behavior:'smooth'});
+}
+function showSavedPosts() {
+  const savedIds = JSON.parse(localStorage.getItem('sp_saved_posts') || '[]');
+  const view = document.getElementById('savedPostsView');
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const createBar = document.getElementById('createBar');
+  if (feed) feed.style.display = 'none';
+  if (ftabs) ftabs.style.display = 'none';
+  if (createBar) createBar.style.display = 'none';
+  if (!view) return;
+  view.style.display = 'block';
+  const listEl = document.getElementById('savedPostsList');
+  if (!listEl) return;
+  if (savedIds.length === 0) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">🔖</div><div class="empty-title">${t('savedPosts')}</div><div class="empty-text">${t('noSavedPosts')}</div></div>`;
+    return;
+  }
+  const saved = allPosts.filter(p => savedIds.includes(p.id));
+  if (saved.length === 0) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">🔖</div><div class="empty-title">${t('savedPosts')}</div><div class="empty-text">${t('noSavedPosts')}</div></div>`;
+  } else {
+    listEl.innerHTML = '';
+    saved.forEach(p => listEl.insertAdjacentHTML('beforeend', buildPostCard(p)));
+    attachPostEvents(listEl);
+  }
+}
+function hideSavedPosts() {
+  const view = document.getElementById('savedPostsView');
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const createBar = document.getElementById('createBar');
+  if (view) view.style.display = 'none';
+  if (feed) feed.style.display = '';
+  if (ftabs) ftabs.style.display = '';
+  if (createBar && curUser) createBar.style.display = 'flex';
+  // reset nav
+  const homeNav = document.getElementById('navHome');
+  if (homeNav) { document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); homeNav.classList.add('active'); }
+}
+function scrollToProfile() {
+  const card = document.getElementById('userCard');
+  if (card) card.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ─── Save / Unsave post ────────────────────────────────────
+function toggleSavePost(postId, btn) {
+  const saved = JSON.parse(localStorage.getItem('sp_saved_posts') || '[]');
+  const idx = saved.indexOf(postId);
+  if (idx === -1) {
+    saved.push(postId);
+    btn.classList.add('saved');
+    btn.title = t('unsavePost');
+    toast('🔖 Post saved!', 'info');
+  } else {
+    saved.splice(idx, 1);
+    btn.classList.remove('saved');
+    btn.title = t('savePost');
+    toast('Post removed from saved', 'info');
+  }
+  localStorage.setItem('sp_saved_posts', JSON.stringify(saved));
 }
 
 // ─── Modals ────────────────────────────────────────────────
