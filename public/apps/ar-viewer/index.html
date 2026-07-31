@@ -426,27 +426,40 @@
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          // Helper function to fetch target URL safely without CORS crash
+          // Helper function to fetch target URL safely with HTML resolution & CORS fallbacks
           async function fetchWithHtmlResolve(targetUrl) {
             try {
-              let response = await fetch(targetUrl);
-              if (!response || !response.ok) return response;
-              const cType = (response.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) {
-                const htmlText = await response.text();
-                const m = htmlText.match(/href="([^"]*\/dl\/[^"]+)"/i) || htmlText.match(/href="([^"]+)">Download/i);
-                if (m) {
-                  let realLink = m[1];
-                  if (!realLink.startsWith('http')) {
-                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
+              let response = await fetch(targetUrl).catch(() => null);
+              if (response && response.ok) {
+                const cType = (response.headers.get('content-type') || '').toLowerCase();
+                if (cType.includes('html')) {
+                  const htmlText = await response.text();
+                  const m = htmlText.match(/href=["']([^"']*\/(?:dl|files)\/[^"']+)["']/i) || htmlText.match(/href=["']([^"']+)["']>Download/i);
+                  if (m) {
+                    let realLink = m[1];
+                    if (!realLink.startsWith('http')) {
+                      realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
+                    }
+                    
+                    // 1. Try direct fetch of realLink
+                    let directRes = await fetch(realLink).catch(() => null);
+                    if (directRes && directRes.ok) return directRes;
+
+                    // 2. Try Netlify proxy of realLink
+                    let proxiedLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
+                    let proxyRes = await fetch(proxiedLink).catch(() => null);
+                    if (proxyRes && proxyRes.ok) return proxyRes;
+
+                    // 3. Fallback: CORS proxy for realLink
+                    let corsLink = `https://api.allorigins.win/raw?url=${encodeURIComponent(realLink)}`;
+                    let corsRes = await fetch(corsLink).catch(() => null);
+                    if (corsRes && corsRes.ok) return corsRes;
                   }
-                  if (targetUrl.includes('/api/proxy/')) {
-                    realLink = realLink.replace('https://tmpfiles.org/', '/api/proxy/');
-                  }
-                  response = await fetch(realLink).catch(() => null);
+                } else {
+                  return response;
                 }
               }
-              return response;
+              return null;
             } catch(e) {
               console.warn('fetchWithHtmlResolve error for', targetUrl, e);
               return null;
@@ -455,31 +468,28 @@
 
           let res = null;
 
-          // 1. Try Netlify Proxy first if it's a tmpfiles.org URL (bypasses mobile CORS completely)
-          if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace('https://tmpfiles.org/', '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            res = await fetchWithHtmlResolve(proxyUrl);
-          }
+          // 1. Try direct fetch first
+          res = await fetchWithHtmlResolve(fetchUrl);
 
-          // 2. Direct fetch (if not tmpfiles or if proxy didn't succeed)
+          // 2. If not ok, try Netlify Proxy (if tmpfiles)
           if (!res || !res.ok) {
-            let directUrl = fetchUrl;
-            if (directUrl.includes('tmpfiles.org') && !directUrl.includes('/dl/')) {
-              directUrl = directUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            let proxyUrl = fetchUrl;
+            if (proxyUrl.includes('tmpfiles.org')) {
+              proxyUrl = proxyUrl.replace('https://tmpfiles.org/', '/api/proxy/');
+              if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
+                proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+              }
+              res = await fetchWithHtmlResolve(proxyUrl);
             }
-            res = await fetchWithHtmlResolve(directUrl);
           }
 
-          // 3. Fallback: Try CORS proxy (corsproxy.io)
+          // 3. Fallback: Try CORS proxy (allorigins.win & corsproxy.io)
           if (!res || !res.ok) {
             let cleanUrl = fetchUrl;
             if (cleanUrl.includes('tmpfiles.org') && !cleanUrl.includes('/dl/')) {
               cleanUrl = cleanUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
-            const corsUrl = `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`;
+            const corsUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
             res = await fetchWithHtmlResolve(corsUrl);
           }
 
@@ -1177,27 +1187,35 @@
         console.warn('Service 1 (litterbox.catbox.moe) failed:', e.message);
       }
 
-      // -- Service 2: tmpfiles.org via Netlify proxy -------------------------
-      // NOTE: tmpfiles.org sends CORS: null which is blocked by mobile browsers.
-      // We upload via proxy, extract the real binary link, and encode it in the QR.
-      // On mobile the phone will fetch it direct - only use as last resort.
+      // -- Service: tmpfiles.org (dual via Netlify proxy & direct API) --
       if (!directDlUrl) {
         try {
           const fd2 = new FormData();
           fd2.append('file', file, fileName);
-          const r2 = await fetch('/api/proxy/api/v1/upload', {
+          let r2 = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
             body: fd2,
             signal: AbortSignal.timeout(18000)
-          });
-          if (r2.ok) {
+          }).catch(() => null);
+
+          if (!r2 || !r2.ok) {
+            const fdDirect = new FormData();
+            fdDirect.append('file', file, fileName);
+            r2 = await fetch('https://tmpfiles.org/api/v1/upload', {
+              method: 'POST',
+              body: fdDirect,
+              signal: AbortSignal.timeout(18000)
+            }).catch(() => null);
+          }
+
+          if (r2 && r2.ok) {
             const json = await r2.json();
-            if (json.status === 'success') {
+            if (json && json.status === 'success' && json.data && json.data.url) {
               directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
           }
         } catch(e) {
-          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
+          console.warn('tmpfiles.org upload failed:', e.message);
         }
       }
 
