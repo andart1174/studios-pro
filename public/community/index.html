@@ -365,10 +365,10 @@
     .hdr-user-btn.open .hdr-user-btn-caret{transform:rotate(180deg);}
 
     /* ── 2-COLUMN POST GRID ───────────────────────────────── */
-    #feedEl{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-    #feedEl .post-card{margin-bottom:0;}
-    #feedEl .feed-loading,#feedEl .empty{grid-column:1/-1;}
-    @media(max-width:900px){#feedEl{grid-template-columns:1fr;}}
+    #feedEl, #savedPostsList{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    #feedEl .post-card, #savedPostsList .post-card{margin-bottom:0;}
+    #feedEl .feed-loading, #feedEl .empty, #savedPostsList .empty{grid-column:1/-1;}
+    @media(max-width:900px){#feedEl, #savedPostsList{grid-template-columns:1fr;}}
 
     /* Rank colors */
     .rk-starter{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
@@ -3427,18 +3427,23 @@ function scrollToFeed() {
   if (ftabs) ftabs.style.display = '';
   const createBar = document.getElementById('createBar');
   if (createBar && curUser) createBar.style.display = 'flex';
-  window.scrollTo({top: document.querySelector('.feed')?.offsetTop - 100 || 200, behavior:'smooth'});
+  renderFeed(allPosts);
+  const feedCol = document.querySelector('.feed');
+  if (feedCol) feedCol.scrollTo({top: 0, behavior:'smooth'});
 }
 function showTrendingView() {
-  // Filter feed to show trending (most liked posts)
   const sv = document.getElementById('savedPostsView');
   if (sv) sv.style.display = 'none';
   const feed = document.getElementById('feedEl');
   if (feed) feed.style.display = '';
-  // Sort allPosts by likesCount desc
+  const createBar = document.getElementById('createBar');
+  if (createBar && curUser) createBar.style.display = 'flex';
+  const ftabs = document.getElementById('mainFtabs');
+  if (ftabs) ftabs.style.display = '';
   const sorted = [...allPosts].sort((a,b) => (b.likesCount||0) - (a.likesCount||0));
-  renderPosts(sorted);
-  window.scrollTo({top: 0, behavior:'smooth'});
+  renderFeed(sorted);
+  const feedCol = document.querySelector('.feed');
+  if (feedCol) feedCol.scrollTo({top: 0, behavior:'smooth'});
 }
 function showSavedPosts() {
   const savedIds = JSON.parse(localStorage.getItem('sp_saved_posts') || '[]');
@@ -3462,9 +3467,10 @@ function showSavedPosts() {
     listEl.innerHTML = `<div class="empty"><div class="empty-icon">🔖</div><div class="empty-title">${t('savedPosts')}</div><div class="empty-text">${t('noSavedPosts')}</div></div>`;
   } else {
     listEl.innerHTML = '';
-    saved.forEach(p => listEl.insertAdjacentHTML('beforeend', buildPostCard(p)));
-    attachPostEvents(listEl);
+    saved.forEach(p => listEl.appendChild(buildCard(p)));
   }
+  const feedCol = document.querySelector('.feed');
+  if (feedCol) feedCol.scrollTo({top: 0, behavior:'smooth'});
 }
 function hideSavedPosts() {
   const view = document.getElementById('savedPostsView');
