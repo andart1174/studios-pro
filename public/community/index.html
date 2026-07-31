@@ -2791,8 +2791,7 @@ async function toggleLike(pid) {
   await ref.update({ likes: newLikes, likesCount: newLikes.length });
   if (!had) {
     // Send like notification to post author
-    const pUid = snap.data().uid;
-    createNotification(pUid, 'like', 'liked your post');
+    createNotification(d.uid, 'like', 'liked your post');
   }
   
   const lkEl = document.getElementById(`lk-${pid}`);
@@ -5222,7 +5221,9 @@ function toggleNotifPanel() {
 
 function initNotificationsListener(uid) {
   if (notifListener) notifListener();
-  const ref = db.collection('notifications').doc(uid).collection('items')
+  // Flat collection: sp_notifs, filtered by toUid — any auth user can write
+  const ref = db.collection('sp_notifs')
+    .where('toUid','==',uid)
     .orderBy('ts','desc').limit(40);
   notifListener = ref.onSnapshot(snap => {
     const items = snap.docs.map(d => ({id:d.id,...d.data()}));
@@ -5230,7 +5231,19 @@ function initNotificationsListener(uid) {
     const unread = items.filter(n=>!n.read).length;
     const badge = document.getElementById('notifBadge');
     if (badge) { badge.textContent = unread>9?'9+':unread; badge.style.display = unread>0?'flex':'none'; }
-  }, ()=>{});
+  }, err => {
+    console.warn('Notif listener (with orderBy) failed, trying without orderBy:', err.message);
+    // Fallback: no orderBy (no composite index needed), sort client-side
+    const ref2 = db.collection('sp_notifs').where('toUid','==',uid).limit(40);
+    notifListener = ref2.onSnapshot(snap => {
+      const items = snap.docs.map(d=>({id:d.id,...d.data()}))
+        .sort((a,b)=>{ const ta=a.ts?.toDate?a.ts.toDate():new Date(0); const tb=b.ts?.toDate?b.ts.toDate():new Date(0); return tb-ta; });
+      renderNotifList(items);
+      const unread = items.filter(n=>!n.read).length;
+      const badge = document.getElementById('notifBadge');
+      if (badge) { badge.textContent = unread>9?'9+':unread; badge.style.display = unread>0?'flex':'none'; }
+    }, err2 => console.error('Notif listener fallback also failed:', err2.message));
+  });
 }
 
 function renderNotifList(items) {
@@ -5252,30 +5265,35 @@ function renderNotifList(items) {
 async function createNotification(toUid, type, message) {
   if (!curUser || !db || !toUid || toUid===curUser.uid) return;
   try {
-    await db.collection('notifications').doc(toUid).collection('items').add({
-      type, message,
+    // Use flat 'sp_notifs' collection — any authenticated user can write to it
+    await db.collection('sp_notifs').add({
+      toUid,
+      type,
+      message,
       fromUid: curUser.uid,
       fromName: curUser.displayName||'User',
       fromAv: curUser.photoURL||'',
       read: false,
       ts: firebase.firestore.FieldValue.serverTimestamp()
     });
-  } catch(e){}
+  } catch(e){ console.error('createNotification error:', e.message); }
 }
 
 async function markNotifRead(id) {
   if (!curUser||!db) return;
-  try { await db.collection('notifications').doc(curUser.uid).collection('items').doc(id).update({read:true}); } catch(e){}
+  try { await db.collection('sp_notifs').doc(id).update({read:true}); } catch(e){}
 }
 
 async function markAllNotifRead() {
   if (!curUser||!db) return;
   try {
-    const snap = await db.collection('notifications').doc(curUser.uid).collection('items').where('read','==',false).get();
+    const snap = await db.collection('sp_notifs')
+      .where('toUid','==',curUser.uid)
+      .where('read','==',false).get();
     const batch = db.batch();
     snap.forEach(d => batch.update(d.ref,{read:true}));
     await batch.commit();
-  } catch(e){}
+  } catch(e){ console.warn('markAllRead error:', e.message); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -5539,13 +5557,35 @@ async function applySpinReward(reward) {
   if(btn) btn.disabled=true;
   if(!curUser||!db) return;
   try {
-    const upd={lastSpin:firebase.firestore.FieldValue.serverTimestamp()};
-    if(reward.type==='xp') upd.xp=firebase.firestore.FieldValue.increment(reward.value);
-    await db.collection('users').doc(curUser.uid).update(upd);
-    if(reward.type==='badge') unlockAchievement('spin_lucky',0);
-    else if(reward.value>=200) unlockAchievement('spin_lucky',0);
-    loadUserStats(curUser.uid);
-  } catch(e){}
+    // Build update: ALWAYS record lastSpin, add XP if reward is XP type
+    const upd = { lastSpin: firebase.firestore.FieldValue.serverTimestamp() };
+    if (reward.type==='xp') {
+      upd.totalXP = firebase.firestore.FieldValue.increment(reward.value);
+    }
+    // Use set+merge so it works even if some fields are missing
+    await db.collection('users').doc(curUser.uid).set(upd, { merge: true });
+    // Unlock achievement
+    if (reward.type==='badge') unlockAchievement('spin_lucky', 0);
+    else if (reward.value >= 200) unlockAchievement('spin_lucky', 0);
+    // Show confetti burst
+    for (let i=0;i<10;i++) {
+      const p=document.createElement('div'); p.className='sp-like-particle';
+      p.textContent=['🎉','⭐','⚡','💫','🤑'][Math.floor(Math.random()*5)];
+      p.style.left=(Math.random()*window.innerWidth)+'px';
+      p.style.top=(window.scrollY+180+Math.random()*80)+'px';
+      p.style.setProperty('--rot',(Math.random()*120-60)+'deg');
+      p.style.animationDelay=(Math.random()*0.15)+'s';
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),1000);
+    }
+    // Refresh XP display using existing updateUserXPDisplay function
+    if (typeof updateUserXPDisplay === 'function') updateUserXPDisplay(0);
+    // Show toast
+    if (typeof toast === 'function') toast(`🎰 ${reward.label} added to your account!`, 'success');
+  } catch(e){
+    console.error('applySpinReward error:', e.message);
+    if (typeof toast === 'function') toast('Error saving spin reward: ' + e.message, 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
