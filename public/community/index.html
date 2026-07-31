@@ -124,11 +124,38 @@
     .hdr-name{font-size:.83rem;font-weight:600;color:var(--text);white-space:nowrap}
     .rank-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:.68rem;font-weight:800;letter-spacing:.03em;white-space:nowrap}
 
-    /* LAYOUT */
-    .wrap{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:24px;display:grid;grid-template-columns:240px 1fr 280px;gap:22px;align-items:start}
+    /* LAYOUT — chaque colonne scroll indépendamment */
+    .wrap{
+      position:fixed;
+      top:66px;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:1;
+      max-width:1300px;
+      margin:0 auto;
+      padding:0 24px;
+      display:grid;
+      grid-template-columns:240px 1fr 280px;
+      gap:22px;
+      align-items:start;
+      overflow:hidden;
+    }
 
-    /* LEFT SIDEBAR */
-    .sl{position:sticky;top:90px}
+    /* LEFT SIDEBAR — scroll indépendant */
+    .sl{
+      height:100%;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:24px 0 24px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(99,102,241,.3) transparent;
+    }
+    .sl::-webkit-scrollbar{width:4px}
+    .sl::-webkit-scrollbar-track{background:transparent}
+    .sl::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px}
+    .sl::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.6)}
+
     .scard{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
     .stitle{font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
     .u-av-wrap{position:relative;width:66px;margin:0 auto 12px}
@@ -161,8 +188,20 @@
     .cat-btn:hover{background:rgba(99,102,241,.1);color:var(--text)}
     .cat-btn.active{background:rgba(99,102,241,.18);color:var(--accent3);border:1px solid var(--border)}
 
-    /* FEED */
-    .feed{}
+    /* CENTER FEED — scroll indépendant */
+    .feed{
+      height:100%;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:24px 0 24px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(99,102,241,.3) transparent;
+    }
+    .feed::-webkit-scrollbar{width:4px}
+    .feed::-webkit-scrollbar-track{background:transparent}
+    .feed::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px}
+    .feed::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.6)}
+
     /* Stories */
     .s-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;margin-bottom:20px;scrollbar-width:none}
     .s-row::-webkit-scrollbar{display:none}
@@ -253,7 +292,20 @@
     .del-btn:hover{background:rgba(239,68,68,.2)}
 
     /* RIGHT SIDEBAR */
-    .sr{position:sticky;top:90px}
+    /* RIGHT SIDEBAR — scroll indépendant */
+    .sr{
+      height:100%;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:24px 0 24px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(99,102,241,.3) transparent;
+    }
+    .sr::-webkit-scrollbar{width:4px}
+    .sr::-webkit-scrollbar-track{background:transparent}
+    .sr::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px}
+    .sr::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.6)}
+
     .sc{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
     .sc-title{font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
     .stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border2)}
@@ -490,8 +542,17 @@
     .dm-msg-item.other .dm-bubble{background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-bottom-left-radius:4px}
     .dm-msg-time{font-size:.65rem;color:var(--muted);margin-top:3px;padding:0 4px}
     /* Responsive */
-    @media(max-width:1100px){.wrap{grid-template-columns:1fr}.sl,.sr{display:none}}
-    @media(max-width:640px){.wrap{padding:12px}.header{padding:0 12px}.hcenter{display:none}.overlay{align-items:flex-end;padding:0}.modal{border-radius:20px 20px 0 0;max-height:94vh}}
+    @media(max-width:1100px){
+      .wrap{grid-template-columns:1fr;padding:0 12px;}
+      .sl,.sr{display:none}
+    }
+    @media(max-width:640px){
+      .wrap{padding:0 8px;}
+      .header{padding:0 12px}
+      .hcenter{display:none}
+      .overlay{align-items:flex-end}
+      .modal{border-radius:20px 20px 0 0;max-height:85vh;overflow-y:auto}
+    }
 
     /* ── DAILY STREAK ──────────────────────────────────────── */
     .streak-card{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:12px 14px;margin-bottom:12px;}
