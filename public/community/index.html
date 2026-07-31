@@ -1037,6 +1037,97 @@
       text-align:center;padding:40px 22px;
       color:var(--muted);font-size:.85rem;
     }
+
+    /* ══════════════════════════════════════════════════
+       🔔 NOTIFICATIONS
+    ══════════════════════════════════════════════════ */
+    .notif-bell-btn{position:relative;width:38px;height:38px;border-radius:50%;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);color:var(--text);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+    .notif-bell-btn:hover{background:rgba(99,102,241,.25);box-shadow:0 0 16px rgba(99,102,241,.3)}
+    .notif-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:999px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:.62rem;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg1);animation:notifPulse 1.5s ease-in-out infinite}
+    @keyframes notifPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    .notif-panel{position:fixed;top:66px;right:0;bottom:0;width:340px;background:var(--bg2);border-left:1px solid var(--border);z-index:1402;overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);box-shadow:-8px 0 32px rgba(0,0,0,.5)}
+    .notif-panel.open{transform:translateX(0)}
+    .notif-panel-header{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(249,115,22,.08));padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2;backdrop-filter:blur(12px)}
+    .notif-panel-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:.95rem;color:#fff;display:flex;align-items:center;gap:8px}
+    .notif-mark-all{font-size:.72rem;color:var(--accent3);cursor:pointer;border:none;background:none;font-family:inherit;font-weight:700;padding:4px 8px;border-radius:8px;transition:all .2s}
+    .notif-mark-all:hover{background:rgba(99,102,241,.15)}
+    .notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .18s;position:relative}
+    .notif-item:hover{background:rgba(255,255,255,.04)}
+    .notif-item.unread{background:rgba(99,102,241,.06)}
+    .notif-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border)}
+    .notif-body{flex:1;min-width:0}
+    .notif-msg{font-size:.82rem;color:var(--text);line-height:1.4;word-break:break-word}
+    .notif-msg strong{color:#fff}
+    .notif-time{font-size:.68rem;color:var(--muted);margin-top:3px}
+    .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px}
+    .notif-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:.88rem}
+    .notif-overlay{position:fixed;inset:0;z-index:1401;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+    .notif-overlay.open{opacity:1;pointer-events:all}
+
+    /* ══════════════════════════════════════════════════
+       🎖️ ACHIEVEMENTS / BADGES
+    ══════════════════════════════════════════════════ */
+    .achiev-modal{position:fixed;inset:0;z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .25s}
+    .achiev-modal.open{opacity:1;pointer-events:all}
+    .achiev-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;width:100%;max-width:580px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+    .achiev-hdr{background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(245,158,11,.08));padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2;backdrop-filter:blur(12px);border-radius:24px 24px 0 0}
+    .achiev-hdr-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.1rem;background:linear-gradient(90deg,#fbbf24,#f97316);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .achiev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px}
+    .achiev-item{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:14px 10px;text-align:center;transition:all .25s;position:relative;overflow:hidden}
+    .achiev-item.unlocked{background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(245,158,11,.06));border-color:rgba(251,191,36,.4)}
+    .achiev-item.locked{opacity:.45;filter:grayscale(.7)}
+    .achiev-item:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .achiev-icon{font-size:2rem;margin-bottom:6px;line-height:1}
+    .achiev-name{font-size:.72rem;font-weight:800;color:#fff;margin-bottom:3px}
+    .achiev-desc{font-size:.62rem;color:var(--muted);line-height:1.3}
+    .achiev-xp{display:inline-block;margin-top:5px;padding:2px 7px;border-radius:999px;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);font-size:.62rem;font-weight:800;color:#fbbf24}
+    .achiev-unlocked-tag{position:absolute;top:6px;right:6px;font-size:.55rem;font-weight:800;color:#fbbf24;background:rgba(245,158,11,.2);border-radius:999px;padding:2px 6px}
+    /* unlock animation */
+    @keyframes achievUnlock{0%{transform:scale(0.5) rotate(-10deg);opacity:0}60%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+    .achiev-unlock-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(251,191,36,.95),rgba(245,158,11,.9));border:2px solid #fbbf24;border-radius:20px;padding:14px 22px;z-index:3000;color:#000;font-weight:800;font-size:.9rem;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(245,158,11,.5);animation:achievUnlock .4s cubic-bezier(0.34,1.56,0.64,1) forwards;pointer-events:none}
+    .badges-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;justify-content:center}
+    .badge-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.35);font-size:.65rem;font-weight:700;color:#fbbf24;cursor:pointer}
+    .badge-pill:hover{background:rgba(251,191,36,.3)}
+
+    /* ══════════════════════════════════════════════════
+       🎰 DAILY SPIN WHEEL
+    ══════════════════════════════════════════════════ */
+    .spin-modal{position:fixed;inset:0;z-index:1600;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .25s}
+    .spin-modal.open{opacity:1;pointer-events:all}
+    .spin-box{background:var(--bg2);border:1px solid var(--border);border-radius:28px;padding:28px;width:100%;max-width:460px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);position:relative}
+    .spin-title{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.4rem;background:linear-gradient(90deg,#fbbf24,#ec4899,#6366f1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+    .spin-subtitle{font-size:.8rem;color:var(--muted);margin-bottom:20px}
+    .spin-wheel-wrap{position:relative;width:280px;height:280px;margin:0 auto 20px}
+    .spin-pointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:1.6rem;z-index:10;filter:drop-shadow(0 2px 8px rgba(251,191,36,.6));animation:pointerBob .8s ease-in-out infinite alternate}
+    @keyframes pointerBob{0%{transform:translateX(-50%) translateY(0)}100%{transform:translateX(-50%) translateY(-4px)}}
+    .spin-canvas{width:280px;height:280px;border-radius:50%;border:5px solid rgba(251,191,36,.4);box-shadow:0 0 40px rgba(251,191,36,.2),inset 0 0 30px rgba(0,0,0,.3);cursor:pointer;transition:box-shadow .3s}
+    .spin-canvas:hover{box-shadow:0 0 60px rgba(251,191,36,.4),inset 0 0 30px rgba(0,0,0,.3)}
+    .spin-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 32px;border-radius:16px;background:linear-gradient(135deg,#fbbf24,#f97316);border:none;color:#000;font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;transition:all .25s;box-shadow:0 4px 20px rgba(251,191,36,.4)}
+    .spin-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(251,191,36,.5)}
+    .spin-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .spin-cooldown{font-size:.78rem;color:var(--muted);margin-top:10px}
+    .spin-result{font-size:1.1rem;font-weight:800;color:#fbbf24;margin:12px 0 4px;min-height:28px}
+    /* Spin trigger button in sidebar */
+    .spin-trigger{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(236,72,153,.08));border:1px solid rgba(251,191,36,.3);cursor:pointer;transition:all .22s;width:100%;font-family:inherit;margin-bottom:14px}
+    .spin-trigger:hover{background:linear-gradient(135deg,rgba(251,191,36,.28),rgba(236,72,153,.15));border-color:rgba(251,191,36,.6);box-shadow:0 4px 20px rgba(251,191,36,.2)}
+    .spin-trigger-icon{font-size:1.5rem;animation:spin-idle 4s linear infinite}
+    @keyframes spin-idle{0%,80%,100%{transform:rotate(0deg)}85%{transform:rotate(180deg)}95%{transform:rotate(350deg)}}
+    .spin-trigger-text{text-align:left}
+    .spin-trigger-title{font-weight:800;font-size:.82rem;color:#fbbf24}
+    .spin-trigger-sub{font-size:.68rem;color:var(--muted)}
+
+    /* ══════════════════════════════════════════════════
+       👥 FOLLOW BUTTON
+    ══════════════════════════════════════════════════ */
+    .follow-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-size:.72rem;font-weight:800;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+    .follow-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(99,102,241,.4)}
+    .follow-btn.following{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--accent3)}
+    .follow-btn.following:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#f87171}
+    .follower-stats{display:flex;gap:14px;justify-content:center;margin-top:5px}
+    .follower-stat{text-align:center;cursor:pointer}
+    .follower-stat-n{font-family:'Outfit',sans-serif;font-weight:800;font-size:.95rem;color:var(--accent3)}
+    .follower-stat-l{font-size:.62rem;color:var(--muted)}
+
   </style>
 </head>
 <body>
@@ -1068,6 +1159,11 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- 🔔 Notification Bell (shown when logged in) -->
+    <button class="notif-bell-btn" id="notifBellBtn" style="display:none" onclick="toggleNotifPanel()" title="Notifications">
+      🔔
+      <span class="notif-badge" id="notifBadge">0</span>
+    </button>
     <div id="hdrActions">
       <button class="btn-email" onclick="openAuth()"><span data-t="signin">Sign In</span></button>
     </div>
@@ -1264,6 +1360,25 @@
           <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .2s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''"></button>
         </div>
       </div>
+    </div>
+
+    <!-- 🎰 DAILY SPIN TRIGGER -->
+    <button class="spin-trigger" id="spinTriggerCard" style="display:none" onclick="openSpinModal()">
+      <div class="spin-trigger-icon">🎰</div>
+      <div class="spin-trigger-text">
+        <div class="spin-trigger-title">Daily Fortune Spin</div>
+        <div class="spin-trigger-sub">Free spin every 24h · Win XP!</div>
+      </div>
+    </button>
+
+    <!-- 🏅 ACHIEVEMENTS SHORTCUT -->
+    <div class="scard" id="achievCard" style="display:none;cursor:pointer;padding:12px 16px;" onclick="openAchievModal()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">🏅 Achievements</span>
+        <span style="font-size:.68rem;color:var(--accent3);font-weight:700" id="sideAchievCount">0/20</span>
+      </div>
+      <div class="badges-row" id="userBadgesRow"></div>
+      <div style="font-size:.68rem;color:var(--muted);margin-top:6px;text-align:center">Click to see all badges →</div>
     </div>
 
   </aside>
@@ -2074,6 +2189,15 @@ function renderLoggedIn(u) {
   if (isAdmin) { const ap = document.getElementById('adminPanel'); if (ap) ap.style.display='block'; }
   initUserChatsListener(u.uid);
   checkUrlParamsForDM();
+  // ── New viral features ──
+  const bell = document.getElementById('notifBellBtn'); if(bell) bell.style.display='flex';
+  const spinTriggerEl = document.getElementById('spinTriggerCard'); if(spinTriggerEl) spinTriggerEl.style.display='flex';
+  if(db) {
+    initNotificationsListener(u.uid);
+    loadAchievements(u.uid);
+    loadFollowing(u.uid);
+    setTimeout(()=>checkAchievements(u.uid), 2000);
+  }
 }
 
 function renderLoggedOut() {
@@ -2459,6 +2583,7 @@ function buildCard(p) {
         <div class="p-time">${timeAgo(p.createdAt)}</div>
       </div>
       ${canDel ? `<button class="del-btn" onclick="delPost('${p.id}')">🗑️</button>` : ''}
+      ${curUser && p.uid !== curUser.uid ? `<button class="follow-btn ${followingSet.has(p.uid)?'following':''} " data-uid="${p.uid}" onclick="toggleFollow('${p.uid}')">${followingSet.has(p.uid)?'✓ Following':'+ Follow'}</button>` : ''}
     </div>
     ${p.content ? `<div class="p-content">${esc(p.content)}</div>` : ''}
     ${audioHtml}
@@ -2664,6 +2789,11 @@ async function toggleLike(pid) {
   const had = likes.includes(curUser.uid);
   const newLikes = had ? likes.filter(l=>l!==curUser.uid) : [...likes, curUser.uid];
   await ref.update({ likes: newLikes, likesCount: newLikes.length });
+  if (!had) {
+    // Send like notification to post author
+    const pUid = snap.data().uid;
+    createNotification(pUid, 'like', 'liked your post');
+  }
   
   const lkEl = document.getElementById(`lk-${pid}`);
   if (lkEl) {
@@ -5033,6 +5163,433 @@ function checkUrlParamsForDM() {
   }
 }
 
+</script>
+
+<!-- 🔔 NOTIFICATIONS OVERLAY + PANEL -->
+<div class="notif-overlay" id="notifOverlay" onclick="toggleNotifPanel()"></div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header">
+    <div class="notif-panel-title">🔔 Notifications</div>
+    <button class="notif-mark-all" onclick="markAllNotifRead()">✓ Mark all read</button>
+    <button onclick="toggleNotifPanel()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:4px 8px;border-radius:8px">✕</button>
+  </div>
+  <div id="notifList"><div class="notif-empty">🔔 No notifications yet</div></div>
+</div>
+
+<!-- 🏅 ACHIEVEMENTS MODAL -->
+<div class="achiev-modal" id="achievModal" onclick="closeAchievModal(event)">
+  <div class="achiev-box" onclick="event.stopPropagation()">
+    <div class="achiev-hdr">
+      <span class="achiev-hdr-title">🏅 Achievements &amp; Badges</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:.72rem;color:var(--muted)" id="achievProgress">0/20 unlocked</span>
+        <button onclick="closeAchievModal()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:4px 8px;border-radius:8px">✕</button>
+      </div>
+    </div>
+    <div class="achiev-grid" id="achievGrid"></div>
+  </div>
+</div>
+
+<!-- 🎰 DAILY SPIN MODAL -->
+<div class="spin-modal" id="spinModal" onclick="closeSpinModal(event)">
+  <div class="spin-box" onclick="event.stopPropagation()">
+    <button onclick="closeSpinModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer">✕</button>
+    <div class="spin-title">🎰 Daily Fortune Spin</div>
+    <div class="spin-subtitle">One free spin per day — Good luck! 🍀</div>
+    <div class="spin-wheel-wrap">
+      <div class="spin-pointer">▼</div>
+      <canvas class="spin-canvas" id="spinCanvas" width="280" height="280"></canvas>
+    </div>
+    <div class="spin-result" id="spinResult"></div>
+    <button class="spin-btn" id="spinBtn" onclick="doSpin()">🎰 SPIN!</button>
+    <div class="spin-cooldown" id="spinCooldown"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 🔔 FEATURE 1 — REAL-TIME NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+let notifListener = null;
+let notifPanelOpen = false;
+
+function toggleNotifPanel() {
+  notifPanelOpen = !notifPanelOpen;
+  document.getElementById('notifPanel').classList.toggle('open', notifPanelOpen);
+  document.getElementById('notifOverlay').classList.toggle('open', notifPanelOpen);
+  if (notifPanelOpen) markAllNotifRead();
+}
+
+function initNotificationsListener(uid) {
+  if (notifListener) notifListener();
+  const ref = db.collection('notifications').doc(uid).collection('items')
+    .orderBy('ts','desc').limit(40);
+  notifListener = ref.onSnapshot(snap => {
+    const items = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderNotifList(items);
+    const unread = items.filter(n=>!n.read).length;
+    const badge = document.getElementById('notifBadge');
+    if (badge) { badge.textContent = unread>9?'9+':unread; badge.style.display = unread>0?'flex':'none'; }
+  }, ()=>{});
+}
+
+function renderNotifList(items) {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  if (!items.length) { list.innerHTML='<div class="notif-empty">🔔 No notifications yet</div>'; return; }
+  const icons = {like:'❤️',comment:'💬',follow:'👥',achievement:'🏅',reaction:'🔥',mention:'@️⃣',spin:'🎰'};
+  list.innerHTML = items.map(n => `
+    <div class="notif-item ${n.read?'':'unread'}" onclick="markNotifRead('${n.id}')">
+      <img src="${n.fromAv||''}" class="notif-av" alt="" onerror="this.src=''">
+      <div class="notif-body">
+        <div class="notif-msg">${icons[n.type]||'🔔'} <strong>${esc(n.fromName||'')}</strong> ${esc(n.message||'')}</div>
+        <div class="notif-time">${n.ts?timeAgo(n.ts.toDate?n.ts.toDate():new Date(n.ts)):''}</div>
+      </div>
+      ${!n.read?'<div class="notif-dot"></div>':''}
+    </div>`).join('');
+}
+
+async function createNotification(toUid, type, message) {
+  if (!curUser || !db || !toUid || toUid===curUser.uid) return;
+  try {
+    await db.collection('notifications').doc(toUid).collection('items').add({
+      type, message,
+      fromUid: curUser.uid,
+      fromName: curUser.displayName||'User',
+      fromAv: curUser.photoURL||'',
+      read: false,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e){}
+}
+
+async function markNotifRead(id) {
+  if (!curUser||!db) return;
+  try { await db.collection('notifications').doc(curUser.uid).collection('items').doc(id).update({read:true}); } catch(e){}
+}
+
+async function markAllNotifRead() {
+  if (!curUser||!db) return;
+  try {
+    const snap = await db.collection('notifications').doc(curUser.uid).collection('items').where('read','==',false).get();
+    const batch = db.batch();
+    snap.forEach(d => batch.update(d.ref,{read:true}));
+    await batch.commit();
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🏅 FEATURE 3 — ACHIEVEMENTS & BADGES
+// ═══════════════════════════════════════════════════════════════
+const ACHIEVEMENTS_DEF = [
+  {id:'first_post',    icon:'📝', name:'First Creation',   desc:'Publish your first post',      xp:20},
+  {id:'posts_5',       icon:'🎨', name:'Creator',          desc:'Publish 5 posts',               xp:40},
+  {id:'posts_20',      icon:'⭐',  name:'Expert Creator',   desc:'Publish 20 posts',              xp:80},
+  {id:'posts_50',      icon:'🔮', name:'Master Creator',   desc:'Publish 50 posts',              xp:150},
+  {id:'likes_10',      icon:'❤️',  name:'Social Starter',   desc:'Receive 10 likes',              xp:30},
+  {id:'likes_50',      icon:'💫', name:'Crowd Pleaser',    desc:'Receive 50 likes',              xp:60},
+  {id:'likes_100',     icon:'🧨', name:'Viral Creator',    desc:'Receive 100 likes',             xp:100},
+  {id:'streak_3',      icon:'🔥', name:'On Fire',          desc:'3-day login streak',            xp:15},
+  {id:'streak_7',      icon:'🧱', name:'Fire Starter',     desc:'7-day login streak',            xp:50},
+  {id:'streak_30',     icon:'🌋', name:'Unstoppable',      desc:'30-day login streak',           xp:200},
+  {id:'followers_5',   icon:'👥', name:'Rising Star',      desc:'Get 5 followers',               xp:30},
+  {id:'followers_25',  icon:'🌟', name:'Influencer',       desc:'Get 25 followers',              xp:80},
+  {id:'followers_100', icon:'🎊', name:'Creator Legend',   desc:'Get 100 followers',             xp:200},
+  {id:'xp_100',        icon:'⚡',  name:'XP Hunter',        desc:'Earn 100 XP',                   xp:0},
+  {id:'xp_500',        icon:'💪', name:'XP Champion',      desc:'Earn 500 XP',                   xp:0},
+  {id:'comments_10',   icon:'💬', name:'Commentator',      desc:'Leave 10 comments',             xp:30},
+  {id:'top3',          icon:'🏆', name:'Top Creator',      desc:'Reach top 3 leaderboard',       xp:100},
+  {id:'spin_lucky',    icon:'🎰', name:'Lucky Spinner',    desc:'Win big on daily spin',         xp:0},
+  {id:'founding',      icon:'🏅', name:'Founding Member',  desc:'One of the first 100 members',  xp:0},
+  {id:'first_follow',  icon:'🤝', name:'First Follower',   desc:'Follow your first creator',     xp:10},
+];
+
+let userAchievements = new Set();
+
+async function loadAchievements(uid) {
+  if (!db||!uid) return;
+  try {
+    const snap = await db.collection('users').doc(uid).collection('achievements').get();
+    userAchievements = new Set(snap.docs.map(d=>d.id));
+    renderUserBadges();
+  } catch(e){}
+}
+
+async function unlockAchievement(achievId, xpBonus) {
+  if (!curUser||!db) return;
+  if (userAchievements.has(achievId)) return;
+  try {
+    await db.collection('users').doc(curUser.uid).collection('achievements').doc(achievId).set({
+      unlockedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    userAchievements.add(achievId);
+    const def = ACHIEVEMENTS_DEF.find(a=>a.id===achievId);
+    if (!def) return;
+    // Show toast
+    const toast = document.createElement('div');
+    toast.className = 'achiev-unlock-toast';
+    toast.innerHTML = `<span style="font-size:1.6rem">${def.icon}</span> <div><div style="font-size:.75rem;opacity:.7">Achievement Unlocked!</div><div>${def.name}</div></div>${def.xp>0?`<span style="background:rgba(0,0,0,.2);padding:3px 8px;border-radius:999px">+${def.xp} XP</span>`:''}` ;
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.remove(), 4000);
+    // Award XP
+    if (def.xp>0) {
+      await db.collection('users').doc(curUser.uid).update({
+        xp: firebase.firestore.FieldValue.increment(def.xp)
+      });
+      loadUserStats(curUser.uid);
+    }
+    // Notify self
+    createNotification(curUser.uid, 'achievement', `unlocked the "${def.name}" badge!`);
+    renderUserBadges();
+  } catch(e){}
+}
+
+function openAchievModal() {
+  renderAchievGrid();
+  document.getElementById('achievModal').classList.add('open');
+}
+function closeAchievModal(e) {
+  if (!e||e.target===document.getElementById('achievModal')) document.getElementById('achievModal').classList.remove('open');
+}
+
+function renderAchievGrid() {
+  const grid = document.getElementById('achievGrid');
+  const prog = document.getElementById('achievProgress');
+  if (!grid) return;
+  const count = userAchievements.size;
+  if (prog) prog.textContent = `${count}/${ACHIEVEMENTS_DEF.length} unlocked`;
+  grid.innerHTML = ACHIEVEMENTS_DEF.map(a => {
+    const unlocked = userAchievements.has(a.id);
+    return `<div class="achiev-item ${unlocked?'unlocked':'locked'}" title="${a.desc}">
+      ${unlocked?'<div class="achiev-unlocked-tag">✓</div>':''}
+      <div class="achiev-icon">${a.icon}</div>
+      <div class="achiev-name">${a.name}</div>
+      <div class="achiev-desc">${a.desc}</div>
+      ${a.xp>0?`<div class="achiev-xp">+${a.xp} XP</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderUserBadges() {
+  const container = document.getElementById('userBadgesRow');
+  const countEl = document.getElementById('sideAchievCount');
+  const achievCardEl = document.getElementById('achievCard');
+  if (achievCardEl) achievCardEl.style.display = 'block';
+  const unlocked = ACHIEVEMENTS_DEF.filter(a=>userAchievements.has(a.id));
+  if (countEl) countEl.textContent = `${unlocked.length}/${ACHIEVEMENTS_DEF.length}`;
+  if (!container) return;
+  container.innerHTML = unlocked.length
+    ? unlocked.slice(0,6).map(a=>`<span class="badge-pill" title="${a.name}">${a.icon} ${a.name}</span>`).join('')
+    : '<span style="font-size:.7rem;color:var(--muted)">No badges yet — start creating!</span>';
+}
+
+async function checkAchievements(uid) {
+  if (!uid||!db) return;
+  try {
+    const uDoc = await db.collection('users').doc(uid).get();
+    const d = uDoc.data()||{};
+    const posts = d.postsCount||0;
+    const likes = d.likesReceived||0;
+    const xp = d.xp||0;
+    const streak = d.streakCount||0;
+    if (posts>=1)  unlockAchievement('first_post',20);
+    if (posts>=5)  unlockAchievement('posts_5',40);
+    if (posts>=20) unlockAchievement('posts_20',80);
+    if (posts>=50) unlockAchievement('posts_50',150);
+    if (likes>=10) unlockAchievement('likes_10',30);
+    if (likes>=50) unlockAchievement('likes_50',60);
+    if (likes>=100) unlockAchievement('likes_100',100);
+    if (streak>=3) unlockAchievement('streak_3',15);
+    if (streak>=7) unlockAchievement('streak_7',50);
+    if (streak>=30) unlockAchievement('streak_30',200);
+    if (xp>=100) unlockAchievement('xp_100',0);
+    if (xp>=500) unlockAchievement('xp_500',0);
+    if (d.foundingMember) unlockAchievement('founding',0);
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🎰 FEATURE 4 — DAILY SPIN WHEEL
+// ═══════════════════════════════════════════════════════════════
+const SPIN_REWARDS = [
+  {label:'+10 XP',  type:'xp', value:10,  color:'#6366f1', prob:28},
+  {label:'+25 XP',  type:'xp', value:25,  color:'#8b5cf6', prob:22},
+  {label:'+50 XP',  type:'xp', value:50,  color:'#f59e0b', prob:18},
+  {label:'+5 XP',   type:'xp', value:5,   color:'#475569', prob:16},
+  {label:'+100 XP', type:'xp', value:100, color:'#ef4444', prob:8},
+  {label:'🏅 Badge',  type:'badge', value:'spin_lucky', color:'#10b981', prob:5},
+  {label:'+200 XP!',type:'xp', value:200, color:'#ec4899', prob:3},
+];
+let spinAngle = 0;
+let isSpinning = false;
+
+function drawSpinWheel(angle) {
+  const canvas = document.getElementById('spinCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 140, cy = 140, r = 130;
+  const total = SPIN_REWARDS.reduce((s,r)=>s+r.prob,0);
+  ctx.clearRect(0,0,280,280);
+  let start = angle;
+  SPIN_REWARDS.forEach((seg,i) => {
+    const slice = (seg.prob/total) * Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+slice);
+    ctx.closePath();
+    ctx.fillStyle = seg.color; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=2; ctx.stroke();
+    // Label
+    const mid = start + slice/2;
+    ctx.save();
+    ctx.translate(cx + Math.cos(mid)*(r*0.65), cy + Math.sin(mid)*(r*0.65));
+    ctx.rotate(mid + Math.PI/2);
+    ctx.fillStyle='#fff'; ctx.font='bold 11px Outfit,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=4;
+    ctx.fillText(seg.label,0,0);
+    ctx.restore();
+    start += slice;
+  });
+  // Center circle
+  ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
+  const gr = ctx.createRadialGradient(cx,cy,0,cx,cy,22);
+  gr.addColorStop(0,'#fbbf24'); gr.addColorStop(1,'#f97316');
+  ctx.fillStyle=gr; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#000'; ctx.font='bold 10px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy);
+}
+
+async function openSpinModal() {
+  document.getElementById('spinModal').classList.add('open');
+  drawSpinWheel(spinAngle);
+  await checkSpinCooldown();
+}
+function closeSpinModal(e) {
+  if (!e||e.target===document.getElementById('spinModal')) document.getElementById('spinModal').classList.remove('open');
+}
+
+async function checkSpinCooldown() {
+  const btn = document.getElementById('spinBtn');
+  const cd = document.getElementById('spinCooldown');
+  if (!curUser||!db) { if(btn) btn.disabled=true; return; }
+  try {
+    const doc = await db.collection('users').doc(curUser.uid).get();
+    const lastSpin = doc.data()?.lastSpin?.toDate ? doc.data().lastSpin.toDate() : null;
+    if (lastSpin) {
+      const next = new Date(lastSpin.getTime() + 24*60*60*1000);
+      const now = new Date();
+      if (now < next) {
+        if(btn) btn.disabled=true;
+        const h = Math.floor((next-now)/3600000), m = Math.floor(((next-now)%3600000)/60000);
+        if(cd) cd.textContent = `⏰ Next spin in ${h}h ${m}m`;
+        return;
+      }
+    }
+    if(btn) btn.disabled=false;
+    if(cd) cd.textContent = '✨ You have a free spin!';
+  } catch(e){ if(btn) btn.disabled=false; }
+}
+
+async function doSpin() {
+  if (isSpinning) return;
+  if (!curUser) { openAuth(); return; }
+  const btn = document.getElementById('spinBtn');
+  const resEl = document.getElementById('spinResult');
+  // Pick reward (weighted)
+  const total = SPIN_REWARDS.reduce((s,r)=>s+r.prob,0);
+  let rand = Math.random()*total, chosen = SPIN_REWARDS[SPIN_REWARDS.length-1], cumul=0;
+  for (const r of SPIN_REWARDS) { cumul+=r.prob; if (rand<=cumul){chosen=r;break;} }
+  // Calc landing angle
+  const totalProb = SPIN_REWARDS.reduce((s,r)=>s+r.prob,0);
+  let segStart = 0;
+  for (const r of SPIN_REWARDS) {
+    if (r===chosen) { segStart += (r.prob/totalProb)*Math.PI; break; }
+    segStart += (r.prob/totalProb)*Math.PI*2;
+  }
+  const targetAngle = -segStart + (Math.PI*1.5); // point to top pointer
+  const spins = (Math.floor(Math.random()*3)+5)*Math.PI*2;
+  const finalAngle = spinAngle - (spinAngle % (Math.PI*2)) + spins + targetAngle;
+  isSpinning=true; if(btn) btn.disabled=true; if(resEl) resEl.textContent='';
+  // Animate
+  const duration=4000, start=performance.now();
+  const from=spinAngle;
+  function animate(now){
+    const elapsed=now-start, t=Math.min(elapsed/duration,1);
+    const ease=1-Math.pow(1-t,4);
+    spinAngle=from+(finalAngle-from)*ease;
+    drawSpinWheel(spinAngle);
+    if(t<1){requestAnimationFrame(animate);}else{
+      spinAngle=finalAngle;
+      drawSpinWheel(spinAngle);
+      isSpinning=false;
+      applySpinReward(chosen);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+async function applySpinReward(reward) {
+  const resEl=document.getElementById('spinResult');
+  const cd=document.getElementById('spinCooldown');
+  const btn=document.getElementById('spinBtn');
+  if(resEl) resEl.textContent=`🎉 You won: ${reward.label}!`;
+  if(cd) cd.textContent='⏰ Come back tomorrow for another spin!';
+  if(btn) btn.disabled=true;
+  if(!curUser||!db) return;
+  try {
+    const upd={lastSpin:firebase.firestore.FieldValue.serverTimestamp()};
+    if(reward.type==='xp') upd.xp=firebase.firestore.FieldValue.increment(reward.value);
+    await db.collection('users').doc(curUser.uid).update(upd);
+    if(reward.type==='badge') unlockAchievement('spin_lucky',0);
+    else if(reward.value>=200) unlockAchievement('spin_lucky',0);
+    loadUserStats(curUser.uid);
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 👥 FEATURE 5 — FOLLOW / UNFOLLOW
+// ═══════════════════════════════════════════════════════════════
+let followingSet = new Set();
+
+async function loadFollowing(uid) {
+  if(!uid||!db) return;
+  try {
+    const snap = await db.collection('users').doc(uid).collection('following').get();
+    followingSet = new Set(snap.docs.map(d=>d.id));
+    document.querySelectorAll('.follow-btn[data-uid]').forEach(btn=>{
+      const tuid=btn.dataset.uid;
+      btn.classList.toggle('following',followingSet.has(tuid));
+      btn.textContent=followingSet.has(tuid)?'✓ Following':'+ Follow';
+    });
+  } catch(e){}
+}
+
+async function toggleFollow(targetUid) {
+  if (!curUser) { openAuth(); return; }
+  if (!db || !targetUid || targetUid===curUser.uid) return;
+  const myUid=curUser.uid;
+  const followRef=db.collection('users').doc(myUid).collection('following').doc(targetUid);
+  const followerRef=db.collection('users').doc(targetUid).collection('followers').doc(myUid);
+  const isFollowing=followingSet.has(targetUid);
+  try {
+    if(isFollowing){
+      await followRef.delete(); await followerRef.delete();
+      followingSet.delete(targetUid);
+    } else {
+      await followRef.set({uid:targetUid,ts:firebase.firestore.FieldValue.serverTimestamp()});
+      await followerRef.set({uid:myUid,ts:firebase.firestore.FieldValue.serverTimestamp()});
+      followingSet.add(targetUid);
+      createNotification(targetUid,'follow','started following you');
+      unlockAchievement('first_follow',10);
+    }
+    document.querySelectorAll(`.follow-btn[data-uid="${targetUid}"]`).forEach(btn=>{
+      btn.classList.toggle('following',followingSet.has(targetUid));
+      btn.textContent=followingSet.has(targetUid)?'✓ Following':'+ Follow';
+    });
+  } catch(e){ console.error(e); }
+}
 </script>
 </body>
 </html>
