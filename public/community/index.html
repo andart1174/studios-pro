@@ -1346,12 +1346,8 @@
       </div>
       <button class="user-panel-close" onclick="closeUserPanel()">✕</button>
     </div>
-    <!-- XP -->
-    <div id="upXpDisplay" style="display:none;margin:6px 0;padding:5px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
-      <span style="font-size:.9rem">⚡</span>
-      <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="upXpCount">0</span>
-      <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
-    </div>
+    <!-- XP hidden (replaced by SP Coins) -->
+    <div id="upXpDisplay" style="display:none"><span id="upXpCount">0</span></div>
     <div class="u-bio" id="upBio" onclick="editBio()" title="Click to edit"></div>
     <div class="u-stats" style="margin-bottom:0">
       <div class="u-stat"><div class="u-stat-n" id="upPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
@@ -1382,13 +1378,13 @@
         </div>
       </div>
       <div class="streak-dots" id="upStreakDots"></div>
-      <button class="streak-claim-btn" id="upStreakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+      <button class="streak-claim-btn" id="upStreakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+25 💰)</button>
       <div class="streak-claimed" id="upStreakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
     </div>
     <!-- Invite & Earn -->
     <div class="ref-card" id="upRefCard" style="display:none;margin-bottom:10px" onclick="openReferralModal()">
-      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN XP</div></div>
-      <div class="ref-desc">Invite friends → +100 XP for you, +50 XP for them!</div>
+      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN 💰</div></div>
+      <div class="ref-desc">Invite friends → +500 💰 for you, +250 💰 for them!</div>
       <div class="ref-count-row">
         <div><div class="ref-count" id="upRefCount">0</div><div class="ref-count-lbl">friends invited</div></div>
         <button class="ref-btn">📤 Share</button>
@@ -1425,11 +1421,8 @@
         <button onclick="editDisplayName()" style="background:none;border:none;cursor:pointer;color:var(--accent3);font-size:0.85rem;padding:2px;" title="Edit Name">✏️</button>
       </div>
       <div class="u-rank" id="slRank"></div>
-      <div id="xpDisplay" style="display:none;margin:5px auto 8px;padding:4px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);display:flex;align-items:center;gap:6px;width:fit-content;">
-        <span style="font-size:.9rem">⚡</span>
-        <span style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;color:#fbbf24" id="xpCount">0</span>
-        <span style="font-size:.72rem;color:var(--muted);font-weight:700">XP</span>
-      </div>
+      <!-- XP hidden (replaced by SP Coins) -->
+      <div id="xpDisplay" style="display:none"><span id="xpCount">0</span></div>
       <div class="u-bio" id="slBio" onclick="editBio()" title="Click to edit status/bio"></div>
       <div class="u-stats">
         <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
@@ -1502,14 +1495,14 @@
         </div>
       </div>
       <div class="streak-dots" id="streakDots"></div>
-      <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+10 XP)</button>
+      <button class="streak-claim-btn" id="streakClaimBtn" onclick="claimDailyStreak()">🔥 Claim Daily Reward (+25 💰)</button>
       <div class="streak-claimed" id="streakClaimed">✅ Streak claimed today! Come back tomorrow 🔥</div>
     </div>
 
     <!-- REFERRAL -->
     <div class="scard ref-card" id="refCard" style="display:none" onclick="openReferralModal()">
-      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN XP</div></div>
-      <div class="ref-desc">Invite friends → +100 XP for you, +50 XP for them!</div>
+      <div class="ref-header"><div class="ref-icon">🚀</div><div class="ref-title">INVITE &amp; EARN 💰</div></div>
+      <div class="ref-desc">Invite friends → +500 💰 for you, +250 💰 for them!</div>
       <div class="ref-count-row">
         <div><div class="ref-count" id="refInviteCount">0</div><div class="ref-count-lbl">friends invited</div></div>
         <button class="ref-btn">📤 Share Link</button>
@@ -1535,7 +1528,7 @@
       <div class="spin-trigger-icon">🎰</div>
       <div class="spin-trigger-text">
         <div class="spin-trigger-title">Daily Fortune Spin</div>
-        <div class="spin-trigger-sub">Free spin every 24h · Win XP!</div>
+        <div class="spin-trigger-sub">Free spin every 24h · Win SP Coins! 💰</div>
       </div>
     </button>
 
@@ -2015,12 +2008,14 @@ const CMT_COLL = 'studios_community_comments';
 const PRESENCE_COLL = 'studios_community_presence';
 const CHATS_COLL = 'studios_community_chats';
 
+// Ranks based on total SP Coins EARNED (never decremented)
 const RANKS = [
-  { id:'starter', label:'🌱 Starter', min:0, max:5 },
-  { id:'creator', label:'🔥 Creator', min:5, max:20 },
-  { id:'expert',  label:'💎 Expert',  min:20, max:60 },
-  { id:'master',  label:'🚀 Master',  min:60, max:150 },
-  { id:'legend',  label:'👑 Legend',  min:150, max:Infinity }
+  { id:'starter', label:'🌱 Newcomer',  min:0,      max:500 },
+  { id:'member',  label:'⭐ Member',    min:500,    max:1500 },
+  { id:'creator', label:'🔥 Creator',   min:1500,   max:5000 },
+  { id:'expert',  label:'💎 Expert',    min:5000,   max:15000 },
+  { id:'master',  label:'🚀 Legend',    min:15000,  max:50000 },
+  { id:'legend',  label:'👑 SP Elite',  min:50000,  max:Infinity }
 ];
 
 const T = {
@@ -2461,24 +2456,28 @@ async function loadUserStats(uid) {
 
     const uPostsEl = document.getElementById('uPostsCnt'); if (uPostsEl) uPostsEl.textContent = posts;
     const uLikesEl = document.getElementById('uLikesCnt'); if (uLikesEl) uLikesEl.textContent = lks;
-    const rank = getRank(posts);
-    const slRankEl = document.getElementById('slRank'); if (slRankEl) slRankEl.innerHTML = rankHtml(posts);
+
+    // Fetch totalCoinsEarned for rank calculation
+    const userDoc = await db.collection('users').doc(uid).get().catch(() => null);
+    const userData = userDoc && userDoc.exists ? userDoc.data() : {};
+    const coinsEarned = userData.totalCoinsEarned || 0;
+
+    const rank = getRank(coinsEarned);
+    const slRankEl = document.getElementById('slRank'); if (slRankEl) slRankEl.innerHTML = rankHtml(coinsEarned);
 
     const bioEl = document.getElementById('slBio');
     if (bioEl && !bioEl.dataset.userSet) {
-      const uDoc = await db.collection('users').doc(uid).get().catch(() => null);
-      const d = uDoc && uDoc.exists ? uDoc.data() : {};
-      const bioText = d.bio || (curLang === 'fr' ? 'Ajouter une biographie... 📝' : 'Click to add status/bio... 📝');
+      const bioText = userData.bio || (curLang === 'fr' ? 'Ajouter une biographie... 📝' : 'Click to add status/bio... 📝');
       bioEl.textContent = bioText;
     }
 
     const idx = RANKS.findIndex(r => r.id === rank.id);
     const next = RANKS[idx+1];
     if (next) {
-      const pct = Math.min(((posts - rank.min) / (next.min - rank.min)) * 100, 100);
+      const pct = Math.min(((coinsEarned - rank.min) / (next.min - rank.min)) * 100, 100);
       const rpFill = document.getElementById('rpFill'); if (rpFill) rpFill.style.width = pct + '%';
-      const rpCur = document.getElementById('rp-cur'); if (rpCur) rpCur.textContent = posts;
-      const rpMax = document.getElementById('rp-max'); if (rpMax) rpMax.textContent = next.min;
+      const rpCur = document.getElementById('rp-cur'); if (rpCur) rpCur.textContent = coinsEarned.toLocaleString() + ' 💰';
+      const rpMax = document.getElementById('rp-max'); if (rpMax) rpMax.textContent = next.min.toLocaleString();
       const rpLbl = document.getElementById('rp-next-lbl'); if (rpLbl) rpLbl.textContent = next.label;
     } else {
       const rpFill = document.getElementById('rpFill'); if (rpFill) rpFill.style.width = '100%';
@@ -4449,20 +4448,31 @@ async function claimDailyStreak() {
       toast(curLang === 'fr' ? '✅ Déjà réclamé aujourd\'hui !' : '✅ Already claimed today!', 'info');
       return;
     }
-    const newStreak = (d.streakCount || 0) + 1;
-    const xpBonus = newStreak >= 7 ? 25 : newStreak >= 3 ? 15 : 10;
+      const newStreak = (d.streakCount || 0) + 1;
+    const coinsBonus = newStreak >= 7 ? 150 : newStreak >= 3 ? 75 : 25;
     await db.collection('users').doc(curUser.uid).set({
       streakCount: newStreak,
       streakClaimedDate: today,
       lastLoginDate: today,
-      totalXP: firebase.firestore.FieldValue.increment(xpBonus)
+      totalCoinsEarned: firebase.firestore.FieldValue.increment(coinsBonus)
     }, { merge: true });
-
-    // Explosion animation
+    // Award SP Coins
+    addCoins(coinsBonus, 'streak', null, `🔥 Streak day ${newStreak}`);
+    document.getElementById('streakCount').textContent = newStreak;
+    document.getElementById('streakClaimBtn').style.display = 'none';
+    document.getElementById('streakClaimed').style.display = 'block';
+    const todayDot = document.querySelector('.streak-dot.today');
+    if (todayDot) { todayDot.textContent = '✅'; }
+    const msgs = {
+      fr: `🔥 Série de ${newStreak} jour${newStreak>1?'s':''}! +${coinsBonus} 💰${newStreak>=7?' 👑 SEMAINE COMPLÈTE!':newStreak>=3?' 🌟':''}`,
+      en: `🔥 ${newStreak}-day streak! +${coinsBonus} 💰${newStreak>=7?' 👑 FULL WEEK!':newStreak>=3?' 🌟':''}`
+    };
+    toast(msgs[curLang] || msgs.en, 'success');
+    // Particle animation
     for (let i = 0; i < 12; i++) {
       const p = document.createElement('div');
       p.className = 'sp-like-particle';
-      p.textContent = ['🔥','⭐','💥','✨','🎉'][Math.floor(Math.random()*5)];
+      p.textContent = ['🔥','⭐','💰','✨','🎉'][Math.floor(Math.random()*5)];
       p.style.left = (Math.random() * window.innerWidth) + 'px';
       p.style.top = (window.scrollY + 200 + Math.random() * 100) + 'px';
       p.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
@@ -4470,21 +4480,6 @@ async function claimDailyStreak() {
       document.body.appendChild(p);
       setTimeout(() => p.remove(), 1000);
     }
-
-    document.getElementById('streakCount').textContent = newStreak;
-    document.getElementById('streakClaimBtn').style.display = 'none';
-    document.getElementById('streakClaimed').style.display = 'block';
-    // Update today dot
-    const todayDot = document.querySelector('.streak-dot.today');
-    if (todayDot) { todayDot.textContent = '✅'; }
-
-    const msgs = {
-      fr: `🔥 Série de ${newStreak} jour${newStreak>1?'s':''}! +${xpBonus} XP gagné${newStreak>=7?' 👑 SEMAINE COMPLÈTE!':newStreak>=3?' 🌟':''}`,
-      en: `🔥 ${newStreak}-day streak! +${xpBonus} XP earned${newStreak>=7?' 👑 FULL WEEK!':newStreak>=3?' 🌟':''}`
-    };
-    toast(msgs[curLang] || msgs.en, 'success');
-
-    // Check quest progress
     updateQuestProgress(curUser.uid, 'dailyLogin', 1);
   } catch(e) { console.warn('claimDailyStreak error:', e); toast('Error: ' + e.message, 'error'); }
 }
@@ -4493,11 +4488,11 @@ async function claimDailyStreak() {
 // 🎯 CREATOR QUESTS SYSTEM
 // ════════════════════════════════════════════════════════════
 const QUESTS = [
-  { id: 'post3', icon: '📝', en: 'Publish 3 creations', fr: 'Publier 3 créations', field: 'postCount', target: 3, xp: 50 },
-  { id: 'like10', icon: '❤️', en: 'Give 10 likes', fr: 'Donner 10 likes', field: 'likeGiven', target: 10, xp: 30 },
-  { id: 'comment5', icon: '💬', en: 'Comment 5 times', fr: 'Commenter 5 fois', field: 'commentCount', target: 5, xp: 40 },
-  { id: 'dailyLogin', icon: '🔥', en: 'Log in 5 days', fr: 'Connexion 5 jours', field: 'weeklyLogins', target: 5, xp: 60 },
-  { id: 'share1', icon: '📤', en: 'Share a post', fr: 'Partager un post', field: 'shareCount', target: 1, xp: 20 }
+  { id: 'post3',      icon: '📝', en: 'Publish 3 creations', fr: 'Publier 3 créations',  field: 'postCount',    target: 3,  coins: 100 },
+  { id: 'like10',     icon: '❤️',  en: 'Give 10 likes',      fr: 'Donner 10 likes',    field: 'likeGiven',    target: 10, coins: 60 },
+  { id: 'comment5',   icon: '💬', en: 'Comment 5 times',    fr: 'Commenter 5 fois',   field: 'commentCount', target: 5,  coins: 80 },
+  { id: 'dailyLogin', icon: '🔥', en: 'Log in 5 days',      fr: 'Connexion 5 jours',  field: 'weeklyLogins', target: 5,  coins: 120 },
+  { id: 'share1',     icon: '📤', en: 'Share a post',       fr: 'Partager un post',   field: 'shareCount',   target: 1,  coins: 40 }
 ];
 
 // ─── Quest week key helper ─────────────────────────────────
@@ -4527,38 +4522,9 @@ function setLocalQuestProgress(uid, field, value) {
   } catch(e) {}
 }
 
+// updateUserXPDisplay is kept as a no-op for backward compat but does nothing
 function updateUserXPDisplay(additionalXP = 0) {
-  if (!curUser) return;
-  try {
-    const localProgress = getLocalQuestProgress(curUser.uid);
-    let questXP = 0;
-    QUESTS.forEach(q => {
-      if ((localProgress[q.field] || 0) >= q.target) {
-        questXP += q.xp;
-      }
-    });
-
-    db.collection('users').doc(curUser.uid).get().then(doc => {
-      const d = doc.exists ? doc.data() : {};
-      const storedXP = d.totalXP || 0;
-      const refXP = (d.referralCount || 0) * 100;
-      const totalXP = Math.max(storedXP, questXP + refXP + additionalXP);
-
-      const xpEl = document.getElementById('xpCount');
-      const xpDisplay = document.getElementById('xpDisplay');
-      if (xpEl) xpEl.textContent = totalXP.toLocaleString();
-      if (xpDisplay) xpDisplay.style.display = 'flex';
-
-      if (totalXP > storedXP && db) {
-        db.collection('users').doc(curUser.uid).set({ totalXP: totalXP }, { merge: true }).catch(() => {});
-      }
-    }).catch(() => {
-      const xpEl = document.getElementById('xpCount');
-      const xpDisplay = document.getElementById('xpDisplay');
-      if (xpEl) xpEl.textContent = questXP.toLocaleString();
-      if (xpDisplay) xpDisplay.style.display = 'flex';
-    });
-  } catch(e) {}
+  // XP display removed — SP Coins system handles rank via totalCoinsEarned
 }
 
 function renderQuestList(progress) {
@@ -4567,33 +4533,27 @@ function renderQuestList(progress) {
   const isFR = curLang === 'fr';
   listEl.innerHTML = '';
 
-  let calculatedQuestXP = 0;
-
   QUESTS.forEach(q => {
     const cur = Math.min(progress[q.field] || 0, q.target);
     const pct = Math.round((cur / q.target) * 100);
     const done = cur >= q.target;
-    if (done) calculatedQuestXP += q.xp;
 
     const div = document.createElement('div');
     if (done) {
       div.className = 'quest-done';
-      div.innerHTML = `${q.icon} <strong>${isFR ? q.fr : q.en}</strong> — ✅ +${q.xp} XP`;
+      div.innerHTML = `${q.icon} <strong>${isFR ? q.fr : q.en}</strong> — ✅ +${q.coins} 💰`;
     } else {
       div.className = 'quest-item';
       div.innerHTML = `
         <div class="quest-item-header">
           <div class="quest-item-name">${q.icon} ${isFR ? q.fr : q.en}</div>
-          <div class="quest-item-xp">+${q.xp} XP</div>
+          <div class="quest-item-xp">+${q.coins} 💰</div>
         </div>
         <div class="quest-bar"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
         <div class="quest-count">${cur} / ${q.target}</div>`;
     }
     listEl.appendChild(div);
   });
-
-  // Update profile XP badge immediately with total earned XP!
-  updateUserXPDisplay();
 }
 
 async function loadCreatorQuests(uid) {
@@ -4705,15 +4665,12 @@ async function updateQuestProgress(uid, field, increment) {
         setTimeout(() => p.remove(), 1000);
       }
       toast(isFR
-        ? `🏆 Quête complétée : ${quest.fr} ! +${quest.xp} XP`
-        : `🏆 Quest done: ${quest.en}! +${quest.xp} XP`,
+        ? `🏆 Quête complétée : ${quest.fr} ! +${quest.coins} 💰`
+        : `🏆 Quest done: ${quest.en}! +${quest.coins} 💰`,
         'success');
-      // Award XP in Firebase
+      // Award SP Coins in Firebase
       if (db && curUser) {
-        db.collection('users').doc(uid).set(
-          { totalXP: firebase.firestore.FieldValue.increment(quest.xp) },
-          { merge: true }
-        ).catch(() => {});
+        addCoins(quest.coins, 'quest', null, `🎯 Quest: ${quest.en}`);
       }
     }, 300);
   }
@@ -5513,26 +5470,26 @@ async function markAllNotifRead() {
 // 🏅 FEATURE 3 — ACHIEVEMENTS & BADGES
 // ═══════════════════════════════════════════════════════════════
 const ACHIEVEMENTS_DEF = [
-  {id:'first_post',    icon:'📝', name:'First Creation',   desc:'Publish your first post',      xp:20},
-  {id:'posts_5',       icon:'🎨', name:'Creator',          desc:'Publish 5 posts',               xp:40},
-  {id:'posts_20',      icon:'⭐',  name:'Expert Creator',   desc:'Publish 20 posts',              xp:80},
-  {id:'posts_50',      icon:'🔮', name:'Master Creator',   desc:'Publish 50 posts',              xp:150},
-  {id:'likes_10',      icon:'❤️',  name:'Social Starter',   desc:'Receive 10 likes',              xp:30},
-  {id:'likes_50',      icon:'💫', name:'Crowd Pleaser',    desc:'Receive 50 likes',              xp:60},
-  {id:'likes_100',     icon:'🧨', name:'Viral Creator',    desc:'Receive 100 likes',             xp:100},
-  {id:'streak_3',      icon:'🔥', name:'On Fire',          desc:'3-day login streak',            xp:15},
-  {id:'streak_7',      icon:'🧱', name:'Fire Starter',     desc:'7-day login streak',            xp:50},
-  {id:'streak_30',     icon:'🌋', name:'Unstoppable',      desc:'30-day login streak',           xp:200},
-  {id:'followers_5',   icon:'👥', name:'Rising Star',      desc:'Get 5 followers',               xp:30},
-  {id:'followers_25',  icon:'🌟', name:'Influencer',       desc:'Get 25 followers',              xp:80},
-  {id:'followers_100', icon:'🎊', name:'Creator Legend',   desc:'Get 100 followers',             xp:200},
-  {id:'xp_100',        icon:'⚡',  name:'XP Hunter',        desc:'Earn 100 XP',                   xp:0},
-  {id:'xp_500',        icon:'💪', name:'XP Champion',      desc:'Earn 500 XP',                   xp:0},
-  {id:'comments_10',   icon:'💬', name:'Commentator',      desc:'Leave 10 comments',             xp:30},
-  {id:'top3',          icon:'🏆', name:'Top Creator',      desc:'Reach top 3 leaderboard',       xp:100},
-  {id:'spin_lucky',    icon:'🎰', name:'Lucky Spinner',    desc:'Win big on daily spin',         xp:0},
-  {id:'founding',      icon:'🏅', name:'Founding Member',  desc:'One of the first 100 members',  xp:0},
-  {id:'first_follow',  icon:'🤝', name:'First Follower',   desc:'Follow your first creator',     xp:10},
+  {id:'first_post',    icon:'📝', name:'First Creation',   desc:'Publish your first post',      coins:50},
+  {id:'posts_5',       icon:'🎨', name:'Creator',          desc:'Publish 5 posts',               coins:100},
+  {id:'posts_20',      icon:'⭐',  name:'Expert Creator',   desc:'Publish 20 posts',              coins:200},
+  {id:'posts_50',      icon:'🔮', name:'Master Creator',   desc:'Publish 50 posts',              coins:500},
+  {id:'likes_10',      icon:'❤️',  name:'Social Starter',   desc:'Receive 10 likes',              coins:75},
+  {id:'likes_50',      icon:'💫', name:'Crowd Pleaser',    desc:'Receive 50 likes',              coins:200},
+  {id:'likes_100',     icon:'🧨', name:'Viral Creator',    desc:'Receive 100 likes',             coins:500},
+  {id:'streak_3',      icon:'🔥', name:'On Fire',          desc:'3-day login streak',            coins:75},
+  {id:'streak_7',      icon:'🧱', name:'Fire Starter',     desc:'7-day login streak',            coins:250},
+  {id:'streak_30',     icon:'🌋', name:'Unstoppable',      desc:'30-day login streak',           coins:1000},
+  {id:'followers_5',   icon:'👥', name:'Rising Star',      desc:'Get 5 followers',               coins:100},
+  {id:'followers_25',  icon:'🌟', name:'Influencer',       desc:'Get 25 followers',              coins:300},
+  {id:'followers_100', icon:'🎊', name:'Creator Legend',   desc:'Get 100 followers',             coins:1000},
+  {id:'coins_500',     icon:'⚡',  name:'Coin Collector',   desc:'Earn 500 SP Coins',             coins:0},
+  {id:'coins_5000',    icon:'💪', name:'Coin Champion',    desc:'Earn 5,000 SP Coins',           coins:0},
+  {id:'comments_10',   icon:'💬', name:'Commentator',      desc:'Leave 10 comments',             coins:75},
+  {id:'top3',          icon:'🏆', name:'Top Creator',      desc:'Reach top 3 leaderboard',       coins:500},
+  {id:'spin_lucky',    icon:'🎰', name:'Lucky Spinner',    desc:'Win big on daily spin',         coins:0},
+  {id:'founding',      icon:'🏅', name:'Founding Member',  desc:'One of the first 100 members',  coins:0},
+  {id:'first_follow',  icon:'🤝', name:'First Follower',   desc:'Follow your first creator',     coins:25},
 ];
 
 let userAchievements = new Set();
@@ -5546,7 +5503,7 @@ async function loadAchievements(uid) {
   } catch(e){}
 }
 
-async function unlockAchievement(achievId, xpBonus) {
+async function unlockAchievement(achievId, coinsBonus) {
   if (!curUser||!db) return;
   if (userAchievements.has(achievId)) return;
   try {
@@ -5557,17 +5514,14 @@ async function unlockAchievement(achievId, xpBonus) {
     const def = ACHIEVEMENTS_DEF.find(a=>a.id===achievId);
     if (!def) return;
     // Show toast
-    const toast = document.createElement('div');
-    toast.className = 'achiev-unlock-toast';
-    toast.innerHTML = `<span style="font-size:1.6rem">${def.icon}</span> <div><div style="font-size:.75rem;opacity:.7">Achievement Unlocked!</div><div>${def.name}</div></div>${def.xp>0?`<span style="background:rgba(0,0,0,.2);padding:3px 8px;border-radius:999px">+${def.xp} XP</span>`:''}` ;
-    document.body.appendChild(toast);
-    setTimeout(()=>toast.remove(), 4000);
-    // Award XP
-    if (def.xp>0) {
-      await db.collection('users').doc(curUser.uid).update({
-        xp: firebase.firestore.FieldValue.increment(def.xp)
-      });
-      loadUserStats(curUser.uid);
+    const toastEl = document.createElement('div');
+    toastEl.className = 'achiev-unlock-toast';
+    toastEl.innerHTML = `<span style="font-size:1.6rem">${def.icon}</span> <div><div style="font-size:.75rem;opacity:.7">Achievement Unlocked!</div><div>${def.name}</div></div>${def.coins>0?`<span style="background:rgba(0,0,0,.2);padding:3px 8px;border-radius:999px">+${def.coins} 💰</span>`:''}` ;
+    document.body.appendChild(toastEl);
+    setTimeout(()=>toastEl.remove(), 4000);
+    // Award SP Coins
+    if (def.coins>0) {
+      addCoins(def.coins, 'achievement', null, `🏅 Achievement: ${def.name}`);
     }
     // Notify self
     createNotification(curUser.uid, 'achievement', `unlocked the "${def.name}" badge!`);
@@ -5596,7 +5550,7 @@ function renderAchievGrid() {
       <div class="achiev-icon">${a.icon}</div>
       <div class="achiev-name">${a.name}</div>
       <div class="achiev-desc">${a.desc}</div>
-      ${a.xp>0?`<div class="achiev-xp">+${a.xp} XP</div>`:''}
+      ${a.coins>0?`<div class="achiev-xp">+${a.coins} 💰</div>`:''}
     </div>`;
   }).join('');
 }
@@ -5621,21 +5575,21 @@ async function checkAchievements(uid) {
     const d = uDoc.data()||{};
     const posts = d.postsCount||0;
     const likes = d.likesReceived||0;
-    const xp = d.xp||0;
+    const coins = d.totalCoinsEarned||0;
     const streak = d.streakCount||0;
-    if (posts>=1)  unlockAchievement('first_post',20);
-    if (posts>=5)  unlockAchievement('posts_5',40);
-    if (posts>=20) unlockAchievement('posts_20',80);
-    if (posts>=50) unlockAchievement('posts_50',150);
-    if (likes>=10) unlockAchievement('likes_10',30);
-    if (likes>=50) unlockAchievement('likes_50',60);
-    if (likes>=100) unlockAchievement('likes_100',100);
-    if (streak>=3) unlockAchievement('streak_3',15);
-    if (streak>=7) unlockAchievement('streak_7',50);
-    if (streak>=30) unlockAchievement('streak_30',200);
-    if (xp>=100) unlockAchievement('xp_100',0);
-    if (xp>=500) unlockAchievement('xp_500',0);
-    if (d.foundingMember) unlockAchievement('founding',0);
+    if (posts>=1)  unlockAchievement('first_post');
+    if (posts>=5)  unlockAchievement('posts_5');
+    if (posts>=20) unlockAchievement('posts_20');
+    if (posts>=50) unlockAchievement('posts_50');
+    if (likes>=10) unlockAchievement('likes_10');
+    if (likes>=50) unlockAchievement('likes_50');
+    if (likes>=100) unlockAchievement('likes_100');
+    if (streak>=3) unlockAchievement('streak_3');
+    if (streak>=7) unlockAchievement('streak_7');
+    if (streak>=30) unlockAchievement('streak_30');
+    if (coins>=500)  unlockAchievement('coins_500');
+    if (coins>=5000) unlockAchievement('coins_5000');
+    if (d.foundingMember) unlockAchievement('founding');
   } catch(e){}
 }
 
@@ -5643,13 +5597,13 @@ async function checkAchievements(uid) {
 // 🎰 FEATURE 4 — DAILY SPIN WHEEL
 // ═══════════════════════════════════════════════════════════════
 const SPIN_REWARDS = [
-  {label:'+10 XP',  type:'xp', value:10,  color:'#6366f1', prob:28},
-  {label:'+25 XP',  type:'xp', value:25,  color:'#8b5cf6', prob:22},
-  {label:'+50 XP',  type:'xp', value:50,  color:'#f59e0b', prob:18},
-  {label:'+5 XP',   type:'xp', value:5,   color:'#475569', prob:16},
-  {label:'+100 XP', type:'xp', value:100, color:'#ef4444', prob:8},
+  {label:'+10 💰',  type:'coins', value:10,  color:'#6366f1', prob:28},
+  {label:'+25 💰',  type:'coins', value:25,  color:'#8b5cf6', prob:22},
+  {label:'+50 💰',  type:'coins', value:50,  color:'#f59e0b', prob:18},
+  {label:'+5 💰',   type:'coins', value:5,   color:'#475569', prob:16},
+  {label:'+100 💰', type:'coins', value:100, color:'#ef4444', prob:8},
   {label:'🏅 Badge',  type:'badge', value:'spin_lucky', color:'#10b981', prob:5},
-  {label:'+200 XP!',type:'xp', value:200, color:'#ec4899', prob:3},
+  {label:'+200 💰!', type:'coins', value:200, color:'#ec4899', prob:3},
 ];
 let spinAngle = 0;
 let isSpinning = false;
@@ -5770,13 +5724,11 @@ async function applySpinReward(reward) {
   if(btn) btn.disabled=true;
   if(!curUser||!db) return;
   try {
-    // Build update: ALWAYS record lastSpin, add XP if reward is XP type
-    const upd = { lastSpin: firebase.firestore.FieldValue.serverTimestamp() };
-    if (reward.type==='xp') {
-      upd.totalXP = firebase.firestore.FieldValue.increment(reward.value);
-    }
-    // Use set+merge so it works even if some fields are missing
+        const upd = { lastSpin: firebase.firestore.FieldValue.serverTimestamp() };
     await db.collection('users').doc(curUser.uid).set(upd, { merge: true });
+    if (reward.type==='coins') {
+      addCoins(reward.value, 'spin', null, `🎰 Daily spin: ${reward.label}`);
+    }
     // Unlock achievement
     if (reward.type==='badge') unlockAchievement('spin_lucky', 0);
     else if (reward.value >= 200) unlockAchievement('spin_lucky', 0);
@@ -6095,10 +6047,15 @@ async function addCoins(amount, type, postId, description) {
   try {
     spCoinsBalance += amount;
     updateCoinUI(spCoinsBalance);
+    // spCoins = current balance (can be spent)
+    // totalCoinsEarned = lifetime total (never decremented, used for rank)
     await db.collection('users').doc(curUser.uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(amount)
+      spCoins: firebase.firestore.FieldValue.increment(amount),
+      totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
     }, { merge: true });
     await logTransaction(curUser.uid, null, amount, type, postId, description);
+    // Refresh rank display
+    loadUserStats(curUser.uid);
   } catch(e) { console.warn('addCoins error:', e); }
 }
 
@@ -6107,7 +6064,8 @@ async function awardCoinsToUser(uid, amount, type, description) {
   if (!db || !uid || amount <= 0) return;
   try {
     await db.collection('users').doc(uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(amount)
+      spCoins: firebase.firestore.FieldValue.increment(amount),
+      totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
     }, { merge: true });
     await logTransaction(uid, curUser ? curUser.uid : null, amount, type, null, description);
   } catch(e) { console.warn('awardCoinsToUser error:', e); }
