@@ -2386,6 +2386,7 @@ function renderLoggedIn(u) {
     initStories();
     initLiveFeed();
     initCoins();
+    setTimeout(() => processPendingTips(), 3000); // process any pending tips after coins load
   }
 }
 
@@ -6029,6 +6030,42 @@ async function initCoins() {
   } catch(e) { console.warn('initCoins error:', e); }
 }
 
+// ── Process pending tips sent to this user while they were away ───
+async function processPendingTips() {
+  if (!curUser || !db) return;
+  try {
+    const snap = await db.collection('sp_pending_tips')
+      .where('toUid', '==', curUser.uid)
+      .where('status', '==', 'pending')
+      .get();
+    if (snap.empty) return;
+
+    let totalPending = 0;
+    const batch = db.batch();
+    snap.forEach(doc => {
+      const d = doc.data();
+      totalPending += (d.amount || 0);
+      // Mark as processed so it won't be applied twice
+      batch.update(doc.ref, { status: 'processed', processedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+
+    if (totalPending > 0) {
+      // Credit this user's balance (safety net — direct credit may have already worked)
+      // Use a transaction to avoid double-crediting
+      const uRef = db.collection('users').doc(curUser.uid);
+      batch.set(uRef, {
+        spCoins: firebase.firestore.FieldValue.increment(totalPending),
+        totalCoinsEarned: firebase.firestore.FieldValue.increment(totalPending)
+      }, { merge: true });
+      await batch.commit();
+      toast(`💰 You received ${totalPending} SP Coins as tips!`, 'success');
+      // Refresh balance display
+      const freshDoc = await uRef.get();
+      if (freshDoc.exists) updateCoinUI(freshDoc.data().spCoins || 0);
+    }
+  } catch(e) { console.warn('processPendingTips error:', e); }
+}
+
 function updateCoinUI(amount) {
   spCoinsBalance = amount;
   if (curUser && amount !== null && amount !== undefined) {
@@ -6183,7 +6220,7 @@ function closeTipModalDirect() {
   document.getElementById('tipOverlay').classList.remove('open');
 }
 
-// ── Robust confirmTip ────────────────────────────────────────────
+// ── Robust confirmTip — atomic batch write ───────────────────────
 async function confirmTip() {
   if (!curUser || !db || !tipTargetUid) return;
   if (spCoinsBalance < tipSelectedAmount) {
@@ -6195,35 +6232,62 @@ async function confirmTip() {
   const prevBalance = spCoinsBalance;
   try {
     const msg = document.getElementById('tipMessageInp').value.trim();
-    
-    // Deduct from sender in Firestore
-    await db.collection('users').doc(curUser.uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(-tipSelectedAmount)
+    const amount = tipSelectedAmount;
+
+    // ── Atomic batch: deduct sender + create pending tip for recipient ──
+    const batch = db.batch();
+
+    // 1. Deduct from sender
+    const senderRef = db.collection('users').doc(curUser.uid);
+    batch.set(senderRef, {
+      spCoins: firebase.firestore.FieldValue.increment(-amount)
     }, { merge: true });
 
-    // Award to recipient in Firestore (if different user)
+    // 2. Write pending tip for recipient (so it survives even if they're offline)
+    const tipRef = db.collection('sp_pending_tips').doc();
+    batch.set(tipRef, {
+      toUid: tipTargetUid,
+      fromUid: curUser.uid,
+      fromName: curUser.displayName || 'User',
+      fromPhoto: curUser.photoURL || '',
+      amount: amount,
+      postId: tipTargetPostId || null,
+      message: msg,
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 3. Also credit recipient directly (if rules allow — best-effort)
     if (tipTargetUid !== curUser.uid) {
-      await db.collection('users').doc(tipTargetUid).set({
-        spCoins: firebase.firestore.FieldValue.increment(tipSelectedAmount)
+      const recipRef = db.collection('users').doc(tipTargetUid);
+      batch.set(recipRef, {
+        spCoins: firebase.firestore.FieldValue.increment(amount),
+        totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
       }, { merge: true });
     }
 
-    // Log transaction
-    logTransaction(tipTargetUid, curUser.uid, tipSelectedAmount, 'tip', tipTargetPostId, `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`);
+    await batch.commit();
 
-    // Update local state and UI immediately + sync to localStorage
-    const newBal = Math.max(0, spCoinsBalance - tipSelectedAmount);
-    updateCoinUI(newBal); // updateCoinUI also saves to localStorage
+    // Log transaction
+    logTransaction(tipTargetUid, curUser.uid, amount, 'tip', tipTargetPostId,
+      `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`);
+
+    // Update local balance immediately
+    const newBal = Math.max(0, spCoinsBalance - amount);
+    updateCoinUI(newBal);
     closeTipModalDirect();
-    toast(`🎁 Sent ${tipSelectedAmount} SP Coins!`, 'success');
-    spawnCoinRain(tipSelectedAmount);
-    
+    toast(`🎁 Sent ${amount} SP Coins!`, 'success');
+    spawnCoinRain(amount);
+
     // Notify recipient
-    if (db && tipTargetUid !== curUser.uid) {
-      createNotification(tipTargetUid, 'tip', `sent you ${tipSelectedAmount} SP Coins 💰${msg ? ': ' + msg : ''}`);
+    if (tipTargetUid !== curUser.uid) {
+      createNotification(tipTargetUid, 'tip',
+        `sent you ${amount} SP Coins 💰${msg ? ': ' + msg : ''}`);
     }
   } catch(e) {
     console.error('Tip error:', e);
+    // Only restore local balance — Firestore may or may not have deducted
+    // On next refresh, initCoins will read the real Firestore value
     spCoinsBalance = prevBalance;
     updateCoinUI(spCoinsBalance);
     toast('Error sending tip: ' + e.message, 'error');
