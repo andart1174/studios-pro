@@ -1162,6 +1162,90 @@
     .inc-btn-accept{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:8px 14px;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;}
     .inc-btn-decline{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#ef4444;padding:8px 14px;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;}
 
+    /* ── HASHTAGS ─────────────────────────────────────────── */
+    .hashtag-chip{color:#a78bfa;font-weight:700;cursor:pointer;transition:color .18s;text-decoration:none;}
+    .hashtag-chip:hover{color:#c4b5fd;text-decoration:underline;}
+    .trend-tags-view{padding:4px 0 18px;}
+    .trend-tag-list{display:flex;flex-direction:column;gap:8px;}
+    .trend-tag-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:13px;background:var(--bg3);border:1px solid var(--border2);cursor:pointer;transition:all .2s;}
+    .trend-tag-row:hover{border-color:var(--accent);background:rgba(99,102,241,.08);transform:translateX(4px);}
+    .trend-tag-name{font-weight:700;color:#a78bfa;font-size:.94rem;}
+    .trend-tag-count{font-size:.75rem;color:var(--muted);background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);padding:2px 10px;border-radius:999px;}
+    .trend-tag-rank{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.1rem;color:var(--muted);width:24px;text-align:center;}
+    .trend-tag-rank.top3{color:#fbbf24;}
+
+    /* ── STORIES (new full implementation) ───────────────── */
+    .stories-bar{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:14px 16px;margin-bottom:18px;}
+    .stories-bar-title{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+    .stories-bar-title span{color:var(--accent3);cursor:pointer;font-size:.73rem;}
+    .stories-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+    .stories-scroll::-webkit-scrollbar{display:none;}
+    .story-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+    .story-item-ring{width:64px;height:64px;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--accent),var(--pink),var(--gold));transition:transform .2s;}
+    .story-item-ring:hover{transform:scale(1.06);}
+    .story-item-ring.seen{background:rgba(255,255,255,.15);}
+    .story-item-ring.live-ring{background:linear-gradient(135deg,#ef4444,#f97316);animation:liveRingPulse 1.5s ease-in-out infinite;}
+    @keyframes liveRingPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5);}50%{box-shadow:0 0 0 6px rgba(239,68,68,.0);}}
+    .story-item-av{width:100%;height:100%;border-radius:50%;border:2.5px solid var(--bg);object-fit:cover;display:block;}
+    .story-item-name{font-size:.66rem;color:var(--muted);max-width:70px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .story-add-btn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+    .story-add-circle{width:64px;height:64px;border-radius:50%;border:2px dashed rgba(99,102,241,.5);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--accent3);background:rgba(99,102,241,.06);transition:all .2s;}
+    .story-add-circle:hover{background:rgba(99,102,241,.15);border-color:var(--accent);}
+    .story-add-lbl{font-size:.66rem;color:var(--muted);}
+    .live-badge{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;font-size:.5rem;font-weight:900;padding:1px 5px;border-radius:999px;letter-spacing:.05em;}
+    .story-item-wrap{position:relative;}
+    /* Story viewer enhancements */
+    .sv-view-count{font-size:.72rem;color:rgba(255,255,255,.7);margin-left:8px;}
+    .story-full-viewer{background:var(--bg2);max-width:500px;width:100%;border-radius:18px;overflow:hidden;}
+
+    /* ── STORY UPLOAD MODAL ──────────────────────────────── */
+    .story-upload-modal{background:var(--bg2);border:1px solid var(--border);border-radius:22px;width:100%;max-width:480px;overflow:hidden;}
+    .story-preview-box{position:relative;width:100%;height:280px;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .story-preview-box img{max-width:100%;max-height:100%;object-fit:contain;}
+    .story-drop-zone{width:100%;height:100%;border:2px dashed rgba(99,102,241,.4);border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .2s;}
+    .story-drop-zone:hover{background:rgba(99,102,241,.06);border-color:var(--accent);}
+    .story-drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+    /* ── LIVE STREAMING ─────────────────────────────────── */
+    .live-bar-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#ef4444,#f97316);border:none;border-radius:10px;color:#fff;font-size:.82rem;font-weight:800;cursor:pointer;transition:all .2s;font-family:inherit;animation:liveBtnPulse 2s ease-in-out infinite;}
+    @keyframes liveBtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5);}50%{box-shadow:0 0 0 8px rgba(239,68,68,.0);}}
+    .live-bar-btn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(239,68,68,.5);}
+    .live-dot-anim{width:8px;height:8px;border-radius:50%;background:#fff;animation:liveDotBlink 1s ease-in-out infinite;}
+    @keyframes liveDotBlink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    /* Live Streamer Panel */
+    .live-panel{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:flex-start;}
+    .live-panel.open{display:flex;}
+    .live-panel-header{width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;padding:20px 24px;}
+    .live-badge-big{background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-weight:900;font-size:.8rem;padding:4px 14px;border-radius:999px;letter-spacing:.1em;animation:liveDotBlink 1s infinite;}
+    .live-panel-body{width:100%;max-width:900px;display:grid;grid-template-columns:1fr 320px;gap:16px;padding:0 24px;flex:1;min-height:0;}
+    .live-video-area{position:relative;background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9;}
+    .live-video-area video{width:100%;height:100%;object-fit:cover;}
+    .live-stats-bar{position:absolute;top:14px;left:14px;display:flex;gap:10px;align-items:center;}
+    .live-viewers-badge{background:rgba(0,0,0,.65);backdrop-filter:blur(8px);color:#fff;font-size:.78rem;font-weight:700;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);}
+    .live-chat-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;}
+    .live-chat-header{padding:14px 16px;border-bottom:1px solid var(--border2);font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+    .live-chat-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+    .live-chat-msg{font-size:.82rem;line-height:1.45;word-break:break-word;}
+    .live-chat-msg .lcm-name{font-weight:700;color:var(--accent3);margin-right:5px;}
+    .live-chat-compose{padding:10px 12px;border-top:1px solid var(--border2);display:flex;gap:8px;}
+    .live-chat-inp{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:999px;padding:8px 14px;color:var(--text);font-size:.84rem;font-family:inherit;outline:none;transition:border-color .2s;}
+    .live-chat-inp:focus{border-color:var(--accent);}
+    .live-chat-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;}
+    .live-controls{display:flex;gap:12px;align-items:center;padding:16px 24px 20px;width:100%;max-width:900px;justify-content:center;}
+    .live-ctrl-btn{width:50px;height:50px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .live-ctrl-btn:hover{background:rgba(255,255,255,.25);transform:scale(1.08);}
+    .live-end-btn{width:56px;height:56px;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 20px rgba(239,68,68,.5);}
+    .live-end-btn:hover{box-shadow:0 6px 24px rgba(239,68,68,.75);}
+    /* Live Viewer */
+    .live-viewer-panel{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:8900;display:none;flex-direction:column;}
+    .live-viewer-panel.open{display:flex;}
+    .live-viewer-video{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000;}
+    .live-viewer-video video{width:100%;height:100%;object-fit:contain;}
+    .live-viewer-overlay{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-start;}
+    .live-viewer-info{background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border-radius:10px;padding:8px 14px;}
+    .live-viewer-chat{position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);padding:16px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden;}
+    .live-viewer-chat .live-chat-msg{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);}
+
   </style>
 </head>
 <body>
@@ -1324,8 +1408,11 @@
         <button class="nav-item active" id="navHome" onclick="setActiveNav(this);filterCat('all',document.querySelector('[data-cat=all].cat-btn'));scrollToFeed()">
           <span class="nav-item-icon">🏠</span><span data-t="navHome">Home</span>
         </button>
-        <button class="nav-item" id="navTrending" onclick="setActiveNav(this);showTrendingView()">
+        <button class="nav-item" id="navTrending" onclick="setActiveNav(this);showHashtagTrending()">
           <span class="nav-item-icon">🔥</span><span data-t="navTrending">Trending</span>
+        </button>
+        <button class="nav-item" id="navStories" onclick="setActiveNav(this);showStoriesView()">
+          <span class="nav-item-icon">📖</span><span>Stories</span>
         </button>
         <button class="nav-item" id="navSaved" onclick="setActiveNav(this);showSavedPosts()">
           <span class="nav-item-icon">🔖</span><span data-t="navSaved">Saved Posts</span>
@@ -1430,6 +1517,27 @@
       <button class="ftab" data-cat="music" onclick="filterTab('music',this)">🎵 Music</button>
       <button class="ftab" data-cat="challenge" onclick="filterTab('challenge',this)">🏅 Challenge</button>
     </div>
+    <!-- Stories Bar -->
+    <div class="stories-bar" id="storiesBarEl" style="display:none">
+      <div class="stories-bar-title">📖 Stories <span onclick="showStoriesView()">View all →</span></div>
+      <div class="stories-scroll" id="storiesScrollEl"></div>
+    </div>
+    <!-- Trending Hashtags View -->
+    <div id="trendingHashtagView" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;">🔥 Trending Hashtags</div>
+        <button onclick="hideTrendingHashtagView()" style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;">← Back to feed</button>
+      </div>
+      <div class="trend-tags-view"><div class="trend-tag-list" id="trendTagList"></div></div>
+    </div>
+    <!-- Stories Full View -->
+    <div id="storiesFullView" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;">📖 All Stories</div>
+        <button onclick="hideStoriesView()" style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;">← Back to feed</button>
+      </div>
+      <div id="storiesFullList" style="display:flex;flex-wrap:wrap;gap:14px;"></div>
+    </div>
     <!-- Create bar -->
     <div class="create-bar" id="createBar" style="display:none">
       <img src="" alt="" class="cb-av" id="cbAv">
@@ -1462,11 +1570,11 @@
       </div>
       <div class="nch-panel" id="nchPanel"></div>
     </div>
-    <!-- Stories (hidden - required by JS) -->
-    <div style="display:none">
-      <div class="s-row" id="storiesRow">
-        <div class="story-bubble" id="addStoryBubble"></div>
-      </div>
+    <!-- Live Streaming button (shown when logged in) -->
+    <div id="liveBarBtn" style="display:none;margin-bottom:16px;">
+      <button class="live-bar-btn" onclick="startLiveModal()" style="width:100%;justify-content:center;">
+        <div class="live-dot-anim"></div> 🔴 Go Live
+      </button>
     </div>
     <!-- Login prompt -->
     <div class="login-prompt" id="loginPrompt" style="display:none">
@@ -2203,7 +2311,8 @@ function renderLoggedIn(u) {
     </button>`;
   document.getElementById('loginPrompt').style.display = 'none';
   document.getElementById('createBar').style.display = 'flex';
-  document.getElementById('addStoryBubble').style.display = 'flex';
+  const liveBarBtn = document.getElementById('liveBarBtn'); if(liveBarBtn) liveBarBtn.style.display = 'block';
+  const addStoryBubble = document.getElementById('addStoryBubble'); if(addStoryBubble) addStoryBubble.style.display = 'flex';
   document.getElementById('cbAv').src = a;
   document.getElementById('compAv').src = a;
   document.getElementById('compName').textContent = u.displayName;
@@ -2232,6 +2341,8 @@ function renderLoggedIn(u) {
     loadFollowing(u.uid);
     initCallSignalingListener(u.uid);
     setTimeout(()=>checkAchievements(u.uid), 2000);
+    initStories();
+    initLiveFeed();
   }
 }
 
@@ -2239,6 +2350,7 @@ function renderLoggedOut() {
   document.getElementById('hdrActions').innerHTML = `<button class="btn-email" onclick="openAuth()"><span data-t="signin">Sign In</span></button>`;
   document.getElementById('loginPrompt').style.display = 'block';
   document.getElementById('createBar').style.display = 'none';
+  const liveBarBtnOut = document.getElementById('liveBarBtn'); if(liveBarBtnOut) liveBarBtnOut.style.display = 'none';
   document.getElementById('userCard').style.display = 'none';
   const themeCard = document.getElementById('themeCard');
   if (themeCard) themeCard.style.display = 'none';
@@ -2620,7 +2732,7 @@ function buildCard(p) {
       ${canDel ? `<button class="del-btn" onclick="delPost('${p.id}')">🗑️</button>` : ''}
       ${curUser && p.uid !== curUser.uid ? `<button class="follow-btn ${followingSet.has(p.uid)?'following':''} " data-uid="${p.uid}" onclick="toggleFollow('${p.uid}')">${followingSet.has(p.uid)?'✓ Following':'+ Follow'}</button>` : ''}
     </div>
-    ${p.content ? `<div class="p-content">${esc(p.content)}</div>` : ''}
+    ${p.content ? `<div class="p-content">${renderHashtagText(esc(p.content))}</div>` : ''}
     ${audioHtml}
     ${mediaHtml}
     <div class="pf">
@@ -3020,6 +3132,7 @@ async function publish() {
       commentsCount: 0,
       userPostCount: ud.postCount || 0,
       foundingMember: ud.foundingMember || false,
+      hashtags: extractHashtags(content),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -5675,6 +5788,85 @@ async function toggleFollow(targetUid) {
 }
 </script>
 
+<!-- 📖 STORY UPLOAD OVERLAY -->
+<div class="overlay" id="storyUploadOverlay" onclick="closeStoryUpload(event)">
+  <div class="story-upload-modal">
+    <div class="mh">
+      <div class="mt">📖 Add a Story</div>
+      <button class="mc" onclick="closeStoryUploadDirect()">✕</button>
+    </div>
+    <div class="mb">
+      <div class="story-preview-box" id="storyPreviewBox">
+        <div class="story-drop-zone" id="storyDropZone">
+          <input type="file" accept="image/*" id="storyFileInput" onchange="previewStoryFile(event)">
+          <div style="font-size:2.5rem;margin-bottom:10px;">📸</div>
+          <div style="font-size:.88rem;color:var(--muted);text-align:center;">Click or drag to upload an image<br><span style="font-size:.75rem;">Visible for 24 hours</span></div>
+        </div>
+        <img id="storyPreviewImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;">
+      </div>
+      <div class="fg" style="margin-top:14px;">
+        <label class="opt-lbl">Caption (optional)</label>
+        <input type="text" class="fi" id="storyCaptionInp" placeholder="Add a caption..." maxlength="150">
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-cancel" onclick="closeStoryUploadDirect()">Cancel</button>
+      <button class="btn-pub" id="storyPublishBtn" onclick="publishStory()" disabled>Publish Story ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔴 LIVE STREAMER PANEL -->
+<div class="live-panel" id="liveStreamerPanel">
+  <div class="live-panel-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="live-badge-big">🔴 LIVE</span>
+      <span id="liveStreamerTitle" style="color:#fff;font-weight:700;font-size:1rem;"></span>
+      <span class="live-viewers-badge">👁 <span id="liveViewerCount">0</span> viewers</span>
+    </div>
+    <button onclick="endLive()" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#f87171;padding:8px 18px;border-radius:10px;font-weight:800;font-size:.82rem;cursor:pointer;">Stop Live</button>
+  </div>
+  <div class="live-panel-body">
+    <div class="live-video-area">
+      <video id="liveLocalVideoEl" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+    </div>
+    <div class="live-chat-panel">
+      <div class="live-chat-header">💬 Live Chat</div>
+      <div class="live-chat-msgs" id="liveStreamerChatMsgs"></div>
+      <div class="live-chat-compose">
+        <input class="live-chat-inp" id="liveStreamerChatInp" placeholder="Say something..." onkeydown="if(event.key==='Enter')sendLiveMessage('streamer')">
+        <button class="live-chat-send" onclick="sendLiveMessage('streamer')">➤</button>
+      </div>
+    </div>
+  </div>
+  <div class="live-controls">
+    <button class="live-ctrl-btn" id="liveMuteBtn" onclick="toggleLiveMic()" title="Mute">🎤</button>
+    <button class="live-ctrl-btn" id="liveCamBtn" onclick="toggleLiveCam()" title="Camera">📹</button>
+    <button class="live-ctrl-btn live-end-btn" onclick="endLive()" title="End Live">🛑</button>
+  </div>
+</div>
+
+<!-- 👁 LIVE VIEWER PANEL -->
+<div class="live-viewer-panel" id="liveViewerPanel">
+  <div class="live-viewer-video">
+    <video id="liveRemoteVideoEl" autoplay playsinline style="width:100%;height:100%;object-fit:contain;"></video>
+    <div class="live-viewer-overlay">
+      <div class="live-viewer-info">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="live-badge-big">🔴 LIVE</span>
+          <span id="liveViewerHostName" style="color:#fff;font-weight:700;font-size:.9rem;"></span>
+        </div>
+      </div>
+      <button onclick="exitLiveViewer()" style="background:rgba(0,0,0,.65);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:10px;font-weight:700;font-size:.8rem;cursor:pointer;">✕ Leave</button>
+    </div>
+    <div class="live-viewer-chat" id="liveViewerChatMsgs"></div>
+  </div>
+  <div style="background:#0a0f1e;padding:10px 16px;display:flex;gap:8px;border-top:1px solid rgba(255,255,255,.08);">
+    <input class="live-chat-inp" id="liveViewerChatInp" placeholder="Send a message..." style="flex:1;" onkeydown="if(event.key==='Enter')sendLiveMessage('viewer')">
+    <button class="live-chat-send" onclick="sendLiveMessage('viewer')">➤</button>
+  </div>
+</div>
+
 <!-- 🔔 INCOMING CALL POPUP -->
 <div class="inc-call-box" id="incCallBox">
   <img id="incCallAv" src="" class="inc-call-av" alt="">
@@ -5715,6 +5907,536 @@ async function toggleFollow(targetUid) {
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════
+// 📖 STORIES ENGINE
+// ═══════════════════════════════════════════════════════════════
+let allStories = [];
+let storyFileDataUrl = null;
+let liveListUnsub = null;
+let liveActiveLives = [];
+
+async function initStories() {
+  if (!db) return;
+  const now = new Date();
+  try {
+    const snap = await db.collection('sp_stories')
+      .where('expiresAt', '>', firebase.firestore.Timestamp.fromDate(now))
+      .orderBy('expiresAt', 'asc')
+      .limit(30)
+      .get();
+    allStories = [];
+    snap.forEach(doc => allStories.push({ id: doc.id, ...doc.data() }));
+    renderStoriesBar();
+  } catch(e) { console.warn('Stories load error:', e); }
+}
+
+function renderStoriesBar() {
+  const el = document.getElementById('storiesScrollEl');
+  const barEl = document.getElementById('storiesBarEl');
+  if (!el) return;
+  el.innerHTML = '';
+
+  // Add Story button (only if logged in)
+  if (curUser) {
+    const addBtn = document.createElement('div');
+    addBtn.className = 'story-add-btn';
+    addBtn.innerHTML = `<div class="story-add-circle">+</div><div class="story-add-lbl">Add Story</div>`;
+    addBtn.onclick = () => openStoryUpload();
+    el.appendChild(addBtn);
+  }
+
+  // Live items first
+  liveActiveLives.forEach(live => {
+    const av = live.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(live.displayName||'?')}&background=ef4444&color=fff&bold=true`;
+    const item = document.createElement('div');
+    item.className = 'story-item';
+    item.innerHTML = `
+      <div class="story-item-wrap">
+        <div class="story-item-ring live-ring">
+          <img src="${av}" class="story-item-av" alt="">
+        </div>
+        <span class="live-badge">LIVE</span>
+      </div>
+      <div class="story-item-name">${(live.displayName||'Creator').split(' ')[0]}</div>`;
+    item.onclick = () => joinLive(live.id);
+    el.appendChild(item);
+  });
+
+  // Story items
+  allStories.forEach(s => {
+    const av = s.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.displayName||'?')}&background=6366f1&color=fff&bold=true`;
+    const seenKey = `sp_story_seen_${s.id}`;
+    const seen = !!localStorage.getItem(seenKey);
+    const item = document.createElement('div');
+    item.className = 'story-item';
+    item.innerHTML = `
+      <div class="story-item-ring ${seen ? 'seen' : ''}">
+        <img src="${s.mediaURL || av}" class="story-item-av" alt="" onerror="this.src='${av}'">
+      </div>
+      <div class="story-item-name">${(s.displayName||'Creator').split(' ')[0]}</div>`;
+    item.onclick = () => viewStoryById(s.id);
+    el.appendChild(item);
+  });
+
+  const hasContent = allStories.length > 0 || liveActiveLives.length > 0 || curUser;
+  if (barEl) barEl.style.display = hasContent ? 'block' : 'none';
+}
+
+function openStoryUpload() {
+  if (!curUser) { openAuth(); return; }
+  document.getElementById('storyUploadOverlay').classList.add('open');
+  storyFileDataUrl = null;
+  document.getElementById('storyPreviewImg').style.display = 'none';
+  document.getElementById('storyDropZone').style.display = 'flex';
+  document.getElementById('storyCaptionInp').value = '';
+  document.getElementById('storyPublishBtn').disabled = true;
+}
+
+function closeStoryUpload(e) {
+  if (e && e.target !== document.getElementById('storyUploadOverlay')) return;
+  closeStoryUploadDirect();
+}
+function closeStoryUploadDirect() {
+  document.getElementById('storyUploadOverlay').classList.remove('open');
+}
+
+function previewStoryFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    storyFileDataUrl = ev.target.result;
+    document.getElementById('storyPreviewImg').src = storyFileDataUrl;
+    document.getElementById('storyPreviewImg').style.display = 'block';
+    document.getElementById('storyDropZone').style.display = 'none';
+    document.getElementById('storyPublishBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function publishStory() {
+  if (!curUser || !db || !storyFileDataUrl) return;
+  const btn = document.getElementById('storyPublishBtn');
+  btn.disabled = true; btn.textContent = 'Publishing...';
+  try {
+    const caption = document.getElementById('storyCaptionInp').value.trim();
+    const now = firebase.firestore.Timestamp.now();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    let mediaURL = storyFileDataUrl;
+    // Try Firebase Storage upload
+    if (storage) {
+      try {
+        const ref = storage.ref(`sp_stories/${curUser.uid}/${Date.now()}`);
+        const snap = await Promise.race([ref.putString(storyFileDataUrl, 'data_url'), new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))]);
+        mediaURL = await snap.ref.getDownloadURL();
+      } catch(e) { console.warn('Story storage fallback to base64'); }
+    }
+    await db.collection('sp_stories').add({
+      uid: curUser.uid,
+      displayName: curUser.displayName || 'Creator',
+      photoURL: curUser.photoURL || '',
+      mediaURL,
+      mediaType: 'image',
+      caption,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      views: []
+    });
+    closeStoryUploadDirect();
+    toast('Story published! 📖', 'success');
+    initStories();
+  } catch(e) {
+    toast('Error publishing story: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Publish Story ✦';
+  }
+}
+
+async function viewStoryById(storyId) {
+  const s = allStories.find(x => x.id === storyId);
+  if (!s) return;
+  // Mark as seen
+  localStorage.setItem(`sp_story_seen_${storyId}`, '1');
+  // Track view
+  if (curUser && db) {
+    db.collection('sp_stories').doc(storyId).update({
+      views: firebase.firestore.FieldValue.arrayUnion(curUser.uid)
+    }).catch(() => {});
+  }
+  // Open story viewer
+  const a = s.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.displayName||'?')}&background=6366f1&color=fff&bold=true`;
+  document.getElementById('svAv').src = a;
+  document.getElementById('svName').textContent = s.displayName || 'Creator';
+  document.getElementById('svTime').textContent = timeAgo(s.createdAt);
+  const svImg = document.getElementById('svImg');
+  svImg.src = s.mediaURL || '';
+  svImg.style.display = s.mediaURL ? 'block' : 'none';
+  document.getElementById('svTxt').textContent = s.caption || '';
+  document.getElementById('svProgs').innerHTML = '<div class="sv-prog-bar"><div class="sv-prog-fill" id="svFill"></div></div>';
+  document.getElementById('storyViewer').classList.add('open');
+  const fill = document.getElementById('svFill');
+  fill.style.transition = 'width 8s linear';
+  setTimeout(() => fill.style.width = '100%', 100);
+  setTimeout(() => closeStory(), 8200);
+  // Re-render bar to show seen state
+  renderStoriesBar();
+}
+
+function showStoriesView() {
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const sv = document.getElementById('savedPostsView');
+  const tv = document.getElementById('trendingHashtagView');
+  const storiesView = document.getElementById('storiesFullView');
+  const createBar = document.getElementById('createBar');
+  if (feed) feed.style.display = 'none';
+  if (ftabs) ftabs.style.display = 'none';
+  if (sv) sv.style.display = 'none';
+  if (tv) tv.style.display = 'none';
+  if (createBar) createBar.style.display = 'none';
+  if (storiesView) storiesView.style.display = 'block';
+
+  // Render stories grid
+  const listEl = document.getElementById('storiesFullList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  // Add story button
+  if (curUser) {
+    const addCard = document.createElement('div');
+    addCard.style.cssText = 'cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
+    addCard.innerHTML = `<div style="width:80px;height:80px;border-radius:50%;border:3px dashed rgba(99,102,241,.5);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--accent3);background:rgba(99,102,241,.06);">+</div><div style="font-size:.72rem;color:var(--muted);">Add Story</div>`;
+    addCard.onclick = openStoryUpload;
+    listEl.appendChild(addCard);
+  }
+  allStories.forEach(s => {
+    const av = s.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.displayName||'?')}&background=6366f1&color=fff&bold=true`;
+    const card = document.createElement('div');
+    card.style.cssText = 'cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
+    card.innerHTML = `
+      <div style="position:relative;width:80px;height:80px;">
+        <div style="width:80px;height:80px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#6366f1,#ec4899,#f59e0b);">
+          <img src="${s.mediaURL || av}" style="width:100%;height:100%;border-radius:50%;border:2.5px solid var(--bg);object-fit:cover;" onerror="this.src='${av}'">
+        </div>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);max-width:80px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.displayName || 'Creator'}</div>`;
+    card.onclick = () => viewStoryById(s.id);
+    listEl.appendChild(card);
+  });
+}
+
+function hideStoriesView() {
+  const storiesView = document.getElementById('storiesFullView');
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const createBar = document.getElementById('createBar');
+  if (storiesView) storiesView.style.display = 'none';
+  if (feed) feed.style.display = '';
+  if (ftabs) ftabs.style.display = '';
+  if (createBar && curUser) createBar.style.display = 'flex';
+  const homeNav = document.getElementById('navHome');
+  if (homeNav) { document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); homeNav.classList.add('active'); }
+}
+
+function initLiveFeed() {
+  if (!db) return;
+  if (liveListUnsub) liveListUnsub();
+  liveListUnsub = db.collection('sp_lives')
+    .where('status', '==', 'live')
+    .onSnapshot(snap => {
+      liveActiveLives = [];
+      snap.forEach(doc => liveActiveLives.push({ id: doc.id, ...doc.data() }));
+      renderStoriesBar();
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🔥 HASHTAGS & TRENDING ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+function extractHashtags(text) {
+  if (!text) return [];
+  const matches = text.match(/#[\w\u00C0-\u024F]{2,}/g) || [];
+  return [...new Set(matches.map(t => t.slice(1).toLowerCase()))];
+}
+
+function renderHashtagText(text) {
+  if (!text) return '';
+  return text.replace(/#([\w\u00C0-\u024F]{2,})/g, (match, tag) =>
+    `<a class="hashtag-chip" onclick="filterByHashtag('${tag}')" href="javascript:void(0)">#${tag}</a>`
+  );
+}
+
+function filterByHashtag(tag) {
+  const filtered = allPosts.filter(p => {
+    if (p.hashtags && Array.isArray(p.hashtags) && p.hashtags.includes(tag)) return true;
+    if (p.content && p.content.toLowerCase().includes('#' + tag)) return true;
+    return false;
+  });
+  renderFeed(filtered);
+  // Show hashtag filter indicator
+  const ftabs = document.getElementById('mainFtabs');
+  if (ftabs) {
+    document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  }
+  // Reset to home view
+  const sv = document.getElementById('savedPostsView');
+  const tv = document.getElementById('trendingHashtagView');
+  const sfv = document.getElementById('storiesFullView');
+  if (sv) sv.style.display = 'none';
+  if (tv) tv.style.display = 'none';
+  if (sfv) sfv.style.display = 'none';
+  const feed = document.getElementById('feedEl');
+  if (feed) feed.style.display = '';
+  toast(`Showing posts with #${tag}`, 'info');
+  const feedCol = document.querySelector('.feed');
+  if (feedCol) feedCol.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showHashtagTrending() {
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const sv = document.getElementById('savedPostsView');
+  const sfv = document.getElementById('storiesFullView');
+  const tv = document.getElementById('trendingHashtagView');
+  const createBar = document.getElementById('createBar');
+  if (feed) feed.style.display = 'none';
+  if (ftabs) ftabs.style.display = 'none';
+  if (sv) sv.style.display = 'none';
+  if (sfv) sfv.style.display = 'none';
+  if (createBar) createBar.style.display = 'none';
+  if (tv) tv.style.display = 'block';
+
+  // Compute trending from allPosts
+  const tagCounts = {};
+  allPosts.forEach(p => {
+    const tags = p.hashtags && Array.isArray(p.hashtags) ? p.hashtags : extractHashtags(p.content || '');
+    tags.forEach(tag => { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+  });
+  const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  const listEl = document.getElementById('trendTagList');
+  if (!listEl) return;
+  if (sorted.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);">No hashtags found yet. Be the first to use #hashtags in your posts!</div>';
+    return;
+  }
+  listEl.innerHTML = sorted.map(([tag, count], i) => `
+    <div class="trend-tag-row" onclick="filterByHashtag('${tag}');hideTrendingHashtagView()">
+      <span class="trend-tag-rank ${i < 3 ? 'top3' : ''}">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1)}</span>
+      <span class="trend-tag-name">#${tag}</span>
+      <span class="trend-tag-count">${count} post${count > 1 ? 's' : ''}</span>
+    </div>`).join('');
+}
+
+function hideTrendingHashtagView() {
+  const tv = document.getElementById('trendingHashtagView');
+  const feed = document.getElementById('feedEl');
+  const ftabs = document.getElementById('mainFtabs');
+  const createBar = document.getElementById('createBar');
+  if (tv) tv.style.display = 'none';
+  if (feed) feed.style.display = '';
+  if (ftabs) ftabs.style.display = '';
+  if (createBar && curUser) createBar.style.display = 'flex';
+  renderFeed(allPosts);
+  const homeNav = document.getElementById('navHome');
+  if (homeNav) { document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active')); homeNav.classList.add('active'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🔴 LIVE STREAMING ENGINE
+// ═══════════════════════════════════════════════════════════════
+let liveStream = null;
+let livePeerConn = null;
+let liveId = null;
+let liveIsStreamer = false;
+let liveChatUnsub = null;
+let liveStatusUnsub2 = null;
+let liveMicMuted = false;
+let liveCamOff = false;
+let currentViewingLiveId = null;
+
+async function startLiveModal() {
+  if (!curUser) { openAuth(); return; }
+  const title = prompt('Title for your Live Stream (optional):') || `${curUser.displayName || 'Creator'}'s Live`;
+  startLiveBroadcast(title);
+}
+
+async function startLiveBroadcast(title) {
+  if (!curUser || !db) return;
+  try {
+    liveStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+    });
+    const videoEl = document.getElementById('liveLocalVideoEl');
+    if (videoEl) { videoEl.srcObject = liveStream; videoEl.play().catch(() => {}); }
+
+    // Create live session in Firestore
+    const liveRef = await db.collection('sp_lives').add({
+      uid: curUser.uid,
+      displayName: curUser.displayName || 'Creator',
+      photoURL: curUser.photoURL || '',
+      title,
+      status: 'live',
+      viewerCount: 0,
+      startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      callerCandidates: [],
+      calleeCandidates: []
+    });
+    liveId = liveRef.id;
+    liveIsStreamer = true;
+
+    // Show streamer panel
+    document.getElementById('liveStreamerTitle').textContent = title;
+    document.getElementById('liveStreamerPanel').classList.add('open');
+    document.getElementById('liveViewerCount').textContent = '0';
+
+    // Start live chat listener
+    startLiveChatListener(liveId, 'streamer');
+
+    // Listen for viewer count
+    liveStatusUnsub2 = db.collection('sp_lives').doc(liveId).onSnapshot(snap => {
+      if (snap.exists) {
+        const data = snap.data();
+        document.getElementById('liveViewerCount').textContent = data.viewerCount || 0;
+      }
+    });
+
+    toast('🔴 You are now LIVE!', 'success');
+  } catch(err) {
+    console.error('Live start error:', err);
+    toast('Camera/Microphone error', 'error');
+  }
+}
+
+async function joinLive(lId) {
+  if (!db) return;
+  currentViewingLiveId = lId;
+  const liveDoc = await db.collection('sp_lives').doc(lId).get();
+  if (!liveDoc.exists || liveDoc.data().status !== 'live') {
+    toast('This live has ended.', 'info');
+    return;
+  }
+  const liveData = liveDoc.data();
+  document.getElementById('liveViewerHostName').textContent = liveData.displayName || 'Creator';
+  document.getElementById('liveViewerPanel').classList.add('open');
+
+  // Increment viewer count
+  db.collection('sp_lives').doc(lId).update({
+    viewerCount: firebase.firestore.FieldValue.increment(1)
+  }).catch(() => {});
+
+  // Start chat listener for viewer
+  startLiveChatListener(lId, 'viewer');
+
+  // Listen for live ending
+  liveStatusUnsub2 = db.collection('sp_lives').doc(lId).onSnapshot(snap => {
+    if (!snap.exists || snap.data().status === 'ended') {
+      exitLiveViewer();
+      toast('Live stream has ended.', 'info');
+    }
+  });
+}
+
+function exitLiveViewer() {
+  document.getElementById('liveViewerPanel').classList.remove('open');
+  if (liveChatUnsub) { liveChatUnsub(); liveChatUnsub = null; }
+  if (liveStatusUnsub2) { liveStatusUnsub2(); liveStatusUnsub2 = null; }
+  // Decrement viewer count
+  if (currentViewingLiveId && db) {
+    db.collection('sp_lives').doc(currentViewingLiveId).update({
+      viewerCount: firebase.firestore.FieldValue.increment(-1)
+    }).catch(() => {});
+  }
+  currentViewingLiveId = null;
+  const viewerMsgs = document.getElementById('liveViewerChatMsgs');
+  if (viewerMsgs) viewerMsgs.innerHTML = '';
+}
+
+async function endLive() {
+  if (liveStream) { liveStream.getTracks().forEach(t => t.stop()); liveStream = null; }
+  if (livePeerConn) { livePeerConn.close(); livePeerConn = null; }
+  if (liveStatusUnsub2) { liveStatusUnsub2(); liveStatusUnsub2 = null; }
+  if (liveChatUnsub) { liveChatUnsub(); liveChatUnsub = null; }
+  if (liveId && db) {
+    await db.collection('sp_lives').doc(liveId).update({ status: 'ended' }).catch(() => {});
+  }
+  liveId = null;
+  liveIsStreamer = false;
+  document.getElementById('liveStreamerPanel').classList.remove('open');
+  document.getElementById('liveStreamerChatMsgs').innerHTML = '';
+  toast('Live stream ended.', 'info');
+}
+
+function startLiveChatListener(lId, role) {
+  if (liveChatUnsub) { liveChatUnsub(); liveChatUnsub = null; }
+  const msgsElId = role === 'streamer' ? 'liveStreamerChatMsgs' : 'liveViewerChatMsgs';
+  liveChatUnsub = db.collection('sp_live_chat').doc(lId).collection('messages')
+    .orderBy('createdAt', 'asc')
+    .limitToLast(50)
+    .onSnapshot(snap => {
+      const el = document.getElementById(msgsElId);
+      if (!el) return;
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const msg = change.doc.data();
+          const div = document.createElement('div');
+          div.className = 'live-chat-msg';
+          div.innerHTML = `<span class="lcm-name">${msg.displayName || 'User'}:</span>${msg.text || ''}`;
+          el.appendChild(div);
+          el.scrollTop = el.scrollHeight;
+          // Mirror to viewer chat
+          if (role === 'streamer') {
+            const vEl = document.getElementById('liveViewerChatMsgs');
+            if (vEl) {
+              const vDiv = div.cloneNode(true);
+              vEl.appendChild(vDiv);
+              vEl.scrollTop = vEl.scrollHeight;
+            }
+          }
+        }
+      });
+    });
+}
+
+async function sendLiveMessage(role) {
+  if (!curUser || !db) return;
+  const inpId = role === 'streamer' ? 'liveStreamerChatInp' : 'liveViewerChatInp';
+  const lId = role === 'viewer' ? currentViewingLiveId : liveId;
+  if (!lId) return;
+  const inp = document.getElementById(inpId);
+  if (!inp || !inp.value.trim()) return;
+  const text = inp.value.trim();
+  inp.value = '';
+  await db.collection('sp_live_chat').doc(lId).collection('messages').add({
+    uid: curUser.uid,
+    displayName: curUser.displayName || 'User',
+    text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(() => {});
+}
+
+function toggleLiveMic() {
+  if (!liveStream) return;
+  const track = liveStream.getAudioTracks()[0];
+  if (track) {
+    liveMicMuted = !liveMicMuted;
+    track.enabled = !liveMicMuted;
+    const btn = document.getElementById('liveMuteBtn');
+    if (btn) btn.textContent = liveMicMuted ? '🔇' : '🎤';
+  }
+}
+
+function toggleLiveCam() {
+  if (!liveStream) return;
+  const track = liveStream.getVideoTracks()[0];
+  if (track) {
+    liveCamOff = !liveCamOff;
+    track.enabled = !liveCamOff;
+    const btn = document.getElementById('liveCamBtn');
+    if (btn) btn.textContent = liveCamOff ? '🚫' : '📹';
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Top-Level Array Signaling)
 // ═══════════════════════════════════════════════════════════════
