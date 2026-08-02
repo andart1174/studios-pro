@@ -5716,19 +5716,24 @@ async function toggleFollow(targetUid) {
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE
+// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Refactored)
 // ═══════════════════════════════════════════════════════════════
 const RTC_CONFIG = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
   ]
 };
 
 let peerConnection = null;
 let localMediaStream = null;
 let currentCallId = null;
-let activeCallPartnerUid = null;
+let currentCallIsVideo = false;
+let callStatusUnsub = null;
+let candidatesUnsub = null;
 let callSignalingUnsub = null;
 let isAudioMuted = false;
 let isVideoStopped = false;
@@ -5769,46 +5774,61 @@ function stopRingtone() {
   }
 }
 
+// Helper: Attach Remote Stream & Play Video
+function handleRemoteTrack(event) {
+  const remoteVideoEl = document.getElementById('callRemoteVideo');
+  if (remoteVideoEl && event.streams && event.streams[0]) {
+    remoteVideoEl.srcObject = event.streams[0];
+    remoteVideoEl.play().catch(e => console.warn('Remote video play error:', e));
+    if (currentCallIsVideo) {
+      remoteVideoEl.style.display = 'block';
+      const avView = document.getElementById('callAvatarView');
+      if (avView) avView.style.display = 'none';
+    }
+  }
+}
+
 // ── Initiate Call (Caller) ──
-async function initiateDirectCall(isVideo = false) {
+async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   if (!curUser) { openAuth(); return; }
-  if (!activePartnerUid) { toast('Please select a creator to call', 'info'); return; }
+  const partnerUid = targetPartnerUid || activePartnerUid;
+  if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
   if (!db) return;
 
-  const partnerUid = activePartnerUid;
   const partnerData = activePartnerData || {};
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   currentCallId = chatId;
+  currentCallIsVideo = isVideo;
 
   openCallOverlay(partnerData.displayName || 'Creator', partnerData.photoURL || '', isVideo, 'Calling...');
   startRingtone();
 
   try {
-    localMediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: isVideo
-    });
-    
+    const mediaConstraints = {
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
+    };
+
+    localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     setupLocalVideoStream(localMediaStream, isVideo);
+
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
     localMediaStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localMediaStream);
     });
 
-    const remoteVideoEl = document.getElementById('callRemoteVideo');
-    peerConnection.ontrack = event => {
-      if (remoteVideoEl && event.streams && event.streams[0]) {
-        remoteVideoEl.srcObject = event.streams[0];
-        if (isVideo) {
-          remoteVideoEl.style.display = 'block';
-          document.getElementById('callAvatarView').style.display = 'none';
-        }
+    peerConnection.ontrack = handleRemoteTrack;
+
+    const callRef = db.collection('sp_calls').doc(chatId);
+
+    // ICE Candidates listener (Send local ICE candidates to callerCandidates subcollection)
+    peerConnection.onicecandidate = event => {
+      if (event.candidate) {
+        callRef.collection('callerCandidates').add(event.candidate.toJSON()).catch(()=>{});
       }
     };
 
-    // Create Call document in Firestore
-    const callRef = db.collection('sp_calls').doc(chatId);
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
@@ -5821,24 +5841,23 @@ async function initiateDirectCall(isVideo = false) {
       isVideo,
       status: 'calling',
       offer: { sdp: offer.sdp, type: offer.type },
-      callerCandidates: [],
-      calleeCandidates: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // ICE Candidates
-    peerConnection.onicecandidate = event => {
-      if (event.candidate) {
-        callRef.update({
-          callerCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON())
-        }).catch(()=>{});
-      }
     };
 
     await callRef.set(callData);
 
+    // Listen for Callee ICE Candidates in real-time
+    candidatesUnsub = callRef.collection('calleeCandidates').onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added' && peerConnection) {
+          const cand = change.doc.data();
+          peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
+        }
+      });
+    });
+
     // Listen for Answer / Status changes
-    callRef.onSnapshot(async snap => {
+    callStatusUnsub = callRef.onSnapshot(async snap => {
       if (!snap.exists) return;
       const data = snap.data();
       if (data.status === 'declined') {
@@ -5847,25 +5866,18 @@ async function initiateDirectCall(isVideo = false) {
         setTimeout(() => endCall(false), 2000);
       } else if (data.status === 'ended') {
         endCall(false);
-      } else if (data.status === 'accepted' && data.answer && !peerConnection.currentRemoteDescription) {
+      } else if (data.status === 'accepted' && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
         stopRingtone();
         updateCallStatus('Connected 🟢');
         startCallTimer();
         const rtcAnswer = new RTCSessionDescription(data.answer);
         await peerConnection.setRemoteDescription(rtcAnswer);
-
-        // Process callee ICE candidates
-        if (data.calleeCandidates && Array.isArray(data.calleeCandidates)) {
-          data.calleeCandidates.forEach(cand => {
-            peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
-          });
-        }
       }
     });
 
   } catch(err) {
     console.error('Call initiation error:', err);
-    toast('Camera/Microphone permission denied', 'error');
+    toast('Camera/Microphone access error', 'error');
     endCall(false);
   }
 }
@@ -5919,53 +5931,48 @@ async function acceptIncomingCall() {
   hideIncomingCallBox();
   currentCallId = callData.chatId;
   const isVideo = callData.isVideo;
+  currentCallIsVideo = isVideo;
 
   openCallOverlay(callData.callerName || 'Creator', callData.callerAv || '', isVideo, 'Connecting...');
 
   try {
-    localMediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: isVideo
-    });
+    const mediaConstraints = {
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
+    };
 
+    localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     setupLocalVideoStream(localMediaStream, isVideo);
+
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
     localMediaStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localMediaStream);
     });
 
-    const remoteVideoEl = document.getElementById('callRemoteVideo');
-    peerConnection.ontrack = event => {
-      if (remoteVideoEl && event.streams && event.streams[0]) {
-        remoteVideoEl.srcObject = event.streams[0];
-        if (isVideo) {
-          remoteVideoEl.style.display = 'block';
-          document.getElementById('callAvatarView').style.display = 'none';
-        }
-      }
-    };
+    peerConnection.ontrack = handleRemoteTrack;
 
     const callRef = db.collection('sp_calls').doc(callData.chatId);
 
-    // ICE Candidates
+    // ICE Candidates (Send local ICE candidates to calleeCandidates subcollection)
     peerConnection.onicecandidate = event => {
       if (event.candidate) {
-        callRef.update({
-          calleeCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON())
-        }).catch(()=>{});
+        callRef.collection('calleeCandidates').add(event.candidate.toJSON()).catch(()=>{});
       }
     };
 
     // Set Remote Offer
     await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
 
-    // Process caller candidates already gathered
-    if (callData.callerCandidates && Array.isArray(callData.callerCandidates)) {
-      callData.callerCandidates.forEach(cand => {
-        peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
+    // Listen for Caller ICE Candidates in real-time
+    candidatesUnsub = callRef.collection('callerCandidates').onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added' && peerConnection) {
+          const cand = change.doc.data();
+          peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
+        }
       });
-    }
+    });
 
     // Create Answer
     const answer = await peerConnection.createAnswer();
@@ -5980,7 +5987,7 @@ async function acceptIncomingCall() {
     startCallTimer();
 
     // Listen for call termination by caller
-    callRef.onSnapshot(snap => {
+    callStatusUnsub = callRef.onSnapshot(snap => {
       if (snap.exists && snap.data().status === 'ended') {
         endCall(false);
       }
@@ -6006,6 +6013,9 @@ async function declineIncomingCall() {
 async function endCall(notifyDb = true) {
   stopRingtone();
   stopCallTimer();
+
+  if (callStatusUnsub) { callStatusUnsub(); callStatusUnsub = null; }
+  if (candidatesUnsub) { candidatesUnsub(); candidatesUnsub = null; }
 
   if (localMediaStream) {
     localMediaStream.getTracks().forEach(t => t.stop());
@@ -6054,6 +6064,7 @@ function setupLocalVideoStream(stream, isVideo) {
   const locVideo = document.getElementById('callLocalVideo');
   if (locVideo && isVideo) {
     locVideo.srcObject = stream;
+    locVideo.play().catch(()=>{});
     locVideo.style.display = 'block';
   }
 }
