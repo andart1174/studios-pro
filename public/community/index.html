@@ -1246,6 +1246,47 @@
     .live-viewer-chat{position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);padding:16px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden;}
     .live-viewer-chat .live-chat-msg{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);}
 
+    /* ── SP COINS ─────────────────────────────────────────── */
+    .sp-coin-display{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(234,179,8,.1));border:1px solid rgba(245,158,11,.35);cursor:pointer;transition:all .22s;width:fit-content;margin:6px auto 10px;}
+    .sp-coin-display:hover{background:linear-gradient(135deg,rgba(245,158,11,.3),rgba(234,179,8,.18));box-shadow:0 0 16px rgba(245,158,11,.3);transform:translateY(-1px);}
+    .sp-coin-icon{font-size:1rem;animation:coinSpin 4s linear infinite;}
+    @keyframes coinSpin{0%,100%{transform:rotateY(0deg);}50%{transform:rotateY(180deg);}}
+    .sp-coin-amount{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.05rem;color:#fbbf24;}
+    .sp-coin-lbl{font-size:.65rem;color:rgba(251,191,36,.7);font-weight:700;letter-spacing:.06em;}
+    /* Wallet Modal */
+    .wallet-modal{background:var(--bg2);border:1px solid rgba(245,158,11,.3);border-radius:22px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;}
+    .wallet-header-bg{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(234,179,8,.08));padding:24px;border-bottom:1px solid rgba(245,158,11,.2);text-align:center;}
+    .wallet-balance-big{font-family:'Outfit',sans-serif;font-weight:900;font-size:3rem;color:#fbbf24;text-shadow:0 0 30px rgba(245,158,11,.5);line-height:1;}
+    .wallet-balance-lbl{font-size:.8rem;color:rgba(251,191,36,.7);font-weight:700;letter-spacing:.1em;margin-top:4px;}
+    .wallet-earn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px;}
+    .wallet-earn-item{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;text-align:center;}
+    .wallet-earn-amount{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.1rem;color:#fbbf24;}
+    .wallet-earn-action{font-size:.72rem;color:var(--muted);margin-top:3px;}
+    .wallet-tx-list{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;}
+    .wallet-tx-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);}
+    .wallet-tx-info{display:flex;flex-direction:column;gap:2px;}
+    .wallet-tx-name{font-size:.82rem;font-weight:700;color:var(--text);}
+    .wallet-tx-type{font-size:.7rem;color:var(--muted);}
+    .wallet-tx-amount{font-family:'Outfit',sans-serif;font-weight:900;font-size:1rem;}
+    .wallet-tx-amount.plus{color:#10b981;}
+    .wallet-tx-amount.minus{color:#f87171;}
+    /* Tip Modal */
+    .tip-modal{background:var(--bg2);border:1px solid var(--border);border-radius:22px;width:100%;max-width:420px;overflow:hidden;}
+    .tip-amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0;}
+    .tip-amt-btn{padding:12px 6px;border-radius:12px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.06);color:#fbbf24;font-family:'Outfit',sans-serif;font-weight:900;font-size:.95rem;cursor:pointer;transition:all .2s;text-align:center;}
+    .tip-amt-btn:hover,.tip-amt-btn.selected{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.6);box-shadow:0 0 12px rgba(245,158,11,.3);transform:translateY(-2px);}
+    .tip-amt-btn span{display:block;font-size:.62rem;color:rgba(251,191,36,.6);font-weight:600;margin-top:2px;}
+    /* Coin rain animation */
+    .coin-particle{position:fixed;pointer-events:none;font-size:1.4rem;z-index:9999;animation:coinFly 1.2s cubic-bezier(.18,.89,.32,1.28) forwards;}
+    @keyframes coinFly{0%{transform:scale(0) translateY(0) rotate(0deg);opacity:1;}100%{transform:scale(1.2) translateY(-120px) rotate(var(--rot));opacity:0;}}
+    /* Boost badge */
+    .boost-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(234,179,8,.15));border:1px solid rgba(245,158,11,.5);color:#fbbf24;font-size:.65rem;font-weight:900;letter-spacing:.05em;animation:boostGlow 2s ease-in-out infinite;}
+    @keyframes boostGlow{0%,100%{box-shadow:0 0 4px rgba(245,158,11,.3);}50%{box-shadow:0 0 14px rgba(245,158,11,.7);}}
+    .tip-post-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:9px;border:none;background:rgba(245,158,11,.08);color:#fbbf24;font-size:.79rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;}
+    .tip-post-btn:hover{background:rgba(245,158,11,.2);transform:translateY(-1px);box-shadow:0 3px 10px rgba(245,158,11,.3);}
+    .live-gift-btn{display:flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#000;font-size:.85rem;font-weight:900;cursor:pointer;transition:all .2s;font-family:inherit;margin:8px 12px;}
+    .live-gift-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.5);}
+
   </style>
 </head>
 <body>
@@ -1393,6 +1434,12 @@
       <div class="u-stats">
         <div class="u-stat"><div class="u-stat-n" id="uPostsCnt">0</div><div class="u-stat-l" data-t="posts">Posts</div></div>
         <div class="u-stat"><div class="u-stat-n" id="uLikesCnt">0</div><div class="u-stat-l" data-t="likes">Likes</div></div>
+      </div>
+      <!-- SP COINS BALANCE -->
+      <div class="sp-coin-display" id="spCoinDisplay" style="display:none" onclick="openWallet()" title="Your SP Coins — Click to open Wallet">
+        <span class="sp-coin-icon">💰</span>
+        <span class="sp-coin-amount" id="spCoinCount">0</span>
+        <span class="sp-coin-lbl">SP COINS</span>
       </div>
       <div id="rankProgress">
         <div class="rp-top"><span data-t="progress">Progress to next rank</span><span id="rp-next-lbl"></span></div>
@@ -2343,6 +2390,7 @@ function renderLoggedIn(u) {
     setTimeout(()=>checkAchievements(u.uid), 2000);
     initStories();
     initLiveFeed();
+    initCoins();
   }
 }
 
@@ -2748,6 +2796,9 @@ function buildCard(p) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span id="cm-${p.id}">${p.commentsCount||0}</span>
       </button>
+      ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">💰 Tip</button>` : ''}
+      ${curUser && p.uid === curUser.uid && !p.boosted ? `<button class="tip-post-btn" onclick="boostPost('${p.id}')" title="Boost this post for 50 coins" style="color:#a78bfa;background:rgba(99,102,241,.08);">🚀 Boost</button>` : ''}
+      ${p.boosted ? `<span class="boost-badge">⚡ BOOSTED</span>` : ''}
       <button class="act-btn share-btn" onclick="sharePost('${p.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -2939,6 +2990,10 @@ async function toggleLike(pid) {
   if (!had) {
     // Send like notification to post author
     createNotification(d.uid, 'like', 'liked your post');
+    // 💰 SP Coins: reward liker
+    addCoins(1, 'reward', null, '❤️ Like given');
+    // 💰 SP Coins: reward post author
+    if (d.uid !== curUser.uid) awardCoinsToUser(d.uid, 1, 'reward', '❤️ Post liked by someone');
   }
   
   const lkEl = document.getElementById(`lk-${pid}`);
@@ -3154,6 +3209,8 @@ async function publish() {
     await db.collection('users').doc(curUser.uid).set({ postCount: firebase.firestore.FieldValue.increment(1) }, { merge: true }).catch(()=>{});
     // 🎯 Quest: track post published
     updateQuestProgress(curUser.uid, 'postCount', 1);
+    // 💰 SP Coins: reward for posting
+    addCoins(5, 'reward', null, '✦ Post published');
 
     // Reset form
     document.getElementById('postContent').value = '';
@@ -5779,6 +5836,8 @@ async function toggleFollow(targetUid) {
       followingSet.add(targetUid);
       createNotification(targetUid,'follow','started following you');
       unlockAchievement('first_follow',10);
+      // 💰 SP Coins: reward new follower (to the followed user)
+      awardCoinsToUser(targetUid, 3, 'reward', '👥 New follower');
     }
     document.querySelectorAll(`.follow-btn[data-uid="${targetUid}"]`).forEach(btn=>{
       btn.classList.toggle('following',followingSet.has(targetUid));
@@ -5787,6 +5846,64 @@ async function toggleFollow(targetUid) {
   } catch(e){ console.error(e); }
 }
 </script>
+
+<!-- 💰 WALLET MODAL -->
+<div class="overlay" id="walletOverlay" onclick="closeWallet(event)">
+  <div class="wallet-modal">
+    <div class="mh" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,179,8,.06));">
+      <div class="mt" style="color:#fbbf24;">💰 SP Coins Wallet</div>
+      <button class="mc" onclick="closeWalletDirect()">✕</button>
+    </div>
+    <div class="wallet-header-bg">
+      <div class="wallet-balance-big" id="walletBalanceBig">0</div>
+      <div class="wallet-balance-lbl">SP COINS</div>
+      <div style="margin-top:12px;font-size:.8rem;color:rgba(251,191,36,.6);">Click on any post to tip a creator 🎁</div>
+    </div>
+    <div style="padding:14px 16px 6px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">How to earn</div>
+    <div class="wallet-earn-grid">
+      <div class="wallet-earn-item"><div class="wallet-earn-amount">+100</div><div class="wallet-earn-action">New account</div></div>
+      <div class="wallet-earn-item"><div class="wallet-earn-amount">+10</div><div class="wallet-earn-action">Daily login</div></div>
+      <div class="wallet-earn-item"><div class="wallet-earn-amount">+5</div><div class="wallet-earn-action">Post content</div></div>
+      <div class="wallet-earn-item"><div class="wallet-earn-amount">+1</div><div class="wallet-earn-action">Give a like</div></div>
+    </div>
+    <div style="padding:14px 16px 6px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Recent transactions</div>
+    <div class="wallet-tx-list" id="walletTxList">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 🎁 TIP MODAL -->
+<div class="overlay" id="tipOverlay" onclick="closeTipModal(event)">
+  <div class="tip-modal">
+    <div class="mh">
+      <div class="mt">🎁 Send SP Coins Tip</div>
+      <button class="mc" onclick="closeTipModalDirect()">✕</button>
+    </div>
+    <div class="mb">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:6px;">Sending tip to</div>
+        <div style="font-weight:700;color:#fff;font-size:1rem;" id="tipTargetName">Creator</div>
+        <div style="font-size:.75rem;color:rgba(251,191,36,.7);margin-top:4px;">Your balance: <span id="tipMyBalance" style="font-weight:900;color:#fbbf24;">0</span> SP Coins</div>
+      </div>
+      <div style="font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Choose amount</div>
+      <div class="tip-amounts">
+        <div class="tip-amt-btn" onclick="selectTipAmount(5,this)">💰 5<span>coins</span></div>
+        <div class="tip-amt-btn" onclick="selectTipAmount(10,this)">💰 10<span>coins</span></div>
+        <div class="tip-amt-btn" onclick="selectTipAmount(25,this)">💰 25<span>coins</span></div>
+        <div class="tip-amt-btn" onclick="selectTipAmount(50,this)">💰 50<span>coins</span></div>
+      </div>
+      <div class="fg">
+        <label class="opt-lbl">Message (optional)</label>
+        <input type="text" class="fi" id="tipMessageInp" placeholder="Great work! Keep it up 🔥" maxlength="80">
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-cancel" onclick="closeTipModalDirect()">Cancel</button>
+      <button class="btn-pub" id="tipSendBtn" onclick="confirmTip()" style="background:linear-gradient(135deg,#f59e0b,#f97316);">Send 💰 <span id="tipSendAmt">5</span> Coins</button>
+    </div>
+  </div>
+</div>
 
 <!-- 📖 STORY UPLOAD OVERLAY -->
 <div class="overlay" id="storyUploadOverlay" onclick="closeStoryUpload(event)">
@@ -5905,6 +6022,265 @@ async function toggleFollow(targetUid) {
     </div>
   </div>
 </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 💰 SP COINS ENGINE
+// ═══════════════════════════════════════════════════════════════
+let spCoinsBalance = 0;
+let tipTargetUid = null;
+let tipTargetPostId = null;
+let tipSelectedAmount = 5;
+
+// ── Init: load balance, grant welcome/daily bonus ───────────────
+async function initCoins() {
+  if (!curUser || !db) return;
+  try {
+    const uDoc = await db.collection('users').doc(curUser.uid).get();
+    const data = uDoc.exists ? uDoc.data() : {};
+    spCoinsBalance = data.spCoins || 0;
+
+    // Welcome bonus for brand-new users
+    if (!uDoc.exists || data.spCoins === undefined) {
+      await db.collection('users').doc(curUser.uid).set({ spCoins: 100 }, { merge: true });
+      await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome to SP Nexus!');
+      spCoinsBalance = 100;
+      toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
+    }
+
+    // Daily login bonus
+    const today = new Date().toDateString();
+    const lastLogin = data.lastLoginDate || '';
+    if (lastLogin !== today) {
+      spCoinsBalance += 10;
+      await db.collection('users').doc(curUser.uid).update({
+        spCoins: firebase.firestore.FieldValue.increment(10),
+        lastLoginDate: today
+      });
+      await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
+      toast('📅 Daily login: +10 SP Coins!', 'info');
+    }
+
+    updateCoinUI(spCoinsBalance);
+  } catch(e) { console.warn('initCoins error:', e); }
+}
+
+function updateCoinUI(amount) {
+  spCoinsBalance = amount;
+  const countEl = document.getElementById('spCoinCount');
+  const displayEl = document.getElementById('spCoinDisplay');
+  if (countEl) countEl.textContent = amount;
+  if (displayEl) displayEl.style.display = 'flex';
+  const walletBig = document.getElementById('walletBalanceBig');
+  if (walletBig) walletBig.textContent = amount;
+  const tipBal = document.getElementById('tipMyBalance');
+  if (tipBal) tipBal.textContent = amount;
+}
+
+// ── Add coins to current user ───────────────────────────────────
+async function addCoins(amount, type, postId, description) {
+  if (!curUser || !db || amount <= 0) return;
+  try {
+    spCoinsBalance += amount;
+    await db.collection('users').doc(curUser.uid).update({
+      spCoins: firebase.firestore.FieldValue.increment(amount)
+    });
+    await logTransaction(curUser.uid, null, amount, type, postId, description);
+    updateCoinUI(spCoinsBalance);
+  } catch(e) { console.warn('addCoins error:', e); }
+}
+
+// ── Award coins to another user (async, no UI update for that user) ─
+async function awardCoinsToUser(uid, amount, type, description) {
+  if (!db || !uid || amount <= 0) return;
+  try {
+    await db.collection('users').doc(uid).update({
+      spCoins: firebase.firestore.FieldValue.increment(amount)
+    });
+    await logTransaction(uid, curUser ? curUser.uid : null, amount, type, null, description);
+  } catch(e) { console.warn('awardCoinsToUser error:', e); }
+}
+
+// ── Log a transaction ────────────────────────────────────────────
+async function logTransaction(toUid, fromUid, amount, type, postId, description) {
+  if (!db) return;
+  const tx = {
+    to: toUid,
+    from: fromUid || null,
+    amount,
+    type,
+    description: description || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (postId) tx.postId = postId;
+  if (fromUid && curUser) tx.fromName = curUser.displayName || 'User';
+  await db.collection('sp_transactions').add(tx).catch(() => {});
+}
+
+// ── Wallet modal ─────────────────────────────────────────────────
+async function openWallet() {
+  document.getElementById('walletOverlay').classList.add('open');
+  const walletBig = document.getElementById('walletBalanceBig');
+  if (walletBig) walletBig.textContent = spCoinsBalance;
+  loadWalletTransactions();
+}
+
+function closeWallet(e) {
+  if (e && e.target !== document.getElementById('walletOverlay')) return;
+  closeWalletDirect();
+}
+function closeWalletDirect() {
+  document.getElementById('walletOverlay').classList.remove('open');
+}
+
+async function loadWalletTransactions() {
+  if (!db || !curUser) return;
+  const listEl = document.getElementById('walletTxList');
+  if (!listEl) return;
+  try {
+    const snap = await db.collection('sp_transactions')
+      .where('to', '==', curUser.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(10)
+      .get();
+    if (snap.empty) {
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">No transactions yet. Start posting and liking! 🚀</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    snap.forEach(doc => {
+      const tx = doc.data();
+      const isIncoming = tx.amount > 0;
+      const icon = tx.type === 'tip' ? '🎁' : tx.type === 'boost' ? '🚀' : tx.type === 'daily' ? '📅' : tx.type === 'welcome' ? '🎉' : '💰';
+      const div = document.createElement('div');
+      div.className = 'wallet-tx-item';
+      div.innerHTML = `
+        <div class="wallet-tx-info">
+          <div class="wallet-tx-name">${icon} ${tx.description || tx.type}</div>
+          <div class="wallet-tx-type">${tx.fromName ? 'from ' + tx.fromName : ''} ${tx.createdAt ? timeAgo(tx.createdAt) : ''}</div>
+        </div>
+        <div class="wallet-tx-amount ${isIncoming ? 'plus' : 'minus'}">${isIncoming ? '+' : ''}${tx.amount} 💰</div>`;
+      listEl.appendChild(div);
+    });
+  } catch(e) { listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">Error loading transactions.</div>'; }
+}
+
+// ── Tip modal ────────────────────────────────────────────────────
+function openTipModal(postId, targetUid, targetName) {
+  if (!curUser) { openAuth(); return; }
+  tipTargetUid = targetUid;
+  tipTargetPostId = postId;
+  tipSelectedAmount = 5;
+  document.getElementById('tipTargetName').textContent = targetName;
+  document.getElementById('tipMyBalance').textContent = spCoinsBalance;
+  document.getElementById('tipSendAmt').textContent = 5;
+  document.getElementById('tipMessageInp').value = '';
+  document.querySelectorAll('.tip-amt-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.tip-amt-btn')[0].classList.add('selected');
+  document.getElementById('tipOverlay').classList.add('open');
+}
+
+function selectTipAmount(amount, btn) {
+  tipSelectedAmount = amount;
+  document.querySelectorAll('.tip-amt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('tipSendAmt').textContent = amount;
+}
+
+function closeTipModal(e) {
+  if (e && e.target !== document.getElementById('tipOverlay')) return;
+  closeTipModalDirect();
+}
+function closeTipModalDirect() {
+  document.getElementById('tipOverlay').classList.remove('open');
+}
+
+async function confirmTip() {
+  if (!curUser || !db || !tipTargetUid) return;
+  if (spCoinsBalance < tipSelectedAmount) {
+    toast('Not enough SP Coins! 💔', 'error');
+    return;
+  }
+  const btn = document.getElementById('tipSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const msg = document.getElementById('tipMessageInp').value.trim();
+    // Deduct from sender
+    spCoinsBalance -= tipSelectedAmount;
+    await db.collection('users').doc(curUser.uid).update({
+      spCoins: firebase.firestore.FieldValue.increment(-tipSelectedAmount)
+    });
+    // Award to recipient
+    await db.collection('users').doc(tipTargetUid).update({
+      spCoins: firebase.firestore.FieldValue.increment(tipSelectedAmount)
+    });
+    // Log transaction
+    await db.collection('sp_transactions').add({
+      to: tipTargetUid,
+      from: curUser.uid,
+      fromName: curUser.displayName || 'User',
+      amount: tipSelectedAmount,
+      type: 'tip',
+      postId: tipTargetPostId || null,
+      description: `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    updateCoinUI(spCoinsBalance);
+    closeTipModalDirect();
+    toast(`🎁 Sent ${tipSelectedAmount} SP Coins!`, 'success');
+    spawnCoinRain(tipSelectedAmount);
+    // Notify recipient
+    if (db) createNotification(tipTargetUid, 'tip', `sent you ${tipSelectedAmount} SP Coins 💰${msg ? ': ' + msg : ''}`);
+  } catch(e) {
+    toast('Error sending tip: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = `Send 💰 ${tipSelectedAmount} Coins`;
+  }
+}
+
+// ── Coin rain animation ──────────────────────────────────────────
+function spawnCoinRain(amount) {
+  const count = Math.min(amount, 12);
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'coin-particle';
+    el.textContent = '💰';
+    el.style.left = (20 + Math.random() * 60) + 'vw';
+    el.style.top = (40 + Math.random() * 30) + 'vh';
+    el.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
+    el.style.animationDelay = (i * 0.08) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }
+}
+
+// ── Boost Post ───────────────────────────────────────────────────
+async function boostPost(postId) {
+  if (!curUser || !db) return;
+  if (spCoinsBalance < 50) {
+    toast('You need 50 SP Coins to boost! 💔', 'error');
+    openWallet();
+    return;
+  }
+  if (!confirm('Boost this post for 24h? Cost: 50 SP Coins')) return;
+  try {
+    const boostedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await db.collection(COLL).doc(postId).update({
+      boosted: true,
+      boostedUntil: firebase.firestore.Timestamp.fromDate(boostedUntil),
+      pinned: true
+    });
+    spCoinsBalance -= 50;
+    await db.collection('users').doc(curUser.uid).update({
+      spCoins: firebase.firestore.FieldValue.increment(-50)
+    });
+    await logTransaction(curUser.uid, null, -50, 'boost', postId, '🚀 Post boosted 24h');
+    updateCoinUI(spCoinsBalance);
+    toast('🚀 Post boosted for 24 hours! ⚡', 'success');
+    spawnCoinRain(5);
+  } catch(e) { toast('Error boosting post: ' + e.message, 'error'); }
+}
+</script>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
