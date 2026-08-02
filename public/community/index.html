@@ -6033,41 +6033,52 @@ let tipTargetUid = null;
 let tipTargetPostId = null;
 let tipSelectedAmount = 5;
 
-// ── Init: load balance, grant welcome/daily bonus ───────────────
+// ── Init: load balance from Firestore/localStorage & handle bonus ─
 async function initCoins() {
   if (!curUser || !db) return;
   try {
-    const uDoc = await db.collection('users').doc(curUser.uid).get();
+    const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
+    if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
+      spCoinsBalance = parseInt(cacheVal);
+      updateCoinUI(spCoinsBalance);
+    }
+
+    const uRef = db.collection('users').doc(curUser.uid);
+    const uDoc = await uRef.get();
     const data = uDoc.exists ? uDoc.data() : {};
-    spCoinsBalance = data.spCoins || 0;
+
+    let currentDbCoins = (typeof data.spCoins === 'number') ? data.spCoins : null;
 
     // Welcome bonus for brand-new users
     if (!uDoc.exists || data.spCoins === undefined) {
-      await db.collection('users').doc(curUser.uid).set({ spCoins: 100 }, { merge: true });
-      await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome to SP Nexus!');
-      spCoinsBalance = 100;
+      currentDbCoins = 100;
+      await uRef.set({ spCoins: 100 }, { merge: true });
+      await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
 
     // Daily login bonus
     const today = new Date().toDateString();
-    const lastLogin = data.lastLoginDate || '';
+    const lastLogin = data.lastCoinLoginDate || '';
     if (lastLogin !== today) {
-      spCoinsBalance += 10;
-      await db.collection('users').doc(curUser.uid).set({
+      currentDbCoins = (currentDbCoins || 0) + 10;
+      await uRef.set({
         spCoins: firebase.firestore.FieldValue.increment(10),
-        lastLoginDate: today
+        lastCoinLoginDate: today
       }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
 
-    updateCoinUI(spCoinsBalance);
+    updateCoinUI(currentDbCoins);
   } catch(e) { console.warn('initCoins error:', e); }
 }
 
 function updateCoinUI(amount) {
   spCoinsBalance = amount;
+  if (curUser && amount !== null && amount !== undefined) {
+    try { localStorage.setItem('sp_coins_' + curUser.uid, amount.toString()); } catch(e){}
+  }
   const countEl = document.getElementById('spCoinCount');
   const displayEl = document.getElementById('spCoinDisplay');
   if (countEl) countEl.textContent = amount;
@@ -6083,11 +6094,11 @@ async function addCoins(amount, type, postId, description) {
   if (!curUser || !db || amount <= 0) return;
   try {
     spCoinsBalance += amount;
+    updateCoinUI(spCoinsBalance);
     await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(amount)
     }, { merge: true });
     await logTransaction(curUser.uid, null, amount, type, postId, description);
-    updateCoinUI(spCoinsBalance);
   } catch(e) { console.warn('addCoins error:', e); }
 }
 
@@ -6102,20 +6113,22 @@ async function awardCoinsToUser(uid, amount, type, description) {
   } catch(e) { console.warn('awardCoinsToUser error:', e); }
 }
 
-// ── Log a transaction ────────────────────────────────────────────
+// ── Log a transaction (silent fallback) ───────────────────────────
 async function logTransaction(toUid, fromUid, amount, type, postId, description) {
   if (!db) return;
-  const tx = {
-    to: toUid,
-    from: fromUid || null,
-    amount,
-    type,
-    description: description || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  if (postId) tx.postId = postId;
-  if (fromUid && curUser) tx.fromName = curUser.displayName || 'User';
-  await db.collection('sp_transactions').add(tx).catch(() => {});
+  try {
+    const tx = {
+      to: toUid,
+      from: fromUid || null,
+      amount,
+      type,
+      description: description || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (postId) tx.postId = postId;
+    if (fromUid && curUser) tx.fromName = curUser.displayName || 'User';
+    await db.collection('sp_transactions').add(tx);
+  } catch(e) { console.warn('logTransaction fallback:', e); }
 }
 
 // ── Wallet modal ─────────────────────────────────────────────────
@@ -6134,36 +6147,49 @@ function closeWalletDirect() {
   document.getElementById('walletOverlay').classList.remove('open');
 }
 
+// ── Robust loadWalletTransactions (No index required) ────────────
 async function loadWalletTransactions() {
   if (!db || !curUser) return;
   const listEl = document.getElementById('walletTxList');
   if (!listEl) return;
   try {
-    const snap = await db.collection('sp_transactions')
-      .where('to', '==', curUser.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(10)
-      .get();
-    if (snap.empty) {
+    const [inSnap, outSnap] = await Promise.all([
+      db.collection('sp_transactions').where('to', '==', curUser.uid).limit(20).get().catch(() => ({ docs: [] })),
+      db.collection('sp_transactions').where('from', '==', curUser.uid).limit(20).get().catch(() => ({ docs: [] }))
+    ]);
+    const map = new Map();
+    [...(inSnap.docs || []), ...(outSnap.docs || [])].forEach(d => {
+      if (!map.has(d.id)) map.set(d.id, { id: d.id, ...d.data() });
+    });
+    const txs = Array.from(map.values());
+    txs.sort((a, b) => {
+      const tA = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()) : 0;
+      const tB = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()) : 0;
+      return tB - tA;
+    });
+
+    if (txs.length === 0) {
       listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">No transactions yet. Start posting and liking! 🚀</div>';
       return;
     }
     listEl.innerHTML = '';
-    snap.forEach(doc => {
-      const tx = doc.data();
-      const isIncoming = tx.amount > 0;
+    txs.slice(0, 15).forEach(tx => {
+      const isIncoming = tx.to === curUser.uid && tx.from !== curUser.uid;
       const icon = tx.type === 'tip' ? '🎁' : tx.type === 'boost' ? '🚀' : tx.type === 'daily' ? '📅' : tx.type === 'welcome' ? '🎉' : '💰';
       const div = document.createElement('div');
       div.className = 'wallet-tx-item';
       div.innerHTML = `
         <div class="wallet-tx-info">
           <div class="wallet-tx-name">${icon} ${tx.description || tx.type}</div>
-          <div class="wallet-tx-type">${tx.fromName ? 'from ' + tx.fromName : ''} ${tx.createdAt ? timeAgo(tx.createdAt) : ''}</div>
+          <div class="wallet-tx-type">${isIncoming ? (tx.fromName ? 'from ' + tx.fromName : 'Received') : 'Sent'} ${tx.createdAt ? timeAgo(tx.createdAt) : ''}</div>
         </div>
-        <div class="wallet-tx-amount ${isIncoming ? 'plus' : 'minus'}">${isIncoming ? '+' : ''}${tx.amount} 💰</div>`;
+        <div class="wallet-tx-amount ${isIncoming ? 'plus' : 'minus'}">${isIncoming ? '+' : '-'}${Math.abs(tx.amount)} 💰</div>`;
       listEl.appendChild(div);
     });
-  } catch(e) { listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">Error loading transactions.</div>'; }
+  } catch(e) { 
+    console.error('loadWalletTransactions error:', e);
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">No transactions recorded yet.</div>'; 
+  }
 }
 
 // ── Tip modal ────────────────────────────────────────────────────
@@ -6196,6 +6222,7 @@ function closeTipModalDirect() {
   document.getElementById('tipOverlay').classList.remove('open');
 }
 
+// ── Robust confirmTip ────────────────────────────────────────────
 async function confirmTip() {
   if (!curUser || !db || !tipTargetUid) return;
   if (spCoinsBalance < tipSelectedAmount) {
@@ -6204,36 +6231,40 @@ async function confirmTip() {
   }
   const btn = document.getElementById('tipSendBtn');
   btn.disabled = true; btn.textContent = 'Sending...';
+  const prevBalance = spCoinsBalance;
   try {
     const msg = document.getElementById('tipMessageInp').value.trim();
-    // Deduct from sender
-    spCoinsBalance -= tipSelectedAmount;
+    
+    // Deduct from sender in Firestore
     await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(-tipSelectedAmount)
     }, { merge: true });
-    // Award to recipient
-    await db.collection('users').doc(tipTargetUid).set({
-      spCoins: firebase.firestore.FieldValue.increment(tipSelectedAmount)
-    }, { merge: true });
+
+    // Award to recipient in Firestore (if different user)
+    if (tipTargetUid !== curUser.uid) {
+      await db.collection('users').doc(tipTargetUid).set({
+        spCoins: firebase.firestore.FieldValue.increment(tipSelectedAmount)
+      }, { merge: true });
+    }
+
     // Log transaction
-    await db.collection('sp_transactions').add({
-      to: tipTargetUid,
-      from: curUser.uid,
-      fromName: curUser.displayName || 'User',
-      amount: tipSelectedAmount,
-      type: 'tip',
-      postId: tipTargetPostId || null,
-      description: `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    updateCoinUI(spCoinsBalance);
+    logTransaction(tipTargetUid, curUser.uid, tipSelectedAmount, 'tip', tipTargetPostId, `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`);
+
+    // Update local state and UI
+    const newBal = Math.max(0, spCoinsBalance - tipSelectedAmount);
+    updateCoinUI(newBal);
     closeTipModalDirect();
     toast(`🎁 Sent ${tipSelectedAmount} SP Coins!`, 'success');
     spawnCoinRain(tipSelectedAmount);
+    
     // Notify recipient
-    if (db) createNotification(tipTargetUid, 'tip', `sent you ${tipSelectedAmount} SP Coins 💰${msg ? ': ' + msg : ''}`);
+    if (db && tipTargetUid !== curUser.uid) {
+      createNotification(tipTargetUid, 'tip', `sent you ${tipSelectedAmount} SP Coins 💰${msg ? ': ' + msg : ''}`);
+    }
   } catch(e) {
     console.error('Tip error:', e);
+    spCoinsBalance = prevBalance;
+    updateCoinUI(spCoinsBalance);
     toast('Error sending tip: ' + e.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = `Send 💰 ${tipSelectedAmount} Coins`;
@@ -6265,6 +6296,7 @@ async function boostPost(postId) {
     return;
   }
   if (!confirm('Boost this post for 24h? Cost: 50 SP Coins')) return;
+  const prevBalance = spCoinsBalance;
   try {
     const boostedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await db.collection(COLL).doc(postId).update({
@@ -6272,15 +6304,21 @@ async function boostPost(postId) {
       boostedUntil: firebase.firestore.Timestamp.fromDate(boostedUntil),
       pinned: true
     });
-    spCoinsBalance -= 50;
+    
     await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(-50)
     }, { merge: true });
-    await logTransaction(curUser.uid, null, -50, 'boost', postId, '🚀 Post boosted 24h');
-    updateCoinUI(spCoinsBalance);
+    
+    logTransaction(curUser.uid, null, -50, 'boost', postId, '🚀 Post boosted 24h');
+    const newBal = Math.max(0, spCoinsBalance - 50);
+    updateCoinUI(newBal);
     toast('🚀 Post boosted for 24 hours! ⚡', 'success');
     spawnCoinRain(5);
-  } catch(e) { toast('Error boosting post: ' + e.message, 'error'); }
+  } catch(e) {
+    spCoinsBalance = prevBalance;
+    updateCoinUI(spCoinsBalance);
+    toast('Error boosting post: ' + e.message, 'error'); 
+  }
 }
 </script>
 
