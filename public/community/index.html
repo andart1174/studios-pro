@@ -5716,7 +5716,7 @@ async function toggleFollow(targetUid) {
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Refactored)
+// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Top-Level Array Signaling)
 // ═══════════════════════════════════════════════════════════════
 const RTC_CONFIG = {
   iceServers: [
@@ -5733,7 +5733,6 @@ let localMediaStream = null;
 let currentCallId = null;
 let currentCallIsVideo = false;
 let callStatusUnsub = null;
-let candidatesUnsub = null;
 let callSignalingUnsub = null;
 let isAudioMuted = false;
 let isVideoStopped = false;
@@ -5741,6 +5740,7 @@ let ringtoneAudioCtx = null;
 let ringtoneInterval = null;
 let callTimerInterval = null;
 let callSecondsElapsed = 0;
+let processedCandidates = new Set();
 
 // Web Audio API Ringtone Generator
 function startRingtone() {
@@ -5799,6 +5799,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   currentCallId = chatId;
   currentCallIsVideo = isVideo;
+  processedCandidates.clear();
 
   openCallOverlay(partnerData.displayName || 'Creator', partnerData.photoURL || '', isVideo, 'Calling...');
   startRingtone();
@@ -5822,10 +5823,16 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
 
     const callRef = db.collection('sp_calls').doc(chatId);
 
-    // ICE Candidates listener (Send local ICE candidates to callerCandidates subcollection)
+    // Caller ICE Candidate Event
     peerConnection.onicecandidate = event => {
       if (event.candidate) {
-        callRef.collection('callerCandidates').add(event.candidate.toJSON()).catch(()=>{});
+        callRef.update({
+          callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(event.candidate.toJSON()))
+        }).catch(() => {
+          callRef.set({
+            callerCandidates: [JSON.stringify(event.candidate.toJSON())]
+          }, { merge: true }).catch(()=>{});
+        });
       }
     };
 
@@ -5841,37 +5848,45 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       isVideo,
       status: 'calling',
       offer: { sdp: offer.sdp, type: offer.type },
+      callerCandidates: [],
+      calleeCandidates: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await callRef.set(callData);
 
-    // Listen for Callee ICE Candidates in real-time
-    candidatesUnsub = callRef.collection('calleeCandidates').onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
-        if (change.type === 'added' && peerConnection) {
-          const cand = change.doc.data();
-          peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
-        }
-      });
-    });
-
-    // Listen for Answer / Status changes
+    // Listen for Answer / Status & Callee Candidates changes
     callStatusUnsub = callRef.onSnapshot(async snap => {
       if (!snap.exists) return;
       const data = snap.data();
+
       if (data.status === 'declined') {
         stopRingtone();
         updateCallStatus('Call Declined ❌');
         setTimeout(() => endCall(false), 2000);
       } else if (data.status === 'ended') {
         endCall(false);
-      } else if (data.status === 'accepted' && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-        stopRingtone();
-        updateCallStatus('Connected 🟢');
-        startCallTimer();
-        const rtcAnswer = new RTCSessionDescription(data.answer);
-        await peerConnection.setRemoteDescription(rtcAnswer);
+      } else if (data.status === 'accepted') {
+        if (data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+          stopRingtone();
+          updateCallStatus('Connected 🟢');
+          startCallTimer();
+          const rtcAnswer = new RTCSessionDescription(data.answer);
+          await peerConnection.setRemoteDescription(rtcAnswer);
+        }
+
+        // Process callee candidates in real-time
+        if (data.calleeCandidates && Array.isArray(data.calleeCandidates) && peerConnection && peerConnection.remoteDescription) {
+          data.calleeCandidates.forEach(candStr => {
+            if (!processedCandidates.has(candStr)) {
+              processedCandidates.add(candStr);
+              try {
+                const candObj = JSON.parse(candStr);
+                peerConnection.addIceCandidate(new RTCIceCandidate(candObj)).catch(()=>{});
+              } catch(e){}
+            }
+          });
+        }
       }
     });
 
@@ -5932,6 +5947,7 @@ async function acceptIncomingCall() {
   currentCallId = callData.chatId;
   const isVideo = callData.isVideo;
   currentCallIsVideo = isVideo;
+  processedCandidates.clear();
 
   openCallOverlay(callData.callerName || 'Creator', callData.callerAv || '', isVideo, 'Connecting...');
 
@@ -5954,25 +5970,21 @@ async function acceptIncomingCall() {
 
     const callRef = db.collection('sp_calls').doc(callData.chatId);
 
-    // ICE Candidates (Send local ICE candidates to calleeCandidates subcollection)
+    // Callee ICE Candidate Event
     peerConnection.onicecandidate = event => {
       if (event.candidate) {
-        callRef.collection('calleeCandidates').add(event.candidate.toJSON()).catch(()=>{});
+        callRef.update({
+          calleeCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(event.candidate.toJSON()))
+        }).catch(() => {
+          callRef.set({
+            calleeCandidates: [JSON.stringify(event.candidate.toJSON())]
+          }, { merge: true }).catch(()=>{});
+        });
       }
     };
 
     // Set Remote Offer
     await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-
-    // Listen for Caller ICE Candidates in real-time
-    candidatesUnsub = callRef.collection('callerCandidates').onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
-        if (change.type === 'added' && peerConnection) {
-          const cand = change.doc.data();
-          peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
-        }
-      });
-    });
 
     // Create Answer
     const answer = await peerConnection.createAnswer();
@@ -5986,10 +5998,26 @@ async function acceptIncomingCall() {
     updateCallStatus('Connected 🟢');
     startCallTimer();
 
-    // Listen for call termination by caller
+    // Listen for Call status & Caller candidates in real-time
     callStatusUnsub = callRef.onSnapshot(snap => {
-      if (snap.exists && snap.data().status === 'ended') {
+      if (!snap.exists) return;
+      const data = snap.data();
+      if (data.status === 'ended') {
         endCall(false);
+        return;
+      }
+      
+      // Process caller candidates in real-time
+      if (data.callerCandidates && Array.isArray(data.callerCandidates) && peerConnection && peerConnection.remoteDescription) {
+        data.callerCandidates.forEach(candStr => {
+          if (!processedCandidates.has(candStr)) {
+            processedCandidates.add(candStr);
+            try {
+              const candObj = JSON.parse(candStr);
+              peerConnection.addIceCandidate(new RTCIceCandidate(candObj)).catch(()=>{});
+            } catch(e){}
+          }
+        });
       }
     });
 
@@ -6015,7 +6043,6 @@ async function endCall(notifyDb = true) {
   stopCallTimer();
 
   if (callStatusUnsub) { callStatusUnsub(); callStatusUnsub = null; }
-  if (candidatesUnsub) { candidatesUnsub(); candidatesUnsub = null; }
 
   if (localMediaStream) {
     localMediaStream.getTracks().forEach(t => t.stop());
@@ -6033,6 +6060,7 @@ async function endCall(notifyDb = true) {
   }
 
   currentCallId = null;
+  processedCandidates.clear();
   const overlay = document.getElementById('callModalOverlay');
   if (overlay) overlay.classList.remove('open');
 }
