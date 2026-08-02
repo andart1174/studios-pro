@@ -5989,6 +5989,7 @@ let tipSelectedAmount = 5;
 async function initCoins() {
   if (!curUser || !db) return;
   try {
+    // 1. Show localStorage cache instantly (fast UX)
     const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
     if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
       spCoinsBalance = parseInt(cacheVal);
@@ -5999,30 +6000,32 @@ async function initCoins() {
     const uDoc = await uRef.get();
     const data = uDoc.exists ? uDoc.data() : {};
 
-    let currentDbCoins = (typeof data.spCoins === 'number') ? data.spCoins : null;
-
-    // Welcome bonus for brand-new users
+    // Welcome bonus for brand-new users (only if spCoins field missing)
     if (!uDoc.exists || data.spCoins === undefined) {
-      currentDbCoins = 100;
-      await uRef.set({ spCoins: 100 }, { merge: true });
-      await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
-      toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
+      await uRef.set({ spCoins: 500, totalCoinsEarned: 500 }, { merge: true });
+      await logTransaction(curUser.uid, null, 500, 'welcome', null, '🎉 Welcome bonus');
+      toast('🎉 Welcome bonus: +500 SP Coins!', 'success');
     }
 
-    // Daily login bonus
+    // Daily login bonus (only once per day)
     const today = new Date().toDateString();
     const lastLogin = data.lastCoinLoginDate || '';
     if (lastLogin !== today) {
-      currentDbCoins = (currentDbCoins || 0) + 10;
       await uRef.set({
         spCoins: firebase.firestore.FieldValue.increment(10),
+        totalCoinsEarned: firebase.firestore.FieldValue.increment(10),
         lastCoinLoginDate: today
       }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
 
-    updateCoinUI(currentDbCoins);
+    // 2. Read FRESH balance from Firestore AFTER all writes — source of truth
+    const freshDoc = await uRef.get();
+    const freshData = freshDoc.exists ? freshDoc.data() : {};
+    const finalBalance = typeof freshData.spCoins === 'number' ? freshData.spCoins : 0;
+    updateCoinUI(finalBalance);
+
   } catch(e) { console.warn('initCoins error:', e); }
 }
 
@@ -6208,9 +6211,9 @@ async function confirmTip() {
     // Log transaction
     logTransaction(tipTargetUid, curUser.uid, tipSelectedAmount, 'tip', tipTargetPostId, `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`);
 
-    // Update local state and UI
+    // Update local state and UI immediately + sync to localStorage
     const newBal = Math.max(0, spCoinsBalance - tipSelectedAmount);
-    updateCoinUI(newBal);
+    updateCoinUI(newBal); // updateCoinUI also saves to localStorage
     closeTipModalDirect();
     toast(`🎁 Sent ${tipSelectedAmount} SP Coins!`, 'success');
     spawnCoinRain(tipSelectedAmount);
