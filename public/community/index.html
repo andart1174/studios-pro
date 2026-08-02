@@ -6054,10 +6054,10 @@ async function initCoins() {
     const lastLogin = data.lastLoginDate || '';
     if (lastLogin !== today) {
       spCoinsBalance += 10;
-      await db.collection('users').doc(curUser.uid).update({
+      await db.collection('users').doc(curUser.uid).set({
         spCoins: firebase.firestore.FieldValue.increment(10),
         lastLoginDate: today
-      });
+      }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
@@ -6083,9 +6083,9 @@ async function addCoins(amount, type, postId, description) {
   if (!curUser || !db || amount <= 0) return;
   try {
     spCoinsBalance += amount;
-    await db.collection('users').doc(curUser.uid).update({
+    await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(amount)
-    });
+    }, { merge: true });
     await logTransaction(curUser.uid, null, amount, type, postId, description);
     updateCoinUI(spCoinsBalance);
   } catch(e) { console.warn('addCoins error:', e); }
@@ -6095,9 +6095,9 @@ async function addCoins(amount, type, postId, description) {
 async function awardCoinsToUser(uid, amount, type, description) {
   if (!db || !uid || amount <= 0) return;
   try {
-    await db.collection('users').doc(uid).update({
+    await db.collection('users').doc(uid).set({
       spCoins: firebase.firestore.FieldValue.increment(amount)
-    });
+    }, { merge: true });
     await logTransaction(uid, curUser ? curUser.uid : null, amount, type, null, description);
   } catch(e) { console.warn('awardCoinsToUser error:', e); }
 }
@@ -6208,13 +6208,13 @@ async function confirmTip() {
     const msg = document.getElementById('tipMessageInp').value.trim();
     // Deduct from sender
     spCoinsBalance -= tipSelectedAmount;
-    await db.collection('users').doc(curUser.uid).update({
+    await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(-tipSelectedAmount)
-    });
+    }, { merge: true });
     // Award to recipient
-    await db.collection('users').doc(tipTargetUid).update({
+    await db.collection('users').doc(tipTargetUid).set({
       spCoins: firebase.firestore.FieldValue.increment(tipSelectedAmount)
-    });
+    }, { merge: true });
     // Log transaction
     await db.collection('sp_transactions').add({
       to: tipTargetUid,
@@ -6233,6 +6233,7 @@ async function confirmTip() {
     // Notify recipient
     if (db) createNotification(tipTargetUid, 'tip', `sent you ${tipSelectedAmount} SP Coins 💰${msg ? ': ' + msg : ''}`);
   } catch(e) {
+    console.error('Tip error:', e);
     toast('Error sending tip: ' + e.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = `Send 💰 ${tipSelectedAmount} Coins`;
@@ -6272,9 +6273,9 @@ async function boostPost(postId) {
       pinned: true
     });
     spCoinsBalance -= 50;
-    await db.collection('users').doc(curUser.uid).update({
+    await db.collection('users').doc(curUser.uid).set({
       spCoins: firebase.firestore.FieldValue.increment(-50)
-    });
+    }, { merge: true });
     await logTransaction(curUser.uid, null, -50, 'boost', postId, '🚀 Post boosted 24h');
     updateCoinUI(spCoinsBalance);
     toast('🚀 Post boosted for 24 hours! ⚡', 'success');
