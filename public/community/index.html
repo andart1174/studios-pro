@@ -6104,16 +6104,19 @@ function updateCoinUI(amount) {
 async function addCoins(amount, type, postId, description) {
   if (!curUser || !db || amount <= 0) return;
   try {
-    spCoinsBalance += amount;
-    updateCoinUI(spCoinsBalance);
-    // spCoins = current balance (can be spent)
-    // totalCoinsEarned = lifetime total (never decremented, used for rank)
+    const newBal = spCoinsBalance + amount;
+    updateCoinUI(newBal);
+
+    const uDoc = await db.collection('users').doc(curUser.uid).get();
+    const uData = uDoc.exists ? uDoc.data() : {};
+    const oldEarned = typeof uData.totalCoinsEarned === 'number' ? uData.totalCoinsEarned : (Number(uData.totalCoinsEarned) || 0);
+
     await db.collection('users').doc(curUser.uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(amount),
-      totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
+      spCoins: newBal,
+      totalCoinsEarned: oldEarned + amount
     }, { merge: true });
+
     await logTransaction(curUser.uid, null, amount, type, postId, description);
-    // Refresh rank display
     loadUserStats(curUser.uid);
   } catch(e) { console.warn('addCoins error:', e); }
 }
@@ -6239,7 +6242,7 @@ function closeTipModalDirect() {
   document.getElementById('tipOverlay').classList.remove('open');
 }
 
-// ── confirmTip — sender first, recipient best-effort ─────────────
+// ── confirmTip — sender first with explicit numeric balance ───────
 async function confirmTip() {
   if (!curUser || !db || !tipTargetUid) return;
   if (spCoinsBalance < tipSelectedAmount) {
@@ -6253,48 +6256,46 @@ async function confirmTip() {
   try {
     const msg = document.getElementById('tipMessageInp').value.trim();
 
-    // ── STEP 1: Deduct from sender (CRITICAL — must succeed first) ──
+    // ── STEP 1: Calculate and write explicit numeric balance for sender ──
+    const newSenderBal = Math.max(0, spCoinsBalance - amount);
     await db.collection('users').doc(curUser.uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(-amount)
+      spCoins: newSenderBal
     }, { merge: true });
 
-    // ── STEP 2: Update UI immediately (sender write confirmed) ──────
-    const newBal = Math.max(0, spCoinsBalance - amount);
-    updateCoinUI(newBal);
+    // ── STEP 2: Update UI immediately ──────
+    updateCoinUI(newSenderBal);
     closeTipModalDirect();
     toast(`🎁 Sent ${amount} SP Coins!`, 'success');
     spawnCoinRain(amount);
 
-    // ── STEP 3: Credit recipient (best-effort, non-blocking) ────────
+    // ── STEP 3: Credit recipient (explicit numeric addition) ────────
     if (tipTargetUid !== curUser.uid) {
-      db.collection('users').doc(tipTargetUid).set({
-        spCoins: firebase.firestore.FieldValue.increment(amount),
-        totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
-      }, { merge: true }).catch(e => console.warn('recipient credit failed, using queue:', e));
+      db.collection('users').doc(tipTargetUid).get().then(recipDoc => {
+        const recipData = recipDoc.exists ? recipDoc.data() : {};
+        const oldCoins = typeof recipData.spCoins === 'number' ? recipData.spCoins : (Number(recipData.spCoins) || 0);
+        const oldTotal = typeof recipData.totalCoinsEarned === 'number' ? recipData.totalCoinsEarned : (Number(recipData.totalCoinsEarned) || 0);
 
-      // ── STEP 4: Write to queue as backup (if direct credit fails) ─
-      db.collection('sp_pending_tips').add({
-        toUid: tipTargetUid,
-        fromUid: curUser.uid,
-        fromName: curUser.displayName || 'User',
-        amount: amount,
-        message: msg,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(() => {});
+        db.collection('users').doc(tipTargetUid).set({
+          spCoins: oldCoins + amount,
+          totalCoinsEarned: oldTotal + amount
+        }, { merge: true }).catch(e => console.warn('recipient credit failed:', e));
+      }).catch(() => {
+        db.collection('users').doc(tipTargetUid).set({
+          spCoins: firebase.firestore.FieldValue.increment(amount),
+          totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
+        }, { merge: true }).catch(() => {});
+      });
     }
 
-    // ── STEP 5: Log + notify (non-blocking) ────────────────────────
+    // ── STEP 4: Log transaction + notification ────────────────────────
     logTransaction(tipTargetUid, curUser.uid, amount, 'tip', tipTargetPostId,
       `🎁 Tip from ${curUser.displayName || 'User'}${msg ? ': ' + msg : ''}`);
     createNotification(tipTargetUid, 'tip',
       `sent you ${amount} SP Coins 💰${msg ? ': ' + msg : ''}`);
 
   } catch(e) {
-    // Only sender write failed — don't restore UI since Firestore
-    // may have partially applied. initCoins on next load will correct.
-    console.error('Tip sender write error:', e);
-    toast('Error sending tip. Please try again.', 'error');
+    console.error('Tip error:', e);
+    toast('Error sending tip: ' + e.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = `Send 💰 ${amount} Coins`;
   }
