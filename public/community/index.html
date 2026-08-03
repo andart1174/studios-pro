@@ -2587,6 +2587,19 @@ async function loadUserStats(uid) {
     const userData = userDoc && userDoc.exists ? userDoc.data() : {};
     const coinsEarned = userData.totalCoinsEarned || 0;
 
+    // Apply equipped avatar border
+    const borderClassMap = {
+      'border_neon': 'avatar-border-neon',
+      'border_fire': 'avatar-border-fire',
+      'border_gold': 'avatar-border-gold',
+      'border_hologram': 'avatar-border-hologram'
+    };
+    const bClass = borderClassMap[userData.equippedBorder] || '';
+    const slAv = document.getElementById('slAv');
+    if (slAv) slAv.className = 'u-av ' + bClass;
+    const upAv = document.getElementById('upAv');
+    if (upAv) upAv.className = 'u-av ' + bClass;
+
     const rank = getRank(coinsEarned);
     const slRankEl = document.getElementById('slRank'); if (slRankEl) slRankEl.innerHTML = rankHtml(coinsEarned);
 
@@ -6392,10 +6405,10 @@ async function renderShopItems() {
 
   if (currentShopTab === 'borders') {
     const borders = [
-      { id: 'border_neon', name: '⚡ Neon Cyber Ring', price: 200, icon: '💫', class: 'avatar-border-neon', desc: 'Glowing animated neon aura' },
-      { id: 'border_fire', name: '🔥 Fire & Flames', price: 300, icon: '🔥', class: 'avatar-border-fire', desc: 'Pulsating fire effect' },
-      { id: 'border_gold', name: '👑 Gold Royalty', price: 500, icon: '👑', class: 'avatar-border-gold', desc: 'Imperial gold particles border' },
-      { id: 'border_hologram', name: '🌌 Hologram Sci-Fi', price: 400, icon: '🌌', class: 'avatar-border-hologram', desc: 'Futuristic holographic ring' }
+      { id: 'border_neon', name: '⚡ Neon Cyber Ring', price: 100, icon: '💫', class: 'avatar-border-neon', desc: 'Glowing animated neon aura' },
+      { id: 'border_fire', name: '🔥 Fire & Flames', price: 100, icon: '🔥', class: 'avatar-border-fire', desc: 'Pulsating fire effect' },
+      { id: 'border_gold', name: '👑 Gold Royalty', price: 100, icon: '👑', class: 'avatar-border-gold', desc: 'Imperial gold particles border' },
+      { id: 'border_hologram', name: '🌌 Hologram Sci-Fi', price: 100, icon: '🌌', class: 'avatar-border-hologram', desc: 'Futuristic holographic ring' }
     ];
 
     grid.innerHTML = borders.map(b => {
@@ -6411,13 +6424,13 @@ async function renderShopItems() {
             <div>
               <div style="font-weight:700;color:#fff;font-size:.9rem;">${b.name}</div>
               <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">${b.desc}</div>
-              <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 ${b.price} SP Coins</div>
+              <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 100 SP Coins</div>
             </div>
           </div>
           <div>
             ${isEquipped ? `<button style="background:rgba(16,185,129,.2);border:1px solid #10b981;color:#10b981;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:default;">✅ Equipped</button>` :
               owned ? `<button onclick="equipItem('${b.id}', 'border')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;">Equip</button>` :
-              `<button onclick="buyShopItem('${b.id}', ${b.price}, 'border', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 ${b.price}</button>`}
+              `<button onclick="buyShopItem('${b.id}', 100, 'border', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 100</button>`}
           </div>
         </div>
       `;
@@ -6425,10 +6438,10 @@ async function renderShopItems() {
 
   } else if (currentShopTab === 'badges') {
     const badges = [
-      { id: 'badge_wizard', name: '⚡ 3D Wizard', price: 150, desc: 'Title displayed on your profile' },
-      { id: 'badge_architect', name: '🌌 Sand Architect', price: 200, desc: 'Special 3D creator title' },
-      { id: 'badge_diamond', name: '💎 Diamond Master', price: 400, desc: 'Animated diamond badge' },
-      { id: 'badge_legend', name: '🚀 Sci-Fi Legend', price: 500, desc: 'Elite sci-fi creator badge' }
+      { id: 'badge_wizard', name: '⚡ 3D Wizard', price: 100, desc: 'Title displayed on your profile' },
+      { id: 'badge_architect', name: '🌌 Sand Architect', price: 100, desc: 'Special 3D creator title' },
+      { id: 'badge_diamond', name: '💎 Diamond Master', price: 100, desc: 'Animated diamond badge' },
+      { id: 'badge_legend', name: '🚀 Sci-Fi Legend', price: 100, desc: 'Elite sci-fi creator badge' }
     ];
 
     grid.innerHTML = badges.map(b => {
@@ -6439,12 +6452,12 @@ async function renderShopItems() {
           <div>
             <div style="font-weight:700;color:#fff;font-size:.9rem;">${b.name}</div>
             <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">${b.desc}</div>
-            <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 ${b.price} SP Coins</div>
+            <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 100 SP Coins</div>
           </div>
           <div>
             ${isEquipped ? `<button style="background:rgba(16,185,129,.2);border:1px solid #10b981;color:#10b981;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:default;">✅ Equipped</button>` :
               owned ? `<button onclick="equipItem('${b.id}', 'badge')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;">Equip</button>` :
-              `<button onclick="buyShopItem('${b.id}', ${b.price}, 'badge', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 ${b.price}</button>`}
+              `<button onclick="buyShopItem('${b.id}', 100, 'badge', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 100</button>`}
           </div>
         </div>
       `;
