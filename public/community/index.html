@@ -1824,6 +1824,12 @@
               </div>
               <button class="adm-btn" type="button" onclick="adminCreatePromoCode()" style="background:rgba(168,85,247,.15);border-color:#a855f7;color:#fff;">🎟️ Create Promo Code</button>
             </div>
+
+            <!-- Transfer to Admin's own account -->
+            <div style="border-top:1px dashed rgba(255,255,255,.1);margin-top:10px;padding-top:10px;">
+              <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:4px;">👑 Transfer Vault Coins to Admin Account</div>
+              <button class="adm-btn" type="button" onclick="adminTransferToSelf()" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:900;">👑 Transfer +500 Coins to My Admin Balance</button>
+            </div>
           </div>
           <!-- Export CSV -->
           <div class="adm-section">
@@ -6287,14 +6293,28 @@ async function addCoins(amount, type, postId, description) {
   } catch(e) { console.warn('addCoins error:', e); }
 }
 
-// ── Award coins to another user (async, no UI update for that user) ─
+// ── Award coins to another user (explicit numeric balance) ─────────
 async function awardCoinsToUser(uid, amount, type, description) {
   if (!db || !uid || amount <= 0) return;
   try {
+    const uDoc = await db.collection('users').doc(uid).get();
+    const uData = uDoc.exists ? uDoc.data() : {};
+    const oldCoins = typeof uData.spCoins === 'number' ? uData.spCoins : (Number(uData.spCoins) || 0);
+    const oldEarned = typeof uData.totalCoinsEarned === 'number' ? uData.totalCoinsEarned : (Number(uData.totalCoinsEarned) || 0);
+
+    const newCoins = oldCoins + amount;
+    const newEarned = oldEarned + amount;
+
     await db.collection('users').doc(uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(amount),
-      totalCoinsEarned: firebase.firestore.FieldValue.increment(amount)
+      spCoins: newCoins,
+      totalCoinsEarned: newEarned
     }, { merge: true });
+
+    // If awarding to currently logged in user (e.g. Admin withdrawing to self), update UI live!
+    if (curUser && uid === curUser.uid) {
+      updateCoinUI(newCoins);
+    }
+
     await logTransaction(uid, curUser ? curUser.uid : null, amount, type, null, description);
   } catch(e) { console.warn('awardCoinsToUser error:', e); }
 }
@@ -6637,6 +6657,24 @@ async function redeemPromoCode() {
   } catch(e) {
     console.error('redeemPromoCode error:', e);
     toast('Error redeeming code: ' + e.message, 'error');
+  }
+}
+
+async function adminTransferToSelf() {
+  if (!db || !curUser || !isAdmin) return;
+  try {
+    const amt = 500;
+    await awardCoinsToUser(curUser.uid, amt, 'admin_withdraw', '👑 Admin Vault Withdrawal');
+    adminVaultBalance = Math.max(0, adminVaultBalance - amt);
+    if (adminVaultBalance < 500) adminVaultBalance = 10000;
+    try { localStorage.setItem('sp_admin_vault', adminVaultBalance.toString()); } catch(e){}
+    const el = document.getElementById('adminVaultReserve');
+    if (el) el.textContent = adminVaultBalance.toLocaleString() + ' 💰';
+
+    toast(`👑 Transferred +${amt} SP Coins directly to your Admin Account balance!`, 'success');
+    spawnCoinRain(10);
+  } catch(e) {
+    toast('Error transferring to Admin balance: ' + e.message, 'error');
   }
 }
 
