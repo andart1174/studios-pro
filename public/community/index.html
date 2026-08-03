@@ -6028,7 +6028,10 @@ function initCoins() {
         spCoins: 100,
         totalCoinsEarned: 100,
         lastCoinLoginDate: today
-      }, { merge: true });
+      }, { merge: true }).catch(err => {
+        console.error('[COINS] FAILED TO WRITE WELCOME BONUS:', err);
+        alert('🔥 Firebase Write Error: ' + err.message + '\nCheck Firebase Console Rules for collection users!');
+      });
       await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
@@ -6041,7 +6044,9 @@ function initCoins() {
         spCoins: currentCoins,
         totalCoinsEarned: oldEarned + 10,
         lastCoinLoginDate: today
-      }, { merge: true });
+      }, { merge: true }).catch(err => {
+        console.error('[COINS] FAILED TO WRITE DAILY BONUS:', err);
+      });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
@@ -6267,7 +6272,11 @@ async function confirmTip() {
     const newSenderBal = Math.max(0, spCoinsBalance - amount);
     await db.collection('users').doc(curUser.uid).set({
       spCoins: newSenderBal
-    }, { merge: true });
+    }, { merge: true }).catch(err => {
+      console.error('[TIP] Sender write failed:', err);
+      alert('🔥 Tip Error: ' + err.message + '\nCheck Firebase Console Rules for collection users!');
+      throw err;
+    });
 
     // ── STEP 2: Update UI immediately ──────
     updateCoinUI(newSenderBal);
