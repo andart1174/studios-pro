@@ -5992,6 +5992,7 @@ async function initCoins() {
   try {
     // 1. Show localStorage cache instantly (fast UX while server loads)
     const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
+    console.log('[COINS] localStorage value:', cacheVal);
     if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
       spCoinsBalance = parseInt(cacheVal);
       updateCoinUI(spCoinsBalance);
@@ -6002,6 +6003,7 @@ async function initCoins() {
     // ⚠️ FORCE server read — bypass Firestore local cache completely
     const uDoc = await uRef.get({ source: 'server' });
     const data = uDoc.exists ? uDoc.data() : {};
+    console.log('[COINS] Firestore server read (1st):', data.spCoins, '| lastLogin:', data.lastCoinLoginDate);
 
     // Welcome bonus for brand-new users (only if spCoins field missing)
     if (!uDoc.exists || data.spCoins === undefined) {
@@ -6014,6 +6016,7 @@ async function initCoins() {
     const today = new Date().toDateString();
     const lastLogin = data.lastCoinLoginDate || '';
     if (lastLogin !== today) {
+      console.log('[COINS] Applying daily login bonus +10');
       await uRef.set({
         spCoins: firebase.firestore.FieldValue.increment(10),
         totalCoinsEarned: firebase.firestore.FieldValue.increment(10),
@@ -6027,9 +6030,10 @@ async function initCoins() {
     const freshDoc = await uRef.get({ source: 'server' });
     const freshData = freshDoc.exists ? freshDoc.data() : {};
     const finalBalance = typeof freshData.spCoins === 'number' ? freshData.spCoins : 0;
+    console.log('[COINS] Firestore server read (final):', finalBalance, '← this is what will be displayed');
     updateCoinUI(finalBalance);
 
-  } catch(e) { console.warn('initCoins error:', e); }
+  } catch(e) { console.error('[COINS] initCoins ERROR:', e); }
 }
 
 // ── Process pending tips sent to this user while they were away ───
