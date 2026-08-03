@@ -6004,12 +6004,15 @@ async function initCoins() {
     const uDoc = await uRef.get();
     const data = uDoc.exists ? uDoc.data() : {};
 
-    let currentCoins = typeof data.spCoins === 'number' ? data.spCoins : null;
+    let currentCoins = null;
+    if (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins))) {
+      currentCoins = Number(data.spCoins);
+    }
     let lastLogin = data.lastCoinLoginDate || '';
 
     // CASE A: Brand new user or missing spCoins field -> initial 100 bonus
     if (currentCoins === null) {
-      console.log('[COINS] Brand new user -> set 100 SP Coins');
+      console.log('[COINS] Brand new user -> setting initial 100 SP Coins');
       currentCoins = 100;
       await uRef.set({
         spCoins: 100,
@@ -6031,13 +6034,16 @@ async function initCoins() {
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     } else {
-      console.log('[COINS] Balance loaded from Firestore:', currentCoins);
+      console.log('[COINS] Loaded balance from Firestore:', currentCoins);
     }
 
     // 3. Update UI and localStorage with final verified balance
     updateCoinUI(currentCoins);
 
-  } catch(e) { console.error('[COINS] initCoins ERROR:', e); }
+  } catch(e) {
+    console.error('[COINS] initCoins ERROR:', e);
+    toast('Coins Sync Error: ' + e.message, 'error');
+  }
 }
 
 // ── Process pending tips sent to this user while they were away ───
