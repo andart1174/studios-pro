@@ -5990,7 +5990,7 @@ let tipSelectedAmount = 5;
 async function initCoins() {
   if (!curUser || !db) return;
   try {
-    // 1. Show localStorage cache instantly (fast UX)
+    // 1. Show localStorage cache instantly (fast UX while server loads)
     const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
     if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
       spCoinsBalance = parseInt(cacheVal);
@@ -5998,7 +5998,9 @@ async function initCoins() {
     }
 
     const uRef = db.collection('users').doc(curUser.uid);
-    const uDoc = await uRef.get();
+
+    // ⚠️ FORCE server read — bypass Firestore local cache completely
+    const uDoc = await uRef.get({ source: 'server' });
     const data = uDoc.exists ? uDoc.data() : {};
 
     // Welcome bonus for brand-new users (only if spCoins field missing)
@@ -6021,8 +6023,8 @@ async function initCoins() {
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
 
-    // 2. Read FRESH balance from Firestore AFTER all writes — source of truth
-    const freshDoc = await uRef.get();
+    // ⚠️ FORCE server read again — get the REAL final balance after all writes
+    const freshDoc = await uRef.get({ source: 'server' });
     const freshData = freshDoc.exists ? freshDoc.data() : {};
     const finalBalance = typeof freshData.spCoins === 'number' ? freshData.spCoins : 0;
     updateCoinUI(finalBalance);
