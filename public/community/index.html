@@ -2171,11 +2171,18 @@ if (auth) {
     curUser = u;
     if (u) {
       isAdmin = ADMIN_EMAILS.includes(u.email);
+
+      // ─── Ensure user profile fields exist first to avoid write races ───
+      try {
+        await db.collection('users').doc(u.uid).set({
+          displayName: u.displayName || 'Creator',
+          photoURL: u.photoURL || null,
+          email: u.email || '',
+          lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch(e) {}
+
       renderLoggedIn(u);
-      db.collection('users').doc(u.uid).set({
-        displayName: u.displayName, photoURL: u.photoURL,
-        email: u.email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).catch(()=>{});
 
       // ─── Founding Member: grant badge + update public stats counter ───
       db.collection('users').doc(u.uid).get().then(snap => {
@@ -6008,7 +6015,7 @@ function initCoins() {
   // 2. Realtime listener for Firestore balance
   coinsUnsub = uRef.onSnapshot(async doc => {
     if (!doc.exists) {
-      console.log('[COINS] No user doc found for uid:', curUser.uid, '-> creating doc with 100 SP Coins');
+      console.log('[COINS] No user doc found -> creating doc with 100 SP Coins');
       await uRef.set({
         spCoins: 100,
         totalCoinsEarned: 100,
