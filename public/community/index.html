@@ -1287,7 +1287,70 @@
     .live-gift-btn{display:flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#000;font-size:.85rem;font-weight:900;cursor:pointer;transition:all .2s;font-family:inherit;margin:8px 12px;}
     .live-gift-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.5);}
 
-  </style>
+  /* 🎨 SP SHOP AVATAR BORDERS & BADGES */
+.avatar-border-neon {
+  border: 3px solid transparent !important;
+  background: linear-gradient(#0f172a, #0f172a) padding-box, linear-gradient(135deg, #6366f1, #a855f7, #ec4899) border-box !important;
+  box-shadow: 0 0 14px rgba(168,85,247,0.7) !important;
+  animation: borderRotate 4s linear infinite !important;
+}
+.avatar-border-fire {
+  border: 3px solid #f97316 !important;
+  box-shadow: 0 0 16px rgba(249,115,22,0.9), inset 0 0 8px rgba(239,68,68,0.8) !important;
+  animation: firePulse 1.5s ease-in-out infinite alternate !important;
+}
+.avatar-border-gold {
+  border: 3px solid #f59e0b !important;
+  box-shadow: 0 0 18px rgba(245,158,11,0.85), inset 0 0 6px rgba(251,191,36,0.6) !important;
+}
+.avatar-border-hologram {
+  border: 3px solid #06b6d4 !important;
+  box-shadow: 0 0 16px rgba(6,182,212,0.8), 0 0 30px rgba(99,102,241,0.5) !important;
+  animation: holoGlow 3s ease-in-out infinite alternate !important;
+}
+@keyframes firePulse {
+  0% { box-shadow: 0 0 12px rgba(249,115,22,0.7), inset 0 0 4px rgba(239,68,68,0.5); }
+  100% { box-shadow: 0 0 22px rgba(239,68,68,1), inset 0 0 12px rgba(245,158,11,0.9); }
+}
+@keyframes holoGlow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(180deg); }
+}
+.shop-tab-btn {
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all .2s;
+}
+.shop-tab-btn.active {
+  background: rgba(168,85,247,.18);
+  border-color: #a855f7;
+  color: #fff;
+}
+.shop-item-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all .2s;
+}
+.shop-item-card:hover {
+  border-color: rgba(168,85,247,.4);
+  background: rgba(255,255,255,.05);
+}
+</style>
 </head>
 <body>
 
@@ -1463,6 +1526,9 @@
         </button>
         <button class="nav-item" onclick="setActiveNav(this);scrollToProfile()">
           <span class="nav-item-icon">👤</span><span data-t="navProfile">My Profile</span>
+        </button>
+        <button class="nav-item" id="navShop" onclick="openShopModal()" style="color:var(--accent3);font-weight:700;">
+          <span class="nav-item-icon">🛍️</span><span>SP Shop</span>
         </button>
       </div>
     </div>
@@ -5834,6 +5900,36 @@ async function toggleFollow(targetUid) {
   </div>
 </div>
 
+<!-- 🛍️ SP SHOP MODAL -->
+<div class="overlay" id="shopOverlay" onclick="closeShopModal(event)">
+  <div class="wallet-modal" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="mh" style="background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(236,72,153,.15));">
+      <div class="mt" style="color:#a855f7;display:flex;align-items:center;gap:8px;">🛍️ SP Nexus Marketplace</div>
+      <button class="mc" onclick="closeShopModalDirect()">✕</button>
+    </div>
+    <div style="background:rgba(15,23,42,.6);padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img src="/sp_coin_logo.png" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(245,158,11,.8));">
+        <div style="font-weight:900;color:#fbbf24;font-size:1.1rem;" id="shopBalance">0</div>
+        <div style="font-size:.75rem;color:var(--muted);font-weight:700;">SP COINS</div>
+      </div>
+      <div style="font-size:.72rem;color:var(--accent3);font-weight:700;background:rgba(99,102,241,.12);padding:4px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.3);">✨ Exclusive Items</div>
+    </div>
+    
+    <!-- Shop Tabs -->
+    <div style="display:flex;gap:4px;padding:10px 16px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border2);overflow-x:auto;">
+      <button class="shop-tab-btn active" id="tabBorders" onclick="switchShopTab('borders')">🖼️ Avatar Borders</button>
+      <button class="shop-tab-btn" id="tabBadges" onclick="switchShopTab('badges')">🏷️ Badges</button>
+      <button class="shop-tab-btn" id="tabBoost" onclick="switchShopTab('boost')">🚀 Boost</button>
+    </div>
+
+    <!-- Shop Content Grid -->
+    <div style="padding:16px;overflow-y:auto;flex:1;" id="shopContentGrid">
+      <!-- Dynamic Items Rendered Here -->
+    </div>
+  </div>
+</div>
+
 <!-- 🎁 TIP MODAL -->
 <div class="overlay" id="tipOverlay" onclick="closeTipModal(event)">
   <div class="tip-modal">
@@ -6184,6 +6280,162 @@ function closeWallet(e) {
 }
 function closeWalletDirect() {
   document.getElementById('walletOverlay').classList.remove('open');
+}
+
+// ── 🛍️ SP SHOP MARKETPLACE FUNCTIONS ──────────────────────────────────
+let currentShopTab = 'borders';
+
+function openShopModal() {
+  if (!curUser) { openAuth(); return; }
+  document.getElementById('shopOverlay').classList.add('open');
+  const balEl = document.getElementById('shopBalance');
+  if (balEl) balEl.textContent = spCoinsBalance;
+  renderShopItems();
+}
+
+function closeShopModal(e) {
+  if (e && e.target !== document.getElementById('shopOverlay')) return;
+  closeShopModalDirect();
+}
+function closeShopModalDirect() {
+  document.getElementById('shopOverlay').classList.remove('open');
+}
+
+function switchShopTab(tab) {
+  currentShopTab = tab;
+  document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
+  const activeTabBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (activeTabBtn) activeTabBtn.classList.add('active');
+  renderShopItems();
+}
+
+async function renderShopItems() {
+  const grid = document.getElementById('shopContentGrid');
+  if (!grid || !curUser || !db) return;
+
+  const uDoc = await db.collection('users').doc(curUser.uid).get().catch(() => null);
+  const uData = uDoc && uDoc.exists ? uDoc.data() : {};
+  const inventory = Array.isArray(uData.inventory) ? uData.inventory : [];
+  const equippedBorder = uData.equippedBorder || '';
+  const equippedBadge = uData.equippedBadge || '';
+
+  if (currentShopTab === 'borders') {
+    const borders = [
+      { id: 'border_neon', name: '⚡ Neon Cyber Ring', price: 200, icon: '💫', class: 'avatar-border-neon', desc: 'Glowing animated neon aura' },
+      { id: 'border_fire', name: '🔥 Fire & Flames', price: 300, icon: '🔥', class: 'avatar-border-fire', desc: 'Pulsating fire effect' },
+      { id: 'border_gold', name: '👑 Gold Royalty', price: 500, icon: '👑', class: 'avatar-border-gold', desc: 'Imperial gold particles border' },
+      { id: 'border_hologram', name: '🌌 Hologram Sci-Fi', price: 400, icon: '🌌', class: 'avatar-border-hologram', desc: 'Futuristic holographic ring' }
+    ];
+
+    grid.innerHTML = borders.map(b => {
+      const owned = inventory.includes(b.id);
+      const isEquipped = equippedBorder === b.id;
+      const userPhoto = curUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(curUser.displayName||'U')}&background=6366f1&color=fff`;
+      return `
+        <div class="shop-item-card">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="position:relative;width:44px;height:44px;flex-shrink:0;">
+              <img src="${userPhoto}" class="${b.class}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;">
+            </div>
+            <div>
+              <div style="font-weight:700;color:#fff;font-size:.9rem;">${b.name}</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">${b.desc}</div>
+              <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 ${b.price} SP Coins</div>
+            </div>
+          </div>
+          <div>
+            ${isEquipped ? `<button style="background:rgba(16,185,129,.2);border:1px solid #10b981;color:#10b981;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:default;">✅ Equipped</button>` :
+              owned ? `<button onclick="equipItem('${b.id}', 'border')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;">Equip</button>` :
+              `<button onclick="buyShopItem('${b.id}', ${b.price}, 'border', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 ${b.price}</button>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } else if (currentShopTab === 'badges') {
+    const badges = [
+      { id: 'badge_wizard', name: '⚡ 3D Wizard', price: 150, desc: 'Title displayed on your profile' },
+      { id: 'badge_architect', name: '🌌 Sand Architect', price: 200, desc: 'Special 3D creator title' },
+      { id: 'badge_diamond', name: '💎 Diamond Master', price: 400, desc: 'Animated diamond badge' },
+      { id: 'badge_legend', name: '🚀 Sci-Fi Legend', price: 500, desc: 'Elite sci-fi creator badge' }
+    ];
+
+    grid.innerHTML = badges.map(b => {
+      const owned = inventory.includes(b.id);
+      const isEquipped = equippedBadge === b.id;
+      return `
+        <div class="shop-item-card">
+          <div>
+            <div style="font-weight:700;color:#fff;font-size:.9rem;">${b.name}</div>
+            <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">${b.desc}</div>
+            <div style="font-size:.75rem;font-weight:800;color:#fbbf24;margin-top:4px;">💰 ${b.price} SP Coins</div>
+          </div>
+          <div>
+            ${isEquipped ? `<button style="background:rgba(16,185,129,.2);border:1px solid #10b981;color:#10b981;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:default;">✅ Equipped</button>` :
+              owned ? `<button onclick="equipItem('${b.id}', 'badge')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;">Equip</button>` :
+              `<button onclick="buyShopItem('${b.id}', ${b.price}, 'badge', '${escAttr(b.name)}')" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:7px 16px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Buy 💰 ${b.price}</button>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } else if (currentShopTab === 'boost') {
+    grid.innerHTML = `
+      <div class="shop-item-card">
+        <div>
+          <div style="font-weight:700;color:#fff;font-size:.95rem;">⚡ 24h Feed Spotlight</div>
+          <div style="font-size:.76rem;color:var(--muted);margin-top:4px;">Promote any of your creations to the top of the community feed with a ⚡ BOOSTED badge for 24 hours.</div>
+          <div style="font-size:.8rem;font-weight:800;color:#fbbf24;margin-top:6px;">💰 50 SP Coins / boost</div>
+        </div>
+        <button onclick="closeShopModalDirect();toast('Click the 🚀 Boost button under any of your posts to boost it!', 'info');" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;">🚀 Boost Post</button>
+      </div>
+    `;
+  }
+}
+
+async function buyShopItem(itemId, price, type, itemName) {
+  if (!curUser || !db) return;
+  if (spCoinsBalance < price) {
+    toast(`Not enough SP Coins! You need ${price} 💰`, 'error');
+    return;
+  }
+  try {
+    const newBal = spCoinsBalance - price;
+    updateCoinUI(newBal);
+
+    const updateData = {
+      spCoins: newBal,
+      inventory: firebase.firestore.FieldValue.arrayUnion(itemId)
+    };
+    if (type === 'border') updateData.equippedBorder = itemId;
+    if (type === 'badge') updateData.equippedBadge = itemId;
+
+    await db.collection('users').doc(curUser.uid).set(updateData, { merge: true });
+    await logTransaction(curUser.uid, null, -price, 'shop', null, `🛍️ Bought ${itemName}`);
+
+    toast(`🎉 Successfully bought and equipped ${itemName}!`, 'success');
+    spawnCoinRain(6);
+    renderShopItems();
+    loadUserStats(curUser.uid);
+  } catch(e) {
+    toast('Error buying item: ' + e.message, 'error');
+  }
+}
+
+async function equipItem(itemId, type) {
+  if (!curUser || !db) return;
+  try {
+    const updateData = {};
+    if (type === 'border') updateData.equippedBorder = itemId;
+    if (type === 'badge') updateData.equippedBadge = itemId;
+
+    await db.collection('users').doc(curUser.uid).set(updateData, { merge: true });
+    toast('✅ Equipped!', 'success');
+    renderShopItems();
+    loadUserStats(curUser.uid);
+  } catch(e) {
+    toast('Error equipping item: ' + e.message, 'error');
+  }
 }
 
 // ── Robust loadWalletTransactions (No index required) ────────────
