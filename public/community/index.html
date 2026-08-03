@@ -6008,7 +6008,7 @@ function initCoins() {
   // 2. Realtime listener for Firestore balance
   coinsUnsub = uRef.onSnapshot(async doc => {
     if (!doc.exists) {
-      // Doc doesn't exist yet, initialize it
+      console.log('[COINS] No user doc found for uid:', curUser.uid, '-> creating doc with 100 SP Coins');
       await uRef.set({
         spCoins: 100,
         totalCoinsEarned: 100,
@@ -6018,6 +6018,7 @@ function initCoins() {
     }
 
     const data = doc.data();
+    console.log('[COINS] uid:', curUser.uid, '| doc.data():', data);
     let currentCoins = (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins)))
       ? Number(data.spCoins) : null;
     let lastLogin = data.lastCoinLoginDate || '';
