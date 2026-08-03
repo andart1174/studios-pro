@@ -6003,9 +6003,9 @@ async function initCoins() {
 
     // Welcome bonus for brand-new users (only if spCoins field missing)
     if (!uDoc.exists || data.spCoins === undefined) {
-      await uRef.set({ spCoins: 500, totalCoinsEarned: 500 }, { merge: true });
-      await logTransaction(curUser.uid, null, 500, 'welcome', null, '🎉 Welcome bonus');
-      toast('🎉 Welcome bonus: +500 SP Coins!', 'success');
+      await uRef.set({ spCoins: 100, totalCoinsEarned: 100 }, { merge: true });
+      await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
+      toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
 
     // Daily login bonus (only once per day)
