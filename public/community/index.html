@@ -4854,53 +4854,74 @@ async function loadCreatorQuests(uid) {
     } catch(e) {}
 
     renderQuestList(realProgress);
+    await checkAndClaimQuestRewards(uid, realProgress);
 
   } catch(e) {
     console.warn('loadCreatorQuests fetch error:', e.message);
     renderQuestList(localProgress);
+    checkAndClaimQuestRewards(uid, localProgress);
+  }
+}
+
+function getClaimedQuests(uid) {
+  try {
+    const weekKey = getQuestWeekKey();
+    const raw = localStorage.getItem(`sp_claimed_quests_${uid}_${weekKey}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function markQuestClaimed(uid, questId) {
+  try {
+    const weekKey = getQuestWeekKey();
+    const claimed = getClaimedQuests(uid);
+    if (!claimed.includes(questId)) {
+      claimed.push(questId);
+      localStorage.setItem(`sp_claimed_quests_${uid}_${weekKey}`, JSON.stringify(claimed));
+    }
+  } catch(e) {}
+}
+
+async function checkAndClaimQuestRewards(uid, progress) {
+  if (!uid || !progress) return;
+  const claimed = getClaimedQuests(uid);
+
+  for (let q of QUESTS) {
+    const cur = progress[q.field] || 0;
+    if (cur >= q.target && !claimed.includes(q.id)) {
+      markQuestClaimed(uid, q.id);
+
+      if (curUser && uid === curUser.uid) {
+        toast(`🏆 Quest Completed: ${q.en}! +${q.coins} SP Coins! 💰`, 'success');
+        spawnCoinRain(8);
+        await addCoins(q.coins, 'quest', null, `🎯 Quest: ${q.en}`);
+      } else {
+        await awardCoinsToUser(uid, q.coins, 'quest', `🎯 Quest: ${q.en}`);
+      }
+
+      if (db) {
+        try {
+          const weekKey = getQuestWeekKey();
+          await db.collection('user_quests').doc(`${uid}_${weekKey}`).set({
+            claimedQuests: firebase.firestore.FieldValue.arrayUnion(q.id)
+          }, { merge: true });
+        } catch(e) {}
+      }
+    }
   }
 }
 
 async function updateQuestProgress(uid, field, increment) {
   if (!uid) return;
 
-  // 1. Update localStorage IMMEDIATELY (always works)
   const cur = getLocalQuestProgress(uid);
   const newVal = (cur[field] || 0) + increment;
   setLocalQuestProgress(uid, field, newVal);
 
-  // 2. Re-render quest UI right away
-  renderQuestList(getLocalQuestProgress(uid));
+  const progress = getLocalQuestProgress(uid);
+  renderQuestList(progress);
+  await checkAndClaimQuestRewards(uid, progress);
 
-  // Check if quest just completed
-  const quest = QUESTS.find(q => q.field === field);
-  if (quest && newVal >= quest.target && (newVal - increment) < quest.target) {
-    const isFR = curLang === 'fr';
-    setTimeout(() => {
-      // Particle burst for quest completion
-      for (let i = 0; i < 14; i++) {
-        const p = document.createElement('div');
-        p.className = 'sp-like-particle';
-        p.textContent = ['🎯','⭐','✨','🏆','🎉'][Math.floor(Math.random()*5)];
-        p.style.left = (Math.random() * window.innerWidth) + 'px';
-        p.style.top = (window.scrollY + 150 + Math.random() * 100) + 'px';
-        p.style.setProperty('--rot', (Math.random() * 120 - 60) + 'deg');
-        p.style.animationDelay = (Math.random() * 0.2) + 's';
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 1000);
-      }
-      toast(isFR
-        ? `🏆 Quête complétée : ${quest.fr} ! +${quest.coins} 💰`
-        : `🏆 Quest done: ${quest.en}! +${quest.coins} 💰`,
-        'success');
-      // Award SP Coins in Firebase
-      if (db && curUser) {
-        addCoins(quest.coins, 'quest', null, `🎯 Quest: ${quest.en}`);
-      }
-    }, 300);
-  }
-
-  // 3. Sync to Firebase (optional, fails gracefully)
   if (!db) return;
   try {
     const weekKey = getQuestWeekKey();
@@ -4910,7 +4931,6 @@ async function updateQuestProgress(uid, field, increment) {
       { merge: true }
     );
   } catch(e) {
-    // Firebase sync failed — localStorage is the source of truth
     console.warn('updateQuestProgress Firebase sync skipped:', e.message);
   }
 }
