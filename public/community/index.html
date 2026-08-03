@@ -6014,38 +6014,36 @@ function initCoins() {
 
   // 2. Realtime listener for Firestore balance
   coinsUnsub = uRef.onSnapshot(async doc => {
-    if (!doc.exists) {
-      console.log('[COINS] No user doc found -> creating doc with 100 SP Coins');
+    if (!doc.exists) return;
+
+    const data = doc.data();
+    console.log('[COINS] uid:', curUser.uid, '| doc.data():', data);
+
+    let currentCoins = (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins)))
+      ? Number(data.spCoins) : null;
+    let lastLogin = data.lastCoinLoginDate || '';
+    const hasBeenInitialized = lastLogin !== '' || localStorage.getItem('sp_coins_init_' + curUser.uid) === 'true';
+
+    // CASE A: Truly brand new user (never initialized before)
+    if (currentCoins === null && !hasBeenInitialized) {
+      console.log('[COINS] Truly brand new user -> setting initial 100 SP Coins');
+      currentCoins = 100;
+      try { localStorage.setItem('sp_coins_init_' + curUser.uid, 'true'); } catch(e){}
       await uRef.set({
         spCoins: 100,
         totalCoinsEarned: 100,
         lastCoinLoginDate: today
       }, { merge: true });
-      return;
-    }
-
-    const data = doc.data();
-    console.log('[COINS] uid:', curUser.uid, '| doc.data():', data);
-    let currentCoins = (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins)))
-      ? Number(data.spCoins) : null;
-    let lastLogin = data.lastCoinLoginDate || '';
-
-    // CASE A: Missing spCoins field -> initialize with 100
-    if (currentCoins === null) {
-      console.log('[COINS] Missing spCoins field -> setting 100');
-      currentCoins = 100;
-      await uRef.set({
-        spCoins: 100,
-        totalCoinsEarned: 100,
-        lastCoinLoginDate: today
-      }, { merge: true }).catch(err => {
-        console.error('[COINS] FAILED TO WRITE WELCOME BONUS:', err);
-        alert('🔥 Firebase Write Error: ' + err.message + '\nCheck Firebase Console Rules for collection users!');
-      });
       await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
-    // CASE B: New day login bonus (+10)
+    // CASE B: Existing user whose spCoins field was temporarily missing in cache
+    else if (currentCoins === null && hasBeenInitialized) {
+      console.log('[COINS] Existing user missing spCoins -> restoring current balance');
+      currentCoins = spCoinsBalance > 0 ? spCoinsBalance : 100;
+      await uRef.set({ spCoins: currentCoins, lastCoinLoginDate: today }, { merge: true });
+    }
+    // CASE C: New day login bonus (+10)
     else if (lastLogin !== today) {
       console.log('[COINS] New day -> adding +10 daily login bonus');
       currentCoins += 10;
@@ -6054,14 +6052,13 @@ function initCoins() {
         spCoins: currentCoins,
         totalCoinsEarned: oldEarned + 10,
         lastCoinLoginDate: today
-      }, { merge: true }).catch(err => {
-        console.error('[COINS] FAILED TO WRITE DAILY BONUS:', err);
-      });
+      }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
 
-    // Sync UI with exact Firestore balance
+    // Always mark as initialized and update UI
+    try { localStorage.setItem('sp_coins_init_' + curUser.uid, 'true'); } catch(e){}
     updateCoinUI(currentCoins);
   }, err => {
     console.warn('[COINS] Realtime listener error:', err);
