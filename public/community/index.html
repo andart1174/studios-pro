@@ -1780,6 +1780,51 @@
             <textarea class="adm-inp" id="challengeDesc" placeholder="Challenge description..." rows="2" style="resize:vertical;"></textarea>
             <button class="adm-btn" onclick="adminCreateChallenge()">🏅 Create Challenge</button>
           </div>
+
+          <!-- 🏛️ CENTRAL SP TREASURY & BANK -->
+          <div class="adm-section" style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px;margin-top:10px;">
+            <div class="adm-section-title" style="color:#fbbf24;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span>🏛️ Central SP Treasury</span>
+              <span style="font-size:.68rem;background:rgba(245,158,11,.15);color:#fbbf24;padding:2px 6px;border-radius:6px;font-weight:800;">ADMIN ONLY</span>
+            </div>
+            
+            <!-- Treasury Vault Display -->
+            <div style="background:rgba(0,0,0,.3);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px;border:1px solid rgba(245,158,11,.15);">
+              <div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;">Admin Vault Reserve</div>
+              <div style="font-size:1.3rem;font-weight:900;color:#fbbf24;margin:3px 0;" id="adminVaultReserve">10,000 💰</div>
+              <button onclick="refillAdminVault()" type="button" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:#fbbf24;font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;">🔄 Refill Vault (10,000 💰)</button>
+            </div>
+
+            <!-- Gift Coins to Specific User -->
+            <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:6px;">🎁 Gift Coins to User</div>
+            <input class="adm-inp" id="adminGiftEmail" placeholder="User email or UID...">
+            <div style="display:flex;gap:4px;margin-bottom:6px;">
+              <button type="button" onclick="setAdminGiftAmt(50)" class="shop-tab-btn" style="flex:1;padding:4px;">+50</button>
+              <button type="button" onclick="setAdminGiftAmt(100)" class="shop-tab-btn" style="flex:1;padding:4px;">+100</button>
+              <button type="button" onclick="setAdminGiftAmt(250)" class="shop-tab-btn" style="flex:1;padding:4px;">+250</button>
+              <button type="button" onclick="setAdminGiftAmt(500)" class="shop-tab-btn" style="flex:1;padding:4px;">+500</button>
+            </div>
+            <input class="adm-inp" id="adminGiftAmt" type="number" placeholder="Coins amount..." value="100">
+            <input class="adm-inp" id="adminGiftReason" placeholder="Reason (e.g. 🏆 Featured 3D model reward)...">
+            <button class="adm-btn" type="button" onclick="adminSendGiftCoins()" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:#000;font-weight:900;">🎁 Send Admin Gift</button>
+
+            <!-- Community Airdrop -->
+            <div style="border-top:1px dashed rgba(255,255,255,.1);margin-top:10px;padding-top:10px;">
+              <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:4px;">🚀 Mass Airdrop to Active Creators</div>
+              <button class="adm-btn" type="button" onclick="adminMassAirdrop()" style="background:rgba(99,102,241,.15);border-color:#6366f1;color:#fff;">🚀 Airdrop +50 Coins to All Creators</button>
+            </div>
+
+            <!-- Promo Code Generator -->
+            <div style="border-top:1px dashed rgba(255,255,255,.1);margin-top:10px;padding-top:10px;">
+              <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:4px;">🎟️ Create SP Promo Code</div>
+              <input class="adm-inp" id="promoCodeName" placeholder="Code name (e.g. NEXUS2026)...">
+              <div style="display:flex;gap:4px;margin-bottom:6px;">
+                <input class="adm-inp" id="promoCodeCoins" type="number" placeholder="Coins/user" value="100" style="margin:0;">
+                <input class="adm-inp" id="promoCodeMax" type="number" placeholder="Max uses" value="20" style="margin:0;">
+              </div>
+              <button class="adm-btn" type="button" onclick="adminCreatePromoCode()" style="background:rgba(168,85,247,.15);border-color:#a855f7;color:#fff;">🎟️ Create Promo Code</button>
+            </div>
+          </div>
           <!-- Export CSV -->
           <div class="adm-section">
             <div class="adm-section-title">📥 Export Data</div>
@@ -5927,6 +5972,12 @@ async function toggleFollow(targetUid) {
     <div style="padding:16px;overflow-y:auto;flex:1;" id="shopContentGrid">
       <!-- Dynamic Items Rendered Here -->
     </div>
+
+    <!-- Promo Code Redeem Bar -->
+    <div style="background:rgba(0,0,0,.3);padding:10px 16px;border-top:1px solid var(--border2);display:flex;gap:6px;align-items:center;">
+      <input id="promoCodeInp" placeholder="🎟️ Enter Promo Code..." style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;border-radius:8px;padding:6px 10px;font-size:.78rem;font-family:inherit;">
+      <button onclick="redeemPromoCode()" type="button" style="background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:.76rem;font-weight:700;cursor:pointer;">Redeem</button>
+    </div>
   </div>
 </div>
 
@@ -6435,6 +6486,157 @@ async function equipItem(itemId, type) {
     loadUserStats(curUser.uid);
   } catch(e) {
     toast('Error equipping item: ' + e.message, 'error');
+  }
+}
+
+// ── 🏛️ ADMIN CENTRAL SP TREASURY & BANK FUNCTIONS ────────────────────
+let adminVaultBalance = 10000;
+
+function refillAdminVault() {
+  adminVaultBalance = 10000;
+  try { localStorage.setItem('sp_admin_vault', '10000'); } catch(e){}
+  const el = document.getElementById('adminVaultReserve');
+  if (el) el.textContent = '10,000 💰';
+  toast('🏛️ Admin Vault refilled to 10,000 SP Coins!', 'success');
+}
+
+function setAdminGiftAmt(amt) {
+  const el = document.getElementById('adminGiftAmt');
+  if (el) el.value = amt;
+}
+
+async function adminSendGiftCoins() {
+  if (!db || !isAdmin) return;
+  const targetInput = document.getElementById('adminGiftEmail').value.trim();
+  const amtInput = parseInt(document.getElementById('adminGiftAmt').value) || 0;
+  const reason = document.getElementById('adminGiftReason').value.trim() || '👑 Admin Gift Reward';
+
+  if (!targetInput || amtInput <= 0) {
+    toast('Please enter a valid user email/UID and positive coin amount!', 'error');
+    return;
+  }
+
+  try {
+    toast('Searching user...', 'info');
+    let targetUid = null;
+    let targetName = 'User';
+
+    let snap = await db.collection('users').where('email', '==', targetInput).limit(1).get();
+    if (!snap.empty) {
+      targetUid = snap.docs[0].id;
+      targetName = snap.docs[0].data().displayName || 'User';
+    } else {
+      let doc = await db.collection('users').doc(targetInput).get().catch(() => null);
+      if (doc && doc.exists) {
+        targetUid = doc.id;
+        targetName = doc.data().displayName || 'User';
+      }
+    }
+
+    if (!targetUid) {
+      toast('User not found with that email or UID!', 'error');
+      return;
+    }
+
+    await awardCoinsToUser(targetUid, amtInput, 'admin_gift', `👑 Gift from Admin: ${reason}`);
+    await createNotification(targetUid, 'admin_gift', `👑 Admin sent you +${amtInput} SP Coins! Reason: ${reason}`);
+
+    adminVaultBalance = Math.max(0, adminVaultBalance - amtInput);
+    if (adminVaultBalance < 500) adminVaultBalance = 10000;
+    try { localStorage.setItem('sp_admin_vault', adminVaultBalance.toString()); } catch(e){}
+    const el = document.getElementById('adminVaultReserve');
+    if (el) el.textContent = adminVaultBalance.toLocaleString() + ' 💰';
+
+    toast(`🎁 Successfully sent +${amtInput} SP Coins to ${targetName}!`, 'success');
+    spawnCoinRain(8);
+  } catch(e) {
+    console.error('adminSendGiftCoins error:', e);
+    toast('Error sending gift: ' + e.message, 'error');
+  }
+}
+
+async function adminMassAirdrop() {
+  if (!db || !isAdmin) return;
+  if (!confirm('Send +50 SP Coins Airdrop to all active creators?')) return;
+
+  try {
+    toast('Processing Mass Airdrop...', 'info');
+    const snap = await db.collection('users').limit(50).get();
+    let count = 0;
+
+    for (let doc of snap.docs) {
+      await awardCoinsToUser(doc.id, 50, 'airdrop', '🚀 Admin Community Airdrop');
+      await createNotification(doc.id, 'airdrop', '🚀 You received +50 SP Coins from Admin Airdrop!');
+      count++;
+    }
+
+    toast(`🚀 Mass Airdrop sent! +50 SP Coins credited to ${count} creators! 🎉`, 'success');
+    spawnCoinRain(12);
+  } catch(e) {
+    console.error('adminMassAirdrop error:', e);
+    toast('Airdrop error: ' + e.message, 'error');
+  }
+}
+
+async function adminCreatePromoCode() {
+  if (!db || !isAdmin) return;
+  const code = document.getElementById('promoCodeName').value.trim().toUpperCase();
+  const coins = parseInt(document.getElementById('promoCodeCoins').value) || 100;
+  const maxUses = parseInt(document.getElementById('promoCodeMax').value) || 20;
+
+  if (!code) { toast('Please enter a promo code name!', 'error'); return; }
+
+  try {
+    await db.collection('sp_promo_codes').doc(code).set({
+      code,
+      coins,
+      maxUses,
+      claimedBy: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast(`🎟️ Promo Code "${code}" created (+${coins} coins, ${maxUses} max uses)!`, 'success');
+  } catch(e) {
+    toast('Error creating code: ' + e.message, 'error');
+  }
+}
+
+async function redeemPromoCode() {
+  if (!curUser || !db) { openAuth(); return; }
+  const inp = document.getElementById('promoCodeInp');
+  if (!inp) return;
+  const code = inp.value.trim().toUpperCase();
+  if (!code) { toast('Please enter a code!', 'error'); return; }
+
+  try {
+    toast('Validating promo code...', 'info');
+    const doc = await db.collection('sp_promo_codes').doc(code).get();
+    if (!doc.exists) {
+      toast('Invalid promo code! ❌', 'error');
+      return;
+    }
+    const d = doc.data();
+    const claimedBy = Array.isArray(d.claimedBy) ? d.claimedBy : [];
+
+    if (claimedBy.includes(curUser.uid)) {
+      toast('You already redeemed this promo code! ⚠️', 'info');
+      return;
+    }
+    if (claimedBy.length >= (d.maxUses || 999)) {
+      toast('Promo code has reached maximum claim limit! 💔', 'error');
+      return;
+    }
+
+    await addCoins(d.coins, 'promo', null, `🎟️ Redeemed Promo Code ${code}`);
+    await db.collection('sp_promo_codes').doc(code).set({
+      claimedBy: firebase.firestore.FieldValue.arrayUnion(curUser.uid)
+    }, { merge: true });
+
+    inp.value = '';
+    toast(`🎉 Promo Code Redeemed! +${d.coins} SP Coins added! 💰`, 'success');
+    spawnCoinRain(8);
+  } catch(e) {
+    console.error('redeemPromoCode error:', e);
+    toast('Error redeeming code: ' + e.message, 'error');
   }
 }
 
