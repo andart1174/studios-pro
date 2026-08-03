@@ -5986,33 +5986,43 @@ let tipTargetUid = null;
 let tipTargetPostId = null;
 let tipSelectedAmount = 5;
 
-// ── Init: load balance from Firestore/localStorage & handle bonus ─
-async function initCoins() {
+// ── Init: realtime Firestore coin sync ────────────────────────────
+let coinsUnsub = null;
+
+function initCoins() {
   if (!curUser || !db) return;
-  try {
-    const today = new Date().toDateString();
-    const uRef = db.collection('users').doc(curUser.uid);
+  if (coinsUnsub) { try { coinsUnsub(); } catch(e){} }
 
-    // 1. Show localStorage cache instantly (fast UX)
-    const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
-    if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
-      spCoinsBalance = parseInt(cacheVal);
-      updateCoinUI(spCoinsBalance);
+  const today = new Date().toDateString();
+  const uRef = db.collection('users').doc(curUser.uid);
+
+  // 1. Instant local display from cache
+  const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
+  if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
+    spCoinsBalance = parseInt(cacheVal);
+    updateCoinUI(spCoinsBalance);
+  }
+
+  // 2. Realtime listener for Firestore balance
+  coinsUnsub = uRef.onSnapshot(async doc => {
+    if (!doc.exists) {
+      // Doc doesn't exist yet, initialize it
+      await uRef.set({
+        spCoins: 100,
+        totalCoinsEarned: 100,
+        lastCoinLoginDate: today
+      }, { merge: true });
+      return;
     }
 
-    // 2. Fetch fresh user doc from Firestore
-    const uDoc = await uRef.get();
-    const data = uDoc.exists ? uDoc.data() : {};
-
-    let currentCoins = null;
-    if (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins))) {
-      currentCoins = Number(data.spCoins);
-    }
+    const data = doc.data();
+    let currentCoins = (data.spCoins !== undefined && data.spCoins !== null && !isNaN(Number(data.spCoins)))
+      ? Number(data.spCoins) : null;
     let lastLogin = data.lastCoinLoginDate || '';
 
-    // CASE A: Brand new user or missing spCoins field -> initial 100 bonus
+    // CASE A: Missing spCoins field -> initialize with 100
     if (currentCoins === null) {
-      console.log('[COINS] Brand new user -> setting initial 100 SP Coins');
+      console.log('[COINS] Missing spCoins field -> setting 100');
       currentCoins = 100;
       await uRef.set({
         spCoins: 100,
@@ -6022,28 +6032,25 @@ async function initCoins() {
       await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
-    // CASE B: Existing user logging in on a new day -> daily +10 bonus
+    // CASE B: New day login bonus (+10)
     else if (lastLogin !== today) {
-      console.log('[COINS] New day -> daily bonus +10');
+      console.log('[COINS] New day -> adding +10 daily login bonus');
       currentCoins += 10;
+      const oldEarned = typeof data.totalCoinsEarned === 'number' ? data.totalCoinsEarned : (Number(data.totalCoinsEarned) || 0);
       await uRef.set({
-        spCoins: firebase.firestore.FieldValue.increment(10),
-        totalCoinsEarned: firebase.firestore.FieldValue.increment(10),
+        spCoins: currentCoins,
+        totalCoinsEarned: oldEarned + 10,
         lastCoinLoginDate: today
       }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
-    } else {
-      console.log('[COINS] Loaded balance from Firestore:', currentCoins);
     }
 
-    // 3. Update UI and localStorage with final verified balance
+    // Sync UI with exact Firestore balance
     updateCoinUI(currentCoins);
-
-  } catch(e) {
-    console.error('[COINS] initCoins ERROR:', e);
-    toast('Coins Sync Error: ' + e.message, 'error');
-  }
+  }, err => {
+    console.warn('[COINS] Realtime listener error:', err);
+  });
 }
 
 // ── Process pending tips sent to this user while they were away ───
