@@ -5993,6 +5993,8 @@ function initCoins() {
   if (!curUser || !db) return;
   if (coinsUnsub) { try { coinsUnsub(); } catch(e){} }
 
+  console.log('%c [SP NEXUS COINS v2.5 ONLINE] %c Realtime Firestore Sync Active', 'background:#6366f1;color:#fff;font-weight:bold;padding:4px 8px;border-radius:4px;', 'color:#10b981;font-weight:bold;');
+
   const today = new Date().toDateString();
   const uRef = db.collection('users').doc(curUser.uid);
 
