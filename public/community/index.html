@@ -5992,7 +5992,7 @@ async function initCoins() {
   try {
     // 1. Show localStorage cache instantly (fast UX while server loads)
     const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
-    console.log('[COINS] localStorage value:', cacheVal);
+    console.log('[COINS] uid:', curUser.uid, '| localStorage:', cacheVal);
     if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
       spCoinsBalance = parseInt(cacheVal);
       updateCoinUI(spCoinsBalance);
@@ -6000,13 +6000,14 @@ async function initCoins() {
 
     const uRef = db.collection('users').doc(curUser.uid);
 
-    // ⚠️ FORCE server read — bypass Firestore local cache completely
-    const uDoc = await uRef.get({ source: 'server' });
+    // Read from Firestore (default mode - consistent with recent writes)
+    const uDoc = await uRef.get();
+    console.log('[COINS] doc exists:', uDoc.exists, '| spCoins:', uDoc.exists ? uDoc.data().spCoins : 'NO DOC', '| lastLogin:', uDoc.exists ? uDoc.data().lastCoinLoginDate : 'NO DOC');
     const data = uDoc.exists ? uDoc.data() : {};
-    console.log('[COINS] Firestore server read (1st):', data.spCoins, '| lastLogin:', data.lastCoinLoginDate);
 
     // Welcome bonus for brand-new users (only if spCoins field missing)
-    if (!uDoc.exists || data.spCoins === undefined) {
+    if (data.spCoins === undefined || data.spCoins === null) {
+      console.log('[COINS] Writing welcome bonus 100');
       await uRef.set({ spCoins: 100, totalCoinsEarned: 100 }, { merge: true });
       await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
@@ -6016,7 +6017,7 @@ async function initCoins() {
     const today = new Date().toDateString();
     const lastLogin = data.lastCoinLoginDate || '';
     if (lastLogin !== today) {
-      console.log('[COINS] Applying daily login bonus +10');
+      console.log('[COINS] Writing daily login bonus +10');
       await uRef.set({
         spCoins: firebase.firestore.FieldValue.increment(10),
         totalCoinsEarned: firebase.firestore.FieldValue.increment(10),
@@ -6026,11 +6027,11 @@ async function initCoins() {
       toast('📅 Daily login: +10 SP Coins!', 'info');
     }
 
-    // ⚠️ FORCE server read again — get the REAL final balance after all writes
-    const freshDoc = await uRef.get({ source: 'server' });
+    // Final read — get confirmed balance
+    const freshDoc = await uRef.get();
     const freshData = freshDoc.exists ? freshDoc.data() : {};
     const finalBalance = typeof freshData.spCoins === 'number' ? freshData.spCoins : 0;
-    console.log('[COINS] Firestore server read (final):', finalBalance, '← this is what will be displayed');
+    console.log('[COINS] Final balance displayed:', finalBalance);
     updateCoinUI(finalBalance);
 
   } catch(e) { console.error('[COINS] initCoins ERROR:', e); }
