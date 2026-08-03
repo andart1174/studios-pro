@@ -6594,6 +6594,7 @@ function spawnCoinRain(amount) {
 }
 
 // ── Boost Post ───────────────────────────────────────────────────
+// ── Boost Post ───────────────────────────────────────────────────
 async function boostPost(postId) {
   if (!curUser || !db) return;
   if (spCoinsBalance < 50) {
@@ -6602,26 +6603,25 @@ async function boostPost(postId) {
     return;
   }
   if (!confirm('Boost this post for 24h? Cost: 50 SP Coins')) return;
-  const prevBalance = spCoinsBalance;
   try {
     const boostedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const newBal = Math.max(0, spCoinsBalance - 50);
+
+    await db.collection('users').doc(curUser.uid).set({
+      spCoins: newBal
+    }, { merge: true });
+
     await db.collection(COLL).doc(postId).update({
       boosted: true,
       boostedUntil: firebase.firestore.Timestamp.fromDate(boostedUntil),
       pinned: true
     });
     
-    await db.collection('users').doc(curUser.uid).set({
-      spCoins: firebase.firestore.FieldValue.increment(-50)
-    }, { merge: true });
-    
     logTransaction(curUser.uid, null, -50, 'boost', postId, '🚀 Post boosted 24h');
-    const newBal = Math.max(0, spCoinsBalance - 50);
     updateCoinUI(newBal);
     toast('🚀 Post boosted for 24 hours! ⚡', 'success');
     spawnCoinRain(5);
   } catch(e) {
-    // Don't restore from localStorage — let initCoins read true Firestore value on next load
     console.error('Boost error:', e);
     toast('Error boosting post: ' + e.message, 'error');
   }
