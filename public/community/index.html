@@ -5990,34 +5990,39 @@ let tipSelectedAmount = 5;
 async function initCoins() {
   if (!curUser || !db) return;
   try {
-    // 1. Show localStorage cache instantly (fast UX while server loads)
+    const today = new Date().toDateString();
+    const uRef = db.collection('users').doc(curUser.uid);
+
+    // 1. Show localStorage cache instantly (fast UX)
     const cacheVal = localStorage.getItem('sp_coins_' + curUser.uid);
-    console.log('[COINS] uid:', curUser.uid, '| localStorage:', cacheVal);
     if (cacheVal !== null && !isNaN(parseInt(cacheVal))) {
       spCoinsBalance = parseInt(cacheVal);
       updateCoinUI(spCoinsBalance);
     }
 
-    const uRef = db.collection('users').doc(curUser.uid);
-
-    // Read from Firestore (default mode - consistent with recent writes)
+    // 2. Fetch fresh user doc from Firestore
     const uDoc = await uRef.get();
-    console.log('[COINS] doc exists:', uDoc.exists, '| spCoins:', uDoc.exists ? uDoc.data().spCoins : 'NO DOC', '| lastLogin:', uDoc.exists ? uDoc.data().lastCoinLoginDate : 'NO DOC');
     const data = uDoc.exists ? uDoc.data() : {};
 
-    // Welcome bonus for brand-new users (only if spCoins field missing)
-    if (data.spCoins === undefined || data.spCoins === null) {
-      console.log('[COINS] Writing welcome bonus 100');
-      await uRef.set({ spCoins: 100, totalCoinsEarned: 100 }, { merge: true });
+    let currentCoins = typeof data.spCoins === 'number' ? data.spCoins : null;
+    let lastLogin = data.lastCoinLoginDate || '';
+
+    // CASE A: Brand new user or missing spCoins field -> initial 100 bonus
+    if (currentCoins === null) {
+      console.log('[COINS] Brand new user -> set 100 SP Coins');
+      currentCoins = 100;
+      await uRef.set({
+        spCoins: 100,
+        totalCoinsEarned: 100,
+        lastCoinLoginDate: today
+      }, { merge: true });
       await logTransaction(curUser.uid, null, 100, 'welcome', null, '🎉 Welcome bonus');
       toast('🎉 Welcome bonus: +100 SP Coins!', 'success');
     }
-
-    // Daily login bonus (only once per day)
-    const today = new Date().toDateString();
-    const lastLogin = data.lastCoinLoginDate || '';
-    if (lastLogin !== today) {
-      console.log('[COINS] Writing daily login bonus +10');
+    // CASE B: Existing user logging in on a new day -> daily +10 bonus
+    else if (lastLogin !== today) {
+      console.log('[COINS] New day -> daily bonus +10');
+      currentCoins += 10;
       await uRef.set({
         spCoins: firebase.firestore.FieldValue.increment(10),
         totalCoinsEarned: firebase.firestore.FieldValue.increment(10),
@@ -6025,14 +6030,12 @@ async function initCoins() {
       }, { merge: true });
       await logTransaction(curUser.uid, null, 10, 'daily', null, '📅 Daily login bonus');
       toast('📅 Daily login: +10 SP Coins!', 'info');
+    } else {
+      console.log('[COINS] Balance loaded from Firestore:', currentCoins);
     }
 
-    // Final read — get confirmed balance
-    const freshDoc = await uRef.get();
-    const freshData = freshDoc.exists ? freshDoc.data() : {};
-    const finalBalance = typeof freshData.spCoins === 'number' ? freshData.spCoins : 0;
-    console.log('[COINS] Final balance displayed:', finalBalance);
-    updateCoinUI(finalBalance);
+    // 3. Update UI and localStorage with final verified balance
+    updateCoinUI(currentCoins);
 
   } catch(e) { console.error('[COINS] initCoins ERROR:', e); }
 }
