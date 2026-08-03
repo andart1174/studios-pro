@@ -2829,6 +2829,47 @@ function ytId(url) {
   return m ? m[1] : null;
 }
 
+// ── Global User Border Cache & Renderer ─────────────────────────────
+const userBorderCache = new Map();
+
+async function applyUserBorderToAvatar(uid, imgEl) {
+  if (!uid || !imgEl || !db) return;
+
+  const BORDER_CLASS_MAP = {
+    'border_neon': 'avatar-border-neon',
+    'border_fire': 'avatar-border-fire',
+    'border_gold': 'avatar-border-gold',
+    'border_hologram': 'avatar-border-hologram'
+  };
+
+  if (userBorderCache.has(uid)) {
+    const borderCls = userBorderCache.get(uid);
+    Object.values(BORDER_CLASS_MAP).forEach(c => imgEl.classList.remove(c));
+    if (borderCls) imgEl.classList.add(borderCls);
+    return;
+  }
+
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      const borderCls = BORDER_CLASS_MAP[data.equippedBorder || ''] || '';
+      userBorderCache.set(uid, borderCls);
+      document.querySelectorAll(`[data-user-border-uid="${uid}"]`).forEach(el => {
+        Object.values(BORDER_CLASS_MAP).forEach(c => el.classList.remove(c));
+        if (borderCls) el.classList.add(borderCls);
+      });
+      const slAv = document.getElementById('slAv');
+      if (curUser && uid === curUser.uid && slAv) {
+        Object.values(BORDER_CLASS_MAP).forEach(c => slAv.classList.remove(c));
+        if (borderCls) slAv.classList.add(borderCls);
+      }
+    } else {
+      userBorderCache.set(uid, '');
+    }
+  } catch(e) {}
+}
+
 function buildCard(p) {
   const div = document.createElement('div');
   div.className = 'post-card' + (p.pinned ? ' pinned' : '');
@@ -2902,7 +2943,7 @@ function buildCard(p) {
     ${p.pinned ? '<div class="pinned-tag">📌 Pinned</div>' : ''}
     <div class="ph">
       <div class="p-av-wrap" onclick="openPublicProfile('${p.uid}')" style="cursor:pointer" title="View profile">
-        <img src="${a}" class="p-av" alt="">
+        <img src="${a}" class="p-av" data-user-border-uid="${p.uid}" alt="">
       </div>
       <div class="pm">
         <div class="p-author" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -2942,6 +2983,9 @@ function buildCard(p) {
       </button>
       <button class="save-btn${(()=>{try{return JSON.parse(localStorage.getItem('sp_saved_posts')||'[]').includes(p.id)?' saved':''}catch(e){return ''}})()} " onclick="toggleSavePost('${p.id}',this)" title="Save post">🔖</button>
     </div>`;
+
+  const postAvImg = div.querySelector('[data-user-border-uid]');
+  if (postAvImg) applyUserBorderToAvatar(p.uid, postAvImg);
 
   return div;
 }
@@ -6514,6 +6558,16 @@ async function equipItem(itemId, type) {
     if (type === 'badge') updateData.equippedBadge = itemId;
 
     await db.collection('users').doc(curUser.uid).set(updateData, { merge: true });
+    
+    if (type === 'border') {
+      userBorderCache.delete(curUser.uid);
+      const slAv = document.getElementById('slAv');
+      if (slAv) applyUserBorderToAvatar(curUser.uid, slAv);
+      document.querySelectorAll(`[data-user-border-uid="${curUser.uid}"]`).forEach(el => {
+        applyUserBorderToAvatar(curUser.uid, el);
+      });
+    }
+
     toast('✅ Equipped!', 'success');
     renderShopItems();
     loadUserStats(curUser.uid);
