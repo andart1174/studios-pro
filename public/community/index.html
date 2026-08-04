@@ -132,12 +132,12 @@
       right:0;
       bottom:0;
       z-index:1;
-      max-width:1300px;
+      max-width:1400px;
       margin:0 auto;
-      padding:0 24px;
+      padding:0 20px;
       display:grid;
-      grid-template-columns:240px 1fr 280px;
-      gap:22px;
+      grid-template-columns:250px 1fr 310px;
+      gap:24px;
       align-items:start;
       overflow:hidden;
     }
@@ -364,11 +364,10 @@
     .hdr-user-btn-caret{font-size:.7rem;color:var(--muted);transition:transform .2s;}
     .hdr-user-btn.open .hdr-user-btn-caret{transform:rotate(180deg);}
 
-    /* ── 2-COLUMN POST GRID ───────────────────────────────── */
-    #feedEl, #savedPostsList{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    /* ── SINGLE COLUMN FEED LAYOUT (Spacious & Clean) ────── */
+    #feedEl, #savedPostsList{display:flex;flex-direction:column;gap:16px;}
     #feedEl .post-card, #savedPostsList .post-card{margin-bottom:0;}
-    #feedEl .feed-loading, #feedEl .empty, #savedPostsList .empty{grid-column:1/-1;}
-    @media(max-width:900px){#feedEl, #savedPostsList{grid-template-columns:1fr;}}
+    #feedEl .feed-loading, #feedEl .empty, #savedPostsList .empty{width:100%;}
 
     /* Rank colors */
     .rk-starter{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
@@ -7239,6 +7238,7 @@ function renderActivePedestal() {
 
   const item = metaverseItems[activeMetaIndex];
   const mainImg = item.img || '';
+  const has3D = item.modelData || true; // Enable 3D WebGL mode or Holo-Tilt preview
 
   stage.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding-bottom:10px;">
@@ -7247,21 +7247,44 @@ function renderActivePedestal() {
       </div>
       
       <div style="font-size:1.3rem;font-weight:900;color:#fff;margin-bottom:4px;">${esc(item.title)}</div>
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:16px;">Exhibited by <strong style="color:#fff;">${esc(item.authorName)}</strong></div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">Exhibited by <strong style="color:#fff;">${esc(item.authorName)}</strong></div>
 
-      <div style="position:relative;width:100%;max-width:480px;height:320px;margin-bottom:16px;border-radius:20px;overflow:hidden;background:#090d1a;border:2px solid rgba(168,85,247,.5);box-shadow:0 0 40px rgba(168,85,247,.35), inset 0 0 30px rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;">
-        ${mainImg ? `<img src="${mainImg}" style="width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 0 20px rgba(168,85,247,.6));">` : `<div style="font-size:5rem;filter:drop-shadow(0 0 20px #a855f7);">🔮</div>`}
+      <!-- Interactive 3D Illuminated Pedestal Stage -->
+      <div style="position:relative;width:100%;max-width:540px;height:350px;margin-bottom:16px;border-radius:20px;overflow:hidden;background:#090d1a;border:2px solid rgba(168,85,247,.5);box-shadow:0 0 40px rgba(168,85,247,.35), inset 0 0 30px rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;" onmousemove="if(typeof initHoloTilt==='function') initHoloTilt(this, event)" onmouseleave="if(typeof resetHoloTilt==='function') resetHoloTilt(this)">
         
-        <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top, rgba(168,85,247,.6), transparent);border-top:2px solid #a855f7;"></div>
-        <div style="position:absolute;top:10px;left:14px;background:rgba(0,0,0,.6);color:#fbbf24;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:800;border:1px solid rgba(251,191,36,.3);">🏛️ METAVERSE EXHIBIT</div>
+        <div id="meta3dViewerContainer" style="width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;">
+          ${mainImg ? `<img src="${mainImg}" id="img-meta-${item.postId}" style="width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 0 20px rgba(168,85,247,.6));">` : `<div style="font-size:5rem;filter:drop-shadow(0 0 20px #a855f7);">🔮</div>`}
+          <div class="p-3dv" id="v3d-meta-${item.postId}" data-model='${JSON.stringify(item.modelData || {}).replace(/'/g,"&#39;")}' style="display:none;height:100%;width:100%;position:relative;"></div>
+        </div>
+
+        <button onclick="activateMetaverse3DInteractive('${item.postId}')" id="metaPlay3dBtn" style="position:absolute;bottom:16px;right:16px;z-index:10;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:8px 16px;border-radius:12px;font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 0 16px rgba(168,85,247,.5);">🔮 Rotate in 3D</button>
+        
+        <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top, rgba(168,85,247,.6), transparent);border-top:2px solid #a855f7;pointer-events:none;"></div>
+        <div style="position:absolute;top:10px;left:14px;background:rgba(0,0,0,.6);color:#fbbf24;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:800;border:1px solid rgba(251,191,36,.3);pointer-events:none;">🏛️ METAVERSE EXHIBIT</div>
       </div>
 
+      <!-- Action Buttons -->
       <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
         <button onclick="openTipModal('${item.postId}','${escAttr(item.authorUid)}','${escAttr(item.authorName)}')" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:#000;font-weight:900;padding:8px 20px;border-radius:10px;font-size:.82rem;cursor:pointer;box-shadow:0 0 15px rgba(245,158,11,.4);">💰 Tip Creator (50 Coins)</button>
         <button onclick="closeMetaverseGalleryModalDirect();scrollToPost('${item.postId}')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;font-weight:800;padding:8px 16px;border-radius:10px;font-size:.8rem;cursor:pointer;">💬 View Post</button>
         ${isAdmin ? `<button onclick="adminRemoveFromMetaverse('${item.id}')" style="background:rgba(239,68,68,.2);border:1px solid #ef4444;color:#ef4444;font-weight:700;padding:8px 14px;border-radius:10px;font-size:.78rem;cursor:pointer;">🗑️ Remove</button>` : ''}
       </div>
     </div>`;
+}
+
+function activateMetaverse3DInteractive(postId) {
+  const img = document.getElementById(`img-meta-${postId}`);
+  const btn = document.getElementById('metaPlay3dBtn');
+  const viewer = document.getElementById(`v3d-meta-${postId}`);
+  if (!viewer) return;
+
+  if (img) img.style.display = 'none';
+  if (btn) btn.style.display = 'none';
+  viewer.style.display = 'block';
+
+  if (typeof init3D === 'function') {
+    init3D(viewer, `meta-${postId}`);
+  }
 }
 
 async function adminRemoveFromMetaverse(id) {
@@ -7290,21 +7313,46 @@ function startMetaverseAudio() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     metaAudioCtx = new AudioCtx();
-    metaOsc = metaAudioCtx.createOscillator();
-    const gain = metaAudioCtx.createGain();
-    metaOsc.type = 'sine';
-    metaOsc.frequency.setValueAtTime(220, metaAudioCtx.currentTime);
-    gain.gain.setValueAtTime(0.04, metaAudioCtx.currentTime);
-    metaOsc.connect(gain);
-    gain.connect(metaAudioCtx.destination);
-    metaOsc.start();
+
+    const masterGain = metaAudioCtx.createGain();
+    const filter = metaAudioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, metaAudioCtx.currentTime);
+
+    masterGain.gain.setValueAtTime(0, metaAudioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.08, metaAudioCtx.currentTime + 2);
+
+    filter.connect(masterGain);
+    masterGain.connect(metaAudioCtx.destination);
+
+    // Warm Ambient Cord Frequencies (Hz): C3, Eb3, G3, Bb3, D4
+    const freqs = [130.81, 155.56, 196.00, 233.08, 293.66];
+    metaOsc = [];
+
+    freqs.forEach((freq, idx) => {
+      const osc = metaAudioCtx.createOscillator();
+      const oscGain = metaAudioCtx.createGain();
+      osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, metaAudioCtx.currentTime);
+      osc.detune.setValueAtTime((idx - 2) * 4, metaAudioCtx.currentTime);
+      oscGain.gain.setValueAtTime(0.18, metaAudioCtx.currentTime);
+
+      osc.connect(oscGain);
+      oscGain.connect(filter);
+      osc.start();
+      metaOsc.push(osc);
+    });
+
     isMetaAudioPlaying = true;
   } catch(e) {}
 }
 
 function stopMetaverseAudio() {
   try {
-    if (metaOsc) { metaOsc.stop(); metaOsc.disconnect(); metaOsc = null; }
+    if (metaOsc && Array.isArray(metaOsc)) {
+      metaOsc.forEach(o => { try { o.stop(); o.disconnect(); } catch(e){} });
+      metaOsc = null;
+    }
     if (metaAudioCtx) { metaAudioCtx.close(); metaAudioCtx = null; }
   } catch(e) {}
   isMetaAudioPlaying = false;
