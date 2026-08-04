@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- ═══ SEO: Title & Meta ═══════════════════════════════════════ -->
-  <title>SP Nexus 🌐 3D Creator Social Network, SP Coins & Metaverse Gallery | Studios-PRO</title>
-  <meta name="description" content="Join SP Nexus by Studios-PRO: The ultimate 3D creator social network. Earn SP Coins, participate in live 3D Auctions, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel, and chat live via HD Video/Voice calls!">
+  <title>SP Nexus 🌐 3D Creator Social Network &amp; SP Coins | Studios-PRO</title>
+  <meta name="description" content="Join SP Nexus: The 3D creator social network. Earn SP Coins, bid on 3D Auctions, explore Metaverse 3D Gallery &amp; spin the Daily Lucky Wheel!">
   <meta name="keywords" content="SP Nexus, Studios-PRO, 3D social network, SP Coins, 3D Auction House, Metaverse 3D gallery, 3D modeling, WebGL 3D, daily lucky wheel, live video chat creators, 3D hologram, virtual currency economy">
   <meta name="author" content="Studios-PRO">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
@@ -81,6 +81,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     :root{
       --bg:#050812;--bg2:#0b1120;--bg3:#111827;
       --accent:#6366f1;--accent2:#8b5cf6;--accent3:#a78bfa;
@@ -1364,6 +1365,8 @@
 </head>
 <body>
 
+<h1 class="sr-only">SP Nexus — 3D Creator Social Network &amp; SP Coins Economy by Studios-PRO</h1>
+
 <!-- HEADER -->
 <header class="header">
   <a href="/" class="hlogo" style="text-decoration:none" title="Back to Studios-PRO">
@@ -1412,7 +1415,7 @@
 <div class="user-panel" id="userPanel">
   <div class="user-panel-header">
     <div class="user-panel-av-row">
-      <img src="" alt="" class="user-panel-av" id="upAv">
+      <img src="" alt="User Profile Avatar" class="user-panel-av" id="upAv">
       <div>
         <div class="user-panel-name" id="upName"></div>
         <div id="upRank" style="margin-top:3px"></div>
@@ -1486,7 +1489,7 @@
     <!-- USER PROFILE CARD -->
     <div class="scard" id="userCard" style="display:none">
       <div class="u-av-wrap">
-        <img src="" alt="" class="u-av" id="slAv">
+        <img src="" alt="User Avatar" class="u-av" id="slAv">
         <div class="u-av-online"></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:5px 0;">
@@ -1665,7 +1668,7 @@
     </div>
     <!-- Create bar -->
     <div class="create-bar" id="createBar" style="display:none">
-      <img src="" alt="" class="cb-av" id="cbAv">
+      <img src="" alt="User Avatar" class="cb-av" id="cbAv">
       <div class="cb-inp" onclick="openCreate()" id="cbInpEl" data-t="whatCreating">What are you creating today? ✨</div>
       <div class="cb-actions">
         <div class="cb-act" onclick="openCreate()" title="Photo">📸</div>
