@@ -1511,6 +1511,11 @@
         <span class="sp-coin-amount" id="spCoinCount">0</span>
         <span class="sp-coin-lbl">SP COINS</span>
       </div>
+
+      <!-- PUSH NOTIFICATION BUTTON -->
+      <button onclick="requestPushNotificationPermission()" style="width:100%;margin-top:10px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);color:#c084fc;padding:6px 10px;border-radius:10px;font-size:.73rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span>🔔 Enable Push Alerts</span>
+      </button>
       <div id="rankProgress">
         <div class="rp-top"><span data-t="progress">Progress to next rank</span><span id="rp-next-lbl"></span></div>
         <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
@@ -2116,14 +2121,14 @@
 </div>
 
 <!-- PWA APP INSTALL BANNER -->
-<div id="pwaBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(11,17,32,.95);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(99,102,241,.4);backdrop-filter:blur(16px);border-radius:16px;padding:12px 18px;align-items:center;gap:14px;max-width:90%;width:420px;">
-  <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📲</div>
+<div id="pwaBanner" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(9,13,26,.95);border:2px solid rgba(168,85,247,.5);box-shadow:0 12px 40px rgba(168,85,247,.4);backdrop-filter:blur(20px);border-radius:18px;padding:14px 20px;align-items:center;gap:14px;max-width:92%;width:440px;">
+  <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#a855f7,#6366f1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;box-shadow:0 0 16px rgba(168,85,247,.5);">📲</div>
   <div style="flex:1;min-width:0;">
-    <div style="font-weight:800;font-size:.85rem;color:#fff;">Install SP Nexus App</div>
-    <div style="font-size:.72rem;color:var(--muted);">Add to home screen for instant 1-tap access!</div>
+    <div style="font-weight:900;font-size:.88rem;color:#fff;">Install SP Nexus App</div>
+    <div style="font-size:.73rem;color:var(--muted);">Add to home screen for 1-tap access &amp; push alerts! 🔔</div>
   </div>
-  <button onclick="installPWA()" style="background:linear-gradient(135deg,var(--accent),var(--pink));border:none;color:#fff;padding:8px 14px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;">Install</button>
-  <button onclick="closePWABanner()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
+  <button onclick="installPWA()" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:#000;padding:9px 16px;border-radius:12px;font-size:.8rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 0 12px rgba(245,158,11,.4);">Install</button>
+  <button onclick="closePWABanner()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px;">✕</button>
 </div>
 
 <!-- FIREBASE -->
@@ -5278,12 +5283,28 @@ function showPWABanner() {
   if (banner) banner.style.display = 'flex';
 }
 
-function checkMobilePWA() {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+// ═══════════════════════════════════════════════════════════════
+// 📱 PWA APP INSTALLATION & WEB PUSH NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+let deferredPrompt = null;
 
-  if (isMobile && !isStandalone && !localStorage.getItem('sp_pwa_dismissed')) {
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('sp_pwa_dismissed')) {
     setTimeout(showPWABanner, 1000);
+  }
+});
+
+function showPWABanner() {
+  const banner = document.getElementById('pwaBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function checkMobilePWA() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone && !localStorage.getItem('sp_pwa_dismissed')) {
+    setTimeout(showPWABanner, 1500);
   }
 }
 setTimeout(checkMobilePWA, 1200);
@@ -5302,7 +5323,7 @@ function installPWA() {
       closePWABanner();
     });
   } else {
-    alert("📲 Pentru a adăuga pe ecranul telefonului:\n\nDeschide meniul browserului (⋮) și alege 'Adaugă pe ecranul de pornire' / 'Install App'.");
+    alert("📲 Pentru a adăuga pe ecranul dispozitivului:\n\nDeschide meniul browserului (⋮) și alege 'Adaugă pe ecranul de pornire' / 'Install App'.");
   }
 }
 
@@ -5310,6 +5331,35 @@ function closePWABanner() {
   const banner = document.getElementById('pwaBanner');
   if (banner) banner.style.display = 'none';
   localStorage.setItem('sp_pwa_dismissed', '1');
+}
+
+// Service Worker Registration for Web Push Notifications
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('ServiceWorker registration error:', err.message);
+    });
+  });
+}
+
+function requestPushNotificationPermission() {
+  if (!('Notification' in window)) {
+    toast('Web notifications not supported on this browser', 'info');
+    return;
+  }
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      toast('🔔 Push Notifications Active! You will get instant alerts for bids, tips & spins!', 'success');
+      try {
+        new Notification('SP Nexus 🌐', {
+          body: '🎉 Push Notifications activated successfully!',
+          icon: '/sp_coin_logo.png'
+        });
+      } catch(e) {}
+    } else {
+      toast('Notification permission denied', 'info');
+    }
+  });
 }
 
 // ─── Public Profile Navigation ────────────────────────────
