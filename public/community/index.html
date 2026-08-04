@@ -2076,14 +2076,14 @@
 <div class="overlay" id="referralOverlay" onclick="closeReferralModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
     <div class="mh">
-      <div class="mt">🚀 Invite Friends &amp; Earn XP</div>
+      <div class="mt">🚀 Invite Friends &amp; Earn SP Coins</div>
       <button class="mc" onclick="closeReferralDirect()">✕</button>
     </div>
     <div class="mb">
       <div style="text-align:center;margin-bottom:16px">
         <div style="font-size:2.5rem;margin-bottom:8px">🎁</div>
         <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin-bottom:6px">Share your unique invite link</div>
-        <div style="font-size:.82rem;color:var(--muted);line-height:1.5">You earn <strong style="color:#fbbf24">+100 XP</strong> for each friend who joins!<br>They earn <strong style="color:#34d399">+50 XP</strong> bonus on signup.</div>
+        <div style="font-size:.84rem;color:var(--muted);line-height:1.5">You earn <strong style="color:#fbbf24">+500 SP Coins 💰</strong> for each friend who joins!<br>They earn <strong style="color:#34d399">+250 SP Coins 💰</strong> bonus on signup.</div>
       </div>
       <div class="opt-lbl" style="margin-bottom:6px">🔗 Your Invite Link</div>
       <div class="ref-link-box" id="refLinkDisplay">Loading...</div>
@@ -2097,7 +2097,7 @@
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);text-align:center">
         <div style="font-size:.75rem;color:var(--muted);margin-bottom:6px">Friends you've invited</div>
         <div style="font-family:'Orbitron',monospace;font-weight:700;font-size:1.8rem;color:#ec4899" id="refModalCount">0</div>
-        <div style="font-size:.72rem;color:var(--muted)">= <span id="refXPEarned" style="color:#fbbf24;font-weight:700">0</span> XP earned from referrals!</div>
+        <div style="font-size:.72rem;color:var(--muted);">= <span id="refCoinsEarned" style="color:#fbbf24;font-weight:700">0</span> SP Coins earned from referrals!</div>
       </div>
     </div>
   </div>
@@ -4976,17 +4976,20 @@ async function checkReferralOnLogin(u) {
 
     // Only reward once
     if (refUid && refUid !== u.uid && !userData.referredBy) {
-      // Give +50 XP to new user
       await db.collection('users').doc(u.uid).set({
-        referredBy: refUid,
-        totalXP: firebase.firestore.FieldValue.increment(50)
+        referredBy: refUid
       }, { merge: true });
-      // Give +100 XP to referrer
+      
+      // Give +250 SP Coins bonus to new user
+      await addCoins(250, 'welcome_ref', null, '🎉 Invited Welcome Bonus');
+
+      // Give +500 SP Coins reward to referrer
+      await awardCoinsToUser(refUid, 500, 'referral', '🚀 Referral reward for inviting a friend');
       await db.collection('users').doc(refUid).set({
-        totalXP: firebase.firestore.FieldValue.increment(100),
         referralCount: firebase.firestore.FieldValue.increment(1)
       }, { merge: true });
-      toast(curLang === 'fr' ? '🎁 +50 XP offerts grâce à une invitation !' : '🎁 +50 XP bonus from referral!', 'success');
+
+      toast('🎁 +250 SP Coins bonus from referral invite!', 'success');
     }
 
     // Load referral count for display
@@ -5009,9 +5012,9 @@ function openReferralModal() {
   db.collection('users').doc(curUser.uid).get().then(doc => {
     const count = (doc.exists ? doc.data().referralCount : 0) || 0;
     const countEl = document.getElementById('refModalCount');
-    const xpEl = document.getElementById('refXPEarned');
+    const coinsEl = document.getElementById('refCoinsEarned');
     if (countEl) countEl.textContent = count;
-    if (xpEl) xpEl.textContent = count * 100;
+    if (coinsEl) coinsEl.textContent = (count * 500).toLocaleString();
   }).catch(() => {});
   document.getElementById('referralOverlay').classList.add('open');
 }
