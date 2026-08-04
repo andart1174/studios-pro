@@ -7664,23 +7664,6 @@ function renderStoriesBar() {
     el.appendChild(addBtn);
   }
 
-  // Live items first
-  liveActiveLives.forEach(live => {
-    const av = live.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(live.displayName||'?')}&background=ef4444&color=fff&bold=true`;
-    const item = document.createElement('div');
-    item.className = 'story-item';
-    item.innerHTML = `
-      <div class="story-item-wrap">
-        <div class="story-item-ring live-ring">
-          <img src="${av}" class="story-item-av" alt="">
-        </div>
-        <span class="live-badge">LIVE</span>
-      </div>
-      <div class="story-item-name">${(live.displayName||'Creator').split(' ')[0]}</div>`;
-    item.onclick = () => joinLive(live.id);
-    el.appendChild(item);
-  });
-
   // Story items
   allStories.forEach(s => {
     const av = s.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.displayName||'?')}&background=6366f1&color=fff&bold=true`;
@@ -7697,7 +7680,7 @@ function renderStoriesBar() {
     el.appendChild(item);
   });
 
-  const hasContent = allStories.length > 0 || liveActiveLives.length > 0 || curUser;
+  const hasContent = allStories.length > 0 || curUser;
   if (barEl) barEl.style.display = hasContent ? 'block' : 'none';
 }
 
