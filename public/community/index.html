@@ -5634,7 +5634,7 @@ function checkUrlParamsForDM() {
   <div class="spin-box" onclick="event.stopPropagation()" style="background:#090d1a;border:2px solid rgba(245,158,11,.4);box-shadow:0 0 35px rgba(245,158,11,.25);">
     <button onclick="closeSpinModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer">✕</button>
     <div class="spin-title" style="color:#fbbf24;font-family:'Outfit',sans-serif;font-weight:900;">🎡 SP Daily Lucky Wheel</div>
-    <div class="spin-subtitle" style="color:var(--muted);">Spin free every 24h or use 25 SP Coins for extra spins! 🎰</div>
+    <div class="spin-subtitle" style="color:var(--muted);">Spin free every 24h or use 50 SP Coins for extra spins! 🎰</div>
     <div class="spin-wheel-wrap">
       <div class="spin-pointer" style="color:#fbbf24;font-size:1.5rem;">▼</div>
       <canvas class="spin-canvas" id="spinCanvas" width="280" height="280"></canvas>
@@ -5867,12 +5867,13 @@ async function checkAchievements(uid) {
 // 🎰 FEATURE 4 — DAILY SPIN WHEEL
 // ═══════════════════════════════════════════════════════════════
 const SPIN_REWARDS = [
-  { label: '+25 💰',                     type: 'coins',  value: 25,           color: '#06b6d4', prob: 28 },
-  { label: '+50 💰',                     type: 'coins',  value: 50,           color: '#8b5cf6', prob: 22 },
-  { label: '+100 💰',                    type: 'coins',  value: 100,          color: '#ec4899', prob: 15 },
-  { label: '🎉 JACKPOT 250 💰',          type: 'coins',  value: 250,          color: '#f59e0b', prob: 8  },
-  { label: '⚡ Cyber Neon Border (24h)',  type: 'border', value: 'border_neon', color: '#10b981', prob: 15 },
-  { label: '🔥 Fiery Flame Border (24h)', type: 'border', value: 'border_fire', color: '#ef4444', prob: 12 }
+  { label: '+10 💰',                     type: 'coins',  value: 10,           color: '#334155', prob: 25 },
+  { label: '+25 💰',                     type: 'coins',  value: 25,           color: '#06b6d4', prob: 25 },
+  { label: '+50 💰',                     type: 'coins',  value: 50,           color: '#8b5cf6', prob: 20 },
+  { label: '+100 💰',                    type: 'coins',  value: 100,          color: '#ec4899', prob: 12 },
+  { label: '🎉 JACKPOT 250 💰',          type: 'coins',  value: 250,          color: '#f59e0b', prob: 6  },
+  { label: '⚡ Cyber Neon Border (24h)',  type: 'border', value: 'border_neon', color: '#10b981', prob: 12 },
+  { label: '🔥 Fiery Flame Border (24h)', type: 'border', value: 'border_fire', color: '#ef4444', prob: 10 }
 ];
 let spinAngle = 0;
 let isSpinning = false;
@@ -5893,18 +5894,27 @@ function drawSpinWheel(angle) {
     ctx.closePath();
     ctx.fillStyle = seg.color; ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=2; ctx.stroke();
-    // Label
+
+    // Parallel upright label orientation
     const mid = start + slice/2;
     ctx.save();
-    ctx.translate(cx + Math.cos(mid)*(r*0.62), cy + Math.sin(mid)*(r*0.62));
-    ctx.rotate(mid + Math.PI/2);
+    ctx.translate(cx + Math.cos(mid)*(r*0.65), cy + Math.sin(mid)*(r*0.65));
+
+    let textAngle = mid;
+    // Flip text if on bottom/left semicircle so it always reads right-side-up
+    if (textAngle > Math.PI / 2 && textAngle < (3 * Math.PI) / 2) {
+      textAngle += Math.PI;
+    }
+    ctx.rotate(textAngle);
+
     ctx.fillStyle='#fff'; ctx.font='bold 10px Outfit,sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=6;
+    ctx.shadowColor='rgba(0,0,0,.9)'; ctx.shadowBlur=6;
     ctx.fillText(seg.label,0,0);
     ctx.restore();
     start += slice;
   });
+
   // Center glowing SP Coin medallion
   ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
   const gr = ctx.createRadialGradient(cx,cy,0,cx,cy,24);
@@ -5947,12 +5957,12 @@ async function checkSpinCooldown() {
       hasFreeSpinToday = false;
       if(btn) {
         btn.disabled = false;
-        btn.innerHTML = '⚡ Extra Spin (💰 25 SP Coins)';
+        btn.innerHTML = '⚡ Extra Spin (💰 50 SP Coins)';
         btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
       }
       const next = new Date(lastSpin.getTime() + 24*60*60*1000);
       const h = Math.floor((next-now)/3600000), m = Math.floor(((next-now)%3600000)/60000);
-      if(cd) cd.innerHTML = `⏰ Free spin resets in ${h}h ${m}m · <span style="color:#a78bfa">Or spin now for 25 💰!</span>`;
+      if(cd) cd.innerHTML = `⏰ Free spin resets in ${h}h ${m}m · <span style="color:#a78bfa">Or spin now for 50 💰!</span>`;
     }
   } catch(e){
     if(btn) btn.disabled=false;
@@ -5965,18 +5975,18 @@ async function doSpin() {
   const btn = document.getElementById('spinBtn');
   const resEl = document.getElementById('spinResult');
 
-  // Check spin cost
+  // Check spin cost (50 SP Coins for extra spin)
   if (!hasFreeSpinToday) {
-    if (spCoinsBalance < 25) {
-      toast('Not enough SP Coins! You need 25 💰 for an extra spin!', 'error');
+    if (spCoinsBalance < 50) {
+      toast('Not enough SP Coins! You need 50 💰 for an extra spin!', 'error');
       openWallet();
       return;
     }
-    // Deduct 25 SP Coins for extra spin
-    const newBal = spCoinsBalance - 25;
+    // Deduct 50 SP Coins for extra spin
+    const newBal = spCoinsBalance - 50;
     updateCoinUI(newBal);
     await db.collection('users').doc(curUser.uid).set({ spCoins: newBal }, { merge: true });
-    await logTransaction(curUser.uid, null, -25, 'spin_extra', null, '⚡ Extra Wheel Spin');
+    await logTransaction(curUser.uid, null, -50, 'spin_extra', null, '⚡ Extra Wheel Spin (50 Coins)');
   }
 
   // Pick reward (weighted)
