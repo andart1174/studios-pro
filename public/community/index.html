@@ -1601,10 +1601,10 @@
 
     <!-- 🎰 DAILY SPIN TRIGGER -->
     <button class="spin-trigger" id="spinTriggerCard" style="display:none" onclick="openSpinModal()">
-      <div class="spin-trigger-icon">🎰</div>
+      <div class="spin-trigger-icon">🎡</div>
       <div class="spin-trigger-text">
-        <div class="spin-trigger-title">Daily Fortune Spin</div>
-        <div class="spin-trigger-sub">Free spin every 24h · Win SP Coins! 💰</div>
+        <div class="spin-trigger-title" style="color:#fbbf24;font-weight:900;">SP Daily Lucky Wheel</div>
+        <div class="spin-trigger-sub">Free spin every 24h · Win 250 💰 Jackpot!</div>
       </div>
     </button>
 
@@ -5629,19 +5629,19 @@ function checkUrlParamsForDM() {
   </div>
 </div>
 
-<!-- 🎰 DAILY SPIN MODAL -->
+<!-- 🎡 SP DAILY LUCKY WHEEL MODAL -->
 <div class="spin-modal" id="spinModal" onclick="closeSpinModal(event)">
-  <div class="spin-box" onclick="event.stopPropagation()">
+  <div class="spin-box" onclick="event.stopPropagation()" style="background:#090d1a;border:2px solid rgba(245,158,11,.4);box-shadow:0 0 35px rgba(245,158,11,.25);">
     <button onclick="closeSpinModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer">✕</button>
-    <div class="spin-title">🎰 Daily Fortune Spin</div>
-    <div class="spin-subtitle">One free spin per day — Good luck! 🍀</div>
+    <div class="spin-title" style="color:#fbbf24;font-family:'Outfit',sans-serif;font-weight:900;">🎡 SP Daily Lucky Wheel</div>
+    <div class="spin-subtitle" style="color:var(--muted);">Spin free every 24h or use 25 SP Coins for extra spins! 🎰</div>
     <div class="spin-wheel-wrap">
-      <div class="spin-pointer">▼</div>
+      <div class="spin-pointer" style="color:#fbbf24;font-size:1.5rem;">▼</div>
       <canvas class="spin-canvas" id="spinCanvas" width="280" height="280"></canvas>
     </div>
-    <div class="spin-result" id="spinResult"></div>
-    <button class="spin-btn" id="spinBtn" onclick="doSpin()">🎰 SPIN!</button>
-    <div class="spin-cooldown" id="spinCooldown"></div>
+    <div class="spin-result" id="spinResult" style="font-weight:900;font-size:1.05rem;color:#fbbf24;"></div>
+    <button class="spin-btn" id="spinBtn" onclick="doSpin()" style="font-weight:900;letter-spacing:.03em;border-radius:12px;font-size:.92rem;padding:12px 24px;cursor:pointer;">🎰 SPIN!</button>
+    <div class="spin-cooldown" id="spinCooldown" style="font-size:.78rem;margin-top:8px;"></div>
   </div>
 </div>
 
@@ -5867,16 +5867,16 @@ async function checkAchievements(uid) {
 // 🎰 FEATURE 4 — DAILY SPIN WHEEL
 // ═══════════════════════════════════════════════════════════════
 const SPIN_REWARDS = [
-  {label:'+10 💰',  type:'coins', value:10,  color:'#6366f1', prob:28},
-  {label:'+25 💰',  type:'coins', value:25,  color:'#8b5cf6', prob:22},
-  {label:'+50 💰',  type:'coins', value:50,  color:'#f59e0b', prob:18},
-  {label:'+5 💰',   type:'coins', value:5,   color:'#475569', prob:16},
-  {label:'+100 💰', type:'coins', value:100, color:'#ef4444', prob:8},
-  {label:'🏅 Badge',  type:'badge', value:'spin_lucky', color:'#10b981', prob:5},
-  {label:'+200 💰!', type:'coins', value:200, color:'#ec4899', prob:3},
+  { label: '+25 💰',                     type: 'coins',  value: 25,           color: '#06b6d4', prob: 28 },
+  { label: '+50 💰',                     type: 'coins',  value: 50,           color: '#8b5cf6', prob: 22 },
+  { label: '+100 💰',                    type: 'coins',  value: 100,          color: '#ec4899', prob: 15 },
+  { label: '🎉 JACKPOT 250 💰',          type: 'coins',  value: 250,          color: '#f59e0b', prob: 8  },
+  { label: '⚡ Cyber Neon Border (24h)',  type: 'border', value: 'border_neon', color: '#10b981', prob: 15 },
+  { label: '🔥 Fiery Flame Border (24h)', type: 'border', value: 'border_fire', color: '#ef4444', prob: 12 }
 ];
 let spinAngle = 0;
 let isSpinning = false;
+let hasFreeSpinToday = false;
 
 function drawSpinWheel(angle) {
   const canvas = document.getElementById('spinCanvas');
@@ -5892,28 +5892,28 @@ function drawSpinWheel(angle) {
     ctx.arc(cx,cy,r,start,start+slice);
     ctx.closePath();
     ctx.fillStyle = seg.color; ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=2; ctx.stroke();
     // Label
     const mid = start + slice/2;
     ctx.save();
-    ctx.translate(cx + Math.cos(mid)*(r*0.65), cy + Math.sin(mid)*(r*0.65));
+    ctx.translate(cx + Math.cos(mid)*(r*0.62), cy + Math.sin(mid)*(r*0.62));
     ctx.rotate(mid + Math.PI/2);
-    ctx.fillStyle='#fff'; ctx.font='bold 11px Outfit,sans-serif';
+    ctx.fillStyle='#fff'; ctx.font='bold 10px Outfit,sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=4;
+    ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=6;
     ctx.fillText(seg.label,0,0);
     ctx.restore();
     start += slice;
   });
-  // Center circle
-  ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
-  const gr = ctx.createRadialGradient(cx,cy,0,cx,cy,22);
-  gr.addColorStop(0,'#fbbf24'); gr.addColorStop(1,'#f97316');
+  // Center glowing SP Coin medallion
+  ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
+  const gr = ctx.createRadialGradient(cx,cy,0,cx,cy,24);
+  gr.addColorStop(0,'#fbbf24'); gr.addColorStop(1,'#d97706');
   ctx.fillStyle=gr; ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle='#000'; ctx.font='bold 10px Outfit,sans-serif';
+  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#000'; ctx.font='bold 12px Outfit,sans-serif';
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🎰',cx,cy);
+  ctx.fillText('🎡',cx,cy);
 }
 
 async function openSpinModal() {
@@ -5921,6 +5921,7 @@ async function openSpinModal() {
   drawSpinWheel(spinAngle);
   await checkSpinCooldown();
 }
+
 function closeSpinModal(e) {
   if (!e||e.target===document.getElementById('spinModal')) document.getElementById('spinModal').classList.remove('open');
 }
@@ -5932,19 +5933,30 @@ async function checkSpinCooldown() {
   try {
     const doc = await db.collection('users').doc(curUser.uid).get();
     const lastSpin = doc.data()?.lastSpin?.toDate ? doc.data().lastSpin.toDate() : null;
-    if (lastSpin) {
-      const next = new Date(lastSpin.getTime() + 24*60*60*1000);
-      const now = new Date();
-      if (now < next) {
-        if(btn) btn.disabled=true;
-        const h = Math.floor((next-now)/3600000), m = Math.floor(((next-now)%3600000)/60000);
-        if(cd) cd.textContent = `⏰ Next spin in ${h}h ${m}m`;
-        return;
+    const now = new Date();
+
+    if (!lastSpin || (now - lastSpin) >= 24*60*60*1000) {
+      hasFreeSpinToday = true;
+      if(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🎡 FREE DAILY SPIN!';
+        btn.style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
       }
+      if(cd) cd.innerHTML = '✨ <strong style="color:#fbbf24">Free spin available today!</strong>';
+    } else {
+      hasFreeSpinToday = false;
+      if(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '⚡ Extra Spin (💰 25 SP Coins)';
+        btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
+      }
+      const next = new Date(lastSpin.getTime() + 24*60*60*1000);
+      const h = Math.floor((next-now)/3600000), m = Math.floor(((next-now)%3600000)/60000);
+      if(cd) cd.innerHTML = `⏰ Free spin resets in ${h}h ${m}m · <span style="color:#a78bfa">Or spin now for 25 💰!</span>`;
     }
+  } catch(e){
     if(btn) btn.disabled=false;
-    if(cd) cd.textContent = '✨ You have a free spin!';
-  } catch(e){ if(btn) btn.disabled=false; }
+  }
 }
 
 async function doSpin() {
@@ -5952,30 +5964,51 @@ async function doSpin() {
   if (!curUser) { openAuth(); return; }
   const btn = document.getElementById('spinBtn');
   const resEl = document.getElementById('spinResult');
+
+  // Check spin cost
+  if (!hasFreeSpinToday) {
+    if (spCoinsBalance < 25) {
+      toast('Not enough SP Coins! You need 25 💰 for an extra spin!', 'error');
+      openWallet();
+      return;
+    }
+    // Deduct 25 SP Coins for extra spin
+    const newBal = spCoinsBalance - 25;
+    updateCoinUI(newBal);
+    await db.collection('users').doc(curUser.uid).set({ spCoins: newBal }, { merge: true });
+    await logTransaction(curUser.uid, null, -25, 'spin_extra', null, '⚡ Extra Wheel Spin');
+  }
+
   // Pick reward (weighted)
   const total = SPIN_REWARDS.reduce((s,r)=>s+r.prob,0);
   let rand = Math.random()*total, chosen = SPIN_REWARDS[SPIN_REWARDS.length-1], cumul=0;
   for (const r of SPIN_REWARDS) { cumul+=r.prob; if (rand<=cumul){chosen=r;break;} }
-  // Calc landing angle
+
   const totalProb = SPIN_REWARDS.reduce((s,r)=>s+r.prob,0);
   let segStart = 0;
   for (const r of SPIN_REWARDS) {
     if (r===chosen) { segStart += (r.prob/totalProb)*Math.PI; break; }
     segStart += (r.prob/totalProb)*Math.PI*2;
   }
-  const targetAngle = -segStart + (Math.PI*1.5); // point to top pointer
+  const targetAngle = -segStart + (Math.PI*1.5);
   const spins = (Math.floor(Math.random()*3)+5)*Math.PI*2;
   const finalAngle = spinAngle - (spinAngle % (Math.PI*2)) + spins + targetAngle;
-  isSpinning=true; if(btn) btn.disabled=true; if(resEl) resEl.textContent='';
-  // Animate
+  
+  isSpinning=true;
+  if(btn) btn.disabled=true;
+  if(resEl) resEl.textContent='';
+
   const duration=4000, start=performance.now();
   const from=spinAngle;
+
   function animate(now){
     const elapsed=now-start, t=Math.min(elapsed/duration,1);
     const ease=1-Math.pow(1-t,4);
     spinAngle=from+(finalAngle-from)*ease;
     drawSpinWheel(spinAngle);
-    if(t<1){requestAnimationFrame(animate);}else{
+    if(t<1){
+      requestAnimationFrame(animate);
+    } else {
       spinAngle=finalAngle;
       drawSpinWheel(spinAngle);
       isSpinning=false;
@@ -5987,39 +6020,34 @@ async function doSpin() {
 
 async function applySpinReward(reward) {
   const resEl=document.getElementById('spinResult');
-  const cd=document.getElementById('spinCooldown');
-  const btn=document.getElementById('spinBtn');
   if(resEl) resEl.textContent=`🎉 You won: ${reward.label}!`;
-  if(cd) cd.textContent='⏰ Come back tomorrow for another spin!';
-  if(btn) btn.disabled=true;
+
   if(!curUser||!db) return;
   try {
-        const upd = { lastSpin: firebase.firestore.FieldValue.serverTimestamp() };
-    await db.collection('users').doc(curUser.uid).set(upd, { merge: true });
+    if (hasFreeSpinToday) {
+      await db.collection('users').doc(curUser.uid).set({
+        lastSpin: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
     if (reward.type==='coins') {
-      addCoins(reward.value, 'spin', null, `🎰 Daily spin: ${reward.label}`);
+      await addCoins(reward.value, 'spin', null, `🎡 Daily Lucky Wheel: +${reward.value} SP Coins`);
+      if (reward.value >= 250) {
+        toast(`🎉 JACKPOT! You won +${reward.value} SP Coins! 🎰💰`, 'success');
+        spawnCoinRain(15);
+      } else {
+        toast(`🎉 Wheel Result: +${reward.value} SP Coins! 💰`, 'success');
+        spawnCoinRain(6);
+      }
+    } else if (reward.type==='border') {
+      await equipItem(reward.value, 'border');
+      toast(`🎉 Wheel Result: Unlocked ${reward.label}! 🖼️`, 'success');
+      spawnCoinRain(8);
     }
-    // Unlock achievement
-    if (reward.type==='badge') unlockAchievement('spin_lucky', 0);
-    else if (reward.value >= 200) unlockAchievement('spin_lucky', 0);
-    // Show confetti burst
-    for (let i=0;i<10;i++) {
-      const p=document.createElement('div'); p.className='sp-like-particle';
-      p.textContent=['🎉','⭐','⚡','💫','🤑'][Math.floor(Math.random()*5)];
-      p.style.left=(Math.random()*window.innerWidth)+'px';
-      p.style.top=(window.scrollY+180+Math.random()*80)+'px';
-      p.style.setProperty('--rot',(Math.random()*120-60)+'deg');
-      p.style.animationDelay=(Math.random()*0.15)+'s';
-      document.body.appendChild(p);
-      setTimeout(()=>p.remove(),1000);
-    }
-    // Refresh XP display using existing updateUserXPDisplay function
-    if (typeof updateUserXPDisplay === 'function') updateUserXPDisplay(0);
-    // Show toast
-    if (typeof toast === 'function') toast(`🎰 ${reward.label} added to your account!`, 'success');
+
+    await checkSpinCooldown();
   } catch(e){
     console.error('applySpinReward error:', e.message);
-    if (typeof toast === 'function') toast('Error saving spin reward: ' + e.message, 'error');
   }
 }
 
