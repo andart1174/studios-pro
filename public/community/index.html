@@ -2732,45 +2732,38 @@ function loadFeed() {
   if (unsub) unsub();
 
   const processSnap = async snap => {
-    allPosts = [];
-    snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
-    allPosts.sort((a,b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
-      const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
-      return tb - ta;
-    });
-
-    // ─── Founding Member badge via public community_stats doc ───
     try {
-      const statsDoc = await db.collection('community_stats').doc('global').get();
-      // If doc doesn't exist yet → 0 members → definitely founding period
-      const memberCount = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
-      if (memberCount <= 100) {
-        // All registered users are Founding Members while site has ≤ 100 members
-        allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
-      } else {
-        // Site grew past 100 — only show badge for users explicitly marked
-        const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
-        if (unknownUids.length > 0) {
-          const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get()));
-          const fmMap = {};
-          userSnaps.forEach(s => { if (s.exists) fmMap[s.id] = s.data().foundingMember || false; });
-          allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
-        }
-      }
-    } catch(e) {
-      // If query fails for any reason → show badge (founding period assumed)
-      allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
-    }
+      allPosts = [];
+      snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
+      allPosts.sort((a,b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+        return tb - ta;
+      });
 
-    let filtered = allPosts;
-    if (curCat !== 'all') {
-      filtered = allPosts.filter(p => p.category === curCat);
+      // Founding Member badge check (fail-safe)
+      try {
+        const statsDoc = await db.collection('community_stats').doc('global').get().catch(()=>null);
+        const memberCount = (statsDoc && statsDoc.exists) ? (statsDoc.data().memberCount || 0) : 0;
+        if (memberCount <= 100) {
+          allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
+        }
+      } catch(e) {
+        allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
+      }
+
+      let filtered = allPosts;
+      if (curCat !== 'all') {
+        filtered = allPosts.filter(p => p.category === curCat);
+      }
+      renderFeed(filtered);
+      try { loadStories(filtered); } catch(e){}
+    } catch(err) {
+      console.error('processSnap error:', err);
+      renderFeed(allPosts || []);
     }
-    renderFeed(filtered);
-    loadStories(filtered);
   };
 
   unsub = db.collection(COLL).limit(100).onSnapshot(processSnap, err => {
