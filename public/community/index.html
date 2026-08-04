@@ -364,10 +364,11 @@
     .hdr-user-btn-caret{font-size:.7rem;color:var(--muted);transition:transform .2s;}
     .hdr-user-btn.open .hdr-user-btn-caret{transform:rotate(180deg);}
 
-    /* ── SINGLE COLUMN FEED LAYOUT (Spacious & Clean) ────── */
-    #feedEl, #savedPostsList{display:flex;flex-direction:column;gap:16px;}
+    /* ── 2-COLUMN POST GRID (Side-by-Side) ────── */
+    #feedEl, #savedPostsList{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
     #feedEl .post-card, #savedPostsList .post-card{margin-bottom:0;}
-    #feedEl .feed-loading, #feedEl .empty, #savedPostsList .empty{width:100%;}
+    #feedEl .feed-loading, #feedEl .empty, #savedPostsList .empty{grid-column:1/-1;}
+    @media(max-width:900px){#feedEl, #savedPostsList{grid-template-columns:1fr;}}
 
     /* Rank colors */
     .rk-starter{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
@@ -7278,12 +7279,37 @@ function activateMetaverse3DInteractive(postId) {
   const viewer = document.getElementById(`v3d-meta-${postId}`);
   if (!viewer) return;
 
-  if (img) img.style.display = 'none';
-  if (btn) btn.style.display = 'none';
-  viewer.style.display = 'block';
+  const item = metaverseItems[activeMetaIndex];
+  const postObj = (allPosts && allPosts.find(p => p.id === postId)) || item;
+  let modelData = (postObj && postObj.modelData) || null;
 
-  if (typeof init3D === 'function') {
-    init3D(viewer, `meta-${postId}`);
+  if (typeof modelData === 'string') {
+    try { modelData = JSON.parse(modelData); } catch(e){}
+  }
+
+  const hasMesh = modelData && (modelData.positions || modelData.vertices);
+
+  if (hasMesh) {
+    if (img) img.style.display = 'none';
+    if (btn) btn.style.display = 'none';
+    viewer.style.display = 'block';
+    viewer.dataset.model = JSON.stringify(modelData);
+    if (typeof init3D === 'function') {
+      init3D(viewer, `meta-${postId}`);
+    }
+  } else {
+    toast('🔮 3D Interactive Holo-Tilt Active! Move mouse to tilt & inspect 3D perspective!', 'info');
+    if (btn) {
+      btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      btn.innerHTML = '✨ 3D Tilt Active';
+    }
+    if (img) {
+      img.style.transition = 'transform 0.2s ease-out';
+      img.style.transform = 'scale(1.08) rotateY(15deg) rotateX(8deg)';
+      setTimeout(() => {
+        img.style.transform = 'scale(1) rotateY(0deg) rotateX(0deg)';
+      }, 700);
+    }
   }
 }
 
