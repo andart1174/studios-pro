@@ -1534,6 +1534,9 @@
         <button class="nav-item" id="navAuction" onclick="openAuctionModal()" style="color:#fbbf24;font-weight:700;">
           <span class="nav-item-icon">🏷️</span><span>3D Auction House</span>
         </button>
+        <button class="nav-item" id="navMetaverse" onclick="openMetaverseGalleryModal()" style="color:#a855f7;font-weight:700;">
+          <span class="nav-item-icon">🏛️</span><span>Metaverse 3D Gallery</span>
+        </button>
       </div>
     </div>
 
@@ -1541,6 +1544,7 @@
     <div class="scard">
       <div class="stitle" data-t="categories">Categories</div>
       <button class="cat-btn active" data-cat="all" onclick="filterCat('all',this)">🌐 <span data-t="allPosts">All Posts</span></button>
+      <button class="cat-btn" data-cat="metaverse" onclick="openMetaverseGalleryModal()" style="color:#a855f7;font-weight:800;">🏛️ <span>Metaverse Gallery</span></button>
       <button class="cat-btn" data-cat="auction" onclick="openAuctionModal()" style="color:#fbbf24;font-weight:800;">🏷️ <span>3D Auction House</span></button>
       <button class="cat-btn" data-cat="music" onclick="filterCat('music',this)">🎵 Music &amp; Audio Studio</button>
       <button class="cat-btn" data-cat="architecture" onclick="filterCat('architecture',this)">🏗️ Architecture &amp; Floor Plans</button>
@@ -1835,6 +1839,18 @@
               <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:4px;">👑 Transfer Vault Coins to Admin Account</div>
               <button class="adm-btn" type="button" onclick="adminTransferToSelf()" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:900;">👑 Transfer +500 Coins to My Admin Balance</button>
             </div>
+          </div>
+
+          <!-- 🏛️ METAVERSE GALLERY CURATOR TOOL -->
+          <div class="adm-section" style="background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.25);border-radius:12px;padding:12px;margin-top:10px;">
+            <div class="adm-section-title" style="color:#c084fc;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span>🏛️ Metaverse Curator Tool</span>
+              <span style="font-size:.68rem;background:rgba(168,85,247,.15);color:#c084fc;padding:2px 6px;border-radius:6px;font-weight:800;">ADMIN ONLY</span>
+            </div>
+            <div style="font-size:.73rem;font-weight:700;color:#fff;margin-bottom:6px;">Feature 3D Model in Metaverse Gallery:</div>
+            <input class="adm-inp" id="metaCuratorPostId" placeholder="Post ID (e.g. post_123 or paste ID)...">
+            <input class="adm-inp" id="metaCuratorTitle" placeholder="Pedestal Title (e.g. 🏆 Masterpiece of the Month)..." value="🏆 Admin Choice Award">
+            <button class="adm-btn" type="button" onclick="adminAddPostToMetaverse()" style="background:linear-gradient(135deg,#a855f7,#ec4899);border:none;color:#fff;font-weight:900;">🏛️ Feature in Metaverse (+200 Reward to Creator)</button>
           </div>
           <!-- Export CSV -->
           <div class="adm-section">
@@ -3002,6 +3018,7 @@ function buildCard(p) {
         <div class="p-time">${timeAgo(p.createdAt)}</div>
       </div>
       ${canDel ? `<button class="del-btn" onclick="delPost('${p.id}')">🗑️</button>` : ''}
+      ${isAdmin ? `<button class="tip-post-btn" onclick="quickFeatureInMetaverse('${p.id}')" title="Admin: Feature in Metaverse 3D Gallery" style="color:#c084fc;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);">🏛️ Feature</button>` : ''}
       ${curUser && p.uid !== curUser.uid ? `<button class="follow-btn ${followingSet.has(p.uid)?'following':''} " data-uid="${p.uid}" onclick="toggleFollow('${p.uid}')">${followingSet.has(p.uid)?'✓ Following':'+ Follow'}</button>` : ''}
     </div>
     ${p.content ? `<div class="p-content">${renderHashtagText(esc(p.content))}</div>` : ''}
@@ -6164,6 +6181,29 @@ async function toggleFollow(targetUid) {
   </div>
 </div>
 
+<!-- 🏛️ SP METAVERSE 3D GALLERY MODAL -->
+<div class="overlay" id="metaverseOverlay" onclick="closeMetaverseGalleryModal(event)">
+  <div class="wallet-modal" style="max-width:850px;max-height:92vh;display:flex;flex-direction:column;background:#060813;border:1px solid rgba(168,85,247,.4);box-shadow:0 0 40px rgba(168,85,247,.3);">
+    <div class="mh" style="background:linear-gradient(135deg,rgba(168,85,247,.3),rgba(236,72,153,.2));">
+      <div class="mt" style="color:#c084fc;display:flex;align-items:center;gap:8px;font-size:1.1rem;">🏛️ SP Metaverse 3D Gallery</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button id="metaAudioBtn" onclick="toggleMetaverseAudio()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 10px;border-radius:20px;font-size:.74rem;cursor:pointer;font-weight:700;">🎵 Ambient: OFF</button>
+        <button class="mc" onclick="closeMetaverseGalleryModalDirect()">✕</button>
+      </div>
+    </div>
+    
+    <!-- Pedestal Selection Bar -->
+    <div style="display:flex;gap:6px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border2);overflow-x:auto;" id="metaPedestalBar">
+      <!-- Dynamic Pedestals Rendered Here -->
+    </div>
+
+    <!-- Main Exhibition Canvas & Stage -->
+    <div style="flex:1;display:flex;flex-direction:column;position:relative;background:radial-gradient(circle at center, rgba(168,85,247,.15) 0%, rgba(6,8,19,1) 80%);padding:16px;overflow-y:auto;" id="metaGalleryStage">
+      <!-- Active Pedestal Exhibition View -->
+    </div>
+  </div>
+</div>
+
 <!-- 🎁 TIP MODAL -->
 <div class="overlay" id="tipOverlay" onclick="closeTipModal(event)">
   <div class="tip-modal">
@@ -7080,6 +7120,194 @@ async function settleAuction(auctionData) {
       await createNotification(auctionData.highestBidderUid, 'auction_won', `🏆 You won the 3D Auction for "${auctionData.title}"!`);
     }
   } catch(e) {}
+}
+
+// ── 🏛️ SP METAVERSE 3D GALLERY SYSTEM ──────────────────────────────
+let metaverseItems = [];
+let activeMetaIndex = 0;
+let metaAudioCtx = null;
+let metaOsc = null;
+let isMetaAudioPlaying = false;
+
+function openMetaverseGalleryModal() {
+  document.getElementById('metaverseOverlay').classList.add('open');
+  loadMetaverseGallery();
+}
+
+function closeMetaverseGalleryModal(e) {
+  if (e && e.target !== document.getElementById('metaverseOverlay')) return;
+  closeMetaverseGalleryModalDirect();
+}
+function closeMetaverseGalleryModalDirect() {
+  document.getElementById('metaverseOverlay').classList.remove('open');
+  if (isMetaAudioPlaying) stopMetaverseAudio();
+}
+
+async function adminAddPostToMetaverse() {
+  if (!db || !isAdmin) return;
+  const postId = document.getElementById('metaCuratorPostId').value.trim();
+  const curatorTitle = document.getElementById('metaCuratorTitle').value.trim() || '🏆 Admin Choice Award';
+
+  if (!postId) { toast('Please enter or select a Post ID!', 'error'); return; }
+
+  try {
+    toast('Curating post for Metaverse Gallery...', 'info');
+    const postDoc = await db.collection(COLL).doc(postId).get();
+    if (!postDoc.exists) { toast('Post not found!', 'error'); return; }
+
+    const p = postDoc.data();
+    const itemData = {
+      postId,
+      title: p.content ? p.content.slice(0,50) : '3D Masterpiece',
+      curatorTitle,
+      authorUid: p.uid,
+      authorName: p.displayName || 'Creator',
+      authorPhoto: p.photoURL || '',
+      img: (p.images && p.images[0]) || '',
+      modelData: p.modelData || null,
+      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('sp_metaverse_gallery').doc(postId).set(itemData, { merge: true });
+
+    if (p.uid) {
+      await awardCoinsToUser(p.uid, 200, 'metaverse_reward', `🏛️ Featured in SP Metaverse Gallery: ${curatorTitle}`);
+      await createNotification(p.uid, 'metaverse_featured', `🏛️ Congratulations! Your 3D creation was featured by Admin in the SP Metaverse 3D Gallery! (+200 SP Coins)`);
+    }
+
+    toast('🏛️ Model successfully featured in SP Metaverse 3D Gallery! (+200 SP Coins awarded to Creator)', 'success');
+    spawnCoinRain(10);
+    document.getElementById('metaCuratorPostId').value = '';
+    loadMetaverseGallery();
+  } catch(e) {
+    console.error('adminAddPostToMetaverse error:', e);
+    toast('Error featuring in Metaverse: ' + e.message, 'error');
+  }
+}
+
+async function quickFeatureInMetaverse(postId) {
+  if (!isAdmin) return;
+  const curatorTitle = prompt('Enter Pedestal Title for Metaverse Gallery:', '🏆 Admin Choice Award');
+  if (curatorTitle === null) return;
+
+  document.getElementById('metaCuratorPostId').value = postId;
+  document.getElementById('metaCuratorTitle').value = curatorTitle || '🏆 Admin Choice Award';
+  await adminAddPostToMetaverse();
+}
+
+async function loadMetaverseGallery() {
+  const bar = document.getElementById('metaPedestalBar');
+  const stage = document.getElementById('metaGalleryStage');
+  if (!bar || !stage || !db) return;
+
+  try {
+    const snap = await db.collection('sp_metaverse_gallery').limit(15).get();
+    metaverseItems = [];
+    snap.forEach(doc => metaverseItems.push({ id: doc.id, ...doc.data() }));
+
+    if (metaverseItems.length === 0) {
+      bar.innerHTML = '';
+      stage.innerHTML = `
+        <div style="text-align:center;margin:auto;padding:40px 20px;color:var(--muted);">
+          <div style="font-size:3.5rem;margin-bottom:12px;filter:drop-shadow(0 0 15px #a855f7);">🏛️</div>
+          <div style="font-size:1.2rem;font-weight:900;color:#fff;">The SP Metaverse 3D Gallery is empty</div>
+          <div style="font-size:.82rem;margin-top:6px;max-width:380px;margin-left:auto;margin-right:auto;">As Admin, click the "🏛️ Feature" button on any 3D post in the community to curate it onto a live Metaverse pedestal!</div>
+        </div>`;
+      return;
+    }
+
+    bar.innerHTML = metaverseItems.map((item, idx) => `
+      <button onclick="selectMetaversePedestal(${idx})" style="background:${idx===activeMetaIndex?'linear-gradient(135deg,#a855f7,#ec4899)':'rgba(255,255,255,.05)'};border:1px solid ${idx===activeMetaIndex?'#a855f7':'var(--border2)'};color:#fff;padding:6px 14px;border-radius:20px;font-size:.76rem;font-weight:800;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+        <span>🏛️ Pedestal ${idx+1}</span>
+      </button>
+    `).join('');
+
+    renderActivePedestal();
+  } catch(e) {
+    console.error('loadMetaverseGallery error:', e);
+  }
+}
+
+function selectMetaversePedestal(idx) {
+  activeMetaIndex = idx;
+  loadMetaverseGallery();
+}
+
+function renderActivePedestal() {
+  const stage = document.getElementById('metaGalleryStage');
+  if (!stage || !metaverseItems[activeMetaIndex]) return;
+
+  const item = metaverseItems[activeMetaIndex];
+  const mainImg = item.img || '';
+
+  stage.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding-bottom:10px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(168,85,247,.2);border:1px solid #a855f7;color:#c084fc;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:900;margin-bottom:10px;box-shadow:0 0 16px rgba(168,85,247,.4);">
+        ${esc(item.curatorTitle || '🏆 Admin Choice Award')}
+      </div>
+      
+      <div style="font-size:1.3rem;font-weight:900;color:#fff;margin-bottom:4px;">${esc(item.title)}</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:16px;">Exhibited by <strong style="color:#fff;">${esc(item.authorName)}</strong></div>
+
+      <div style="position:relative;width:100%;max-width:480px;height:320px;margin-bottom:16px;border-radius:20px;overflow:hidden;background:#090d1a;border:2px solid rgba(168,85,247,.5);box-shadow:0 0 40px rgba(168,85,247,.35), inset 0 0 30px rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;">
+        ${mainImg ? `<img src="${mainImg}" style="width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 0 20px rgba(168,85,247,.6));">` : `<div style="font-size:5rem;filter:drop-shadow(0 0 20px #a855f7);">🔮</div>`}
+        
+        <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top, rgba(168,85,247,.6), transparent);border-top:2px solid #a855f7;"></div>
+        <div style="position:absolute;top:10px;left:14px;background:rgba(0,0,0,.6);color:#fbbf24;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:800;border:1px solid rgba(251,191,36,.3);">🏛️ METAVERSE EXHIBIT</div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+        <button onclick="openTipModal('${item.postId}','${escAttr(item.authorUid)}','${escAttr(item.authorName)}')" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:#000;font-weight:900;padding:8px 20px;border-radius:10px;font-size:.82rem;cursor:pointer;box-shadow:0 0 15px rgba(245,158,11,.4);">💰 Tip Creator (50 Coins)</button>
+        <button onclick="closeMetaverseGalleryModalDirect();scrollToPost('${item.postId}')" style="background:rgba(99,102,241,.2);border:1px solid #6366f1;color:#fff;font-weight:800;padding:8px 16px;border-radius:10px;font-size:.8rem;cursor:pointer;">💬 View Post</button>
+        ${isAdmin ? `<button onclick="adminRemoveFromMetaverse('${item.id}')" style="background:rgba(239,68,68,.2);border:1px solid #ef4444;color:#ef4444;font-weight:700;padding:8px 14px;border-radius:10px;font-size:.78rem;cursor:pointer;">🗑️ Remove</button>` : ''}
+      </div>
+    </div>`;
+}
+
+async function adminRemoveFromMetaverse(id) {
+  if (!isAdmin || !db) return;
+  if (!confirm('Remove this model from the Metaverse Gallery?')) return;
+  try {
+    await db.collection('sp_metaverse_gallery').doc(id).delete();
+    toast('Removed from Metaverse Gallery', 'info');
+    loadMetaverseGallery();
+  } catch(e) {}
+}
+
+function toggleMetaverseAudio() {
+  const btn = document.getElementById('metaAudioBtn');
+  if (isMetaAudioPlaying) {
+    stopMetaverseAudio();
+    if (btn) btn.textContent = '🎵 Ambient: OFF';
+  } else {
+    startMetaverseAudio();
+    if (btn) btn.textContent = '🎵 Ambient: ON ✨';
+  }
+}
+
+function startMetaverseAudio() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    metaAudioCtx = new AudioCtx();
+    metaOsc = metaAudioCtx.createOscillator();
+    const gain = metaAudioCtx.createGain();
+    metaOsc.type = 'sine';
+    metaOsc.frequency.setValueAtTime(220, metaAudioCtx.currentTime);
+    gain.gain.setValueAtTime(0.04, metaAudioCtx.currentTime);
+    metaOsc.connect(gain);
+    gain.connect(metaAudioCtx.destination);
+    metaOsc.start();
+    isMetaAudioPlaying = true;
+  } catch(e) {}
+}
+
+function stopMetaverseAudio() {
+  try {
+    if (metaOsc) { metaOsc.stop(); metaOsc.disconnect(); metaOsc = null; }
+    if (metaAudioCtx) { metaAudioCtx.close(); metaAudioCtx = null; }
+  } catch(e) {}
+  isMetaAudioPlaying = false;
 }
 
 // ── Robust loadWalletTransactions (No index required) ────────────
