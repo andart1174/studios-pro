@@ -5333,14 +5333,7 @@ function closePWABanner() {
   localStorage.setItem('sp_pwa_dismissed', '1');
 }
 
-// Service Worker Registration for Web Push Notifications
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
-      console.warn('ServiceWorker registration error:', err.message);
-    });
-  });
-}
+
 
 function requestPushNotificationPermission() {
   if (!('Notification' in window)) {
