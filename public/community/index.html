@@ -8676,6 +8676,94 @@ function updateCtrlBtnStates() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 📞 PHONE CONTACTS & DIRECT CALL ENGINE
+// ═══════════════════════════════════════════════════════════════
+let phoneBookCreatorsList = [];
+
+async function openPhoneBook() {
+  if (!curUser) { openAuth(); return; }
+  const overlay = document.getElementById('phoneBookOverlay');
+  if (overlay) overlay.classList.add('open');
+  await loadPhoneBookCreators();
+}
+
+function closePhoneBook(e) {
+  if (!e || e.target === document.getElementById('phoneBookOverlay')) closePhoneBookDirect();
+}
+
+function closePhoneBookDirect() {
+  const overlay = document.getElementById('phoneBookOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+async function loadPhoneBookCreators() {
+  const container = document.getElementById('phoneBookList');
+  if (!container || !db) return;
+
+  container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading creators...</div>`;
+
+  try {
+    const snap = await db.collection('users').limit(50).get();
+    phoneBookCreatorsList = [];
+    snap.forEach(doc => {
+      if (doc.id !== curUser.uid) {
+        phoneBookCreatorsList.push({ uid: doc.id, ...doc.data() });
+      }
+    });
+
+    renderPhoneBook(phoneBookCreatorsList);
+  } catch(e) {
+    if (container) container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;">Error loading creators</div>`;
+  }
+}
+
+function renderPhoneBook(list) {
+  const container = document.getElementById('phoneBookList');
+  if (!container) return;
+
+  if (!list || !list.length) {
+    container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">No creators found</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  list.forEach(u => {
+    const name = u.displayName || 'Creator';
+    const photo = u.photoURL || '';
+    const initial = (name[0] || 'C').toUpperCase();
+    const rank = u.rank || 'Member';
+
+    const avHtml = photo
+      ? `<img src="${esc(photo)}" style="width:42px;height:42px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;border:2px solid var(--accent);flex-shrink:0;">${initial}</div>`;
+
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;';
+    item.innerHTML = `
+      ${avHtml}
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:800;font-size:.88rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+        <div style="font-size:.72rem;color:var(--muted);">${esc(rank)}</div>
+      </div>
+      <button onclick="callFromPhoneBook('${u.uid}', false)" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;">📞 Audio</button>
+      <button onclick="callFromPhoneBook('${u.uid}', true)" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;">📹 Video</button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function filterPhoneBook(q) {
+  const query = (q || '').toLowerCase();
+  const filtered = phoneBookCreatorsList.filter(u => (u.displayName || '').toLowerCase().includes(query));
+  renderPhoneBook(filtered);
+}
+
+function callFromPhoneBook(targetUid, isVideo) {
+  closePhoneBookDirect();
+  initiateDirectCall(isVideo, targetUid);
+}
+
 function openMobileTab(tab) {
   document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
   const btnId = 'mn' + tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -8684,6 +8772,8 @@ function openMobileTab(tab) {
 
   if (tab === 'feed') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (tab === 'phone') {
+    openPhoneBook();
   } else if (tab === 'meta') {
     if (typeof openMetaverseGalleryModal === 'function') openMetaverseGalleryModal();
     else if (typeof openAuctionModal === 'function') openAuctionModal();
