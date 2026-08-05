@@ -8908,37 +8908,41 @@ function initCallSignalingListener(myUid) {
 
   callSignalingUnsub = db.collection('sp_calls')
     .where('calleeUid', '==', myUid)
+    .where('status', '==', 'calling')
     .onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
-        const data = change.doc.data();
-        if (change.type === 'added' && data.status === 'calling') {
-          incomingCallData = { id: change.doc.id, ...data };
-          showIncomingCallBox(incomingCallData);
-        } else if ((change.type === 'modified' || change.type === 'removed') && data.status !== 'calling') {
-          if (incomingCallData && incomingCallData.chatId === data.chatId && !peerConnection && (data.status === 'ended' || data.status === 'declined' || data.status === 'missed')) {
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const callerName = data.callerName || 'Creator';
-            sendNativeMissedCallPushNotification(callerName, timeStr, data.callerAv);
-            toast(`📞 Missed call from @${callerName} at ${timeStr}`, 'error');
-            
-            try {
-              db.collection(NOTIF_COLL).add({
-                targetUid: myUid,
-                actorUid: data.callerUid,
-                actorName: callerName,
-                actorPhoto: data.callerAv || '',
-                type: 'missed_call',
-                text: `📞 Missed call from @${callerName} at ${timeStr}`,
-                read: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
-            } catch(e){}
-          }
-          incomingCallData = null;
-          hideIncomingCallBox();
+      if (snap.empty) {
+        if (incomingCallData && !peerConnection) {
+          const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const callerName = incomingCallData.callerName || 'Creator';
+          sendNativeMissedCallPushNotification(callerName, timeStr, incomingCallData.callerAv);
+          toast(`📞 Missed call from @${callerName} at ${timeStr}`, 'error');
+          
+          try {
+            db.collection(NOTIF_COLL).add({
+              targetUid: myUid,
+              actorUid: incomingCallData.callerUid,
+              actorName: callerName,
+              actorPhoto: incomingCallData.callerAv || '',
+              type: 'missed_call',
+              text: `📞 Missed call from @${callerName} at ${timeStr}`,
+              read: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } catch(e){}
         }
-      });
-    });
+        incomingCallData = null;
+        hideIncomingCallBox();
+        return;
+      }
+
+      const doc = snap.docs[0];
+      const data = { id: doc.id, ...doc.data() };
+      
+      if (!incomingCallData || incomingCallData.id !== doc.id) {
+        incomingCallData = data;
+        showIncomingCallBox(incomingCallData);
+      }
+    }, err => console.warn('call signaling error:', err));
 }
 
 function showIncomingCallBox(data) {
