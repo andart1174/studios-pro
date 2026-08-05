@@ -8874,6 +8874,32 @@ function initGlobalDMNotificationListener(myUid) {
     }, err => console.warn('DM push listener error:', err));
 }
 
+function sendNativeMissedCallPushNotification(callerName, timeStr, callerPhoto) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const notifTitle = `📞 Missed Call from @${callerName}`;
+    const notifBody = `Missed call at ${timeStr}. Tap to call back!`;
+
+    const options = {
+      body: notifBody,
+      icon: callerPhoto || '/logo_studios_pro.png',
+      badge: '/logo_studios_pro.png',
+      tag: 'sp-missed-call-' + Date.now(),
+      renotify: true,
+      vibrate: [200, 100, 200, 100, 400],
+      data: { url: '/community/' }
+    };
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => reg.showNotification(notifTitle, options)).catch(()=>{
+        new Notification(notifTitle, options);
+      });
+    } else {
+      new Notification(notifTitle, options);
+    }
+  } catch(e){}
+}
+
 function initCallSignalingListener(myUid) {
   if (!db || !myUid) return;
   if (callSignalingUnsub) callSignalingUnsub();
@@ -8882,15 +8908,36 @@ function initCallSignalingListener(myUid) {
 
   callSignalingUnsub = db.collection('sp_calls')
     .where('calleeUid', '==', myUid)
-    .where('status', '==', 'calling')
     .onSnapshot(snap => {
-      if (snap.empty) {
-        hideIncomingCallBox();
-        return;
-      }
-      const doc = snap.docs[0];
-      incomingCallData = { id: doc.id, ...doc.data() };
-      showIncomingCallBox(incomingCallData);
+      snap.docChanges().forEach(change => {
+        const data = change.doc.data();
+        if (change.type === 'added' && data.status === 'calling') {
+          incomingCallData = { id: change.doc.id, ...data };
+          showIncomingCallBox(incomingCallData);
+        } else if ((change.type === 'modified' || change.type === 'removed') && data.status !== 'calling') {
+          if (incomingCallData && incomingCallData.chatId === data.chatId && !peerConnection && (data.status === 'ended' || data.status === 'declined' || data.status === 'missed')) {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const callerName = data.callerName || 'Creator';
+            sendNativeMissedCallPushNotification(callerName, timeStr, data.callerAv);
+            toast(`📞 Missed call from @${callerName} at ${timeStr}`, 'error');
+            
+            try {
+              db.collection(NOTIF_COLL).add({
+                targetUid: myUid,
+                actorUid: data.callerUid,
+                actorName: callerName,
+                actorPhoto: data.callerAv || '',
+                type: 'missed_call',
+                text: `📞 Missed call from @${callerName} at ${timeStr}`,
+                read: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            } catch(e){}
+          }
+          incomingCallData = null;
+          hideIncomingCallBox();
+        }
+      });
     });
 }
 
