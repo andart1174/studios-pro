@@ -1442,6 +1442,11 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- 📞 Direct Phone Calls Button -->
+    <button onclick="openPhoneBook()" title="Direct Phone Calls / Contacts" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:6px 12px;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;">
+      <span>📞</span>
+      <span>Calls</span>
+    </button>
     <!-- 🔔 Notification Bell (shown when logged in) -->
     <button class="notif-bell-btn" id="notifBellBtn" style="display:none" onclick="toggleNotifPanel()" title="Notifications">
       🔔
@@ -1699,6 +1704,10 @@
       <button class="mobile-nav-item active" onclick="openMobileTab('feed')" id="mnFeed">
         <span class="mobile-nav-icon">🏠</span>
         <span data-t="navHome">Feed</span>
+      </button>
+      <button class="mobile-nav-item" onclick="openMobileTab('phone')" id="mnPhone" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);border-radius:10px;">
+        <span class="mobile-nav-icon" style="color:#c084fc;">📞</span>
+        <span style="color:#c084fc;font-weight:900;">Calls</span>
       </button>
       <button class="mobile-nav-item" onclick="openMobileTab('meta')" id="mnMeta">
         <span class="mobile-nav-icon">🏛️</span>
