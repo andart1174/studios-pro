@@ -5670,9 +5670,14 @@ async function openChatConversation(chatId, partnerUid, partnerData) {
         return;
       }
 
-      // 👁️ Auto self-destruct 1-view check
-      if (m.timerMode === '1view' && !isMe && m.read) {
-        if (m.id) setTimeout(() => db.collection(CMT_COLL).doc(m.id).delete().catch(()=>{}), 4000);
+      // 👁️ Auto self-destruct 1-view check (destroys 4 seconds after receiver views it)
+      if (m.timerMode === '1view' && !isMe) {
+        if (m.id && !m.destructing) {
+          m.destructing = true;
+          setTimeout(() => {
+            db.collection(CMT_COLL).doc(m.id).delete().catch(()=>{});
+          }, 4000);
+        }
       }
 
       const div = document.createElement('div');
@@ -5680,7 +5685,7 @@ async function openChatConversation(chatId, partnerUid, partnerData) {
 
       let timerBadge = '';
       if (m.timerMode === '24h') timerBadge = `<span style="font-size:.68rem;color:#fbbf24;margin-left:4px;" title="24h Self-Destruct">⏱️ 24h</span>`;
-      else if (m.timerMode === '1view') timerBadge = `<span style="font-size:.68rem;color:#f472b6;margin-left:4px;" title="1-View Only">👁️ 1-View</span>`;
+      else if (m.timerMode === '1view') timerBadge = `<span style="font-size:.68rem;color:#f472b6;margin-left:4px;" title="1-View Only">👁️ Self-destructing in 4s...</span>`;
 
       let bodyContent = esc(m.text || '');
       if (m.image) {
@@ -5738,9 +5743,10 @@ async function sendDirectMessage() {
       senderId: curUser.uid,
       senderName: curUser.displayName || 'User',
       senderPhoto: curUser.photoURL || '',
-      partnerName: activePartnerData.displayName || 'Creator',
-      partnerPhoto: activePartnerData.photoURL || '',
+      partnerName: activePartnerData ? (activePartnerData.displayName || 'Creator') : 'Creator',
+      partnerPhoto: activePartnerData ? (activePartnerData.photoURL || '') : '',
       text: text,
+      timerMode: currentDMTimerMode,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       read: false
     });
