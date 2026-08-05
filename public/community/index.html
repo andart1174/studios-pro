@@ -1692,6 +1692,30 @@
       <button class="ftab" data-cat="music" onclick="filterTab('music',this)">🎵 Music</button>
       <button class="ftab" data-cat="challenge" onclick="filterTab('challenge',this)">🏅 Challenge</button>
     </div>
+
+    <!-- MOBILE NAVIGATION BAR (RIGHT UNDER CATEGORIES) -->
+    <nav class="mobile-nav" id="mobileNav">
+      <button class="mobile-nav-item active" onclick="openMobileTab('feed')" id="mnFeed">
+        <span class="mobile-nav-icon">🏠</span>
+        <span data-t="navHome">Feed</span>
+      </button>
+      <button class="mobile-nav-item" onclick="openMobileTab('meta')" id="mnMeta">
+        <span class="mobile-nav-icon">🏛️</span>
+        <span>Metaverse</span>
+      </button>
+      <button class="mobile-nav-item" onclick="openMobileTab('chat')" id="mnChat">
+        <span class="mobile-nav-icon">💬</span>
+        <span data-t="messages">Messages</span>
+      </button>
+      <button class="mobile-nav-item" onclick="openMobileTab('wheel')" id="mnWheel">
+        <span class="mobile-nav-icon">🎡</span>
+        <span>Spin</span>
+      </button>
+      <button class="mobile-nav-item" onclick="openMobileTab('profile')" id="mnProfile">
+        <span class="mobile-nav-icon">👤</span>
+        <span data-t="navProfile">Profile</span>
+      </button>
+    </nav>
     <!-- Stories Bar -->
     <div class="stories-bar" id="storiesBarEl" style="display:none">
       <div class="stories-bar-title">📖 Stories <span onclick="showStoriesView()">View all →</span></div>
@@ -5522,7 +5546,7 @@ function renderChatsList(chats) {
 
 async function openDirectChat(partnerUid, partnerName, partnerPhoto) {
   if (!curUser) { openAuth(); return; }
-  if (partnerUid === curUser.uid) { toast('You cannot message yourself', 'info'); return; }
+  if (partnerUid === curUser.uid) { openUserPanel(); return; }
 
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   const pData = { displayName: partnerName || 'Creator', photoURL: partnerPhoto || '' };
@@ -8636,7 +8660,7 @@ function openMobileTab(tab) {
     if (typeof openMetaverseGalleryModal === 'function') openMetaverseGalleryModal();
     else if (typeof openAuctionModal === 'function') openAuctionModal();
   } else if (tab === 'chat') {
-    if (typeof openDMDrawer === 'function') openDMDrawer();
+    if (typeof toggleDMDrawer === 'function') toggleDMDrawer();
   } else if (tab === 'wheel') {
     if (typeof openSpinModal === 'function') openSpinModal();
   } else if (tab === 'profile') {
@@ -8645,30 +8669,6 @@ function openMobileTab(tab) {
   }
 }
 </script>
-
-<!-- MOBILE BOTTOM NAVIGATION BAR -->
-<nav class="mobile-nav" id="mobileNav">
-  <button class="mobile-nav-item active" onclick="openMobileTab('feed')" id="mnFeed">
-    <span class="mobile-nav-icon">🏠</span>
-    <span data-t="navHome">Feed</span>
-  </button>
-  <button class="mobile-nav-item" onclick="openMobileTab('meta')" id="mnMeta">
-    <span class="mobile-nav-icon">🏛️</span>
-    <span>Metaverse</span>
-  </button>
-  <button class="mobile-nav-item" onclick="openMobileTab('chat')" id="mnChat">
-    <span class="mobile-nav-icon">💬</span>
-    <span data-t="messages">Messages</span>
-  </button>
-  <button class="mobile-nav-item" onclick="openMobileTab('wheel')" id="mnWheel">
-    <span class="mobile-nav-icon">🎡</span>
-    <span>Spin</span>
-  </button>
-  <button class="mobile-nav-item" onclick="openMobileTab('profile')" id="mnProfile">
-    <span class="mobile-nav-icon">👤</span>
-    <span data-t="navProfile">Profile</span>
-  </button>
-</nav>
 
 </body>
 </html>
