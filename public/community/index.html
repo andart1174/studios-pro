@@ -1248,6 +1248,53 @@
     .live-end-btn{width:56px;height:56px;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 20px rgba(239,68,68,.5);}
     .live-end-btn:hover{box-shadow:0 6px 24px rgba(239,68,68,.75);}
     /* Live Viewer */
+    /* ── MOBILE BOTTOM NAVIGATION BAR ───────────────────── */
+    @media(max-width:900px){
+      body { padding-bottom: 70px; }
+      .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(9, 13, 26, 0.95);
+        border-top: 1px solid rgba(168, 85, 247, 0.35);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 9990;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 6px;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+      }
+      .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        color: var(--muted);
+        font-size: 0.64rem;
+        font-weight: 800;
+        cursor: pointer;
+        background: none;
+        border: none;
+        transition: all 0.2s;
+        flex: 1;
+        font-family: inherit;
+        padding: 6px 0;
+      }
+      .mobile-nav-item.active, .mobile-nav-item:hover {
+        color: #c084fc;
+        transform: translateY(-2px);
+      }
+      .mobile-nav-icon {
+        font-size: 1.25rem;
+      }
+    }
+    @media(min-width:901px){
+      .mobile-nav { display: none !important; }
+    }
     .live-viewer-panel{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:8900;display:none;flex-direction:column;}
     .live-viewer-panel.open{display:flex;}
     .live-viewer-video{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000;}
@@ -8576,6 +8623,52 @@ function updateCtrlBtnStates() {
     camBtn.textContent = isVideoStopped ? '🚫' : '📹';
   }
 }
+
+function openMobileTab(tab) {
+  document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+  const btnId = 'mn' + tab.charAt(0).toUpperCase() + tab.slice(1);
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'feed') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (tab === 'meta') {
+    if (typeof openMetaverseGalleryModal === 'function') openMetaverseGalleryModal();
+    else if (typeof openAuctionModal === 'function') openAuctionModal();
+  } else if (tab === 'chat') {
+    if (typeof openDMDrawer === 'function') openDMDrawer();
+  } else if (tab === 'wheel') {
+    if (typeof openSpinModal === 'function') openSpinModal();
+  } else if (tab === 'profile') {
+    if (curUser && typeof openUserPanel === 'function') openUserPanel();
+    else if (typeof openAuth === 'function') openAuth();
+  }
+}
 </script>
+
+<!-- MOBILE BOTTOM NAVIGATION BAR -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-item active" onclick="openMobileTab('feed')" id="mnFeed">
+    <span class="mobile-nav-icon">🏠</span>
+    <span data-t="navHome">Feed</span>
+  </button>
+  <button class="mobile-nav-item" onclick="openMobileTab('meta')" id="mnMeta">
+    <span class="mobile-nav-icon">🏛️</span>
+    <span>Metaverse</span>
+  </button>
+  <button class="mobile-nav-item" onclick="openMobileTab('chat')" id="mnChat">
+    <span class="mobile-nav-icon">💬</span>
+    <span data-t="messages">Messages</span>
+  </button>
+  <button class="mobile-nav-item" onclick="openMobileTab('wheel')" id="mnWheel">
+    <span class="mobile-nav-icon">🎡</span>
+    <span>Spin</span>
+  </button>
+  <button class="mobile-nav-item" onclick="openMobileTab('profile')" id="mnProfile">
+    <span class="mobile-nav-icon">👤</span>
+    <span data-t="navProfile">Profile</span>
+  </button>
+</nav>
+
 </body>
 </html>
