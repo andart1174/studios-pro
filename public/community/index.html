@@ -2132,6 +2132,11 @@
       <button class="mc" onclick="closePhoneBookDirect()">✕</button>
     </div>
     <div class="mb">
+      <!-- Notification Enable Bar -->
+      <div id="pushPermissionBanner" style="background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="font-size:.76rem;color:#c084fc;font-weight:700;">🔔 Enable Phone Ring &amp; Background Alerts</div>
+        <button onclick="requestNotificationPermission()" style="background:#a855f7;border:none;color:#fff;padding:5px 10px;border-radius:8px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:inherit;">Enable 🔔</button>
+      </div>
       <div style="margin-bottom:12px">
         <input type="text" id="phoneSearchInp" placeholder="Search creators to call..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;color:#fff;font-size:.85rem;outline:none;" oninput="filterPhoneBook(this.value)">
       </div>
