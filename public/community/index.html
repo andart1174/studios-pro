@@ -4421,8 +4421,11 @@ setTimeout(loadIncomingShare, 200);
 
       <!-- Message Input Composer -->
       <div style="padding:12px 16px; border-top:1px solid var(--border); background:rgba(11,17,32,.95); display:flex; align-items:center; gap:8px;">
+        <input type="file" id="dmFileInput" accept="image/*,video/*,.glb,.gltf" style="display:none" onchange="handleDMFileSelect(event)">
+        <button onclick="triggerDMFileSelect()" style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:var(--text); width:38px; height:38px; border-radius:10px; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Attach Image or 3D File">📎</button>
+        <button id="dmVoiceRecordBtn" onclick="toggleDMVoiceRecord()" style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:var(--text); width:38px; height:38px; border-radius:10px; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Record Voice Note">🎙️</button>
         <input type="text" id="dmInputText" data-t-placeholder="typeMessage" placeholder="Type a message..." style="flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:12px; padding:10px 14px; color:var(--text); font-size:.85rem; font-family:inherit; outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDirectMessage();}">
-        <button onclick="sendDirectMessage()" style="background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff; padding:10px 16px; border-radius:12px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.88rem; transition:transform .2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">➤</button>
+        <button onclick="sendDirectMessage()" style="background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff; padding:10px 16px; border-radius:12px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.88rem; transition:transform .2s; flex-shrink:0;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">➤</button>
       </div>
     </div>
   </div>
@@ -5651,17 +5654,29 @@ async function openChatConversation(chatId, partnerUid, partnerData) {
 
     streamEl.innerHTML = '';
     msgs.forEach(m => {
-      const isMe = m.senderId === (curUser ? curUser.uid : '');
+      const isMe = (m.uid === (curUser ? curUser.uid : '')) || (m.senderId === (curUser ? curUser.uid : ''));
       const div = document.createElement('div');
       div.className = `dm-msg-item ${isMe ? 'me' : 'other'}`;
+
+      let bodyContent = esc(m.text || '');
+      if (m.image) {
+        bodyContent += `<div style="margin-top:6px;"><img src="${esc(m.image)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;"></div>`;
+      }
+      if (m.audioNote) {
+        bodyContent += `<div style="margin-top:6px;"><audio src="${esc(m.audioNote)}" controls style="max-width:220px;height:36px;"></audio></div>`;
+      }
+      if (m.fileUrl) {
+        bodyContent += `<div style="margin-top:6px;"><a href="${escAttr(m.fileUrl)}" download="${escAttr(m.fileName||'attachment')}" style="color:#a78bfa;font-weight:700;text-decoration:none;">💾 ${esc(m.fileName||'Download Attachment')}</a></div>`;
+      }
+
       div.innerHTML = `
-        <div class="dm-bubble">${esc(m.text)}</div>
+        <div class="dm-bubble">${bodyContent}</div>
         <div class="dm-msg-time">${timeAgo(m.createdAt)}</div>
       `;
       streamEl.appendChild(div);
-      // Mark read if it was sent by partner
-      if (!isMe && !m.read && doc.ref) {
-        doc.ref.update({ read: true }).catch(()=>{});
+
+      if (!isMe && !m.read && m.id) {
+        db.collection(CMT_COLL).doc(m.id).update({ read: true }).catch(()=>{});
       }
     });
     streamEl.scrollTop = streamEl.scrollHeight;
@@ -5703,6 +5718,87 @@ async function sendDirectMessage() {
   } catch(e) {
     console.error('Send DM error:', e);
     toast('Could not send message: ' + e.message, 'error');
+  }
+}
+
+let dmVoiceRecorder = null;
+let dmVoiceChunks = [];
+let isDMVoiceRecording = false;
+
+function triggerDMFileSelect() {
+  const el = document.getElementById('dmFileInput');
+  if (el) el.click();
+}
+
+function handleDMFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const dataUrl = event.target.result;
+    if (file.type.startsWith('image/')) {
+      sendDirectMessageData({ image: dataUrl, text: '🖼️ Image attachment' });
+    } else {
+      sendDirectMessageData({ fileUrl: dataUrl, fileName: file.name, text: '📎 File: ' + file.name });
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function toggleDMVoiceRecord() {
+  const btn = document.getElementById('dmVoiceRecordBtn');
+  if (isDMVoiceRecording) {
+    if (dmVoiceRecorder && dmVoiceRecorder.state !== 'inactive') {
+      dmVoiceRecorder.stop();
+    }
+    isDMVoiceRecording = false;
+    if (btn) { btn.style.background = 'rgba(255,255,255,.07)'; btn.style.borderColor = 'rgba(255,255,255,.12)'; btn.textContent = '🎙️'; }
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      dmVoiceChunks = [];
+      dmVoiceRecorder = new MediaRecorder(stream);
+      dmVoiceRecorder.ondataavailable = ev => { if (ev.data.size > 0) dmVoiceChunks.push(ev.data); };
+      dmVoiceRecorder.onstop = () => {
+        const audioBlob = new Blob(dmVoiceChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          sendDirectMessageData({ audioNote: reader.result, text: '🎙️ Voice note' });
+        };
+        reader.readAsDataURL(audioBlob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      dmVoiceRecorder.start();
+      isDMVoiceRecording = true;
+      if (btn) { btn.style.background = 'rgba(239,68,68,.3)'; btn.style.borderColor = '#ef4444'; btn.textContent = '⏹️'; }
+      toast('🎙️ Recording voice note... Tap ⏹️ to send', 'info');
+    } catch(err) {
+      toast('Microphone access denied', 'error');
+    }
+  }
+}
+
+async function sendDirectMessageData(extraData) {
+  if (!curUser || !activeChatId || !activePartnerUid) return;
+  const msgData = {
+    isDM: true,
+    chatId: activeChatId,
+    participants: [curUser.uid, activePartnerUid],
+    senderId: curUser.uid,
+    senderName: curUser.displayName || 'User',
+    senderPhoto: curUser.photoURL || '',
+    partnerName: activePartnerData ? (activePartnerData.displayName || 'Creator') : 'Creator',
+    partnerPhoto: activePartnerData ? (activePartnerData.photoURL || '') : '',
+    text: extraData.text || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    read: false,
+    ...extraData
+  };
+
+  try {
+    await db.collection(CMT_COLL).add(msgData);
+  } catch(e) {
+    console.error('sendDirectMessageData error:', e);
   }
 }
 
