@@ -6515,9 +6515,10 @@ async function toggleFollow(targetUid) {
       <div class="call-status" id="callStatusText">Calling...</div>
     </div>
 
-    <!-- Video Streams (Video Mode) -->
+    <!-- Video Streams & Audio Output -->
     <video id="callRemoteVideo" class="call-remote-video" autoplay playsinline style="display:none"></video>
     <video id="callLocalVideo" class="call-local-video" autoplay playsinline muted style="display:none"></video>
+    <audio id="callRemoteAudio" autoplay playsinline style="display:none"></audio>
 
     <!-- Floating Call Controls -->
     <div class="call-controls">
@@ -8344,13 +8345,29 @@ function stopRingtone() {
   }
 }
 
-// Helper: Attach Remote Stream & Play Video
+// Helper: Attach Remote Stream & Play Video / Audio
 function handleRemoteTrack(event) {
   const remoteVideoEl = document.getElementById('callRemoteVideo');
-  if (remoteVideoEl && event.streams && event.streams[0]) {
-    remoteVideoEl.srcObject = event.streams[0];
-    remoteVideoEl.play().catch(e => console.warn('Remote video play error:', e));
-    if (currentCallIsVideo) {
+  const remoteAudioEl = document.getElementById('callRemoteAudio');
+
+  if (event.streams && event.streams[0]) {
+    const stream = event.streams[0];
+
+    if (remoteVideoEl) {
+      remoteVideoEl.srcObject = stream;
+      remoteVideoEl.muted = false;
+      remoteVideoEl.volume = 1.0;
+      remoteVideoEl.play().catch(e => console.warn('Remote video play error:', e));
+    }
+
+    if (remoteAudioEl) {
+      remoteAudioEl.srcObject = stream;
+      remoteAudioEl.muted = false;
+      remoteAudioEl.volume = 1.0;
+      remoteAudioEl.play().catch(e => console.warn('Remote audio play error:', e));
+    }
+
+    if (currentCallIsVideo && remoteVideoEl) {
       remoteVideoEl.style.display = 'block';
       const avView = document.getElementById('callAvatarView');
       if (avView) avView.style.display = 'none';
