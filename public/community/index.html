@@ -8872,6 +8872,16 @@ async function loadPhoneBookCreators() {
       }
     });
 
+    // Fetch presence status for creators
+    try {
+      const presSnap = await db.collection(PRESENCE_COLL).where('online', '==', true).get();
+      const onlineSet = new Set();
+      presSnap.forEach(s => onlineSet.add(s.id));
+      phoneBookCreatorsList.forEach(u => {
+        u.isOnline = onlineSet.has(u.uid);
+      });
+    } catch(e){}
+
     renderPhoneBook(phoneBookCreatorsList);
   } catch(e) {
     if (container) container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;">Error loading creators</div>`;
@@ -8893,21 +8903,35 @@ function renderPhoneBook(list) {
     const photo = u.photoURL || '';
     const initial = (name[0] || 'C').toUpperCase();
     const rank = u.rank || 'Member';
+    const isOnline = !!u.isOnline;
+
+    const statusBadge = isOnline
+      ? `<span style="font-size:.65rem;background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.4);padding:2px 6px;border-radius:10px;font-weight:800;">🟢 Online</span>`
+      : `<span style="font-size:.65rem;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);padding:2px 6px;border-radius:10px;">⚪ Offline</span>`;
 
     const avHtml = photo
       ? `<img src="${esc(photo)}" style="width:42px;height:42px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0;">`
       : `<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;border:2px solid var(--accent);flex-shrink:0;">${initial}</div>`;
 
     const item = document.createElement('div');
-    item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;';
+    item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;flex-wrap:wrap;';
     item.innerHTML = `
-      ${avHtml}
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:800;font-size:.88rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
-        <div style="font-size:.72rem;color:var(--muted);">${esc(rank)}</div>
+      <div style="position:relative;flex-shrink:0;">
+        ${avHtml}
+        <div style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:${isOnline?'#10b981':'#64748b'};border:2px solid var(--bg3);"></div>
       </div>
-      <button onclick="callFromPhoneBook('${u.uid}', false)" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;">📞 Audio</button>
-      <button onclick="callFromPhoneBook('${u.uid}', true)" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;">📹 Video</button>
+      <div style="flex:1;min-width:110px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="font-weight:800;font-size:.88rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div>
+          ${statusBadge}
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${esc(rank)}</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <button onclick="callFromPhoneBook('${u.uid}', false)" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:6px 10px;border-radius:10px;font-size:.76rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:inherit;" title="Audio Call">📞 Audio</button>
+        <button onclick="callFromPhoneBook('${u.uid}', true)" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:6px 10px;border-radius:10px;font-size:.76rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:inherit;" title="Video Call">📹 Video</button>
+        <button onclick="chatFromPhoneBook('${u.uid}', '${escAttr(name)}', '${escAttr(photo)}')" style="background:rgba(236,72,153,.2);border:1px solid rgba(236,72,153,.4);color:#f472b6;padding:6px 10px;border-radius:10px;font-size:.76rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:inherit;" title="Open Chat (Voice notes & Attachments)">💬 Chat</button>
+      </div>
     `;
     container.appendChild(item);
   });
@@ -8922,6 +8946,11 @@ function filterPhoneBook(q) {
 function callFromPhoneBook(targetUid, isVideo) {
   closePhoneBookDirect();
   initiateDirectCall(isVideo, targetUid);
+}
+
+function chatFromPhoneBook(targetUid, name, photo) {
+  closePhoneBookDirect();
+  openDirectChat(targetUid, name, photo);
 }
 
 function openMobileTab(tab) {
