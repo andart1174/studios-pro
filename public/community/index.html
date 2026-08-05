@@ -1250,31 +1250,32 @@
     /* Live Viewer */
     /* ── MOBILE BOTTOM NAVIGATION BAR ───────────────────── */
     @media(max-width:900px){
-      body { padding-bottom: 70px; }
+      body { padding-bottom: 20px; }
       .mobile-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 64px;
+        position: relative;
+        top: 0;
+        width: 100%;
+        margin: 10px 0 16px 0;
+        height: 56px;
         background: rgba(9, 13, 26, 0.95);
-        border-top: 1px solid rgba(168, 85, 247, 0.35);
+        border: 1px solid rgba(168, 85, 247, 0.35);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        z-index: 9990;
+        border-radius: 16px;
+        z-index: 100;
         display: flex;
         align-items: center;
         justify-content: space-around;
-        padding: 0 6px;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+        padding: 0 4px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       }
       .mobile-nav-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 3px;
+        gap: 2px;
         color: var(--muted);
-        font-size: 0.64rem;
+        font-size: 0.62rem;
         font-weight: 800;
         cursor: pointer;
         background: none;
@@ -1282,14 +1283,14 @@
         transition: all 0.2s;
         flex: 1;
         font-family: inherit;
-        padding: 6px 0;
+        padding: 4px 0;
       }
       .mobile-nav-item.active, .mobile-nav-item:hover {
         color: #c084fc;
-        transform: translateY(-2px);
+        transform: translateY(-1px);
       }
       .mobile-nav-icon {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
       }
     }
     @media(min-width:901px){
@@ -2104,6 +2105,24 @@
         <button class="c-send" onclick="sendCmt()">➤</button>
       </div>
       <div id="cmtLoginMsg" style="display:none;text-align:center;padding:16px;color:var(--muted);font-size:.83rem" data-t="loginComment">Sign in to leave a comment</div>
+    </div>
+  </div>
+</div>
+
+<!-- 📞 PHONE CONTACTS & DIRECT CALL MODAL -->
+<div class="overlay" id="phoneBookOverlay" onclick="closePhoneBook(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px;background:#090d1a;border:2px solid rgba(168,85,247,.4);box-shadow:0 0 35px rgba(168,85,247,.25);">
+    <div class="mh">
+      <div class="mt" style="color:#c084fc;font-family:'Outfit',sans-serif;font-weight:900;">📞 Phone &amp; Direct Calls</div>
+      <button class="mc" onclick="closePhoneBookDirect()">✕</button>
+    </div>
+    <div class="mb">
+      <div style="margin-bottom:12px">
+        <input type="text" id="phoneSearchInp" placeholder="Search creators to call..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;color:#fff;font-size:.85rem;outline:none;" oninput="filterPhoneBook(this.value)">
+      </div>
+      <div id="phoneBookList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding-right:4px;">
+        <div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading creators...</div>
+      </div>
     </div>
   </div>
 </div>
