@@ -3142,6 +3142,7 @@ function buildCard(p) {
       </div>
       ${canDel ? `<button class="del-btn" onclick="delPost('${p.id}')">🗑️</button>` : ''}
       ${isAdmin ? `<button class="tip-post-btn" onclick="quickFeatureInMetaverse('${p.id}')" title="Admin: Feature in Metaverse 3D Gallery" style="color:#c084fc;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);">🏛️ Feature</button>` : ''}
+      ${curUser && p.uid !== curUser.uid ? `<button onclick="initiateDirectCall(false, '${escAttr(p.uid)}')" title="1-Tap Call Creator" style="background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:4px 9px;border-radius:8px;font-size:.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-family:inherit;">📞 Call</button>` : ''}
       ${curUser && p.uid !== curUser.uid ? `<button class="follow-btn ${followingSet.has(p.uid)?'following':''} " data-uid="${p.uid}" onclick="toggleFollow('${p.uid}')">${followingSet.has(p.uid)?'✓ Following':'+ Follow'}</button>` : ''}
     </div>
     ${p.content ? `<div class="p-content">${renderHashtagText(esc(p.content))}</div>` : ''}
@@ -3160,6 +3161,7 @@ function buildCard(p) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span id="cm-${p.id}">${p.commentsCount||0}</span>
       </button>
+      ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="initiateDirectCall(false, '${escAttr(p.uid)}')" title="1-Tap Call Creator" style="color:#34d399;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);">📞 Call</button>` : ''}
       ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">💰 Tip</button>` : ''}
       ${curUser && p.uid === curUser.uid && !p.boosted ? `<button class="tip-post-btn" onclick="boostPost('${p.id}')" title="Boost this post for 50 coins" style="color:#a78bfa;background:rgba(99,102,241,.08);">🚀 Boost</button>` : ''}
       ${p.boosted ? `<span class="boost-badge">⚡ BOOSTED</span>` : ''}
@@ -8622,7 +8624,14 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
   if (!db) return;
 
-  const partnerData = activePartnerData || {};
+  let partnerData = (targetPartnerUid && activePartnerUid !== targetPartnerUid) ? {} : (activePartnerData || {});
+  if (targetPartnerUid && (!partnerData.displayName || activePartnerUid !== targetPartnerUid)) {
+    try {
+      const uDoc = await db.collection('users').doc(targetPartnerUid).get();
+      if (uDoc.exists) partnerData = uDoc.data();
+    } catch(e){}
+  }
+
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   currentCallId = chatId;
   currentCallIsVideo = isVideo;
