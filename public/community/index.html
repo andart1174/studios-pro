@@ -8645,6 +8645,14 @@ function requestNotificationPermission() {
   }
 }
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    console.log('[SW] Push Service Worker Active:', reg.scope);
+  }).catch(err => {
+    console.warn('[SW] Registration failed:', err);
+  });
+}
+
 function sendNativeCallPushNotification(data) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
@@ -8653,22 +8661,32 @@ function sendNativeCallPushNotification(data) {
     const notifTitle = isVideo ? `📹 Incoming Video Call from @${callerName}` : `📞 Incoming Voice Call from @${callerName}`;
     const notifBody = 'Tap to answer call in SP Nexus!';
 
-    const notif = new Notification(notifTitle, {
+    const options = {
       body: notifBody,
-      icon: data.callerAv || '/sp_coin_logo.png',
-      badge: '/sp_coin_logo.png',
+      icon: data.callerAv || '/logo_studios_pro.png',
+      badge: '/logo_studios_pro.png',
       tag: 'sp-call-' + (data.chatId || 'incoming'),
       renotify: true,
       requireInteraction: true,
-      vibrate: [300, 150, 300, 150, 500, 200, 500]
-    });
-
-    notif.onclick = function(e) {
-      e.preventDefault();
-      window.focus();
-      if (typeof acceptIncomingCall === 'function') acceptIncomingCall();
-      notif.close();
+      vibrate: [300, 150, 300, 150, 500, 200, 500],
+      data: { url: '/community/?call=true' }
     };
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(notifTitle, options);
+      }).catch(() => {
+        new Notification(notifTitle, options);
+      });
+    } else {
+      const notif = new Notification(notifTitle, options);
+      notif.onclick = function(e) {
+        e.preventDefault();
+        window.focus();
+        if (typeof acceptIncomingCall === 'function') acceptIncomingCall();
+        notif.close();
+      };
+    }
   } catch(e){
     console.warn('Native call push error:', e);
   }
@@ -8681,23 +8699,33 @@ function sendNativeDMPushNotification(m) {
     const notifTitle = `💬 Message from @${senderName}`;
     const notifBody = m.text || (m.audioNote ? '🎙️ Voice note' : m.image ? '🖼️ Photo' : '📎 Attachment');
 
-    const notif = new Notification(notifTitle, {
+    const options = {
       body: notifBody,
-      icon: m.senderPhoto || m.authorPhoto || '/sp_coin_logo.png',
-      badge: '/sp_coin_logo.png',
+      icon: m.senderPhoto || m.authorPhoto || '/logo_studios_pro.png',
+      badge: '/logo_studios_pro.png',
       tag: 'sp-dm-' + (m.chatId || 'dm'),
       renotify: true,
-      vibrate: [100, 50, 100]
-    });
-
-    notif.onclick = function(e) {
-      e.preventDefault();
-      window.focus();
-      if (m.senderId && typeof openDirectChat === 'function') {
-        openDirectChat(m.senderId, senderName, m.senderPhoto || '');
-      }
-      notif.close();
+      vibrate: [100, 50, 100],
+      data: { url: '/community/?dm=' + (m.senderId || m.uid) }
     };
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(notifTitle, options);
+      }).catch(() => {
+        new Notification(notifTitle, options);
+      });
+    } else {
+      const notif = new Notification(notifTitle, options);
+      notif.onclick = function(e) {
+        e.preventDefault();
+        window.focus();
+        if (m.senderId && typeof openDirectChat === 'function') {
+          openDirectChat(m.senderId, senderName, m.senderPhoto || '');
+        }
+        notif.close();
+      };
+    }
 
     playNativeChimeSound();
   } catch(e){}
