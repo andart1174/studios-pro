@@ -5689,13 +5689,39 @@ async function openChatConversation(chatId, partnerUid, partnerData) {
 
       let bodyContent = esc(m.text || '');
       if (m.image) {
-        bodyContent += `<div style="margin-top:6px;"><img src="${esc(m.image)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;"></div>`;
+        const fileName = 'sp_photo_' + (m.id || Date.now()) + '.jpg';
+        bodyContent += `
+          <div style="margin-top:6px;">
+            <img src="${esc(m.image)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;object-fit:cover;">
+            <div style="margin-top:6px;">
+              <a href="${escAttr(m.image)}" download="${fileName}" target="_blank" style="background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:5px 12px;border-radius:8px;font-size:.76rem;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:inherit;">
+                <span>📥</span>
+                <span>Download Photo</span>
+              </a>
+            </div>
+          </div>`;
       }
       if (m.audioNote) {
-        bodyContent += `<div style="margin-top:6px;"><audio src="${esc(m.audioNote)}" controls style="max-width:220px;height:36px;"></audio></div>`;
+        const audioName = 'sp_voice_' + (m.id || Date.now()) + '.webm';
+        bodyContent += `
+          <div style="margin-top:6px;">
+            <audio src="${esc(m.audioNote)}" controls style="max-width:220px;height:36px;display:block;"></audio>
+            <div style="margin-top:4px;">
+              <a href="${escAttr(m.audioNote)}" download="${audioName}" style="color:#a78bfa;font-size:.72rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">
+                <span>📥</span>
+                <span>Save Audio</span>
+              </a>
+            </div>
+          </div>`;
       }
       if (m.fileUrl) {
-        bodyContent += `<div style="margin-top:6px;"><a href="${escAttr(m.fileUrl)}" download="${escAttr(m.fileName||'attachment')}" style="color:#a78bfa;font-weight:700;text-decoration:none;">💾 ${esc(m.fileName||'Download Attachment')}</a></div>`;
+        bodyContent += `
+          <div style="margin-top:6px;">
+            <a href="${escAttr(m.fileUrl)}" download="${escAttr(m.fileName||'attachment')}" target="_blank" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:6px 12px;border-radius:10px;font-size:.76rem;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:inherit;">
+              <span>📥</span>
+              <span>Download ${esc(m.fileName||'File')}</span>
+            </a>
+          </div>`;
       }
 
       const delBtnHtml = m.id ? `<button onclick="deleteDirectMessage('${m.id}')" style="background:none;border:none;color:var(--muted);font-size:.72rem;cursor:pointer;opacity:.6;padding:2px 4px;margin-left:6px;transition:all .2s;" onmouseover="this.style.opacity='1';this.style.color='#f87171'" onmouseout="this.style.opacity='.6';this.style.color='var(--muted)'" title="Delete message">🗑️</button>` : '';
