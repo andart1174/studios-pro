@@ -3015,7 +3015,8 @@ function imgsHtml(images) {
 
 function ytId(url) {
   if (!url) return null;
-  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  url = url.trim();
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
   return m ? m[1] : null;
 }
 
@@ -3141,7 +3142,13 @@ function buildCard(p) {
           ${renderHotspots(p.tags, p.id)}
         </div>`;
     } else {
-      mediaHtml = imgsHtml(p.images) + (vid ? `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?rel=0" allowfullscreen loading="lazy"></iframe></div>` : '');
+      let vidHtml = '';
+      if (vid) {
+        vidHtml = `<div class="p-video"><iframe src="https://www.youtube.com/embed/${vid}?autoplay=0&rel=0" allowfullscreen loading="lazy"></iframe></div>`;
+      } else if (p.videoUrl && p.videoUrl.trim().startsWith('http')) {
+        vidHtml = `<div class="p-video" style="aspect-ratio:auto;"><video src="${esc(p.videoUrl.trim())}" controls playsinline style="width:100%;max-height:480px;border-radius:14px;background:#000;display:block;"></video></div>`;
+      }
+      mediaHtml = imgsHtml(p.images) + vidHtml;
     }
   }
 
