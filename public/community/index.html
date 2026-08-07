@@ -2073,8 +2073,14 @@
         <div class="img-pv" id="imgPreviews"></div>
       </div>
       <div class="opt-sec">
-        <label class="opt-lbl" data-t="ytLink">YouTube Video Link (max 1 min)</label>
-        <input type="url" class="vid-inp" id="vidUrl" placeholder="https://youtube.com/watch?v=...">
+        <label class="opt-lbl">🎥 Video (Upload MP4/MOV up to 60s or YouTube Link)</label>
+        <div class="up-area" style="margin-bottom:8px;">
+          <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/quicktime" onchange="onVideoFileSel(event)">
+          <div class="up-icon">🎥</div>
+          <div class="up-text"><strong>Click to upload video</strong> or drag & drop<br>MP4, MOV, WebM · Max 60 seconds (Reels/Shorts)</div>
+        </div>
+        <div id="videoFilePreview" style="display:none;flex-direction:column;margin-bottom:8px;"></div>
+        <input type="url" class="vid-inp" id="vidUrl" placeholder="Or paste YouTube Shorts / Video link (https://...)">
       </div>
       <div class="opt-sec">
         <label class="opt-lbl">🔮 <span data-t="transfer3d">Transfer 3D Model from HUD Builder</span></label>
@@ -2376,7 +2382,49 @@ const T = {
 
 window.name = 'studios_community_tab';
 let curLang='en', curUser=null, isAdmin=false, curCat='all', curPostId=null;
-let uploadedFiles=[], unsub=null, unsubCmt=null;
+let uploadedFiles=[], uploadedVideoFile=null, unsub=null, unsubCmt=null;
+
+function onVideoFileSel(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('video/')) {
+    toast('Please select a valid video file (MP4, MOV, WebM)', 'error');
+    return;
+  }
+
+  const tempVid = document.createElement('video');
+  tempVid.preload = 'metadata';
+  tempVid.src = URL.createObjectURL(file);
+  tempVid.onloadedmetadata = function() {
+    URL.revokeObjectURL(tempVid.src);
+    if (tempVid.duration > 65) {
+      toast('⚠️ Video is longer than 60 seconds. Please select a clip under 60 seconds.', 'error');
+      const inp = document.getElementById('videoFileInput'); if (inp) inp.value = '';
+      uploadedVideoFile = null;
+      document.getElementById('videoFilePreview').style.display = 'none';
+      return;
+    }
+
+    uploadedVideoFile = file;
+    const pv = document.getElementById('videoFilePreview');
+    pv.style.display = 'flex';
+    pv.innerHTML = `
+      <div style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);">
+        <video src="${URL.createObjectURL(file)}" controls style="width:100%;max-height:200px;display:block;"></object>
+        <button onclick="removeVideoFile()" style="position:absolute;top:8px;right:8px;background:rgba(239,68,68,.85);border:none;color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;font-weight:bold;z-index:2;">✕</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--green);margin-top:4px;font-weight:700;">✅ Short Video Attached (${Math.round(tempVid.duration)}s • ${(file.size / (1024*1024)).toFixed(1)} MB)</div>
+    `;
+  };
+}
+
+function removeVideoFile() {
+  uploadedVideoFile = null;
+  const inp = document.getElementById('videoFileInput'); if (inp) inp.value = '';
+  const pv = document.getElementById('videoFilePreview');
+  if (pv) { pv.style.display = 'none'; pv.innerHTML = ''; }
+}
 let replyParentId=null, replyParentName=null;
 let allPosts=[], transferred3D=null, sharedSourcePage=null;
 
@@ -3103,6 +3151,15 @@ function buildCard(p) {
     }
   }
 
+  if (p.directVideoUrl) {
+    const directVidHtml = `
+      <div class="sp-direct-video-wrapper" style="position:relative;width:100%;border-radius:14px;overflow:hidden;margin-bottom:14px;background:#000;border:1px solid var(--border);">
+        <video src="${esc(p.directVideoUrl)}" controls playsinline preload="metadata" loop style="width:100%;max-height:480px;display:block;object-fit:contain;background:#000;"></video>
+        <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);padding:4px 10px;border-radius:12px;font-size:.7rem;font-weight:800;color:#34d399;border:1px solid rgba(52,211,153,.3);pointer-events:none;display:inline-flex;align-items:center;gap:4px;">🎥 REELS (60s)</div>
+      </div>`;
+    mediaHtml = directVidHtml + mediaHtml;
+  }
+
   let remixHtml = '';
   if (p.sourcePage) {
     const toolStateJson = p.toolState ? JSON.stringify(p.toolState) : '';
@@ -3502,7 +3559,7 @@ async function publish() {
   const audioInp = document.getElementById('audioUrl');
   const audioUrl = audioInp ? audioInp.value.trim() : '';
 
-  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !transferred3D) {
+  if (!content && !uploadedFiles.length && !uploadedVideoFile && !vidUrl && !audioUrl && !transferred3D) {
     toast('Add some content first!', 'error');
     return;
   }
@@ -3512,7 +3569,37 @@ async function publish() {
   btn.textContent = 'Publishing...';
 
   try {
-    // 1. Process image uploads with fast timeout + Base64 fallback
+    // 1. Process direct video upload if present
+    let directVideoUrl = null;
+    if (uploadedVideoFile) {
+      btn.textContent = 'Uploading Video...';
+      try {
+        if (storage) {
+          document.getElementById('upProg').style.display = 'block';
+          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(uploadedVideoFile);
+          vidTask.on('state_changed', snap => {
+            const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+            document.getElementById('upBar').style.width = `${pct}%`;
+          });
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage video timeout')), 12000));
+          const snap = await Promise.race([vidTask, timeoutPromise]);
+          directVideoUrl = await snap.ref.getDownloadURL();
+        }
+      } catch(e) {
+        console.warn('Storage video upload bypassed/failed, converting to DataURL:', e);
+      }
+
+      if (!directVideoUrl) {
+        directVideoUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(uploadedVideoFile);
+        });
+      }
+    }
+
+    // 2. Process image uploads with fast timeout + Base64 fallback
     const finalUrls = [];
     for (let i = 0; i < uploadedFiles.length; i++) {
       const f = uploadedFiles[i];
@@ -3552,9 +3639,10 @@ async function publish() {
       displayName: curUser.displayName || 'Creator',
       photoURL: curUser.photoURL || '',
       content,
-      category: transferred3D ? '3dmodel' : cat,
+      category: transferred3D ? '3dmodel' : (directVideoUrl ? 'video' : cat),
       images: finalUrls,
       videoUrl: vidUrl,
+      directVideoUrl: directVideoUrl || '',
       likes: [],
       likesCount: 0,
       commentsCount: 0,
@@ -3590,6 +3678,7 @@ async function publish() {
     if (document.getElementById('vidUrl')) document.getElementById('vidUrl').value = '';
     if (audioInp) audioInp.value = '';
     uploadedFiles = [];
+    removeVideoFile();
     document.getElementById('imgPreviews').innerHTML = '';
     document.getElementById('upProg').style.display = 'none';
     document.getElementById('upBar').style.width = '0%';
