@@ -3192,21 +3192,45 @@ function parseVideoEmbed(url) {
 }
 
 // 🍿 SP REELS & SHORTS IMMERSIVE VIEWER LOGIC
-function openReelsViewerModal() {
-  if (!allPosts || !allPosts.length) {
-    toast('No posts available for Reels yet!', 'info');
+async function openReelsViewerModal() {
+  let posts = (allPosts && allPosts.length) ? allPosts : [];
+
+  // Fallback: Fetch directly from Firestore if allPosts is not ready
+  if ((!posts || !posts.length) && db) {
+    try {
+      const snap = await db.collection(COLL).orderBy('createdAt', 'desc').limit(30).get();
+      posts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      allPosts = posts;
+    } catch(e) {
+      console.warn('Error fetching posts for reels:', e);
+    }
+  }
+
+  const overlay = document.getElementById('reelsOverlay');
+  const container = document.getElementById('reelsScrollContainer');
+
+  if (!container || !overlay) {
+    console.error('Reels container elements not found');
     return;
   }
 
-  const reelPosts = allPosts.filter(p => p && (p.videoUrl || p.directVideoUrl || p.modelData || (p.images && p.images.length > 0)));
+  container.innerHTML = '';
+
+  // Filter posts with video, direct video, 3D model, or images
+  const reelPosts = posts.filter(p => p && (p.videoUrl || p.directVideoUrl || p.modelData || (p.images && p.images.length > 0) || p.content));
 
   if (!reelPosts.length) {
-    toast('No video or 3D Reels available yet! Create the first Reel!', 'info');
+    container.innerHTML = `
+      <div style="height:100vh;width:100vw;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
+        <div style="font-size:4rem;animation:bounce 2s infinite;">🍿</div>
+        <div style="font-size:1.4rem;font-weight:900;margin-top:14px;color:#c084fc;">No Reels Available Yet!</div>
+        <div style="font-size:.9rem;color:var(--muted);max-width:320px;margin:8px 0 20px;">Be the first creator to share a TikTok, Instagram Reel, YouTube Shorts or 3D creation!</div>
+        <button onclick="closeReelsViewerModal();openCreateModal();" style="background:linear-gradient(135deg,#ff0050,#00f2fe);border:none;color:#fff;padding:12px 28px;border-radius:30px;font-weight:800;font-size:1rem;cursor:pointer;box-shadow:0 0 25px rgba(255,0,80,.5);">➕ Create First Reel</button>
+      </div>`;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
     return;
   }
-
-  const container = document.getElementById('reelsScrollContainer');
-  container.innerHTML = '';
 
   reelPosts.forEach((p) => {
     const slide = document.createElement('div');
@@ -3224,8 +3248,8 @@ function openReelsViewerModal() {
       const mainImg = p.images && p.images[0] ? p.images[0] : '';
       mediaContent = `
         <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-          <img src="${esc(mainImg)}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.85);">
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);">
+          ${mainImg ? `<img src="${esc(mainImg)}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.85);">` : ''}
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.65);">
             <div style="font-size:3.5rem;animation:bounce 2s infinite;">🔮</div>
             <div style="font-weight:900;font-size:1.3rem;color:#c084fc;margin-top:10px;">Interactive 3D Hologram</div>
             <button onclick="closeReelsViewerModal();scrollToPost('${p.id}');start3DPreview('${p.id}');" style="margin-top:14px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:10px 22px;border-radius:25px;font-weight:800;cursor:pointer;font-size:.9rem;box-shadow:0 0 20px rgba(168,85,247,.5);">🔮 Tap to Rotate 3D Model</button>
@@ -3233,6 +3257,11 @@ function openReelsViewerModal() {
         </div>`;
     } else if (p.images && p.images[0]) {
       mediaContent = `<img src="${esc(p.images[0])}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.9);">`;
+    } else {
+      mediaContent = `
+        <div style="padding:30px;max-width:500px;text-align:center;color:#fff;font-size:1.2rem;font-weight:700;line-height:1.5;background:rgba(255,255,255,.05);border-radius:20px;border:1px solid rgba(255,255,255,.1);">
+          "${esc(p.content || '')}"
+        </div>`;
     }
 
     const liked = curUser && p.likes && p.likes.includes(curUser.uid);
@@ -3303,8 +3332,7 @@ function openReelsViewerModal() {
     container.appendChild(slide);
   });
 
-  const overlay = document.getElementById('reelsOverlay');
-  if (overlay) overlay.style.display = 'flex';
+  overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
