@@ -8693,6 +8693,9 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
 
     await callRef.set(callData);
 
+    // 🔔 Send real Web Push to callee (works even when their app is closed!)
+    sendWebPushCall(partnerUid, curUser.displayName || 'User', curUser.photoURL || '', isVideo, chatId);
+
     // Listen for Answer / Status & Callee Candidates changes
     callStatusUnsub = callRef.onSnapshot(async snap => {
       if (!snap.exists) return;
@@ -8764,26 +8767,73 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Send UID + Firebase config to SW so it can poll for calls in background
-function sendSWInit(uid) {
-  if (!('serviceWorker' in navigator) || !uid) return;
-  navigator.serviceWorker.ready.then(reg => {
-    if (reg.active) {
-      reg.active.postMessage({
-        type: 'SP_SW_INIT',
-        uid: uid,
-        firebaseConfig: FIREBASE_CONFIG
-      });
-    }
-  }).catch(()=>{});
+
+const VAPID_PUBLIC_KEY = 'BOT1swSZfG17hNyhMVepjZqHt6eGAr2zQmr0CHa9JBbJETi_6-FdLNrlVhPNzTEo9Dvyb1jPL6eoZTgdfyTFPzk';
+
+// Convert VAPID public key to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
 }
 
-function sendSWStop() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.ready.then(reg => {
-    if (reg.active) reg.active.postMessage({ type: 'SP_SW_STOP' });
-  }).catch(()=>{});
+// Subscribe user to Web Push and save subscription to Firestore
+async function subscribeUserToPush(uid) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    // Save subscription to Firestore under this user
+    if (db && uid && sub) {
+      await db.collection('users').doc(uid).set(
+        { pushSubscription: JSON.parse(JSON.stringify(sub)) },
+        { merge: true }
+      );
+      console.log('[Push] Subscription saved for', uid);
+    }
+  } catch(e) { console.warn('[Push] Subscribe error:', e); }
 }
+
+// Called by caller — sends real Web Push to callee via Netlify Function
+async function sendWebPushCall(calleeUid, callerName, callerAv, isVideo, chatId) {
+  if (!db || !calleeUid) return;
+  try {
+    const calleeDoc = await db.collection('users').doc(calleeUid).get();
+    if (!calleeDoc.exists) return;
+    const subscription = calleeDoc.data().pushSubscription;
+    if (!subscription || !subscription.endpoint) return;
+
+    const payload = {
+      title: isVideo ? '📹 Incoming Video Call from @' + callerName : '📞 Incoming Call from @' + callerName,
+      body: 'Tap here to answer in SP Nexus!',
+      icon: callerAv || '/logo_studios_pro.png',
+      badge: '/logo_studios_pro.png',
+      tag: 'sp-call-' + chatId,
+      url: '/community/?call=true',
+      vibrate: [400, 150, 400, 150, 600, 200, 600],
+      requireInteraction: true
+    };
+
+    await fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription, payload })
+    });
+    console.log('[Push] Call notification sent to callee');
+  } catch(e) { console.warn('[Push] sendWebPushCall error:', e); }
+}
+
+// Old polling helpers (kept for compat, now no-ops)
+function sendSWInit(uid) { subscribeUserToPush(uid); }
+function sendSWStop() {}
 
 function sendNativeCallPushNotification(data) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
