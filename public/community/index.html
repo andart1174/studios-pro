@@ -8768,39 +8768,49 @@ if ('serviceWorker' in navigator) {
 }
 
 
-const VAPID_PUBLIC_KEY = 'BOT1swSZfG17hNyhMVepjZqHt6eGAr2zQmr0CHa9JBbJETi_6-FdLNrlVhPNzTEo9Dvyb1jPL6eoZTgdfyTFPzk';
+// FCM VAPID key from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+const FCM_VAPID_KEY = 'BOT1swSZfG17hNyhMVepjZqHt6eGAr2zQmr0CHa9JBbJETi_6-FdLNrlVhPNzTEo9Dvyb1jPL6eoZTgdfyTFPzk';
 
-// Convert VAPID public key to Uint8Array
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
-}
+let fcmMessaging = null;
 
-// Subscribe user to Web Push and save subscription to Firestore
+// Initialize FCM and get device token, save to Firestore
 async function subscribeUserToPush(uid) {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!('serviceWorker' in navigator) || !uid) return;
   if (Notification.permission !== 'granted') return;
   try {
-    const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
+    // Register the FCM-specific service worker
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+    // Init Firebase Messaging if not already done
+    if (!fcmMessaging && typeof firebase !== 'undefined' && firebase.messaging) {
+      try { fcmMessaging = firebase.messaging(); } catch(e) {}
     }
-    // Save subscription to Firestore under this user
-    if (db && uid && sub) {
-      await db.collection('users').doc(uid).set(
-        { pushSubscription: JSON.parse(JSON.stringify(sub)) },
-        { merge: true }
-      );
-      console.log('[Push] Subscription saved for', uid);
+
+    let fcmToken = null;
+    if (fcmMessaging) {
+      fcmToken = await fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
     }
-  } catch(e) { console.warn('[Push] Subscribe error:', e); }
+
+    if (fcmToken && db && uid) {
+      await db.collection('users').doc(uid).set({ fcmToken }, { merge: true });
+      console.log('[FCM] Token saved:', fcmToken.substring(0, 20) + '...');
+    }
+  } catch(e) {
+    console.warn('[FCM] Subscribe error:', e.message);
+    // Fallback: use raw Web Push
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true });
+      if (db && uid && sub) {
+        await db.collection('users').doc(uid).set(
+          { pushSubscription: JSON.parse(JSON.stringify(sub)) },
+          { merge: true }
+        );
+      }
+    } catch(e2) {}
+  }
 }
+
 
 // Called by caller — sends real Web Push to callee via Netlify Function
 async function sendWebPushCall(calleeUid, callerName, callerAv, isVideo, chatId) {
@@ -8808,8 +8818,15 @@ async function sendWebPushCall(calleeUid, callerName, callerAv, isVideo, chatId)
   try {
     const calleeDoc = await db.collection('users').doc(calleeUid).get();
     if (!calleeDoc.exists) return;
-    const subscription = calleeDoc.data().pushSubscription;
-    if (!subscription || !subscription.endpoint) return;
+    const userData = calleeDoc.data();
+    const fcmToken    = userData.fcmToken || null;
+    const subscription = userData.pushSubscription || null;
+
+    // Need at least one delivery method
+    if (!fcmToken && !subscription) {
+      console.warn('[Push] Callee has no push token registered');
+      return;
+    }
 
     const payload = {
       title: isVideo ? '📹 Incoming Video Call from @' + callerName : '📞 Incoming Call from @' + callerName,
@@ -8822,12 +8839,13 @@ async function sendWebPushCall(calleeUid, callerName, callerAv, isVideo, chatId)
       requireInteraction: true
     };
 
-    await fetch('/.netlify/functions/send-push', {
+    const res = await fetch('/.netlify/functions/send-push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription, payload })
+      body: JSON.stringify({ fcmToken, subscription, payload })
     });
-    console.log('[Push] Call notification sent to callee');
+    const result = await res.json().catch(() => ({}));
+    console.log('[Push] Call notification sent via', result.method || 'unknown');
   } catch(e) { console.warn('[Push] sendWebPushCall error:', e); }
 }
 
