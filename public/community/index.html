@@ -2425,85 +2425,6 @@ function removeVideoFile() {
   const pv = document.getElementById('videoFilePreview');
   if (pv) { pv.style.display = 'none'; pv.innerHTML = ''; }
 }
-
-// Client-side video compressor helper for files > 15MB
-async function compressVideoFileIfNeeded(file) {
-  if (file.size <= 15 * 1024 * 1024) return file;
-  return new Promise((resolve) => {
-    try {
-      const video = document.createElement('video');
-      video.src = URL.createObjectURL(file);
-      video.muted = true;
-      video.playsInline = true;
-
-      video.onloadedmetadata = () => {
-        const canvas = document.createElement('canvas');
-        let width = video.videoWidth || 1280;
-        let height = video.videoHeight || 720;
-        const maxDim = 720;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        width = width % 2 === 0 ? width : width - 1;
-        height = height % 2 === 0 ? height : height - 1;
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-
-        const stream = canvas.captureStream(24);
-        const mimeType = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) ? 'video/webm;codecs=vp9'
-                       : (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm')) ? 'video/webm'
-                       : 'video/mp4';
-
-        if (typeof MediaRecorder === 'undefined') { resolve(file); return; }
-
-        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1200000 });
-        const chunks = [];
-        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-        recorder.onstop = () => {
-          URL.revokeObjectURL(video.src);
-          const blob = new Blob(chunks, { type: mimeType });
-          if (blob.size > 0 && blob.size < file.size) {
-            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".mp4", { type: mimeType }));
-          } else {
-            resolve(file);
-          }
-        };
-
-        recorder.start();
-        video.play();
-
-        const drawLoop = () => {
-          if (!video.paused && !video.ended) {
-            ctx.drawImage(video, 0, 0, width, height);
-            requestAnimationFrame(drawLoop);
-          }
-        };
-        drawLoop();
-
-        video.onended = () => {
-          recorder.stop();
-        };
-
-        setTimeout(() => {
-          if (recorder.state === 'recording') recorder.stop();
-        }, (video.duration + 4) * 1000);
-      };
-
-      video.onerror = () => resolve(file);
-    } catch(err) {
-      console.warn('Video compression skipped:', err);
-      resolve(file);
-    }
-  });
-}
 let replyParentId=null, replyParentName=null;
 let allPosts=[], transferred3D=null, sharedSourcePage=null;
 
@@ -3651,24 +3572,17 @@ async function publish() {
     // 1. Process direct video upload if present
     let directVideoUrl = null;
     if (uploadedVideoFile) {
-      btn.textContent = 'Preparing Video...';
-
-      let videoToUpload = uploadedVideoFile;
-      if (videoToUpload.size > 20 * 1024 * 1024) {
-        btn.textContent = 'Optimizing Video...';
-        videoToUpload = await compressVideoFileIfNeeded(uploadedVideoFile);
-      }
-
+      btn.textContent = 'Uploading Video (0%)...';
       try {
         if (storage) {
           document.getElementById('upProg').style.display = 'block';
-          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(videoToUpload);
+          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(uploadedVideoFile);
           vidTask.on('state_changed', snap => {
             const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
             document.getElementById('upBar').style.width = `${pct}%`;
             btn.textContent = `Uploading Video (${pct}%)...`;
           });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage video upload timeout after 3 mins')), 180000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage video upload timeout after 5 mins')), 300000));
           const snap = await Promise.race([vidTask, timeoutPromise]);
           directVideoUrl = await snap.ref.getDownloadURL();
         }
@@ -3677,14 +3591,14 @@ async function publish() {
       }
 
       if (!directVideoUrl) {
-        if (videoToUpload.size > 800 * 1024) {
-          throw new Error(`Video file size (${(videoToUpload.size / (1024*1024)).toFixed(1)} MB) is too large for database storage. Storage upload timed out. Please ensure internet connection is stable or choose a smaller clip under 15 MB.`);
+        if (uploadedVideoFile.size > 800 * 1024) {
+          throw new Error(`Video upload failed to Firebase Storage. Please ensure internet connection is stable.`);
         }
         directVideoUrl = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = ev => resolve(ev.target.result);
           reader.onerror = () => resolve(null);
-          reader.readAsDataURL(videoToUpload);
+          reader.readAsDataURL(uploadedVideoFile);
         });
       }
     }
