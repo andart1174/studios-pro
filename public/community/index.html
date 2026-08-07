@@ -3569,16 +3569,48 @@ async function publish() {
   btn.textContent = 'Publishing...';
 
   try {
-    // 1. Process direct video upload if present (3-Layer Failover)
+    // 1. Process direct video upload if present (Catbox CDN High-Speed Stream + Firebase Fallback)
     let directVideoUrl = null;
     if (uploadedVideoFile) {
       btn.textContent = 'Uploading Video (0%)...';
       document.getElementById('upProg').style.display = 'block';
 
-      // Layer 1: Firebase Storage (5-min timeout)
+      // Layer 1: High-Speed Video Streaming CDN (Catbox.moe API - instant HTML5 video streaming)
       try {
-        if (storage) {
-          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(uploadedVideoFile);
+        directVideoUrl = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', 'https://catbox.moe/user/api.php');
+          xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+              const pct = Math.round((e.loaded / e.total) * 100);
+              document.getElementById('upBar').style.width = `${pct}%`;
+              btn.textContent = `Uploading Video (${pct}%)...`;
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status === 200 && xhr.responseText && xhr.responseText.trim().startsWith('http')) {
+              resolve(xhr.responseText.trim());
+            } else {
+              reject(new Error('Catbox video CDN upload failed'));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Catbox network error'));
+          const fd = new FormData();
+          fd.append('reqtype', 'fileupload');
+          fd.append('fileToUpload', uploadedVideoFile);
+          xhr.send(fd);
+        });
+        console.log('[Video Upload] Success via High-Speed Video CDN:', directVideoUrl);
+      } catch(e1) {
+        console.warn('High-speed video CDN failed, trying Firebase Storage:', e1.message);
+      }
+
+      // Layer 2: Firebase Storage Fallback (2-min timeout)
+      if (!directVideoUrl && storage) {
+        try {
+          btn.textContent = 'Uploading Video (Storage)...';
+          const meta = { contentType: uploadedVideoFile.type || 'video/mp4' };
+          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(uploadedVideoFile, meta);
           vidTask.on('state_changed', snap => {
             if (snap.totalBytes > 0) {
               const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
@@ -3586,89 +3618,18 @@ async function publish() {
               btn.textContent = `Uploading Video (${pct}%)...`;
             }
           });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase Storage timeout')), 300000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 120000));
           const snap = await Promise.race([vidTask, timeoutPromise]);
           directVideoUrl = await snap.ref.getDownloadURL();
-          console.log('[Video Upload] Layer 1 Success (Firebase Storage):', directVideoUrl);
-        }
-      } catch(e1) {
-        console.warn('Layer 1 (Firebase Storage) bypassed/failed:', e1.message);
-      }
-
-      // Layer 2: High-Speed Video CDN (tmpfiles.org API)
-      if (!directVideoUrl) {
-        try {
-          btn.textContent = 'Uploading Video (CDN Layer 2)...';
-          directVideoUrl = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://tmpfiles.org/api/v1/upload');
-            xhr.upload.onprogress = e => {
-              if (e.lengthComputable) {
-                const pct = Math.round((e.loaded / e.total) * 100);
-                document.getElementById('upBar').style.width = `${pct}%`;
-                btn.textContent = `Uploading Video (${pct}%)...`;
-              }
-            };
-            xhr.onload = () => {
-              if (xhr.status === 200) {
-                try {
-                  const json = JSON.parse(xhr.responseText);
-                  if (json && json.data && json.data.url) {
-                    const dlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-                    resolve(dlUrl);
-                    return;
-                  }
-                } catch(err){}
-              }
-              reject(new Error('tmpfiles failed'));
-            };
-            xhr.onerror = () => reject(new Error('tmpfiles network error'));
-            const fd = new FormData();
-            fd.append('file', uploadedVideoFile);
-            xhr.send(fd);
-          });
-          console.log('[Video Upload] Layer 2 Success (tmpfiles CDN):', directVideoUrl);
+          console.log('[Video Upload] Success via Firebase Storage:', directVideoUrl);
         } catch(e2) {
-          console.warn('Layer 2 (tmpfiles CDN) failed:', e2.message);
-        }
-      }
-
-      // Layer 3: Backup High-Speed Video Server (Catbox API Direct)
-      if (!directVideoUrl) {
-        try {
-          btn.textContent = 'Uploading Video (CDN Layer 3)...';
-          directVideoUrl = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://catbox.moe/user/api.php');
-            xhr.upload.onprogress = e => {
-              if (e.lengthComputable) {
-                const pct = Math.round((e.loaded / e.total) * 100);
-                document.getElementById('upBar').style.width = `${pct}%`;
-                btn.textContent = `Uploading Video (${pct}%)...`;
-              }
-            };
-            xhr.onload = () => {
-              if (xhr.status === 200 && xhr.responseText && xhr.responseText.trim().startsWith('http')) {
-                resolve(xhr.responseText.trim());
-              } else {
-                reject(new Error('Catbox failed'));
-              }
-            };
-            xhr.onerror = () => reject(new Error('Catbox network error'));
-            const fd = new FormData();
-            fd.append('reqtype', 'fileupload');
-            fd.append('fileToUpload', uploadedVideoFile);
-            xhr.send(fd);
-          });
-          console.log('[Video Upload] Layer 3 Success (Catbox CDN):', directVideoUrl);
-        } catch(e3) {
-          console.warn('Layer 3 (Catbox CDN) failed:', e3.message);
+          console.warn('Firebase Storage video upload failed:', e2.message);
         }
       }
 
       if (!directVideoUrl) {
         if (uploadedVideoFile.size > 800 * 1024) {
-          throw new Error('Video upload failed on all 3 storage servers. Please check your internet connection and try again.');
+          throw new Error('Video upload failed on storage servers. Please check your internet connection and try again.');
         }
         directVideoUrl = await new Promise((resolve) => {
           const reader = new FileReader();
