@@ -2073,14 +2073,8 @@
         <div class="img-pv" id="imgPreviews"></div>
       </div>
       <div class="opt-sec">
-        <label class="opt-lbl">🎥 Video (Upload MP4/MOV up to 60s or YouTube Link)</label>
-        <div class="up-area" style="margin-bottom:8px;">
-          <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/quicktime" onchange="onVideoFileSel(event)">
-          <div class="up-icon">🎥</div>
-          <div class="up-text"><strong>Click to upload video</strong> or drag & drop<br>MP4, MOV, WebM · Max 60 seconds (Reels/Shorts)</div>
-        </div>
-        <div id="videoFilePreview" style="display:none;flex-direction:column;margin-bottom:8px;"></div>
-        <input type="url" class="vid-inp" id="vidUrl" placeholder="Or paste YouTube Shorts / Video link (https://...)">
+        <label class="opt-lbl" data-t="ytLink">YouTube Video Link (max 1 min)</label>
+        <input type="url" class="vid-inp" id="vidUrl" placeholder="https://youtube.com/watch?v=...">
       </div>
       <div class="opt-sec">
         <label class="opt-lbl">🔮 <span data-t="transfer3d">Transfer 3D Model from HUD Builder</span></label>
@@ -3559,7 +3553,7 @@ async function publish() {
   const audioInp = document.getElementById('audioUrl');
   const audioUrl = audioInp ? audioInp.value.trim() : '';
 
-  if (!content && !uploadedFiles.length && !uploadedVideoFile && !vidUrl && !audioUrl && !transferred3D) {
+  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !transferred3D) {
     toast('Add some content first!', 'error');
     return;
   }
@@ -3569,78 +3563,7 @@ async function publish() {
   btn.textContent = 'Publishing...';
 
   try {
-    // 1. Process direct video upload if present (Catbox CDN High-Speed Stream + Firebase Fallback)
-    let directVideoUrl = null;
-    if (uploadedVideoFile) {
-      btn.textContent = 'Uploading Video (0%)...';
-      document.getElementById('upProg').style.display = 'block';
-
-      // Layer 1: High-Speed Video Streaming CDN (Catbox.moe API - instant HTML5 video streaming)
-      try {
-        directVideoUrl = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', 'https://catbox.moe/user/api.php');
-          xhr.upload.onprogress = e => {
-            if (e.lengthComputable) {
-              const pct = Math.round((e.loaded / e.total) * 100);
-              document.getElementById('upBar').style.width = `${pct}%`;
-              btn.textContent = `Uploading Video (${pct}%)...`;
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status === 200 && xhr.responseText && xhr.responseText.trim().startsWith('http')) {
-              resolve(xhr.responseText.trim());
-            } else {
-              reject(new Error('Catbox video CDN upload failed'));
-            }
-          };
-          xhr.onerror = () => reject(new Error('Catbox network error'));
-          const fd = new FormData();
-          fd.append('reqtype', 'fileupload');
-          fd.append('fileToUpload', uploadedVideoFile);
-          xhr.send(fd);
-        });
-        console.log('[Video Upload] Success via High-Speed Video CDN:', directVideoUrl);
-      } catch(e1) {
-        console.warn('High-speed video CDN failed, trying Firebase Storage:', e1.message);
-      }
-
-      // Layer 2: Firebase Storage Fallback (2-min timeout)
-      if (!directVideoUrl && storage) {
-        try {
-          btn.textContent = 'Uploading Video (Storage)...';
-          const meta = { contentType: uploadedVideoFile.type || 'video/mp4' };
-          const vidTask = storage.ref(`studios_community_videos/${curUser.uid}/${Date.now()}_short.mp4`).put(uploadedVideoFile, meta);
-          vidTask.on('state_changed', snap => {
-            if (snap.totalBytes > 0) {
-              const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-              document.getElementById('upBar').style.width = `${pct}%`;
-              btn.textContent = `Uploading Video (${pct}%)...`;
-            }
-          });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 120000));
-          const snap = await Promise.race([vidTask, timeoutPromise]);
-          directVideoUrl = await snap.ref.getDownloadURL();
-          console.log('[Video Upload] Success via Firebase Storage:', directVideoUrl);
-        } catch(e2) {
-          console.warn('Firebase Storage video upload failed:', e2.message);
-        }
-      }
-
-      if (!directVideoUrl) {
-        if (uploadedVideoFile.size > 800 * 1024) {
-          throw new Error('Video upload failed on storage servers. Please check your internet connection and try again.');
-        }
-        directVideoUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = ev => resolve(ev.target.result);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(uploadedVideoFile);
-        });
-      }
-    }
-
-    // 2. Process image uploads with fast timeout + Base64 fallback
+    // 1. Process image uploads with fast timeout + Base64 fallback
     const finalUrls = [];
     for (let i = 0; i < uploadedFiles.length; i++) {
       const f = uploadedFiles[i];
@@ -3680,10 +3603,9 @@ async function publish() {
       displayName: curUser.displayName || 'Creator',
       photoURL: curUser.photoURL || '',
       content,
-      category: transferred3D ? '3dmodel' : (directVideoUrl ? 'video' : cat),
+      category: transferred3D ? '3dmodel' : cat,
       images: finalUrls,
       videoUrl: vidUrl,
-      directVideoUrl: directVideoUrl || '',
       likes: [],
       likesCount: 0,
       commentsCount: 0,
