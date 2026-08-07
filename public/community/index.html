@@ -2651,6 +2651,7 @@ function renderLoggedIn(u) {
     loadAchievements(u.uid);
     loadFollowing(u.uid);
     initCallSignalingListener(u.uid);
+    sendSWInit(u.uid); // Start background call polling in Service Worker
     setTimeout(()=>checkAchievements(u.uid), 2000);
     initStories();
     initLiveFeed();
@@ -8754,6 +8755,34 @@ if ('serviceWorker' in navigator) {
   }).catch(err => {
     console.warn('[SW] Registration failed:', err);
   });
+
+  // When user taps push notification and app opens → auto-answer call
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SP_CALL_ANSWER_FROM_PUSH') {
+      if (typeof acceptIncomingCall === 'function') acceptIncomingCall();
+    }
+  });
+}
+
+// Send UID + Firebase config to SW so it can poll for calls in background
+function sendSWInit(uid) {
+  if (!('serviceWorker' in navigator) || !uid) return;
+  navigator.serviceWorker.ready.then(reg => {
+    if (reg.active) {
+      reg.active.postMessage({
+        type: 'SP_SW_INIT',
+        uid: uid,
+        firebaseConfig: FIREBASE_CONFIG
+      });
+    }
+  }).catch(()=>{});
+}
+
+function sendSWStop() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(reg => {
+    if (reg.active) reg.active.postMessage({ type: 'SP_SW_STOP' });
+  }).catch(()=>{});
 }
 
 function sendNativeCallPushNotification(data) {
