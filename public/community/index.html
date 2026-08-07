@@ -3573,6 +3573,7 @@ async function publish() {
     let directVideoUrl = null;
     if (uploadedVideoFile) {
       btn.textContent = 'Uploading Video (0%)...';
+      // Attempt 1: Firebase Storage (with 8s timeout)
       try {
         if (storage) {
           document.getElementById('upProg').style.display = 'block';
@@ -3582,17 +3583,45 @@ async function publish() {
             document.getElementById('upBar').style.width = `${pct}%`;
             btn.textContent = `Uploading Video (${pct}%)...`;
           });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage video upload timeout after 5 mins')), 300000));
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 8000));
           const snap = await Promise.race([vidTask, timeoutPromise]);
           directVideoUrl = await snap.ref.getDownloadURL();
         }
       } catch(e) {
-        console.warn('Storage video upload bypassed/failed:', e);
+        console.warn('Firebase Storage bypassed/failed, trying High-Speed Video CDN:', e.message);
+      }
+
+      // Attempt 2: High-Speed Video CDN (Catbox API)
+      if (!directVideoUrl) {
+        try {
+          btn.textContent = 'Uploading Video (High-Speed CDN)...';
+          document.getElementById('upProg').style.display = 'block';
+          document.getElementById('upBar').style.width = '60%';
+
+          const fd = new FormData();
+          fd.append('reqtype', 'fileupload');
+          fd.append('fileToUpload', uploadedVideoFile);
+
+          const res = await fetch('/api/catbox', {
+            method: 'POST',
+            body: fd
+          });
+          if (res.ok) {
+            const txt = await res.text();
+            if (txt && txt.trim().startsWith('http')) {
+              directVideoUrl = txt.trim();
+              document.getElementById('upBar').style.width = '100%';
+              console.log('[Video Upload] Success via High-Speed CDN:', directVideoUrl);
+            }
+          }
+        } catch(e2) {
+          console.warn('High-speed video CDN failed:', e2);
+        }
       }
 
       if (!directVideoUrl) {
         if (uploadedVideoFile.size > 800 * 1024) {
-          throw new Error(`Video upload failed to Firebase Storage. Please ensure internet connection is stable.`);
+          throw new Error('Video upload failed on storage servers. Please check your internet connection and try again.');
         }
         directVideoUrl = await new Promise((resolve) => {
           const reader = new FileReader();
