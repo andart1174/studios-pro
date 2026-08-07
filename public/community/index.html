@@ -2214,6 +2214,7 @@
       </div>
       <div id="cmtLoginMsg" style="display:none;text-align:center;padding:16px;color:var(--muted);font-size:.83rem" data-t="loginComment">Sign in to leave a comment</div>
     </div>
+  </div>
 </div>
 
 <!-- 🍿 SP REELS & SHORTS FULL-SCREEN IMMERSIVE VIEWER -->
@@ -3332,13 +3333,13 @@ async function openReelsViewerModal() {
     container.appendChild(slide);
   });
 
-  overlay.style.display = 'flex';
+  overlay.style.setProperty('display', 'flex', 'important');
   document.body.style.overflow = 'hidden';
 }
 
 function closeReelsViewerModal() {
   const overlay = document.getElementById('reelsOverlay');
-  if (overlay) overlay.style.display = 'none';
+  if (overlay) overlay.style.setProperty('display', 'none', 'important');
   document.body.style.overflow = '';
 }
 
