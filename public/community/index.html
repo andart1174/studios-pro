@@ -1526,6 +1526,11 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- 🍿 SP Reels Button in Header -->
+    <button onclick="openReelsViewerModal()" title="Watch SP Reels & Shorts" style="background:linear-gradient(135deg,rgba(255,0,80,.25),rgba(0,242,254,.2));border:1px solid rgba(255,0,80,.5);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 15px rgba(255,0,80,.35);">
+      <span style="font-size:16px;">🍿</span>
+      <span style="background:linear-gradient(135deg,#ff0050,#00f2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SP Reels</span>
+    </button>
     <!-- 📞 Direct Phone Calls Button -->
     <button onclick="openPhoneBook()" title="Direct Phone Calls / Contacts" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:6px 12px;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;">
       <span>📞</span>
@@ -1668,6 +1673,9 @@
         <button class="nav-item active" id="navHome" onclick="setActiveNav(this);filterCat('all',document.querySelector('[data-cat=all].cat-btn'));scrollToFeed()">
           <span class="nav-item-icon">🏠</span><span data-t="navHome">Home</span>
         </button>
+        <button class="nav-item" id="navReels" onclick="openReelsViewerModal()" style="background:linear-gradient(135deg,rgba(255,0,80,.2),rgba(0,242,254,.15));border:1px solid rgba(255,0,80,.4);color:#fff;font-weight:900;margin:3px 0;box-shadow:0 0 12px rgba(255,0,80,.25);">
+          <span class="nav-item-icon">🍿</span><span style="background:linear-gradient(135deg,#ff0050,#00f2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SP Reels &amp; Shorts</span>
+        </button>
         <button class="nav-item" id="navTrending" onclick="setActiveNav(this);showHashtagTrending()">
           <span class="nav-item-icon">🔥</span><span data-t="navTrending">Trending</span>
         </button>
@@ -1780,6 +1788,7 @@
     <!-- Filter tabs (above create bar like YouTube) -->
     <div class="ftabs" id="mainFtabs">
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
+      <button class="ftab" data-cat="reels" onclick="openReelsViewerModal()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,rgba(255,0,80,.85),rgba(0,242,254,.85));border:none;box-shadow:0 0 15px rgba(255,0,80,.45);">🍿 SP Reels</button>
       <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
       <button class="ftab" data-cat="3dmodel" onclick="filterTab('3dmodel',this)">🔮 3D Models</button>
       <button class="ftab" data-cat="hologram" onclick="filterTab('hologram',this)">✨ Hologram</button>
