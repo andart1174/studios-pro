@@ -1405,9 +1405,93 @@
   gap: 12px;
   transition: all .2s;
 }
-.shop-item-card:hover {
-  border-color: rgba(168,85,247,.4);
-  background: rgba(255,255,255,.05);
+/* 🍿 SP REELS & SHORTS MODAL & CARD STYLES */
+#reelsScrollContainer::-webkit-scrollbar { display: none; }
+.reel-card-slide {
+  height: 100vh;
+  width: 100vw;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+}
+.reel-media-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.reel-side-actions {
+  position: absolute;
+  bottom: 85px;
+  right: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.reel-action-btn {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+}
+.reel-action-btn:hover {
+  transform: scale(1.12);
+  background: rgba(255, 0, 80, 0.5);
+}
+.reel-action-val {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  margin-top: 3px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+.reel-bottom-info {
+  position: absolute;
+  bottom: 24px;
+  left: 18px;
+  right: 80px;
+  z-index: 50;
+  pointer-events: auto;
+  color: #fff;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.9);
+}
+.reel-author-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reel-caption-text {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  margin-top: 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
 </head>
@@ -2121,6 +2205,25 @@
       </div>
       <div id="cmtLoginMsg" style="display:none;text-align:center;padding:16px;color:var(--muted);font-size:.83rem" data-t="loginComment">Sign in to leave a comment</div>
     </div>
+</div>
+
+<!-- 🍿 SP REELS & SHORTS FULL-SCREEN IMMERSIVE VIEWER -->
+<div id="reelsOverlay" style="display:none;position:fixed;inset:0;z-index:100000;background:#000;flex-direction:column;font-family:'Outfit',sans-serif;">
+  <!-- Top Floating Header -->
+  <div style="position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(to bottom, rgba(0,0,0,0.88), transparent);pointer-events:auto;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.4rem;">🍿</span>
+      <span style="font-size:1.15rem;font-weight:900;background:linear-gradient(135deg,#ff0050,#00f2fe,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SP Reels &amp; Shorts</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="closeReelsViewerModal();openCreateModal();" style="background:linear-gradient(135deg,#ff0050,#00f2fe);border:none;color:#fff;padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 15px rgba(255,0,80,.4);">➕ Post Reel</button>
+      <button onclick="closeReelsViewerModal()" style="background:rgba(255,255,255,.18);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:bold;backdrop-filter:blur(8px);">✕</button>
+    </div>
+  </div>
+
+  <!-- Vertical Scroll Container -->
+  <div id="reelsScrollContainer" style="flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;height:100vh;width:100vw;scrollbar-width:none;">
+    <!-- Reel Cards dynamically injected here -->
   </div>
 </div>
 
@@ -3077,6 +3180,129 @@ function parseVideoEmbed(url) {
   }
 
   return null;
+}
+
+// 🍿 SP REELS & SHORTS IMMERSIVE VIEWER LOGIC
+function openReelsViewerModal() {
+  if (!allPosts || !allPosts.length) {
+    toast('No posts available for Reels yet!', 'info');
+    return;
+  }
+
+  const reelPosts = allPosts.filter(p => p && (p.videoUrl || p.directVideoUrl || p.modelData || (p.images && p.images.length > 0)));
+
+  if (!reelPosts.length) {
+    toast('No video or 3D Reels available yet! Create the first Reel!', 'info');
+    return;
+  }
+
+  const container = document.getElementById('reelsScrollContainer');
+  container.innerHTML = '';
+
+  reelPosts.forEach((p) => {
+    const slide = document.createElement('div');
+    slide.className = 'reel-card-slide';
+    slide.id = `reel-slide-${p.id}`;
+
+    const embedObj = parseVideoEmbed(p.videoUrl);
+    let mediaContent = '';
+
+    if (embedObj) {
+      mediaContent = embedObj.html;
+    } else if (p.directVideoUrl) {
+      mediaContent = `<video src="${esc(p.directVideoUrl)}" controls playsinline loop style="width:100%;height:100%;object-fit:cover;"></video>`;
+    } else if (p.modelData) {
+      const mainImg = p.images && p.images[0] ? p.images[0] : '';
+      mediaContent = `
+        <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+          <img src="${esc(mainImg)}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.85);">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);">
+            <div style="font-size:3.5rem;animation:bounce 2s infinite;">🔮</div>
+            <div style="font-weight:900;font-size:1.3rem;color:#c084fc;margin-top:10px;">Interactive 3D Hologram</div>
+            <button onclick="closeReelsViewerModal();scrollToPost('${p.id}');start3DPreview('${p.id}');" style="margin-top:14px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;padding:10px 22px;border-radius:25px;font-weight:800;cursor:pointer;font-size:.9rem;box-shadow:0 0 20px rgba(168,85,247,.5);">🔮 Tap to Rotate 3D Model</button>
+          </div>
+        </div>`;
+    } else if (p.images && p.images[0]) {
+      mediaContent = `<img src="${esc(p.images[0])}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.9);">`;
+    }
+
+    const liked = curUser && p.likes && p.likes.includes(curUser.uid);
+    const likesCnt = (p.likes && p.likes.length) || 0;
+    const cmtsCnt = p.commentsCount || 0;
+
+    slide.innerHTML = `
+      <div class="reel-media-box">${mediaContent}</div>
+
+      <!-- Right Action Side Panel -->
+      <div class="reel-side-actions">
+        <!-- Author Avatar -->
+        <div style="position:relative;cursor:pointer;" onclick="closeReelsViewerModal();viewUserProfile('${p.uid}');">
+          <img src="${esc(av(p))}" style="width:48px;height:48px;border-radius:50%;border:2px solid #a855f7;object-fit:cover;box-shadow:0 0 15px rgba(168,85,247,.5);">
+          <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);background:#ff0050;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;">+</div>
+        </div>
+
+        <!-- Like Button -->
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="toggleLike('${p.id}')" style="${liked ? 'color:#ef4444;background:rgba(239,68,68,.3);' : ''}">
+            ${liked ? '❤️' : '🤍'}
+          </button>
+          <div class="reel-action-val" id="reel-likes-${p.id}">${likesCnt}</div>
+        </div>
+
+        <!-- Comments Button -->
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="openComments('${p.id}')">💬</button>
+          <div class="reel-action-val">${cmtsCnt}</div>
+        </div>
+
+        <!-- Tip Coins Button -->
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="openTipModal('${p.uid}','${p.id}')" style="color:#fbbf24;background:rgba(251,191,36,.25);box-shadow:0 0 15px rgba(251,191,36,.3);" title="Tip SP Coins">🪙</button>
+          <div class="reel-action-val" style="color:#fbbf24;">Tip</div>
+        </div>
+
+        <!-- 3D Model Option (if attached) -->
+        ${p.modelData ? `
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="closeReelsViewerModal();scrollToPost('${p.id}');start3DPreview('${p.id}');" style="color:#c084fc;background:rgba(192,132,252,.25);box-shadow:0 0 15px rgba(192,132,252,.4);" title="View 3D Model">🔮</button>
+          <div class="reel-action-val" style="color:#c084fc;">3D</div>
+        </div>` : ''}
+
+        <!-- Boost Button -->
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="boostPost('${p.id}')" style="color:#00f2fe;background:rgba(0,242,254,.2);" title="Boost Post">🚀</button>
+          <div class="reel-action-val" style="color:#00f2fe;">Boost</div>
+        </div>
+
+        <!-- Share Button -->
+        <div style="text-align:center;">
+          <button class="reel-action-btn" onclick="sharePost('${p.id}')" title="Share Reel">🔗</button>
+          <div class="reel-action-val">Share</div>
+        </div>
+      </div>
+
+      <!-- Bottom Author Info Overlay -->
+      <div class="reel-bottom-info">
+        <div class="reel-author-name" onclick="closeReelsViewerModal();viewUserProfile('${p.uid}');" style="cursor:pointer;">
+          @${esc(p.displayName || 'Creator')}
+          <span style="font-size:.65rem;background:rgba(168,85,247,.25);border:1px solid rgba(168,85,247,.4);padding:2px 8px;border-radius:10px;color:#c084fc;">✦ ${p.category || 'Reels'}</span>
+        </div>
+        <div class="reel-caption-text">${esc(p.content || '')}</div>
+      </div>
+    `;
+
+    container.appendChild(slide);
+  });
+
+  const overlay = document.getElementById('reelsOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReelsViewerModal() {
+  const overlay = document.getElementById('reelsOverlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // ── Global User Border Cache & Renderer ─────────────────────────────
