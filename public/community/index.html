@@ -2268,6 +2268,7 @@ const COLL = 'studios_community_posts';
 const CMT_COLL = 'studios_community_comments';
 const PRESENCE_COLL = 'studios_community_presence';
 const CHATS_COLL = 'studios_community_chats';
+const NOTIF_COLL = 'studios_community_notifications';
 
 // Ranks based on total SP Coins EARNED (never decremented)
 const RANKS = [
@@ -8911,25 +8912,26 @@ function initCallSignalingListener(myUid) {
     .where('status', '==', 'calling')
     .onSnapshot(snap => {
       if (snap.empty) {
-        if (incomingCallData && !peerConnection) {
-          const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const callerName = incomingCallData.callerName || 'Creator';
-          sendNativeMissedCallPushNotification(callerName, timeStr, incomingCallData.callerAv);
-          toast(`📞 Missed call from @${callerName} at ${timeStr}`, 'error');
-          
-          try {
-            db.collection(NOTIF_COLL).add({
-              targetUid: myUid,
-              actorUid: incomingCallData.callerUid,
-              actorName: callerName,
-              actorPhoto: incomingCallData.callerAv || '',
-              type: 'missed_call',
-              text: `📞 Missed call from @${callerName} at ${timeStr}`,
-              read: false,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-          } catch(e){}
-        }
+        try {
+          if (incomingCallData && !peerConnection) {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const callerName = incomingCallData.callerName || 'Creator';
+            sendNativeMissedCallPushNotification(callerName, timeStr, incomingCallData.callerAv);
+            toast('📞 Missed call from @' + callerName + ' at ' + timeStr, 'error');
+            if (db) {
+              db.collection(NOTIF_COLL).add({
+                targetUid: myUid,
+                actorUid: incomingCallData.callerUid || '',
+                actorName: callerName,
+                actorPhoto: incomingCallData.callerAv || '',
+                type: 'missed_call',
+                text: '📞 Missed call from @' + callerName + ' at ' + timeStr,
+                read: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).catch(()=>{});
+            }
+          }
+        } catch(missedErr) { console.warn('missed call notif error:', missedErr); }
         incomingCallData = null;
         hideIncomingCallBox();
         return;
