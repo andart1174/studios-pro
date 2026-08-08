@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SP Nexus Widget</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -131,8 +131,49 @@ async function loadEmbed(){
       ? `<img src="${esc(photo)}" class="w-av" alt="" onerror="this.remove()">`
       : `<div class="w-av-init">${(name[0]||'?').toUpperCase()}</div>`;
 
+function parseHtml3DEmbed(code) {
+  if (!code || typeof code !== 'string') return '';
+  code = code.trim();
+  if (!code) return '';
+
+  if (code.includes('<model-viewer') || code.endsWith('.glb') || code.endsWith('.gltf')) {
+    let src = '';
+    const srcMatch = code.match(/src=["']([^"']+)["']/i);
+    if (srcMatch && srcMatch[1]) {
+      src = srcMatch[1];
+    } else if (code.startsWith('http')) {
+      src = code;
+    }
+    if (src) {
+      return `<div style="position:relative;width:100%;height:320px;border-radius:12px;overflow:hidden;background:#050811;border:1px solid var(--border);"><model-viewer src="${esc(src)}" ar ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate shadow-intensity="1" style="width:100%;height:100%;background:#050811;"></model-viewer></div>`;
+    }
+  }
+
+  const sfMatch = code.match(/sketchfab\.com\/(?:models\/|3d-models\/|show\/)?([a-f0-9]{32})/i);
+  if (sfMatch && sfMatch[1]) {
+    return `<div style="position:relative;width:100%;height:320px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);"><iframe src="https://sketchfab.com/models/${sfMatch[1]}/embed?autostart=1" allow="autoplay; fullscreen; vr" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe></div>`;
+  }
+
+  const splineMatch = code.match(/spline\.design\/([a-zA-Z0-9_-]+)/i);
+  if (splineMatch && splineMatch[1]) {
+    return `<div style="position:relative;width:100%;height:320px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);"><iframe src="https://my.spline.design/${splineMatch[1]}/" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe></div>`;
+  }
+
+  if (code.includes('<iframe') && code.includes('src=')) {
+    const iframeSrcMatch = code.match(/src=["']([^"']+)["']/i);
+    if (iframeSrcMatch && iframeSrcMatch[1]) {
+      return `<div style="position:relative;width:100%;height:320px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);"><iframe src="${esc(iframeSrcMatch[1])}" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe></div>`;
+    }
+  }
+
+  return `<div style="position:relative;width:100%;height:320px;border-radius:12px;overflow:hidden;background:#050811;border:1px solid var(--border);"><iframe srcdoc="${esc(code)}" sandbox="allow-scripts allow-same-origin allow-popups" style="width:100%;height:100%;border:none;background:#050811;"></iframe></div>`;
+}
+
     // Media
     let mediaHtml = '';
+    if(p.htmlCode){
+      mediaHtml += parseHtml3DEmbed(p.htmlCode);
+    }
     if(p.images && p.images.length){
       mediaHtml += `<div class="w-media-wrap"><img src="${esc(p.images[0])}" class="w-img" alt="" loading="lazy"></div>`;
     }

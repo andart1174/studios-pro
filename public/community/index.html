@@ -3270,6 +3270,38 @@ function parseHtml3DEmbed(code) {
     </div>`;
 }
 
+function exportHtmlCode(postId) {
+  const p = (allPosts && allPosts.length) ? allPosts.find(x => x.id === postId) : null;
+  if (!p || !p.htmlCode) {
+    toast('No HTML code found to export', 'error');
+    return;
+  }
+  const blob = new Blob([p.htmlCode], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sp_nexus_creation_${postId}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('📥 HTML Code File Downloaded!', 'success');
+}
+
+function openHtmlCodeEditor(postId) {
+  const p = (allPosts && allPosts.length) ? allPosts.find(x => x.id === postId) : null;
+  if (!p || !p.htmlCode) {
+    toast('No HTML code found to remix', 'error');
+    return;
+  }
+  openCreateModal();
+  setTimeout(() => {
+    const htmlInp = document.getElementById('htmlCodeInp');
+    const contentInp = document.getElementById('postContent');
+    if (htmlInp) htmlInp.value = p.htmlCode;
+    if (contentInp) contentInp.value = `Remix of @${p.displayName}'s 3D creation 🔮`;
+    toast('🛠️ Loaded 3D Code in Remix Editor!', 'success');
+  }, 200);
+}
+
 // 🍿 SP REELS & SHORTS IMMERSIVE VIEWER LOGIC
 async function openReelsViewerModal() {
   let posts = (allPosts && allPosts.length) ? allPosts : [];
@@ -3560,7 +3592,12 @@ function buildCard(p) {
 
   if (p.htmlCode) {
     const html3dContent = parseHtml3DEmbed(p.htmlCode);
-    mediaHtml = html3dContent + mediaHtml;
+    const htmlCodeActions = `
+      <div style="display:flex;gap:8px;margin-top:6px;margin-bottom:12px;">
+        <button onclick="exportHtmlCode('${p.id}')" style="flex:1;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4);color:#34d399;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;">📥 Export .HTML File</button>
+        <button onclick="openHtmlCodeEditor('${p.id}')" style="flex:1;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:6px 12px;border-radius:10px;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;">🛠️ Edit &amp; Remix Code</button>
+      </div>`;
+    mediaHtml = html3dContent + htmlCodeActions + mediaHtml;
   }
 
   let remixHtml = '';
