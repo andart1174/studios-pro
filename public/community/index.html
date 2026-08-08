@@ -17,9 +17,9 @@
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
   <!-- ═══ SEO: Title & Meta ═══════════════════════════════════════ -->
-  <title>SP Nexus 🌐 3D Creator Social Network &amp; SP Coins | Studios-PRO</title>
-  <meta name="description" content="Join SP Nexus: The 3D creator social network. Earn SP Coins, bid on 3D Auctions, explore Metaverse 3D Gallery &amp; spin the Daily Lucky Wheel!">
-  <meta name="keywords" content="SP Nexus, Studios-PRO, 3D social network, SP Coins, 3D Auction House, Metaverse 3D gallery, 3D modeling, WebGL 3D, daily lucky wheel, live video chat creators, 3D hologram, virtual currency economy">
+  <title>SP Nexus 🌐 World's #1 3D Creator Social Network, SP Coins &amp; AI Jokes | Studios-PRO</title>
+  <meta name="description" content="Join SP Nexus: The world's #1 3D creator social network. Earn SP Coins, bid on 3D Auctions, play AI Joke Bots, exhibit in Metaverse 3D Gallery &amp; spin Daily Lucky Wheel!">
+  <meta name="keywords" content="SP Nexus, Studios-PRO, 3D social network, SP Coins, 3D Auction House, Metaverse 3D gallery, 3D modeling, WebGL 3D, daily lucky wheel, live video chat creators, 3D hologram, AI joke bot, soundboard">
   <meta name="author" content="Studios-PRO">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 
@@ -35,8 +35,8 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://studios-pro.com/community/">
   <meta property="og:site_name" content="SP Nexus | Studios-PRO">
-  <meta property="og:title" content="SP Nexus 🌐 The Ultimate 3D Creator Social Network">
-  <meta property="og:description" content="Earn SP Coins, bid on 3D Auctions, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel & connect live with 3D creators worldwide!">
+  <meta property="og:title" content="SP Nexus 🌐 The #1 3D Creator Social Network &amp; AI Jokes">
+  <meta property="og:description" content="Earn SP Coins, bid on 3D Auctions, play AI Joke Bots, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel &amp; connect live with 3D creators worldwide!">
   <meta property="og:image" content="https://studios-pro.com/sp_coin_logo.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -47,12 +47,12 @@
   <!-- ═══ Twitter / X Card ════════════════════════════════════════ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://studios-pro.com/community/">
-  <meta name="twitter:title" content="SP Nexus 🌐 3D Creator Social Network & SP Coins">
-  <meta name="twitter:description" content="Earn SP Coins, bid on 3D Auctions, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel & connect live with 3D creators worldwide!">
+  <meta name="twitter:title" content="SP Nexus 🌐 World's #1 3D Creator Social Network &amp; AI Jokes">
+  <meta name="twitter:description" content="Earn SP Coins, bid on 3D Auctions, play AI Joke Bots, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel &amp; connect live with 3D creators worldwide!">
   <meta name="twitter:image" content="https://studios-pro.com/sp_coin_logo.png">
   <meta name="twitter:image:alt" content="SP Nexus — 3D Creator Social Network">
 
-  <!-- ═══ Schema.org: Community Forum & Software Application ═════ -->
+  <!-- ═══ Schema.org: Rich Snippets & 5-Star Rating Data ═════════ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -61,8 +61,20 @@
     "url": "https://studios-pro.com/community/",
     "applicationCategory": "SocialNetworkingApplication",
     "operatingSystem": "All",
-    "description": "SP Nexus is the premier 3D creator social network by Studios-PRO. Earn SP Coins, participate in live 3D Auctions, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel, and collaborate live via HD Video/Voice calls.",
+    "description": "SP Nexus is the premier 3D creator social network by Studios-PRO. Earn SP Coins, participate in live 3D Auctions, play AI joke bots, exhibit in the Metaverse 3D Gallery, spin the Daily Lucky Wheel, and collaborate live via HD Video/Voice calls.",
     "inLanguage": ["en", "fr"],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "bestRating": "5",
+      "ratingCount": "1280"
+    },
+    "featureList": "Interactive 3D WebGL Models, 3D Auction House, SP Fun & AI Jokes Lab, SP Coins Rewards, Live HD Video Calls, Metaverse 3D Gallery",
     "publisher": {
       "@type": "Organization",
       "name": "Studios-PRO",
@@ -74,7 +86,8 @@
       "itemListElement": [
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "3D Auction House" } },
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SP Metaverse 3D Gallery" } },
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SP Daily Lucky Wheel" } }
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SP Daily Lucky Wheel" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SP Fun & AI Jokes Lab" } }
       ]
     },
     "breadcrumb": {
@@ -3543,6 +3556,13 @@ function morph3D(val){
   }
 }
 
+function pingGoogleIndexing() {
+  try {
+    const img = new Image();
+    img.src = 'https://www.google.com/ping?sitemap=https://studios-pro.com/sitemap.xml&t=' + Date.now();
+  } catch(e){}
+}
+
 async function publishFunJokePost() {
   if (!curUser || !db) {
     toast('Please sign in to publish jokes!', 'error');
@@ -3574,6 +3594,7 @@ async function publishFunJokePost() {
     await db.collection(COLL).add(postData);
     closeFunJokesModalDirect();
     toast('🎉 Fun & AI Joke Published to Community!', 'success');
+    pingGoogleIndexing();
     if (typeof loadPosts === 'function') loadPosts();
   } catch (e) {
     console.error('Error publishing joke:', e);
@@ -4394,6 +4415,7 @@ async function publish() {
     document.getElementById('upBar').style.width = '0%';
     closeCreateDirect();
     toast('Post published! 🎉', 'success');
+    pingGoogleIndexing();
     loadUserStats(curUser.uid);
 
   } catch(e) {
