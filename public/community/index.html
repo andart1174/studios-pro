@@ -3959,8 +3959,10 @@ async function publish() {
   const content = document.getElementById('postContent').value.trim();
   const cat = document.getElementById('postCat') ? document.getElementById('postCat').value : 'general';
   const vidUrl = document.getElementById('vidUrl') ? document.getElementById('vidUrl').value.trim() : '';
+  const audioInp = document.getElementById('audioUrl');
+  const audioUrl = (audioInp && typeof audioInp.value === 'string') ? audioInp.value.trim() : '';
   const htmlInp = document.getElementById('htmlCodeInp');
-  const htmlCode = htmlInp ? htmlInp.value.trim() : '';
+  const htmlCode = (htmlInp && typeof htmlInp.value === 'string') ? htmlInp.value.trim() : '';
 
   if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !htmlCode && !transferred3D) {
     toast('Add some content first!', 'error');
@@ -4028,7 +4030,7 @@ async function publish() {
       postData.htmlCode = htmlCode;
       if (!transferred3D && cat === 'general') postData.category = 'html3d';
     }
-    if (audioUrl) {
+    if (typeof audioUrl === 'string' && audioUrl.length > 0) {
       postData.audioUrl = audioUrl;
       postData.audioTitle = 'Audio Track / Sound';
     }
