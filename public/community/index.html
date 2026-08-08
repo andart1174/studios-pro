@@ -2291,7 +2291,7 @@
 
       <!-- Preview Frame -->
       <div style="background:#050811;border:1px solid rgba(245,158,11,.3);border-radius:14px;overflow:hidden;height:280px;margin-bottom:14px;position:relative;">
-        <iframe id="jokePreviewFrame" style="width:100%;height:100%;border:none;background:#050811;"></iframe>
+        <iframe id="jokePreviewFrame" sandbox="allow-scripts allow-same-origin allow-popups" style="width:100%;height:100%;border:none;background:#050811;"></iframe>
       </div>
 
       <!-- Title Input -->
@@ -3345,9 +3345,20 @@ let currentGeneratedJokeCode = '';
 
 const AI_JOKES_LIST = [
   { title: "🤖 AI Joke: Why don't 3D models get lost?", text: "Why don't 3D models get lost?\nBecause they always follow GLTF maps! 😂", emoji: "🤖" },
-  { title: "☕ AI Joke: 3D Render at 3 AM", text: "I asked the AI to render a 3D gold ring at 3 AM.\nIt rendered a glazed donut! 🍩", emoji: "🍩" },
-  { title: "⚡ AI Joke: The 3D Printer Date", text: "Why did the 3D printer break up with the laptop?\nToo much drama between the layers! 💔", emoji: "🖨️" },
-  { title: "🚀 AI Joke: Sci-Fi Hologram", text: "What did the hologram say to the 3D modeller?\nStop staring, I'm transparent! 👻", emoji: "🔮" }
+  { title: "🍩 AI Joke: 3D Render at 3 AM", text: "I asked the AI to render a 3D gold ring at 3 AM.\nIt rendered a glazed donut! 🍩", emoji: "🍩" },
+  { title: "🖨️ AI Joke: The 3D Printer Date", text: "Why did the 3D printer break up with the laptop?\nToo much drama between the layers! 💔", emoji: "🖨️" },
+  { title: "🔮 AI Joke: Sci-Fi Hologram", text: "What did the hologram say to the 3D modeller?\nStop staring, I'm transparent! 👻", emoji: "🔮" },
+  { title: "🔥 AI Joke: GPU Overheating", text: "Why is the GPU always calm?\nBecause it knows how to handle 4K pressure! 🔥", emoji: "🔥" },
+  { title: "🛋️ AI Joke: UV Unwrapping", text: "How do 3D artists relax?\nThey stretch out their UV maps! 🛋️", emoji: "🛋️" },
+  { title: "📐 AI Joke: Polygon Party", text: "Why wasn't the cube invited to the sphere party?\nIt was too edgy! 📐", emoji: "📐" },
+  { title: "🌌 AI Joke: Metaverse Crossing", text: "Why did the avatar cross the Metaverse road?\nTo get to the higher resolution side! 🌌", emoji: "🌌" },
+  { title: "☕ AI Joke: Extra RAM Coffee", text: "How does an AI 3D creator take their coffee?\nWith 3 tablespoons of extra RAM! ☕", emoji: "☕" },
+  { title: "🪙 AI Joke: SP Coins Interest", text: "Why do SP Coins never sleep?\nBecause they are constantly gaining interest in the Metaverse! 🪙", emoji: "🪙" },
+  { title: "🛸 AI Joke: Alien Shaders", text: "Why did the alien land in the 3D studio?\nIt heard we had out-of-this-world shaders! 🛸", emoji: "🛸" },
+  { title: "🎯 AI Joke: Ray Tracing Bounciness", text: "What did the light ray say when it hit a mirror?\nI'm reflecting on my life choices! 💡", emoji: "💡" },
+  { title: "🤖 AI Joke: Robot Workout", text: "Why do robots go to the gym?\nTo upgrade their core processors! 🏋️‍♂️", emoji: "🏋️‍♂️" },
+  { title: "🎨 AI Joke: Normal Map Secret", text: "What is a texture's favorite secret?\nIt keeps things looking deep without changing topology! 🎨", emoji: "🎨" },
+  { title: "👾 AI Joke: Low-Poly Life", text: "Why do low-poly characters love retro games?\nFewer triangles, zero stress! 👾", emoji: "👾" }
 ];
 
 function openFunJokesModal() {
@@ -3388,14 +3399,65 @@ function generateRandomJokeCode() {
   const titleInp = document.getElementById('jokeTitleInp');
   if (titleInp) titleInp.value = jokeItem.title;
 
+  const S = '<' + 'script' + '>';
+  const E = '<' + '/script' + '>';
+
+  const audioSynthJs = S + `
+    let actx = null;
+    function getACtx() {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    }
+    function playTone(freq, duration, type) {
+      try {
+        const ctx = getACtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e){}
+    }
+    function playLaugh() {
+      for(let i=0; i<6; i++) {
+        setTimeout(() => playTone(280 + Math.random()*240, 0.15, 'triangle'), i * 130);
+      }
+    }
+    function playAirhorn() {
+      playTone(460, 0.35, 'sawtooth');
+      setTimeout(() => playTone(580, 0.45, 'sawtooth'), 140);
+    }
+    function playBoom() {
+      playTone(90, 0.65, 'sine');
+    }
+    function playVictory() {
+      [262, 330, 392, 523].forEach((f, i) => setTimeout(() => playTone(f, 0.18, 'square'), i * 110));
+    }
+    function speakText(txt) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.pitch = 1.3;
+        u.rate = 1.05;
+        window.speechSynthesis.speak(u);
+      }
+    }
+  ` + E;
+
   if (activeJokePreset === 'bot') {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#090d1a,#1e1b4b);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;}.bot-icon{font-size:4rem;animation:pulse 1.2s infinite ease-in-out;display:inline-block;}@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18) rotate(6deg);}}</style></head><body><div class="bot-icon">${jokeItem.emoji}</div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:10px;">${jokeItem.title}</div><div style="font-size:.88rem;color:#e2e8f0;margin-top:10px;line-height:1.4;background:rgba(255,255,255,.07);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);max-width:320px;">"${jokeItem.text.replace(/\n/g, '<br>')}"</div><div style="margin-top:14px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:8px 18px;border-radius:20px;font-weight:900;display:inline-block;">😂 AI 3D Joke Bot</div></body></html>`;
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#090d1a,#1e1b4b);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;}.bot-icon{font-size:4rem;animation:pulse 1.2s infinite ease-in-out;display:inline-block;}@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18) rotate(6deg);}}</style></head><body><div class="bot-icon">${jokeItem.emoji}</div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:10px;">${jokeItem.title}</div><div style="font-size:.88rem;color:#e2e8f0;margin-top:10px;line-height:1.4;background:rgba(255,255,255,.07);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);max-width:320px;">"${jokeItem.text.replace(/\n/g, '<br>')}"</div><div style="display:flex;gap:8px;margin-top:14px;"><button onclick="playLaugh();speakText(decodeURIComponent('${encodeURIComponent(jokeItem.text)}'));" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:9px 18px;border-radius:20px;font-weight:900;cursor:pointer;box-shadow:0 0 15px rgba(245,158,11,.4);">🔊 Speak &amp; Laugh</button></div></body></html>`;
   } else if (activeJokePreset === 'soundboard') {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050811;color:#fff;font-family:sans-serif;padding:15px;box-sizing:border-box;}.sb-btn{padding:14px;border-radius:12px;font-weight:800;border:none;color:#fff;font-size:.9rem;cursor:pointer;transition:transform .15s;}.sb-btn:active{transform:scale(0.92);}</style></head><body><div style="font-size:1rem;font-weight:900;color:#fbbf24;margin-bottom:14px;">🕹️ SP Viral Soundboard</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:280px;"><button class="sb-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">😂 Laugh</button><button class="sb-btn" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🎺 Airhorn</button><button class="sb-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed);">💥 Sub Boom</button><button class="sb-btn" style="background:linear-gradient(135deg,#10b981,#059669);">🎉 Victory</button></div></body></html>`;
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050811;color:#fff;font-family:sans-serif;padding:15px;box-sizing:border-box;}.sb-btn{padding:14px;border-radius:12px;font-weight:800;border:none;color:#fff;font-size:.9rem;cursor:pointer;transition:transform .15s;box-shadow:0 4px 12px rgba(0,0,0,.4);}.sb-btn:active{transform:scale(0.92);}</style></head><body><div style="font-size:1rem;font-weight:900;color:#fbbf24;margin-bottom:14px;">🕹️ SP Viral Soundboard</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:280px;"><button onclick="playLaugh()" class="sb-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">😂 Laugh</button><button onclick="playAirhorn()" class="sb-btn" style="background:linear-gradient(135deg,#ef4444,#dc2626);">🎺 Airhorn</button><button onclick="playBoom()" class="sb-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed);">💥 Sub Boom</button><button onclick="playVictory()" class="sb-btn" style="background:linear-gradient(135deg,#10b981,#059669);">🎉 Victory</button></div></body></html>`;
   } else if (activeJokePreset === 'dance') {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#18181b,#090d1a);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;overflow:hidden;}.dancer{font-size:4.5rem;animation:dance .6s infinite alternate;display:inline-block;}.disco{position:absolute;inset:0;background:radial-gradient(circle,rgba(236,72,153,.3) 0%,transparent 70%);animation:discoBg 1.5s infinite alternate;pointer-events:none;}@keyframes dance{0%{transform:translateY(0) rotate(-12deg) scale(1);}100%{transform:translateY(-16px) rotate(12deg) scale(1.15);}}@keyframes discoBg{0%{background:radial-gradient(circle,rgba(236,72,153,.3) 0%,transparent 70%);}100%{background:radial-gradient(circle,rgba(0,242,254,.3) 0%,transparent 70%);}}</style></head><body><div class="disco"></div><div class="dancer">💃</div><div style="font-size:1.15rem;font-weight:900;color:#ec4899;margin-top:14px;z-index:2;">🎭 3D Salsa Party Bot</div><div style="font-size:.8rem;color:#94a3b8;margin-top:6px;z-index:2;">Live Party Vibes! 🎉</div></body></html>`;
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#18181b,#090d1a);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;overflow:hidden;}.dancer{font-size:4.5rem;animation:dance .6s infinite alternate;display:inline-block;cursor:pointer;}.disco{position:absolute;inset:0;background:radial-gradient(circle,rgba(236,72,153,.3) 0%,transparent 70%);animation:discoBg 1.5s infinite alternate;pointer-events:none;}@keyframes dance{0%{transform:translateY(0) rotate(-12deg) scale(1);}100%{transform:translateY(-16px) rotate(12deg) scale(1.15);}}@keyframes discoBg{0%{background:radial-gradient(circle,rgba(236,72,153,.3) 0%,transparent 70%);}100%{background:radial-gradient(circle,rgba(0,242,254,.3) 0%,transparent 70%);}}</style></head><body><div class="disco"></div><div class="dancer" onclick="playVictory();playLaugh();">💃</div><div style="font-size:1.15rem;font-weight:900;color:#ec4899;margin-top:14px;z-index:2;">🎭 3D Salsa Party Bot</div><button onclick="playVictory();playLaugh();" style="margin-top:10px;z-index:2;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:8px 18px;border-radius:20px;font-weight:800;cursor:pointer;box-shadow:0 0 15px rgba(236,72,153,.4);">🎉 Party Beat Sound</button></body></html>`;
   } else {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;}.c-btn{flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;font-size:.82rem;}</style></head><body><div style="font-size:.98rem;font-weight:900;color:#fbbf24;margin-bottom:12px;">🔮 3D Render crashed at 99%! What do you do?</div><div style="display:flex;gap:10px;margin-top:8px;width:100%;max-width:280px;"><div class="c-btn" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">☕ Drink Coffee</div><div class="c-btn" style="background:linear-gradient(135deg,#ec4899,#d946ef);">😭 Cry on TikTok</div></div></body></html>`;
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;}.c-btn{flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;font-size:.82rem;}</style></head><body><div style="font-size:.98rem;font-weight:900;color:#fbbf24;margin-bottom:12px;">🔮 3D Render crashed at 99%! What do you do?</div><div style="display:flex;gap:10px;margin-top:8px;width:100%;max-width:280px;"><button onclick="playTone(600,0.2);document.getElementById('optRes').innerHTML='☕ You got +100 Energy &amp; restarted rendering!';" class="c-btn" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">☕ Drink Coffee</button><button onclick="playVictory();document.getElementById('optRes').innerHTML='😭 Video got 1M views on TikTok! Task failed successfully!';" class="c-btn" style="background:linear-gradient(135deg,#ec4899,#d946ef);">😭 Cry on TikTok</button></div><div id="optRes" style="margin-top:14px;font-size:.85rem;color:#34d399;font-weight:800;min-height:24px;"></div></body></html>`;
   }
 
   const iframe = document.getElementById('jokePreviewFrame');
