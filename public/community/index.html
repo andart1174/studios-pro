@@ -3467,9 +3467,15 @@ function generateRandomJokeCode() {
   } else if (activeJokePreset === 'morph') {
     currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#050811,#111827);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;overflow:hidden;}.m-head{font-size:4rem;transition:transform .1s linear;display:inline-block;cursor:pointer;}.m-slider{width:100%;max-width:280px;accent-color:#ec4899;cursor:pointer;}</style></head><body><div class="m-head" id="mHead">🤪</div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:10px;" id="mLbl">Crazy Morph Level: 0%</div><div style="width:100%;max-width:280px;margin-top:12px;"><input type="range" class="m-slider" min="0" max="1000" value="0" id="mRange" oninput="doMorph(this.value)"></div><div id="mDesc" style="font-size:.8rem;color:#a78bfa;margin-top:8px;font-weight:800;height:20px;">Drag slider to warp reality! 🚀</div>` + S + `function doMorph(v){const h=document.getElementById("mHead"),l=document.getElementById("mLbl"),d=document.getElementById("mDesc");const s=1+(v/250),r=(v/1000)*720;h.style.transform="scale("+s+") rotate("+r+"deg)";l.innerText="Crazy Morph Level: "+v+"%";if(v>700){h.innerText="🤯";d.innerText="OVER 9000!! MAX CRAZY!";if(v%100===0)playAirhorn();}else if(v>300){h.innerText="🤪";d.innerText="Warp Speed Enabled! 🌀";if(v%100===0)playLaugh();}else{h.innerText="😃";d.innerText="Drag slider to warp reality! 🚀";if(v%100===0)playTone(200+v*0.5,0.1);}}` + E + `</body></html>`;
   } else if (activeJokePreset === 'animalmorph') {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}${THREE_SCRIPT}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#050811,#1e1b4b);color:#fff;font-family:sans-serif;text-align:center;padding:10px;box-sizing:border-box;overflow:hidden;}#webglCanvas{width:100%;height:160px;border-radius:12px;background:#050811;}.a-slider{width:100%;max-width:280px;accent-color:#f59e0b;cursor:pointer;margin-top:6px;}</style></head><body><div id="webglCanvas"></div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:6px;" id="aName">🐱 3D Kitten Geometry</div><div style="width:100%;max-width:280px;"><input type="range" class="a-slider" min="0" max="100" value="0" id="aRange" oninput="morph3D(this.value)"></div><div id="aSub" style="font-size:.78rem;color:#cbd5e1;margin-top:4px;font-weight:700;">Drag slider to morph 3D WebGL Mesh &amp; Animal! 🐾</div>` + S + `
-let scene, camera, renderer, mesh, mat;
-const animals=[{v:0,e:"🐱 3D Kitten",t:400,c:0x3b82f6},{v:25,e:"🐶 3D Puppy",t:300,c:0x10b981},{v:50,e:"🦊 3D Fox",t:450,c:0xf59e0b},{v:75,e:"🦁 3D Lion",t:180,c:0xef4444},{v:100,e:"🐉 3D Fire Dragon",t:120,c:0xec4899}];
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}${THREE_SCRIPT}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#050811,#1e1b4b);color:#fff;font-family:sans-serif;text-align:center;padding:10px;box-sizing:border-box;overflow:hidden;}#webglCanvas{width:100%;height:160px;border-radius:12px;background:#050811;}.a-slider{width:100%;max-width:280px;accent-color:#f59e0b;cursor:pointer;margin-top:6px;}</style></head><body><div id="webglCanvas"></div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:6px;" id="aName">🐱 3D Kitten Sphere</div><div style="width:100%;max-width:280px;"><input type="range" class="a-slider" min="0" max="100" value="0" id="aRange" oninput="morph3D(this.value)"></div><div id="aSub" style="font-size:.78rem;color:#cbd5e1;margin-top:4px;font-weight:700;">Drag slider to morph 3D WebGL Shape Geometry! 🐾</div>` + S + `
+let scene, camera, renderer, mesh, mat, geos;
+const animals=[
+  {v:0,e:"🐱 3D Kitten Sphere",t:400,c:0x3b82f6,g:0},
+  {v:25,e:"🐶 3D Puppy Cube",t:300,c:0x10b981,g:1},
+  {v:50,e:"🦊 3D Fox Cone",t:450,c:0xf59e0b,g:2},
+  {v:75,e:"🦁 3D Lion Torus",t:180,c:0xef4444,g:3},
+  {v:100,e:"🐉 3D Fire Dragon Crystal",t:120,c:0xec4899,g:4}
+];
 function init3D(){
   const container = document.getElementById("webglCanvas");
   if(!container) return;
@@ -3484,9 +3490,15 @@ function init3D(){
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
   dirLight.position.set(5, 5, 5);
   scene.add(dirLight);
-  const geo = new THREE.TorusKnotGeometry(0.7, 0.2, 64, 16);
-  mat = new THREE.MeshStandardMaterial({color:0x3b82f6, roughness:0.3, metalness:0.6, wireframe:false});
-  mesh = new THREE.Mesh(geo, mat);
+  geos = [
+    new THREE.SphereGeometry(0.8, 32, 32),
+    new THREE.BoxGeometry(1.2, 1.2, 1.2),
+    new THREE.ConeGeometry(0.9, 1.5, 32),
+    new THREE.TorusKnotGeometry(0.7, 0.2, 64, 16),
+    new THREE.OctahedronGeometry(1.1, 2)
+  ];
+  mat = new THREE.MeshStandardMaterial({color:0x3b82f6, roughness:0.25, metalness:0.75, wireframe:false});
+  mesh = new THREE.Mesh(geos[0], mat);
   scene.add(mesh);
   function animate(){
     requestAnimationFrame(animate);
@@ -3496,14 +3508,19 @@ function init3D(){
   animate();
 }
 window.onload = init3D;
+let curGeoIdx = 0;
 function morph3D(val){
   const v = parseInt(val);
   let match = animals[0];
   for(let a of animals){ if(v>=a.v) match=a; }
   document.getElementById("aName").innerText = match.e;
   if(mat){ mat.color.setHex(match.c); }
+  if(mesh && geos && curGeoIdx !== match.g){
+    curGeoIdx = match.g;
+    mesh.geometry = geos[match.g];
+  }
   if(mesh){
-    const s = 1 + (v/200);
+    const s = 1 + ((v % 25)/50);
     mesh.scale.set(s,s,s);
   }
   if(v%25===0) playTone(match.t, 0.25, "triangle");
