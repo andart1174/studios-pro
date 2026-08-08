@@ -3352,7 +3352,7 @@ const AI_JOKES_LIST = [
 
 function openFunJokesModal() {
   const overlay = document.getElementById('funJokesOverlay');
-  if (overlay) overlay.style.display = 'flex';
+  if (overlay) overlay.classList.add('open');
   selectJokePreset(activeJokePreset || 'bot');
 }
 
@@ -3364,7 +3364,7 @@ function closeFunJokesModal(e) {
 
 function closeFunJokesModalDirect() {
   const overlay = document.getElementById('funJokesOverlay');
-  if (overlay) overlay.style.display = 'none';
+  if (overlay) overlay.classList.remove('open');
 }
 
 function selectJokePreset(preset) {
