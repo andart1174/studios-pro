@@ -1538,6 +1538,11 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- 😂 SP Fun & AI Jokes Button in Header -->
+    <button onclick="openFunJokesModal()" title="SP Fun & AI Jokes Lab" style="background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(239,68,68,.2));border:1px solid rgba(245,158,11,.5);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 15px rgba(245,158,11,.35);">
+      <span style="font-size:16px;">😂</span>
+      <span style="background:linear-gradient(135deg,#fbbf24,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Fun &amp; AI Jokes</span>
+    </button>
     <!-- 🍿 SP Reels Button in Header -->
     <button onclick="openReelsViewerModal()" title="Watch SP Reels & Shorts" style="background:linear-gradient(135deg,rgba(255,0,80,.25),rgba(0,242,254,.2));border:1px solid rgba(255,0,80,.5);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 15px rgba(255,0,80,.35);">
       <span style="font-size:16px;">🍿</span>
@@ -2250,6 +2255,54 @@
   <!-- Vertical Scroll Container -->
   <div id="reelsScrollContainer" style="flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;height:100vh;width:100vw;scrollbar-width:none;">
     <!-- Reel Cards dynamically injected here -->
+  </div>
+</div>
+
+<!-- 😂 SP FUN & AI JOKES LAB MODAL -->
+<div class="overlay" id="funJokesOverlay" onclick="closeFunJokesModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:680px;background:#090d1a;border:2px solid rgba(245,158,11,.4);box-shadow:0 0 40px rgba(245,158,11,.25);font-family:'Outfit',sans-serif;">
+    <div class="mh" style="border-bottom:1px solid rgba(245,158,11,.3);padding:14px 18px;">
+      <div class="mt" style="color:#fbbf24;font-size:1.15rem;font-weight:900;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:1.4rem;">😂</span>
+        <span>SP Fun &amp; AI Jokes Lab</span>
+      </div>
+      <button class="mc" onclick="closeFunJokesModalDirect()">✕</button>
+    </div>
+    <div class="mb" style="padding:18px;">
+      <div style="font-size:.85rem;color:#cbd5e1;margin-bottom:14px;line-height:1.4;">
+        Interactive HTML5 AI Jokes, 3D Meme Bots, Soundboards, and Choice Stories for SP Nexus!
+      </div>
+      
+      <!-- Preset Type Tabs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <button onclick="selectJokePreset('bot')" id="jtab-bot" class="jpreset-btn" style="background:rgba(245,158,11,.2);border:1px solid #f59e0b;color:#fbbf24;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
+          🤖 3D AI Joke Bot<br><span style="font-size:.7rem;font-weight:normal;color:#e2e8f0;">Interactive robot telling jokes</span>
+        </button>
+        <button onclick="selectJokePreset('soundboard')" id="jtab-soundboard" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
+          🕹️ Meme Soundboard<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">Clickable viral reaction sound FX</span>
+        </button>
+        <button onclick="selectJokePreset('dance')" id="jtab-dance" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
+          🎭 Dancing 3D Meme<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">Animated dancing 3D character</span>
+        </button>
+        <button onclick="selectJokePreset('choice')" id="jtab-choice" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
+          🔮 Interactive Choice Meme<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">2-Option choose your story joke</span>
+        </button>
+      </div>
+
+      <!-- Preview Frame -->
+      <div style="background:#050811;border:1px solid rgba(245,158,11,.3);border-radius:14px;overflow:hidden;height:280px;margin-bottom:14px;position:relative;">
+        <iframe id="jokePreviewFrame" style="width:100%;height:100%;border:none;background:#050811;"></iframe>
+      </div>
+
+      <!-- Title Input -->
+      <input type="text" id="jokeTitleInp" placeholder="Joke / Meme Title..." value="🤖 AI Joke Bot: 3D Creator Humor" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:#fff;padding:10px 14px;border-radius:10px;font-size:.88rem;font-weight:700;margin-bottom:14px;font-family:inherit;">
+
+      <!-- Actions -->
+      <div style="display:flex;gap:10px;">
+        <button onclick="generateRandomJokeCode()" style="background:rgba(255,255,255,.1);border:1px solid var(--border2);color:#fff;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;font-size:.85rem;font-family:inherit;">🎲 Randomize Joke</button>
+        <button onclick="publishFunJokePost()" style="flex:1;background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:10px 18px;border-radius:10px;font-weight:900;cursor:pointer;font-size:.9rem;box-shadow:0 0 20px rgba(245,158,11,.4);font-family:inherit;">🚀 Publish Joke to Community</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3284,6 +3337,139 @@ function exportHtmlCode(postId) {
   a.click();
   document.body.removeChild(a);
   toast('📥 HTML Code File Downloaded!', 'success');
+}
+
+// 😂 SP FUN & AI JOKES LAB COMPARTMENT LOGIC
+let activeJokePreset = 'bot';
+let currentGeneratedJokeCode = '';
+
+const AI_JOKES_LIST = [
+  { title: "🤖 AI Joke: Why don't 3D models get lost?", text: "Why don't 3D models get lost?\nBecause they always follow GLTF maps! 😂", emoji: "🤖" },
+  { title: "☕ AI Joke: 3D Render at 3 AM", text: "I asked the AI to render a 3D gold ring at 3 AM.\nIt rendered a glazed donut! 🍩", emoji: "🍩" },
+  { title: "⚡ AI Joke: The 3D Printer Date", text: "Why did the 3D printer break up with the laptop?\nToo much drama between the layers! 💔", emoji: "🖨️" },
+  { title: "🚀 AI Joke: Sci-Fi Hologram", text: "What did the hologram say to the 3D modeller?\nStop staring, I'm transparent! 👻", emoji: "🔮" }
+];
+
+function openFunJokesModal() {
+  const overlay = document.getElementById('funJokesOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  selectJokePreset(activeJokePreset || 'bot');
+}
+
+function closeFunJokesModal(e) {
+  if (e && e.target && e.target.id === 'funJokesOverlay') {
+    closeFunJokesModalDirect();
+  }
+}
+
+function closeFunJokesModalDirect() {
+  const overlay = document.getElementById('funJokesOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function selectJokePreset(preset) {
+  activeJokePreset = preset;
+  document.querySelectorAll('.jpreset-btn').forEach(btn => {
+    btn.style.background = 'rgba(255,255,255,.05)';
+    btn.style.borderColor = 'var(--border2)';
+    btn.style.color = '#fff';
+  });
+  const activeBtn = document.getElementById(`jtab-${preset}`);
+  if (activeBtn) {
+    activeBtn.style.background = 'rgba(245,158,11,.2)';
+    activeBtn.style.borderColor = '#f59e0b';
+    activeBtn.style.color = '#fbbf24';
+  }
+  generateRandomJokeCode();
+}
+
+function generateRandomJokeCode() {
+  const jokeItem = AI_JOKES_LIST[Math.floor(Math.random() * AI_JOKES_LIST.length)];
+  const titleInp = document.getElementById('jokeTitleInp');
+  if (titleInp) titleInp.value = jokeItem.title;
+
+  if (activeJokePreset === 'bot') {
+    currentGeneratedJokeCode = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:20px;box-sizing:border-box;">
+        <div style="font-size:4rem;animation:bounce 1.5s infinite;">${jokeItem.emoji}</div>
+        <div style="font-size:1.1rem;font-weight:bold;color:#fbbf24;margin-top:10px;">${jokeItem.title}</div>
+        <div style="font-size:.9rem;color:#cbd5e1;margin-top:10px;line-height:1.4;">${jokeItem.text.replace(/\n/g, '<br>')}</div>
+        <button onclick="document.getElementById('res').innerHTML='😂 HAHAHA! Amazing AI Joke!';" style="margin-top:14px;background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:8px 18px;border-radius:20px;font-weight:bold;cursor:pointer;">😂 Tap to Laugh</button>
+        <div id="res" style="margin-top:8px;font-size:.8rem;color:#34d399;font-weight:bold;"></div>
+      </div>`;
+  } else if (activeJokePreset === 'soundboard') {
+    currentGeneratedJokeCode = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050811;color:#fff;font-family:sans-serif;padding:15px;box-sizing:border-box;">
+        <div style="font-size:1rem;font-weight:bold;color:#fbbf24;margin-bottom:12px;">🕹️ SP Viral Soundboard</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:280px;">
+          <button onclick="alert('😂 HAHAHA!')" style="background:#3b82f6;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;">😂 Laugh</button>
+          <button onclick="alert('🎺 AIRHORN BZZZZ!')" style="background:#ef4444;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;">🎺 Airhorn</button>
+          <button onclick="alert('💥 BOOM!')" style="background:#a855f7;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;">💥 Boom</button>
+          <button onclick="alert('🎉 VICTORY!')" style="background:#10b981;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;">🎉 Victory</button>
+        </div>
+      </div>`;
+  } else if (activeJokePreset === 'dance') {
+    currentGeneratedJokeCode = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:20px;box-sizing:border-box;">
+        <div style="font-size:4.5rem;animation:spin 2s linear infinite;display:inline-block;">💃</div>
+        <div style="font-size:1.1rem;font-weight:bold;color:#ec4899;margin-top:14px;">🎭 3D Salsa Dancing Robot</div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:6px;">Hover or tap to party! 🎉</div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }</style>
+      </div>`;
+  } else {
+    currentGeneratedJokeCode = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;">
+        <div style="font-size:.95rem;font-weight:bold;color:#fbbf24;">🔮 3D Render crashed at 99%! What do you do?</div>
+        <div style="display:flex;gap:10px;margin-top:14px;width:100%;max-width:280px;">
+          <button onclick="document.getElementById('optRes').innerHTML='☕ You got +100 Energy & restarted rendering!';" style="flex:1;background:#6366f1;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:.8rem;">☕ Drink Coffee</button>
+          <button onclick="document.getElementById('optRes').innerHTML='😭 Video got 1M views on TikTok! Task failed successfully!';" style="flex:1;background:#ec4899;border:none;color:#fff;padding:10px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:.8rem;">😭 Cry on TikTok</button>
+        </div>
+        <div id="optRes" style="margin-top:12px;font-size:.85rem;color:#34d399;font-weight:bold;min-height:24px;"></div>
+      </div>`;
+  }
+
+  const iframe = document.getElementById('jokePreviewFrame');
+  if (iframe) {
+    iframe.srcdoc = currentGeneratedJokeCode;
+  }
+}
+
+async function publishFunJokePost() {
+  if (!curUser || !db) {
+    toast('Please sign in to publish jokes!', 'error');
+    return;
+  }
+
+  const titleInp = document.getElementById('jokeTitleInp');
+  const title = (titleInp && titleInp.value) ? titleInp.value.trim() : '😂 SP Fun & AI Joke';
+
+  if (!currentGeneratedJokeCode) {
+    toast('No joke code generated!', 'error');
+    return;
+  }
+
+  try {
+    const postData = {
+      uid: curUser.uid,
+      displayName: curUser.displayName || 'Creator',
+      photoURL: curUser.photoURL || '',
+      content: title,
+      category: 'funjokes',
+      htmlCode: currentGeneratedJokeCode,
+      likes: [],
+      likesCount: 0,
+      commentsCount: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection(COLL).add(postData);
+    closeFunJokesModalDirect();
+    toast('🎉 Fun & AI Joke Published to Community!', 'success');
+    if (typeof loadPosts === 'function') loadPosts();
+  } catch (e) {
+    console.error('Error publishing joke:', e);
+    toast('Error publishing joke post', 'error');
+  }
 }
 
 function openHtmlCodeEditor(postId) {
