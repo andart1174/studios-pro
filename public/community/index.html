@@ -2287,8 +2287,11 @@
         <button onclick="selectJokePreset('choice')" id="jtab-choice" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
           🔮 Interactive Choice Meme<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">2-Option choose your story joke</span>
         </button>
-        <button onclick="selectJokePreset('morph')" id="jtab-morph" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;grid-column:span 2;">
-          🤪 Crazy Face Morph Slider (0% ➔ 1000%)<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">Interactive face deformation &amp; pitch shift slider</span>
+        <button onclick="selectJokePreset('morph')" id="jtab-morph" class="jpreset-btn" style="background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;">
+          🤪 Crazy Face Morph (0% ➔ 1000%)<br><span style="font-size:.7rem;font-weight:normal;color:#64748b;">Pitch shift slider</span>
+        </button>
+        <button onclick="selectJokePreset('animalmorph')" id="jtab-animalmorph" class="jpreset-btn" style="background:rgba(245,158,11,.2);border:1px solid #f59e0b;color:#fbbf24;padding:10px;border-radius:12px;font-weight:800;cursor:pointer;text-align:left;grid-column:span 2;">
+          🐾 Real 3D Animal &amp; Mesh Morphing (Cat 🐱 ➔ Dog 🐶 ➔ Dragon 🐉)<br><span style="font-size:.7rem;font-weight:normal;color:#e2e8f0;">Real 60FPS WebGL 3D Mesh transformation &amp; sound FX</span>
         </button>
       </div>
 
@@ -3462,7 +3465,48 @@ function generateRandomJokeCode() {
   } else if (activeJokePreset === 'morph') {
     currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#050811,#111827);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;overflow:hidden;}.m-head{font-size:4rem;transition:transform .1s linear;display:inline-block;cursor:pointer;}.m-slider{width:100%;max-width:280px;accent-color:#ec4899;cursor:pointer;}</style></head><body><div class="m-head" id="mHead">🤪</div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:10px;" id="mLbl">Crazy Morph Level: 0%</div><div style="width:100%;max-width:280px;margin-top:12px;"><input type="range" class="m-slider" min="0" max="1000" value="0" id="mRange" oninput="doMorph(this.value)"></div><div id="mDesc" style="font-size:.8rem;color:#a78bfa;margin-top:8px;font-weight:800;height:20px;">Drag slider to warp reality! 🚀</div>` + S + `function doMorph(v){const h=document.getElementById("mHead"),l=document.getElementById("mLbl"),d=document.getElementById("mDesc");const s=1+(v/250),r=(v/1000)*720;h.style.transform="scale("+s+") rotate("+r+"deg)";l.innerText="Crazy Morph Level: "+v+"%";if(v>700){h.innerText="🤯";d.innerText="OVER 9000!! MAX CRAZY!";if(v%100===0)playAirhorn();}else if(v>300){h.innerText="🤪";d.innerText="Warp Speed Enabled! 🌀";if(v%100===0)playLaugh();}else{h.innerText="😃";d.innerText="Drag slider to warp reality! 🚀";if(v%100===0)playTone(200+v*0.5,0.1);}}` + E + `</body></html>`;
   } else if (activeJokePreset === 'animalmorph') {
-    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#090d1a,#1e293b);color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;overflow:hidden;}.a-icon{font-size:4.5rem;transition:all .2s ease;display:inline-block;cursor:pointer;}.a-slider{width:100%;max-width:280px;accent-color:#f59e0b;cursor:pointer;}</style></head><body><div class="a-icon" id="aIcon">🐱</div><div style="font-size:1.1rem;font-weight:900;color:#fbbf24;margin-top:10px;" id="aName">Cute Kitten</div><div style="width:100%;max-width:280px;margin-top:12px;"><input type="range" class="a-slider" min="0" max="100" value="0" id="aRange" oninput="morphAnimal(this.value)"></div><div id="aSub" style="font-size:.82rem;color:#cbd5e1;margin-top:8px;font-weight:700;">Drag slider to transform animal! 🐾</div>` + S + `const animals=[{v:0,e:"🐱",n:"Cute Kitten",t:400},{v:25,e:"🐶",n:"Playful Puppy",t:300},{v:50,e:"🦊",n:"Wild Fox",t:450},{v:75,e:"🦁",n:"Golden Lion",t:180},{v:100,e:"🐉",n:"Fire Dragon",t:120}];function morphAnimal(val){const v=parseInt(val);let match=animals[0];for(let a of animals){if(v>=a.v)match=a;}const ic=document.getElementById("aIcon"),nm=document.getElementById("aName");ic.innerText=match.e;nm.innerText=match.n;const scale=1+(v/200);ic.style.transform="scale("+scale+") rotate("+(v*3.6)+"deg)";if(v%25===0)playTone(match.t,0.25,"triangle");}` + E + `</body></html>`;
+    currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#050811,#1e1b4b);color:#fff;font-family:sans-serif;text-align:center;padding:10px;box-sizing:border-box;overflow:hidden;}#webglCanvas{width:100%;height:160px;border-radius:12px;background:#050811;}.a-slider{width:100%;max-width:280px;accent-color:#f59e0b;cursor:pointer;margin-top:6px;}</style></head><body><div id="webglCanvas"></div><div style="font-size:1.05rem;font-weight:900;color:#fbbf24;margin-top:6px;" id="aName">🐱 3D Kitten Geometry</div><div style="width:100%;max-width:280px;"><input type="range" class="a-slider" min="0" max="100" value="0" id="aRange" oninput="morph3D(this.value)"></div><div id="aSub" style="font-size:.78rem;color:#cbd5e1;margin-top:4px;font-weight:700;">Drag slider to morph 3D WebGL Mesh &amp; Animal! 🐾</div>` + S + `
+let scene, camera, renderer, mesh, mat;
+const animals=[{v:0,e:"🐱 3D Kitten",t:400,c:0x3b82f6},{v:25,e:"🐶 3D Puppy",t:300,c:0x10b981},{v:50,e:"🦊 3D Fox",t:450,c:0xf59e0b},{v:75,e:"🦁 3D Lion",t:180,c:0xef4444},{v:100,e:"🐉 3D Fire Dragon",t:120,c:0xec4899}];
+function init3D(){
+  const container = document.getElementById("webglCanvas");
+  if(!container) return;
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 100);
+  camera.position.z = 3.5;
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(5, 5, 5);
+  scene.add(dirLight);
+  const geo = new THREE.TorusKnotGeometry(0.7, 0.2, 64, 16);
+  mat = new THREE.MeshStandardMaterial({color:0x3b82f6, roughness:0.3, metalness:0.6, wireframe:false});
+  mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+  function animate(){
+    requestAnimationFrame(animate);
+    if(mesh){ mesh.rotation.x += 0.01; mesh.rotation.y += 0.015; }
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+window.onload = init3D;
+function morph3D(val){
+  const v = parseInt(val);
+  let match = animals[0];
+  for(let a of animals){ if(v>=a.v) match=a; }
+  document.getElementById("aName").innerText = match.e;
+  if(mat){ mat.color.setHex(match.c); }
+  if(mesh){
+    const s = 1 + (v/200);
+    mesh.scale.set(s,s,s);
+  }
+  if(v%25===0) playTone(match.t, 0.25, "triangle");
+}
+` + E + `</body></html>`;
   } else {
     currentGeneratedJokeCode = `<!DOCTYPE html><html><head><meta charset="UTF-8">${audioSynthJs}<style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090d1a;color:#fff;font-family:sans-serif;text-align:center;padding:16px;box-sizing:border-box;}.c-btn{flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;font-size:.82rem;}</style></head><body><div style="font-size:.98rem;font-weight:900;color:#fbbf24;margin-bottom:12px;">🔮 3D Render crashed at 99%! What do you do?</div><div style="display:flex;gap:10px;margin-top:8px;width:100%;max-width:280px;"><button onclick="playTone(600,0.2);document.getElementById('optRes').innerHTML='☕ You got +100 Energy &amp; restarted rendering!';" class="c-btn" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">☕ Drink Coffee</button><button onclick="playVictory();document.getElementById('optRes').innerHTML='😭 Video got 1M views on TikTok! Task failed successfully!';" class="c-btn" style="background:linear-gradient(135deg,#ec4899,#d946ef);">😭 Cry on TikTok</button></div><div id="optRes" style="margin-top:14px;font-size:.85rem;color:#34d399;font-weight:800;min-height:24px;"></div></body></html>`;
   }
