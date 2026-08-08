@@ -1805,6 +1805,7 @@
     <!-- Filter tabs (above create bar like YouTube) -->
     <div class="ftabs" id="mainFtabs">
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
+      <button class="ftab" data-cat="aijokes" onclick="filterTab('aijokes',this)">😂 AI Jokes</button>
       <button class="ftab" data-cat="reels" onclick="openReelsViewerModal()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,rgba(255,0,80,.85),rgba(0,242,254,.85));border:none;box-shadow:0 0 15px rgba(255,0,80,.45);">🍿 SP Reels</button>
       <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
       <button class="ftab" data-cat="3dmodel" onclick="filterTab('3dmodel',this)">🔮 3D Models</button>
@@ -3105,7 +3106,11 @@ function loadFeed() {
 
     let filtered = allPosts;
     if (curCat !== 'all') {
-      filtered = allPosts.filter(p => p.category === curCat);
+      if (curCat === 'aijokes') {
+        filtered = allPosts.filter(p => p.category === 'aijokes' || p.category === 'funjokes');
+      } else {
+        filtered = allPosts.filter(p => p.category === curCat);
+      }
     }
     renderFeed(filtered);
     loadStories(filtered);
@@ -3164,6 +3169,8 @@ function timeAgo(ts) {
 
 function catBadge(cat) {
   const M = {
+    aijokes:      ['cat-showcase','😂 AI Jokes'],
+    funjokes:     ['cat-showcase','😂 AI Jokes'],
     showcase:     ['cat-showcase','🏆 Showcase'],
     music:        ['cat-music','🎵 Music & Audio'],
     architecture: ['cat-arch','🏛️ Architecture'],
@@ -3556,7 +3563,7 @@ async function publishFunJokePost() {
       displayName: curUser.displayName || 'Creator',
       photoURL: curUser.photoURL || '',
       content: title,
-      category: 'funjokes',
+      category: 'aijokes',
       htmlCode: currentGeneratedJokeCode,
       likes: [],
       likesCount: 0,
