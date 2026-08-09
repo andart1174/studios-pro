@@ -4681,12 +4681,12 @@ function spCardDownload(dateKey, cardNum) {
 
 // ── Admin Panel open / close ────────────────────────────────────────
 function spAdminCardOpen() {
-  // Guard: only admins can open (button already hidden for non-admins)
   const ov = document.getElementById('spAdminCardOverlay');
   if (!ov) { console.warn('spAdminCardOpen: overlay not found'); return; }
   ov.style.display = 'flex';
   ov.style.alignItems = 'flex-start';
   ov.style.paddingTop = '4vh';
+  ov.classList.add('open');
   document.body.style.overflow = 'hidden';
   const m = document.getElementById('spAdminCardModal');
   if (m) m.scrollTop = 0;
@@ -4695,7 +4695,10 @@ function spAdminCardOpen() {
 function spAdminCardClose(e) {
   if (e && e.target !== document.getElementById('spAdminCardOverlay')) return;
   const ov = document.getElementById('spAdminCardOverlay');
-  if (ov) ov.style.display = 'none';
+  if (ov) {
+    ov.classList.remove('open');
+    ov.style.display = 'none';
+  }
   document.body.style.overflow = '';
 }
 
