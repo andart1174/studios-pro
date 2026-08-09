@@ -4430,12 +4430,12 @@ async function spCardViewerOpen(card) {
   const theme   = SP_CARD_THEMES[themIdx];
   const uname   = curUser ? (curUser.displayName || 'SP Creator') : '';
 
-  if (title) title.textContent = `🃏 ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}`;
+  if (title) title.textContent = `🃏 ${card.serialPrefix ? card.serialPrefix + ' ' : ''}${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}`;
   body.innerHTML = `<div style="text-align:center;padding:24px;"><div class="spinner" style="margin:auto;"></div></div>`;
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 
-  const imgData = await spCardDraw(card.cardNum, card.dateKey, rarity, palette, shape, uname, theme);
+  const imgData = await spCardDraw(card.cardNum, card.dateKey, rarity, palette, shape, uname, theme, card.customArtUrl || null, card.adminMessage || null, card.serialPrefix || null, card.artTitle || null);
   window._spViewerCardDataUrl = imgData;
 
   body.innerHTML = `
@@ -4598,14 +4598,24 @@ async function spDailyCardRender(dateKey) {
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;">
         ${myCards.map(card => {
           const rr = SP_CARD_RARITIES.find(r => r.name === card.rarityName) || SP_CARD_RARITIES[0];
-          const cardJson = JSON.stringify({rarityName:card.rarityName,cardNum:card.cardNum,dateKey:card.dateKey}).replace(/'/g,"&apos;");
+          const cardObj = {
+            rarityName: card.rarityName,
+            cardNum: card.cardNum,
+            dateKey: card.dateKey,
+            serialPrefix: card.serialPrefix || null,
+            adminMessage: card.adminMessage || null,
+            customArtUrl: card.customArtUrl || null,
+            artTitle: card.artTitle || null
+          };
+          const cardJson = JSON.stringify(cardObj).replace(/'/g,"&apos;");
+          const displayLabel = card.serialPrefix ? `${card.serialPrefix} #${String(card.cardNum).padStart(4,'0')}` : `#${String(card.cardNum).padStart(4,'0')}`;
           return `<div onclick="spCardViewerOpen(${cardJson.replace(/"/g,"'")})"
             style="text-align:center;background:rgba(255,255,255,.04);border:1px solid ${rr.colorB}44;border-radius:12px;padding:8px 4px;cursor:pointer;transition:all .2s;"
             onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.transform='translateY(-2px)'"
             onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.transform=''"
-            title="Click to view — ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}">
+            title="Click to view — ${card.serialPrefix||''} ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}">
             <div style="font-size:1.2rem;margin-bottom:2px;">${rr.emoji}</div>
-            <div style="font-size:.6rem;color:${rr.textCol||'#fff'};font-weight:900;">#${String(card.cardNum).padStart(4,'0')}</div>
+            <div style="font-size:.6rem;color:${rr.textCol||'#fff'};font-weight:900;">${displayLabel}</div>
             <div style="font-size:.52rem;color:var(--muted);margin-top:1px;">${card.dateKey||''}</div>
             <div style="margin-top:4px;background:linear-gradient(135deg,${rr.colorA},${rr.colorB});border-radius:6px;padding:2px 0;font-size:.52rem;color:#fff;font-weight:800;">VIEW</div>
           </div>`;
