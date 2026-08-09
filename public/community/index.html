@@ -3874,14 +3874,39 @@ async function spShareCreatorCard(name, posts, likes, coins) {
         useCORS: false,
         logging: false
       });
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 800));
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1500));
       const canvas = await Promise.race([capturePromise, timeoutPromise]);
       if (canvas && typeof canvas.toDataURL === 'function') {
         spCardDataUrl = canvas.toDataURL('image/png');
       }
     } catch(e) {
-      console.warn('html2canvas non-blocking notice:', e);
+      console.warn('html2canvas capture notice:', e);
     }
+  }
+
+  // Guaranteed SVG/Canvas Fallback if html2canvas didn't output a dataURL
+  if (!spCardDataUrl) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = 600; c.height = 700;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#090d1a';
+      ctx.fillRect(0,0,600,700);
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(10,10,580,680);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(name || '3D Creator', 300, 180);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '24px sans-serif';
+      ctx.fillText(`📝 Posts: ${posts}  |  🪙 Coins: ${coins}  |  ❤️ Likes: ${likes}`, 300, 320);
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('🎴 SP NEXUS OFFICIAL CREATOR CARD', 300, 500);
+      spCardDataUrl = c.toDataURL('image/png');
+    } catch(err) {}
   }
 
   const url = window.location.origin + window.location.pathname;
@@ -3890,7 +3915,7 @@ async function spShareCreatorCard(name, posts, likes, coins) {
   const encText = encodeURIComponent(shareText);
 
   content.innerHTML = `
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;text-align:center;">Share your official <strong>SP Creator Card</strong> to social networks:</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;text-align:center;">Share your official <strong>SP Creator Card</strong> image to social networks:</div>
 
     ${spCardDataUrl ? `
       <div style="text-align:center;margin-bottom:14px;">
@@ -3899,12 +3924,10 @@ async function spShareCreatorCard(name, posts, likes, coins) {
     ` : ''}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-      ${spCardDataUrl ? `
-        <button type="button" onclick="spDownloadCardImage('${name}')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          📥 Download Image PNG
-        </button>
-      ` : ''}
-      <button type="button" onclick="spShareImageFile('${name}','${shareText}')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <button type="button" onclick="spDownloadCardImage('${name}')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        📥 Download Image PNG
+      </button>
+      <button type="button" onclick="spShareImageFile('${name}','${shareText.replace(/\n/g,' ')}')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
         📱 Share Card Image File
       </button>
     </div>
@@ -3970,6 +3993,7 @@ function spDownloadCardImage(name) {
 }
 
 async function spShareImageFile(name, shareText) {
+  let sharedNatively = false;
   if (spCardDataUrl && navigator.share && navigator.canShare) {
     try {
       const res = await fetch(spCardDataUrl);
@@ -3981,11 +4005,18 @@ async function spShareImageFile(name, shareText) {
           text: shareText,
           files: [file]
         });
-        return;
+        sharedNatively = true;
       }
     } catch(e) { console.warn('Native file share notice:', e); }
   }
-  spDownloadCardImage(name);
+
+  if (!sharedNatively) {
+    spDownloadCardImage(name);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText);
+    }
+    if (typeof toast === 'function') toast('Card PNG downloaded & text copied to clipboard! 📱', 'success');
+  }
 }
 
 function spCopyShareText(text, msg) {
