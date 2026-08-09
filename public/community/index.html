@@ -3759,7 +3759,7 @@ function spApplyMoodToFeed() {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   🎴 SP CREATOR CARD — Robust Logic
+   🎴 SP CREATOR CARD — Ultra-Premium Holographic Design
    ════════════════════════════════════════════════════════════════════ */
 function spOpenCreatorCard() {
   if (!curUser) {
@@ -3771,47 +3771,65 @@ function spOpenCreatorCard() {
   const inner   = document.getElementById('spCreatorCardInner');
   if (!overlay || !inner) return;
 
-  const name   = curUser.displayName || 'Creator';
+  const name   = curUser.displayName || '3D Creator';
   const photo  = curUser.photoURL || '';
   const posts  = document.getElementById('uPostsCnt')  ? document.getElementById('uPostsCnt').textContent  : '0';
   const likes  = document.getElementById('uLikesCnt')  ? document.getElementById('uLikesCnt').textContent  : '0';
-  const coins  = document.getElementById('spCoinsDisp') ? document.getElementById('spCoinsDisp').textContent : '0';
+  
+  const coins  = typeof spCoinsBalance !== 'undefined' && spCoinsBalance !== null ? spCoinsBalance : (document.getElementById('spCoinsDisp') ? document.getElementById('spCoinsDisp').textContent : '0');
+  
   const rankEl = document.getElementById('slRank');
-  const rankTxt = rankEl ? rankEl.textContent.trim() : '⚡ Creator';
+  const rankTxt = rankEl ? rankEl.textContent.trim() : '👑 Founding Member';
   const joinDate = new Date().toLocaleDateString('en-GB',{month:'short',year:'numeric'});
 
-  const rarityColors = ['#6366f1','#8b5cf6','#a78bfa','#ec4899','#f59e0b'];
-  const rc = rarityColors[Math.floor(Math.random()*rarityColors.length)];
-
   inner.innerHTML = `
-    <div class="sp-card-glow" style="background:linear-gradient(135deg,#0b1120,#111827);border:1px solid ${rc}44;border-radius:20px;padding:24px;text-align:center;position:relative;overflow:hidden;">
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,${rc}22,transparent 70%);pointer-events:none;"></div>
-      <div style="position:absolute;top:12px;right:14px;font-size:.65rem;font-weight:900;background:linear-gradient(135deg,${rc},${rc}99);color:#fff;padding:3px 10px;border-radius:999px;letter-spacing:.06em;">SP CREATOR</div>
-      <div style="position:relative;display:inline-block;margin-bottom:14px;">
-        ${photo ? `<img src="${photo}" style="width:80px;height:80px;border-radius:50%;border:3px solid ${rc};box-shadow:0 0 20px ${rc}88;object-fit:cover;">` : `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,${rc},#050812);border:3px solid ${rc};display:flex;align-items:center;justify-content:center;font-size:2rem;">🎨</div>`}
+    <div style="background:linear-gradient(135deg,#090d1a,#111827);border:2px solid #6366f1;border-radius:24px;padding:28px 24px;text-align:center;position:relative;overflow:hidden;box-shadow:0 0 50px rgba(99,102,241,.4),inset 0 0 30px rgba(139,92,246,.2);font-family:'Outfit',sans-serif;">
+      
+      <!-- Holographic Badge Top Right -->
+      <div style="position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#000;font-size:.65rem;font-weight:900;padding:4px 12px;border-radius:999px;letter-spacing:.08em;box-shadow:0 0 15px rgba(245,158,11,.6);">VERIFIED CREATOR</div>
+
+      <!-- Avatar & Ring -->
+      <div style="position:relative;display:inline-block;margin-bottom:12px;">
+        <div style="width:90px;height:90px;border-radius:50%;padding:4px;background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);box-shadow:0 0 30px rgba(245,158,11,.5);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+          ${photo ? `<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #090d1a;">` : `<div style="width:100%;height:100%;border-radius:50%;background:#090d1a;display:flex;align-items:center;justify-content:center;font-size:2.2rem;">🎨</div>`}
+        </div>
+        <div style="position:absolute;bottom:0;right:4px;background:#f59e0b;color:#000;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;border:2px solid #090d1a;box-shadow:0 0 10px rgba(245,158,11,.8);">✨</div>
       </div>
-      <div style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1.2rem;color:#fff;margin-bottom:4px;">${name}</div>
-      <div style="font-size:.75rem;color:${rc};font-weight:800;margin-bottom:16px;">${rankTxt}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">
-        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
-          <div style="font-size:1.2rem;font-weight:900;color:#fff;">${posts}</div>
-          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">POSTS</div>
+
+      <!-- Name & Rank -->
+      <div style="font-weight:900;font-size:1.35rem;color:#fff;letter-spacing:-.02em;margin-bottom:4px;">${name}</div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:#fbbf24;padding:4px 14px;border-radius:999px;font-size:.78rem;font-weight:800;margin-bottom:20px;">
+        <span>🏆</span><span>${rankTxt}</span>
+      </div>
+
+      <!-- Stats Grid (Posts / SP Coins / Likes) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px;">
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 6px;">
+          <div style="font-size:1.3rem;font-weight:900;color:#fff;">${posts}</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:800;letter-spacing:.05em;margin-top:2px;">POSTS</div>
         </div>
-        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
-          <div style="font-size:1.2rem;font-weight:900;color:#f59e0b;">${coins}</div>
-          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">SP COINS</div>
+        <div style="background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.4);border-radius:16px;padding:12px 6px;box-shadow:0 0 20px rgba(245,158,11,.2);">
+          <div style="font-size:1.38rem;font-weight:900;color:#fbbf24;display:flex;align-items:center;justify-content:center;gap:3px;">
+            <span>🪙</span><span>${coins}</span>
+          </div>
+          <div style="font-size:.65rem;color:#fbbf24;font-weight:900;letter-spacing:.05em;margin-top:2px;">SP COINS</div>
         </div>
-        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
-          <div style="font-size:1.2rem;font-weight:900;color:#ec4899;">${likes}</div>
-          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">LIKES</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 6px;">
+          <div style="font-size:1.3rem;font-weight:900;color:#ec4899;">${likes}</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:800;letter-spacing:.05em;margin-top:2px;">LIKES</div>
         </div>
       </div>
+
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:20px;">Member since ${joinDate} · studios-pro.com/community</div>
+
+      <!-- Action Buttons -->
       <div style="display:flex;gap:10px;">
-        <button onclick="spShareCreatorCard('${name}','${posts}','${likes}','${coins}')" style="flex:1;background:linear-gradient(135deg,${rc},${rc}88);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.82rem;cursor:pointer;">🚀 Share Card</button>
-        <button onclick="spCloseCreatorBtn()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:10px 14px;border-radius:12px;font-weight:700;font-size:.82rem;cursor:pointer;">✕ Close</button>
+        <button onclick="spShareCreatorCard('${name}','${posts}','${likes}','${coins}')" style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:12px;border-radius:14px;font-weight:900;font-size:.88rem;cursor:pointer;box-shadow:0 0 20px rgba(99,102,241,.5);font-family:'Outfit',sans-serif;">🚀 Share Card</button>
+        <button onclick="spCloseCreatorBtn()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:12px 18px;border-radius:14px;font-weight:800;font-size:.85rem;cursor:pointer;font-family:'Outfit',sans-serif;">✕ Close</button>
       </div>
     </div>
   `;
+
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 }
