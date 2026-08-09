@@ -1828,6 +1828,7 @@
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
       <button class="ftab" data-cat="arcade" onclick="spArcadeOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);border:none;box-shadow:0 0 15px rgba(16,185,129,.4);">🎮 Arcade 3D</button>
       <button class="ftab" data-cat="dailycard" onclick="spDailyCardOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);border:none;box-shadow:0 0 15px rgba(245,158,11,.45);">🃏 Daily Card</button>
+      <button id="adminCardBtn" class="ftab" data-cat="admincards" onclick="spAdminCardOpen()" style="display:none;color:#fff;font-weight:900;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;box-shadow:0 0 15px rgba(124,58,237,.5);">🛡️ Admin Cards</button>
       <button class="ftab" data-cat="aijokes" onclick="filterTab('aijokes',this)">😂 AI Jokes</button>
       <button class="ftab" data-cat="reels" onclick="openReelsViewerModal()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,rgba(255,0,80,.85),rgba(0,242,254,.85));border:none;box-shadow:0 0 15px rgba(255,0,80,.45);">🍿 SP Reels</button>
       <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
@@ -2330,6 +2331,35 @@
     <div style="padding:18px 16px;" id="spCardViewerBody"></div>
   </div>
 </div>
+
+<!-- ═══ 🛡️ ADMIN CARD CENTER — visible only for admin ═══ -->
+<div class="overlay" id="spAdminCardOverlay" onclick="spAdminCardClose(event)" style="display:none;align-items:flex-start;padding-top:4vh;">
+  <div class="modal" id="spAdminCardModal" onclick="event.stopPropagation()" style="max-width:600px;width:96%;background:#07090f;border:2px solid rgba(124,58,237,.6);box-shadow:0 0 80px rgba(124,58,237,.35);font-family:'Outfit',sans-serif;border-radius:26px;overflow:hidden;padding:0;max-height:90vh;overflow-y:auto;">
+    <!-- Header -->
+    <div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg,rgba(7,9,15,.98),rgba(124,58,237,.2),rgba(7,9,15,.98));backdrop-filter:blur(12px);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.6rem;">🛡️</span>
+        <div>
+          <div style="font-weight:900;font-size:1rem;color:#fff;">SP NEXUS ADMIN CARD CENTER</div>
+          <div style="font-size:.7rem;color:#a78bfa;font-weight:700;">Restricted — Admin Only</div>
+        </div>
+      </div>
+      <button onclick="spAdminCardClose()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;">✕</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.08);">
+      <button id="admTab_gift"   onclick="spAdminTab('gift')"   style="flex:1;padding:11px 6px;background:rgba(124,58,237,.25);border:none;color:#a78bfa;font-weight:900;font-size:.78rem;cursor:pointer;border-bottom:2px solid #7c3aed;">🎁 Gift Card</button>
+      <button id="admTab_event"  onclick="spAdminTab('event')"  style="flex:1;padding:11px 6px;background:transparent;border:none;color:var(--muted);font-weight:800;font-size:.78rem;cursor:pointer;border-bottom:2px solid transparent;">📅 Event Card</button>
+      <button id="admTab_art"    onclick="spAdminTab('art')"    style="flex:1;padding:11px 6px;background:transparent;border:none;color:var(--muted);font-weight:800;font-size:.78rem;cursor:pointer;border-bottom:2px solid transparent;">🎨 Custom Art</button>
+      <button id="admTab_log"    onclick="spAdminTab('log')"    style="flex:1;padding:11px 6px;background:transparent;border:none;color:var(--muted);font-weight:800;font-size:.78rem;cursor:pointer;border-bottom:2px solid transparent;">📊 Overview</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:22px 20px;" id="spAdminCardBody"></div>
+  </div>
+</div>
+
+<!-- ═══ 🎁 GIFT CARD NOTIFICATION BANNER (injected by JS) ═══ -->
+<div id="spGiftCardBanner" style="display:none;"></div>
 
 <!-- ═══ 🌐 SOCIAL SHARE MODAL — Self-contained social networks sharing compartment ═══ -->
 <div class="overlay" id="spSocialShareOverlay" onclick="spCloseSocialShare(event)" style="display:none;">
@@ -2878,6 +2908,13 @@ if (auth) {
       } catch(e) {}
 
       renderLoggedIn(u);
+
+      // ─── Show admin card button if admin ────────────────────────────────
+      const adminBtn = document.getElementById('adminCardBtn');
+      if (adminBtn) adminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+
+      // ─── Check for pending gift cards ────────────────────────────────────
+      spCheckPendingGiftCards(u.uid);
 
       // ─── Founding Member: grant badge + update public stats counter ───
       db.collection('users').doc(u.uid).get().then(snap => {
@@ -4131,7 +4168,7 @@ function spCardPickRarity(seed) {
 }
 
 // ── Draw the card on a Canvas → returns Promise<dataURL> ──────────
-function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, theme) {
+function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, theme, customArtUrl, adminMessage, serialPrefix, artTitle) {
   return new Promise(resolve => {
     const W = 500, H = 740;
     const cv = document.createElement('canvas');
@@ -4232,10 +4269,10 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, them
         ctx.fillText('SP', W/2, coinY+78);
       }
 
-      // SP COINS label
+      // SP COINS label (or custom art title)
       ctx.font='bold 14px "Outfit",sans-serif'; ctx.fillStyle='#fbbf24'; ctx.textAlign='center';
       ctx.shadowColor='rgba(245,158,11,0.5)'; ctx.shadowBlur=8;
-      ctx.fillText('SP  COINS', W/2, coinY+coinSz+26);
+      ctx.fillText(artTitle ? artTitle.toUpperCase() : 'SP  COINS', W/2, coinY+coinSz+26);
       ctx.shadowBlur=0;
 
       // 8. Divider
@@ -4257,6 +4294,18 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, them
         ctx.fillText(`👤  ${userName}`, W/2, 476);
       }
 
+      // Admin personal message (idea 6 — Personal Message Card)
+      if (adminMessage) {
+        ctx.save();
+        const admGrad = ctx.createLinearGradient(W/2-120, 0, W/2+120, 0);
+        admGrad.addColorStop(0, rarity.colorA + '55'); admGrad.addColorStop(1, rarity.colorB + '55');
+        ctx.fillStyle = admGrad;
+        spRoundRect(ctx, W/2-120, 460, 240, 22, 11); ctx.fill();
+        ctx.restore();
+        ctx.font='italic bold 11px "Outfit",sans-serif'; ctx.fillStyle='rgba(255,255,255,.88)'; ctx.textAlign='center';
+        ctx.fillText(`\u201c${adminMessage}\u201d`, W/2, 476);
+      }
+
       // 10. Theme & Power (unique genius feature)
       if (theme) {
         // Theme pill background
@@ -4273,10 +4322,11 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, them
       ctx.beginPath(); ctx.moveTo(50,500); ctx.lineTo(W-50,500); ctx.stroke();
 
       // 12. Cert + serial
+      const spn = serialPrefix ? `${serialPrefix}-${String(cardNum).padStart(4,'0')}` : `SPN-${dateKey.replace(/-/g,'')}-${String(cardNum).padStart(4,'0')}`;
       ctx.font='bold 10px "Outfit",sans-serif'; ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.textAlign='center';
       ctx.fillText('✦  CERTIFIED BY SP NEXUS  ·  studios-pro.com/community  ✦', W/2, 542);
       ctx.font='9px monospace'; ctx.fillStyle='rgba(255,255,255,0.2)';
-      ctx.fillText(`SPN-${dateKey.replace(/-/g,'')}-${String(cardNum).padStart(4,'0')}`, W/2, 562);
+      ctx.fillText(spn, W/2, 562);
 
       // 12. Corner gems + dots
       [[62,594],[W-62,594]].forEach(([x,y])=>{
@@ -4292,11 +4342,13 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, them
       resolve(cv.toDataURL('image/png'));
     };
 
+    // Load coin image OR custom art image
+    const imgSrc = customArtUrl || '/sp_coin_logo.png';
     const img = new Image();
     img.crossOrigin='anonymous';
     img.onload  = () => renderCard(img);
     img.onerror = () => renderCard(null);
-    img.src = '/sp_coin_logo.png';
+    img.src = imgSrc;
   });
 }
 
@@ -4471,7 +4523,30 @@ async function spDailyCardRender(dateKey) {
     } catch(e) {}
   }
 
+  // ── Check active event card ─────────────────────────────────────
+  const activeEvent = await spCheckActiveEventCard();
+  let eventAlreadyClaimed = false;
+  if (activeEvent && curUser && db) {
+    try {
+      const ec = await db.collection('event_cards').doc(activeEvent.id).collection('claims').doc(curUser.uid).get();
+      eventAlreadyClaimed = ec.exists;
+    } catch(e) {}
+  }
+
   body.innerHTML = `
+    ${activeEvent ? `
+    <div style="margin-bottom:14px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(236,72,153,.1));border:1px solid rgba(245,158,11,.5);border-radius:14px;padding:12px 14px;text-align:center;">
+      <div style="font-size:1.4rem;margin-bottom:3px;">${activeEvent.eventEmoji}</div>
+      <div style="font-weight:900;color:#fbbf24;font-size:.9rem;margin-bottom:2px;">LIMITED EVENT: ${activeEvent.eventName}</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;">${activeEvent.description||'Exclusive collectible card — limited time only!'}</div>
+      ${eventAlreadyClaimed
+        ? `<div style="color:#34d399;font-size:.78rem;font-weight:800;">✅ Event card claimed! / Carte d'événement réclamée!</div>`
+        : curUser
+          ? `<button onclick="spClaimEventCard('${activeEvent.id}')" style="background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;padding:8px 22px;border-radius:10px;font-weight:900;font-size:.82rem;cursor:pointer;box-shadow:0 0 20px rgba(245,158,11,.4);">${activeEvent.eventEmoji} Claim Event Card — FREE!</button>`
+          : `<div style="font-size:.78rem;color:var(--muted);">Sign in to claim this event card!</div>`
+      }
+    </div>` : ''}
+
     <div style="text-align:center;margin-bottom:14px;">
       <img id="spTodayCardImg" src="${imgData}" style="width:100%;max-width:300px;border-radius:20px;box-shadow:0 0 50px ${rarity.glow},0 8px 32px rgba(0,0,0,.6);display:block;margin:0 auto;cursor:pointer;" onclick="spCardViewerOpen({rarityName:'${rarity.name}',cardNum:${cardNum},dateKey:'${dateKey}'})" alt="SP Daily Card" title="Click to open full viewer">
     </div>
@@ -4597,6 +4672,461 @@ function spCardDownload(dateKey, cardNum) {
   a.download = `SP_Nexus_Card_${dateKey}_${String(cardNum).padStart(4,'0')}.png`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   if(typeof toast==='function') toast('Card downloaded! / Carte téléchargée! 📥','success');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 🛡️ SP NEXUS ADMIN CARD SYSTEM
+// Ideas: 1-Gift, 3-Event, 5-CustomArt, 6-PersonalMsg, 9-AdminPanel
+// ════════════════════════════════════════════════════════════════════
+
+// ── Admin Panel open / close ────────────────────────────────────────
+function spAdminCardOpen() {
+  if (!isAdmin) return;
+  const ov = document.getElementById('spAdminCardOverlay');
+  if (!ov) return;
+  ov.style.display = 'flex';
+  const m = document.getElementById('spAdminCardModal');
+  if (m) m.scrollTop = 0;
+  spAdminTab('gift'); // default tab
+}
+function spAdminCardClose(e) {
+  if (e && e.target !== document.getElementById('spAdminCardOverlay')) return;
+  const ov = document.getElementById('spAdminCardOverlay');
+  if (ov) { ov.style.display = 'none'; }
+}
+
+// ── Tab switcher ────────────────────────────────────────────────────
+function spAdminTab(tab) {
+  ['gift','event','art','log'].forEach(t => {
+    const btn = document.getElementById('admTab_'+t);
+    if (!btn) return;
+    const active = t === tab;
+    btn.style.background    = active ? 'rgba(124,58,237,.25)' : 'transparent';
+    btn.style.color         = active ? '#a78bfa' : 'var(--muted)';
+    btn.style.borderBottom  = active ? '2px solid #7c3aed' : '2px solid transparent';
+  });
+  const body = document.getElementById('spAdminCardBody');
+  if (!body) return;
+  if (tab === 'gift')  spAdminRenderGift(body);
+  if (tab === 'event') spAdminRenderEvent(body);
+  if (tab === 'art')   spAdminRenderArt(body);
+  if (tab === 'log')   spAdminRenderLog(body);
+}
+
+// ── Input helper ────────────────────────────────────────────────────
+function spAdminInput(id, label, placeholder, type='text', extra='') {
+  return `<div style="margin-bottom:12px;">
+    <label style="display:block;font-size:.75rem;color:#a78bfa;font-weight:800;margin-bottom:4px;">${label}</label>
+    <input id="${id}" type="${type}" placeholder="${placeholder}" ${extra}
+      style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(124,58,237,.4);border-radius:10px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:'Outfit',sans-serif;box-sizing:border-box;outline:none;">
+  </div>`;
+}
+function spAdminSelect(id, label, options) {
+  return `<div style="margin-bottom:12px;">
+    <label style="display:block;font-size:.75rem;color:#a78bfa;font-weight:800;margin-bottom:4px;">${label}</label>
+    <select id="${id}" style="width:100%;background:#12151f;border:1px solid rgba(124,58,237,.4);border-radius:10px;padding:9px 12px;color:#fff;font-size:.85rem;font-family:'Outfit',sans-serif;box-sizing:border-box;">
+      ${options.map(o=>`<option value="${o.v}">${o.l}</option>`).join('')}
+    </select>
+  </div>`;
+}
+function spAdminBtn(label, onclick, color='#7c3aed') {
+  return `<button onclick="${onclick}" style="width:100%;padding:12px;background:linear-gradient(135deg,${color},${color}cc);border:none;color:#fff;border-radius:12px;font-weight:900;font-size:.9rem;cursor:pointer;margin-top:4px;box-shadow:0 0 20px ${color}66;">${label}</button>`;
+}
+
+// ── Tab: 🎁 Gift Card + Personal Message ───────────────────────────
+function spAdminRenderGift(body) {
+  body.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-weight:900;color:#fff;font-size:.95rem;margin-bottom:4px;">🎁 Send a Gift / Personal Card</div>
+      <div style="font-size:.75rem;color:var(--muted);">The user will receive a notification and the card appears in their collection.</div>
+    </div>
+    ${spAdminInput('admGiftUser','👤 Username (displayName)','e.g. Alex or Creator123')}
+    ${spAdminInput('admGiftMsg','💌 Personal Message (max 40 chars)','e.g. Happy Birthday! Top Creator!','text','maxlength="40"')}
+    ${spAdminSelect('admGiftRarity','⭐ Rarity',[
+      {v:'Legendary',l:'👑 Legendary (gold)'},
+      {v:'Epic',l:'💜 Epic (purple)'},
+      {v:'Rare',l:'💙 Rare (blue)'},
+      {v:'Uncommon',l:'💚 Uncommon (green)'},
+      {v:'Common',l:'⚪ Common (white)'}
+    ])}
+    ${spAdminInput('admGiftSerial','🔖 Serial Prefix','e.g. VIP, GIFT, BDAY')}
+    <div id="admGiftPreview" style="text-align:center;margin:14px 0;min-height:60px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button onclick="spAdminPreviewGiftCard()" style="padding:11px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.5);color:#a78bfa;border-radius:11px;font-weight:900;font-size:.82rem;cursor:pointer;">👁️ Preview Card</button>
+      <button onclick="spAdminSendGiftCard()" style="padding:11px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;border-radius:11px;font-weight:900;font-size:.82rem;cursor:pointer;">🚀 Send Gift Card</button>
+    </div>
+    <div id="admGiftStatus" style="margin-top:10px;font-size:.78rem;text-align:center;"></div>
+  `;
+}
+
+async function spAdminPreviewGiftCard() {
+  const msg     = (document.getElementById('admGiftMsg')?.value||'').trim().substring(0,40);
+  const rName   = document.getElementById('admGiftRarity')?.value || 'Legendary';
+  const serial  = (document.getElementById('admGiftSerial')?.value||'VIP').trim().toUpperCase() || 'VIP';
+  const rarity  = SP_CARD_RARITIES.find(r=>r.name===rName) || SP_CARD_RARITIES[0];
+  const palIdx  = Math.floor(Math.random() * SP_CARD_PALETTES.length);
+  const shpIdx  = Math.floor(Math.random() * SP_CARD_SHAPES.length);
+  const themIdx = Math.floor(Math.random() * SP_CARD_THEMES.length);
+  const dateKey = spCardDateKey();
+  const prev    = document.getElementById('admGiftPreview');
+  if (prev) prev.innerHTML = `<div class="spinner" style="margin:auto;"></div>`;
+  const img = await spCardDraw(1, dateKey, rarity, SP_CARD_PALETTES[palIdx], SP_CARD_SHAPES[shpIdx],
+    curUser?.displayName||'SP Creator', SP_CARD_THEMES[themIdx], null, msg, serial);
+  window._spAdminGiftPreviewUrl = img;
+  if (prev) prev.innerHTML = `<img src="${img}" style="width:100%;max-width:220px;border-radius:14px;box-shadow:0 0 30px ${rarity.glow};">`;
+}
+
+async function spAdminSendGiftCard() {
+  if (!db) return;
+  const userName = (document.getElementById('admGiftUser')?.value||'').trim();
+  const msg      = (document.getElementById('admGiftMsg')?.value||'').trim().substring(0,40);
+  const rName    = document.getElementById('admGiftRarity')?.value || 'Legendary';
+  const serial   = (document.getElementById('admGiftSerial')?.value||'VIP').trim().toUpperCase() || 'VIP';
+  const status   = document.getElementById('admGiftStatus');
+  if (!userName) { if(status) status.innerHTML = `<span style="color:#f87171;">⚠️ Enter a username first.</span>`; return; }
+  if(status) status.innerHTML = `<span style="color:#a78bfa;">🔍 Looking up user…</span>`;
+  try {
+    // find user by displayName
+    const snap = await db.collection('users').where('displayName','==',userName).limit(1).get();
+    if (snap.empty) {
+      if(status) status.innerHTML = `<span style="color:#f87171;">❌ User "${userName}" not found.</span>`; return;
+    }
+    const recipientUid = snap.docs[0].id;
+    const dateKey = spCardDateKey();
+    // get next VIP serial
+    const logRef  = db.collection('admin_cards_log');
+    const count   = (await logRef.where('serialPrefix','==',serial).get()).size + 1;
+    const cardNum = count;
+    const cardId  = `${serial}_${String(cardNum).padStart(4,'0')}_${Date.now()}`;
+    const cardData = {
+      type:'gift', fromAdmin:true, senderUid: curUser.uid,
+      recipientUid, recipientName: userName,
+      adminMessage: msg, rarityName: rName,
+      serialPrefix: serial, cardNum, dateKey,
+      claimed:false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('users').doc(recipientUid).collection('gift_cards').doc(cardId).set(cardData);
+    await logRef.doc(cardId).set(cardData);
+    if(status) status.innerHTML = `<span style="color:#34d399;">✅ Gift card sent to ${userName}! Card: ${serial}-${String(cardNum).padStart(4,'0')}</span>`;
+    if(typeof toast==='function') toast(`🎁 Gift card sent to ${userName}!`,'success');
+  } catch(e) {
+    console.error('gift card send error',e);
+    if(status) status.innerHTML = `<span style="color:#f87171;">❌ Error: ${e.message}</span>`;
+  }
+}
+
+// ── Tab: 📅 Event Card ──────────────────────────────────────────────
+function spAdminRenderEvent(body) {
+  body.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-weight:900;color:#fff;font-size:.95rem;margin-bottom:4px;">📅 Create a Limited Event Card</div>
+      <div style="font-size:.75rem;color:var(--muted);">All users will see a banner and can claim during the active period.</div>
+    </div>
+    ${spAdminInput('admEvtName','🏷️ Event Name','e.g. Halloween 2026')}
+    ${spAdminInput('admEvtEmoji','🎭 Event Emoji (1 character)','🎃')}
+    ${spAdminInput('admEvtDesc','📝 Short Description (40 chars)','e.g. Spooky Edition — Limited 24h','text','maxlength="40"')}
+    ${spAdminSelect('admEvtDuration','⏱️ Duration',[
+      {v:'24',l:'24 hours'},
+      {v:'48',l:'48 hours'},
+      {v:'72',l:'72 hours'},
+      {v:'168',l:'7 days'}
+    ])}
+    ${spAdminSelect('admEvtRarity','⭐ Rarity',[
+      {v:'Legendary',l:'👑 Legendary (forced)'},
+      {v:'Epic',l:'💜 Epic'},
+      {v:'Rare',l:'💙 Rare'}
+    ])}
+    ${spAdminBtn('📅 Create Event Card','spAdminCreateEvent()','#f59e0b')}
+    <div id="admEvtStatus" style="margin-top:10px;font-size:.78rem;text-align:center;"></div>
+    <div style="margin-top:18px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px;">
+      <div style="font-weight:800;color:#fff;font-size:.82rem;margin-bottom:8px;">⚡ Active Events</div>
+      <div id="admEvtList"><div class="spinner" style="margin:auto;"></div></div>
+    </div>
+  `;
+  spAdminLoadActiveEvents();
+}
+
+async function spAdminCreateEvent() {
+  if (!db) return;
+  const name     = (document.getElementById('admEvtName')?.value||'').trim();
+  const emoji    = (document.getElementById('admEvtEmoji')?.value||'🎉').trim().charAt(0);
+  const desc     = (document.getElementById('admEvtDesc')?.value||'').trim().substring(0,40);
+  const duration = parseInt(document.getElementById('admEvtDuration')?.value||'24');
+  const rName    = document.getElementById('admEvtRarity')?.value || 'Legendary';
+  const status   = document.getElementById('admEvtStatus');
+  if (!name) { if(status) status.innerHTML=`<span style="color:#f87171;">⚠️ Enter event name.</span>`; return; }
+  try {
+    const now = new Date();
+    const endsAt = new Date(now.getTime() + duration*3600*1000);
+    const eventId = `evt_${Date.now()}`;
+    await db.collection('event_cards').doc(eventId).set({
+      eventName:name, eventEmoji:emoji, description:desc,
+      rarityName:rName, startsAt:firebase.firestore.Timestamp.fromDate(now),
+      endsAt:firebase.firestore.Timestamp.fromDate(endsAt),
+      totalClaims:0, active:true, createdBy:curUser.uid,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(status) status.innerHTML=`<span style="color:#34d399;">✅ Event "${name}" created! Active for ${duration}h.</span>`;
+    if(typeof toast==='function') toast(`📅 Event Card "${name}" is now live!`,'success');
+    spAdminLoadActiveEvents();
+  } catch(e) {
+    if(status) status.innerHTML=`<span style="color:#f87171;">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function spAdminLoadActiveEvents() {
+  const el = document.getElementById('admEvtList'); if (!el||!db) return;
+  try {
+    const snap = await db.collection('event_cards').orderBy('createdAt','desc').limit(10).get();
+    if (snap.empty) { el.innerHTML=`<div style="color:var(--muted);font-size:.78rem;">No events yet.</div>`; return; }
+    el.innerHTML = snap.docs.map(d=>{
+      const ev = d.data();
+      const now = Date.now();
+      const ends = ev.endsAt?.toDate?.()?.getTime?.() || 0;
+      const active = ends > now;
+      const left = active ? Math.round((ends-now)/3600000) + 'h left' : 'Expired';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px;">
+        <div>
+          <div style="font-weight:800;color:#fff;font-size:.8rem;">${ev.eventEmoji} ${ev.eventName}</div>
+          <div style="font-size:.68rem;color:${active?'#34d399':'#f87171'};">${active?'🟢 Active':'🔴 Expired'} — ${left} — ${ev.totalClaims||0} claims</div>
+        </div>
+        ${active?`<button onclick="spAdminDeactivateEvent('${d.id}')" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#f87171;padding:4px 9px;border-radius:8px;font-size:.68rem;font-weight:800;cursor:pointer;">Deactivate</button>`:''}
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div style="color:#f87171;font-size:.75rem;">Error loading events.</div>`; }
+}
+
+async function spAdminDeactivateEvent(eventId) {
+  if (!db) return;
+  await db.collection('event_cards').doc(eventId).update({ active:false, endsAt:firebase.firestore.Timestamp.fromDate(new Date()) });
+  if(typeof toast==='function') toast('Event deactivated!','info');
+  spAdminLoadActiveEvents();
+}
+
+// ── Tab: 🎨 Custom Art Card ─────────────────────────────────────────
+function spAdminRenderArt(body) {
+  body.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-weight:900;color:#fff;font-size:.95rem;margin-bottom:4px;">🎨 Custom Art Card</div>
+      <div style="font-size:.75rem;color:var(--muted);">Replace the SP Coin logo with a custom image. Send to a specific user.</div>
+    </div>
+    ${spAdminInput('admArtUser','👤 Username (recipient)','e.g. Alex')}
+    ${spAdminInput('admArtUrl','🖼️ Image URL','https://... (square image recommended)')}
+    ${spAdminInput('admArtTitle','🏷️ Card Title (replaces SP COINS label)','e.g. 3D Artist of the Month','text','maxlength="28"')}
+    ${spAdminInput('admArtMsg','💌 Personal Message (40 chars)','e.g. Best Creator June 2026!','text','maxlength="40"')}
+    ${spAdminSelect('admArtRarity','⭐ Rarity',[
+      {v:'Legendary',l:'👑 Legendary'},
+      {v:'Epic',l:'💜 Epic'},
+      {v:'Rare',l:'💙 Rare'}
+    ])}
+    <div id="admArtPreview" style="text-align:center;margin:12px 0;min-height:60px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button onclick="spAdminPreviewArtCard()" style="padding:11px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.5);color:#a78bfa;border-radius:11px;font-weight:900;font-size:.82rem;cursor:pointer;">👁️ Preview</button>
+      <button onclick="spAdminSendArtCard()" style="padding:11px;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;border-radius:11px;font-weight:900;font-size:.82rem;cursor:pointer;">🎨 Send Art Card</button>
+    </div>
+    <div id="admArtStatus" style="margin-top:10px;font-size:.78rem;text-align:center;"></div>
+  `;
+}
+
+async function spAdminPreviewArtCard() {
+  const artUrl  = (document.getElementById('admArtUrl')?.value||'').trim();
+  const artTitle= (document.getElementById('admArtTitle')?.value||'Custom Art').trim();
+  const msg     = (document.getElementById('admArtMsg')?.value||'').trim().substring(0,40);
+  const rName   = document.getElementById('admArtRarity')?.value || 'Legendary';
+  const rarity  = SP_CARD_RARITIES.find(r=>r.name===rName) || SP_CARD_RARITIES[0];
+  const palIdx  = Math.floor(Math.random() * SP_CARD_PALETTES.length);
+  const shpIdx  = Math.floor(Math.random() * SP_CARD_SHAPES.length);
+  const themIdx = Math.floor(Math.random() * SP_CARD_THEMES.length);
+  const prev    = document.getElementById('admArtPreview');
+  if (prev) prev.innerHTML = `<div class="spinner" style="margin:auto;"></div>`;
+  const img = await spCardDraw(1, spCardDateKey(), rarity, SP_CARD_PALETTES[palIdx], SP_CARD_SHAPES[shpIdx],
+    curUser?.displayName||'SP Creator', SP_CARD_THEMES[themIdx], artUrl||null, msg, 'ART', artTitle);
+  window._spAdminArtPreviewUrl = img;
+  if (prev) prev.innerHTML = `<img src="${img}" style="width:100%;max-width:200px;border-radius:14px;box-shadow:0 0 30px ${rarity.glow};">`;
+}
+
+async function spAdminSendArtCard() {
+  if (!db) return;
+  const userName = (document.getElementById('admArtUser')?.value||'').trim();
+  const artUrl   = (document.getElementById('admArtUrl')?.value||'').trim();
+  const artTitle = (document.getElementById('admArtTitle')?.value||'Custom Art').trim();
+  const msg      = (document.getElementById('admArtMsg')?.value||'').trim().substring(0,40);
+  const rName    = document.getElementById('admArtRarity')?.value || 'Legendary';
+  const status   = document.getElementById('admArtStatus');
+  if (!userName) { if(status) status.innerHTML=`<span style="color:#f87171;">⚠️ Enter a username.</span>`; return; }
+  try {
+    const snap = await db.collection('users').where('displayName','==',userName).limit(1).get();
+    if (snap.empty) { if(status) status.innerHTML=`<span style="color:#f87171;">❌ User not found.</span>`; return; }
+    const recipientUid = snap.docs[0].id;
+    const dateKey = spCardDateKey();
+    const cardId  = `ART_${Date.now()}`;
+    const cardData = {
+      type:'art', fromAdmin:true, senderUid:curUser.uid,
+      recipientUid, recipientName:userName,
+      adminMessage:msg, rarityName:rName,
+      serialPrefix:'ART', cardNum:Date.now()%10000, dateKey,
+      customArtUrl:artUrl, artTitle, claimed:false,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('users').doc(recipientUid).collection('gift_cards').doc(cardId).set(cardData);
+    await db.collection('admin_cards_log').doc(cardId).set(cardData);
+    if(status) status.innerHTML=`<span style="color:#34d399;">✅ Custom Art Card sent to ${userName}!</span>`;
+    if(typeof toast==='function') toast(`🎨 Art Card sent to ${userName}!`,'success');
+  } catch(e) { if(status) status.innerHTML=`<span style="color:#f87171;">❌ ${e.message}</span>`; }
+}
+
+// ── Tab: 📊 Overview ────────────────────────────────────────────────
+async function spAdminRenderLog(body) {
+  body.innerHTML = `
+    <div style="font-weight:900;color:#fff;font-size:.95rem;margin-bottom:12px;">📊 Admin Cards Overview</div>
+    <div id="admLogContent"><div class="spinner" style="margin:auto;"></div></div>
+  `;
+  if (!db) return;
+  try {
+    const snap = await db.collection('admin_cards_log').orderBy('createdAt','desc').limit(30).get();
+    const el   = document.getElementById('admLogContent');
+    if (!el) return;
+    if (snap.empty) { el.innerHTML=`<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:20px;">No admin cards sent yet.</div>`; return; }
+    const total = snap.size;
+    const claimed = snap.docs.filter(d=>d.data().claimed).length;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:900;color:#a78bfa;">${total}</div>
+          <div style="font-size:.65rem;color:var(--muted);">Total Sent</div>
+        </div>
+        <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:900;color:#34d399;">${claimed}</div>
+          <div style="font-size:.65rem;color:var(--muted);">Claimed</div>
+        </div>
+        <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:1.4rem;font-weight:900;color:#fbbf24;">${total-claimed}</div>
+          <div style="font-size:.65rem;color:var(--muted);">Pending</div>
+        </div>
+      </div>
+      <div style="max-height:300px;overflow-y:auto;">
+        ${snap.docs.map(d=>{
+          const c = d.data();
+          const typeIcon = c.type==='art'?'🎨':c.type==='event'?'📅':'🎁';
+          const statusIcon = c.claimed ? '✅' : '⏳';
+          const rr = SP_CARD_RARITIES.find(r=>r.name===c.rarityName)||SP_CARD_RARITIES[0];
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:5px;">
+            <div>
+              <div style="font-size:.8rem;font-weight:800;color:#fff;">${typeIcon} ${rr.emoji} ${c.serialPrefix||'CARD'}-${String(c.cardNum).padStart(4,'0')} → ${c.recipientName||'All'}</div>
+              <div style="font-size:.65rem;color:var(--muted);">${c.adminMessage||''} ${statusIcon} ${c.claimed?'Claimed':'Pending'}</div>
+            </div>
+            ${!c.claimed?`<button onclick="spAdminRevokeCard('${d.id}','${c.recipientUid||''}')" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:4px 8px;border-radius:7px;font-size:.65rem;font-weight:800;cursor:pointer;">Revoke</button>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  } catch(e) { document.getElementById('admLogContent').innerHTML=`<div style="color:#f87171;">Error loading log: ${e.message}</div>`; }
+}
+
+async function spAdminRevokeCard(cardId, recipientUid) {
+  if (!db || !confirm('Revoke this card?')) return;
+  try {
+    await db.collection('admin_cards_log').doc(cardId).delete();
+    if (recipientUid) await db.collection('users').doc(recipientUid).collection('gift_cards').doc(cardId).delete();
+    if(typeof toast==='function') toast('Card revoked!','info');
+    spAdminTab('log');
+  } catch(e) { if(typeof toast==='function') toast('Error revoking card.','error'); }
+}
+
+// ── Gift Card: check pending on login ──────────────────────────────
+async function spCheckPendingGiftCards(uid) {
+  if (!db || !uid) return;
+  try {
+    const snap = await db.collection('users').doc(uid).collection('gift_cards')
+      .where('claimed','==',false).limit(5).get();
+    if (snap.empty) return;
+    // Show banner for first unclaimed
+    const card = snap.docs[0].data();
+    const cardId = snap.docs[0].id;
+    const rr = SP_CARD_RARITIES.find(r=>r.name===card.rarityName)||SP_CARD_RARITIES[0];
+    const banner = document.getElementById('spGiftCardBanner');
+    if (!banner) return;
+    banner.style.cssText = `display:block;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;max-width:360px;width:90%;`;
+    banner.innerHTML = `
+      <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5,#ec4899);border-radius:18px;padding:14px 18px;box-shadow:0 0 50px rgba(124,58,237,.6);font-family:'Outfit',sans-serif;animation:pulse 2s infinite;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:1.8rem;">🎁</span>
+          <div>
+            <div style="font-weight:900;color:#fff;font-size:.95rem;">You received a Gift Card!</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.8);">${rr.emoji} ${card.rarityName} ${card.serialPrefix||'GIFT'}-${String(card.cardNum).padStart(4,'0')} from SP Nexus Admin</div>
+          </div>
+        </div>
+        ${card.adminMessage?`<div style="font-size:.78rem;color:rgba(255,255,255,.9);font-style:italic;margin-bottom:8px;">"${card.adminMessage}"</div>`:''}
+        <div style="display:flex;gap:8px;">
+          <button onclick="spClaimGiftCard('${cardId}')" style="flex:1;background:#fff;border:none;color:#7c3aed;padding:8px;border-radius:10px;font-weight:900;font-size:.82rem;cursor:pointer;">✨ Claim Card!</button>
+          <button onclick="document.getElementById('spGiftCardBanner').style.display='none'" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 12px;border-radius:10px;font-weight:800;font-size:.82rem;cursor:pointer;">Later</button>
+        </div>
+      </div>
+    `;
+  } catch(e) { console.warn('gift card check error',e); }
+}
+
+async function spClaimGiftCard(cardId) {
+  if (!db || !curUser) return;
+  try {
+    const ref  = db.collection('users').doc(curUser.uid).collection('gift_cards').doc(cardId);
+    const snap = await ref.get();
+    if (!snap.exists) return;
+    const card = snap.data();
+    // Save to card_collection
+    const collId = `${card.serialPrefix||'GIFT'}_${card.cardNum}_${cardId}`;
+    await db.collection('users').doc(curUser.uid).collection('card_collection').doc(collId).set({
+      ...card, claimed:true, claimedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Update log
+    await ref.update({ claimed:true, claimedAt:firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('admin_cards_log').doc(cardId).update({ claimed:true }).catch(()=>{});
+    // Hide banner
+    const banner = document.getElementById('spGiftCardBanner');
+    if (banner) banner.style.display='none';
+    if(typeof toast==='function') toast(`🎁 ${card.rarityName} Gift Card claimed! Check your collection! 🎉`,'success');
+    // If daily card panel open, refresh it
+    const overlay = document.getElementById('spDailyCardOverlay');
+    if (overlay && overlay.style.display !== 'none') spDailyCardRender(spCardDateKey());
+  } catch(e) { if(typeof toast==='function') toast('Error claiming gift card.','error'); }
+}
+
+// ── Event card banner in Daily Card render ─────────────────────────
+async function spCheckActiveEventCard() {
+  if (!db) return null;
+  try {
+    const now  = firebase.firestore.Timestamp.now();
+    const snap = await db.collection('event_cards')
+      .where('active','==',true)
+      .where('endsAt','>',now)
+      .limit(1).get();
+    if (snap.empty) return null;
+    return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  } catch(e) { return null; }
+}
+
+async function spClaimEventCard(eventId) {
+  if (!curUser || !db) { if(typeof openAuth==='function') openAuth(); return; }
+  try {
+    const claimRef = db.collection('event_cards').doc(eventId).collection('claims').doc(curUser.uid);
+    const exist    = await claimRef.get();
+    if (exist.exists) { if(typeof toast==='function') toast('Already claimed this event card!','info'); return; }
+    const evSnap = await db.collection('event_cards').doc(eventId).get();
+    if (!evSnap.exists) return;
+    const ev     = evSnap.data();
+    const count  = (ev.totalClaims||0) + 1;
+    const dateKey= spCardDateKey();
+    await claimRef.set({ uid:curUser.uid, displayName:curUser.displayName||'', claimedAt:firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('event_cards').doc(eventId).update({ totalClaims: count });
+    const collId = `EVT_${eventId}_${curUser.uid}`;
+    await db.collection('users').doc(curUser.uid).collection('card_collection').doc(collId).set({
+      type:'event', rarityName:ev.rarityName, cardNum:count, dateKey,
+      eventName:ev.eventName, eventEmoji:ev.eventEmoji, serialPrefix:'EVT',
+      claimedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(typeof toast==='function') toast(`${ev.eventEmoji} ${ev.eventName} card claimed! #${count} 🎉`,'success');
+    spDailyCardRender(dateKey);
+  } catch(e) { if(typeof toast==='function') toast('Error claiming event card.','error'); }
 }
 
 /* ════════════════════════════════════════════════════════════════════
