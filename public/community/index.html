@@ -3838,70 +3838,143 @@ function spCloseCreatorBtn() {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   🌐 SOCIAL SHARE MODAL LOGIC — Direct connections to social networks
+   🌐 SOCIAL SHARE MODAL & HD CARD IMAGE GENERATOR
    ════════════════════════════════════════════════════════════════════ */
-function spShareCreatorCard(name, posts, likes, coins) {
+let spCardDataUrl = null;
+
+async function spShareCreatorCard(name, posts, likes, coins) {
   const overlay = document.getElementById('spSocialShareOverlay');
   const content = document.getElementById('spSocialShareContent');
   if (!overlay || !content) return;
 
+  content.innerHTML = `
+    <div style="text-align:center;padding:24px;color:var(--muted);">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-weight:800;color:#fff;font-size:1rem;">📸 Generating HD Creator Card Image...</div>
+    </div>
+  `;
+  overlay.style.display = 'flex';
+  overlay.classList.add('open');
+
+  const cardElement = document.getElementById('spCardBoxToCapture');
+  spCardDataUrl = null;
+
+  if (typeof html2canvas === 'function' && cardElement) {
+    try {
+      const canvas = await html2canvas(cardElement, {
+        scale: 2,
+        backgroundColor: '#090d1a',
+        useCORS: true,
+        logging: false
+      });
+      spCardDataUrl = canvas.toDataURL('image/png');
+    } catch(e) {
+      console.warn('html2canvas capture notice:', e);
+    }
+  }
+
   const url = window.location.origin + window.location.pathname;
-  const shareText = `🎴 My SP Nexus Creator Passport!\n👤 ${name}\n📝 ${posts} Posts | ❤️ ${likes} Likes | 🪙 ${coins} SP Coins\n🚀 Join me on ${url}`;
+  const shareText = `🎴 Check out my SP Nexus Creator Card!\n👤 ${name}\n📝 ${posts} Posts | ❤️ ${likes} Likes | 🪙 ${coins} SP Coins\n🚀 Join me on ${url}`;
   const encUrl = encodeURIComponent(url);
   const encText = encodeURIComponent(shareText);
 
   content.innerHTML = `
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:16px;text-align:center;">Select a social network to share your <strong>SP Creator Passport</strong>:</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;text-align:center;">Share your official <strong>SP Creator Card</strong> image to social networks:</div>
+
+    ${spCardDataUrl ? `
+      <div style="text-align:center;margin-bottom:14px;">
+        <img src="${spCardDataUrl}" style="width:100%;max-width:280px;border-radius:16px;border:2px solid rgba(99,102,241,.5);box-shadow:0 0 25px rgba(99,102,241,.35);margin:0 auto;display:block;">
+      </div>
+    ` : ''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      ${spCardDataUrl ? `
+        <button onclick="spDownloadCardImage('${name}')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          📥 Download Image PNG
+        </button>
+      ` : ''}
+      <button onclick="spShareImageFile('${name}','${shareText}')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        📱 Share Card Image File
+      </button>
+    </div>
+
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;text-align:center;font-weight:700;">SHARE DIRECT LINK TO PLATFORM:</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <!-- Facebook -->
-      <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#1877f2;color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">📘</span> Facebook
+      <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#1877f2;color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>📘</span> Facebook
       </a>
       
       <!-- X / Twitter -->
-      <a href="https://twitter.com/intent/tweet?text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#000;border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">🐦</span> X (Twitter)
+      <a href="https://twitter.com/intent/tweet?text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#000;border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>🐦</span> X (Twitter)
       </a>
 
       <!-- Instagram -->
-      <button onclick="spCopyShareText('${shareText.replace(/\n/g,' ')}','Copied text for Instagram Story / Bio! 📸')" style="display:flex;align-items:center;gap:10px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border:none;padding:12px 14px;border-radius:14px;font-weight:800;font-size:.85rem;cursor:pointer;text-align:left;">
-        <span style="font-size:1.2rem;">📸</span> Instagram
+      <button onclick="spCopyShareText('${shareText.replace(/\n/g,' ')}','Copied text for Instagram Story / Post! 📸')" style="display:flex;align-items:center;gap:8px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border:none;padding:10px 12px;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;text-align:left;">
+        <span>📸</span> Instagram
       </button>
 
       <!-- TikTok -->
-      <button onclick="spCopyShareText('${shareText.replace(/\n/g,' ')}','Copied text for TikTok Bio / Caption! 🎵')" style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#00f2fe,#ff0050);color:#000;border:none;padding:12px 14px;border-radius:14px;font-weight:900;font-size:.85rem;cursor:pointer;text-align:left;">
-        <span style="font-size:1.2rem;">🎵</span> TikTok
+      <button onclick="spCopyShareText('${shareText.replace(/\n/g,' ')}','Copied text for TikTok Bio / Caption! 🎵')" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#00f2fe,#ff0050);color:#000;border:none;padding:10px 12px;border-radius:12px;font-weight:900;font-size:.8rem;cursor:pointer;text-align:left;">
+        <span>🎵</span> TikTok
       </button>
 
       <!-- WhatsApp -->
-      <a href="https://api.whatsapp.com/send?text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">💬</span> WhatsApp
+      <a href="https://api.whatsapp.com/send?text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#25d366;color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>💬</span> WhatsApp
       </a>
 
       <!-- Telegram -->
-      <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#229ed9;color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">✈️</span> Telegram
+      <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#229ed9;color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>✈️</span> Telegram
       </a>
 
       <!-- Reddit -->
-      <a href="https://www.reddit.com/submit?url=${encUrl}&title=${encodeURIComponent('My SP Nexus Creator Passport')}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#ff4500;color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">🤖</span> Reddit
+      <a href="https://www.reddit.com/submit?url=${encUrl}&title=${encodeURIComponent('My SP Nexus Creator Card')}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#ff4500;color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>🤖</span> Reddit
       </a>
 
       <!-- Pinterest -->
-      <a href="https://pinterest.com/pin/create/button/?url=${encUrl}&description=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:#e60023;color:#fff;padding:12px 14px;border-radius:14px;text-decoration:none;font-weight:800;font-size:.85rem;transition:transform .2s;">
-        <span style="font-size:1.2rem;">📌</span> Pinterest
+      <a href="https://pinterest.com/pin/create/button/?url=${encUrl}&description=${encText}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#e60023;color:#fff;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:.8rem;">
+        <span>📌</span> Pinterest
       </a>
     </div>
 
-    <!-- Copy Direct Link -->
-    <button onclick="spCopyShareText('${url}','Direct link copied to clipboard! 📋')" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:12px;border-radius:14px;font-weight:800;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+    <button onclick="spCopyShareText('${url}','Direct link copied to clipboard! 📋')" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px;border-radius:12px;font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
       📋 Copy Direct Link
     </button>
   `;
+}
 
-  overlay.style.display = 'flex';
-  overlay.classList.add('open');
+function spDownloadCardImage(name) {
+  if (!spCardDataUrl) return;
+  const a = document.createElement('a');
+  a.href = spCardDataUrl;
+  a.download = `SP_Creator_Card_${(name||'Creator').replace(/\s+/g,'_')}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if (typeof toast === 'function') toast('HD Creator Card image downloaded! 📥', 'success');
+}
+
+async function spShareImageFile(name, shareText) {
+  if (spCardDataUrl && navigator.share && navigator.canShare) {
+    try {
+      const res = await fetch(spCardDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `SP_Creator_Card.png`, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `${name}'s SP Creator Card`,
+          text: shareText,
+          files: [file]
+        });
+        return;
+      }
+    } catch(e) { console.warn('Native file share notice:', e); }
+  }
+  spDownloadCardImage(name);
 }
 
 function spCopyShareText(text, msg) {
