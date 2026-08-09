@@ -1823,6 +1823,34 @@
 
   <!-- FEED -->
   <main class="feed">
+    <!-- ═══ 🃏 DAILY CARD PROMO TICKER BANNER (PROMOTIONAL FEATURE) ═══ -->
+    <div id="spDailyCardPromoBanner" onclick="spDailyCardOpen()"
+      style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(90deg,rgba(245,158,11,.18),rgba(236,72,153,.15),rgba(99,102,241,.18));border:1px solid rgba(245,158,11,.4);box-shadow:0 0 25px rgba(245,158,11,.2);border-radius:16px;padding:11px 16px;margin-bottom:14px;cursor:pointer;transition:all .2s;"
+      onmouseover="this.style.transform='scale(1.01)';this.style.borderColor='rgba(245,158,11,.7)';"
+      onmouseout="this.style.transform='';this.style.borderColor='rgba(245,158,11,.4)';">
+      <div style="display:flex;align-items:center;gap:10px;overflow:hidden;">
+        <span style="font-size:1.6rem;animation:pulse 2s infinite;flex-shrink:0;">🃏</span>
+        <div style="overflow:hidden;">
+          <div style="font-weight:900;font-size:.88rem;color:#fff;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+            <span>DAILY COLLECTIBLE CARD DROP</span>
+            <span style="background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;font-size:.62rem;padding:2px 7px;border-radius:99px;font-weight:900;letter-spacing:.04em;">FREE DAILY #0001</span>
+          </div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.75);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;" id="spDailyCardTickerMsg">
+            ✨ Unique 3D cards generated every 24h with serial numbers — Claim yours free!
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-size:.62rem;color:var(--muted);font-weight:700;">NEXT DROP</div>
+          <div style="font-size:.78rem;font-weight:900;color:#fbbf24;font-family:monospace;" id="spDailyCardCountdown">--:--:--</div>
+        </div>
+        <button style="background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;padding:8px 16px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(245,158,11,.5);">
+          🎴 Claim Card
+        </button>
+      </div>
+    </div>
+
     <!-- Filter tabs (above create bar like YouTube) -->
     <div class="ftabs" id="mainFtabs">
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
@@ -4447,10 +4475,11 @@ async function spCardViewerOpen(card) {
         ${rarity.emoji}  ${rarity.label||rarity.name}  —  #${String(card.cardNum).padStart(4,'0')}
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px;">
-      <button onclick="spCardShareViewer('${card.dateKey}','${card.rarityName}',${card.cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">🌐 Share</button>
-      <button onclick="spCardCopyViewer()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">📋 Copy</button>
-      <button onclick="spCardDownloadViewer('${card.dateKey}',${card.cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">📥 Save</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button onclick="spCardShareViewer('${card.dateKey}','${card.rarityName}',${card.cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;">🌐 Share</button>
+      <button onclick="spCardDownloadStory('${card.dateKey}',${card.cardNum})" style="background:linear-gradient(135deg,#ec4899,#f59e0b);border:none;color:#fff;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;box-shadow:0 0 12px rgba(236,72,153,.4);">📸 Story 9:16</button>
+      <button onclick="spCardCopyViewer()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;">📋 Copy</button>
+      <button onclick="spCardDownloadViewer('${card.dateKey}',${card.cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;">📥 Save</button>
     </div>
   `;
 }
@@ -4586,10 +4615,11 @@ async function spDailyCardRender(dateKey) {
       </button>
     </div>`}
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
-      <button onclick="spCardShare('${dateKey}','${rarity.name}',${cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px 6px;border-radius:12px;font-weight:800;font-size:.78rem;cursor:pointer;">🌐 Share</button>
-      <button onclick="spCardCopyImage()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:10px 6px;border-radius:12px;font-weight:800;font-size:.78rem;cursor:pointer;">📋 Copy Image</button>
-      <button onclick="spCardDownload('${dateKey}',${cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:10px 6px;border-radius:12px;font-weight:800;font-size:.78rem;cursor:pointer;">📥 Download</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:20px;">
+      <button onclick="spCardShare('${dateKey}','${rarity.name}',${cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">🌐 Share</button>
+      <button onclick="spCardDownloadStory('${dateKey}',${cardNum})" style="background:linear-gradient(135deg,#ec4899,#f59e0b);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;box-shadow:0 0 14px rgba(236,72,153,.4);">📸 Story 9:16</button>
+      <button onclick="spCardCopyImage()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">📋 Copy</button>
+      <button onclick="spCardDownload('${dateKey}',${cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">📥 Save</button>
     </div>
 
     ${myCards.length > 0 ? `
@@ -4692,6 +4722,97 @@ function spCardDownload(dateKey, cardNum) {
   a.download = `SP_Nexus_Card_${dateKey}_${String(cardNum).padStart(4,'0')}.png`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   if(typeof toast==='function') toast('Card downloaded! / Carte téléchargée! 📥','success');
+}
+
+// ── Download 9:16 Social Story Poster (Instagram/TikTok format) ──────
+async function spCardDownloadStory(dateKey, cardNum) {
+  const dataUrl = window._spTodayCardDataUrl || window._spViewerCardDataUrl;
+  if (!dataUrl) return;
+  const SW = 1080, SH = 1920;
+  const cv = document.createElement('canvas');
+  cv.width = SW; cv.height = SH;
+  const ctx = cv.getContext('2d');
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, SH);
+  bg.addColorStop(0, '#070914'); bg.addColorStop(0.5, '#120b29'); bg.addColorStop(1, '#05070e');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, SW, SH);
+
+  // Cyber grid pattern
+  ctx.strokeStyle = 'rgba(124,58,237,0.12)'; ctx.lineWidth = 1;
+  for (let x = 0; x < SW; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, SH); ctx.stroke(); }
+  for (let y = 0; y < SH; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(SW, y); ctx.stroke(); }
+
+  // Header Branding
+  ctx.save();
+  ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 30;
+  ctx.font = 'bold 38px "Outfit",sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center';
+  ctx.fillText('✦  SP NEXUS  ✦', SW/2, 140);
+  ctx.restore();
+
+  ctx.font = 'bold 52px "Outfit",sans-serif'; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+  ctx.fillText('DAILY COLLECTIBLE DROP', SW/2, 210);
+
+  ctx.font = '30px "Outfit",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillText(`LIMITED EDITION  ·  ${dateKey}`, SW/2, 260);
+
+  // Draw Card Image centered
+  const cardImg = new Image();
+  cardImg.onload = () => {
+    const cardW = 740, cardH = 1095;
+    const cardX = (SW - cardW) / 2;
+    const cardY = 320;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(245,158,11,0.5)'; ctx.shadowBlur = 50;
+    ctx.drawImage(cardImg, cardX, cardY, cardW, cardH);
+    ctx.restore();
+
+    // Call To Action Footer Banner
+    const footerY = 1500;
+    ctx.save();
+    const ctaGrad = ctx.createLinearGradient(SW/2-420, 0, SW/2+420, 0);
+    ctaGrad.addColorStop(0, '#f59e0b'); ctaGrad.addColorStop(0.5, '#ec4899'); ctaGrad.addColorStop(1, '#6366f1');
+    ctx.fillStyle = ctaGrad;
+    spRoundRect(ctx, SW/2-420, footerY, 840, 110, 55); ctx.fill();
+    ctx.restore();
+
+    ctx.font = 'bold 38px "Outfit",sans-serif'; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+    ctx.fillText('🎴 CLAIM YOUR FREE CARD TODAY!', SW/2, footerY + 68);
+
+    ctx.font = 'bold 30px "Outfit",sans-serif'; ctx.fillStyle = '#a78bfa'; ctx.textAlign = 'center';
+    ctx.fillText('🚀 studios-pro.com/community', SW/2, 1700);
+
+    // Download PNG
+    const storyDataUrl = cv.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = storyDataUrl;
+    a.download = `SP_Nexus_Story_Card_${dateKey}_${cardNum}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if(typeof toast==='function') toast('Instagram/TikTok 9:16 Story downloaded! 📲','success');
+  };
+  cardImg.src = dataUrl;
+}
+
+// ── Daily Drop Countdown Ticker Timer ──────────────────────────────
+function spStartDailyCardCountdown() {
+  setInterval(() => {
+    const el = document.getElementById('spDailyCardCountdown');
+    if (!el) return;
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const diff = Math.max(0, midnight - now);
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', spStartDailyCardCountdown);
+} else {
+  spStartDailyCardCountdown();
 }
 
 // ════════════════════════════════════════════════════════════════════
