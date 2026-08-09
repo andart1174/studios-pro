@@ -1809,6 +1809,13 @@
       </div>
       <div class="badges-row" id="userBadgesRow"></div>
       <div style="font-size:.68rem;color:var(--muted);margin-top:6px;text-align:center">Click to see all badges →</div>
+
+      <!-- ═══ NEW FEATURE BUTTONS (self-contained, no existing functions touched) ═══ -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+        <button onclick="spOpenCreatorCard()" style="background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,.35),rgba(139,92,246,.25))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15))'">🎴 Creator Card</button>
+        <button onclick="spOpenCreatorDna()" style="background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.2));border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,rgba(16,185,129,.3),rgba(6,78,59,.35))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.2))'">🧬 Creator DNA</button>
+      </div>
+      <button onclick="spRadioOpen()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.3);color:#a78bfa;padding:9px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,.28),rgba(139,92,246,.22))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))'">🎙️ Launch SP Nexus Radio</button>
     </div>
 
   </aside>
@@ -1827,6 +1834,17 @@
       <button class="ftab" data-cat="video" onclick="filterTab('video',this)">🎥 <span data-t="videos">Videos</span></button>
       <button class="ftab" data-cat="music" onclick="filterTab('music',this)">🎵 Music</button>
       <button class="ftab" data-cat="challenge" onclick="filterTab('challenge',this)">🏅 Challenge</button>
+    </div>
+
+    <!-- ═══ 🌈 MOOD FEED BAR — New self-contained compartment ═══ -->
+    <div id="spMoodBar" style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;">
+      <span style="font-size:.7rem;font-weight:900;color:var(--muted);white-space:nowrap;flex-shrink:0;letter-spacing:.04em;">🌈 MOOD:</span>
+      <button class="sp-mood-btn sp-mood-active" id="spMoodAll"      onclick="spSetMood('all',this)">✨ All Vibes</button>
+      <button class="sp-mood-btn"                id="spMoodInspired" onclick="spSetMood('inspired',this)">🔥 Inspired</button>
+      <button class="sp-mood-btn"                id="spMoodFun"      onclick="spSetMood('fun',this)">😂 Fun Vibes</button>
+      <button class="sp-mood-btn"                id="spMoodChill"    onclick="spSetMood('chill',this)">🧘 Chill Mode</button>
+      <button class="sp-mood-btn"                id="spMoodEnergy"   onclick="spSetMood('energy',this)">⚡ High Energy</button>
+      <button class="sp-mood-btn"                id="spMoodDiscover" onclick="spSetMood('discover',this)">🔭 Discover</button>
     </div>
 
     <!-- MOBILE NAVIGATION BAR (RIGHT UNDER CATEGORIES) -->
@@ -2270,6 +2288,49 @@
   <!-- Vertical Scroll Container -->
   <div id="reelsScrollContainer" style="flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;height:100vh;width:100vw;scrollbar-width:none;">
     <!-- Reel Cards dynamically injected here -->
+  </div>
+</div>
+
+<!-- ═══ 🎴 SP CREATOR CARD MODAL — New self-contained compartment ═══ -->
+<div class="overlay" id="spCreatorCardOverlay" onclick="spCloseCreatorCard(event)" style="display:none;">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px;background:#050812;border:2px solid rgba(99,102,241,.5);box-shadow:0 0 60px rgba(99,102,241,.35);font-family:'Outfit',sans-serif;padding:0;border-radius:24px;overflow:hidden;">
+    <div id="spCreatorCardInner" style="padding:28px 24px 24px;"></div>
+  </div>
+</div>
+
+<!-- ═══ 🧬 AI CREATOR DNA MODAL — New self-contained compartment ═══ -->
+<div class="overlay" id="spDnaOverlay" onclick="spCloseDna(event)" style="display:none;">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:480px;background:#050812;border:2px solid rgba(16,185,129,.4);box-shadow:0 0 60px rgba(16,185,129,.25);font-family:'Outfit',sans-serif;border-radius:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(16,185,129,.2);">
+      <div style="font-weight:900;font-size:1.1rem;color:#6ee7b7;">🧬 My AI Creator DNA</div>
+      <button onclick="spCloseDnaBtn()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <div id="spDnaContent" style="padding:20px;"></div>
+  </div>
+</div>
+
+<!-- ═══ 🎙️ SP NEXUS RADIO BAR — New self-contained persistent bar ═══ -->
+<div id="spRadioBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,rgba(5,8,18,.97),rgba(11,17,32,.97));backdrop-filter:blur(20px);border-top:1px solid rgba(99,102,241,.3);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 -4px 30px rgba(99,102,241,.2);">
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div id="spRadioWave" style="display:flex;gap:2px;align-items:flex-end;height:20px;">
+      <span style="width:3px;background:#6366f1;border-radius:2px;animation:spRwave .6s ease-in-out infinite alternate;height:8px;"></span>
+      <span style="width:3px;background:#8b5cf6;border-radius:2px;animation:spRwave .6s ease-in-out .15s infinite alternate;height:14px;"></span>
+      <span style="width:3px;background:#a78bfa;border-radius:2px;animation:spRwave .6s ease-in-out .3s infinite alternate;height:20px;"></span>
+      <span style="width:3px;background:#8b5cf6;border-radius:2px;animation:spRwave .6s ease-in-out .45s infinite alternate;height:14px;"></span>
+      <span style="width:3px;background:#6366f1;border-radius:2px;animation:spRwave .6s ease-in-out .6s infinite alternate;height:8px;"></span>
+    </div>
+    <span style="font-weight:900;font-size:.78rem;color:#a78bfa;letter-spacing:.05em;">🎙️ SP RADIO</span>
+  </div>
+  <div style="flex:1;min-width:0;">
+    <div id="spRadioTrackName" style="font-weight:800;font-size:.82rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading tracks...</div>
+    <div id="spRadioArtist" style="font-size:.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+  </div>
+  <audio id="spRadioAudio" onended="spRadioNext()" style="display:none;"></audio>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <button onclick="spRadioPrev()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px;">⏮</button>
+    <button onclick="spRadioToggle()" id="spRadioPlayBtn" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px rgba(99,102,241,.5);">▶</button>
+    <button onclick="spRadioNext()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px;">⏭</button>
+    <button onclick="spRadioClose()" style="background:none;border:none;color:var(--muted);font-size:.9rem;cursor:pointer;padding:4px;" title="Close Radio">✕</button>
   </div>
 </div>
 
@@ -3651,6 +3712,288 @@ function pingGoogleIndexing() {
     const img = new Image();
     img.src = 'https://www.google.com/ping?sitemap=https://studios-pro.com/sitemap.xml&t=' + Date.now();
   } catch(e){}
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   🌈 MOOD FEED — New self-contained compartment (no existing functions touched)
+   ════════════════════════════════════════════════════════════════════ */
+(function() {
+  // inject CSS once
+  const style = document.createElement('style');
+  style.textContent = `
+    .sp-mood-btn{padding:5px 13px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--muted);transition:all .2s;white-space:nowrap;font-family:'Outfit',sans-serif;}
+    .sp-mood-btn:hover{background:rgba(99,102,241,.15);border-color:#6366f1;color:#a78bfa;}
+    .sp-mood-active{background:rgba(99,102,241,.25)!important;border-color:#6366f1!important;color:#a78bfa!important;box-shadow:0 0 10px rgba(99,102,241,.3);}
+    @keyframes spRwave{0%{transform:scaleY(0.4);}100%{transform:scaleY(1);}}
+    .sp-card-glow{animation:spCardGlow 3s ease-in-out infinite alternate;}
+    @keyframes spCardGlow{0%{box-shadow:0 0 30px rgba(99,102,241,.4);}100%{box-shadow:0 0 60px rgba(139,92,246,.7),0 0 100px rgba(99,102,241,.3);}}
+    .sp-dna-bar{height:14px;border-radius:8px;transition:width 1s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;}
+    .sp-dna-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),transparent);border-radius:8px;}
+  `;
+  document.head.appendChild(style);
+})();
+
+let spCurrentMood = 'all';
+const SP_MOOD_CATS = {
+  inspired: ['showcase','3dmodel','hologram','architecture'],
+  fun:      ['aijokes','funjokes','general'],
+  chill:    ['music','sandart','photo'],
+  energy:   ['challenge','video','mechanics'],
+  discover: ['depthmap','3dmodel','hologram','architecture','sandart']
+};
+
+function spSetMood(mood, btn) {
+  spCurrentMood = mood;
+  document.querySelectorAll('.sp-mood-btn').forEach(b => b.classList.remove('sp-mood-active'));
+  if (btn) btn.classList.add('sp-mood-active');
+  spApplyMoodToFeed();
+}
+
+function spApplyMoodToFeed() {
+  if (!window.allPosts) return;
+  let posts = [...window.allPosts];
+  if (spCurrentMood !== 'all' && SP_MOOD_CATS[spCurrentMood]) {
+    const cats = SP_MOOD_CATS[spCurrentMood];
+    const matching = posts.filter(p => cats.includes(p.category));
+    const rest = posts.filter(p => !cats.includes(p.category));
+    posts = [...matching, ...rest];
+  }
+  if (typeof renderFeed === 'function') renderFeed(posts);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   🎴 SP CREATOR CARD — New self-contained compartment
+   ════════════════════════════════════════════════════════════════════ */
+function spOpenCreatorCard() {
+  if (!curUser) { if(typeof toast==='function') toast('Sign in to view your Creator Card!','error'); return; }
+  const overlay = document.getElementById('spCreatorCardOverlay');
+  const inner   = document.getElementById('spCreatorCardInner');
+  if (!overlay || !inner) return;
+
+  const name   = curUser.displayName || 'Creator';
+  const photo  = curUser.photoURL || '';
+  const posts  = document.getElementById('uPostsCnt')  ? document.getElementById('uPostsCnt').textContent  : '0';
+  const likes  = document.getElementById('uLikesCnt')  ? document.getElementById('uLikesCnt').textContent  : '0';
+  const coins  = document.getElementById('spCoinsDisp') ? document.getElementById('spCoinsDisp').textContent : '0';
+  const rankEl = document.getElementById('slRank');
+  const rankTxt = rankEl ? rankEl.textContent.trim() : '⚡ Creator';
+  const joinDate = new Date().toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+
+  const rarityColors = ['#6366f1','#8b5cf6','#a78bfa','#ec4899','#f59e0b'];
+  const rc = rarityColors[Math.floor(Math.random()*rarityColors.length)];
+
+  inner.innerHTML = `
+    <div class="sp-card-glow" style="background:linear-gradient(135deg,#0b1120,#111827);border:1px solid ${rc}44;border-radius:20px;padding:24px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,${rc}22,transparent 70%);pointer-events:none;"></div>
+      <div style="position:absolute;top:12px;right:14px;font-size:.65rem;font-weight:900;background:linear-gradient(135deg,${rc},${rc}99);color:#fff;padding:3px 10px;border-radius:999px;letter-spacing:.06em;">SP CREATOR</div>
+      <div style="position:relative;display:inline-block;margin-bottom:14px;">
+        ${photo ? `<img src="${photo}" style="width:80px;height:80px;border-radius:50%;border:3px solid ${rc};box-shadow:0 0 20px ${rc}88;object-fit:cover;">` : `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,${rc},#050812);border:3px solid ${rc};display:flex;align-items:center;justify-content:center;font-size:2rem;">🎨</div>`}
+        <div style="position:absolute;bottom:-4px;right:-4px;background:linear-gradient(135deg,${rc},#050812);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.65rem;border:2px solid #050812;">✨</div>
+      </div>
+      <div style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1.2rem;color:#fff;margin-bottom:4px;">${name}</div>
+      <div style="font-size:.75rem;color:${rc};font-weight:800;margin-bottom:16px;">${rankTxt}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
+          <div style="font-size:1.2rem;font-weight:900;color:#fff;">${posts}</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">POSTS</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
+          <div style="font-size:1.2rem;font-weight:900;color:#f59e0b;">${coins}</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">SP COINS</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 6px;">
+          <div style="font-size:1.2rem;font-weight:900;color:#ec4899;">${likes}</div>
+          <div style="font-size:.65rem;color:var(--muted);font-weight:700;">LIKES</div>
+        </div>
+      </div>
+      <div style="font-size:.68rem;color:var(--muted);margin-bottom:18px;">Member since ${joinDate} · studios-pro.com/community</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="spShareCreatorCard('${name}','${posts}','${likes}','${coins}')" style="flex:1;background:linear-gradient(135deg,${rc},${rc}88);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.82rem;cursor:pointer;font-family:'Outfit',sans-serif;">🚀 Share Card</button>
+        <button onclick="spCloseCreatorBtn()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:10px 14px;border-radius:12px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Outfit',sans-serif;">✕ Close</button>
+      </div>
+    </div>
+  `;
+
+  overlay.style.display = 'flex';
+}
+
+function spShareCreatorCard(name, posts, likes, coins) {
+  const text = `🎴 My SP Nexus Creator Card!\n👤 ${name}\n📝 ${posts} Posts | ❤️ ${likes} Likes | 🪙 ${coins} SP Coins\n🚀 Join me on studios-pro.com/community/`;
+  if (navigator.share) { navigator.share({ title: 'My SP Creator Card', text, url: 'https://studios-pro.com/community/' }); }
+  else if (navigator.clipboard) { navigator.clipboard.writeText(text); if(typeof toast==='function') toast('Card details copied! Share anywhere 🎴','success'); }
+}
+
+function spCloseCreatorCard(e) {
+  if (e && e.target !== document.getElementById('spCreatorCardOverlay')) return;
+  document.getElementById('spCreatorCardOverlay').style.display = 'none';
+}
+function spCloseCreatorBtn() { document.getElementById('spCreatorCardOverlay').style.display = 'none'; }
+
+/* ════════════════════════════════════════════════════════════════════
+   🧬 AI CREATOR DNA — New self-contained compartment
+   ════════════════════════════════════════════════════════════════════ */
+async function spOpenCreatorDna() {
+  if (!curUser || !db) { if(typeof toast==='function') toast('Sign in to see your Creator DNA!','error'); return; }
+  const overlay = document.getElementById('spDnaOverlay');
+  const content = document.getElementById('spDnaContent');
+  if (!overlay || !content) return;
+  content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">🧬 Analysing your creative DNA...</div>';
+  overlay.style.display = 'flex';
+
+  try {
+    const snap = await db.collection('communities_posts' in window ? window.COLL || 'studios_community' : 'studios_community').where('uid','==',curUser.uid).get();
+    const counts = {};
+    const catLabels = {
+      showcase:'🏆 Showcase', music:'🎵 Music', architecture:'🏛️ Architecture',
+      sandart:'⏳ Sand Art', mechanics:'⚙️ Mechanics', depthmap:'🖼️ Depth Map',
+      '3dmodel':'🔮 3D Model', hologram:'✨ Hologram', photo:'📸 Photo',
+      video:'🎥 Video', challenge:'🏅 Challenge', general:'💬 General',
+      aijokes:'😂 AI Jokes', funjokes:'😂 AI Jokes'
+    };
+    const catColors = {
+      showcase:'#f59e0b', music:'#8b5cf6', architecture:'#3b82f6',
+      sandart:'#f97316', mechanics:'#64748b', depthmap:'#06b6d4',
+      '3dmodel':'#a78bfa', hologram:'#ec4899', photo:'#10b981',
+      video:'#ef4444', challenge:'#f59e0b', general:'#6366f1',
+      aijokes:'#fbbf24', funjokes:'#fbbf24'
+    };
+    let total = 0;
+    snap.forEach(d => {
+      const cat = d.data().category || 'general';
+      counts[cat] = (counts[cat] || 0) + 1;
+      total++;
+    });
+
+    if (total === 0) {
+      content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">📭 Publish some posts first to generate your Creator DNA!</div>';
+      return;
+    }
+
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7);
+    const specialty = catLabels[sorted[0][0]] || 'Creator';
+    const name = curUser.displayName || 'Creator';
+
+    let barsHTML = sorted.map(([cat, cnt]) => {
+      const pct = Math.round((cnt/total)*100);
+      const color = catColors[cat] || '#6366f1';
+      const label = catLabels[cat] || cat;
+      return `
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:.8rem;font-weight:800;color:#fff;">${label}</span>
+            <span style="font-size:.75rem;font-weight:900;color:${color};">${pct}% (${cnt})</span>
+          </div>
+          <div style="background:rgba(255,255,255,.07);border-radius:8px;overflow:hidden;height:14px;">
+            <div class="sp-dna-bar" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}88);"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    content.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:2.5rem;margin-bottom:6px;">🧬</div>
+        <div style="font-weight:900;font-size:1rem;color:#fff;">${name}'s Creative DNA</div>
+        <div style="font-size:.75rem;color:#10b981;font-weight:800;margin-top:4px;">Primary Specialty: ${specialty}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:2px;">Based on ${total} published post${total!==1?'s':''}</div>
+      </div>
+      <div style="margin-bottom:18px;">${barsHTML}</div>
+      <button onclick="spShareDna('${name}','${specialty}','${total}')" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:11px;border-radius:12px;font-weight:900;font-size:.85rem;cursor:pointer;font-family:'Outfit',sans-serif;">🚀 Share My Creator DNA</button>
+    `;
+  } catch(e) {
+    content.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Error loading DNA data.</div>';
+  }
+}
+
+function spShareDna(name, specialty, posts) {
+  const text = `🧬 My SP Nexus Creator DNA!\n👤 ${name} — Primary: ${specialty}\n📊 ${posts} total posts analyzed\n🚀 Discover your Creator DNA: studios-pro.com/community/`;
+  if (navigator.share) { navigator.share({ title: 'My SP Creator DNA', text, url: 'https://studios-pro.com/community/' }); }
+  else if (navigator.clipboard) { navigator.clipboard.writeText(text); if(typeof toast==='function') toast('DNA profile copied! 🧬','success'); }
+}
+
+function spCloseDna(e) {
+  if (e && e.target !== document.getElementById('spDnaOverlay')) return;
+  document.getElementById('spDnaOverlay').style.display = 'none';
+}
+function spCloseDnaBtn() { document.getElementById('spDnaOverlay').style.display = 'none'; }
+
+/* ════════════════════════════════════════════════════════════════════
+   🎙️ SP NEXUS RADIO — New self-contained compartment
+   ════════════════════════════════════════════════════════════════════ */
+let spRadioTracks = [];
+let spRadioIdx = 0;
+let spRadioPlaying = false;
+
+async function spRadioOpen() {
+  const bar = document.getElementById('spRadioBar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  if (spRadioTracks.length === 0) await spRadioLoad();
+  else spRadioPlay();
+}
+
+async function spRadioLoad() {
+  if (!db) return;
+  try {
+    const snap = await db.collection(typeof COLL !== 'undefined' ? COLL : 'studios_community')
+      .where('category','==','music').limit(30).get();
+    spRadioTracks = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.audioUrl) {
+        spRadioTracks.push({ name: data.content || '🎵 SP Track', artist: data.displayName || 'Creator', url: data.audioUrl });
+      }
+    });
+    if (spRadioTracks.length === 0) {
+      document.getElementById('spRadioTrackName').textContent = '🎵 No audio posts yet — add Music posts!';
+      document.getElementById('spRadioArtist').textContent = 'Be the first to post in 🎵 Music category!';
+      return;
+    }
+    spRadioIdx = 0;
+    spRadioPlay();
+  } catch(e) { console.warn('SP Radio load error:', e); }
+}
+
+function spRadioPlay() {
+  if (!spRadioTracks.length) return;
+  const track = spRadioTracks[spRadioIdx];
+  const audio = document.getElementById('spRadioAudio');
+  const btn   = document.getElementById('spRadioPlayBtn');
+  const name  = document.getElementById('spRadioTrackName');
+  const artist= document.getElementById('spRadioArtist');
+  if (!audio) return;
+  audio.src = track.url;
+  name.textContent   = track.name;
+  artist.textContent = '🎤 ' + track.artist;
+  audio.play().then(() => { spRadioPlaying = true; if(btn) btn.textContent = '⏸'; }).catch(()=>{});
+}
+
+function spRadioToggle() {
+  const audio = document.getElementById('spRadioAudio');
+  const btn   = document.getElementById('spRadioPlayBtn');
+  if (!audio) return;
+  if (audio.paused) { audio.play(); spRadioPlaying = true; if(btn) btn.textContent = '⏸'; }
+  else { audio.pause(); spRadioPlaying = false; if(btn) btn.textContent = '▶'; }
+}
+
+function spRadioNext() {
+  if (!spRadioTracks.length) return;
+  spRadioIdx = (spRadioIdx + 1) % spRadioTracks.length;
+  spRadioPlay();
+}
+
+function spRadioPrev() {
+  if (!spRadioTracks.length) return;
+  spRadioIdx = (spRadioIdx - 1 + spRadioTracks.length) % spRadioTracks.length;
+  spRadioPlay();
+}
+
+function spRadioClose() {
+  const audio = document.getElementById('spRadioAudio');
+  if (audio) { audio.pause(); audio.src = ''; }
+  const bar = document.getElementById('spRadioBar');
+  if (bar) bar.style.display = 'none';
+  spRadioPlaying = false;
 }
 
 async function publishFunJokePost() {
