@@ -1827,6 +1827,7 @@
     <div class="ftabs" id="mainFtabs">
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
       <button class="ftab" data-cat="arcade" onclick="spArcadeOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);border:none;box-shadow:0 0 15px rgba(16,185,129,.4);">🎮 Arcade 3D</button>
+      <button class="ftab" data-cat="dailycard" onclick="spDailyCardOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);border:none;box-shadow:0 0 15px rgba(245,158,11,.45);">🃏 Daily Card</button>
       <button class="ftab" data-cat="aijokes" onclick="filterTab('aijokes',this)">😂 AI Jokes</button>
       <button class="ftab" data-cat="reels" onclick="openReelsViewerModal()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,rgba(255,0,80,.85),rgba(0,242,254,.85));border:none;box-shadow:0 0 15px rgba(255,0,80,.45);">🍿 SP Reels</button>
       <button class="ftab" data-cat="showcase" onclick="filterTab('showcase',this)">🏆 Showcase</button>
@@ -2294,6 +2295,30 @@
 </div>
 
 
+
+<!-- ═══ 🃏 SP DAILY COLLECTIBLE CARD COMPARTMENT ═══ -->
+<div class="overlay" id="spDailyCardOverlay" onclick="spDailyCardClose(event)" style="display:none;">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px;width:95%;background:#090d1a;border:2px solid rgba(245,158,11,.5);box-shadow:0 0 60px rgba(245,158,11,.3);font-family:'Outfit',sans-serif;border-radius:24px;overflow:hidden;padding:0;max-height:90vh;overflow-y:auto;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(236,72,153,.12),rgba(99,102,241,.12));">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.5rem;">🃏</span>
+        <div>
+          <div style="font-weight:900;font-size:1.1rem;color:#fff;">SP Daily Collectible Card</div>
+          <div style="font-size:.72rem;color:#fbbf24;font-weight:700;" id="spCardDateLabel"></div>
+        </div>
+      </div>
+      <button onclick="spDailyCardClose()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;font-weight:900;">✕</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:22px 20px;" id="spDailyCardBody">
+      <div style="text-align:center;padding:30px;color:var(--muted);">
+        <div class="spinner" style="margin:0 auto 12px;"></div>
+        <div>Se generează cardul zilei...</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 🌐 SOCIAL SHARE MODAL — Self-contained social networks sharing compartment ═══ -->
 <div class="overlay" id="spSocialShareOverlay" onclick="spCloseSocialShare(event)" style="display:none;">
@@ -4040,6 +4065,467 @@ function spCloseSocialShare(e) {
 function spCloseSocialShareBtn() {
   const overlay = document.getElementById('spSocialShareOverlay');
   if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   🃏 SP DAILY COLLECTIBLE CARD — Self-contained compartment
+   ════════════════════════════════════════════════════════════════════ */
+
+// ── Rarity config ──────────────────────────────────────────────────
+const SP_CARD_RARITIES = [
+  { name: 'Common',    emoji: '⚪', chance: 0.50, colorA: '#475569', colorB: '#64748b', glow: 'rgba(100,116,139,.5)' },
+  { name: 'Rare',      emoji: '🔵', chance: 0.30, colorA: '#1d4ed8', colorB: '#3b82f6', glow: 'rgba(59,130,246,.6)' },
+  { name: 'Epic',      emoji: '🟣', chance: 0.15, colorA: '#7c3aed', colorB: '#a855f7', glow: 'rgba(168,85,247,.7)' },
+  { name: 'Legendary', emoji: '🟡', chance: 0.05, colorA: '#b45309', colorB: '#f59e0b', glow: 'rgba(245,158,11,.9)' }
+];
+
+// ── Palette pool — unique per day ──────────────────────────────────
+const SP_CARD_PALETTES = [
+  { bg: ['#0f0c29','#302b63','#24243e'], accent: '#a78bfa', shine: '#818cf8' },
+  { bg: ['#0a0a0a','#1a0533','#2d1b69'], accent: '#ec4899', shine: '#f472b6' },
+  { bg: ['#001510','#003d2e','#00291f'], accent: '#10b981', shine: '#34d399' },
+  { bg: ['#1a0a00','#3d1a00','#7c2d12'], accent: '#f97316', shine: '#fb923c' },
+  { bg: ['#000d1a','#001e3c','#003060'], accent: '#38bdf8', shine: '#7dd3fc' },
+  { bg: ['#1a0020','#3d0060','#6200a0'], accent: '#d946ef', shine: '#e879f9' },
+  { bg: ['#0a1a00','#1a3d00','#2d6a00'], accent: '#84cc16', shine: '#a3e635' },
+  { bg: ['#1a1000','#3d2800','#5c3a00'], accent: '#eab308', shine: '#facc15' }
+];
+
+// ── Geometric pattern tokens per day ──────────────────────────────
+const SP_CARD_SHAPES = [
+  'hexagons','triangles','circles','diamonds','stars','waves','crosshatch','dots'
+];
+
+// ── Seeded random from date string ────────────────────────────────
+function spCardSeededRand(seed, idx) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  h = Math.imul(h ^ idx, 2246822519);
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+function spCardDateKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function spCardPickRarity(seed) {
+  const r = spCardSeededRand(seed, 99);
+  let acc = 0;
+  for (const rar of SP_CARD_RARITIES) {
+    acc += rar.chance;
+    if (r < acc) return rar;
+  }
+  return SP_CARD_RARITIES[0];
+}
+
+// ── Draw the card on a Canvas → returns dataURL ────────────────────
+function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName) {
+  const W = 480, H = 680;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+
+  // Background gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  palette.bg.forEach((col, i) => bgGrad.addColorStop(i / (palette.bg.length - 1), col));
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Geometric pattern overlay
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = palette.accent;
+  ctx.lineWidth = 1.2;
+  const step = 38;
+  if (shapeType === 'hexagons' || shapeType === 'diamonds') {
+    for (let x = 0; x < W; x += step) for (let y = 0; y < H; y += step) {
+      ctx.beginPath(); ctx.arc(x, y, step / 2.8, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (shapeType === 'triangles' || shapeType === 'stars') {
+    for (let x = 0; x < W + step; x += step) for (let y = 0; y < H + step; y += step) {
+      ctx.beginPath(); ctx.moveTo(x, y - step/2); ctx.lineTo(x + step/2, y + step/2); ctx.lineTo(x - step/2, y + step/2); ctx.closePath(); ctx.stroke();
+    }
+  } else {
+    for (let x = 0; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  }
+  ctx.restore();
+
+  // Holographic shimmer diagonal
+  const shimGrad = ctx.createLinearGradient(0, 0, W, H);
+  shimGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  shimGrad.addColorStop(0.4, 'rgba(255,255,255,0.06)');
+  shimGrad.addColorStop(0.5, 'rgba(255,255,255,0.13)');
+  shimGrad.addColorStop(0.6, 'rgba(255,255,255,0.06)');
+  shimGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shimGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold border with glow
+  ctx.save();
+  ctx.shadowColor = rarity.glow;
+  ctx.shadowBlur = 28;
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, rarity.colorA);
+  grad.addColorStop(0.5, rarity.colorB);
+  grad.addColorStop(1, rarity.colorA);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 5;
+  roundRect(ctx, 10, 10, W - 20, H - 20, 22);
+  ctx.stroke();
+  ctx.restore();
+
+  // Inner border
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, 18, 18, W - 36, H - 36, 18);
+  ctx.stroke();
+
+  // SP NEXUS branding top bar
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(ctx, 28, 28, W - 56, 38, 10);
+  ctx.fill();
+  ctx.font = 'bold 13px Outfit, sans-serif';
+  ctx.fillStyle = palette.shine;
+  ctx.textAlign = 'center';
+  ctx.fillText('✦  SP NEXUS OFFICIAL COLLECTIBLE  ✦', W / 2, 53);
+
+  // 🪙 SP Coin emblem centre-top
+  ctx.save();
+  ctx.shadowColor = palette.accent;
+  ctx.shadowBlur = 40;
+  const coinGrad = ctx.createRadialGradient(W/2, 155, 10, W/2, 155, 70);
+  coinGrad.addColorStop(0, '#fef3c7');
+  coinGrad.addColorStop(0.4, '#fbbf24');
+  coinGrad.addColorStop(1, '#b45309');
+  ctx.fillStyle = coinGrad;
+  ctx.beginPath(); ctx.arc(W/2, 155, 68, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 8;
+  ctx.font = 'bold 72px Outfit, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#7c2d12';
+  ctx.fillText('🪙', W/2, 182);
+  ctx.restore();
+
+  // SP Coins label under coin
+  ctx.font = 'bold 14px Outfit, sans-serif';
+  ctx.fillStyle = '#fbbf24';
+  ctx.textAlign = 'center';
+  ctx.fillText('SP  COINS', W/2, 246);
+
+  // Rarity badge
+  ctx.save();
+  ctx.shadowColor = rarity.glow;
+  ctx.shadowBlur = 20;
+  const rarGrad = ctx.createLinearGradient(W/2 - 80, 0, W/2 + 80, 0);
+  rarGrad.addColorStop(0, rarity.colorA);
+  rarGrad.addColorStop(1, rarity.colorB);
+  ctx.fillStyle = rarGrad;
+  roundRect(ctx, W/2 - 75, 262, 150, 30, 15);
+  ctx.fill();
+  ctx.restore();
+  ctx.font = 'bold 13px Outfit, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${rarity.emoji}  ${rarity.name.toUpperCase()}  ${rarity.emoji}`, W/2, 282);
+
+  // Divider line
+  const divGrad = ctx.createLinearGradient(40, 0, W-40, 0);
+  divGrad.addColorStop(0, 'transparent');
+  divGrad.addColorStop(0.5, palette.accent);
+  divGrad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = divGrad;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(40, 312); ctx.lineTo(W-40, 312); ctx.stroke();
+
+  // Card number & date
+  ctx.font = 'bold 42px Outfit, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = palette.accent;
+  ctx.shadowBlur = 15;
+  ctx.fillText(`#${String(cardNum).padStart(4, '0')}`, W/2, 380);
+  ctx.shadowBlur = 0;
+
+  ctx.font = '13px Outfit, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillText(`EDITION  ·  ${dateKey}`, W/2, 408);
+
+  // Owner name
+  if (userName) {
+    ctx.font = 'bold 16px Outfit, sans-serif';
+    ctx.fillStyle = palette.shine;
+    ctx.fillText(`👤 ${userName}`, W/2, 448);
+  }
+
+  // Divider 2
+  ctx.strokeStyle = divGrad;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(40, 470); ctx.lineTo(W-40, 470); ctx.stroke();
+
+  // Certified seal
+  ctx.font = 'bold 11px Outfit, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText('✦  CERTIFIED BY SP NEXUS  ·  studios-pro.com/community  ✦', W/2, 502);
+
+  // Serial number bottom
+  const serial = `SPN-${dateKey.replace(/-/g,'')}-${String(cardNum).padStart(4,'0')}`;
+  ctx.font = '10px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillText(serial, W/2, 528);
+
+  // Bottom decorative dots
+  [W/2 - 30, W/2, W/2 + 30].forEach((x, i) => {
+    ctx.beginPath();
+    ctx.arc(x, 555, 5, 0, Math.PI*2);
+    ctx.fillStyle = i===1 ? palette.accent : 'rgba(255,255,255,0.2)';
+    ctx.fill();
+  });
+
+  return c.toDataURL('image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ── Open / Close ───────────────────────────────────────────────────
+function spDailyCardOpen() {
+  const overlay = document.getElementById('spDailyCardOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  overlay.classList.add('open');
+
+  const dateKey = spCardDateKey();
+  const dateEl = document.getElementById('spCardDateLabel');
+  if (dateEl) dateEl.textContent = `📅 ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`;
+
+  spDailyCardRender(dateKey);
+}
+
+function spDailyCardClose(e) {
+  if (e && e.target !== document.getElementById('spDailyCardOverlay')) return;
+  const overlay = document.getElementById('spDailyCardOverlay');
+  if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+}
+
+// ── Main render ────────────────────────────────────────────────────
+async function spDailyCardRender(dateKey) {
+  const body = document.getElementById('spDailyCardBody');
+  if (!body) return;
+
+  // Seeded values for today
+  const palIdx   = Math.floor(spCardSeededRand(dateKey, 1) * SP_CARD_PALETTES.length);
+  const shapeIdx = Math.floor(spCardSeededRand(dateKey, 2) * SP_CARD_SHAPES.length);
+  const palette  = SP_CARD_PALETTES[palIdx];
+  const shape    = SP_CARD_SHAPES[shapeIdx];
+
+  // ── Firestore: get or create today's card doc ──────────────────
+  let cardNum = 1;
+  let alreadyClaimed = false;
+  let claimedRarityName = null;
+
+  if (db) {
+    try {
+      const cardDocRef = db.collection('daily_cards').doc(dateKey);
+      const cardSnap = await cardDocRef.get();
+      if (cardSnap.exists) {
+        cardNum = (cardSnap.data().totalClaims || 0) + 1;
+      }
+
+      // Check if current user already claimed today
+      if (curUser) {
+        const userClaimRef = db.collection('daily_cards').doc(dateKey)
+          .collection('claims').doc(curUser.uid);
+        const userClaimSnap = await userClaimRef.get();
+        if (userClaimSnap.exists) {
+          alreadyClaimed = true;
+          cardNum = userClaimSnap.data().cardNum;
+          claimedRarityName = userClaimSnap.data().rarityName;
+        }
+      }
+    } catch(e) { console.warn('daily_card fetch error', e); }
+  }
+
+  const rarity = alreadyClaimed && claimedRarityName
+    ? SP_CARD_RARITIES.find(r => r.name === claimedRarityName) || SP_CARD_RARITIES[0]
+    : spCardPickRarity(dateKey + (curUser ? curUser.uid : 'guest'));
+
+  const userName = curUser ? (curUser.displayName || 'SP Creator') : '';
+  const imgData  = spCardDraw(cardNum, dateKey, rarity, palette, shape, userName);
+
+  // ── Fetch user collection ──────────────────────────────────────
+  let myCards = [];
+  if (curUser && db) {
+    try {
+      const mySnap = await db.collection('users').doc(curUser.uid)
+        .collection('card_collection').orderBy('claimedAt','desc').limit(20).get();
+      mySnap.forEach(d => myCards.push(d.data()));
+    } catch(e) {}
+  }
+
+  // ── Render UI ──────────────────────────────────────────────────
+  body.innerHTML = `
+    <!-- Today's Card Preview -->
+    <div style="text-align:center;margin-bottom:20px;">
+      <img id="spTodayCardImg" src="${imgData}" style="width:100%;max-width:320px;border-radius:18px;box-shadow:0 0 40px ${rarity.glow};display:block;margin:0 auto;" alt="Daily Card">
+    </div>
+
+    <!-- Rarity info -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,${rarity.colorA},${rarity.colorB});padding:6px 18px;border-radius:999px;font-weight:900;font-size:.85rem;color:#fff;box-shadow:0 0 15px ${rarity.glow};">
+        ${rarity.emoji} ${rarity.name} — #${String(cardNum).padStart(4,'0')}
+      </div>
+    </div>
+
+    ${!curUser ? `
+    <!-- Not logged in -->
+    <div style="text-align:center;padding:14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:14px;margin-bottom:16px;">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px;">🔒 Conectează-te pentru a revendica cardul zilei!</div>
+      <button onclick="openAuth()" style="background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;padding:10px 24px;border-radius:12px;font-weight:900;font-size:.88rem;cursor:pointer;">Sign In / Register</button>
+    </div>` : alreadyClaimed ? `
+    <!-- Already claimed -->
+    <div style="text-align:center;padding:12px 16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:14px;margin-bottom:16px;">
+      <div style="font-weight:900;color:#34d399;font-size:.9rem;">✅ Ai revendicat deja cardul de azi!</div>
+      <div style="font-size:.74rem;color:var(--muted);margin-top:4px;">Revino mâine pentru un nou card unic</div>
+    </div>` : `
+    <!-- Claim button -->
+    <div style="text-align:center;margin-bottom:16px;">
+      <button id="spClaimCardBtn" onclick="spClaimDailyCard('${dateKey}','${rarity.name}',${cardNum},'${imgData.substring(0,30)}')" 
+        style="background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);border:none;color:#fff;padding:14px 36px;border-radius:14px;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 0 25px rgba(245,158,11,.5);letter-spacing:.02em;">
+        🎴 Revendică Cardul Zilei — GRATUIT!
+      </button>
+    </div>`}
+
+    <!-- Action buttons: Share & Copy -->
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+      <button onclick="spCardShare('${dateKey}','${rarity.name}',${cardNum})" style="flex:1;min-width:120px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:800;font-size:.82rem;cursor:pointer;">🌐 Share</button>
+      <button onclick="spCardCopyImage()" style="flex:1;min-width:120px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:10px;border-radius:12px;font-weight:800;font-size:.82rem;cursor:pointer;">📋 Copiază Imaginea</button>
+      <button onclick="spCardDownload('${dateKey}',${cardNum})" style="flex:1;min-width:120px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:10px;border-radius:12px;font-weight:800;font-size:.82rem;cursor:pointer;">📥 Descarcă PNG</button>
+    </div>
+
+    ${myCards.length > 0 ? `
+    <!-- My Collection -->
+    <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px;">
+      <div style="font-weight:900;font-size:.9rem;color:#fff;margin-bottom:12px;">🗂️ Colecția Mea (${myCards.length})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">
+        ${myCards.map(card => `
+          <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px;cursor:pointer;" title="${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}">
+            <div style="font-size:1.1rem;">${SP_CARD_RARITIES.find(r=>r.name===card.rarityName)?.emoji||'⚪'}</div>
+            <div style="font-size:.6rem;color:var(--muted);font-weight:700;">#${String(card.cardNum).padStart(4,'0')}</div>
+            <div style="font-size:.55rem;color:var(--muted);">${card.dateKey||''}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+  `;
+
+  // Store today's image on window for share/download
+  window._spTodayCardDataUrl = imgData;
+  window._spTodayCardRarity  = rarity;
+  window._spTodayCardNum     = cardNum;
+}
+
+// ── Claim card ─────────────────────────────────────────────────────
+async function spClaimDailyCard(dateKey, rarityName, cardNum) {
+  if (!curUser || !db) { if(typeof openAuth==='function') openAuth(); return; }
+  const btn = document.getElementById('spClaimCardBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Revendicare...'; }
+
+  try {
+    const cardDocRef  = db.collection('daily_cards').doc(dateKey);
+    const userClaimRef = cardDocRef.collection('claims').doc(curUser.uid);
+
+    // Check not already claimed (race condition guard)
+    const existingClaim = await userClaimRef.get();
+    if (existingClaim.exists) {
+      if (typeof toast === 'function') toast('Ai revendicat deja cardul de azi! 🃏', 'info');
+      spDailyCardRender(dateKey);
+      return;
+    }
+
+    // Assign card number atomically-ish (simple increment)
+    const snap = await cardDocRef.get();
+    const realCardNum = (snap.exists ? (snap.data().totalClaims || 0) : 0) + 1;
+
+    await cardDocRef.set({ totalClaims: realCardNum, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await userClaimRef.set({
+      uid: curUser.uid,
+      displayName: curUser.displayName || '',
+      rarityName,
+      cardNum: realCardNum,
+      dateKey,
+      claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Save to user collection
+    await db.collection('users').doc(curUser.uid).collection('card_collection').doc(dateKey).set({
+      rarityName, cardNum: realCardNum, dateKey,
+      claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (typeof toast === 'function') toast(`🎴 Card ${rarityName} #${String(realCardNum).padStart(4,'0')} revendicat! 🎉`, 'success');
+    spDailyCardRender(dateKey);
+  } catch(e) {
+    console.warn('claim card error', e);
+    if (typeof toast === 'function') toast('Eroare la revendicare. Încearcă din nou.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🎴 Revendică Cardul Zilei — GRATUIT!'; }
+  }
+}
+
+// ── Share ──────────────────────────────────────────────────────────
+function spCardShare(dateKey, rarityName, cardNum) {
+  const url  = window.location.origin + window.location.pathname;
+  const text = `🃏 Am revendicat cardul SP Nexus ${rarityName} #${String(cardNum).padStart(4,'0')} din ${dateKey}!\n🪙 SP Coins • ${rarityName} Edition\n🚀 Alătură-te: ${url}`;
+  if (navigator.share) {
+    navigator.share({ title: `SP Nexus Daily Card #${String(cardNum).padStart(4,'0')}`, text, url }).catch(()=>{});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+    if (typeof toast === 'function') toast('Text copiat pentru share! 📋', 'success');
+  }
+}
+
+// ── Copy image to clipboard ────────────────────────────────────────
+async function spCardCopyImage() {
+  const dataUrl = window._spTodayCardDataUrl;
+  if (!dataUrl) return;
+  try {
+    const res  = await fetch(dataUrl);
+    const blob = await res.blob();
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    if (typeof toast === 'function') toast('Imaginea cardului a fost copiată! 📋', 'success');
+  } catch(e) {
+    // Fallback: open image in new tab
+    const w = window.open();
+    if (w) { w.document.write(`<img src="${dataUrl}" style="max-width:100%">`); }
+    if (typeof toast === 'function') toast('Imaginea s-a deschis într-un tab nou — salvează manual! 📥', 'info');
+  }
+}
+
+// ── Download PNG ───────────────────────────────────────────────────
+function spCardDownload(dateKey, cardNum) {
+  const dataUrl = window._spTodayCardDataUrl;
+  if (!dataUrl) return;
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `SP_Nexus_Card_${dateKey}_${String(cardNum).padStart(4,'0')}.png`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if (typeof toast === 'function') toast('Card descărcat! 📥', 'success');
 }
 
 /* ════════════════════════════════════════════════════════════════════
