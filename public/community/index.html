@@ -2202,9 +2202,34 @@
           <option value="aijokes">😂 Fun & AI Jokes</option>
         </select>
       </div>
-      <div class="opt-sec">
-        <label class="opt-lbl">🎵 Audio Track Link (MP3 / WAV URL)</label>
-        <input type="url" class="vid-inp" id="audioUrl" placeholder="https://domain.com/track.mp3 or audio stream...">
+      <div class="opt-sec" style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);padding:14px;border-radius:14px;">
+        <label class="opt-lbl" style="color:#a78bfa;font-weight:900;display:flex;align-items:center;gap:6px;">
+          🎵 MP3 / WAV Audio File & Radio Stream
+        </label>
+        
+        <!-- MP3 File Upload Dropzone -->
+        <div class="up-area" style="margin-bottom:10px;background:rgba(0,0,0,.25);border:2px dashed rgba(167,139,250,.4);padding:16px;">
+          <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.ogg,.m4a" onchange="onAudioFileSel(event)">
+          <div class="up-icon">🎙️</div>
+          <div class="up-text"><strong style="color:#a78bfa;">Click to upload MP3 / WAV file</strong> <span>or drag & drop audio track</span><br>MP3, WAV, OGG, M4A · Max 30MB</div>
+        </div>
+
+        <!-- Audio Preview Container -->
+        <div id="audioFilePreviewBox" style="display:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;overflow:hidden;flex:1;">
+            <span style="font-size:1.4rem;">🎵</span>
+            <div style="overflow:hidden;">
+              <div id="audioFileName" style="font-size:.82rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">track.mp3</div>
+              <div id="audioFileSize" style="font-size:.7rem;color:var(--muted);">3.4 MB</div>
+            </div>
+          </div>
+          <audio id="audioPreviewPlayer" controls style="height:32px;max-width:180px;"></audio>
+          <button type="button" onclick="removeAudioFile()" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:8px;padding:4px 10px;font-size:.75rem;cursor:pointer;font-weight:800;">✕ Remove</button>
+        </div>
+
+        <!-- Or Paste Audio URL -->
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;font-weight:700;">OR PASTE DIRECT AUDIO LINK / STREAM URL:</div>
+        <input type="url" class="vid-inp" id="audioUrl" placeholder="https://domain.com/track.mp3 or audio stream..." style="margin-bottom:0;">
       </div>
       <div class="opt-sec">
         <label class="opt-lbl" data-t="images">Images (up to 4)</label>
@@ -2647,7 +2672,7 @@ const T = {
 
 window.name = 'studios_community_tab';
 let curLang='en', curUser=null, isAdmin=false, curCat='all', curPostId=null;
-let uploadedFiles=[], uploadedVideoFile=null, unsub=null, unsubCmt=null;
+let uploadedFiles=[], uploadedVideoFile=null, uploadedAudioFile=null, unsub=null, unsubCmt=null;
 
 function onVideoFileSel(e) {
   const file = e.target.files && e.target.files[0];
@@ -4054,19 +4079,27 @@ async function spRadioLoad() {
   if (!db) return;
   try {
     const snap = await db.collection(typeof COLL !== 'undefined' ? COLL : 'studios_community')
-      .where('category','==','music').limit(30).get();
+      .limit(50).get();
     spRadioTracks = [];
     snap.forEach(d => {
       const data = d.data();
       if (data.audioUrl) {
-        spRadioTracks.push({ name: data.content || '🎵 SP Track', artist: data.displayName || 'Creator', url: data.audioUrl });
+        spRadioTracks.push({
+          name: data.audioTitle || data.content || '🎵 SP Track',
+          artist: data.displayName || 'Creator',
+          url: data.audioUrl
+        });
       }
     });
+
     if (spRadioTracks.length === 0) {
-      document.getElementById('spRadioTrackName').textContent = '🎵 No audio posts yet — add Music posts!';
-      document.getElementById('spRadioArtist').textContent = 'Be the first to post in 🎵 Music category!';
-      return;
+      spRadioTracks = [
+        { name: '🌌 Cyber Lofi Beat #1', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3' },
+        { name: '🌃 Synthwave Horizon #2', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73185.mp3?filename=synthwave-80s-110045.mp3' },
+        { name: '⚡ Cyberpunk Pulse #3', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_9185a06940.mp3?filename=cyberpunk-2099-10701.mp3' }
+      ];
     }
+
     spRadioIdx = 0;
     spRadioPlay();
   } catch(e) { console.warn('SP Radio load error:', e); }
@@ -4867,7 +4900,7 @@ async function publish() {
   const htmlInp = document.getElementById('htmlCodeInp');
   const htmlCode = (htmlInp && typeof htmlInp.value === 'string') ? htmlInp.value.trim() : '';
 
-  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !htmlCode && !transferred3D) {
+  if (!content && !uploadedFiles.length && !vidUrl && !audioUrl && !uploadedAudioFile && !htmlCode && !transferred3D) {
     toast('Add some content first!', 'error');
     return;
   }
@@ -4909,6 +4942,40 @@ async function publish() {
       if (imgUrl) finalUrls.push(imgUrl);
     }
 
+    // 2. Process audio file upload if present
+    let finalAudioUrl = audioUrl;
+    let finalAudioTitle = 'Audio Track / Sound';
+
+    if (uploadedAudioFile) {
+      let uploadedUrl = null;
+      try {
+        if (storage) {
+          document.getElementById('upProg').style.display = 'block';
+          const safeName = uploadedAudioFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const uploadTask = storage.ref(`studios_community_audio/${curUser.uid}/${Date.now()}_${safeName}`).put(uploadedAudioFile);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Audio storage timeout')), 10000));
+          const snap = await Promise.race([uploadTask, timeoutPromise]);
+          uploadedUrl = await snap.ref.getDownloadURL();
+        }
+      } catch(e) {
+        console.warn('Audio storage upload failed/bypassed, reading as DataURL:', e);
+      }
+
+      if (!uploadedUrl) {
+        uploadedUrl = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(uploadedAudioFile);
+        });
+      }
+
+      if (uploadedUrl) {
+        finalAudioUrl = uploadedUrl;
+        finalAudioTitle = uploadedAudioFile.name;
+      }
+    }
+
     const uDoc = await db.collection('users').doc(curUser.uid).get().catch(() => null);
     const ud = uDoc && uDoc.exists ? uDoc.data() : {};
 
@@ -4933,9 +5000,10 @@ async function publish() {
       postData.htmlCode = htmlCode;
       if (!transferred3D && cat === 'general') postData.category = 'html3d';
     }
-    if (typeof audioUrl === 'string' && audioUrl.length > 0) {
-      postData.audioUrl = audioUrl;
-      postData.audioTitle = 'Audio Track / Sound';
+    if (typeof finalAudioUrl === 'string' && finalAudioUrl.length > 0) {
+      postData.audioUrl = finalAudioUrl;
+      postData.audioTitle = finalAudioTitle;
+      if (!transferred3D && cat === 'general') postData.category = 'music';
     }
     if (sharedSourcePage) {
       postData.sourcePage = sharedSourcePage;
@@ -4961,6 +5029,7 @@ async function publish() {
     if (audioInp) audioInp.value = '';
     uploadedFiles = [];
     removeVideoFile();
+    removeAudioFile();
     document.getElementById('imgPreviews').innerHTML = '';
     document.getElementById('upProg').style.display = 'none';
     document.getElementById('upBar').style.width = '0%';
@@ -5053,6 +5122,48 @@ function rmImg(idx) {
   const item = document.getElementById(`ip-${idx}`);
   if (item) item.remove();
   uploadedFiles = uploadedFiles.filter(Boolean);
+}
+
+// ─── Audio file upload (MP3 / WAV) ───────────────────────────
+function onAudioFileSel(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  if (file.size > 30 * 1024 * 1024) {
+    if (typeof toast === 'function') toast('Audio file too large (max 30MB)', 'error');
+    return;
+  }
+
+  uploadedAudioFile = file;
+
+  const prevBox = document.getElementById('audioFilePreviewBox');
+  const nameEl  = document.getElementById('audioFileName');
+  const sizeEl  = document.getElementById('audioFileSize');
+  const player  = document.getElementById('audioPreviewPlayer');
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl) sizeEl.textContent = `${(file.size / (1024*1024)).toFixed(1)} MB`;
+
+  if (player) {
+    player.src = URL.createObjectURL(file);
+  }
+
+  if (prevBox) prevBox.style.display = 'flex';
+
+  const catSel = document.getElementById('postCat');
+  if (catSel) catSel.value = 'music';
+
+  if (typeof toast === 'function') toast('Audio track attached! 🎵', 'success');
+}
+
+function removeAudioFile() {
+  uploadedAudioFile = null;
+  const input = document.getElementById('audioFileInput');
+  if (input) input.value = '';
+  const prevBox = document.getElementById('audioFilePreviewBox');
+  if (prevBox) prevBox.style.display = 'none';
+  const player = document.getElementById('audioPreviewPlayer');
+  if (player) { player.pause(); player.src = ''; }
 }
 
 // ─── 3D Transfer from HUD Builder ─────────────────────────
