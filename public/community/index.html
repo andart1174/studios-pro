@@ -4377,13 +4377,14 @@ async function spArcadeEndGame() {
 
   spArcadePlaySound('win');
 
-  const coinsWon = Math.max(5, Math.min(50, Math.floor(finalScore / 4)));
-  if (typeof addCoins === 'function') {
-    addCoins(coinsWon, 'reward', null, `🎮 3D Arcade Winner (${finalScore} pts)`);
+  // Exact Real SP Coins Won (1-to-1 score match)
+  const coinsWon = Math.max(0, finalScore);
+  if (coinsWon > 0 && typeof addCoins === 'function') {
+    addCoins(coinsWon, 'reward', null, `🎮 3D Arcade Score (${coinsWon} SP Coins)`);
   }
 
   if (typeof toast === 'function') {
-    toast(`🎉 Game Over! Final Score: ${finalScore} pts! Earned +${coinsWon} SP Coins 🪙`, 'success');
+    toast(`🎉 Game Over! Final Score: ${finalScore}! Earned +${coinsWon} SP Coins 🪙`, 'success');
   }
 
   if (curUser && db) {
@@ -4401,20 +4402,20 @@ async function spArcadeEndGame() {
   }
 }
 
-// 🏎️ Game 1: Cyber 3D Sand Racer
+// 🏎️ Game 1: Cyber 3D Sand Racer (Higher Speed +1 / -1 SP Coins)
 function spArcadeRunRacer(canvas, ctx) {
   let playerX = canvas.width / 2;
-  let speed = 6;
+  let speed = 10;
   let roadOffset = 0;
   let coins = [];
   let obstacles = [];
 
   function spawnObjects() {
-    if (Math.random() < 0.08) {
-      coins.push({ x: Math.random() * (canvas.width - 80) + 40, y: -20, r: 12 });
+    if (Math.random() < 0.10) {
+      coins.push({ x: Math.random() * (canvas.width - 80) + 40, y: -20, r: 14 });
     }
-    if (Math.random() < 0.04) {
-      obstacles.push({ x: Math.random() * (canvas.width - 80) + 40, y: -20, w: 40, h: 20 });
+    if (Math.random() < 0.05) {
+      obstacles.push({ x: Math.random() * (canvas.width - 80) + 40, y: -20, w: 45, h: 22 });
     }
   }
 
@@ -4424,7 +4425,7 @@ function spArcadeRunRacer(canvas, ctx) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     roadOffset = (roadOffset + speed) % 40;
-    ctx.strokeStyle = 'rgba(245,158,11,.3)';
+    ctx.strokeStyle = 'rgba(245,158,11,.35)';
     ctx.lineWidth = 2;
     for (let y = 0; y < canvas.height; y += 40) {
       const renderY = y + (roadOffset % 40);
@@ -4434,11 +4435,12 @@ function spArcadeRunRacer(canvas, ctx) {
       ctx.stroke();
     }
 
-    if (spArcadeKeys.left && playerX > 40) playerX -= 7;
-    if (spArcadeKeys.right && playerX < canvas.width - 40) playerX += 7;
+    if (spArcadeKeys.left && playerX > 40) playerX -= 11;
+    if (spArcadeKeys.right && playerX < canvas.width - 40) playerX += 11;
 
     spawnObjects();
 
+    // Render Coins (+1 SP Coin)
     ctx.fillStyle = '#fbbf24';
     for (let i = coins.length - 1; i >= 0; i--) {
       const c = coins[i];
@@ -4447,8 +4449,8 @@ function spArcadeRunRacer(canvas, ctx) {
       ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
       ctx.fill();
 
-      if (Math.hypot(c.x - playerX, c.y - (canvas.height - 40)) < 30) {
-        spArcadeScore += 10;
+      if (Math.hypot(c.x - playerX, c.y - (canvas.height - 40)) < 32) {
+        spArcadeScore += 1;
         const sEl = document.getElementById('spArcadeScore');
         if (sEl) sEl.textContent = spArcadeScore;
         spArcadePlaySound('coin');
@@ -4458,14 +4460,15 @@ function spArcadeRunRacer(canvas, ctx) {
       }
     }
 
+    // Render Obstacles (-1 SP Coin)
     ctx.fillStyle = '#ef4444';
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const o = obstacles[i];
       o.y += speed;
       ctx.fillRect(o.x - o.w/2, o.y - o.h/2, o.w, o.h);
 
-      if (Math.abs(o.x - playerX) < 30 && Math.abs(o.y - (canvas.height - 40)) < 25) {
-        spArcadeScore = Math.max(0, spArcadeScore - 5);
+      if (Math.abs(o.x - playerX) < 32 && Math.abs(o.y - (canvas.height - 40)) < 26) {
+        spArcadeScore = Math.max(0, spArcadeScore - 1);
         const sEl = document.getElementById('spArcadeScore');
         if (sEl) sEl.textContent = spArcadeScore;
         spArcadePlaySound('hit');
@@ -4490,11 +4493,12 @@ function spArcadeRunRacer(canvas, ctx) {
   loop();
 }
 
-// 🚀 Game 2: Space Coin Collector 3D
+// 🚀 Game 2: Space Coin Collector 3D (Higher Speed +1 / -1 SP Coins)
 function spArcadeRunSpace(canvas, ctx) {
   let shipX = canvas.width / 2;
-  let stars = Array.from({length: 40}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, z: Math.random()*3 + 1 }));
+  let stars = Array.from({length: 50}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, z: Math.random()*4 + 2 }));
   let rings = [];
+  let meteors = [];
 
   function loop() {
     if (!spArcadeCurrentGame) return;
@@ -4503,35 +4507,59 @@ function spArcadeRunSpace(canvas, ctx) {
 
     ctx.fillStyle = '#a78bfa';
     stars.forEach(s => {
-      s.y += s.z * 2;
+      s.y += s.z * 3;
       if (s.y > canvas.height) { s.y = 0; s.x = Math.random()*canvas.width; }
       ctx.fillRect(s.x, s.y, s.z, s.z);
     });
 
-    if (spArcadeKeys.left && shipX > 30) shipX -= 8;
-    if (spArcadeKeys.right && shipX < canvas.width - 30) shipX += 8;
+    if (spArcadeKeys.left && shipX > 30) shipX -= 12;
+    if (spArcadeKeys.right && shipX < canvas.width - 30) shipX += 12;
 
-    if (Math.random() < 0.06) {
-      rings.push({ x: Math.random()*(canvas.width-100)+50, y: -20, r: 25 });
+    if (Math.random() < 0.08) {
+      rings.push({ x: Math.random()*(canvas.width-100)+50, y: -20, r: 26 });
+    }
+    if (Math.random() < 0.04) {
+      meteors.push({ x: Math.random()*(canvas.width-100)+50, y: -20, r: 18 });
     }
 
+    // Rings (+1 SP Coin)
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 4;
     for (let i = rings.length - 1; i >= 0; i--) {
       const r = rings[i];
-      r.y += 5;
+      r.y += 9;
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
       ctx.stroke();
 
-      if (Math.hypot(r.x - shipX, r.y - (canvas.height - 50)) < 35) {
-        spArcadeScore += 15;
+      if (Math.hypot(r.x - shipX, r.y - (canvas.height - 50)) < 36) {
+        spArcadeScore += 1;
         const sEl = document.getElementById('spArcadeScore');
         if (sEl) sEl.textContent = spArcadeScore;
         spArcadePlaySound('coin');
         rings.splice(i,1);
       } else if (r.y > canvas.height + 30) {
         rings.splice(i,1);
+      }
+    }
+
+    // Meteors (-1 SP Coin)
+    ctx.fillStyle = '#ef4444';
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.y += 9;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, m.r, 0, Math.PI*2);
+      ctx.fill();
+
+      if (Math.hypot(m.x - shipX, m.y - (canvas.height - 50)) < 30) {
+        spArcadeScore = Math.max(0, spArcadeScore - 1);
+        const sEl = document.getElementById('spArcadeScore');
+        if (sEl) sEl.textContent = spArcadeScore;
+        spArcadePlaySound('hit');
+        meteors.splice(i,1);
+      } else if (m.y > canvas.height + 30) {
+        meteors.splice(i,1);
       }
     }
 
@@ -4549,13 +4577,14 @@ function spArcadeRunSpace(canvas, ctx) {
   loop();
 }
 
-// 🌀 Game 3: Holographic 3D Maze Escape
+// 🌀 Game 3: Holographic 3D Maze Escape (Faster +1 / -1 SP Coins)
 function spArcadeRunMaze(canvas, ctx) {
   let player = { x: 50, y: 50, radius: 12 };
   let portal = { x: canvas.width - 60, y: canvas.height - 60, radius: 22 };
-  let coins = [
-    { x: 180, y: 80 }, { x: 340, y: 220 }, { x: 500, y: 120 }, { x: 260, y: 300 }
-  ];
+  let coins = Array.from({length: 15}, () => ({
+    x: Math.random() * (canvas.width - 120) + 60,
+    y: Math.random() * (canvas.height - 120) + 60
+  }));
 
   function loop() {
     if (!spArcadeCurrentGame) return;
@@ -4566,11 +4595,11 @@ function spArcadeRunMaze(canvas, ctx) {
     ctx.lineWidth = 4;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-    if (spArcadeKeys.left && player.x > 35) player.x -= 4;
-    if (spArcadeKeys.right && player.x < canvas.width - 35) player.x += 4;
-    if (spArcadeKeys.action && player.y > 35) player.y -= 4;
+    if (spArcadeKeys.left && player.x > 35) player.x -= 7;
+    if (spArcadeKeys.right && player.x < canvas.width - 35) player.x += 7;
+    if (spArcadeKeys.action && player.y > 35) player.y -= 7;
 
-    player.y = Math.min(canvas.height - 35, player.y + 1.5);
+    player.y = Math.min(canvas.height - 35, player.y + 2.5);
 
     ctx.fillStyle = '#ec4899';
     ctx.beginPath();
@@ -4584,8 +4613,8 @@ function spArcadeRunMaze(canvas, ctx) {
       ctx.arc(c.x, c.y, 8, 0, Math.PI*2);
       ctx.fill();
 
-      if (Math.hypot(c.x - player.x, c.y - player.y) < 20) {
-        spArcadeScore += 20;
+      if (Math.hypot(c.x - player.x, c.y - player.y) < 22) {
+        spArcadeScore += 1;
         const sEl = document.getElementById('spArcadeScore');
         if (sEl) sEl.textContent = spArcadeScore;
         spArcadePlaySound('coin');
@@ -4599,7 +4628,7 @@ function spArcadeRunMaze(canvas, ctx) {
     ctx.fill();
 
     if (Math.hypot(portal.x - player.x, portal.y - player.y) < 30) {
-      spArcadeScore += 50;
+      spArcadeScore += 10;
       spArcadeEndGame();
       return;
     }
