@@ -2297,26 +2297,37 @@
 
 
 <!-- ═══ 🃏 SP DAILY COLLECTIBLE CARD COMPARTMENT ═══ -->
-<div class="overlay" id="spDailyCardOverlay" onclick="spDailyCardClose(event)" style="display:none;">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px;width:95%;background:#090d1a;border:2px solid rgba(245,158,11,.5);box-shadow:0 0 60px rgba(245,158,11,.3);font-family:'Outfit',sans-serif;border-radius:24px;overflow:hidden;padding:0;max-height:90vh;overflow-y:auto;">
+<div class="overlay" id="spDailyCardOverlay" onclick="spDailyCardClose(event)" style="display:none;align-items:flex-start;padding-top:5vh;">
+  <div class="modal" id="spDailyCardModal" onclick="event.stopPropagation()" style="max-width:520px;width:95%;background:#090d1a;border:2px solid rgba(245,158,11,.5);box-shadow:0 0 60px rgba(245,158,11,.3);font-family:'Outfit',sans-serif;border-radius:24px;overflow:hidden;padding:0;max-height:88vh;overflow-y:auto;">
     <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(236,72,153,.12),rgba(99,102,241,.12));">
+    <div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg,rgba(9,13,26,.98),rgba(245,158,11,.15),rgba(9,13,26,.98));backdrop-filter:blur(12px);">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:1.5rem;">🃏</span>
+        <span style="font-size:1.4rem;">🃏</span>
         <div>
-          <div style="font-weight:900;font-size:1.1rem;color:#fff;">SP Daily Collectible Card</div>
-          <div style="font-size:.72rem;color:#fbbf24;font-weight:700;" id="spCardDateLabel"></div>
+          <div style="font-weight:900;font-size:1rem;color:#fff;">SP Daily Collectible Card</div>
+          <div style="font-size:.7rem;color:#fbbf24;font-weight:700;" id="spCardDateLabel"></div>
         </div>
       </div>
-      <button onclick="spDailyCardClose()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;font-weight:900;">✕</button>
+      <button onclick="spDailyCardClose()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.9rem;font-weight:900;">✕</button>
     </div>
     <!-- Body -->
-    <div style="padding:22px 20px;" id="spDailyCardBody">
+    <div style="padding:20px 18px;" id="spDailyCardBody">
       <div style="text-align:center;padding:30px;color:var(--muted);">
         <div class="spinner" style="margin:0 auto 12px;"></div>
-        <div>Se generează cardul zilei...</div>
+        <div style="font-size:.85rem;">Generating today's card… / Génération de la carte du jour…</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ 🃏 CARD VIEWER MODAL (collection click) ═══ -->
+<div class="overlay" id="spCardViewerOverlay" onclick="spCardViewerClose(event)" style="display:none;align-items:flex-start;padding-top:5vh;">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:400px;width:92%;background:#090d1a;border:2px solid rgba(245,158,11,.4);box-shadow:0 0 50px rgba(245,158,11,.25);font-family:'Outfit',sans-serif;border-radius:24px;overflow:hidden;padding:0;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);">
+      <div style="font-weight:900;font-size:.95rem;color:#fff;" id="spCardViewerTitle">🃏 Card Viewer</div>
+      <button onclick="spCardViewerClose()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:18px 16px;" id="spCardViewerBody"></div>
   </div>
 </div>
 
@@ -4120,7 +4131,7 @@ function spCardPickRarity(seed) {
 }
 
 // ── Draw the card on a Canvas → returns Promise<dataURL> ──────────
-function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName) {
+function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, theme) {
   return new Promise(resolve => {
     const W = 500, H = 740;
     const cv = document.createElement('canvas');
@@ -4246,15 +4257,26 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName) {
         ctx.fillText(`👤  ${userName}`, W/2, 476);
       }
 
-      // 10. Second divider
+      // 10. Theme & Power (unique genius feature)
+      if (theme) {
+        // Theme pill background
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        spRoundRect(ctx, W/2-110, 488, 220, 26, 13); ctx.fill();
+        ctx.restore();
+        ctx.font='bold 12px "Outfit",sans-serif'; ctx.fillStyle=palette.shine; ctx.textAlign='center';
+        ctx.fillText(`${theme.icon}  ${theme.name.toUpperCase()}  ·  ${theme.power.toUpperCase()}`, W/2, 506);
+      }
+
+      // 11. Second divider
       ctx.strokeStyle=dv; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(50,500); ctx.lineTo(W-50,500); ctx.stroke();
 
-      // 11. Cert + serial
+      // 12. Cert + serial
       ctx.font='bold 10px "Outfit",sans-serif'; ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.textAlign='center';
-      ctx.fillText('✦  CERTIFIED BY SP NEXUS  ·  studios-pro.com/community  ✦', W/2, 526);
+      ctx.fillText('✦  CERTIFIED BY SP NEXUS  ·  studios-pro.com/community  ✦', W/2, 542);
       ctx.font='9px monospace'; ctx.fillStyle='rgba(255,255,255,0.2)';
-      ctx.fillText(`SPN-${dateKey.replace(/-/g,'')}-${String(cardNum).padStart(4,'0')}`, W/2, 550);
+      ctx.fillText(`SPN-${dateKey.replace(/-/g,'')}-${String(cardNum).padStart(4,'0')}`, W/2, 562);
 
       // 12. Corner gems + dots
       [[62,594],[W-62,594]].forEach(([x,y])=>{
@@ -4293,16 +4315,34 @@ function spRoundRect(ctx, x, y, w, h, r) {
 }
 
 // ── Open / Close ───────────────────────────────────────────────────
+// ── Daily theme & power data ────────────────────────────────────────
+const SP_CARD_THEMES = [
+  { name: 'Dragon Fire',    icon: '🐉', power: 'Unstoppable Creativity' },
+  { name: 'Neon City',      icon: '🌆', power: 'Infinite Vision'        },
+  { name: 'Cosmic Storm',   icon: '🌌', power: 'Galactic Energy'        },
+  { name: 'Crystal Forge',  icon: '💎', power: 'Unbreakable Focus'      },
+  { name: 'Shadow Realm',   icon: '🌑', power: 'Hidden Potential'       },
+  { name: 'Golden Age',     icon: '👑', power: 'Supreme Mastery'        },
+  { name: 'Arctic Pulse',   icon: '❄️', power: 'Crystal Clarity'        },
+  { name: 'Phantom Wave',   icon: '👻', power: 'Ethereal Speed'         },
+  { name: 'Solar Burst',    icon: '☀️', power: 'Pure Radiance'          },
+  { name: 'Void Walker',    icon: '🕳️', power: 'Dark Wisdom'            },
+  { name: 'Thunder Strike', icon: '⚡', power: 'Explosive Power'        },
+  { name: 'Ocean Deep',     icon: '🌊', power: 'Boundless Depth'        }
+];
+
 function spDailyCardOpen() {
   const overlay = document.getElementById('spDailyCardOverlay');
   if (!overlay) return;
   overlay.style.display = 'flex';
   overlay.classList.add('open');
+  // scroll modal to top
+  const modal = document.getElementById('spDailyCardModal');
+  if (modal) modal.scrollTop = 0;
 
   const dateKey = spCardDateKey();
-  const dateEl = document.getElementById('spCardDateLabel');
+  const dateEl  = document.getElementById('spCardDateLabel');
   if (dateEl) dateEl.textContent = `📅 ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`;
-
   spDailyCardRender(dateKey);
 }
 
@@ -4310,6 +4350,80 @@ function spDailyCardClose(e) {
   if (e && e.target !== document.getElementById('spDailyCardOverlay')) return;
   const overlay = document.getElementById('spDailyCardOverlay');
   if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+}
+
+// ── Card Viewer (for collection items) ────────────────────────────
+async function spCardViewerOpen(card) {
+  const overlay = document.getElementById('spCardViewerOverlay');
+  const body    = document.getElementById('spCardViewerBody');
+  const title   = document.getElementById('spCardViewerTitle');
+  if (!overlay || !body) return;
+
+  const rarity  = SP_CARD_RARITIES.find(r => r.name === card.rarityName) || SP_CARD_RARITIES[0];
+  const palIdx  = Math.floor(spCardSeededRand(card.dateKey, 1) * SP_CARD_PALETTES.length);
+  const shpIdx  = Math.floor(spCardSeededRand(card.dateKey, 2) * SP_CARD_SHAPES.length);
+  const themIdx = Math.floor(spCardSeededRand(card.dateKey, 3) * SP_CARD_THEMES.length);
+  const palette = SP_CARD_PALETTES[palIdx];
+  const shape   = SP_CARD_SHAPES[shpIdx];
+  const theme   = SP_CARD_THEMES[themIdx];
+  const uname   = curUser ? (curUser.displayName || 'SP Creator') : '';
+
+  if (title) title.textContent = `🃏 ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}`;
+  body.innerHTML = `<div style="text-align:center;padding:24px;"><div class="spinner" style="margin:auto;"></div></div>`;
+  overlay.style.display = 'flex';
+  overlay.classList.add('open');
+
+  const imgData = await spCardDraw(card.cardNum, card.dateKey, rarity, palette, shape, uname, theme);
+  window._spViewerCardDataUrl = imgData;
+
+  body.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <img src="${imgData}" style="width:100%;max-width:280px;border-radius:16px;box-shadow:0 0 40px ${rarity.glow},0 8px 24px rgba(0,0,0,.6);display:block;margin:0 auto;">
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:14px;">
+      <div style="background:linear-gradient(135deg,${rarity.colorA},${rarity.colorB});padding:6px 18px;border-radius:999px;font-weight:900;font-size:.82rem;color:#fff;box-shadow:0 0 14px ${rarity.glow};">
+        ${rarity.emoji}  ${rarity.label||rarity.name}  —  #${String(card.cardNum).padStart(4,'0')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px;">
+      <button onclick="spCardShareViewer('${card.dateKey}','${card.rarityName}',${card.cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">🌐 Share</button>
+      <button onclick="spCardCopyViewer()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">📋 Copy</button>
+      <button onclick="spCardDownloadViewer('${card.dateKey}',${card.cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:9px 4px;border-radius:11px;font-weight:800;font-size:.75rem;cursor:pointer;">📥 Save</button>
+    </div>
+  `;
+}
+
+function spCardViewerClose(e) {
+  if (e && e.target !== document.getElementById('spCardViewerOverlay')) return;
+  const ov = document.getElementById('spCardViewerOverlay');
+  if (ov) { ov.classList.remove('open'); ov.style.display = 'none'; }
+}
+
+function spCardShareViewer(dateKey, rarityName, cardNum) {
+  const url  = window.location.origin + window.location.pathname;
+  const text = `🃏 My SP Nexus ${rarityName} Card #${String(cardNum).padStart(4,'0')} — ${dateKey}!\n🪙 SP Coins Official Collectible\n🚀 Join: ${url}`;
+  if (navigator.share) navigator.share({title:`SP Nexus Card #${String(cardNum).padStart(4,'0')}`,text,url}).catch(()=>{});
+  else if (navigator.clipboard) { navigator.clipboard.writeText(text); if(typeof toast==='function') toast('Share text copied! 📋','success'); }
+}
+
+async function spCardCopyViewer() {
+  const d = window._spViewerCardDataUrl; if(!d) return;
+  try {
+    const b = await (await fetch(d)).blob();
+    await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);
+    if(typeof toast==='function') toast('Card image copied! / Image copiée! 📋','success');
+  } catch(e) {
+    const w=window.open(); if(w) w.document.write(`<img src="${d}" style="max-width:100%">`);
+    if(typeof toast==='function') toast('Opened in new tab — save manually 📥','info');
+  }
+}
+
+function spCardDownloadViewer(dateKey, cardNum) {
+  const d = window._spViewerCardDataUrl; if(!d) return;
+  const a = document.createElement('a'); a.href=d;
+  a.download=`SP_Nexus_Card_${dateKey}_${String(cardNum).padStart(4,'0')}.png`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if(typeof toast==='function') toast('Card downloaded! / Carte téléchargée! 📥','success');
 }
 
 // ── Main render ────────────────────────────────────────────────────
@@ -4343,9 +4457,11 @@ async function spDailyCardRender(dateKey) {
     ? (SP_CARD_RARITIES.find(r => r.name === claimedRarityName) || SP_CARD_RARITIES[0])
     : spCardPickRarity(dateKey + (curUser ? curUser.uid : 'guest'));
   const userName = curUser ? (curUser.displayName || 'SP Creator') : '';
+  const themIdx  = Math.floor(spCardSeededRand(dateKey, 3) * SP_CARD_THEMES.length);
+  const theme    = SP_CARD_THEMES[themIdx];
 
   // ── await async card draw (loads real SP coin logo) ────────────
-  const imgData = await spCardDraw(cardNum, dateKey, rarity, palette, shape, userName);
+  const imgData = await spCardDraw(cardNum, dateKey, rarity, palette, shape, userName, theme);
 
   let myCards = [];
   if (curUser && db) {
@@ -4356,13 +4472,16 @@ async function spDailyCardRender(dateKey) {
   }
 
   body.innerHTML = `
-    <div style="text-align:center;margin-bottom:18px;">
-      <img id="spTodayCardImg" src="${imgData}" style="width:100%;max-width:300px;border-radius:20px;box-shadow:0 0 50px ${rarity.glow},0 8px 32px rgba(0,0,0,.6);display:block;margin:0 auto;" alt="SP Daily Card">
+    <div style="text-align:center;margin-bottom:14px;">
+      <img id="spTodayCardImg" src="${imgData}" style="width:100%;max-width:300px;border-radius:20px;box-shadow:0 0 50px ${rarity.glow},0 8px 32px rgba(0,0,0,.6);display:block;margin:0 auto;cursor:pointer;" onclick="spCardViewerOpen({rarityName:'${rarity.name}',cardNum:${cardNum},dateKey:'${dateKey}'})" alt="SP Daily Card" title="Click to open full viewer">
     </div>
 
-    <div style="display:flex;justify-content:center;margin-bottom:16px;">
-      <div style="background:linear-gradient(135deg,${rarity.colorA},${rarity.colorB});padding:7px 22px;border-radius:999px;font-weight:900;font-size:.85rem;color:#fff;box-shadow:0 0 18px ${rarity.glow};letter-spacing:.03em;">
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="background:linear-gradient(135deg,${rarity.colorA},${rarity.colorB});padding:6px 18px;border-radius:999px;font-weight:900;font-size:.82rem;color:#fff;box-shadow:0 0 18px ${rarity.glow};letter-spacing:.03em;">
         ${rarity.emoji}  ${rarity.label || rarity.name}  —  #${String(cardNum).padStart(4,'0')}
+      </div>
+      <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);padding:6px 14px;border-radius:999px;font-size:.78rem;color:#fff;font-weight:700;">
+        ${theme.icon} ${theme.name}
       </div>
     </div>
 
@@ -4390,14 +4509,20 @@ async function spDailyCardRender(dateKey) {
 
     ${myCards.length > 0 ? `
     <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:16px;">
-      <div style="font-weight:900;font-size:.88rem;color:#fff;margin-bottom:10px;">🗂️ My Collection / Ma Collection (${myCards.length})</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:7px;">
+      <div style="font-weight:900;font-size:.88rem;color:#fff;margin-bottom:10px;">🗂️ My Collection / Ma Collection (${myCards.length}) <span style="font-size:.7rem;color:var(--muted);font-weight:500;">— click any card to view</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;">
         ${myCards.map(card => {
           const rr = SP_CARD_RARITIES.find(r => r.name === card.rarityName) || SP_CARD_RARITIES[0];
-          return `<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px 4px;" title="${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}">
-            <div style="font-size:1rem;">${rr.emoji}</div>
-            <div style="font-size:.6rem;color:${rr.textCol||'var(--muted)'};font-weight:800;">#${String(card.cardNum).padStart(4,'0')}</div>
-            <div style="font-size:.52rem;color:var(--muted);">${card.dateKey||''}</div>
+          const cardJson = JSON.stringify({rarityName:card.rarityName,cardNum:card.cardNum,dateKey:card.dateKey}).replace(/'/g,"&apos;");
+          return `<div onclick="spCardViewerOpen(${cardJson.replace(/"/g,"'")})"
+            style="text-align:center;background:rgba(255,255,255,.04);border:1px solid ${rr.colorB}44;border-radius:12px;padding:8px 4px;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.transform='translateY(-2px)'"
+            onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.transform=''"
+            title="Click to view — ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} — ${card.dateKey}">
+            <div style="font-size:1.2rem;margin-bottom:2px;">${rr.emoji}</div>
+            <div style="font-size:.6rem;color:${rr.textCol||'#fff'};font-weight:900;">#${String(card.cardNum).padStart(4,'0')}</div>
+            <div style="font-size:.52rem;color:var(--muted);margin-top:1px;">${card.dateKey||''}</div>
+            <div style="margin-top:4px;background:linear-gradient(135deg,${rr.colorA},${rr.colorB});border-radius:6px;padding:2px 0;font-size:.52rem;color:#fff;font-weight:800;">VIEW</div>
           </div>`;
         }).join('')}
       </div>
