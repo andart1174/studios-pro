@@ -1809,13 +1809,16 @@
       </div>
       <div class="badges-row" id="userBadgesRow"></div>
       <div style="font-size:.68rem;color:var(--muted);margin-top:6px;text-align:center">Click to see all badges →</div>
+    </div>
 
-      <!-- ═══ NEW FEATURE BUTTONS (self-contained, no existing functions touched) ═══ -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
-        <button onclick="spOpenCreatorCard()" style="background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,.35),rgba(139,92,246,.25))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15))'">🎴 Creator Card</button>
-        <button onclick="spOpenCreatorDna()" style="background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.2));border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;" onmouseover="this.style.background='linear-gradient(135deg,rgba(16,185,129,.3),rgba(6,78,59,.35))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.2))'">🧬 Creator DNA</button>
+    <!-- ═══ NEW FEATURE BUTTONS CONTAINER ═══ -->
+    <div class="scard" style="padding:12px;margin-top:10px;">
+      <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🚀 SP Creator Tools</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="spOpenCreatorCard()" style="background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border:1px solid rgba(99,102,241,.4);color:#a78bfa;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;">🎴 Creator Card</button>
+        <button onclick="spOpenCreatorDna()" style="background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.2));border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:9px 6px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;">🧬 Creator DNA</button>
       </div>
-      <button onclick="spRadioOpen()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.3);color:#a78bfa;padding:9px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,.28),rgba(139,92,246,.22))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))'">🎙️ Launch SP Nexus Radio</button>
+      <button onclick="spRadioOpen()" style="width:100%;margin-top:8px;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.3);color:#a78bfa;padding:9px;border-radius:12px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">🎙️ Launch SP Nexus Radio</button>
     </div>
 
   </aside>
@@ -3715,24 +3718,8 @@ function pingGoogleIndexing() {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   🌈 MOOD FEED — New self-contained compartment (no existing functions touched)
+   🌈 MOOD FEED — Robust Logic
    ════════════════════════════════════════════════════════════════════ */
-(function() {
-  // inject CSS once
-  const style = document.createElement('style');
-  style.textContent = `
-    .sp-mood-btn{padding:5px 13px;border-radius:999px;font-size:.72rem;font-weight:800;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--muted);transition:all .2s;white-space:nowrap;font-family:'Outfit',sans-serif;}
-    .sp-mood-btn:hover{background:rgba(99,102,241,.15);border-color:#6366f1;color:#a78bfa;}
-    .sp-mood-active{background:rgba(99,102,241,.25)!important;border-color:#6366f1!important;color:#a78bfa!important;box-shadow:0 0 10px rgba(99,102,241,.3);}
-    @keyframes spRwave{0%{transform:scaleY(0.4);}100%{transform:scaleY(1);}}
-    .sp-card-glow{animation:spCardGlow 3s ease-in-out infinite alternate;}
-    @keyframes spCardGlow{0%{box-shadow:0 0 30px rgba(99,102,241,.4);}100%{box-shadow:0 0 60px rgba(139,92,246,.7),0 0 100px rgba(99,102,241,.3);}}
-    .sp-dna-bar{height:14px;border-radius:8px;transition:width 1s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;}
-    .sp-dna-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),transparent);border-radius:8px;}
-  `;
-  document.head.appendChild(style);
-})();
-
 let spCurrentMood = 'all';
 const SP_MOOD_CATS = {
   inspired: ['showcase','3dmodel','hologram','architecture'],
@@ -3746,26 +3733,40 @@ function spSetMood(mood, btn) {
   spCurrentMood = mood;
   document.querySelectorAll('.sp-mood-btn').forEach(b => b.classList.remove('sp-mood-active'));
   if (btn) btn.classList.add('sp-mood-active');
-  spApplyMoodToFeed();
+  if (mood === 'all') {
+    if (typeof allPosts !== 'undefined' && allPosts.length) renderFeed(allPosts);
+    else if (typeof loadFeed === 'function') loadFeed();
+  } else {
+    spApplyMoodToFeed();
+  }
 }
 
 function spApplyMoodToFeed() {
-  if (!window.allPosts) return;
-  let posts = [...window.allPosts];
+  if (typeof allPosts === 'undefined' || !allPosts || !allPosts.length) {
+    if (typeof loadFeed === 'function') loadFeed();
+    return;
+  }
+  let posts = [...allPosts];
   if (spCurrentMood !== 'all' && SP_MOOD_CATS[spCurrentMood]) {
     const cats = SP_MOOD_CATS[spCurrentMood];
     const matching = posts.filter(p => cats.includes(p.category));
     const rest = posts.filter(p => !cats.includes(p.category));
     posts = [...matching, ...rest];
   }
-  if (typeof renderFeed === 'function') renderFeed(posts);
+  if (typeof renderFeed === 'function') {
+    renderFeed(posts);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   🎴 SP CREATOR CARD — New self-contained compartment
+   🎴 SP CREATOR CARD — Robust Logic
    ════════════════════════════════════════════════════════════════════ */
 function spOpenCreatorCard() {
-  if (!curUser) { if(typeof toast==='function') toast('Sign in to view your Creator Card!','error'); return; }
+  if (!curUser) {
+    if (typeof openAuth === 'function') openAuth();
+    else if (typeof toast === 'function') toast('Sign in to view your Creator Card!', 'error');
+    return;
+  }
   const overlay = document.getElementById('spCreatorCardOverlay');
   const inner   = document.getElementById('spCreatorCardInner');
   if (!overlay || !inner) return;
@@ -3788,7 +3789,6 @@ function spOpenCreatorCard() {
       <div style="position:absolute;top:12px;right:14px;font-size:.65rem;font-weight:900;background:linear-gradient(135deg,${rc},${rc}99);color:#fff;padding:3px 10px;border-radius:999px;letter-spacing:.06em;">SP CREATOR</div>
       <div style="position:relative;display:inline-block;margin-bottom:14px;">
         ${photo ? `<img src="${photo}" style="width:80px;height:80px;border-radius:50%;border:3px solid ${rc};box-shadow:0 0 20px ${rc}88;object-fit:cover;">` : `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,${rc},#050812);border:3px solid ${rc};display:flex;align-items:center;justify-content:center;font-size:2rem;">🎨</div>`}
-        <div style="position:absolute;bottom:-4px;right:-4px;background:linear-gradient(135deg,${rc},#050812);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.65rem;border:2px solid #050812;">✨</div>
       </div>
       <div style="font-family:'Outfit',sans-serif;font-weight:900;font-size:1.2rem;color:#fff;margin-bottom:4px;">${name}</div>
       <div style="font-size:.75rem;color:${rc};font-weight:800;margin-bottom:16px;">${rankTxt}</div>
@@ -3806,34 +3806,31 @@ function spOpenCreatorCard() {
           <div style="font-size:.65rem;color:var(--muted);font-weight:700;">LIKES</div>
         </div>
       </div>
-      <div style="font-size:.68rem;color:var(--muted);margin-bottom:18px;">Member since ${joinDate} · studios-pro.com/community</div>
       <div style="display:flex;gap:10px;">
-        <button onclick="spShareCreatorCard('${name}','${posts}','${likes}','${coins}')" style="flex:1;background:linear-gradient(135deg,${rc},${rc}88);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.82rem;cursor:pointer;font-family:'Outfit',sans-serif;">🚀 Share Card</button>
-        <button onclick="spCloseCreatorBtn()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:10px 14px;border-radius:12px;font-weight:700;font-size:.82rem;cursor:pointer;font-family:'Outfit',sans-serif;">✕ Close</button>
+        <button onclick="spShareCreatorCard('${name}','${posts}','${likes}','${coins}')" style="flex:1;background:linear-gradient(135deg,${rc},${rc}88);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:900;font-size:.82rem;cursor:pointer;">🚀 Share Card</button>
+        <button onclick="spCloseCreatorBtn()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--muted);padding:10px 14px;border-radius:12px;font-weight:700;font-size:.82rem;cursor:pointer;">✕ Close</button>
       </div>
     </div>
   `;
-
   overlay.style.display = 'flex';
 }
 
 function spShareCreatorCard(name, posts, likes, coins) {
-  const text = `🎴 My SP Nexus Creator Card!\n👤 ${name}\n📝 ${posts} Posts | ❤️ ${likes} Likes | 🪙 ${coins} SP Coins\n🚀 Join me on studios-pro.com/community/`;
-  if (navigator.share) { navigator.share({ title: 'My SP Creator Card', text, url: 'https://studios-pro.com/community/' }); }
-  else if (navigator.clipboard) { navigator.clipboard.writeText(text); if(typeof toast==='function') toast('Card details copied! Share anywhere 🎴','success'); }
-}
-
-function spCloseCreatorCard(e) {
-  if (e && e.target !== document.getElementById('spCreatorCardOverlay')) return;
-  document.getElementById('spCreatorCardOverlay').style.display = 'none';
+  const text = `🎴 My SP Nexus Creator Card!\n👤 ${name}\n📝 ${posts} Posts | ❤️ ${likes} Likes | 🪙 ${coins} SP Coins\n🚀 studios-pro.com/community/`;
+  if (navigator.share) { navigator.share({ title: 'My SP Creator Card', text }); }
+  else if (navigator.clipboard) { navigator.clipboard.writeText(text); if(typeof toast==='function') toast('Card details copied!','success'); }
 }
 function spCloseCreatorBtn() { document.getElementById('spCreatorCardOverlay').style.display = 'none'; }
 
 /* ════════════════════════════════════════════════════════════════════
-   🧬 AI CREATOR DNA — New self-contained compartment
+   🧬 AI CREATOR DNA — Robust Logic
    ════════════════════════════════════════════════════════════════════ */
 async function spOpenCreatorDna() {
-  if (!curUser || !db) { if(typeof toast==='function') toast('Sign in to see your Creator DNA!','error'); return; }
+  if (!curUser) {
+    if (typeof openAuth === 'function') openAuth();
+    else if (typeof toast === 'function') toast('Sign in to see your Creator DNA!', 'error');
+    return;
+  }
   const overlay = document.getElementById('spDnaOverlay');
   const content = document.getElementById('spDnaContent');
   if (!overlay || !content) return;
