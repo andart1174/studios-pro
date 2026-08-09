@@ -3418,21 +3418,6 @@ function parseHtml3DEmbed(code) {
     </div>`;
 }
 
-function exportHtmlCode(postId) {
-  const p = (allPosts && allPosts.length) ? allPosts.find(x => x.id === postId) : null;
-  if (!p || !p.htmlCode) {
-    toast('No HTML code found to export', 'error');
-    return;
-  }
-  const blob = new Blob([p.htmlCode], { type: 'text/html;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `sp_nexus_creation_${postId}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  toast('📥 HTML Code File Downloaded!', 'success');
-}
 
 // 😂 SP FUN & AI JOKES LAB COMPARTMENT LOGIC
 let activeJokePreset = 'bot';
@@ -4494,11 +4479,7 @@ function buildCard(p) {
 
   if (p.htmlCode) {
     const html3dContent = parseHtml3DEmbed(p.htmlCode);
-    const htmlCodeActions = `
-      <div style="margin-top:6px;margin-bottom:12px;">
-        <button onclick="exportHtmlCode('${p.id}')" style="width:100%;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4);color:#34d399;padding:7px 14px;border-radius:10px;font-size:.8rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;">📥 Export .HTML File</button>
-      </div>`;
-    mediaHtml = html3dContent + htmlCodeActions + mediaHtml;
+    mediaHtml = html3dContent + mediaHtml;
   }
 
   let remixHtml = '';
