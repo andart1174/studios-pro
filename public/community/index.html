@@ -4051,33 +4051,51 @@ async function spRadioOpen() {
 }
 
 async function spRadioLoad() {
-  if (!db) return;
-  try {
-    const snap = await db.collection(typeof COLL !== 'undefined' ? COLL : 'studios_community')
-      .limit(50).get();
-    spRadioTracks = [];
-    snap.forEach(d => {
-      const data = d.data();
-      if (data.audioUrl) {
+  spRadioTracks = [];
+
+  // 1. Scan loaded posts in memory (allPosts)
+  if (Array.isArray(window.allPosts) && window.allPosts.length > 0) {
+    window.allPosts.forEach(p => {
+      if (p && p.audioUrl) {
         spRadioTracks.push({
-          name: data.audioTitle || data.content || '🎵 SP Track',
-          artist: data.displayName || 'Creator',
-          url: data.audioUrl
+          name: p.audioTitle || (p.content ? p.content.slice(0, 40) : '🎵 SP Audio Track'),
+          artist: p.displayName || 'Creator',
+          url: p.audioUrl
         });
       }
     });
+  }
 
-    if (spRadioTracks.length === 0) {
-      spRadioTracks = [
-        { name: '🌌 Cyber Lofi Beat #1', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3' },
-        { name: '🌃 Synthwave Horizon #2', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73185.mp3?filename=synthwave-80s-110045.mp3' },
-        { name: '⚡ Cyberpunk Pulse #3', artist: 'SP Nexus Station', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_9185a06940.mp3?filename=cyberpunk-2099-10701.mp3' }
-      ];
-    }
+  // 2. Query Firestore if memory array didn't find audio tracks
+  if (spRadioTracks.length === 0 && typeof db !== 'undefined' && db) {
+    try {
+      const snap = await db.collection(typeof COLL !== 'undefined' ? COLL : 'studios_community_posts')
+        .limit(50).get();
+      snap.forEach(d => {
+        const data = d.data();
+        if (data && data.audioUrl) {
+          spRadioTracks.push({
+            name: data.audioTitle || (data.content ? data.content.slice(0, 40) : '🎵 SP Audio Track'),
+            artist: data.displayName || 'Creator',
+            url: data.audioUrl
+          });
+        }
+      });
+    } catch(e) { console.warn('SP Radio load notice:', e); }
+  }
 
-    spRadioIdx = 0;
-    spRadioPlay();
-  } catch(e) { console.warn('SP Radio load error:', e); }
+  // 3. Guaranteed Fallback High-Quality 24/7 Cyber Streams
+  if (spRadioTracks.length === 0) {
+    spRadioTracks = [
+      { name: '🌌 Cyberpunk & Synthwave Radio 24/7', artist: 'SP Cyber Station', url: 'https://synthwave.stream/stream.mp3' },
+      { name: '☕ Lofi Study & Chill Beats', artist: 'SP Lofi Lounge', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
+      { name: '🌃 Nightdrive Retro Beats', artist: 'SP Retro Station', url: 'https://stream.zeno.fm/79y1z529n8quv' },
+      { name: '⚡ Cyberpunk 2099 Pulse', artist: 'SP Synthwave', url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_9185a06940.mp3?filename=cyberpunk-2099-10701.mp3' }
+    ];
+  }
+
+  spRadioIdx = 0;
+  spRadioPlay();
 }
 
 function spRadioPlay() {
@@ -4088,10 +4106,19 @@ function spRadioPlay() {
   const name  = document.getElementById('spRadioTrackName');
   const artist= document.getElementById('spRadioArtist');
   if (!audio) return;
+  
   audio.src = track.url;
-  name.textContent   = track.name;
-  artist.textContent = '🎤 ' + track.artist;
-  audio.play().then(() => { spRadioPlaying = true; if(btn) btn.textContent = '⏸'; }).catch(()=>{});
+  if (name) name.textContent = track.name;
+  if (artist) artist.textContent = '🎤 ' + track.artist;
+  
+  audio.play().then(() => {
+    spRadioPlaying = true;
+    if (btn) btn.textContent = '⏸';
+  }).catch((e) => {
+    console.warn('SP Radio autoplay notice:', e);
+    spRadioPlaying = false;
+    if (btn) btn.textContent = '▶';
+  });
 }
 
 function spRadioToggle() {
