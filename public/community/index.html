@@ -3501,12 +3501,43 @@ function parseHtml3DEmbed(code) {
     }
   }
 
-  // 5. Generic Raw HTML / Canvas / WebGL Code (Sandboxed iframe)
+  // 5. Generic Raw HTML / Canvas / WebGL Code (On-demand interactive preview — Zero GPU Lag & Zero Flickering)
+  const previewId = 'h3d-' + Math.random().toString(36).substring(2, 9);
   return `
-    <div class="p-html3d-wrapper" style="position:relative;width:100%;height:420px;border-radius:14px;overflow:hidden;background:#050811;border:1px solid var(--border);margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);">
-      <iframe srcdoc="${esc(code)}" sandbox="allow-scripts allow-same-origin allow-popups" style="width:100%;height:100%;border:none;background:#050811;"></iframe>
-      <div style="position:absolute;top:10px;left:10px;z-index:10;background:rgba(5,8,17,.75);backdrop-filter:blur(8px);padding:4px 10px;border-radius:12px;font-size:.7rem;font-weight:800;color:#34d399;border:1px solid rgba(52,211,153,.3);display:flex;align-items:center;gap:5px;">⚡ LIVE HTML5 LAB</div>
+    <div class="p-html3d-wrapper" style="position:relative;width:100%;min-height:200px;border-radius:14px;overflow:hidden;background:#050811;border:1px solid rgba(52,211,153,.3);margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);">
+      <div id="box-${previewId}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px 20px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.08));">
+        <div style="font-size:2.2rem;margin-bottom:6px;">⚡</div>
+        <div style="font-weight:900;font-size:1rem;color:#fff;margin-bottom:4px;">Interactive HTML5 / WebGL Creation</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:14px;">Click below to launch live WebGL canvas & interactive code</div>
+        <button type="button" onclick="launchHtml3DPreview('${previewId}')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:900;padding:8px 22px;border-radius:999px;font-size:.82rem;cursor:pointer;box-shadow:0 0 15px rgba(16,185,129,.4);">▶ Launch Interactive Creation</button>
+      </div>
+      <div id="frame-${previewId}" style="display:none;width:100%;height:420px;position:relative;">
+        <iframe data-srcdoc="${esc(code)}" sandbox="allow-scripts allow-same-origin allow-popups" style="width:100%;height:100%;border:none;background:#050811;"></iframe>
+        <button type="button" onclick="closeHtml3DPreview('${previewId}')" style="position:absolute;top:10px;right:10px;z-index:20;background:rgba(239,68,68,.85);border:none;color:#fff;padding:4px 10px;border-radius:8px;font-size:.72rem;font-weight:800;cursor:pointer;">✕ Close</button>
+      </div>
     </div>`;
+}
+
+function launchHtml3DPreview(id) {
+  const box = document.getElementById(`box-${id}`);
+  const frameWrap = document.getElementById(`frame-${id}`);
+  if (!box || !frameWrap) return;
+  const iframe = frameWrap.querySelector('iframe');
+  if (iframe && iframe.dataset.srcdoc) {
+    iframe.srcdoc = iframe.dataset.srcdoc;
+  }
+  box.style.display = 'none';
+  frameWrap.style.display = 'block';
+}
+
+function closeHtml3DPreview(id) {
+  const box = document.getElementById(`box-${id}`);
+  const frameWrap = document.getElementById(`frame-${id}`);
+  if (!box || !frameWrap) return;
+  const iframe = frameWrap.querySelector('iframe');
+  if (iframe) iframe.srcdoc = '';
+  frameWrap.style.display = 'none';
+  box.style.display = 'flex';
 }
 
 
