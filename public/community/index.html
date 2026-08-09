@@ -4281,10 +4281,20 @@ function spCardDraw(cardNum, dateKey, rarity, palette, shapeType, userName, them
       ctx.strokeStyle=dv; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.moveTo(50,330); ctx.lineTo(W-50,330); ctx.stroke();
 
-      // 9. Card number
+      // 9. Card number & Serial Prefix
       ctx.save(); ctx.shadowColor=palette.accent; ctx.shadowBlur=22;
-      ctx.font='bold 60px "Outfit",sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center';
-      ctx.fillText(`#${String(cardNum).padStart(4,'0')}`, W/2, 408);
+      ctx.textAlign='center';
+      if (serialPrefix) {
+        const displayText = `${serialPrefix.toUpperCase()} #${String(cardNum).padStart(4,'0')}`;
+        const fontSize = displayText.length > 10 ? 38 : 46;
+        ctx.font = `bold ${fontSize}px "Outfit",sans-serif`;
+        ctx.fillStyle = '#fff';
+        ctx.fillText(displayText, W/2, 404);
+      } else {
+        ctx.font = 'bold 60px "Outfit",sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`#${String(cardNum).padStart(4,'0')}`, W/2, 408);
+      }
       ctx.restore();
       ctx.font='12px "Outfit",sans-serif'; ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.textAlign='center';
       ctx.fillText(`EDITION  ·  ${dateKey}`, W/2, 436);
@@ -4748,7 +4758,7 @@ function spAdminRenderGift(body) {
       <div style="font-size:.75rem;color:var(--muted);">The user will receive a notification and the card appears in their collection.</div>
     </div>
     ${spAdminInput('admGiftUser','👤 Username (displayName)','e.g. Alex or Creator123')}
-    ${spAdminInput('admGiftMsg','💌 Personal Message (max 40 chars)','e.g. Happy Birthday! Top Creator!','text','maxlength="40"')}
+    ${spAdminInput('admGiftMsg','💌 Personal Message (max 40 chars)','e.g. Happy Birthday! Top Creator!','text','maxlength="40" oninput="spAdminPreviewGiftCard()"')}
     ${spAdminSelect('admGiftRarity','⭐ Rarity',[
       {v:'Legendary',l:'👑 Legendary (gold)'},
       {v:'Epic',l:'💜 Epic (purple)'},
@@ -4756,7 +4766,7 @@ function spAdminRenderGift(body) {
       {v:'Uncommon',l:'💚 Uncommon (green)'},
       {v:'Common',l:'⚪ Common (white)'}
     ])}
-    ${spAdminInput('admGiftSerial','🔖 Serial Prefix','e.g. VIP, GIFT, BDAY')}
+    ${spAdminInput('admGiftSerial','🔖 Serial Prefix','e.g. VIP, GIFT, BDAY','text','value="VIP" oninput="spAdminPreviewGiftCard()"')}
     <div id="admGiftPreview" style="text-align:center;margin:14px 0;min-height:60px;"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <button onclick="spAdminPreviewGiftCard()" style="padding:11px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.5);color:#a78bfa;border-radius:11px;font-weight:900;font-size:.82rem;cursor:pointer;">👁️ Preview Card</button>
@@ -4764,6 +4774,9 @@ function spAdminRenderGift(body) {
     </div>
     <div id="admGiftStatus" style="margin-top:10px;font-size:.78rem;text-align:center;"></div>
   `;
+  const sel = document.getElementById('admGiftRarity');
+  if (sel) sel.onchange = spAdminPreviewGiftCard;
+  spAdminPreviewGiftCard();
 }
 
 async function spAdminPreviewGiftCard() {
