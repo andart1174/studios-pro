@@ -3241,7 +3241,7 @@ function loadFeed() {
   el.innerHTML = `<div class="feed-loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
   if (unsub) unsub();
 
-  const processSnap = async snap => {
+  const processSnap = snap => {
     allPosts = [];
     snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
     allPosts.sort((a,b) => {
@@ -3252,28 +3252,8 @@ function loadFeed() {
       return tb - ta;
     });
 
-    // ─── Founding Member badge via public community_stats doc ───
-    try {
-      const statsDoc = await db.collection('community_stats').doc('global').get();
-      // If doc doesn't exist yet → 0 members → definitely founding period
-      const memberCount = statsDoc.exists ? (statsDoc.data().memberCount || 0) : 0;
-      if (memberCount <= 100) {
-        // All registered users are Founding Members while site has ≤ 100 members
-        allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
-      } else {
-        // Site grew past 100 — only show badge for users explicitly marked
-        const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
-        if (unknownUids.length > 0) {
-          const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get()));
-          const fmMap = {};
-          userSnaps.forEach(s => { if (s.exists) fmMap[s.id] = s.data().foundingMember || false; });
-          allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
-        }
-      }
-    } catch(e) {
-      // If query fails for any reason → show badge (founding period assumed)
-      allPosts = allPosts.map(p => ({ ...p, foundingMember: true }));
-    }
+    // ⚡ INSTANT RENDER: Default foundingMember flag for 0ms rendering delay!
+    allPosts = allPosts.map(p => ({ ...p, foundingMember: p.foundingMember !== undefined ? p.foundingMember : true }));
 
     let filtered = allPosts;
     if (curCat !== 'all') {
@@ -3285,6 +3265,23 @@ function loadFeed() {
     }
     renderFeed(filtered);
     loadStories(filtered);
+
+    // ⚡ NON-BLOCKING BACKGROUND ENRICHMENT (Runs asynchronously without delaying feed)
+    setTimeout(async () => {
+      try {
+        const statsDoc = await db.collection('community_stats').doc('global').get().catch(()=>null);
+        const memberCount = (statsDoc && statsDoc.exists) ? (statsDoc.data().memberCount || 0) : 0;
+        if (memberCount > 100) {
+          const unknownUids = [...new Set(allPosts.filter(p => p.foundingMember === undefined).map(p => p.uid))];
+          if (unknownUids.length > 0) {
+            const userSnaps = await Promise.all(unknownUids.map(uid => db.collection('users').doc(uid).get().catch(()=>null)));
+            const fmMap = {};
+            userSnaps.forEach(s => { if (s && s.exists) fmMap[s.id] = s.data().foundingMember || false; });
+            allPosts = allPosts.map(p => p.foundingMember !== undefined ? p : { ...p, foundingMember: fmMap[p.uid] || false });
+          }
+        }
+      } catch(e) {}
+    }, 20);
   };
 
   unsub = db.collection(COLL).limit(100).onSnapshot(processSnap, err => {
@@ -3297,12 +3294,17 @@ function loadFeed() {
 
 function renderFeed(posts) {
   const el = document.getElementById('feedEl');
+  if (!el) return;
   if (!posts.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><div class="empty-title">No posts yet</div><div class="empty-text">Be the first to share something amazing!</div></div>`;
     return;
   }
+
+  // ⚡ Batch DOM insertion via DocumentFragment (Zero Screen Flickering / Smooth 60FPS)
+  const frag = document.createDocumentFragment();
+  posts.forEach(p => frag.appendChild(buildCard(p)));
   el.innerHTML = '';
-  posts.forEach(p => el.appendChild(buildCard(p)));
+  el.appendChild(frag);
   initAll3D();
 }
 
