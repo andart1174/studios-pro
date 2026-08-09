@@ -4681,18 +4681,22 @@ function spCardDownload(dateKey, cardNum) {
 
 // ── Admin Panel open / close ────────────────────────────────────────
 function spAdminCardOpen() {
-  if (!isAdmin) return;
+  // Guard: only admins can open (button already hidden for non-admins)
   const ov = document.getElementById('spAdminCardOverlay');
-  if (!ov) return;
+  if (!ov) { console.warn('spAdminCardOpen: overlay not found'); return; }
   ov.style.display = 'flex';
+  ov.style.alignItems = 'flex-start';
+  ov.style.paddingTop = '4vh';
+  document.body.style.overflow = 'hidden';
   const m = document.getElementById('spAdminCardModal');
   if (m) m.scrollTop = 0;
-  spAdminTab('gift'); // default tab
+  spAdminTab('gift');
 }
 function spAdminCardClose(e) {
   if (e && e.target !== document.getElementById('spAdminCardOverlay')) return;
   const ov = document.getElementById('spAdminCardOverlay');
-  if (ov) { ov.style.display = 'none'; }
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // ── Tab switcher ────────────────────────────────────────────────────
