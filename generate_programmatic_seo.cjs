@@ -244,6 +244,105 @@ const converters = [
     h1Fr: 'Générateur de Relief 3D STL à partir de Dessin 2D Gratuit',
     featureEn: 'Watertight 3D mesh generation, normal calculation, vertex coloring, and high-fidelity STL, OBJ, GLB export.',
     featureFr: 'Maillage 3D étanche, calcul de normales, coloration de sommets et export STL, OBJ, GLB haute fidélité.'
+  },
+  {
+    id: 'obj-to-stl',
+    ref: 's3dviewer',
+    titleEn: 'Free Online OBJ to STL 3D Converter | Studios-Pro',
+    titleFr: 'Convertisseur OBJ en STL gratuit en ligne | Studios-Pro',
+    descEn: 'Convert OBJ 3D mesh files to STL 3D printing format online instantly. No software download required.',
+    descFr: 'Convertissez des fichiers OBJ 3D en format STL pour impression 3D en ligne instantanément.',
+    h1En: 'Free Online OBJ to STL 3D Mesh Converter',
+    h1Fr: 'Convertisseur OBJ en STL Gratuit pour Impression 3D',
+    featureEn: 'Instant browser conversion, mesh repair, scaling, watertight verification, and STL export.',
+    featureFr: 'Conversion instantanée, réparation de maillage, vérification d\'étanchéité et export STL.'
+  },
+  {
+    id: 'stl-to-obj',
+    ref: 's3dviewer',
+    titleEn: 'Free Online STL to OBJ 3D Converter | Studios-Pro',
+    titleFr: 'Convertisseur STL en OBJ gratuit en ligne | Studios-Pro',
+    descEn: 'Convert 3D printing STL files to Wavefront OBJ format with vertex normals and materials online.',
+    descFr: 'Convertissez des fichiers STL en format Wavefront OBJ avec normales de sommets en ligne.',
+    h1En: 'Free Online STL to OBJ 3D Model Converter',
+    h1Fr: 'Convertisseur STL en OBJ Gratuit en Ligne',
+    featureEn: 'Fast client-side processing, normal preservation, 3D preview, and OBJ export.',
+    featureFr: 'Traitement rapide côté client, préservation des normales, aperçu 3D et export OBJ.'
+  },
+  {
+    id: '2d-image-to-3d-stl',
+    ref: 'artgen',
+    titleEn: 'Free Online 2D Image to 3D STL Relief Generator | Studios-Pro',
+    titleFr: 'Convertisseur Image 2D en STL 3D Gratuit | Studios-Pro',
+    descEn: 'Turn 2D photos, logos, or artwork into high-detail 3D printable relief STL models online free.',
+    descFr: 'Transformez des photos 2D, logos ou images en modèles STL 3D de relief pour impression 3D.',
+    h1En: 'Free Online 2D Photo to 3D Relief STL Exporter',
+    h1Fr: 'Générateur de Relief 3D STL à partir de Photo 2D',
+    featureEn: 'Heightmap extraction, extrusion scaling, watertight mesh generation, and STL/OBJ download.',
+    featureFr: 'Extraction de carte de hauteur, mise à l\'échelle, maillage étanche et téléchargement STL/OBJ.'
+  },
+  {
+    id: 'image-to-depth-map',
+    ref: 'depthmaps',
+    titleEn: 'Free AI Image to 3D Depth Map Generator | Studios-Pro',
+    titleFr: 'Générateur de Carte de Profondeur IA Gratuit | Studios-Pro',
+    descEn: 'Extract high-resolution 3D depth maps from any 2D image for CNC carving, lithophanes, and 3D rendering.',
+    descFr: 'Extrayez des cartes de profondeur 3D haute résolution à partir d\'images 2D pour usinage CNC et rendu.',
+    h1En: 'Free AI Monocular Depth Map Extractor Online',
+    h1Fr: 'Générateur de Cartes de Profondeur 3D IA Gratuit',
+    featureEn: 'AI depth estimation, grayscale heightmap preview, stereo 3D display, and 16-bit PNG export.',
+    featureFr: 'Estimation de profondeur IA, carte de hauteur en niveaux de gris et export PNG 16-bit.'
+  },
+  {
+    id: 'svg-to-dxf',
+    ref: 'vcnc',
+    titleEn: 'Free Online SVG to DXF Vector Converter for Laser & CNC | Studios-Pro',
+    titleFr: 'Convertisseur SVG en DXF gratuit pour Laser & CNC | Studios-Pro',
+    descEn: 'Convert SVG vector graphics to AutoCAD DXF format for CNC routers, plasma cutters, and laser engravers.',
+    descFr: 'Convertissez des fichiers vectoriels SVG en format DXF AutoCAD pour découpe laser et routeur CNC.',
+    h1En: 'Free SVG to DXF Converter for Laser Cutting & CNC Routing',
+    h1Fr: 'Convertisseur SVG en DXF Gratuit pour Découpe Laser',
+    featureEn: 'Clean CAD vector curves, layer management, scale matching, and instant DXF export.',
+    featureFr: 'Courbes CAO nettes, gestion des calques, mise à l\'échelle et export DXF instantané.'
+  },
+  {
+    id: 'dxf-to-gcode',
+    ref: 'vcnc',
+    titleEn: 'Free Online DXF to CNC G-Code Generator | Studios-Pro',
+    titleFr: 'Générateur de G-Code CNC à partir de DXF Gratuit | Studios-Pro',
+    descEn: 'Convert DXF CAD blueprints to CNC machine G-Code toolpaths online for milling and laser cutting.',
+    descFr: 'Convertissez des plans DXF CAO en parcours d\'outils G-Code CNC en ligne pour usinage et laser.',
+    h1En: 'Free DXF to G-Code CNC Toolpath Converter',
+    h1Fr: 'Générateur de Parcours G-Code CNC depuis DXF Gratuit',
+    featureEn: 'Tool diameter offset, feedrate controls, 3D toolpath preview, and G-Code file download.',
+    featureFr: 'Compensation de diamètre d\'outil, contrôle des avances, aperçu 3D et export G-Code.'
+  }
+];
+
+const cardPages = [
+  {
+    id: 'pokemon-card-maker',
+    ref: 'spnexus',
+    titleEn: 'Free Online Custom Pokémon Card Maker & 3D Generator | Studios-Pro',
+    titleFr: 'Générateur de Cartes Pokémon Personnalisées Gratuit 3D | Studios-Pro',
+    descEn: 'Create custom printable trading cards with 3D/4D holographic foils, custom photo upload, and A4 print sheets.',
+    descFr: 'Créez des cartes de collection personnalisées avec effets holographiques 3D/4D et impression A4.',
+    h1En: 'Free Custom Pokémon Card Maker & 3D Foil Generator',
+    h1Fr: 'Générateur de Cartes de Collection Personnalisées 3D',
+    featureEn: '24K gold foil finishes, 3D kinetic sparkles, real scannable QR codes, and 300 DPI A4 print export.',
+    featureFr: 'Finition feuille d\'or 24K, étincelles 3D, codes QR scannables et export d\'impression A4 300 DPI.'
+  },
+  {
+    id: 'custom-3d-card-generator',
+    ref: 'spnexus',
+    titleEn: 'Free Printable 3D/4D Physical Card Creator | Studios-Pro',
+    titleFr: 'Créateur de Cartes Physique 3D/4D Imprimables Gratuit | Studios-Pro',
+    descEn: 'Design, preview, and print 3D physical collectible cards with 9-card A4 sheets, duplex alignment, and foil masks.',
+    descFr: 'Concevez, prévisualisez et imprimez des cartes 3D physiques avec feuilles A4 et masques de dorure.',
+    h1En: 'Free Printable 3D/4D Collectible Card Creator Studio',
+    h1Fr: 'Créateur de Cartes 3D Physiques Imprimables Gratuit',
+    featureEn: 'Ultra-HD 300 DPI render, 9-card A4 print sheets, mirrored duplex alignment, and commercial foil masks.',
+    featureFr: 'Rendu Ultra-HD 300 DPI, feuilles A4 9-cartes, alignement duplex et masques de dorure.'
   }
 ];
 
@@ -291,6 +390,7 @@ const template = (page) => {
   if (viewers.some(v => v.id === page.id)) pagePath = `viewer/${page.id}`;
   else if (converters.some(c => c.id === page.id)) pagePath = `convert/${page.id}`;
   else if (arViewers.some(a => a.id === page.id)) pagePath = `ar-viewer/${page.id}`;
+  else if (cardPages.some(c => c.id === page.id)) pagePath = `cards/${page.id}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -630,6 +730,7 @@ const template = (page) => {
 const viewerDir = path.join(__dirname, 'public/viewer');
 const convertDir = path.join(__dirname, 'public/convert');
 const arViewerDir = path.join(__dirname, 'public/ar-viewer');
+const cardsDir = path.join(__dirname, 'public/cards');
 
 if (!fs.existsSync(viewerDir)) {
   fs.mkdirSync(viewerDir, { recursive: true });
@@ -639,6 +740,9 @@ if (!fs.existsSync(convertDir)) {
 }
 if (!fs.existsSync(arViewerDir)) {
   fs.mkdirSync(arViewerDir, { recursive: true });
+}
+if (!fs.existsSync(cardsDir)) {
+  fs.mkdirSync(cardsDir, { recursive: true });
 }
 
 // Generate files
@@ -655,6 +759,11 @@ converters.forEach(page => {
 arViewers.forEach(page => {
   fs.writeFileSync(path.join(arViewerDir, `${page.id}.html`), template(page));
   console.log(`Generated ar-viewer/${page.id}.html`);
+});
+
+cardPages.forEach(page => {
+  fs.writeFileSync(path.join(cardsDir, `${page.id}.html`), template(page));
+  console.log(`Generated cards/${page.id}.html`);
 });
 
 // Update sitemap.xml
@@ -679,6 +788,13 @@ const arViewerUrls = arViewers.map(page => `  <url>
     <lastmod>${date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>\n`).join('');
+
+const cardUrls = cardPages.map(page => `  <url>
+    <loc>https://studios-pro.com/cards/${page.id}</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
   </url>\n`).join('');
 
 // Read tutorials dynamically to avoid breaking the sitemap
@@ -734,7 +850,7 @@ const baseUrls = `  <url>
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${spNexusUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}</urlset>
+${baseUrls}${spNexusUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
 `;
 
 fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
