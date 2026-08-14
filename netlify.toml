@@ -62,6 +62,12 @@
   force = false
 
 [[redirects]]
+  from = "/cards/*"
+  to = "/cards/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/community"
   to = "/community/index.html"
   status = 200
@@ -109,7 +115,50 @@
   to = "/index.html"
   status = 200
 
-# Disable cache for share-bridge.js and community index to prevent cached popup logic
+# ─── SECURITY & SEO HEADERS ────────────────────────────────────────────
+# These headers improve Google ranking (Core Web Vitals + Security signals)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache images and fonts for 30 days
+[[headers]]
+  for = "*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Sitemap — fresh every 24h
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Disable cache for community real-time pages
 [[headers]]
   for = "/community/share-bridge.js"
   [headers.values]
@@ -123,5 +172,6 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
 
 

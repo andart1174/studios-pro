@@ -12,5 +12,23 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/proxy/, '')
       }
     }
+  },
+  build: {
+    // Split large bundle into smaller async chunks for faster LCP / FID
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'vendor-stripe':   ['@stripe/stripe-js'],
+          'vendor-motion':   ['framer-motion'],
+          'vendor-icons':    ['lucide-react'],
+        }
+      }
+    },
+    // Raise warning threshold — real chunks now much smaller
+    chunkSizeWarningLimit: 600,
+    // Minify CSS
+    cssMinify: true,
   }
 })
