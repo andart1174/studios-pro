@@ -523,6 +523,180 @@ const tutorials = [
         pFr: 'Observez vos animations se mettre à jour en temps réel lors de l\'écriture.'
       }
     ]
+  },
+  {
+    id: 'best-free-online-3d-model-viewer-no-download',
+    titleEn: 'Best Free Online 3D Model Viewer — No Download Required | Studios-Pro',
+    titleFr: 'Meilleur Visualiseur 3D Gratuit en Ligne — Sans Téléchargement | Studios-Pro',
+    descEn: 'Compare the best free online 3D model viewers for STL, OBJ, GLB, and GLTF files. No software download required — open and inspect 3D files instantly in your browser.',
+    descFr: 'Comparez les meilleurs visualiseurs 3D gratuits en ligne pour les fichiers STL, OBJ, GLB. Aucun téléchargement requis.',
+    h1En: 'Best Free Online 3D Model Viewer — No Download Required (2026)',
+    h1Fr: 'Meilleur Visualiseur 3D Gratuit en Ligne — Sans Téléchargement (2026)',
+    tag: '3D Viewer',
+    cardH2En: 'Instant Browser-Based 3D Viewing',
+    cardH2Fr: 'Visualisation 3D Instantanée dans le Navigateur',
+    cardPEn: 'Open STL, OBJ, GLB, GLTF, PLY, 3MF files instantly — no software install.',
+    cardPFr: 'Ouvrez STL, OBJ, GLB, GLTF, PLY, 3MF instantanément — sans logiciel.',
+    ref: 's3dviewer',
+    sections: [
+      {
+        h2En: 'Why Use a Browser-Based 3D Viewer?',
+        h2Fr: 'Pourquoi utiliser un visualiseur 3D dans le navigateur ?',
+        pEn: 'Installing heavy desktop software like Blender (700MB+) or MeshLab just to quickly view a single STL or OBJ file is overkill. Browser-based 3D viewers let you open, inspect, rotate, and measure 3D models in seconds — directly inside Chrome, Firefox, or Safari. No setup, no license, no admin rights required. Perfect for students, designers, and engineers who need to quickly verify 3D geometry on any device.',
+        pFr: "Installer un logiciel lourd comme Blender ou MeshLab juste pour visualiser un fichier STL est excessif. Les visualiseurs 3D basés sur navigateur permettent d'ouvrir, inspecter et mesurer des modèles 3D en quelques secondes — directement dans Chrome ou Firefox. Parfait pour les étudiants et ingénieurs."
+      },
+      {
+        h2En: 'Studios-Pro 3D Viewer — Supported Formats',
+        h2Fr: 'Studios-Pro 3D Viewer — Formats Supportés',
+        pEn: 'The Studios-Pro free online 3D viewer supports all major 3D file formats: STL (binary and ASCII), OBJ with MTL materials, GLB binary, GLTF JSON, PLY point clouds, and 3MF manufacturing format. The viewer runs entirely client-side using WebGL — your files never leave your computer, making it completely private and secure. Features include: distance measurement tools, axis clipping planes, lighting controls, and standalone interactive HTML export.',
+        pFr: 'Le visualiseur 3D gratuit Studios-Pro supporte tous les formats majeurs : STL, OBJ, GLB, GLTF, PLY et 3MF. Il fonctionne entièrement côté client via WebGL — vos fichiers ne quittent jamais votre ordinateur. Fonctionnalités : outils de mesure, plans de coupe, contrôle de l\'éclairage et export HTML interactif.'
+      }
+    ]
+  },
+  {
+    id: 'how-to-convert-stl-to-obj-online-free',
+    titleEn: 'How to Convert STL to OBJ Online Free — No Software Needed | Studios-Pro',
+    titleFr: 'Convertir STL en OBJ Gratuitement en Ligne — Sans Logiciel | Studios-Pro',
+    descEn: 'Step-by-step guide to convert STL 3D printing files to OBJ format online for free. No software download required. Works on Windows, Mac, and mobile.',
+    descFr: 'Guide étape par étape pour convertir des fichiers STL en OBJ gratuitement en ligne. Sans téléchargement. Fonctionne sur Windows, Mac et mobile.',
+    h1En: 'How to Convert STL to OBJ Online Free — Complete 2026 Guide',
+    h1Fr: 'Convertir STL en OBJ Gratuitement en Ligne — Guide Complet 2026',
+    tag: '3D Converter',
+    cardH2En: 'Instant STL → OBJ Conversion in Browser',
+    cardH2Fr: 'Conversion STL → OBJ Instantanée dans le Navigateur',
+    cardPEn: 'Convert STL to OBJ online with vertex normals and material support — no upload to server.',
+    cardPFr: 'Convertissez STL en OBJ en ligne avec normales de sommets — sans envoi sur serveur.',
+    ref: 's3dviewer',
+    sections: [
+      {
+        h2En: 'Why Convert STL to OBJ?',
+        h2Fr: 'Pourquoi convertir STL en OBJ ?',
+        pEn: 'STL (Stereolithography) is the standard format for 3D printing slicers, but it lacks material color information and named surface groups. OBJ (Wavefront) supports vertex colors, multiple material assignments via .MTL files, and named object groups — making it essential for game engines, rendering software like Blender, and augmented reality workflows. Converting STL to OBJ online gives you more flexibility without losing any geometry data.',
+        pFr: "Le format STL est standard pour l'impression 3D mais manque d'informations sur les couleurs et matériaux. OBJ supporte les couleurs de sommets, les matériaux multiples via .MTL et les groupes nommés — essentiel pour les moteurs de jeux, Blender et la réalité augmentée."
+      },
+      {
+        h2En: 'Convert STL to OBJ in 3 Steps with Studios-Pro',
+        h2Fr: 'Convertir STL en OBJ en 3 Étapes avec Studios-Pro',
+        pEn: 'Step 1: Open the Studios-Pro 3D Viewer at studios-pro.com. Step 2: Drag and drop your .STL file directly onto the viewer canvas — it will load instantly with full 3D preview. Step 3: Click the Export button and choose OBJ format. Your .OBJ and .MTL files download immediately to your computer. The entire conversion happens locally in your browser — no file upload, no waiting, no size limits.',
+        pFr: 'Étape 1 : Ouvrez Studios-Pro. Étape 2 : Glissez votre fichier .STL sur le canvas — il se charge instantanément. Étape 3 : Cliquez sur Exporter et choisissez OBJ. Vos fichiers .OBJ et .MTL se téléchargent immédiatement. Tout se passe localement dans votre navigateur — pas de téléversement, pas d\'attente.'
+      }
+    ]
+  },
+  {
+    id: 'free-laser-cut-svg-generator-online',
+    titleEn: 'Free Laser Cut SVG File Generator Online — CNC & Engraving Ready | Studios-Pro',
+    titleFr: 'Générateur de Fichiers SVG pour Découpe Laser Gratuit en Ligne | Studios-Pro',
+    descEn: 'Generate clean SVG vector files for laser cutting machines, CNC routers, and vinyl cutters online free. Export DXF, G-Code, and SVG paths instantly.',
+    descFr: 'Générez des fichiers SVG propres pour découpe laser, routeurs CNC et traceurs en ligne gratuitement. Exportez DXF, G-Code et tracés SVG instantanément.',
+    h1En: 'Free Online Laser Cut SVG Generator for CNC & Engraving (2026)',
+    h1Fr: 'Générateur SVG Gratuit pour Découpe Laser CNC (2026)',
+    tag: 'Vector CNC',
+    cardH2En: 'Generate CNC-Ready SVG Paths Online',
+    cardH2Fr: 'Générez des Tracés SVG Prêts pour CNC',
+    cardPEn: 'Create SVG, DXF, and G-Code vector paths for laser cutters — works with Lightburn, LaserGRBL.',
+    cardPFr: 'Créez des tracés SVG, DXF et G-Code pour découpeuses laser — compatible Lightburn, LaserGRBL.',
+    ref: 'vcnc',
+    sections: [
+      {
+        h2En: 'What File Format Do Laser Cutters Use?',
+        h2Fr: 'Quel format de fichier les découpeuses laser utilisent-elles ?',
+        pEn: 'Most laser cutters (like the xTool D1, Sculpfun S30, or Ortur Laser Master) accept SVG vector files or DXF CAD files as input. They read the vector paths and trace them with the laser beam for cutting or engraving. SVG is preferred for simpler workflows (compatible with LightBurn, K40 Whisperer), while DXF is used for professional CNC machines and CAD workflows. G-Code files contain the precise machine movement instructions and are used for the most precise control.',
+        pFr: 'La plupart des découpeuses laser (xTool D1, Sculpfun S30, Ortur) acceptent des fichiers SVG ou DXF. SVG est préféré pour les workflows simples (LightBurn, K40 Whisperer), DXF pour les machines CNC professionnelles.'
+      },
+      {
+        h2En: 'Create Laser Cut Files with Studios-Pro Vector CNC Studio',
+        h2Fr: 'Créer des Fichiers pour Découpe Laser avec Studios-Pro',
+        pEn: 'Studios-Pro Vector CNC Studio lets you draw or import vector paths and export them as laser-ready SVG, DXF, or G-Code files — all for free in your browser. Upload a PNG or JPG image and automatically trace it to clean vector paths for laser engraving. Set your machine dimensions, cutting speed, and power settings directly in the interface. Compatible with LightBurn, LaserGRBL, Carbide Create, and all major CNC software.',
+        pFr: 'Studios-Pro Vector CNC Studio vous permet de dessiner ou importer des tracés vectoriels et de les exporter en SVG, DXF ou G-Code — gratuitement dans votre navigateur. Téléversez une image PNG/JPG et tracez-la automatiquement en vecteurs. Compatible avec LightBurn, LaserGRBL et tous les logiciels CNC majeurs.'
+      }
+    ]
+  },
+  {
+    id: 'free-ai-image-to-3d-model-generator-online',
+    titleEn: 'Free AI Image to 3D Model Generator Online — Photo to STL | Studios-Pro',
+    titleFr: 'Générateur de Modèle 3D IA Gratuit — Photo en STL en Ligne | Studios-Pro',
+    descEn: 'Convert any 2D photo or image to a 3D printable STL model online free using AI depth estimation. No 3D modeling experience required. Export STL, OBJ, GLB.',
+    descFr: 'Convertissez n\'importe quelle photo en modèle STL 3D imprimable en ligne gratuitement. Aucune expérience en modélisation requise. Exportez STL, OBJ, GLB.',
+    h1En: 'Free AI Image to 3D Model Generator Online — Convert Photo to STL (2026)',
+    h1Fr: 'Générateur de Modèle 3D IA Gratuit — Convertir Photo en STL (2026)',
+    tag: 'ArtGen Studio',
+    cardH2En: 'Turn Any Photo into a 3D Printable Model',
+    cardH2Fr: 'Transformez n\'importe quelle Photo en Modèle 3D',
+    cardPEn: 'AI depth estimation converts 2D photos to 3D relief STL models for printing — free, in browser.',
+    cardPFr: 'L\'estimation de profondeur IA convertit des photos 2D en modèles STL 3D pour impression.',
+    ref: 'artgen',
+    sections: [
+      {
+        h2En: 'How Does AI Convert a 2D Image to a 3D Model?',
+        h2Fr: 'Comment l\'IA convertit-elle une image 2D en modèle 3D ?',
+        pEn: 'AI-powered depth estimation analyzes a 2D photograph and predicts the relative depth (distance from camera) of each pixel. Bright pixels are interpreted as closer to the viewer (high elevation) and dark pixels as farther away (low elevation). This grayscale depth map is then converted into a 3D heightmap mesh: a surface with varying Z-height values that produce a 3D relief sculpture when 3D printed. The result is a tangible physical object that visually represents the original photograph in three dimensions.',
+        pFr: "L'estimation de profondeur IA analyse une photographie 2D et prédit la profondeur relative de chaque pixel. Les pixels clairs sont interprétés comme plus proches (haute élévation) et les pixels sombres comme plus éloignés. Cette carte de profondeur est convertie en maillage 3D heightmap."
+      },
+      {
+        h2En: 'Convert Your Photo to 3D with Studios-Pro ArtGen Studio',
+        h2Fr: 'Convertir votre Photo en 3D avec Studios-Pro ArtGen Studio',
+        pEn: 'Upload any PNG or JPG image to Studios-Pro ArtGen Studio. The AI depth engine processes your photo in seconds and generates a full 3D relief mesh. Adjust the extrusion depth, base thickness, and resolution to optimize for your 3D printer. Export as watertight STL (ready for Cura, PrusaSlicer), OBJ with vertex colors, or GLB for AR viewing. Perfect for creating portrait lithophanes, logo plaques, map reliefs, and decorative art panels.',
+        pFr: 'Téléversez n\'importe quelle image PNG ou JPG dans Studios-Pro ArtGen Studio. Le moteur IA traite votre photo en secondes. Ajustez la profondeur et l\'épaisseur de base. Exportez en STL étanche (compatible Cura, PrusaSlicer), OBJ ou GLB. Parfait pour lithophanies, plaques de logo et reliefs cartographiques.'
+      }
+    ]
+  },
+  {
+    id: 'how-to-view-glb-file-online-free',
+    titleEn: 'How to View GLB Files Online Free — No Software Download | Studios-Pro',
+    titleFr: 'Comment Ouvrir un Fichier GLB Gratuitement en Ligne | Studios-Pro',
+    descEn: 'Open and view GLB (binary GLTF) 3D files online free in your browser. No Blender or Autodesk required. Inspect textures, animations, and geometry instantly.',
+    descFr: 'Ouvrez et visualisez des fichiers GLB (GLTF binaire) 3D gratuitement en ligne dans votre navigateur. Inspectez textures, animations et géométrie instantanément.',
+    h1En: 'How to Open and View GLB Files Online Free (No Software Required)',
+    h1Fr: 'Comment Ouvrir un Fichier GLB Gratuitement en Ligne (Sans Logiciel)',
+    tag: '3D Viewer',
+    cardH2En: 'Open GLB Files Instantly in Your Browser',
+    cardH2Fr: 'Ouvrez des Fichiers GLB Instantanément dans le Navigateur',
+    cardPEn: 'View GLB binary 3D models with textures, lighting, and animation — directly online.',
+    cardPFr: 'Visualisez des modèles 3D GLB avec textures et animations — directement en ligne.',
+    ref: 's3dviewer',
+    sections: [
+      {
+        h2En: 'What is a GLB File?',
+        h2Fr: 'Qu\'est-ce qu\'un fichier GLB ?',
+        pEn: 'GLB (GL Transmission Format Binary) is the binary version of the GLTF 3D format, developed by the Khronos Group. Unlike OBJ or STL, GLB packages the 3D geometry, textures, materials, animations, and scene hierarchy all into a single compact binary file. This makes it the preferred format for web 3D, augmented reality (AR), virtual reality (VR), and game engines like Unity and Unreal Engine. GLB files are also widely used by 3D scanning apps, product visualization platforms, and AR try-on experiences.',
+        pFr: 'GLB (GL Transmission Format Binary) est la version binaire du format GLTF 3D, développé par le groupe Khronos. Contrairement à OBJ ou STL, GLB regroupe la géométrie, les textures, les matériaux, les animations et la hiérarchie de scène dans un seul fichier binaire compact. C\'est le format préféré pour le 3D web, la réalité augmentée et les moteurs de jeux.'
+      },
+      {
+        h2En: 'Open GLB Files with Studios-Pro 3D Viewer',
+        h2Fr: 'Ouvrir des Fichiers GLB avec Studios-Pro',
+        pEn: 'Studios-Pro 3D Viewer opens GLB files in seconds directly in your web browser. Simply drag and drop your .GLB file and the viewer renders the full 3D scene including textures, PBR materials, and skeletal animations. You can orbit, zoom, and inspect geometry without any registration or software download. Additional features include: animation playback controls, environment lighting presets, background color adjustment, mesh wireframe toggle, and standalone interactive HTML export for sharing your 3D model online.',
+        pFr: 'Studios-Pro ouvre les fichiers GLB en quelques secondes dans votre navigateur. Glissez-déposez votre fichier .GLB et le visualiseur rend la scène 3D complète incluant textures, matériaux PBR et animations squelettiques. Fonctionnalités : contrôles d\'animation, éclairage d\'environnement, export HTML interactif.'
+      }
+    ]
+  },
+  {
+    id: 'free-dxf-viewer-online-autocad-alternative',
+    titleEn: 'Free Online DXF Viewer — Open AutoCAD Files Without AutoCAD | Studios-Pro',
+    titleFr: 'Visualiseur DXF Gratuit en Ligne — Alternative AutoCAD Gratuite | Studios-Pro',
+    descEn: 'Open and view AutoCAD DXF CAD files online free without installing AutoCAD. Inspect layers, dimensions, and vector geometry. Export as SVG or HTML.',
+    descFr: 'Ouvrez des fichiers DXF AutoCAD en ligne gratuitement sans installer AutoCAD. Inspectez les calques, dimensions et géométrie vectorielle. Exportez en SVG ou HTML.',
+    h1En: 'Free Online DXF Viewer — Open AutoCAD Files Without Installing AutoCAD',
+    h1Fr: 'Visualiseur DXF Gratuit en Ligne — Alternative à AutoCAD',
+    tag: 'DFX Studio',
+    cardH2En: 'Open DXF CAD Files Free in Browser',
+    cardH2Fr: 'Ouvrez des Fichiers DXF CAO Gratuitement dans le Navigateur',
+    cardPEn: 'View AutoCAD DXF blueprints online — layer toggles, zoom, measurement, and SVG export.',
+    cardPFr: 'Visualisez des plans DXF AutoCAD — calques, zoom, mesure et export SVG.',
+    ref: 'dfx',
+    sections: [
+      {
+        h2En: 'Why Do You Need a DXF Viewer Without AutoCAD?',
+        h2Fr: 'Pourquoi avoir besoin d\'un visualiseur DXF sans AutoCAD ?',
+        pEn: 'AutoCAD costs $220+/month, making it inaccessible for freelancers, students, and small workshops who simply need to view a DXF file sent by a client or engineer. DXF (Drawing Exchange Format) is the universal CAD interchange format — used by architects, mechanical engineers, laser cutter operators, and CNC machinists worldwide. A free online DXF viewer lets you open, inspect, measure, and verify CAD blueprints without spending thousands on software licenses.',
+        pFr: 'AutoCAD coûte plus de 220$/mois, le rendant inaccessible aux freelances, étudiants et petits ateliers qui ont simplement besoin de visualiser un fichier DXF. Le DXF est le format d\'échange CAO universel, utilisé par les architectes et ingénieurs mécaniques du monde entier.'
+      },
+      {
+        h2En: 'View DXF Files Free with Studios-Pro DFX Studio',
+        h2Fr: 'Visualiser des Fichiers DXF avec Studios-Pro DFX Studio',
+        pEn: 'Studios-Pro DFX Studio is a completely free browser-based DXF viewer. Drag and drop any .DXF file (AutoCAD R12 through 2024) and it renders instantly with full layer support. Toggle individual layers on/off, zoom to precise regions, inspect entity coordinates, and measure distances between points. Export the rendered view as a clean SVG vector file or as an interactive standalone HTML page. Perfect for architects reviewing structural drawings, laser cut operators checking cut paths, and engineers verifying manufacturing tolerances.',
+        pFr: 'Studios-Pro DFX Studio est un visualiseur DXF entièrement gratuit basé sur navigateur. Glissez n\'importe quel fichier .DXF et il se rend instantanément avec support complet des calques. Basculez les calques, zoomez, inspectez et mesurez. Exportez en SVG ou HTML interactif. Parfait pour architectes, opérateurs laser et ingénieurs.'
+      }
+    ]
   }
 ];
 
