@@ -16,7 +16,7 @@
     <style>
         :root {
             --bg-dark: #07090e;
-            --bg-card: rgba(18, 22, 34, 0.85);
+            --bg-card: rgba(18, 22, 34, 0.88);
             --accent-cyan: #00f2fe;
             --accent-purple: #9b51e0;
             --accent-gold: #ffb703;
@@ -149,7 +149,7 @@
 
         .viewer-container {
             width: 100%;
-            height: 390px;
+            height: 410px;
             background: radial-gradient(circle at center, #151b29 0%, #0c1018 100%);
             border-radius: 24px;
             border: 1px solid rgba(255, 183, 3, 0.4);
@@ -159,10 +159,47 @@
             margin-bottom: 1rem;
         }
 
+        /* Particle & Portal FX Canvas Overlay */
+        #particleCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Holographic Scanline for Iron Man / X-Ray Mode */
+        .scanline-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00f2fe, #fff, #00f2fe, transparent);
+            box-shadow: 0 0 15px #00f2fe;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 6;
+            animation: scanAnim 2.5s ease-in-out infinite;
+        }
+
+        .scanline-beam.active {
+            opacity: 0.85;
+        }
+
+        @keyframes scanAnim {
+            0% { top: 10%; opacity: 0; }
+            30% { opacity: 0.85; }
+            70% { opacity: 0.85; }
+            100% { top: 90%; opacity: 0; }
+        }
+
         model-viewer {
             width: 100%;
             height: 100%;
             --poster-color: transparent;
+            z-index: 2;
         }
 
         .ar-custom-btn {
@@ -213,9 +250,6 @@
             text-transform: uppercase;
         }
 
-        /* ══════════════════════════════════════════════ */
-        /* 🎨 LUXURY MATERIAL & COLOR SWITCHER STYLING  */
-        /* ══════════════════════════════════════════════ */
         .controls-card {
             width: 100%;
             background: var(--bg-card);
@@ -242,7 +276,7 @@
 
         .swatches-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             overflow-x: auto;
             padding-bottom: 6px;
             scrollbar-width: thin;
@@ -257,7 +291,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
             padding: 8px 10px;
-            min-width: 68px;
+            min-width: 64px;
             cursor: pointer;
             transition: all 0.2s ease;
             color: #e2e8f0;
@@ -287,6 +321,7 @@
         .sphere-cyan { background: radial-gradient(circle at 35% 35%, #a5f3fc, #06b6d4 50%, #083344); }
         .sphere-emerald { background: radial-gradient(circle at 35% 35%, #86efac, #10b981 50%, #064e3b); }
         .sphere-ruby { background: radial-gradient(circle at 35% 35%, #fca5a5, #ef4444 50%, #7f1d1d); }
+        .sphere-xray { background: radial-gradient(circle at 35% 35%, #67e8f9, rgba(6,182,212,0.4) 60%, #083344); border: 1px dashed #00f2fe; }
 
         .mat-label {
             font-size: 0.65rem;
@@ -295,56 +330,35 @@
             white-space: nowrap;
         }
 
-        .color-picker-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            background: rgba(0,0,0,0.3);
-            padding: 6px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-
-        .custom-color-input {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background: transparent;
-        }
-
-        .custom-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-        .custom-color-input::-webkit-color-swatch { border: 1px solid #ffb703; border-radius: 8px; }
-
-        .lighting-row {
+        .fx-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             margin-top: 10px;
         }
 
-        .light-btn {
+        .fx-btn {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
-            padding: 6px;
-            font-size: 0.7rem;
+            padding: 7px 4px;
+            font-size: 0.68rem;
             font-weight: 700;
             color: #94a3b8;
             cursor: pointer;
             text-align: center;
             transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
         }
 
-        .light-btn.active {
-            background: rgba(56, 189, 248, 0.15);
-            border-color: #38bdf8;
-            color: #38bdf8;
+        .fx-btn.active {
+            background: rgba(155, 81, 224, 0.2);
+            border-color: #a855f7;
+            color: #d8b4fe;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
         }
 
         .card-details {
@@ -462,9 +476,15 @@
     <!-- Main Content -->
     <main>
         
-        <!-- 3D & AR Stage -->
+        <!-- 3D & AR Stage with Particles & Scanline -->
         <div class="viewer-container">
             <div class="chase-badge" id="chaseBadge">★ 1-OF-1 3D AR EDITION</div>
+            
+            <!-- Particle Field & Laser Portal Rings Canvas -->
+            <canvas id="particleCanvas"></canvas>
+            
+            <!-- X-Ray Hologram Beam -->
+            <div class="scanline-beam" id="scanlineBeam"></div>
 
             <model-viewer 
                 id="cardModelViewer"
@@ -476,7 +496,7 @@
                 ar-placement="floor"
                 camera-controls
                 auto-rotate
-                rotation-per-second="30deg"
+                rotation-per-second="25deg"
                 shadow-intensity="1.5"
                 shadow-softness="0.5"
                 exposure="1.1"
@@ -493,18 +513,22 @@
             </model-viewer>
         </div>
 
-        <!-- 🎨 NEW: LIVE MATERIAL & COLOR SHADER STUDIO -->
+        <!-- 🎨 LUXURY SHADER & X-RAY CONTROLS -->
         <div class="controls-card">
             <div class="section-heading">
                 <span id="lbl-mat-title">🎨 LUXURY SHADER &amp; MATERIAL FX</span>
                 <span id="activeMatName" style="font-size:0.7rem; color:#fff; font-family:'Plus Jakarta Sans',sans-serif;">24K GOLD</span>
             </div>
 
-            <!-- Material Swatches -->
+            <!-- Material Swatches + 🧬 X-RAY WIREFRAME MODE -->
             <div class="swatches-row">
                 <div class="mat-btn active" onclick="applyMaterial('gold', this)">
                     <div class="sphere-preview sphere-gold"></div>
                     <span class="mat-label">24K Gold</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('ruby', this)">
+                    <div class="sphere-preview sphere-ruby"></div>
+                    <span class="mat-label">Ruby Pulse</span>
                 </div>
                 <div class="mat-btn" onclick="applyMaterial('chrome', this)">
                     <div class="sphere-preview sphere-chrome"></div>
@@ -522,26 +546,36 @@
                     <div class="sphere-preview sphere-emerald"></div>
                     <span class="mat-label">Emerald</span>
                 </div>
-                <div class="mat-btn" onclick="applyMaterial('ruby', this)">
-                    <div class="sphere-preview sphere-ruby"></div>
-                    <span class="mat-label">Ruby Pulse</span>
+                <!-- 🧬 X-RAY / IRON MAN WIREFRAME MODE -->
+                <div class="mat-btn" onclick="applyMaterial('xray', this)" id="btn-xray">
+                    <div class="sphere-preview sphere-xray"></div>
+                    <span class="mat-label" style="color:#00f2fe;">🧬 X-Ray</span>
                 </div>
             </div>
 
-            <!-- Custom Color Picker + Lighting FX -->
-            <div class="color-picker-wrapper">
-                <input type="color" id="customColorPicker" class="custom-color-input" value="#ffb703" onchange="applyCustomColor(this.value)">
-                <span style="font-size:0.75rem; color:#94a3b8; font-weight:600;" id="lbl-custom-color">Custom Color Wheel</span>
-            </div>
-
-            <!-- Lighting FX Studio -->
-            <div style="margin-top: 12px;">
-                <div style="font-size:0.7rem; font-weight:800; color:#38bdf8; font-family:'Orbitron',sans-serif; margin-bottom:4px;" id="lbl-light-title">💡 ATMOSPHERIC LIGHTING</div>
-                <div class="lighting-row">
-                    <button class="light-btn active" onclick="setLighting('studio', this)">Studio</button>
-                    <button class="light-btn" onclick="setLighting('cyber', this)">Cyber</button>
-                    <button class="light-btn" onclick="setLighting('sunset', this)">Sunset</button>
-                    <button class="light-btn" onclick="setLighting('void', this)">Void</button>
+            <!-- ✨ NEW: HOLOGRAPHIC PARTICLES & PORTAL FX (Idea #2) -->
+            <div style="margin-top: 14px;">
+                <div style="font-size:0.7rem; font-weight:800; color:#c084fc; font-family:'Orbitron',sans-serif; margin-bottom:6px; display:flex; justify-content:space-between;">
+                    <span id="lbl-fx-title">✨ PARTICLES &amp; PORTAL FX</span>
+                    <span id="activeFxName" style="font-size:0.65rem; color:#fff;">STARDUST</span>
+                </div>
+                <div class="fx-grid">
+                    <button class="fx-btn active" onclick="setParticleFX('stardust', this)">
+                        <span>👑</span>
+                        <span id="fx-lbl-stardust">Stardust</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('rings', this)">
+                        <span>⚡</span>
+                        <span id="fx-lbl-rings">Cyber Ring</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('vortex', this)">
+                        <span>🌌</span>
+                        <span id="fx-lbl-vortex">Vortex</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('off', this)">
+                        <span>🚫</span>
+                        <span id="fx-lbl-off">Off</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -594,14 +628,17 @@
     <script>
         let currentLang = 'en';
         let currentCardId = '184';
+        let activeFXMode = 'stardust';
+        let isXRayActive = false;
 
         const MATERIALS = {
-            gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
-            chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05 },
-            obsidian: { name: 'OBSIDIAN PURPLE', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2 },
-            cyan: { name: 'NEON CYAN', color: [0.0, 0.9, 1.0, 1.0], metallic: 0.8, roughness: 0.1 },
-            emerald: { name: 'MATRIX EMERALD', color: [0.05, 0.85, 0.35, 1.0], metallic: 0.85, roughness: 0.15 },
-            ruby: { name: 'RUBY PULSE', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18 }
+            gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 0.95, roughness: 0.15, xray: false },
+            ruby: { name: 'RUBY PULSE', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18, xray: false },
+            chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05, xray: false },
+            obsidian: { name: 'OBSIDIAN PURPLE', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2, xray: false },
+            cyan: { name: 'NEON CYAN', color: [0.0, 0.9, 1.0, 1.0], metallic: 0.85, roughness: 0.1, xray: false },
+            emerald: { name: 'MATRIX EMERALD', color: [0.05, 0.85, 0.35, 1.0], metallic: 0.85, roughness: 0.15, xray: false },
+            xray: { name: '🧬 X-RAY WIREFRAME', color: [0.0, 0.95, 1.0, 0.4], metallic: 0.3, roughness: 0.05, xray: true }
         };
 
         const translations = {
@@ -609,8 +646,11 @@
                 ar_btn: 'PROJECT IN AR',
                 chase_badge: '★ 1-OF-1 3D AR EDITION',
                 mat_title: '🎨 LUXURY SHADER & MATERIAL FX',
-                custom_color: 'Custom Color Wheel',
-                light_title: '💡 ATMOSPHERIC LIGHTING',
+                fx_title: '✨ PARTICLES & PORTAL FX',
+                fx_stardust: 'Stardust',
+                fx_rings: 'Cyber Ring',
+                fx_vortex: 'Vortex',
+                fx_off: 'Off',
                 snap_btn: '📸 TAKE AR PHOTO / SNAPSHOT',
                 share_btn: 'SHARE ON TIKTOK / REELS',
                 create_btn: 'EXPLORE STUDIOS-PRO.COM',
@@ -622,8 +662,11 @@
                 ar_btn: 'PROJETER EN RÉALITÉ AUGMENTÉE',
                 chase_badge: '★ ÉDITION RA 3D 1-SUR-1',
                 mat_title: '🎨 SHADERS & MATÉRIAUX DE LUXE',
-                custom_color: 'Palette de Couleur Personnalisée',
-                light_title: '💡 ÉCLAIRAGE ATMOSPHÉRIQUE',
+                fx_title: '✨ PARTICULES & PORTAIL RA',
+                fx_stardust: 'Poussière d\'Or',
+                fx_rings: 'Anneau Cyber',
+                fx_vortex: 'Vortex',
+                fx_off: 'Désactiver',
                 snap_btn: '📸 PRENDRE PHOTO RA / CAPTURE',
                 share_btn: 'PARTAGER SUR TIKTOK / REELS',
                 create_btn: 'EXPLORER STUDIOS-PRO.COM',
@@ -644,8 +687,11 @@
             document.getElementById('txt-ar-btn').innerText = t.ar_btn;
             document.getElementById('chaseBadge').innerText = t.chase_badge;
             document.getElementById('lbl-mat-title').innerText = t.mat_title;
-            document.getElementById('lbl-custom-color').innerText = t.custom_color;
-            document.getElementById('lbl-light-title').innerText = t.light_title;
+            document.getElementById('lbl-fx-title').innerText = t.fx_title;
+            document.getElementById('fx-lbl-stardust').innerText = t.fx_stardust;
+            document.getElementById('fx-lbl-rings').innerText = t.fx_rings;
+            document.getElementById('fx-lbl-vortex').innerText = t.fx_vortex;
+            document.getElementById('fx-lbl-off').innerText = t.fx_off;
             document.getElementById('txt-snap-btn').innerText = t.snap_btn;
             document.getElementById('txt-share-btn').innerText = t.share_btn;
             document.getElementById('txt-create-btn').innerText = t.create_btn;
@@ -665,11 +711,12 @@
             const viewer = document.getElementById('cardModelViewer');
             viewer.src = `models/card-${cardParam}.glb`;
 
-            // Apply URL material parameter if provided (e.g. ?card=184&mat=gold)
             const matParam = urlParams.get('mat') || urlParams.get('material') || 'gold';
             viewer.addEventListener('load', () => {
                 applyMaterial(matParam);
             });
+
+            initParticleSystem();
         });
 
         function applyMaterial(key, btnEl = null) {
@@ -680,6 +727,16 @@
             if (btnEl) {
                 document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
                 btnEl.classList.add('active');
+            }
+
+            const beam = document.getElementById('scanlineBeam');
+            if (mat.xray) {
+                isXRayActive = true;
+                if (beam) beam.classList.add('active');
+                setParticleFX('rings');
+            } else {
+                isXRayActive = false;
+                if (beam) beam.classList.remove('active');
             }
 
             const viewer = document.getElementById('cardModelViewer');
@@ -694,44 +751,139 @@
             }
         }
 
-        function applyCustomColor(hex) {
-            document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('activeMatName').innerText = hex.toUpperCase();
+        function setParticleFX(mode, btnEl = null) {
+            activeFXMode = mode;
+            const nameEl = document.getElementById('activeFxName');
+            if (nameEl) nameEl.innerText = mode.toUpperCase();
 
-            const r = parseInt(hex.slice(1, 3), 16) / 255;
-            const g = parseInt(hex.slice(3, 5), 16) / 255;
-            const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-            const viewer = document.getElementById('cardModelViewer');
-            if (viewer.model && viewer.model.materials) {
-                viewer.model.materials.forEach(m => {
-                    if (m.pbrMetallicRoughness) {
-                        m.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1.0]);
-                        m.pbrMetallicRoughness.setMetallicFactor(0.9);
-                        m.pbrMetallicRoughness.setRoughnessFactor(0.15);
-                    }
-                });
+            if (btnEl) {
+                document.querySelectorAll('.fx-btn').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
             }
         }
 
-        function setLighting(mode, btnEl) {
-            document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('active'));
-            btnEl.classList.add('active');
+        /* ══════════════════════════════════════════════ */
+        /* ✨ HIGH-PERFORMANCE 60FPS PARTICLE & PORTAL FX */
+        /* ══════════════════════════════════════════════ */
+        function initParticleSystem() {
+            const canvas = document.getElementById('particleCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
 
-            const viewer = document.getElementById('cardModelViewer');
-            if (mode === 'studio') {
-                viewer.exposure = 1.0;
-                viewer.shadowIntensity = 1.2;
-            } else if (mode === 'cyber') {
-                viewer.exposure = 1.4;
-                viewer.shadowIntensity = 1.8;
-            } else if (mode === 'sunset') {
-                viewer.exposure = 0.9;
-                viewer.shadowIntensity = 1.5;
-            } else if (mode === 'void') {
-                viewer.exposure = 1.2;
-                viewer.shadowIntensity = 0.5;
+            function resize() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
             }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const particles = [];
+            const NUM_P = 45;
+
+            for (let i = 0; i < NUM_P; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2.5 + 1.0,
+                    speedY: -(Math.random() * 0.8 + 0.3),
+                    speedX: (Math.random() - 0.5) * 0.4,
+                    opacity: Math.random() * 0.7 + 0.2,
+                    pulse: Math.random() * Math.PI,
+                    color: Math.random() > 0.4 ? '#ffb703' : '#00f2fe'
+                });
+            }
+
+            let angleRing = 0;
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (activeFXMode === 'stardust') {
+                    // 👑 Floating Stardust
+                    particles.forEach(p => {
+                        p.y += p.speedY;
+                        p.x += p.speedX;
+                        p.pulse += 0.04;
+                        const alpha = Math.sin(p.pulse) * 0.4 + 0.4;
+
+                        if (p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
+                        if (p.x < 0) p.x = canvas.width;
+                        if (p.x > canvas.width) p.x = 0;
+
+                        ctx.save();
+                        ctx.globalAlpha = alpha;
+                        ctx.fillStyle = p.color;
+                        ctx.shadowColor = p.color;
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    });
+                } else if (activeFXMode === 'rings') {
+                    // ⚡ Cyber Matrix Laser Rings beneath model
+                    angleRing += 0.02;
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height * 0.78;
+                    const rx = canvas.width * 0.38;
+                    const ry = rx * 0.32;
+
+                    ctx.save();
+                    ctx.strokeStyle = '#00f2fe';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.shadowBlur = 15;
+
+                    // Ring 1
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Ring 2 (Inner rotating dashed)
+                    ctx.strokeStyle = '#a855f7';
+                    ctx.shadowColor = '#a855f7';
+                    ctx.setLineDash([8, 12]);
+                    ctx.lineDashOffset = -angleRing * 40;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rx * 0.68, ry * 0.68, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                } else if (activeFXMode === 'vortex') {
+                    // 🌌 Quantum Vortex
+                    angleRing += 0.03;
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height * 0.8;
+                    const rx = canvas.width * 0.4;
+                    const ry = rx * 0.28;
+
+                    ctx.save();
+                    const grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, rx);
+                    grad.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+                    grad.addColorStop(0.5, 'rgba(0, 242, 254, 0.2)');
+                    grad.addColorStop(1, 'transparent');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Spiral Arms
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                    for (let i = 0; i < 4; i++) {
+                        const a = angleRing + (i * Math.PI / 2);
+                        ctx.beginPath();
+                        ctx.ellipse(cx, cy, rx * 0.85, ry * 0.85, a, 0, Math.PI * 0.8);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+
+                requestAnimationFrame(render);
+            }
+            render();
         }
 
         async function takeARSnapshot() {
