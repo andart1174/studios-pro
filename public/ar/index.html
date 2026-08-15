@@ -202,9 +202,7 @@
             z-index: 2;
         }
 
-        /* ══════════════════════════════════════════════════════════ */
-        /* 🔮 AR OVERLAY HUD (REMAINS VISIBLE INSIDE AR CAMERA!)     */
-        /* ══════════════════════════════════════════════════════════ */
+        /* 🔮 AR OVERLAY HUD */
         .ar-hud-container {
             position: absolute;
             inset: 0;
@@ -280,7 +278,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 5px 8px;
-            min-width: 54px;
+            min-width: 52px;
             cursor: pointer;
             transition: all 0.2s ease;
             color: #e2e8f0;
@@ -304,6 +302,7 @@
             box-shadow: inset -2px -2px 4px rgba(0,0,0,0.6), inset 2px 2px 4px rgba(255,255,255,0.6);
         }
 
+        .sphere-original { background: radial-gradient(circle at 35% 35%, #fff, #38bdf8 50%, #1e1b4b); border: 1px solid #38bdf8; }
         .sphere-gold { background: radial-gradient(circle at 35% 35%, #ffe066, #ffb703 60%, #996500); }
         .sphere-ruby { background: radial-gradient(circle at 35% 35%, #fca5a5, #ef4444 50%, #7f1d1d); }
         .sphere-chrome { background: radial-gradient(circle at 35% 35%, #ffffff, #d1d5db 50%, #6b7280); }
@@ -376,7 +375,6 @@
             white-space: nowrap;
         }
 
-        /* Hide the Launch AR button when AR session is active */
         model-viewer[ar-status="session-started"] .ar-custom-btn {
             display: none !important;
         }
@@ -490,7 +488,7 @@
     <!-- Main Content -->
     <main>
         
-        <!-- 3D & AR Stage with WebXR DOM Overlay -->
+        <!-- 3D & AR Stage with WebXR DOM Overlay & Animation Autoplay -->
         <div class="viewer-container">
             <!-- Particle Field Canvas -->
             <canvas id="particleCanvas"></canvas>
@@ -507,6 +505,7 @@
                 ar-scale="auto"
                 ar-placement="floor"
                 camera-controls
+                autoplay
                 auto-rotate
                 rotation-per-second="25deg"
                 shadow-intensity="1.5"
@@ -519,14 +518,19 @@
                     <!-- Top HUD -->
                     <div class="ar-hud-top">
                         <div class="chase-badge" id="chaseBadge">★ 1-OF-1 3D AR EDITION</div>
-                        <div class="mat-status-pill" id="activeMatName">24K GOLD</div>
+                        <div class="mat-status-pill" id="activeMatName">ORIGINAL</div>
                     </div>
 
                     <!-- Bottom Floating HUD (Works in 3D Web & in AR Camera!) -->
                     <div class="ar-hud-bottom">
-                        <!-- Material Swatches + X-Ray -->
+                        <!-- 🌟 NEW: ORIGINAL BUTTON + Material Swatches + X-Ray -->
                         <div class="swatches-row-hud">
-                            <div class="mat-btn active" onclick="applyMaterial('gold', this)">
+                            <!-- 🌟 ORIGINAL (Preserves embedded colors & animation tracks) -->
+                            <div class="mat-btn active" onclick="applyMaterial('original', this)" id="btn-orig">
+                                <div class="sphere-preview sphere-original"></div>
+                                <span class="mat-label" style="color:#38bdf8;">🌟 Original</span>
+                            </div>
+                            <div class="mat-btn" onclick="applyMaterial('gold', this)">
                                 <div class="sphere-preview sphere-gold"></div>
                                 <span class="mat-label">Gold</span>
                             </div>
@@ -624,8 +628,10 @@
         let currentFxIdx = 0;
         let activeFXMode = 'stardust';
         let isXRayActive = false;
+        let originalMaterialsData = [];
 
         const MATERIALS = {
+            original: { name: 'ORIGINAL / ANIMATED', xray: false },
             gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 0.95, roughness: 0.15, xray: false },
             ruby: { name: 'RUBY PULSE', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18, xray: false },
             chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05, xray: false },
@@ -690,8 +696,22 @@
             const viewer = document.getElementById('cardModelViewer');
             viewer.src = `models/card-${cardParam}.glb`;
 
-            const matParam = urlParams.get('mat') || urlParams.get('material') || 'gold';
+            const matParam = urlParams.get('mat') || urlParams.get('material') || 'original';
+
             viewer.addEventListener('load', () => {
+                // Cache original materials
+                if (viewer.model && viewer.model.materials) {
+                    originalMaterialsData = viewer.model.materials.map(m => {
+                        if (m.pbrMetallicRoughness) {
+                            return {
+                                color: m.pbrMetallicRoughness.baseColorFactor ? [...m.pbrMetallicRoughness.baseColorFactor] : [1,1,1,1],
+                                metallic: m.pbrMetallicRoughness.metallicFactor !== undefined ? m.pbrMetallicRoughness.metallicFactor : 0.5,
+                                roughness: m.pbrMetallicRoughness.roughnessFactor !== undefined ? m.pbrMetallicRoughness.roughnessFactor : 0.5
+                            };
+                        }
+                        return null;
+                    });
+                }
                 applyMaterial(matParam);
             });
 
@@ -699,13 +719,19 @@
         });
 
         function applyMaterial(key, btnEl = null) {
-            const mat = MATERIALS[key] || MATERIALS.gold;
+            const mat = MATERIALS[key] || MATERIALS.original;
             const nameEl = document.getElementById('activeMatName');
             if (nameEl) nameEl.innerText = mat.name;
 
             if (btnEl) {
                 document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
                 btnEl.classList.add('active');
+            } else {
+                const targetBtn = document.querySelector(`.mat-btn[onclick*="'${key}'"]`);
+                if (targetBtn) {
+                    document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+                    targetBtn.classList.add('active');
+                }
             }
 
             const beam = document.getElementById('scanlineBeam');
@@ -721,13 +747,25 @@
 
             const viewer = document.getElementById('cardModelViewer');
             if (viewer && viewer.model && viewer.model.materials) {
-                viewer.model.materials.forEach(m => {
-                    if (m.pbrMetallicRoughness) {
-                        m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
-                        m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
-                        m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
-                    }
-                });
+                if (key === 'original') {
+                    // Restore original texture and colors!
+                    viewer.model.materials.forEach((m, idx) => {
+                        const orig = originalMaterialsData[idx];
+                        if (orig && m.pbrMetallicRoughness) {
+                            m.pbrMetallicRoughness.setBaseColorFactor(orig.color);
+                            m.pbrMetallicRoughness.setMetallicFactor(orig.metallic);
+                            m.pbrMetallicRoughness.setRoughnessFactor(orig.roughness);
+                        }
+                    });
+                } else {
+                    viewer.model.materials.forEach(m => {
+                        if (m.pbrMetallicRoughness) {
+                            m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
+                            m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
+                            m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
+                        }
+                    });
+                }
             }
         }
 
