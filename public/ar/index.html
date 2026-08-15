@@ -610,7 +610,7 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
-
+            const urlParams = new URLSearchParams(window.location.search);
             const cardParam = urlParams.get('card') || urlParams.get('id') || '184';
             currentCardId = cardParam;
 
