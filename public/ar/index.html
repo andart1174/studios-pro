@@ -452,10 +452,6 @@
             <div class="brand-name">STUDIOS-<span>PRO</span></div>
         </a>
         <div class="header-controls">
-            <div class="lang-switch">
-                <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')">EN</button>
-                <button class="lang-btn" id="btn-fr" onclick="setLanguage('fr')">FR</button>
-            </div>
             <div class="series-tag">SP-22 DECK</div>
         </div>
     </header>
@@ -604,7 +600,7 @@
         let originalMaterials = [];
 
         const MATERIALS = {
-            original: { name: 'ORIGINAL (CULORI & ANIMAȚII)' },
+            original: { name: 'ORIGINAL (AUTHENTIC)' },
             gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
             chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05 },
             obsidian: { name: 'OBSIDIAN PURPLE', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2 },
@@ -613,59 +609,7 @@
             ruby: { name: 'RUBY PULSE', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18 }
         };
 
-        const translations = {
-            en: {
-                ar_btn: 'PROJECT IN AR',
-                chase_badge: '★ 1-OF-1 3D AR EDITION',
-                mat_title: '🎨 LUXURY SHADER & MATERIAL FX',
-                custom_color: 'Custom Color Wheel',
-                light_title: '💡 ATMOSPHERIC LIGHTING',
-                snap_btn: '📸 TAKE AR PHOTO / SNAPSHOT',
-                share_btn: 'SHARE ON TIKTOK / REELS',
-                create_btn: 'EXPLORE STUDIOS-PRO.COM',
-                footer: '© 2026 Studios-Pro.com Ecosystem • Official 3D Hologram Player',
-                card_desc: '★ 1-OF-1 AR EDITION UNLOCKED ★ Procedural 3D collectible asset certified by Studios-Pro ecosystem.',
-                copied_msg: 'Card link copied to clipboard! Paste it directly in your TikTok / Instagram caption.'
-            },
-            fr: {
-                ar_btn: 'PROJETER EN RÉALITÉ AUGMENTÉE',
-                chase_badge: '★ ÉDITION RA 3D 1-SUR-1',
-                mat_title: '🎨 SHADERS & MATÉRIAUX DE LUXE',
-                custom_color: 'Palette de Couleur Personnalisée',
-                light_title: '💡 ÉCLAIRAGE ATMOSPHÉRIQUE',
-                snap_btn: '📸 PRENDRE PHOTO RA / CAPTURE',
-                share_btn: 'PARTAGER SUR TIKTOK / REELS',
-                create_btn: 'EXPLORER STUDIOS-PRO.COM',
-                footer: '© 2026 Écosystème Studios-Pro.com • Lecteur Hologramme 3D Officiel',
-                card_desc: '★ ÉDITION RA 1-SUR-1 DÉVERROUILLÉE ★ Actif 3D procédural de collection certifié par Studios-Pro.',
-                copied_msg: 'Lien copié dans le presse-papiers ! Collez-le dans votre description TikTok / Instagram.'
-            }
-        };
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            document.documentElement.lang = lang;
-
-            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
-
-            const t = translations[lang];
-            document.getElementById('txt-ar-btn').innerText = t.ar_btn;
-            document.getElementById('chaseBadge').innerText = t.chase_badge;
-            document.getElementById('lbl-mat-title').innerText = t.mat_title;
-            document.getElementById('lbl-custom-color').innerText = t.custom_color;
-            document.getElementById('lbl-light-title').innerText = t.light_title;
-            document.getElementById('txt-snap-btn').innerText = t.snap_btn;
-            document.getElementById('txt-share-btn').innerText = t.share_btn;
-            document.getElementById('txt-create-btn').innerText = t.create_btn;
-            document.getElementById('txt-footer').innerText = t.footer;
-            document.getElementById('txt-card-desc').innerText = t.card_desc;
-        }
-
         window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const lang = urlParams.get('lang');
-            if (lang === 'fr') setLanguage('fr');
 
             const cardParam = urlParams.get('card') || urlParams.get('id') || '184';
             currentCardId = cardParam;
@@ -680,10 +624,12 @@
                 if (viewer.model && viewer.model.materials) {
                     originalMaterials = viewer.model.materials.map(m => {
                         if (m.pbrMetallicRoughness) {
+                            const bcf = m.pbrMetallicRoughness.baseColorFactor;
+                            const col = (bcf && bcf.length === 4) ? [bcf[0], bcf[1], bcf[2], bcf[3]] : [1.0, 1.0, 1.0, 1.0];
                             return {
-                                color: m.pbrMetallicRoughness.baseColorFactor ? [...m.pbrMetallicRoughness.baseColorFactor] : [1, 1, 1, 1],
-                                metallic: m.pbrMetallicRoughness.metallicFactor !== undefined ? m.pbrMetallicRoughness.metallicFactor : 0.5,
-                                roughness: m.pbrMetallicRoughness.roughnessFactor !== undefined ? m.pbrMetallicRoughness.roughnessFactor : 0.5
+                                color: col,
+                                metallic: m.pbrMetallicRoughness.metallicFactor !== undefined ? m.pbrMetallicRoughness.metallicFactor : 0.0,
+                                roughness: m.pbrMetallicRoughness.roughnessFactor !== undefined ? m.pbrMetallicRoughness.roughnessFactor : 1.0
                             };
                         }
                         return null;
