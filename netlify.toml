@@ -174,4 +174,41 @@
     Expires = "0"
 
 
+# =====================================================
+# 🔮 AR / 3D MODEL HEADERS — REQUIRED FOR GOOGLE SCENVIEWER & IOS QUICKLOOK
+# Without these, Google SceneViewer (Android AR) silently refuses to show the model
+# =====================================================
 
+# GLB files — correct MIME type + CORS for SceneViewer & QuickLook
+[[headers]]
+  for = "/ar/models/*.glb"
+  [headers.values]
+    Content-Type = "model/gltf-binary"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, HEAD, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+    Cache-Control = "public, max-age=3600"
+
+# GLTF JSON files
+[[headers]]
+  for = "/ar/models/*.gltf"
+  [headers.values]
+    Content-Type = "model/gltf+json"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, HEAD, OPTIONS"
+    Cache-Control = "public, max-age=3600"
+
+# USDZ files for iOS QuickLook
+[[headers]]
+  for = "/ar/models/*.usdz"
+  [headers.values]
+    Content-Type = "model/vnd.usdz+zip"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"
+
+# AR viewer page — no cache so updates deploy instantly
+[[headers]]
+  for = "/ar/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=0, must-revalidate"
