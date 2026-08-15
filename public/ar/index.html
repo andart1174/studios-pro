@@ -149,7 +149,7 @@
 
         .viewer-container {
             width: 100%;
-            height: 440px;
+            height: 400px;
             background: radial-gradient(circle at center, #151b29 0%, #0c1018 100%);
             border-radius: 24px;
             border: 1px solid rgba(255, 183, 3, 0.4);
@@ -202,26 +202,10 @@
             z-index: 2;
         }
 
-        /* 🔮 AR OVERLAY HUD */
-        .ar-hud-container {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 12px;
-            z-index: 20;
-        }
-
-        .ar-hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            pointer-events: auto;
-        }
-
         .chase-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
             background: linear-gradient(135deg, #ffb703, #ff4d4d);
             color: #000;
             font-size: 0.7rem;
@@ -231,73 +215,101 @@
             box-shadow: 0 0 15px rgba(255, 183, 3, 0.6);
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            z-index: 10;
         }
 
-        .mat-status-pill {
-            background: rgba(10, 14, 26, 0.85);
-            border: 1px solid #ffb703;
-            color: #ffb703;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
+        .ar-custom-btn {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+            color: #07090e;
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 14px;
-            backdrop-filter: blur(10px);
-        }
-
-        /* Floating AR Bottom Controls */
-        .ar-hud-bottom {
-            pointer-events: auto;
+            font-size: 0.95rem;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: none;
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 8px;
-            background: rgba(10, 14, 26, 0.82);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 18px;
-            padding: 8px 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 183, 3, 0.45);
+            transition: all 0.2s ease;
+            z-index: 10;
+            white-space: nowrap;
         }
 
-        .swatches-row-hud {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding-bottom: 2px;
-            scrollbar-width: none;
+        .ar-custom-btn:active {
+            transform: translateX(-50%) scale(0.96);
         }
-        .swatches-row-hud::-webkit-scrollbar { display: none; }
+
+        /* ══════════════════════════════════════════════ */
+        /* 🎨 LUXURY MATERIAL & SHADER CONTROLS           */
+        /* ══════════════════════════════════════════════ */
+        .controls-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 1.1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffb703;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .swatches-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
 
         .mat-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 5px 8px;
-            min-width: 52px;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 8px 10px;
+            min-width: 62px;
             cursor: pointer;
             transition: all 0.2s ease;
             color: #e2e8f0;
             flex-shrink: 0;
         }
 
-        .mat-btn:active {
-            transform: scale(0.94);
+        .mat-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            transform: translateY(-2px);
         }
 
         .mat-btn.active {
             border-color: #ffb703;
-            background: rgba(255, 183, 3, 0.22);
-            box-shadow: 0 0 12px rgba(255, 183, 3, 0.4);
+            background: rgba(255, 183, 3, 0.15);
+            box-shadow: 0 0 15px rgba(255, 183, 3, 0.35);
         }
 
         .sphere-preview {
-            width: 22px;
-            height: 22px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             box-shadow: inset -2px -2px 4px rgba(0,0,0,0.6), inset 2px 2px 4px rgba(255,255,255,0.6);
         }
@@ -312,71 +324,41 @@
         .sphere-xray { background: radial-gradient(circle at 35% 35%, #67e8f9, rgba(6,182,212,0.4) 60%, #083344); border: 1px dashed #00f2fe; }
 
         .mat-label {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             font-weight: 700;
             text-align: center;
             white-space: nowrap;
         }
 
-        .ar-quick-actions {
-            display: flex;
+        .fx-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 6px;
-            justify-content: space-between;
+            margin-top: 10px;
         }
 
-        .ar-hud-action-btn {
-            flex: 1;
-            padding: 7px 10px;
+        .fx-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
-            font-size: 0.72rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(255, 255, 255, 0.08);
-            color: #e2e8f0;
+            padding: 7px 4px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #94a3b8;
             cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .ar-hud-action-btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-snap-gold {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none;
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .ar-custom-btn {
-            position: absolute;
-            bottom: 85px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
-            color: #07090e;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 800;
-            font-size: 0.95rem;
-            padding: 11px 22px;
-            border-radius: 30px;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 10px 25px rgba(255, 183, 3, 0.5);
+            text-align: center;
             transition: all 0.2s ease;
-            z-index: 15;
-            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
         }
 
-        model-viewer[ar-status="session-started"] .ar-custom-btn {
-            display: none !important;
+        .fx-btn.active {
+            background: rgba(155, 81, 224, 0.2);
+            border-color: #a855f7;
+            color: #d8b4fe;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
         }
 
         .card-details {
@@ -446,6 +428,12 @@
             border: none;
         }
 
+        .btn-snapshot {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
         .btn-social {
             background: linear-gradient(135deg, rgba(255, 0, 128, 0.15), rgba(121, 40, 202, 0.15));
             border: 1px solid rgba(255, 0, 128, 0.3);
@@ -488,12 +476,14 @@
     <!-- Main Content -->
     <main>
         
-        <!-- 3D & AR Stage with WebXR DOM Overlay & Animation Autoplay -->
+        <!-- 3D & AR Stage (Rock-Solid Google SceneViewer + WebXR) -->
         <div class="viewer-container">
-            <!-- Particle Field Canvas -->
+            <div class="chase-badge" id="chaseBadge">★ 1-OF-1 3D AR EDITION</div>
+            
+            <!-- Particle Canvas -->
             <canvas id="particleCanvas"></canvas>
             
-            <!-- X-Ray Hologram Beam -->
+            <!-- X-Ray Scanline -->
             <div class="scanline-beam" id="scanlineBeam"></div>
 
             <model-viewer 
@@ -501,78 +491,18 @@
                 src="models/card-184.glb"
                 alt="Studios-Pro 3D Holographic Card Asset"
                 ar
-                ar-modes="webxr scene-viewer quick-look"
+                ar-modes="scene-viewer webxr quick-look"
                 ar-scale="auto"
                 ar-placement="floor"
                 camera-controls
                 autoplay
                 auto-rotate
                 rotation-per-second="25deg"
-                shadow-intensity="1.5"
-                shadow-softness="0.5"
-                exposure="1.1"
+                shadow-intensity="1.2"
+                shadow-softness="0.6"
+                exposure="1.05"
                 loading="eager">
                 
-                <!-- 🔮 AR DOM OVERLAY (REMAINS VISIBLE INSIDE AR CAMERA!) -->
-                <div class="ar-hud-container" slot="ar-overlay">
-                    <!-- Top HUD -->
-                    <div class="ar-hud-top">
-                        <div class="chase-badge" id="chaseBadge">★ 1-OF-1 3D AR EDITION</div>
-                        <div class="mat-status-pill" id="activeMatName">ORIGINAL</div>
-                    </div>
-
-                    <!-- Bottom Floating HUD (Works in 3D Web & in AR Camera!) -->
-                    <div class="ar-hud-bottom">
-                        <!-- 🌟 NEW: ORIGINAL BUTTON + Material Swatches + X-Ray -->
-                        <div class="swatches-row-hud">
-                            <!-- 🌟 ORIGINAL (Preserves embedded colors & animation tracks) -->
-                            <div class="mat-btn active" onclick="applyMaterial('original', this)" id="btn-orig">
-                                <div class="sphere-preview sphere-original"></div>
-                                <span class="mat-label" style="color:#38bdf8;">🌟 Original</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('gold', this)">
-                                <div class="sphere-preview sphere-gold"></div>
-                                <span class="mat-label">Gold</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('ruby', this)">
-                                <div class="sphere-preview sphere-ruby"></div>
-                                <span class="mat-label">Ruby</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('chrome', this)">
-                                <div class="sphere-preview sphere-chrome"></div>
-                                <span class="mat-label">Chrome</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('obsidian', this)">
-                                <div class="sphere-preview sphere-obsidian"></div>
-                                <span class="mat-label">Obsidian</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('cyan', this)">
-                                <div class="sphere-preview sphere-cyan"></div>
-                                <span class="mat-label">Cyan</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('emerald', this)">
-                                <div class="sphere-preview sphere-emerald"></div>
-                                <span class="mat-label">Emerald</span>
-                            </div>
-                            <div class="mat-btn" onclick="applyMaterial('xray', this)">
-                                <div class="sphere-preview sphere-xray"></div>
-                                <span class="mat-label" style="color:#00f2fe;">🧬 X-Ray</span>
-                            </div>
-                        </div>
-
-                        <!-- Quick Action Bar -->
-                        <div class="ar-quick-actions">
-                            <button class="ar-hud-action-btn" onclick="cycleParticleFX()">
-                                <span id="fx-icon">✨</span> <span id="lbl-fx-btn">FX: Stardust</span>
-                            </button>
-                            <button class="ar-hud-action-btn btn-snap-gold" onclick="takeARSnapshot()">
-                                📸 <span id="lbl-snap-btn">AR Photo</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Launch AR Button -->
                 <button slot="ar-button" class="ar-custom-btn" id="customArBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -582,6 +512,77 @@
                     <span id="txt-ar-btn">PROJECT IN AR</span>
                 </button>
             </model-viewer>
+        </div>
+
+        <!-- 🎨 LUXURY SHADER & MATERIAL FX -->
+        <div class="controls-card">
+            <div class="section-heading">
+                <span id="lbl-mat-title">🎨 LUXURY SHADER &amp; MATERIAL FX</span>
+                <span id="activeMatName" style="font-size:0.7rem; color:#fff; font-family:'Plus Jakarta Sans',sans-serif;">ORIGINAL</span>
+            </div>
+
+            <!-- Material Swatches -->
+            <div class="swatches-row">
+                <!-- 🌟 ORIGINAL -->
+                <div class="mat-btn active" onclick="applyMaterial('original', this)" id="btn-orig">
+                    <div class="sphere-preview sphere-original"></div>
+                    <span class="mat-label" style="color:#38bdf8;">🌟 Original</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('gold', this)">
+                    <div class="sphere-preview sphere-gold"></div>
+                    <span class="mat-label">Gold</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('ruby', this)">
+                    <div class="sphere-preview sphere-ruby"></div>
+                    <span class="mat-label">Ruby</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('chrome', this)">
+                    <div class="sphere-preview sphere-chrome"></div>
+                    <span class="mat-label">Chrome</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('obsidian', this)">
+                    <div class="sphere-preview sphere-obsidian"></div>
+                    <span class="mat-label">Obsidian</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('cyan', this)">
+                    <div class="sphere-preview sphere-cyan"></div>
+                    <span class="mat-label">Cyan</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('emerald', this)">
+                    <div class="sphere-preview sphere-emerald"></div>
+                    <span class="mat-label">Emerald</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('xray', this)">
+                    <div class="sphere-preview sphere-xray"></div>
+                    <span class="mat-label" style="color:#00f2fe;">🧬 X-Ray</span>
+                </div>
+            </div>
+
+            <!-- ✨ PARTICLES & PORTAL FX -->
+            <div style="margin-top: 14px;">
+                <div style="font-size:0.7rem; font-weight:800; color:#c084fc; font-family:'Orbitron',sans-serif; margin-bottom:6px; display:flex; justify-content:space-between;">
+                    <span id="lbl-fx-title">✨ PARTICLES &amp; PORTAL FX</span>
+                    <span id="activeFxName" style="font-size:0.65rem; color:#fff;">STARDUST</span>
+                </div>
+                <div class="fx-grid">
+                    <button class="fx-btn active" onclick="setParticleFX('stardust', this)">
+                        <span>👑</span>
+                        <span id="fx-lbl-stardust">Stardust</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('rings', this)">
+                        <span>⚡</span>
+                        <span id="fx-lbl-rings">Cyber Ring</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('vortex', this)">
+                        <span>🌌</span>
+                        <span id="fx-lbl-vortex">Vortex</span>
+                    </button>
+                    <button class="fx-btn" onclick="setParticleFX('off', this)">
+                        <span>🚫</span>
+                        <span id="fx-lbl-off">Off</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Card Meta Info -->
@@ -601,6 +602,14 @@
 
         <!-- Actions -->
         <div class="actions-group">
+            <button class="btn-primary btn-snapshot" onclick="takeARSnapshot()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span id="txt-snap-btn">📸 TAKE AR PHOTO / SNAPSHOT</span>
+            </button>
+
             <button class="btn-primary btn-social" onclick="shareExperience()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/>
@@ -624,8 +633,6 @@
     <script>
         let currentLang = 'en';
         let currentCardId = '184';
-        const FX_MODES = ['stardust', 'rings', 'vortex', 'off'];
-        let currentFxIdx = 0;
         let activeFXMode = 'stardust';
         let isXRayActive = false;
         let originalMaterialsData = [];
@@ -645,8 +652,13 @@
             en: {
                 ar_btn: 'PROJECT IN AR',
                 chase_badge: '★ 1-OF-1 3D AR EDITION',
-                fx_prefix: 'FX: ',
-                snap_btn: 'AR Photo',
+                mat_title: '🎨 LUXURY SHADER & MATERIAL FX',
+                fx_title: '✨ PARTICLES & PORTAL FX',
+                fx_stardust: 'Stardust',
+                fx_rings: 'Cyber Ring',
+                fx_vortex: 'Vortex',
+                fx_off: 'Off',
+                snap_btn: '📸 TAKE AR PHOTO / SNAPSHOT',
                 share_btn: 'SHARE ON TIKTOK / REELS',
                 create_btn: 'EXPLORE STUDIOS-PRO.COM',
                 footer: '© 2026 Studios-Pro.com Ecosystem • Official 3D Hologram Player',
@@ -656,8 +668,13 @@
             fr: {
                 ar_btn: 'PROJETER EN RÉALITÉ AUGMENTÉE',
                 chase_badge: '★ ÉDITION RA 3D 1-SUR-1',
-                fx_prefix: 'Effet: ',
-                snap_btn: 'Photo RA',
+                mat_title: '🎨 SHADERS & MATÉRIAUX DE LUXE',
+                fx_title: '✨ PARTICULES & PORTAIL RA',
+                fx_stardust: 'Poussière d\'Or',
+                fx_rings: 'Anneau Cyber',
+                fx_vortex: 'Vortex',
+                fx_off: 'Désactiver',
+                snap_btn: '📸 PRENDRE PHOTO RA / CAPTURE',
                 share_btn: 'PARTAGER SUR TIKTOK / REELS',
                 create_btn: 'EXPLORER STUDIOS-PRO.COM',
                 footer: '© 2026 Écosystème Studios-Pro.com • Lecteur Hologramme 3D Officiel',
@@ -676,12 +693,17 @@
             const t = translations[lang];
             document.getElementById('txt-ar-btn').innerText = t.ar_btn;
             document.getElementById('chaseBadge').innerText = t.chase_badge;
-            document.getElementById('lbl-snap-btn').innerText = t.snap_btn;
+            document.getElementById('lbl-mat-title').innerText = t.mat_title;
+            document.getElementById('lbl-fx-title').innerText = t.fx_title;
+            document.getElementById('fx-lbl-stardust').innerText = t.fx_stardust;
+            document.getElementById('fx-lbl-rings').innerText = t.fx_rings;
+            document.getElementById('fx-lbl-vortex').innerText = t.fx_vortex;
+            document.getElementById('fx-lbl-off').innerText = t.fx_off;
+            document.getElementById('txt-snap-btn').innerText = t.snap_btn;
             document.getElementById('txt-share-btn').innerText = t.share_btn;
             document.getElementById('txt-create-btn').innerText = t.create_btn;
             document.getElementById('txt-footer').innerText = t.footer;
             document.getElementById('txt-card-desc').innerText = t.card_desc;
-            updateFxBtnText();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -699,7 +721,6 @@
             const matParam = urlParams.get('mat') || urlParams.get('material') || 'original';
 
             viewer.addEventListener('load', () => {
-                // Cache original materials
                 if (viewer.model && viewer.model.materials) {
                     originalMaterialsData = viewer.model.materials.map(m => {
                         if (m.pbrMetallicRoughness) {
@@ -738,8 +759,7 @@
             if (mat.xray) {
                 isXRayActive = true;
                 if (beam) beam.classList.add('active');
-                activeFXMode = 'rings';
-                updateFxBtnText();
+                setParticleFX('rings');
             } else {
                 isXRayActive = false;
                 if (beam) beam.classList.remove('active');
@@ -748,7 +768,6 @@
             const viewer = document.getElementById('cardModelViewer');
             if (viewer && viewer.model && viewer.model.materials) {
                 if (key === 'original') {
-                    // Restore original texture and colors!
                     viewer.model.materials.forEach((m, idx) => {
                         const orig = originalMaterialsData[idx];
                         if (orig && m.pbrMetallicRoughness) {
@@ -769,29 +788,14 @@
             }
         }
 
-        function cycleParticleFX() {
-            currentFxIdx = (currentFxIdx + 1) % FX_MODES.length;
-            activeFXMode = FX_MODES[currentFxIdx];
-            updateFxBtnText();
-        }
+        function setParticleFX(mode, btnEl = null) {
+            activeFXMode = mode;
+            const nameEl = document.getElementById('activeFxName');
+            if (nameEl) nameEl.innerText = mode.toUpperCase();
 
-        function updateFxBtnText() {
-            const btnTxt = document.getElementById('lbl-fx-btn');
-            const icon = document.getElementById('fx-icon');
-            const prefix = translations[currentLang].fx_prefix;
-
-            if (activeFXMode === 'stardust') {
-                if (icon) icon.innerText = '👑';
-                if (btnTxt) btnTxt.innerText = prefix + 'Stardust';
-            } else if (activeFXMode === 'rings') {
-                if (icon) icon.innerText = '⚡';
-                if (btnTxt) btnTxt.innerText = prefix + 'Cyber Ring';
-            } else if (activeFXMode === 'vortex') {
-                if (icon) icon.innerText = '🌌';
-                if (btnTxt) btnTxt.innerText = prefix + 'Vortex';
-            } else {
-                if (icon) icon.innerText = '🚫';
-                if (btnTxt) btnTxt.innerText = prefix + 'Off';
+            if (btnEl) {
+                document.querySelectorAll('.fx-btn').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
             }
         }
 
