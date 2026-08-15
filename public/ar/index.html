@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Studios-Pro.com | Official 3D & AR Hologram Portal</title>
+    <title>Studios-Pro.com | Official 3D & AR Hologram Studio</title>
     
-    <!-- Google Model Viewer (WebXR, iOS QuickLook, Android SceneViewer) -->
+    <!-- Google Model Viewer (Google SceneViewer, WebXR, iOS QuickLook) -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -142,21 +142,21 @@
             flex-direction: column;
             align-items: center;
             padding: 1.25rem 1rem;
-            max-width: 600px;
+            max-width: 620px;
             margin: 0 auto;
             width: 100%;
         }
 
         .viewer-container {
             width: 100%;
-            height: 380px;
+            height: 390px;
             background: radial-gradient(circle at center, #151b29 0%, #0c1018 100%);
             border-radius: 24px;
             border: 1px solid rgba(255, 183, 3, 0.4);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 183, 3, 0.15);
             position: relative;
             overflow: hidden;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
         }
 
         model-viewer {
@@ -213,15 +213,138 @@
             text-transform: uppercase;
         }
 
-        .holo-grid {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 100px;
-            background: linear-gradient(to top, rgba(0, 242, 254, 0.08), transparent);
-            pointer-events: none;
-            border-bottom: 2px solid rgba(0, 242, 254, 0.3);
+        /* ══════════════════════════════════════════════ */
+        /* 🎨 LUXURY MATERIAL & COLOR SWITCHER STYLING  */
+        /* ══════════════════════════════════════════════ */
+        .controls-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 1.1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffb703;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .swatches-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+
+        .mat-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 8px 10px;
+            min-width: 68px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #e2e8f0;
+        }
+
+        .mat-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            transform: translateY(-2px);
+        }
+
+        .mat-btn.active {
+            border-color: #ffb703;
+            background: rgba(255, 183, 3, 0.15);
+            box-shadow: 0 0 15px rgba(255, 183, 3, 0.35);
+        }
+
+        .sphere-preview {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.6), inset 3px 3px 6px rgba(255,255,255,0.6);
+        }
+
+        .sphere-gold { background: radial-gradient(circle at 35% 35%, #ffe066, #ffb703 60%, #996500); }
+        .sphere-chrome { background: radial-gradient(circle at 35% 35%, #ffffff, #d1d5db 50%, #6b7280); }
+        .sphere-obsidian { background: radial-gradient(circle at 35% 35%, #d8b4fe, #8b5cf6 50%, #3b0764); }
+        .sphere-cyan { background: radial-gradient(circle at 35% 35%, #a5f3fc, #06b6d4 50%, #083344); }
+        .sphere-emerald { background: radial-gradient(circle at 35% 35%, #86efac, #10b981 50%, #064e3b); }
+        .sphere-ruby { background: radial-gradient(circle at 35% 35%, #fca5a5, #ef4444 50%, #7f1d1d); }
+
+        .mat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .custom-color-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .custom-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .custom-color-input::-webkit-color-swatch { border: 1px solid #ffb703; border-radius: 8px; }
+
+        .lighting-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .light-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #94a3b8;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .light-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
         }
 
         .card-details {
@@ -231,7 +354,7 @@
             backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 1.25rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
@@ -267,44 +390,6 @@
             text-transform: uppercase;
         }
 
-        .specs-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .spec-box {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .spec-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-
-        .spec-val {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .verified-icon {
-            color: #10b981;
-            font-size: 0.9rem;
-        }
-
         .actions-group {
             width: 100%;
             display: flex;
@@ -314,11 +399,11 @@
 
         .btn-primary {
             width: 100%;
-            padding: 14px;
+            padding: 13px;
             border-radius: 14px;
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -326,6 +411,13 @@
             gap: 8px;
             text-decoration: none;
             transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-snapshot {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
         }
 
         .btn-social {
@@ -334,19 +426,10 @@
             color: #ff66c4;
         }
 
-        .btn-social:hover {
-            background: linear-gradient(135deg, rgba(255, 0, 128, 0.25), rgba(121, 40, 202, 0.25));
-            box-shadow: 0 0 15px rgba(255, 0, 128, 0.3);
-        }
-
         .btn-platform {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-glass);
             color: var(--text-main);
-        }
-
-        .btn-platform:hover {
-            background: rgba(255, 255, 255, 0.1);
         }
 
         footer {
@@ -408,8 +491,59 @@
                     <span id="txt-ar-btn">PROJECT IN AR</span>
                 </button>
             </model-viewer>
+        </div>
 
-            <div class="holo-grid"></div>
+        <!-- 🎨 NEW: LIVE MATERIAL & COLOR SHADER STUDIO -->
+        <div class="controls-card">
+            <div class="section-heading">
+                <span id="lbl-mat-title">🎨 LUXURY SHADER &amp; MATERIAL FX</span>
+                <span id="activeMatName" style="font-size:0.7rem; color:#fff; font-family:'Plus Jakarta Sans',sans-serif;">24K GOLD</span>
+            </div>
+
+            <!-- Material Swatches -->
+            <div class="swatches-row">
+                <div class="mat-btn active" onclick="applyMaterial('gold', this)">
+                    <div class="sphere-preview sphere-gold"></div>
+                    <span class="mat-label">24K Gold</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('chrome', this)">
+                    <div class="sphere-preview sphere-chrome"></div>
+                    <span class="mat-label">Chrome</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('obsidian', this)">
+                    <div class="sphere-preview sphere-obsidian"></div>
+                    <span class="mat-label">Obsidian</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('cyan', this)">
+                    <div class="sphere-preview sphere-cyan"></div>
+                    <span class="mat-label">Cyber Cyan</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('emerald', this)">
+                    <div class="sphere-preview sphere-emerald"></div>
+                    <span class="mat-label">Emerald</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('ruby', this)">
+                    <div class="sphere-preview sphere-ruby"></div>
+                    <span class="mat-label">Ruby Pulse</span>
+                </div>
+            </div>
+
+            <!-- Custom Color Picker + Lighting FX -->
+            <div class="color-picker-wrapper">
+                <input type="color" id="customColorPicker" class="custom-color-input" value="#ffb703" onchange="applyCustomColor(this.value)">
+                <span style="font-size:0.75rem; color:#94a3b8; font-weight:600;" id="lbl-custom-color">Custom Color Wheel</span>
+            </div>
+
+            <!-- Lighting FX Studio -->
+            <div style="margin-top: 12px;">
+                <div style="font-size:0.7rem; font-weight:800; color:#38bdf8; font-family:'Orbitron',sans-serif; margin-bottom:4px;" id="lbl-light-title">💡 ATMOSPHERIC LIGHTING</div>
+                <div class="lighting-row">
+                    <button class="light-btn active" onclick="setLighting('studio', this)">Studio</button>
+                    <button class="light-btn" onclick="setLighting('cyber', this)">Cyber</button>
+                    <button class="light-btn" onclick="setLighting('sunset', this)">Sunset</button>
+                    <button class="light-btn" onclick="setLighting('void', this)">Void</button>
+                </div>
+            </div>
         </div>
 
         <!-- Card Meta Info -->
@@ -417,7 +551,7 @@
             <div class="card-header-meta">
                 <div>
                     <div class="card-title" id="cardNameDisplay">Studios-Pro 3D Artifact</div>
-                    <div class="card-id" id="cardSerialDisplay">SERIAL: #177</div>
+                    <div class="card-id" id="cardSerialDisplay">SERIAL: #184</div>
                 </div>
                 <div class="rarity-pill" id="cardRarityDisplay">MYTHIC 1-OF-1</div>
             </div>
@@ -425,34 +559,23 @@
             <p id="txt-card-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
                 ★ 1-OF-1 AR EDITION UNLOCKED ★ Procedural 3D collectible asset certified by Studios-Pro ecosystem.
             </p>
-
-            <div class="specs-grid">
-                <div class="spec-box">
-                    <div class="spec-label" id="lbl-authenticity">AUTHENTICITY</div>
-                    <div class="spec-val" id="val-authenticity"><span class="verified-icon">✓</span> Verified Certificate</div>
-                </div>
-                <div class="spec-box">
-                    <div class="spec-label" id="lbl-format">SOURCE FORMAT</div>
-                    <div class="spec-val">GLB / STL / 4D Vector</div>
-                </div>
-                <div class="spec-box">
-                    <div class="spec-label" id="lbl-series">COLLECTION</div>
-                    <div class="spec-val">Studios-Pro Phygital</div>
-                </div>
-                <div class="spec-box">
-                    <div class="spec-label" id="lbl-ledger">AR ACCESS</div>
-                    <div class="spec-val" id="val-ledger"><span class="verified-icon">★</span> Hologram Active</div>
-                </div>
-            </div>
         </div>
 
         <!-- Actions -->
         <div class="actions-group">
+            <button class="btn-primary btn-snapshot" onclick="takeARSnapshot()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span id="txt-snap-btn">📸 TAKE AR PHOTO / SNAPSHOT</span>
+            </button>
+
             <button class="btn-primary btn-social" onclick="shareExperience()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/>
                 </svg>
-                <span id="txt-share-btn">SHARE VIDEO ON TIKTOK / REELS</span>
+                <span id="txt-share-btn">SHARE ON TIKTOK / REELS</span>
             </button>
 
             <a href="https://studios-pro.com" target="_blank" class="btn-primary btn-platform">
@@ -470,40 +593,43 @@
 
     <script>
         let currentLang = 'en';
-        let currentCardId = '177';
+        let currentCardId = '184';
+
+        const MATERIALS = {
+            gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
+            chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05 },
+            obsidian: { name: 'OBSIDIAN PURPLE', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2 },
+            cyan: { name: 'NEON CYAN', color: [0.0, 0.9, 1.0, 1.0], metallic: 0.8, roughness: 0.1 },
+            emerald: { name: 'MATRIX EMERALD', color: [0.05, 0.85, 0.35, 1.0], metallic: 0.85, roughness: 0.15 },
+            ruby: { name: 'RUBY PULSE', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18 }
+        };
 
         const translations = {
             en: {
                 ar_btn: 'PROJECT IN AR',
                 chase_badge: '★ 1-OF-1 3D AR EDITION',
-                card_title: 'Studios-Pro 3D Artifact',
-                card_desc: '★ 1-OF-1 AR EDITION UNLOCKED ★ Procedural 3D collectible asset certified by Studios-Pro ecosystem.',
-                authenticity_lbl: 'AUTHENTICITY',
-                authenticity_val: '<span class="verified-icon">✓</span> Verified Certificate',
-                format_lbl: 'SOURCE FORMAT',
-                series_lbl: 'COLLECTION',
-                ledger_lbl: 'AR STATUS',
-                ledger_active: '<span class="verified-icon">★</span> Hologram Active',
-                share_btn: 'SHARE VIDEO ON TIKTOK / REELS',
+                mat_title: '🎨 LUXURY SHADER & MATERIAL FX',
+                custom_color: 'Custom Color Wheel',
+                light_title: '💡 ATMOSPHERIC LIGHTING',
+                snap_btn: '📸 TAKE AR PHOTO / SNAPSHOT',
+                share_btn: 'SHARE ON TIKTOK / REELS',
                 create_btn: 'EXPLORE STUDIOS-PRO.COM',
                 footer: '© 2026 Studios-Pro.com Ecosystem • Official 3D Hologram Player',
-                copied_msg: 'Card link copied to clipboard! You can paste it directly in your TikTok / Instagram caption.'
+                card_desc: '★ 1-OF-1 AR EDITION UNLOCKED ★ Procedural 3D collectible asset certified by Studios-Pro ecosystem.',
+                copied_msg: 'Card link copied to clipboard! Paste it directly in your TikTok / Instagram caption.'
             },
             fr: {
                 ar_btn: 'PROJETER EN RÉALITÉ AUGMENTÉE',
                 chase_badge: '★ ÉDITION RA 3D 1-SUR-1',
-                card_title: 'Artefact 3D Studios-Pro',
-                card_desc: '★ ÉDITION RA 1-SUR-1 DÉVERROUILLÉE ★ Actif 3D procédural de collection certifié par Studios-Pro.',
-                authenticity_lbl: 'AUTHENTICITÉ',
-                authenticity_val: '<span class="verified-icon">✓</span> Certificat Vérifié',
-                format_lbl: 'FORMAT SOURCE',
-                series_lbl: 'COLLECTION',
-                ledger_lbl: 'STATUT RA',
-                ledger_active: '<span class="verified-icon">★</span> Hologramme Actif',
-                share_btn: 'PARTAGER LA VIDÉO SUR TIKTOK / REELS',
+                mat_title: '🎨 SHADERS & MATÉRIAUX DE LUXE',
+                custom_color: 'Palette de Couleur Personnalisée',
+                light_title: '💡 ÉCLAIRAGE ATMOSPHÉRIQUE',
+                snap_btn: '📸 PRENDRE PHOTO RA / CAPTURE',
+                share_btn: 'PARTAGER SUR TIKTOK / REELS',
                 create_btn: 'EXPLORER STUDIOS-PRO.COM',
                 footer: '© 2026 Écosystème Studios-Pro.com • Lecteur Hologramme 3D Officiel',
-                copied_msg: 'Lien de la carte copié dans le presse-papiers ! Vous pouvez le coller directement dans votre description TikTok / Instagram.'
+                card_desc: '★ ÉDITION RA 1-SUR-1 DÉVERROUILLÉE ★ Actif 3D procédural de collection certifié par Studios-Pro.',
+                copied_msg: 'Lien copié dans le presse-papiers ! Collez-le dans votre description TikTok / Instagram.'
             }
         };
 
@@ -517,11 +643,10 @@
             const t = translations[lang];
             document.getElementById('txt-ar-btn').innerText = t.ar_btn;
             document.getElementById('chaseBadge').innerText = t.chase_badge;
-            document.getElementById('lbl-authenticity').innerText = t.authenticity_lbl;
-            document.getElementById('val-authenticity').innerHTML = t.authenticity_val;
-            document.getElementById('lbl-format').innerText = t.format_lbl;
-            document.getElementById('lbl-series').innerText = t.series_lbl;
-            document.getElementById('lbl-ledger').innerText = t.ledger_lbl;
+            document.getElementById('lbl-mat-title').innerText = t.mat_title;
+            document.getElementById('lbl-custom-color').innerText = t.custom_color;
+            document.getElementById('lbl-light-title').innerText = t.light_title;
+            document.getElementById('txt-snap-btn').innerText = t.snap_btn;
             document.getElementById('txt-share-btn').innerText = t.share_btn;
             document.getElementById('txt-create-btn').innerText = t.create_btn;
             document.getElementById('txt-footer').innerText = t.footer;
@@ -533,12 +658,99 @@
             const lang = urlParams.get('lang');
             if (lang === 'fr') setLanguage('fr');
 
-            const cardParam = urlParams.get('card') || urlParams.get('id') || '177';
+            const cardParam = urlParams.get('card') || urlParams.get('id') || '184';
             currentCardId = cardParam;
 
             document.getElementById('cardSerialDisplay').innerText = 'SERIAL: #' + cardParam;
-            document.getElementById('cardModelViewer').src = `models/card-${cardParam}.glb`;
+            const viewer = document.getElementById('cardModelViewer');
+            viewer.src = `models/card-${cardParam}.glb`;
+
+            // Apply URL material parameter if provided (e.g. ?card=184&mat=gold)
+            const matParam = urlParams.get('mat') || urlParams.get('material') || 'gold';
+            viewer.addEventListener('load', () => {
+                applyMaterial(matParam);
+            });
         });
+
+        function applyMaterial(key, btnEl = null) {
+            const mat = MATERIALS[key] || MATERIALS.gold;
+            document.getElementById('activeMatName').innerText = mat.name;
+
+            if (btnEl) {
+                document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
+
+            const viewer = document.getElementById('cardModelViewer');
+            if (viewer.model && viewer.model.materials) {
+                viewer.model.materials.forEach(m => {
+                    if (m.pbrMetallicRoughness) {
+                        m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
+                        m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
+                        m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
+                    }
+                });
+            }
+        }
+
+        function applyCustomColor(hex) {
+            document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('activeMatName').innerText = hex.toUpperCase();
+
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+            const viewer = document.getElementById('cardModelViewer');
+            if (viewer.model && viewer.model.materials) {
+                viewer.model.materials.forEach(m => {
+                    if (m.pbrMetallicRoughness) {
+                        m.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1.0]);
+                        m.pbrMetallicRoughness.setMetallicFactor(0.9);
+                        m.pbrMetallicRoughness.setRoughnessFactor(0.15);
+                    }
+                });
+            }
+        }
+
+        function setLighting(mode, btnEl) {
+            document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            const viewer = document.getElementById('cardModelViewer');
+            if (mode === 'studio') {
+                viewer.exposure = 1.0;
+                viewer.shadowIntensity = 1.2;
+            } else if (mode === 'cyber') {
+                viewer.exposure = 1.4;
+                viewer.shadowIntensity = 1.8;
+            } else if (mode === 'sunset') {
+                viewer.exposure = 0.9;
+                viewer.shadowIntensity = 1.5;
+            } else if (mode === 'void') {
+                viewer.exposure = 1.2;
+                viewer.shadowIntensity = 0.5;
+            }
+        }
+
+        async function takeARSnapshot() {
+            const viewer = document.getElementById('cardModelViewer');
+            try {
+                const blob = await viewer.toBlob({ mimeType: 'image/png' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `StudiosPro_Card_${currentCardId}_3D_Snapshot.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('📸 3D AR Snapshot saved to your device gallery!');
+            } catch(e) {
+                console.error(e);
+                alert('Snapshot error: ' + e.message);
+            }
+        }
 
         function shareExperience() {
             if (navigator.share) {
