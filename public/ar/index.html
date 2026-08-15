@@ -281,6 +281,7 @@
             box-shadow: inset -3px -3px 6px rgba(0,0,0,0.6), inset 3px 3px 6px rgba(255,255,255,0.6);
         }
 
+        .sphere-original { background: radial-gradient(circle at 35% 35%, #ffffff, #38bdf8 50%, #1e1b4b); border: 1px solid #38bdf8; }
         .sphere-gold { background: radial-gradient(circle at 35% 35%, #ffe066, #ffb703 60%, #996500); }
         .sphere-chrome { background: radial-gradient(circle at 35% 35%, #ffffff, #d1d5db 50%, #6b7280); }
         .sphere-obsidian { background: radial-gradient(circle at 35% 35%, #d8b4fe, #8b5cf6 50%, #3b0764); }
@@ -475,6 +476,7 @@
                 ar-scale="auto"
                 ar-placement="floor"
                 camera-controls
+                autoplay
                 auto-rotate
                 rotation-per-second="30deg"
                 shadow-intensity="1.5"
@@ -497,12 +499,16 @@
         <div class="controls-card">
             <div class="section-heading">
                 <span id="lbl-mat-title">🎨 LUXURY SHADER &amp; MATERIAL FX</span>
-                <span id="activeMatName" style="font-size:0.7rem; color:#fff; font-family:'Plus Jakarta Sans',sans-serif;">24K GOLD</span>
+                <span id="activeMatName" style="font-size:0.7rem; color:#fff; font-family:'Plus Jakarta Sans',sans-serif;">ORIGINAL</span>
             </div>
 
             <!-- Material Swatches -->
             <div class="swatches-row">
-                <div class="mat-btn active" onclick="applyMaterial('gold', this)">
+                <div class="mat-btn active" onclick="applyMaterial('original', this)" id="btn-orig">
+                    <div class="sphere-preview sphere-original"></div>
+                    <span class="mat-label" style="color: #38bdf8;">🌟 Original</span>
+                </div>
+                <div class="mat-btn" onclick="applyMaterial('gold', this)">
                     <div class="sphere-preview sphere-gold"></div>
                     <span class="mat-label">24K Gold</span>
                 </div>
@@ -595,7 +601,10 @@
         let currentLang = 'en';
         let currentCardId = '184';
 
+        let originalMaterials = [];
+
         const MATERIALS = {
+            original: { name: 'ORIGINAL (CULORI & ANIMAȚII)' },
             gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
             chrome: { name: 'CYBER CHROME', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05 },
             obsidian: { name: 'OBSIDIAN PURPLE', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2 },
@@ -665,32 +674,61 @@
             const viewer = document.getElementById('cardModelViewer');
             viewer.src = `models/card-${cardParam}.glb`;
 
-            // Apply URL material parameter if provided (e.g. ?card=184&mat=gold)
-            const matParam = urlParams.get('mat') || urlParams.get('material') || 'gold';
+            // Apply URL material parameter if provided (e.g. ?card=184&mat=original)
+            const matParam = urlParams.get('mat') || urlParams.get('material') || 'original';
             viewer.addEventListener('load', () => {
+                if (viewer.model && viewer.model.materials) {
+                    originalMaterials = viewer.model.materials.map(m => {
+                        if (m.pbrMetallicRoughness) {
+                            return {
+                                color: m.pbrMetallicRoughness.baseColorFactor ? [...m.pbrMetallicRoughness.baseColorFactor] : [1, 1, 1, 1],
+                                metallic: m.pbrMetallicRoughness.metallicFactor !== undefined ? m.pbrMetallicRoughness.metallicFactor : 0.5,
+                                roughness: m.pbrMetallicRoughness.roughnessFactor !== undefined ? m.pbrMetallicRoughness.roughnessFactor : 0.5
+                            };
+                        }
+                        return null;
+                    });
+                }
                 applyMaterial(matParam);
             });
         });
 
         function applyMaterial(key, btnEl = null) {
-            const mat = MATERIALS[key] || MATERIALS.gold;
+            const mat = MATERIALS[key] || MATERIALS.original;
             const nameEl = document.getElementById('activeMatName');
             if (nameEl) nameEl.innerText = mat.name;
 
             if (btnEl) {
                 document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
                 btnEl.classList.add('active');
+            } else {
+                const targetBtn = document.querySelector(`.mat-btn[onclick*="'${key}'"]`);
+                if (targetBtn) {
+                    document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+                    targetBtn.classList.add('active');
+                }
             }
 
             const viewer = document.getElementById('cardModelViewer');
             if (viewer && viewer.model && viewer.model.materials) {
-                viewer.model.materials.forEach(m => {
-                    if (m.pbrMetallicRoughness) {
-                        m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
-                        m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
-                        m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
-                    }
-                });
+                if (key === 'original') {
+                    viewer.model.materials.forEach((m, idx) => {
+                        const orig = originalMaterials[idx];
+                        if (orig && m.pbrMetallicRoughness) {
+                            m.pbrMetallicRoughness.setBaseColorFactor(orig.color);
+                            m.pbrMetallicRoughness.setMetallicFactor(orig.metallic);
+                            m.pbrMetallicRoughness.setRoughnessFactor(orig.roughness);
+                        }
+                    });
+                } else {
+                    viewer.model.materials.forEach(m => {
+                        if (m.pbrMetallicRoughness) {
+                            m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
+                            m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
+                            m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
+                        }
+                    });
+                }
             }
         }
 
