@@ -471,14 +471,13 @@
                 src="models/card-184.glb"
                 alt="Studios-Pro 3D Holographic Card Asset"
                 ar
-                ar-modes="scene-viewer quick-look webxr"
+                ar-modes="scene-viewer webxr quick-look"
                 ar-scale="auto"
                 ar-placement="floor"
                 camera-controls
-                autoplay
                 auto-rotate
-                rotation-per-second="20deg"
-                shadow-intensity="1.0"
+                rotation-per-second="30deg"
+                shadow-intensity="1.2"
                 shadow-softness="0.8"
                 exposure="1.0"
                 loading="eager">
@@ -595,7 +594,6 @@
     <script>
         let currentLang = 'en';
         let currentCardId = '184';
-        let currentMaterial = 'gold';
 
         const MATERIALS = {
             gold: { name: '24K GOLD', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
@@ -655,7 +653,6 @@
             document.getElementById('txt-card-desc').innerText = t.card_desc;
         }
 
-
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const lang = urlParams.get('lang');
@@ -666,23 +663,17 @@
 
             document.getElementById('cardSerialDisplay').innerText = 'SERIAL: #' + cardParam;
             const viewer = document.getElementById('cardModelViewer');
-            viewer.src = 'models/card-' + cardParam + '.glb';
+            viewer.src = `models/card-${cardParam}.glb`;
 
+            // Apply URL material parameter if provided (e.g. ?card=184&mat=gold)
             const matParam = urlParams.get('mat') || urlParams.get('material') || 'gold';
-
-            // Apply material on load event AND also on model-visibility change
             viewer.addEventListener('load', () => {
                 applyMaterial(matParam);
             });
-
-            // Fallback: also try applying 1s and 3s after page load
-            setTimeout(() => applyMaterial(currentMaterial), 1000);
-            setTimeout(() => applyMaterial(currentMaterial), 3000);
         });
 
         function applyMaterial(key, btnEl = null) {
             const mat = MATERIALS[key] || MATERIALS.gold;
-            currentMaterial = key;
             document.getElementById('activeMatName').innerText = mat.name;
 
             if (btnEl) {
@@ -691,9 +682,7 @@
             }
 
             const viewer = document.getElementById('cardModelViewer');
-
-            // Apply immediately if model is loaded
-            if (viewer.model && viewer.model.materials && viewer.model.materials.length > 0) {
+            if (viewer.model && viewer.model.materials) {
                 viewer.model.materials.forEach(m => {
                     if (m.pbrMetallicRoughness) {
                         m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
@@ -701,23 +690,6 @@
                         m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
                     }
                 });
-            } else {
-                // Model not ready yet — retry every 300ms up to 30 times (9 seconds)
-                let attempts = 0;
-                const retry = setInterval(() => {
-                    attempts++;
-                    if (viewer.model && viewer.model.materials && viewer.model.materials.length > 0) {
-                        viewer.model.materials.forEach(m => {
-                            if (m.pbrMetallicRoughness) {
-                                m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
-                                m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
-                                m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
-                            }
-                        });
-                        clearInterval(retry);
-                    }
-                    if (attempts >= 30) clearInterval(retry);
-                }, 300);
             }
         }
 
