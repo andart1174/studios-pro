@@ -319,6 +319,252 @@ const converters = [
   }
 ];
 
+const nicheTools = [
+  {
+    id: 'lithophane-maker-online',
+    ref: 'depth-maps',
+    titleEn: 'Free Online 3D Lithophane Maker & STL Generator | Studios-Pro',
+    titleFr: 'Générateur de Lithophanie 3D Gratuit en Ligne & STL | Studios-Pro',
+    descEn: 'Convert 2D photos into 3D printable flat, curved, or spherical lithophanes. Export high-precision STL mesh files online without software downloads.',
+    descFr: 'Convertissez des photos 2D en lithophanies 3D plates, courbes ou sphériques. Exportez des fichiers STL haute précision sans installer de logiciel.',
+    h1En: 'Free Online 3D Lithophane Maker & STL Generator',
+    h1Fr: 'Générateur de Lithophanie 3D & Export STL Gratuit',
+    featureEn: 'Instant AI depth mapping, curved & cylinder lithophane formats, preview lighting simulator, and direct STL export.',
+    featureFr: 'Cartographie de profondeur par IA, formats courbes et cylindriques, simulateur d\'éclairage et export STL direct.'
+  },
+  {
+    id: 'cookie-cutter-stl-generator',
+    ref: 'artgen',
+    titleEn: 'Free Online Cookie Cutter 3D Model Maker (STL) | Studios-Pro',
+    titleFr: 'Générateur d\'Emporte-Pièce 3D en Ligne Gratuit (STL) | Studios-Pro',
+    descEn: 'Turn any silhouette, drawing, or logo into a 3D printable cookie cutter with custom blade height, flange, and bevels. Download STL files instantly.',
+    descFr: 'Transformez n\'importe quelle silhouette ou logo en emporte-pièce 3D imprimable avec hauteur et rebord sur mesure. Téléchargement STL instantané.',
+    h1En: 'Free Online Cookie Cutter 3D Model Maker',
+    h1Fr: 'Générateur d\'Emporte-Pièce 3D Imprimable Gratuit',
+    featureEn: 'Custom wall thickness, reinforced pressing handle, sharp cutting blade bevels, and watertight STL export.',
+    featureFr: 'Épaisseur de paroi ajustable, rebord de renfort ergonomique, biseau de coupe net et export STL étanche.'
+  },
+  {
+    id: '3d-keychain-name-generator',
+    ref: 'spro',
+    titleEn: 'Custom 3D Name Keychain & Tag Generator Online | Studios-Pro',
+    titleFr: 'Générateur de Porte-Clés Personnalisé 3D en Ligne | Studios-Pro',
+    descEn: 'Create personalized 3D printable keychains, dog tags, and bag tags with custom fonts, borders, and hanging loops. Export ready-to-print STL models.',
+    descFr: 'Créez des porte-clés et médailles personnalisés imprimables en 3D avec polices et anneaux de fixation sur mesure. Exportez en STL.',
+    h1En: 'Custom 3D Name Keychain & Tag Generator',
+    h1Fr: 'Générateur de Porte-Clés & Médailles 3D Personnalisés',
+    featureEn: 'Multiple typography choices, auto-generated keyring loop, dual-color layer height preview, and direct STL download.',
+    featureFr: 'Multiples polices, anneau de porte-clés automatique, prévisualisation bi-couleur et téléchargement STL direct.'
+  },
+  {
+    id: 'laser-cut-box-generator',
+    ref: 'maker7',
+    titleEn: 'Parametric Laser Cut Box Maker with Finger Joints (DXF/SVG) | Studios-Pro',
+    titleFr: 'Générateur de Boîtes Découpées Laser avec Boîtiers Crantés | Studios-Pro',
+    descEn: 'Generate parametric finger-jointed enclosure boxes for laser cutting. Customize width, height, depth, tab sizes, kerf, and export CAD DXF or SVG.',
+    descFr: 'Générez des boîtes à encoches paramétriques pour découpe laser. Ajustez dimensions, crans, compensation de trait et exportez en DXF ou SVG.',
+    h1En: 'Parametric Laser Cut Box Maker (Finger Joints)',
+    h1Fr: 'Générateur de Boîtes Découpées Laser Paramétriques',
+    featureEn: 'Laser kerf compensation, sliding or hinged lid options, T-slot fastener support, and instant DXF/SVG blueprint export.',
+    featureFr: 'Compensation de trait laser, couvercles coulissants ou sur charnières, assemblage par crans et export DXF/SVG instantané.'
+  },
+  {
+    id: 'gcode-previewer-online',
+    ref: 'vcnc',
+    titleEn: 'Free Online CNC & Laser G-Code Visualizer | Studios-Pro',
+    titleFr: 'Visualiseur de G-Code CNC & Laser Gratuit en Ligne | Studios-Pro',
+    descEn: 'Inspect, simulate, and verify CNC toolpaths and laser G-code files directly in your web browser. Check travel speeds, cut depths, and stepover.',
+    descFr: 'Inspectez, simulez et vérifiez les trajectoires d\'outils CNC et fichiers G-code laser directement dans votre navigateur.',
+    h1En: 'Free Online CNC & Laser G-Code Toolpath Visualizer',
+    h1Fr: 'Visualiseur de Trajectoires G-Code CNC & Laser Gratuit',
+    featureEn: 'Interactive 3D toolpath visualization, feedrate color coding, spindle speed simulator, and dimension boundary inspection.',
+    featureFr: 'Visualisation 3D interactive du parcours d\'outil, code couleur de vitesse d\'avance et vérification des dimensions.'
+  },
+  {
+    id: 'image-to-cnc-relief',
+    ref: 'depth-maps',
+    titleEn: 'Convert Image to 3D CNC Relief & Wood Carving STL | Studios-Pro',
+    titleFr: 'Convertir Image en Relief 3D CNC & Sculpture Bois STL | Studios-Pro',
+    descEn: 'Transform 2D photos and graphics into high-resolution 3D heightmaps and watertight STL relief meshes for CNC wood carving and rotary milling.',
+    descFr: 'Transformez des photos 2D en bas-reliefs 3D haute résolution et maillages STL étanches pour sculpture bois CNC et fraisage.',
+    h1En: 'Convert 2D Images to 3D CNC Relief & STL Bas-Relief',
+    h1Fr: 'Convertir Images 2D en Bas-Relief 3D CNC & STL',
+    featureEn: 'AI monocular depth estimation, smooth Gaussian filter beveling, z-height carving limiters, and high-density STL export.',
+    featureFr: 'Estimation de profondeur IA, lissage gaussien des arêtes, limiteur de hauteur Z et export STL haute densité.'
+  },
+  {
+    id: 'gear-sprocket-generator-dxf',
+    ref: 'mech-gen-pro',
+    titleEn: 'Parametric Mechanical Gear & Sprocket Generator (DXF/SVG/STL) | Studios-Pro',
+    titleFr: 'Générateur d\'Engrenages & Pignons Paramétrique (DXF/SVG/STL) | Studios-Pro',
+    descEn: 'Design involute spur gears, internal gears, planetary gearboxes, and roller chain sprockets. Export CAD DXF, SVG paths, and 3D STL meshes.',
+    descFr: 'Concevez des engrenages droits à développante, des trains planétaires et pignons de chaîne. Exportez en DXF CAO, SVG et STL 3D.',
+    h1En: 'Parametric Mechanical Gear & Sprocket Generator',
+    h1Fr: 'Générateur Paramétrique d\'Engrenages & Pignons',
+    featureEn: 'Pressure angle adjustment, tooth module sizing, pitch circle calculations, and DXF/SVG/STL multi-format export.',
+    featureFr: 'Ajustement de l\'angle de pression, calcul du pas et du module, aperçu cinématique et export multi-format.'
+  },
+  {
+    id: 'custom-3d-ring-designer',
+    ref: 'jewelry-pro',
+    titleEn: 'Free Online 3D Printable Ring & Jewelry Designer | Studios-Pro',
+    titleFr: 'Concepteur de Bagues & Bijoux 3D Imprimables Gratuit | Studios-Pro',
+    descEn: 'Design custom bands, signet rings, engraved pendants, and jewelry mounts with real-world millimeter sizing. Export 3D STL files for lost-wax casting.',
+    descFr: 'Concevez des alliances, chevalières et pendentifs gravés avec dimensions millimétriques réelles. Exportez en STL pour fonte à cire perdue.',
+    h1En: 'Free Online 3D Printable Ring & Jewelry Designer',
+    h1Fr: 'Concepteur de Bagues & Bijoux 3D Imprimables Gratuit',
+    featureEn: 'Ring sizing chart (US/EU/UK), gem bezel mounts, embossed custom text engraving, and precision jewelry STL export.',
+    featureFr: 'Tableau des tailles de bague US/EU, sertissages de pierres, gravure de texte et export STL bijouterie haute précision.'
+  },
+  {
+    id: 'svg-to-gcode-laser-engraver',
+    ref: 'vcnc',
+    titleEn: 'Free SVG to Laser Engraver G-Code Converter | Studios-Pro',
+    titleFr: 'Convertisseur SVG en G-Code pour Graveur Laser Gratuit | Studios-Pro',
+    descEn: 'Convert vector SVG graphics into optimized G-Code toolpaths for GRBL laser cutters, diode engravers, and CNC routers in seconds.',
+    descFr: 'Convertissez des fichiers vectoriels SVG en parcours G-Code optimisés pour découpeurs laser GRBL et routeurs CNC.',
+    h1En: 'Free SVG to Laser Engraver G-Code Converter',
+    h1Fr: 'Convertisseur SVG en G-Code Graveur Laser Gratuit',
+    featureEn: 'GRBL / Marlin firmware compatibility, laser power S-value mapping, travel speed optimization, and instant G-Code export.',
+    featureFr: 'Compatibilité firmwares GRBL et Marlin, modulation de puissance laser, optimisation des trajets à vide et export G-Code.'
+  },
+  {
+    id: '3d-text-extruder-online',
+    ref: 'spro',
+    titleEn: 'Free Online 3D Text Extruder & Embosser to STL | Studios-Pro',
+    titleFr: 'Extrudeur de Texte 3D en Ligne Gratuit vers STL | Studios-Pro',
+    descEn: 'Extrude any 2D typography or custom message into solid 3D printable meshes. Customize bevels, curved baselines, and download STL/OBJ.',
+    descFr: 'Extrudez n\'importe quelle typographie ou message en maillage 3D imprimable solide. Personnalisez les biseaux et téléchargez en STL/OBJ.',
+    h1En: 'Free Online 3D Text Extruder & Embosser to STL',
+    h1Fr: 'Extrudeur de Texte 3D & Lettrage vers STL Gratuit',
+    featureEn: 'Google Fonts typography integration, extrusion depth slider, baseplate backing option, and instant STL 3D printing export.',
+    featureFr: 'Intégration typographique Google Fonts, curseur de profondeur, socle de support automatique et export STL instantané.'
+  }
+];
+
+const comparisons = [
+  {
+    id: 'free-alternative-to-meshmixer',
+    targetSoftware: 'Autodesk Meshmixer',
+    ref: 's3dviewer',
+    titleEn: 'Best Free Online Alternative to Autodesk Meshmixer | Studios-Pro',
+    titleFr: 'Meilleure Alternative Gratuite en Ligne à Autodesk Meshmixer | Studios-Pro',
+    descEn: 'Looking for a free Autodesk Meshmixer alternative? Studios-Pro lets you inspect, slice, transform, convert, and export 3D STL/OBJ models in your browser without downloads.',
+    descFr: 'Vous cherchez une alternative gratuite à Meshmixer ? Studios-Pro vous permet d\'inspecter, découper, convertir et exporter des fichiers 3D STL/OBJ en ligne sans installation.',
+    h1En: 'Best Free Online Alternative to Autodesk Meshmixer',
+    h1Fr: 'Meilleure Alternative Gratuite en Ligne à Autodesk Meshmixer',
+    leadEn: 'Inspect, measure, repair, convert, and slice 3D models directly in your browser on Windows, Mac, iPad, and Chromebook.',
+    leadFr: 'Inspectez, mesurez, réparez, convertissez et découpez des modèles 3D directement dans votre navigateur sur Windows, Mac, iPad et Chromebook.',
+    table: [
+      { featureEn: 'Installation Required', featureFr: 'Installation Requise', us: 'No (100% In-Browser)', competitor: 'Yes (Desktop Software)' },
+      { featureEn: 'Cross-Platform (Mac, iPad, Chromebook)', featureFr: 'Multiplateforme (Mac, iPad, Chromebook)', us: 'Full Support', competitor: 'Windows Only / Legacy Mac' },
+      { featureEn: 'Active Updates & Modern WebGL', featureFr: 'Mises à jour actives & WebGL moderne', us: 'Active (2026)', competitor: 'Discontinued / Deprecated' },
+      { featureEn: 'Standalone Interactive HTML Export', featureFr: 'Export HTML interactif autonome', us: 'Included', competitor: 'No' },
+      { featureEn: 'AI Depth Maps & Relief Exporter', featureFr: 'Habillement de relief IA & Cartes de profondeur', us: 'Included', competitor: 'No' }
+    ]
+  },
+  {
+    id: 'free-online-tinkercad-alternative',
+    targetSoftware: 'Autodesk Tinkercad',
+    ref: 'spro',
+    titleEn: 'Free Online Tinkercad Alternative for Advanced 3D & CNC Design | Studios-Pro',
+    titleFr: 'Alternative Gratuite à Tinkercad pour la Modélisation 3D & CNC | Studios-Pro',
+    descEn: 'A fast, powerful browser-based alternative to Tinkercad with advanced procedural tools, AI relief generators, DXF vector CAD, and CNC toolpath export.',
+    descFr: 'Une alternative puissante à Tinkercad dans le navigateur avec générateurs procéduraux, relief IA, CAO vectorielle DXF et export CNC.',
+    h1En: 'Free Online Tinkercad Alternative for 3D & CNC Creators',
+    h1Fr: 'Alternative Gratuite à Tinkercad pour Créateurs 3D & CNC',
+    leadEn: 'Go beyond basic geometric shapes with AI depth maps, procedural gear generators, parametric boxes, and laser CNC exports.',
+    leadFr: 'Allez au-delà des formes basiques avec les reliefs IA, générateurs d\'engrenages, boîtes paramétriques et exports CNC laser.',
+    table: [
+      { featureEn: 'No Account Required for Instant Use', featureFr: 'Aucun compte requis pour utilisation immédiate', us: 'Yes (Zero Barrier)', competitor: 'No (Mandatory Account)' },
+      { featureEn: 'AI-Powered 2D to 3D Relief', featureFr: 'Conversion 2D en Relief 3D par IA', us: 'Included', competitor: 'No' },
+      { featureEn: 'Parametric Mechanical Gear Studio', featureFr: 'Studio d\'engrenages mécaniques paramétriques', us: 'Included', competitor: 'No' },
+      { featureEn: 'CNC G-Code Toolpath Generation', featureFr: 'Génération de parcours G-Code CNC', us: 'Included', competitor: 'No' },
+      { featureEn: 'Interactive AR Phone Projection', featureFr: 'Projection Réalité Augmentée sur Mobile', us: 'Included', competitor: 'Limited' }
+    ]
+  },
+  {
+    id: 'vectric-aspire-free-alternative-browser',
+    targetSoftware: 'Vectric Aspire',
+    ref: 'depth-maps',
+    titleEn: 'Free Browser Alternative to Vectric Aspire for 3D CNC Relief | Studios-Pro',
+    titleFr: 'Alternative Gratuite à Vectric Aspire pour Relief CNC 3D | Studios-Pro',
+    descEn: 'Create stunning 3D reliefs and wood carving STL meshes directly in your web browser without paying thousands of dollars for expensive desktop CAM software.',
+    descFr: 'Créez des bas-reliefs 3D et maillages STL pour sculpture sur bois CNC directement dans votre navigateur sans logiciel coûteux.',
+    h1En: 'Free In-Browser Alternative to Vectric Aspire for CNC Relief',
+    h1Fr: 'Alternative Gratuite en Ligne à Vectric Aspire pour Relief CNC',
+    leadEn: 'Turn photographs and illustrations into high-precision 3D CNC relief models and clean DXF contours in seconds.',
+    leadFr: 'Transformez photographies et illustrations en modèles de relief 3D CNC et contours DXF nets en quelques secondes.',
+    table: [
+      { featureEn: 'Software License Cost', featureFr: 'Coût de la licence', us: 'Free / $0', competitor: '$1,995+ USD' },
+      { featureEn: 'Hardware Requirement', featureFr: 'Configuration matérielle requise', us: 'Any Browser / Laptop', competitor: 'High-end Windows PC' },
+      { featureEn: 'AI Monocular Depth Estimation', featureFr: 'Estimation de profondeur IA monoculaire', us: 'Automatic AI Engine', competitor: 'Manual Sculpting' },
+      { featureEn: 'Export Formats', featureFr: 'Formats d\'export', us: 'STL, OBJ, GLB, DXF, SVG, G-Code', competitor: 'Proprietary / STL / G-Code' },
+      { featureEn: 'Instant Web Preview & 3D Lighting', featureFr: 'Aperçu web instantané et éclairage 3D', us: 'Real-time WebGL', competitor: 'Offline Rendering' }
+    ]
+  },
+  {
+    id: 'lightburn-free-dxf-alternative',
+    targetSoftware: 'LightBurn Laser Software',
+    ref: 'vcnc',
+    titleEn: 'Free Online LightBurn Alternative for Photo to Laser DXF | Studios-Pro',
+    titleFr: 'Alternative Gratuite en Ligne à LightBurn pour Laser DXF | Studios-Pro',
+    descEn: 'Convert photos and vector artwork into clean laser cutter DXF files and GRBL G-Code toolpaths online with no software installation or paid license required.',
+    descFr: 'Convertissez des photos et graphiques en fichiers DXF et parcours G-Code GRBL pour découpe laser en ligne sans licence payante.',
+    h1En: 'Free Online LightBurn Alternative for Laser Cutters',
+    h1Fr: 'Alternative Gratuite en Ligne à LightBurn pour Découpe Laser',
+    leadEn: 'Prepare vector paths, trace bitmaps to DXF, and generate laser engraving G-Code directly in your web browser.',
+    leadFr: 'Préparez des tracés vectoriels, vectorisez des images en DXF et générez du G-Code pour laser directement dans le navigateur.',
+    table: [
+      { featureEn: 'Price / License', featureFr: 'Prix / Licence', us: 'Free to use', competitor: '$60 - $150/year' },
+      { featureEn: 'In-Browser Cloud / Mobile Access', featureFr: 'Accès navigateur / Mobile / Tablette', us: '100% Web Based', competitor: 'Desktop App Only' },
+      { featureEn: 'SVG to DXF Scaling & Offset', featureFr: 'Mise à l\'échelle & Décalage SVG vers DXF', us: 'Instant Precision', competitor: 'Manual Setup' },
+      { featureEn: 'Finger Joint Box Generator', featureFr: 'Générateur de boîtes à encoches intégré', us: 'Built-in Maker Studio', competitor: 'External Plugin' },
+      { featureEn: 'No Dongle or Key Verification', featureFr: 'Aucune clé d\'activation requise', us: 'Instant Access', competitor: 'Hardware/Online License Key' }
+    ]
+  },
+  {
+    id: 'photoshop-3d-relief-alternative',
+    targetSoftware: 'Adobe Photoshop 3D Features',
+    ref: 'depth-maps',
+    titleEn: 'Free Alternative to Photoshop 3D for Depth Maps & STL Extrusion | Studios-Pro',
+    titleFr: 'Alternative Gratuite à Photoshop 3D pour Cartes de Profondeur & STL | Studios-Pro',
+    descEn: 'Since Adobe Photoshop discontinued its 3D features, Studios-Pro is the premier free in-browser replacement for monocular depth maps, normal maps, and 3D relief extrusion.',
+    descFr: 'Depuis la suppression de la 3D dans Photoshop, Studios-Pro est le meilleur remplacement gratuit pour cartes de profondeur et bas-relief 3D.',
+    h1En: 'Free In-Browser Alternative to Photoshop 3D',
+    h1Fr: 'Alternative Gratuite en Ligne aux Fonctions 3D de Photoshop',
+    leadEn: 'Extract depth maps, convert 2D canvas drawings to 3D relief STL/OBJ meshes, and inspect shaders in real-time WebGL.',
+    leadFr: 'Extrayez des cartes de profondeur, convertissez vos dessins 2D en maillages 3D STL/OBJ et inspectez vos shaders en WebGL.',
+    table: [
+      { featureEn: '3D Feature Status', featureFr: 'Statut des fonctionnalités 3D', us: 'Fully Active & Evolving', competitor: 'Discontinued by Adobe' },
+      { featureEn: 'Cost', featureFr: 'Coût', us: 'Free', competitor: '$22.99/month (Creative Cloud)' },
+      { featureEn: '3D Printable STL/OBJ Export', featureFr: 'Export STL/OBJ pour impression 3D', us: 'Direct Watertight Meshes', competitor: 'Removed in recent versions' },
+      { featureEn: 'AI Monocular Depth Extraction', featureFr: 'Extraction de profondeur IA', us: 'Built-in Neural Model', competitor: 'Manual Grayscale Painting' },
+      { featureEn: 'Real-time WebGL Normal Shader', featureFr: 'Shader de normales WebGL temps réel', us: 'Included', competitor: 'No' }
+    ]
+  },
+  {
+    id: 'blender-for-3d-printing-simple-alternative',
+    targetSoftware: 'Blender 3D for 3D Printing',
+    ref: 's3dviewer',
+    titleEn: 'Simple Browser Alternative to Blender for 3D Printing | Studios-Pro',
+    titleFr: 'Alternative Simple à Blender dans le Navigateur pour Impression 3D | Studios-Pro',
+    descEn: 'Skip the steep Blender learning curve. Inspect, measure, repair, convert, and prepare 3D printing STL models directly in your web browser in seconds.',
+    descFr: 'Évitez la courbe d\'apprentissage complexe de Blender. Inspectez, mesurez, réparez et préparez vos modèles 3D STL directement dans le navigateur.',
+    h1En: 'Simple Browser Alternative to Blender for 3D Printing',
+    h1Fr: 'Alternative Simple à Blender pour l\'Impression 3D en Ligne',
+    leadEn: 'Everything you need to view, measure, slice, and convert 3D print files without 1,000 complicated menus.',
+    leadFr: 'Tout ce dont vous avez besoin pour visualiser, mesurer, découper et convertir vos fichiers 3D sans menus complexes.',
+    table: [
+      { featureEn: 'Learning Curve', featureFr: 'Courbe d\'apprentissage', us: '0 Minutes (Instant Intuitive)', competitor: 'Weeks / Months' },
+      { featureEn: 'Download Size & Installation', featureFr: 'Taille de téléchargement & Installation', us: '0 MB (Web Browser)', competitor: '500+ MB Download & Install' },
+      { featureEn: 'Fast File Inspection & Measurement', featureFr: 'Inspection rapide & Mesure de cotes', us: '1-Click Measurement Grid', competitor: 'Requires Edit Mode setup' },
+      { featureEn: 'One-Click Standalone HTML Export', featureFr: 'Export HTML autonome en 1 clic', us: 'Included', competitor: 'Requires Complex Addons' },
+      { featureEn: 'AR Mobile Preview for Clients', featureFr: 'Aperçu Réalité Augmentée pour clients', us: 'Built-in WebAR', competitor: 'Not Available' }
+    ]
+  }
+];
+
 const cardPages = [
   {
     id: 'pokemon-card-maker',
@@ -389,8 +635,10 @@ const template = (page) => {
   let pagePath = '';
   if (viewers.some(v => v.id === page.id)) pagePath = `viewer/${page.id}`;
   else if (converters.some(c => c.id === page.id)) pagePath = `convert/${page.id}`;
+  else if (nicheTools.some(t => t.id === page.id)) pagePath = `tools/${page.id}`;
   else if (arViewers.some(a => a.id === page.id)) pagePath = `ar-viewer/${page.id}`;
   else if (cardPages.some(c => c.id === page.id)) pagePath = `cards/${page.id}`;
+
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -815,9 +1063,397 @@ const template = (page) => {
 </html>`;
 };
 
+const compareTemplate = (comp) => {
+  const pagePath = `compare/${comp.id}`;
+  
+  const tableRows = comp.table.map(row => `
+    <tr>
+      <td style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600;">
+        <span data-en>${row.featureEn}</span>
+        <span data-fr>${row.featureFr}</span>
+      </td>
+      <td style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #00f3ff; font-weight: 700;">
+        ✓ ${row.us}
+      </td>
+      <td style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); color: var(--muted);">
+        ${row.competitor}
+      </td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${comp.titleEn}</title>
+    <meta name="description" content="${comp.descEn}">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://studios-pro.com/${pagePath}" />
+    <meta property="og:title" content="${comp.titleEn}" />
+    <meta property="og:description" content="${comp.descEn}" />
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://studios-pro.com/${pagePath}" />
+    <meta name="twitter:title" content="${comp.titleEn}" />
+    <meta name="twitter:description" content="${comp.descEn}" />
+    <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+    
+    <!-- Hreflang -->
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
+    <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070a;
+            --surface: rgba(15, 23, 42, 0.6);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        .nav {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(5, 7, 10, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo img {
+            border-radius: 6px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 60px auto;
+            padding: 0 24px;
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 999px;
+            padding: 6px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            line-height: 1.25;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        p.subtitle {
+            font-size: 1.2rem;
+            color: var(--muted);
+            max-width: 750px;
+            margin: 0 auto 30px auto;
+        }
+        .comparison-table-wrap {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            margin: 40px 0;
+            backdrop-filter: blur(10px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 18px 16px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 50px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(8px);
+        }
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 70px 0 30px 0;
+            padding: 48px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.1));
+            border-radius: 24px;
+            border: 1px solid rgba(59,130,246,0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7);
+            color: #000;
+            padding: 16px 48px;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: 0.3s;
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 45px rgba(0, 243, 255, 0.4);
+        }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn {
+            background: none;
+            border: 1px solid var(--muted);
+            color: var(--muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .lang-btn.active {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+    </style>
+    <!-- Structured Data: SoftwareApplication & FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Studios-Pro",
+          "url": "https://studios-pro.com/${pagePath}",
+          "applicationCategory": "DesignApplication",
+          "operatingSystem": "Web Browser",
+          "description": "${comp.descEn}",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Studios-Pro",
+            "url": "https://studios-pro.com"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Why use Studios-Pro instead of ${comp.targetSoftware}?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Studios-Pro runs 100% in your web browser with zero software installation, full client-side privacy, cross-platform compatibility across Windows, Mac, iPad, and Chromebook, and instant STL, OBJ, DXF, and G-Code exports."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Studios-Pro free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, Studios-Pro offers free in-browser access to its core 3D modeling, depth mapping, CNC vector toolpaths, and viewer tools."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+</head>
+<body class="lang-en">
+    <div class="nav">
+        <a href="/" class="logo">
+            <img src="/logo_studios_pro.png" alt="Studios-Pro Logo" width="36" height="36">
+            <span>Studios-Pro</span>
+        </a>
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLang('en')">EN</button>
+            <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <div class="badge">
+                <span data-en>Software Comparison &bull; 2026</span>
+                <span data-fr>Comparatif Logiciel &bull; 2026</span>
+            </div>
+            <h1>
+                <span data-en>${comp.h1En}</span>
+                <span data-fr>${comp.h1Fr}</span>
+            </h1>
+            <p class="subtitle">
+                <span data-en>${comp.leadEn}</span>
+                <span data-fr>${comp.leadFr}</span>
+            </p>
+        </div>
+
+        <div class="comparison-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <span data-en>Feature / Capability</span>
+                            <span data-fr>Fonctionnalité</span>
+                        </th>
+                        <th style="color: #00f3ff;">Studios-Pro (Web)</th>
+                        <th style="color: var(--muted);">${comp.targetSoftware}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>
+                    <span data-en>⚡ Zero Software Downloads</span>
+                    <span data-fr>⚡ Aucune Installation</span>
+                </h3>
+                <p>
+                    <span data-en>Launch instantly inside Google Chrome, Safari, Edge, or Firefox. Works flawlessly on Mac, Windows, Linux, iPad, and Chromebook.</span>
+                    <span data-fr>Lancez instantanément dans Chrome, Safari, Edge ou Firefox. Fonctionne sur Mac, Windows, Linux, iPad et Chromebook.</span>
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>
+                    <span data-en>🔒 100% Client-Side Privacy</span>
+                    <span data-fr>🔒 Confidentialité 100% Client</span>
+                </h3>
+                <p>
+                    <span data-en>Your 3D meshes, CAD vectors, and private drawings never touch a third-party server. All compute runs on your device GPU.</span>
+                    <span data-fr>Vos fichiers 3D, plans CAO et dessins ne quittent jamais votre appareil. Tout le calcul s'exécute sur votre GPU local.</span>
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>
+                    <span data-en>🚀 Rapid Multi-Format Export</span>
+                    <span data-fr>🚀 Export Multi-Format Rapide</span>
+                </h3>
+                <p>
+                    <span data-en>Generate production-ready STL for 3D printing, CAD DXF vectors, SVG artwork, and CNC machine G-Code in one unified workflow.</span>
+                    <span data-fr>Générez des STL pour impression 3D, fichiers DXF, visuels SVG et parcours G-Code CNC dans une seule interface unifiée.</span>
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>
+                    <span data-en>🌐 Integrated 3D Creator Community</span>
+                    <span data-fr>🌐 Réseau Créatif 3D Intégré</span>
+                </h3>
+                <p>
+                    <span data-en>Join SP Nexus to earn SP Coins, claim daily 3D cards, preview models in Augmented Reality, and connect with makers worldwide.</span>
+                    <span data-fr>Rejoignez SP Nexus pour gagner des SP Coins, collectionner des cartes 3D et projeter vos créations en Réalité Augmentée.</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="cta-container">
+            <h2 style="color: white; margin-top: 0; font-size: 2rem;">
+                <span data-en>Ready to create with Studios-Pro?</span>
+                <span data-fr>Prêt à créer avec Studios-Pro ?</span>
+            </h2>
+            <p style="color: var(--muted); margin-bottom: 30px;">
+                <span data-en>No credit card required. Free instant access in your browser.</span>
+                <span data-fr>Aucune carte bancaire requise. Accès gratuit et immédiat dans votre navigateur.</span>
+            </p>
+            <a href="/?ref=${comp.ref}" class="cta-btn">
+                <span data-en>Launch Free Tool</span>
+                <span data-fr>Lancer l'Outil Gratuit</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(l) {
+            document.body.className = 'lang-' + l;
+            localStorage.setItem('sp_lang', l);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                if(b.innerText.toLowerCase() === l) b.classList.add('active');
+            });
+        }
+        const saved = localStorage.getItem('sp_lang') || 'en';
+        setLang(saved);
+    </script>
+</body>
+</html>`;
+};
+
 // Setup directories
 const viewerDir = path.join(__dirname, 'public/viewer');
 const convertDir = path.join(__dirname, 'public/convert');
+const toolsDir = path.join(__dirname, 'public/tools');
+const compareDir = path.join(__dirname, 'public/compare');
 const arViewerDir = path.join(__dirname, 'public/ar-viewer');
 const cardsDir = path.join(__dirname, 'public/cards');
 
@@ -826,6 +1462,12 @@ if (!fs.existsSync(viewerDir)) {
 }
 if (!fs.existsSync(convertDir)) {
   fs.mkdirSync(convertDir, { recursive: true });
+}
+if (!fs.existsSync(toolsDir)) {
+  fs.mkdirSync(toolsDir, { recursive: true });
+}
+if (!fs.existsSync(compareDir)) {
+  fs.mkdirSync(compareDir, { recursive: true });
 }
 if (!fs.existsSync(arViewerDir)) {
   fs.mkdirSync(arViewerDir, { recursive: true });
@@ -843,6 +1485,16 @@ viewers.forEach(page => {
 converters.forEach(page => {
   fs.writeFileSync(path.join(convertDir, `${page.id}.html`), template(page));
   console.log(`Generated convert/${page.id}.html`);
+});
+
+nicheTools.forEach(page => {
+  fs.writeFileSync(path.join(toolsDir, `${page.id}.html`), template(page));
+  console.log(`Generated tools/${page.id}.html`);
+});
+
+comparisons.forEach(comp => {
+  fs.writeFileSync(path.join(compareDir, `${comp.id}.html`), compareTemplate(comp));
+  console.log(`Generated compare/${comp.id}.html`);
 });
 
 arViewers.forEach(page => {
@@ -870,6 +1522,20 @@ const convertUrls = converters.map(page => `  <url>
     <lastmod>${date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>\n`).join('');
+
+const toolUrls = nicheTools.map(page => `  <url>
+    <loc>https://studios-pro.com/tools/${page.id}</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>\n`).join('');
+
+const compareUrls = comparisons.map(comp => `  <url>
+    <loc>https://studios-pro.com/compare/${comp.id}</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
   </url>\n`).join('');
 
 const arViewerUrls = arViewers.map(page => `  <url>
@@ -1043,7 +1709,7 @@ const appsUrls = `  <url>
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${spNexusUrls}${appsUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
+${baseUrls}${spNexusUrls}${appsUrls}${toolUrls}${compareUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
 `;
 
 fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);

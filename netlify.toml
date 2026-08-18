@@ -68,6 +68,18 @@
   force = false
 
 [[redirects]]
+  from = "/tools/*"
+  to = "/tools/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/compare/*"
+  to = "/compare/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/community"
   to = "/community/index.html"
   status = 200
