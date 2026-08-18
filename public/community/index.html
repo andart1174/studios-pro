@@ -1580,7 +1580,7 @@
       <span style="background:linear-gradient(135deg,#ff0050,#00f2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SP Reels</span>
     </button>
     <!-- 📞 Direct Phone Calls Button -->
-    <button onclick="openPhoneBook()" title="Direct Phone Calls / Contacts" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:6px 12px;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;">
+    <button onclick="openPhoneBook(event)" title="Direct Phone Calls / Contacts" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:6px 12px;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;">
       <span>📞</span>
       <span>Calls</span>
     </button>
@@ -1901,7 +1901,7 @@
         <span class="mobile-nav-icon">🏠</span>
         <span data-t="navHome">Feed</span>
       </button>
-      <button class="mobile-nav-item" onclick="openMobileTab('phone')" id="mnPhone" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);border-radius:10px;">
+      <button class="mobile-nav-item" onclick="openMobileTab('phone', event)" id="mnPhone" style="background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.4);border-radius:10px;">
         <span class="mobile-nav-icon" style="color:#c084fc;">📞</span>
         <span style="color:#c084fc;font-weight:900;">Calls</span>
       </button>
@@ -11744,6 +11744,8 @@ function handleRemoteTrack(event) {
 }
 
 // ── Initiate Call (Caller) ──
+let currentCallSessionId = null;
+
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
@@ -11761,6 +11763,8 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   currentCallId = chatId;
   currentCallIsVideo = isVideo;
+  const callStartTime = Date.now();
+  currentCallSessionId = 'call_' + callStartTime + '_' + Math.random().toString(36).substr(2, 6);
   processedCandidates.clear();
 
   openCallOverlay(partnerData.displayName || 'Creator', partnerData.photoURL || '', isVideo, 'Calling...');
@@ -11772,14 +11776,29 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
     };
 
-    localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    setupLocalVideoStream(localMediaStream, isVideo);
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+        setupLocalVideoStream(localMediaStream, isVideo);
+      }
+    } catch(mediaErr) {
+      console.warn('Full media capture failed, attempting audio fallback:', mediaErr);
+      if (isVideo && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          localMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(audioErr) {
+          console.warn('Audio capture also failed:', audioErr);
+        }
+      }
+    }
 
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
-    localMediaStream.getTracks().forEach(track => {
-      peerConnection.addTrack(track, localMediaStream);
-    });
+    if (localMediaStream) {
+      localMediaStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localMediaStream);
+      });
+    }
 
     peerConnection.ontrack = handleRemoteTrack;
 
@@ -11803,6 +11822,8 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
 
     const callData = {
       chatId,
+      callSessionId: currentCallSessionId,
+      createdAtMs: callStartTime,
       callerUid: curUser.uid,
       callerName: curUser.displayName || 'User',
       callerAv: curUser.photoURL || '',
@@ -11820,17 +11841,25 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
     // 🔔 Send real Web Push to callee (works even when their app is closed!)
     sendWebPushCall(partnerUid, curUser.displayName || 'User', curUser.photoURL || '', isVideo, chatId);
 
+    if (callStatusUnsub) callStatusUnsub();
+
     // Listen for Answer / Status & Callee Candidates changes
     callStatusUnsub = callRef.onSnapshot(async snap => {
       if (!snap.exists) return;
       const data = snap.data();
+
+      // Guard against old snapshot documents or different call sessions
+      if (data.callSessionId && data.callSessionId !== currentCallSessionId) return;
+      if (data.createdAtMs && data.createdAtMs < callStartTime - 3000) return;
 
       if (data.status === 'declined') {
         stopRingtone();
         updateCallStatus('Call Declined ❌');
         setTimeout(() => endCall(false), 2000);
       } else if (data.status === 'ended') {
-        endCall(false);
+        if (data.callSessionId === currentCallSessionId) {
+          endCall(false);
+        }
       } else if (data.status === 'accepted') {
         if (data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
           stopRingtone();
@@ -11857,8 +11886,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
 
   } catch(err) {
     console.error('Call initiation error:', err);
-    toast('Camera/Microphone access error', 'error');
-    endCall(false);
+    updateCallStatus('Ringing...');
   }
 }
 
@@ -12409,7 +12437,11 @@ function updateCtrlBtnStates() {
 // ═══════════════════════════════════════════════════════════════
 let phoneBookCreatorsList = [];
 
-async function openPhoneBook() {
+async function openPhoneBook(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
   if (!curUser) { openAuth(); return; }
   const overlay = document.getElementById('phoneBookOverlay');
   if (overlay) overlay.classList.add('open');
@@ -12417,7 +12449,10 @@ async function openPhoneBook() {
 }
 
 function closePhoneBook(e) {
-  if (!e || e.target === document.getElementById('phoneBookOverlay')) closePhoneBookDirect();
+  if (!e) return;
+  if (e.target && e.target.id === 'phoneBookOverlay') {
+    closePhoneBookDirect();
+  }
 }
 
 function closePhoneBookDirect() {
@@ -12521,7 +12556,8 @@ function chatFromPhoneBook(targetUid, name, photo) {
   openDirectChat(targetUid, name, photo);
 }
 
-function openMobileTab(tab) {
+function openMobileTab(tab, e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
   document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
   const btnId = 'mn' + tab.charAt(0).toUpperCase() + tab.slice(1);
   const btn = document.getElementById(btnId);
@@ -12530,7 +12566,7 @@ function openMobileTab(tab) {
   if (tab === 'feed') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'phone') {
-    openPhoneBook();
+    openPhoneBook(e);
   } else if (tab === 'meta') {
     if (typeof openMetaverseGalleryModal === 'function') openMetaverseGalleryModal();
     else if (typeof openAuctionModal === 'function') openAuctionModal();
