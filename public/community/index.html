@@ -11681,28 +11681,95 @@ let callTimerInterval = null;
 let callSecondsElapsed = 0;
 let processedCandidates = new Set();
 
-// Web Audio API Ringtone Generator
-function startRingtone() {
+// ═══════════════════════════════════════════════════════════════
+// 📞 Web Audio API Real Telephone Ringtone Generator
+// ═══════════════════════════════════════════════════════════════
+function startRingtone(isIncoming = false) {
   stopRingtone();
   try {
     ringtoneAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ringtoneAudioCtx.state === 'suspended') {
+      ringtoneAudioCtx.resume().catch(()=>{});
+    }
+
     const playTone = () => {
       if (!ringtoneAudioCtx || ringtoneAudioCtx.state === 'closed') return;
-      const osc = ringtoneAudioCtx.createOscillator();
-      const gain = ringtoneAudioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, ringtoneAudioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ringtoneAudioCtx.currentTime + 0.4);
-      gain.gain.setValueAtTime(0.15, ringtoneAudioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ringtoneAudioCtx.currentTime + 0.5);
-      osc.connect(gain);
-      gain.connect(ringtoneAudioCtx.destination);
-      osc.start();
-      osc.stop(ringtoneAudioCtx.currentTime + 0.5);
+
+      if (isIncoming) {
+        // 🔔 Incoming Phone Ringtone (Melodic Dual Chime Trill)
+        const notes = [587.33, 739.99, 880.00, 1174.66]; // D5, F#5, A5, D6
+        const now = ringtoneAudioCtx.currentTime;
+
+        notes.forEach((freq, idx) => {
+          const osc = ringtoneAudioCtx.createOscillator();
+          const gain = ringtoneAudioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+          gain.gain.setValueAtTime(0, now + idx * 0.12);
+          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.12 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(ringtoneAudioCtx.destination);
+          osc.start(now + idx * 0.12);
+          osc.stop(now + idx * 0.12 + 0.36);
+        });
+
+        // Second chime burst after 0.55s (Real phone cadence)
+        notes.forEach((freq, idx) => {
+          const osc = ringtoneAudioCtx.createOscillator();
+          const gain = ringtoneAudioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + 0.55 + idx * 0.12);
+
+          gain.gain.setValueAtTime(0, now + 0.55 + idx * 0.12);
+          gain.gain.linearRampToValueAtTime(0.25, now + 0.55 + idx * 0.12 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55 + idx * 0.12 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(ringtoneAudioCtx.destination);
+          osc.start(now + 0.55 + idx * 0.12);
+          osc.stop(now + 0.55 + idx * 0.12 + 0.36);
+        });
+
+        if ('vibrate' in navigator) {
+          try { navigator.vibrate([400, 150, 400, 150, 800]); } catch(e){}
+        }
+
+      } else {
+        // 📞 Outgoing Ringback Tone (Harmonized 440Hz + 480Hz Telephone Tone)
+        const now = ringtoneAudioCtx.currentTime;
+        const osc1 = ringtoneAudioCtx.createOscillator();
+        const osc2 = ringtoneAudioCtx.createOscillator();
+        const gain = ringtoneAudioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(440, now);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(480, now);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.05);
+        gain.gain.setValueAtTime(0.18, now + 1.4);
+        gain.gain.linearRampToValueAtTime(0.001, now + 1.5);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ringtoneAudioCtx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 1.5);
+        osc2.stop(now + 1.5);
+      }
     };
+
     playTone();
-    ringtoneInterval = setInterval(playTone, 2000);
-  } catch(e){}
+    ringtoneInterval = setInterval(playTone, isIncoming ? 2800 : 3500);
+  } catch(e) {
+    console.warn('Ringtone AudioContext error:', e);
+  }
 }
 
 function stopRingtone() {
@@ -11768,29 +11835,51 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   processedCandidates.clear();
 
   openCallOverlay(partnerData.displayName || 'Creator', partnerData.photoURL || '', isVideo, 'Calling...');
-  startRingtone();
+  startRingtone(false);
 
   try {
-    const mediaConstraints = {
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
-    };
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    let localStream = null;
 
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-        setupLocalVideoStream(localMediaStream, isVideo);
-      }
-    } catch(mediaErr) {
-      console.warn('Full media capture failed, attempting audio fallback:', mediaErr);
-      if (isVideo && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if (isVideo) {
+      try {
+        const vConstraints = isMobile
+          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } };
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: vConstraints
+        });
+      } catch (e1) {
+        console.warn('Strict video constraints failed, trying basic video:', e1);
         try {
-          localMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch(audioErr) {
-          console.warn('Audio capture also failed:', audioErr);
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        } catch (e2) {
+          console.warn('Basic video failed, falling back to audio:', e2);
+          try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } catch(e3) {
+            console.warn('Audio capture failed:', e3);
+          }
+        }
+      }
+    } else {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false
+        });
+      } catch (e4) {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(e5) {
+          console.warn('Audio capture failed:', e5);
         }
       }
     }
+
+    localMediaStream = localStream;
+    setupLocalVideoStream(localMediaStream, isVideo);
 
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
@@ -12208,7 +12297,7 @@ function showIncomingCallBox(data) {
   if (type) type.textContent = data.isVideo ? '📹 Incoming Video Call...' : '📞 Incoming Voice Call...';
   
   box.classList.add('open');
-  startRingtone();
+  startRingtone(true); // Incoming ringtone mode
   sendNativeCallPushNotification(data);
 }
 
@@ -12231,19 +12320,56 @@ async function acceptIncomingCall() {
   openCallOverlay(callData.callerName || 'Creator', callData.callerAv || '', isVideo, 'Connecting...');
 
   try {
-    const mediaConstraints = {
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
-    };
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    let localStream = null;
 
-    localMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+    if (isVideo) {
+      try {
+        const vConstraints = isMobile
+          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } };
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: vConstraints
+        });
+      } catch (e1) {
+        console.warn('Callee strict video constraints failed, trying basic video:', e1);
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        } catch (e2) {
+          console.warn('Callee basic video failed, falling back to audio:', e2);
+          try {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } catch(e3) {
+            console.warn('Callee audio capture failed:', e3);
+          }
+        }
+      }
+    } else {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false
+        });
+      } catch (e4) {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch(e5) {
+          console.warn('Callee audio capture failed:', e5);
+        }
+      }
+    }
+
+    localMediaStream = localStream;
     setupLocalVideoStream(localMediaStream, isVideo);
 
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
-    localMediaStream.getTracks().forEach(track => {
-      peerConnection.addTrack(track, localMediaStream);
-    });
+    if (localMediaStream) {
+      localMediaStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localMediaStream);
+      });
+    }
 
     peerConnection.ontrack = handleRemoteTrack;
 
@@ -12360,7 +12486,8 @@ function openCallOverlay(name, photo, isVideo, statusText) {
 
   if (avView) avView.style.display = 'flex';
   if (remVideo) remVideo.style.display = 'none';
-  if (locVideo) locVideo.style.display = isVideo ? 'block' : 'none';
+  // Keep local video hidden until stream actually starts
+  if (locVideo) locVideo.style.display = 'none';
 
   if (overlay) overlay.classList.add('open');
   isAudioMuted = false; isVideoStopped = false;
@@ -12369,10 +12496,17 @@ function openCallOverlay(name, photo, isVideo, statusText) {
 
 function setupLocalVideoStream(stream, isVideo) {
   const locVideo = document.getElementById('callLocalVideo');
-  if (locVideo && isVideo) {
+  if (!locVideo) return;
+  const hasVideoTrack = stream && stream.getVideoTracks && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled;
+  if (isVideo && hasVideoTrack) {
     locVideo.srcObject = stream;
-    locVideo.play().catch(()=>{});
+    locVideo.muted = true;
+    locVideo.playsInline = true;
+    locVideo.autoplay = true;
     locVideo.style.display = 'block';
+    locVideo.play().catch(e => console.warn('Local video play error:', e));
+  } else {
+    locVideo.style.display = 'none';
   }
 }
 

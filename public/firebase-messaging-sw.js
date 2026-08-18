@@ -22,35 +22,51 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(payload => {
   const data = payload.data || payload.notification || {};
 
-  const title = data.title || '📞 SP Nexus';
-  const body  = data.body  || 'You have a new notification';
+  const title = data.title || '📞 SP Nexus — Incoming Call';
+  const body  = data.body  || 'Tap to answer in SP Nexus!';
   const icon  = data.icon  || '/logo_studios_pro.png';
-  const url   = data.url   || '/community/';
-  const tag   = data.tag   || 'sp-nexus-fcm';
+  const url   = data.url   || '/community/?call=true';
+  const tag   = data.tag   || 'sp-call';
 
-  return self.registration.showNotification(title, {
+  const isCall = (tag && tag.includes('call')) || (title && (title.includes('Call') || title.includes('📞') || title.includes('📹')));
+
+  const notifOptions = {
     body,
     icon,
     badge: '/logo_studios_pro.png',
     tag,
     renotify: true,
     requireInteraction: true,
-    vibrate: [400, 150, 400, 150, 600, 200, 600],
+    vibrate: isCall ? [500, 200, 500, 200, 500, 200, 1000, 400, 1000] : [400, 150, 400],
     data: { url }
-  });
+  };
+
+  if (isCall) {
+    notifOptions.actions = [
+      { action: 'answer', title: '📞 Answer' },
+      { action: 'decline', title: '❌ Dismiss' }
+    ];
+  }
+
+  return self.registration.showNotification(title, notifOptions);
 });
 
 // Handle notification click
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+
+  if (event.action === 'decline') {
+    return;
+  }
+
   const url = (event.notification.data && event.notification.data.url)
     ? event.notification.data.url
-    : '/community/';
+    : '/community/?call=true';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes('/community/') && 'focus' in client) {
+        if (client.url.includes('/community') && 'focus' in client) {
           client.postMessage({ type: 'SP_CALL_ANSWER_FROM_PUSH' });
           return client.focus();
         }
@@ -59,3 +75,4 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
