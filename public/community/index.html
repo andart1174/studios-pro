@@ -1190,9 +1190,10 @@
     .call-modal-overlay{position:fixed;inset:0;z-index:9999;background:rgba(5,8,18,.94);backdrop-filter:blur(18px);display:none;align-items:center;justify-content:center;flex-direction:column;}
     .call-modal-overlay.open{display:flex;}
     .call-box{position:relative;width:92%;max-width:680px;height:520px;background:var(--bg2);border:1px solid var(--border);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.85);}
-    .call-remote-video{width:100%;height:100%;object-fit:cover;background:#000;}
-    .call-local-video{position:absolute;top:16px;right:16px;width:140px;height:105px;border-radius:14px;border:2px solid var(--accent);object-fit:cover;background:#111;z-index:2;box-shadow:0 4px 20px rgba(0,0,0,.6);}
-    .call-avatar-view{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(99,102,241,.18) 0%,rgba(5,8,18,.96) 75%);}
+    .call-remote-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1;}
+    .call-local-video{position:absolute;top:16px;right:16px;width:140px;height:105px;border-radius:14px;border:2px solid var(--accent);object-fit:cover;background:#111;z-index:25;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+    .call-avatar-view{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at center,rgba(99,102,241,.18) 0%,rgba(5,8,18,.96) 75%);z-index:2;}
+
     .call-avatar-wrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
     .call-avatar-img{width:110px;height:110px;border-radius:50%;border:4px solid var(--accent);object-fit:cover;box-shadow:0 0 30px rgba(99,102,241,.5);z-index:2;}
     .call-pulse-ring{position:absolute;width:110px;height:110px;border-radius:50%;border:2px solid var(--accent);animation:callPulse 1.8s ease-out infinite;z-index:1;}
@@ -11811,77 +11812,88 @@ function stopRingtone() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🎙️ Resilient Media Capture Engine (Audio & Video Independent)
+// 🎙️ Resilient Media Capture Engine (Single-Pass HD + Fallback)
 // ═══════════════════════════════════════════════════════════════
 async function acquireLocalMedia(isVideo) {
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const stream = new MediaStream();
 
-  // 1. Capture Audio independently
-  try {
-    const audioStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
-    audioStream.getAudioTracks().forEach(t => stream.addTrack(t));
-    console.log('[Media] Audio track acquired');
-  } catch(e) {
-    console.warn('[Media] Enhanced audio capture failed, trying basic audio:', e);
-    try {
-      const basicAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
-      basicAudio.getAudioTracks().forEach(t => stream.addTrack(t));
-      console.log('[Media] Basic audio track acquired');
-    } catch(e2) {
-      console.warn('[Media] Audio capture completely unavailable:', e2);
-    }
-  }
-
-  // 2. Capture Video independently (if isVideo)
   if (isVideo) {
+    // 1. Request Video + Audio together in a single request (avoids OS device lock contention)
     try {
-      const vConstraints = isMobile
-        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-        : { width: { ideal: 1280 }, height: { ideal: 720 } };
-      const videoStream = await navigator.mediaDevices.getUserMedia({ video: vConstraints });
-      videoStream.getVideoTracks().forEach(t => stream.addTrack(t));
-      console.log('[Media] HD Video track acquired');
-    } catch(e) {
-      console.warn('[Media] HD Video constraints failed, trying basic video:', e);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: isMobile ? { facingMode: 'user' } : { width: { ideal: 1280, min: 640 }, height: { ideal: 720, min: 480 } }
+      });
+      console.log('[Media] HD Video + Audio stream captured');
+      return stream;
+    } catch(err1) {
+      console.warn('[Media] HD video+audio failed, trying standard video+audio:', err1);
       try {
-        const basicVideo = await navigator.mediaDevices.getUserMedia({ video: true });
-        basicVideo.getVideoTracks().forEach(t => stream.addTrack(t));
-        console.log('[Media] Basic video track acquired');
-      } catch(e2) {
-        console.warn('[Media] Video capture unavailable:', e2);
+        const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        console.log('[Media] Basic Video + Audio stream captured');
+        return basicStream;
+      } catch(err2) {
+        console.warn('[Media] Video capture failed, falling back to audio only:', err2);
+        try {
+          const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
+          console.log('[Media] Audio-only stream captured');
+          return audioOnly;
+        } catch(err3) {
+          console.warn('[Media] Audio capture failed:', err3);
+          return new MediaStream();
+        }
+      }
+    }
+  } else {
+    // Audio-only call
+    try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false
+      });
+      return audioStream;
+    } catch(err4) {
+      try {
+        const basicAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
+        return basicAudio;
+      } catch(err5) {
+        console.warn('[Media] Audio capture failed:', err5);
+        return new MediaStream();
       }
     }
   }
-
-  return stream;
 }
 
 // Helper: Attach Remote Stream & Play Video / Audio
 function handleRemoteTrack(event) {
+  console.log('[WebRTC] Remote track received:', event.track ? event.track.kind : 'stream');
   const remoteVideoEl = document.getElementById('callRemoteVideo');
   const remoteAudioEl = document.getElementById('callRemoteAudio');
   const avView = document.getElementById('callAvatarView');
+
+  let stream = (event.streams && event.streams[0]) ? event.streams[0] : null;
 
   if (!remoteMediaStream) {
     remoteMediaStream = new MediaStream();
   }
 
   if (event.track) {
-    remoteMediaStream.addTrack(event.track);
-  } else if (event.streams && event.streams[0]) {
-    event.streams[0].getTracks().forEach(t => remoteMediaStream.addTrack(t));
+    if (!remoteMediaStream.getTracks().some(t => t.id === event.track.id)) {
+      remoteMediaStream.addTrack(event.track);
+    }
+  } else if (stream) {
+    stream.getTracks().forEach(t => {
+      if (!remoteMediaStream.getTracks().some(existing => existing.id === t.id)) {
+        remoteMediaStream.addTrack(t);
+      }
+    });
   }
 
+  const effectiveStream = stream || remoteMediaStream;
+
   if (remoteAudioEl) {
-    if (remoteAudioEl.srcObject !== remoteMediaStream) {
-      remoteAudioEl.srcObject = remoteMediaStream;
+    if (remoteAudioEl.srcObject !== effectiveStream) {
+      remoteAudioEl.srcObject = effectiveStream;
     }
     remoteAudioEl.muted = false;
     remoteAudioEl.volume = 1.0;
@@ -11889,23 +11901,26 @@ function handleRemoteTrack(event) {
   }
 
   if (remoteVideoEl) {
-    if (remoteVideoEl.srcObject !== remoteMediaStream) {
-      remoteVideoEl.srcObject = remoteMediaStream;
+    if (remoteVideoEl.srcObject !== effectiveStream) {
+      remoteVideoEl.srcObject = effectiveStream;
     }
     remoteVideoEl.muted = false;
     remoteVideoEl.playsInline = true;
     remoteVideoEl.autoplay = true;
     remoteVideoEl.play().catch(e => console.warn('Remote video play failed:', e));
 
-    const hasVideo = remoteMediaStream.getVideoTracks().length > 0 && remoteMediaStream.getVideoTracks()[0].enabled;
+    const hasVideo = effectiveStream.getVideoTracks().length > 0;
     if (currentCallIsVideo && hasVideo) {
       remoteVideoEl.style.display = 'block';
+      remoteVideoEl.style.zIndex = '1';
       if (avView) avView.style.display = 'none';
     }
   }
 }
 
 // ── Initiate Call (Caller) ──
+let iceCandidatesUnsub = null;
+
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
@@ -11974,16 +11989,18 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
 
     const callRef = db.collection('sp_calls').doc(chatId);
 
-    // Caller ICE Candidate Event
+    // Caller ICE Candidate Event (Subcollection + Doc Array Fallback)
     peerConnection.onicecandidate = event => {
       if (event.candidate) {
-        callRef.update({
-          callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(event.candidate.toJSON()))
-        }).catch(() => {
-          callRef.set({
-            callerCandidates: [JSON.stringify(event.candidate.toJSON())]
-          }, { merge: true }).catch(()=>{});
-        });
+        const candObj = event.candidate.toJSON ? event.candidate.toJSON() : {
+          candidate: event.candidate.candidate,
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex
+        };
+        callRef.collection('callerCandidates').add(candObj).catch(()=>{});
+        callRef.set({
+          callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(candObj))
+        }, { merge: true }).catch(()=>{});
       }
     };
 
@@ -12017,6 +12034,23 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
     sendWebPushCall(partnerUid, curUser.displayName || 'User', curUser.photoURL || '', isVideo, chatId);
 
     if (callStatusUnsub) callStatusUnsub();
+    if (iceCandidatesUnsub) iceCandidatesUnsub();
+
+    // Listen for Callee ICE candidates in subcollection
+    iceCandidatesUnsub = callRef.collection('calleeCandidates').onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(async change => {
+        if (change.type === 'added') {
+          const candData = change.doc.data();
+          const candKey = JSON.stringify(candData);
+          if (!processedCandidates.has(candKey) && peerConnection && peerConnection.remoteDescription) {
+            processedCandidates.add(candKey);
+            try {
+              await peerConnection.addIceCandidate(new RTCIceCandidate(candData));
+            } catch(e){}
+          }
+        }
+      });
+    });
 
     // Listen for Answer / Status & Callee Candidates changes
     callStatusUnsub = callRef.onSnapshot(async snap => {
@@ -12044,7 +12078,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
           await peerConnection.setRemoteDescription(rtcAnswer);
         }
 
-        // Process callee candidates in real-time
+        // Process callee candidates in real-time from array
         if (data.calleeCandidates && Array.isArray(data.calleeCandidates) && peerConnection && peerConnection.remoteDescription) {
           data.calleeCandidates.forEach(candStr => {
             if (!processedCandidates.has(candStr)) {
@@ -12058,6 +12092,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
         }
       }
     });
+
 
   } catch(err) {
     console.error('Call initiation error:', err);
@@ -12556,6 +12591,7 @@ async function endCall(notifyDb = true) {
   stopCallTimer();
 
   if (callStatusUnsub) { callStatusUnsub(); callStatusUnsub = null; }
+  if (iceCandidatesUnsub) { iceCandidatesUnsub(); iceCandidatesUnsub = null; }
 
   if (localMediaStream) {
     localMediaStream.getTracks().forEach(t => t.stop());
