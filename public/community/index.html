@@ -9908,7 +9908,8 @@ async function toggleFollow(targetUid) {
     <!-- Video Streams & Audio Output -->
     <video id="callRemoteVideo" class="call-remote-video" autoplay playsinline style="display:none"></video>
     <video id="callLocalVideo" class="call-local-video" autoplay playsinline muted style="display:none"></video>
-    <audio id="callRemoteAudio" autoplay playsinline style="display:none"></audio>
+    <audio id="callRemoteAudio" autoplay playsinline style="position:absolute;width:1px;height:1px;opacity:0.001;pointer-events:none;"></audio>
+
 
     <!-- Floating Call Controls -->
     <div class="call-controls">
@@ -11687,10 +11688,21 @@ const RTC_CONFIG = {
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
     { urls: 'stun:stun.services.mozilla.com' },
-    { urls: 'stun:stun.cloudflare.com:3478' }
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    // Public OpenRelay WebRTC TURN Relay (for symmetric NAT and mobile 4G/5G carriers)
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
   ],
   iceCandidatePoolSize: 10
 };
+
 
 let peerConnection = null;
 let localMediaStream = null;
@@ -11818,51 +11830,44 @@ async function acquireLocalMedia(isVideo) {
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   if (isVideo) {
-    // 1. Request Video + Audio together in a single request (avoids OS device lock contention)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: isMobile ? { facingMode: 'user' } : { width: { ideal: 1280, min: 640 }, height: { ideal: 720, min: 480 } }
+        video: isMobile ? { facingMode: 'user' } : true
       });
-      console.log('[Media] HD Video + Audio stream captured');
+      console.log('[Media] Video + Audio captured successfully');
       return stream;
     } catch(err1) {
-      console.warn('[Media] HD video+audio failed, trying standard video+audio:', err1);
+      console.warn('[Media] Video+audio capture failed with enhanced audio, trying basic:', err1);
       try {
         const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         console.log('[Media] Basic Video + Audio stream captured');
         return basicStream;
       } catch(err2) {
         console.warn('[Media] Video capture failed, falling back to audio only:', err2);
+        toast('⚠️ Camera unavailable or blocked. Switching to Audio Call.', 'warning');
         try {
           const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
-          console.log('[Media] Audio-only stream captured');
           return audioOnly;
         } catch(err3) {
           console.warn('[Media] Audio capture failed:', err3);
+          toast('⚠️ Microphone access denied in browser.', 'error');
           return new MediaStream();
         }
       }
     }
   } else {
-    // Audio-only call
     try {
-      const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false
-      });
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       return audioStream;
     } catch(err4) {
-      try {
-        const basicAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
-        return basicAudio;
-      } catch(err5) {
-        console.warn('[Media] Audio capture failed:', err5);
-        return new MediaStream();
-      }
+      console.warn('[Media] Audio capture failed:', err4);
+      toast('⚠️ Microphone access denied in browser.', 'error');
+      return new MediaStream();
     }
   }
 }
+
 
 // Helper: Attach Remote Stream & Play Video / Audio
 function handleRemoteTrack(event) {
@@ -12377,18 +12382,18 @@ function initCallSignalingListener(myUid) {
             const callerName = incomingCallData.callerName || 'Creator';
             sendNativeMissedCallPushNotification(callerName, timeStr, incomingCallData.callerAv);
             toast('📞 Missed call from @' + callerName + ' at ' + timeStr, 'error');
-            if (db) {
-              db.collection(NOTIF_COLL).add({
-                targetUid: myUid,
-                actorUid: incomingCallData.callerUid || '',
-                actorName: callerName,
-                actorPhoto: incomingCallData.callerAv || '',
-                type: 'missed_call',
-                text: '📞 Missed call from @' + callerName + ' at ' + timeStr,
-                read: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              }).catch(()=>{});
-            }
+
+            recordCallLog({
+              callerUid: incomingCallData.callerUid || '',
+              callerName: callerName,
+              callerAv: incomingCallData.callerAv || '',
+              calleeUid: myUid,
+              calleeName: curUser.displayName || 'User',
+              calleeAv: curUser.photoURL || '',
+              isVideo: !!incomingCallData.isVideo,
+              status: 'missed',
+              durationSeconds: 0
+            });
           }
         } catch(missedErr) { console.warn('missed call notif error:', missedErr); }
         incomingCallData = null;
@@ -12396,15 +12401,18 @@ function initCallSignalingListener(myUid) {
         return;
       }
 
-      const doc = snap.docs[0];
-      const data = { id: doc.id, ...doc.data() };
+      // Pick the newest calling document
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a,b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+      const latestCall = docs[0];
       
-      if (!incomingCallData || incomingCallData.id !== doc.id) {
-        incomingCallData = data;
+      if (!incomingCallData || incomingCallData.id !== latestCall.id || incomingCallData.callSessionId !== latestCall.callSessionId) {
+        incomingCallData = latestCall;
         showIncomingCallBox(incomingCallData);
       }
     }, err => console.warn('call signaling error:', err));
 }
+
 
 function showIncomingCallBox(data) {
   const box = document.getElementById('incCallBox');
