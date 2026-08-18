@@ -2601,13 +2601,34 @@
         <div style="font-size:.76rem;color:#c084fc;font-weight:700;">🔔 Enable Phone Ring &amp; Background Alerts</div>
         <button onclick="requestNotificationPermission()" style="background:#a855f7;border:none;color:#fff;padding:5px 10px;border-radius:8px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:inherit;">Enable 🔔</button>
       </div>
-      <div style="margin-bottom:12px">
-        <input type="text" id="phoneSearchInp" placeholder="Search creators to call..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;color:#fff;font-size:.85rem;outline:none;" oninput="filterPhoneBook(this.value)">
+
+      <!-- Phone Tab Switcher -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;background:rgba(255,255,255,.05);padding:4px;border-radius:12px;border:1px solid var(--border2);">
+        <button id="phoneTabContactsBtn" onclick="switchPhoneTab('contacts')" style="flex:1;background:#a855f7;border:none;color:#fff;padding:7px;border-radius:8px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;">👥 Contacts</button>
+        <button id="phoneTabRecentsBtn" onclick="switchPhoneTab('recents')" style="flex:1;background:transparent;border:none;color:var(--muted);padding:7px;border-radius:8px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;">
+          <span>🕒 Recents</span>
+          <span id="phoneMissedBadge" style="display:none;background:#ef4444;color:#fff;font-size:.65rem;padding:1px 5px;border-radius:10px;font-weight:900;">0</span>
+        </button>
       </div>
-      <div id="phoneBookList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding-right:4px;">
-        <div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading creators...</div>
+
+      <!-- Contacts Panel -->
+      <div id="phoneContactsPanel">
+        <div style="margin-bottom:12px">
+          <input type="text" id="phoneSearchInp" placeholder="Search creators to call..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;color:#fff;font-size:.85rem;outline:none;" oninput="filterPhoneBook(this.value)">
+        </div>
+        <div id="phoneBookList" style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:4px;">
+          <div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading creators...</div>
+        </div>
+      </div>
+
+      <!-- Recents / Missed Calls Panel -->
+      <div id="phoneRecentsPanel" style="display:none;">
+        <div id="phoneRecentsList" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;padding-right:4px;">
+          <div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading recent calls...</div>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -11655,7 +11676,7 @@ function toggleLiveCam() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Top-Level Array Signaling)
+// 📞 WEBRTC VOICE & VIDEO CALLING ENGINE (Dual-Stream + Call Logs)
 // ═══════════════════════════════════════════════════════════════
 const RTC_CONFIG = {
   iceServers: [
@@ -11663,14 +11684,23 @@ const RTC_CONFIG = {
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.services.mozilla.com' },
+    { urls: 'stun:stun.cloudflare.com:3478' }
+  ],
+  iceCandidatePoolSize: 10
 };
 
 let peerConnection = null;
 let localMediaStream = null;
+let remoteMediaStream = null;
 let currentCallId = null;
 let currentCallIsVideo = false;
+let currentCallSessionId = null;
+let activeCallPartnerUid = null;
+let activeCallPartnerName = null;
+let activeCallPartnerAv = null;
+let activeCallIsCaller = false;
 let callStatusUnsub = null;
 let callSignalingUnsub = null;
 let isAudioMuted = false;
@@ -11780,39 +11810,102 @@ function stopRingtone() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 🎙️ Resilient Media Capture Engine (Audio & Video Independent)
+// ═══════════════════════════════════════════════════════════════
+async function acquireLocalMedia(isVideo) {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const stream = new MediaStream();
+
+  // 1. Capture Audio independently
+  try {
+    const audioStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+    audioStream.getAudioTracks().forEach(t => stream.addTrack(t));
+    console.log('[Media] Audio track acquired');
+  } catch(e) {
+    console.warn('[Media] Enhanced audio capture failed, trying basic audio:', e);
+    try {
+      const basicAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
+      basicAudio.getAudioTracks().forEach(t => stream.addTrack(t));
+      console.log('[Media] Basic audio track acquired');
+    } catch(e2) {
+      console.warn('[Media] Audio capture completely unavailable:', e2);
+    }
+  }
+
+  // 2. Capture Video independently (if isVideo)
+  if (isVideo) {
+    try {
+      const vConstraints = isMobile
+        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 } };
+      const videoStream = await navigator.mediaDevices.getUserMedia({ video: vConstraints });
+      videoStream.getVideoTracks().forEach(t => stream.addTrack(t));
+      console.log('[Media] HD Video track acquired');
+    } catch(e) {
+      console.warn('[Media] HD Video constraints failed, trying basic video:', e);
+      try {
+        const basicVideo = await navigator.mediaDevices.getUserMedia({ video: true });
+        basicVideo.getVideoTracks().forEach(t => stream.addTrack(t));
+        console.log('[Media] Basic video track acquired');
+      } catch(e2) {
+        console.warn('[Media] Video capture unavailable:', e2);
+      }
+    }
+  }
+
+  return stream;
+}
+
 // Helper: Attach Remote Stream & Play Video / Audio
 function handleRemoteTrack(event) {
   const remoteVideoEl = document.getElementById('callRemoteVideo');
   const remoteAudioEl = document.getElementById('callRemoteAudio');
+  const avView = document.getElementById('callAvatarView');
 
-  if (event.streams && event.streams[0]) {
-    const stream = event.streams[0];
+  if (!remoteMediaStream) {
+    remoteMediaStream = new MediaStream();
+  }
 
-    if (remoteVideoEl) {
-      remoteVideoEl.srcObject = stream;
-      remoteVideoEl.muted = false;
-      remoteVideoEl.volume = 1.0;
-      remoteVideoEl.play().catch(e => console.warn('Remote video play error:', e));
+  if (event.track) {
+    remoteMediaStream.addTrack(event.track);
+  } else if (event.streams && event.streams[0]) {
+    event.streams[0].getTracks().forEach(t => remoteMediaStream.addTrack(t));
+  }
+
+  if (remoteAudioEl) {
+    if (remoteAudioEl.srcObject !== remoteMediaStream) {
+      remoteAudioEl.srcObject = remoteMediaStream;
     }
+    remoteAudioEl.muted = false;
+    remoteAudioEl.volume = 1.0;
+    remoteAudioEl.play().catch(e => console.warn('Remote audio play failed:', e));
+  }
 
-    if (remoteAudioEl) {
-      remoteAudioEl.srcObject = stream;
-      remoteAudioEl.muted = false;
-      remoteAudioEl.volume = 1.0;
-      remoteAudioEl.play().catch(e => console.warn('Remote audio play error:', e));
+  if (remoteVideoEl) {
+    if (remoteVideoEl.srcObject !== remoteMediaStream) {
+      remoteVideoEl.srcObject = remoteMediaStream;
     }
+    remoteVideoEl.muted = false;
+    remoteVideoEl.playsInline = true;
+    remoteVideoEl.autoplay = true;
+    remoteVideoEl.play().catch(e => console.warn('Remote video play failed:', e));
 
-    if (currentCallIsVideo && remoteVideoEl) {
+    const hasVideo = remoteMediaStream.getVideoTracks().length > 0 && remoteMediaStream.getVideoTracks()[0].enabled;
+    if (currentCallIsVideo && hasVideo) {
       remoteVideoEl.style.display = 'block';
-      const avView = document.getElementById('callAvatarView');
       if (avView) avView.style.display = 'none';
     }
   }
 }
 
 // ── Initiate Call (Caller) ──
-let currentCallSessionId = null;
-
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
@@ -11827,58 +11920,27 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
     } catch(e){}
   }
 
+  const partnerName = partnerData.displayName || 'Creator';
+  const partnerAv = partnerData.photoURL || '';
+
+  activeCallPartnerUid = partnerUid;
+  activeCallPartnerName = partnerName;
+  activeCallPartnerAv = partnerAv;
+  activeCallIsCaller = true;
+
   const chatId = [curUser.uid, partnerUid].sort().join('_');
   currentCallId = chatId;
   currentCallIsVideo = isVideo;
+  remoteMediaStream = new MediaStream();
   const callStartTime = Date.now();
   currentCallSessionId = 'call_' + callStartTime + '_' + Math.random().toString(36).substr(2, 6);
   processedCandidates.clear();
 
-  openCallOverlay(partnerData.displayName || 'Creator', partnerData.photoURL || '', isVideo, 'Calling...');
+  openCallOverlay(partnerName, partnerAv, isVideo, 'Calling...');
   startRingtone(false);
 
   try {
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    let localStream = null;
-
-    if (isVideo) {
-      try {
-        const vConstraints = isMobile
-          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-          : { width: { ideal: 1280 }, height: { ideal: 720 } };
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: vConstraints
-        });
-      } catch (e1) {
-        console.warn('Strict video constraints failed, trying basic video:', e1);
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        } catch (e2) {
-          console.warn('Basic video failed, falling back to audio:', e2);
-          try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          } catch(e3) {
-            console.warn('Audio capture failed:', e3);
-          }
-        }
-      }
-    } else {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: false
-        });
-      } catch (e4) {
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch(e5) {
-          console.warn('Audio capture failed:', e5);
-        }
-      }
-    }
-
-    localMediaStream = localStream;
+    localMediaStream = await acquireLocalMedia(isVideo);
     setupLocalVideoStream(localMediaStream, isVideo);
 
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
@@ -11889,7 +11951,26 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       });
     }
 
+    // Add receive transceivers for audio/video fallback
+    if (peerConnection.addTransceiver) {
+      if (!localMediaStream || !localMediaStream.getAudioTracks().length) {
+        try { peerConnection.addTransceiver('audio', { direction: 'recvonly' }); } catch(e){}
+      }
+      if (isVideo && (!localMediaStream || !localMediaStream.getVideoTracks().length)) {
+        try { peerConnection.addTransceiver('video', { direction: 'recvonly' }); } catch(e){}
+      }
+    }
+
     peerConnection.ontrack = handleRemoteTrack;
+
+    peerConnection.onconnectionstatechange = () => {
+      console.log('[WebRTC] Caller connection state:', peerConnection.connectionState);
+      if (peerConnection.connectionState === 'connected') {
+        stopRingtone();
+        updateCallStatus('Connected 🟢');
+        startCallTimer();
+      }
+    };
 
     const callRef = db.collection('sp_calls').doc(chatId);
 
@@ -11906,7 +11987,10 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       }
     };
 
-    const offer = await peerConnection.createOffer();
+    const offer = await peerConnection.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: isVideo
+    });
     await peerConnection.setLocalDescription(offer);
 
     const callData = {
@@ -11917,6 +12001,8 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       callerName: curUser.displayName || 'User',
       callerAv: curUser.photoURL || '',
       calleeUid: partnerUid,
+      calleeName: partnerName,
+      calleeAv: partnerAv,
       isVideo,
       status: 'calling',
       offer: { sdp: offer.sdp, type: offer.type },
@@ -12312,55 +12398,26 @@ async function acceptIncomingCall() {
   if (!incomingCallData || !db) return;
   const callData = incomingCallData;
   hideIncomingCallBox();
+
+  const callerUid = callData.callerUid || '';
+  const callerName = callData.callerName || 'Creator';
+  const callerAv = callData.callerAv || '';
+
+  activeCallPartnerUid = callerUid;
+  activeCallPartnerName = callerName;
+  activeCallPartnerAv = callerAv;
+  activeCallIsCaller = false;
+
   currentCallId = callData.chatId;
   const isVideo = callData.isVideo;
   currentCallIsVideo = isVideo;
+  remoteMediaStream = new MediaStream();
   processedCandidates.clear();
 
-  openCallOverlay(callData.callerName || 'Creator', callData.callerAv || '', isVideo, 'Connecting...');
+  openCallOverlay(callerName, callerAv, isVideo, 'Connecting...');
 
   try {
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    let localStream = null;
-
-    if (isVideo) {
-      try {
-        const vConstraints = isMobile
-          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-          : { width: { ideal: 1280 }, height: { ideal: 720 } };
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: vConstraints
-        });
-      } catch (e1) {
-        console.warn('Callee strict video constraints failed, trying basic video:', e1);
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        } catch (e2) {
-          console.warn('Callee basic video failed, falling back to audio:', e2);
-          try {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          } catch(e3) {
-            console.warn('Callee audio capture failed:', e3);
-          }
-        }
-      }
-    } else {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: false
-        });
-      } catch (e4) {
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch(e5) {
-          console.warn('Callee audio capture failed:', e5);
-        }
-      }
-    }
-
-    localMediaStream = localStream;
+    localMediaStream = await acquireLocalMedia(isVideo);
     setupLocalVideoStream(localMediaStream, isVideo);
 
     peerConnection = new RTCPeerConnection(RTC_CONFIG);
@@ -12371,7 +12428,26 @@ async function acceptIncomingCall() {
       });
     }
 
+    // Add receive transceivers for fallback
+    if (peerConnection.addTransceiver) {
+      if (!localMediaStream || !localMediaStream.getAudioTracks().length) {
+        try { peerConnection.addTransceiver('audio', { direction: 'recvonly' }); } catch(e){}
+      }
+      if (isVideo && (!localMediaStream || !localMediaStream.getVideoTracks().length)) {
+        try { peerConnection.addTransceiver('video', { direction: 'recvonly' }); } catch(e){}
+      }
+    }
+
     peerConnection.ontrack = handleRemoteTrack;
+
+    peerConnection.onconnectionstatechange = () => {
+      console.log('[WebRTC] Callee connection state:', peerConnection.connectionState);
+      if (peerConnection.connectionState === 'connected') {
+        stopRingtone();
+        updateCallStatus('Connected 🟢');
+        startCallTimer();
+      }
+    };
 
     const callRef = db.collection('sp_calls').doc(callData.chatId);
 
@@ -12391,8 +12467,24 @@ async function acceptIncomingCall() {
     // Set Remote Offer
     await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
 
+    // Process any initial caller candidates already present
+    if (callData.callerCandidates && Array.isArray(callData.callerCandidates)) {
+      callData.callerCandidates.forEach(candStr => {
+        if (!processedCandidates.has(candStr)) {
+          processedCandidates.add(candStr);
+          try {
+            const candObj = JSON.parse(candStr);
+            peerConnection.addIceCandidate(new RTCIceCandidate(candObj)).catch(()=>{});
+          } catch(e){}
+        }
+      });
+    }
+
     // Create Answer
-    const answer = await peerConnection.createAnswer();
+    const answer = await peerConnection.createAnswer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: isVideo
+    });
     await peerConnection.setLocalDescription(answer);
 
     await callRef.update({
@@ -12436,7 +12528,22 @@ async function acceptIncomingCall() {
 async function declineIncomingCall() {
   if (!incomingCallData || !db) return;
   const callId = incomingCallData.chatId;
+  const cData = incomingCallData;
   hideIncomingCallBox();
+
+  // Record Declined Call in Call Log
+  recordCallLog({
+    callerUid: cData.callerUid || '',
+    callerName: cData.callerName || 'Creator',
+    callerAv: cData.callerAv || '',
+    calleeUid: curUser ? curUser.uid : '',
+    calleeName: curUser ? (curUser.displayName || 'User') : '',
+    calleeAv: curUser ? (curUser.photoURL || '') : '',
+    isVideo: !!cData.isVideo,
+    status: 'declined',
+    durationSeconds: 0
+  });
+
   try {
     await db.collection('sp_calls').doc(callId).update({ status: 'declined' });
   } catch(e){}
@@ -12445,6 +12552,7 @@ async function declineIncomingCall() {
 // ── End / Hang Up Call ──
 async function endCall(notifyDb = true) {
   stopRingtone();
+  const duration = callSecondsElapsed;
   stopCallTimer();
 
   if (callStatusUnsub) { callStatusUnsub(); callStatusUnsub = null; }
@@ -12457,6 +12565,23 @@ async function endCall(notifyDb = true) {
     peerConnection.close();
     peerConnection = null;
   }
+  remoteMediaStream = null;
+
+  // 💾 Record Call Log Entry
+  if (curUser && activeCallPartnerUid) {
+    const isCompleted = duration > 0;
+    recordCallLog({
+      callerUid: activeCallIsCaller ? curUser.uid : activeCallPartnerUid,
+      callerName: activeCallIsCaller ? (curUser.displayName || 'User') : activeCallPartnerName,
+      callerAv: activeCallIsCaller ? (curUser.photoURL || '') : activeCallPartnerAv,
+      calleeUid: activeCallIsCaller ? activeCallPartnerUid : curUser.uid,
+      calleeName: activeCallIsCaller ? activeCallPartnerName : (curUser.displayName || 'User'),
+      calleeAv: activeCallIsCaller ? activeCallPartnerAv : (curUser.photoURL || ''),
+      isVideo: currentCallIsVideo,
+      status: isCompleted ? 'completed' : (activeCallIsCaller ? 'outgoing_unanswered' : 'missed'),
+      durationSeconds: duration
+    });
+  }
 
   if (notifyDb && currentCallId && db) {
     try {
@@ -12465,10 +12590,12 @@ async function endCall(notifyDb = true) {
   }
 
   currentCallId = null;
+  activeCallPartnerUid = null;
   processedCandidates.clear();
   const overlay = document.getElementById('callModalOverlay');
   if (overlay) overlay.classList.remove('open');
 }
+
 
 // ── Call UI Helpers ──
 function openCallOverlay(name, photo, isVideo, statusText) {
@@ -12567,6 +12694,186 @@ function updateCtrlBtnStates() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 📞 PHONE CALL LOGS & HISTORY ENGINE
+// ═══════════════════════════════════════════════════════════════
+let currentPhoneTab = 'contacts';
+let cachedCallLogs = [];
+
+function switchPhoneTab(tab) {
+  currentPhoneTab = tab;
+  const contactsBtn = document.getElementById('phoneTabContactsBtn');
+  const recentsBtn = document.getElementById('phoneTabRecentsBtn');
+  const contactsPanel = document.getElementById('phoneContactsPanel');
+  const recentsPanel = document.getElementById('phoneRecentsPanel');
+
+  if (tab === 'contacts') {
+    if (contactsBtn) { contactsBtn.style.background = '#a855f7'; contactsBtn.style.color = '#fff'; }
+    if (recentsBtn) { recentsBtn.style.background = 'transparent'; recentsBtn.style.color = 'var(--muted)'; }
+    if (contactsPanel) contactsPanel.style.display = 'block';
+    if (recentsPanel) recentsPanel.style.display = 'none';
+  } else {
+    if (contactsBtn) { contactsBtn.style.background = 'transparent'; contactsBtn.style.color = 'var(--muted)'; }
+    if (recentsBtn) { recentsBtn.style.background = '#a855f7'; recentsBtn.style.color = '#fff'; }
+    if (contactsPanel) contactsPanel.style.display = 'none';
+    if (recentsPanel) recentsPanel.style.display = 'block';
+    loadPhoneCallLogs();
+  }
+}
+
+async function recordCallLog(entry) {
+  if (!curUser) return;
+  const logDoc = {
+    callerUid: entry.callerUid || curUser.uid,
+    callerName: entry.callerName || curUser.displayName || 'Creator',
+    callerAv: entry.callerAv || curUser.photoURL || '',
+    calleeUid: entry.calleeUid || '',
+    calleeName: entry.calleeName || 'Creator',
+    calleeAv: entry.calleeAv || '',
+    isVideo: !!entry.isVideo,
+    status: entry.status || 'completed', // 'completed', 'missed', 'declined', 'outgoing_unanswered'
+    durationSeconds: entry.durationSeconds || 0,
+    createdAtMs: Date.now()
+  };
+
+  // Save to LocalStorage immediately for zero latency
+  saveLocalCallLog(logDoc);
+
+  // Sync to Firestore
+  if (db) {
+    try {
+      await db.collection('sp_call_logs').add({
+        ...logDoc,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e){ console.warn('recordCallLog firestore error:', e); }
+  }
+
+  // Update badge if in background
+  updateMissedCallBadge();
+}
+
+function saveLocalCallLog(log) {
+  try {
+    const logs = JSON.parse(localStorage.getItem('sp_call_logs_v2') || '[]');
+    logs.unshift({ ...log, createdAtMs: Date.now() });
+    localStorage.setItem('sp_call_logs_v2', JSON.stringify(logs.slice(0, 50)));
+  } catch(e){}
+}
+
+function getLocalCallLogs() {
+  try {
+    return JSON.parse(localStorage.getItem('sp_call_logs_v2') || '[]');
+  } catch(e) { return []; }
+}
+
+function updateMissedCallBadge() {
+  const badge = document.getElementById('phoneMissedBadge');
+  if (!badge || !curUser) return;
+  const logs = getLocalCallLogs();
+  const missedCount = logs.filter(l => l.calleeUid === curUser.uid && (l.status === 'missed' || l.status === 'declined')).length;
+  if (missedCount > 0) {
+    badge.textContent = missedCount > 9 ? '9+' : missedCount;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function loadPhoneCallLogs() {
+  const container = document.getElementById('phoneRecentsList');
+  if (!container || !curUser) return;
+
+  const localLogs = getLocalCallLogs();
+  if (localLogs.length > 0) {
+    renderCallLogs(localLogs);
+  } else {
+    container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px;font-size:.84rem;">Loading call history...</div>`;
+  }
+
+  if (!db) return;
+  try {
+    const [callerSnap, calleeSnap] = await Promise.all([
+      db.collection('sp_call_logs').where('callerUid', '==', curUser.uid).limit(30).get().catch(()=>({docs:[]})),
+      db.collection('sp_call_logs').where('calleeUid', '==', curUser.uid).limit(30).get().catch(()=>({docs:[]}))
+    ]);
+
+    const combined = [];
+    callerSnap.docs.forEach(d => combined.push({ id: d.id, ...d.data() }));
+    calleeSnap.docs.forEach(d => combined.push({ id: d.id, ...d.data() }));
+
+    combined.sort((a,b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+    cachedCallLogs = combined;
+    localStorage.setItem('sp_call_logs_v2', JSON.stringify(combined.slice(0, 50)));
+    renderCallLogs(combined);
+    updateMissedCallBadge();
+  } catch(e) {
+    console.warn('loadPhoneCallLogs error:', e);
+  }
+}
+
+function renderCallLogs(logs) {
+  const container = document.getElementById('phoneRecentsList');
+  if (!container || !curUser) return;
+
+  if (!logs || !logs.length) {
+    container.innerHTML = `<div style="text-align:center;color:var(--muted);padding:25px;font-size:.84rem;">No recent calls yet</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  logs.forEach(log => {
+    const isCaller = log.callerUid === curUser.uid;
+    const partnerName = isCaller ? (log.calleeName || 'Creator') : (log.callerName || 'Creator');
+    const partnerAv = isCaller ? (log.calleeAv || '') : (log.callerAv || '');
+    const partnerUid = isCaller ? log.calleeUid : log.callerUid;
+    const isVideo = !!log.isVideo;
+    const initial = (partnerName[0] || 'C').toUpperCase();
+
+    let statusLabel = '';
+    let statusColor = '#34d399';
+
+    if (isCaller) {
+      statusLabel = log.status === 'completed' ? '↗️ Outgoing' : '↗️ Unanswered';
+      statusColor = log.status === 'completed' ? '#94a3b8' : '#cbd5e1';
+    } else {
+      if (log.status === 'missed' || log.status === 'declined') {
+        statusLabel = '❌ Missed Call';
+        statusColor = '#ef4444';
+      } else {
+        statusLabel = '↙️ Incoming';
+        statusColor = '#34d399';
+      }
+    }
+
+    const durationText = log.durationSeconds > 0 ? ` (${Math.floor(log.durationSeconds/60)}m ${log.durationSeconds%60}s)` : '';
+    const timeFormatted = timeAgo(log.createdAtMs || Date.now());
+
+    const avHtml = partnerAv
+      ? `<img src="${esc(partnerAv)}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid ${statusColor};">`
+      : `<div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff;border:1.5px solid ${statusColor};flex-shrink:0;">${initial}</div>`;
+
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;';
+    item.innerHTML = `
+      ${avHtml}
+      <div style="flex:1;min-width:100px;">
+        <div style="font-weight:800;font-size:.85rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(partnerName)}</div>
+        <div style="font-size:.72rem;color:${statusColor};display:flex;align-items:center;gap:4px;margin-top:2px;">
+          <span>${statusLabel}${durationText}</span>
+          <span style="color:var(--muted)">• ${timeFormatted}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;">
+        <button onclick="callFromPhoneBook('${partnerUid}', ${isVideo})" style="background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.4);color:#c084fc;padding:5px 9px;border-radius:8px;font-size:.75rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:inherit;" title="Call Back">
+          ${isVideo ? '📹 Video' : '📞 Call'}
+        </button>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 📞 PHONE CONTACTS & DIRECT CALL ENGINE
 // ═══════════════════════════════════════════════════════════════
 let phoneBookCreatorsList = [];
@@ -12579,7 +12886,12 @@ async function openPhoneBook(e) {
   if (!curUser) { openAuth(); return; }
   const overlay = document.getElementById('phoneBookOverlay');
   if (overlay) overlay.classList.add('open');
-  await loadPhoneBookCreators();
+  updateMissedCallBadge();
+  if (currentPhoneTab === 'recents') {
+    loadPhoneCallLogs();
+  } else {
+    await loadPhoneBookCreators();
+  }
 }
 
 function closePhoneBook(e) {
@@ -12588,6 +12900,7 @@ function closePhoneBook(e) {
     closePhoneBookDirect();
   }
 }
+
 
 function closePhoneBookDirect() {
   const overlay = document.getElementById('phoneBookOverlay');
