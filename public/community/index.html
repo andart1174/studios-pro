@@ -11835,14 +11835,14 @@ async function acquireLocalMedia(isVideo) {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
-          noiseSuppression: false,
+          noiseSuppression: true,
           autoGainControl: true
         },
         video: isMobile ? { facingMode: 'user' } : true
       });
-      console.log('[Media] Video + Audio captured successfully');
+      console.log('[Media] HD Video + Audio captured successfully');
     } catch(err1) {
-      console.warn('[Media] Video+audio capture failed with enhanced settings, trying basic:', err1);
+      console.warn('[Media] Enhanced capture failed, trying standard video+audio:', err1);
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         console.log('[Media] Basic Video + Audio stream captured');
@@ -11861,7 +11861,7 @@ async function acquireLocalMedia(isVideo) {
   } else {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true }
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
     } catch(err4) {
       try {
@@ -11888,7 +11888,18 @@ async function acquireLocalMedia(isVideo) {
   return stream;
 }
 
-// Helper: Attach Remote Stream & Play Video / Audio
+// ── Opus HD Fullband Audio SDP Enhancer ──
+function enhanceSdpForHdAudio(sdp) {
+  if (!sdp) return sdp;
+  return sdp.replace(/a=fmtp:(\d+) (.*)/g, (match, pt, rest) => {
+    if (rest.includes('minptime') || rest.includes('useinbandfec') || pt === '111') {
+      return `a=fmtp:${pt} ${rest};maxaveragebitrate=64000;stereo=1;sprop-stereo=1;useinbandfec=1;cbr=0`;
+    }
+    return match;
+  });
+}
+
+// Helper: Attach Remote Stream & Play Video / Audio with Loudspeaker Priority
 function handleRemoteTrack(event) {
   console.log('[WebRTC] Remote track received:', event.track ? event.track.kind : 'stream', event.track ? event.track.id : '');
   const remoteVideoEl = document.getElementById('callRemoteVideo');
@@ -11921,8 +11932,10 @@ function handleRemoteTrack(event) {
     const videoTracks = effectiveStream.getVideoTracks();
     console.log('[WebRTC] Effective stream has ' + audioTracks.length + ' audio tracks and ' + videoTracks.length + ' video tracks');
 
-    // 1. Attach to Remote Video element (plays both video and audio in HTML5)
-    if (remoteVideoEl) {
+    const isVideo = currentCallIsVideo && videoTracks.length > 0;
+
+    if (isVideo && remoteVideoEl) {
+      // VIDEO CALL: Remote video element outputs both video AND audio directly
       if (remoteVideoEl.srcObject !== effectiveStream) {
         remoteVideoEl.srcObject = effectiveStream;
       }
@@ -11930,27 +11943,36 @@ function handleRemoteTrack(event) {
       remoteVideoEl.volume = 1.0;
       remoteVideoEl.playsInline = true;
       remoteVideoEl.autoplay = true;
+      remoteVideoEl.style.display = 'block';
+      remoteVideoEl.style.zIndex = '1';
+      if (avView) avView.style.display = 'none';
       const playP = remoteVideoEl.play();
       if (playP !== undefined) playP.catch(e => console.warn('[WebRTC] Video play error:', e));
 
-      if (currentCallIsVideo && videoTracks.length > 0) {
-        remoteVideoEl.style.display = 'block';
-        remoteVideoEl.style.zIndex = '1';
-        if (avView) avView.style.display = 'none';
+      // Also attach audio stream to remoteAudioEl for mobile speaker routing
+      if (remoteAudioEl && audioTracks.length > 0) {
+        const pureAudioStream = new MediaStream(audioTracks);
+        if (remoteAudioEl.srcObject !== pureAudioStream) {
+          remoteAudioEl.srcObject = pureAudioStream;
+        }
+        remoteAudioEl.muted = false;
+        remoteAudioEl.volume = 1.0;
+        remoteAudioEl.autoplay = true;
+        const playP2 = remoteAudioEl.play();
+        if (playP2 !== undefined) playP2.catch(e => console.warn('[WebRTC] Audio play error:', e));
       }
-    }
-
-    // 2. Attach separate Audio-only Stream to Remote Audio element for dedicated sound output
-    if (remoteAudioEl && audioTracks.length > 0) {
-      const pureAudioStream = new MediaStream(audioTracks);
-      if (remoteAudioEl.srcObject !== pureAudioStream) {
-        remoteAudioEl.srcObject = pureAudioStream;
+    } else if (remoteAudioEl) {
+      // AUDIO CALL: Remote audio element outputs voice
+      if (remoteAudioEl.srcObject !== effectiveStream) {
+        remoteAudioEl.srcObject = effectiveStream;
       }
       remoteAudioEl.muted = false;
       remoteAudioEl.volume = 1.0;
       remoteAudioEl.autoplay = true;
-      const playP2 = remoteAudioEl.play();
-      if (playP2 !== undefined) playP2.catch(e => console.warn('[WebRTC] Audio play error:', e));
+      if (avView) avView.style.display = 'flex';
+      if (remoteVideoEl) { remoteVideoEl.style.display = 'none'; }
+      const playP3 = remoteAudioEl.play();
+      if (playP3 !== undefined) playP3.catch(e => console.warn('[WebRTC] Audio-only play error:', e));
     }
   }
 }
@@ -11976,6 +11998,9 @@ let iceCandidatesUnsub = null;
 let pendingRemoteCandidates = [];
 
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
+  // Synchronously unlock audio playback on direct user gesture
+  unlockCallAudio();
+
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
   if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
@@ -12027,6 +12052,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       console.log('[WebRTC] Caller connection state:', peerConnection.connectionState);
       if (peerConnection.connectionState === 'connected') {
         stopRingtone();
+        unlockCallAudio();
         updateCallStatus('Connected 🟢');
         startCallTimer();
       }
@@ -12036,6 +12062,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       console.log('[WebRTC] Caller ICE state:', peerConnection.iceConnectionState);
       if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
         stopRingtone();
+        unlockCallAudio();
         updateCallStatus('Connected 🟢');
         startCallTimer();
       }
@@ -12059,7 +12086,8 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       offerToReceiveAudio: true,
       offerToReceiveVideo: isVideo
     });
-    await peerConnection.setLocalDescription(offer);
+    const enhancedOfferSdp = enhanceSdpForHdAudio(offer.sdp);
+    await peerConnection.setLocalDescription(new RTCSessionDescription({ type: offer.type, sdp: enhancedOfferSdp }));
 
     const callData = {
       chatId,
@@ -12073,11 +12101,12 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       calleeAv: partnerAv,
       isVideo,
       status: 'calling',
-      offer: { sdp: offer.sdp, type: offer.type },
+      offer: { sdp: enhancedOfferSdp, type: offer.type },
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await callRef.set(callData);
+
 
     // 🔔 Send Web Push to callee
     sendWebPushCall(partnerUid, curUser.displayName || 'User', curUser.photoURL || '', isVideo, chatId);
@@ -12485,6 +12514,9 @@ function hideIncomingCallBox() {
 
 // ── Accept Incoming Call (Callee) ──
 async function acceptIncomingCall() {
+  // Synchronously unlock audio on direct touch/click
+  unlockCallAudio();
+
   if (!incomingCallData || !db) return;
   const callData = incomingCallData;
   hideIncomingCallBox();
@@ -12525,6 +12557,7 @@ async function acceptIncomingCall() {
       console.log('[WebRTC] Callee connection state:', peerConnection.connectionState);
       if (peerConnection.connectionState === 'connected') {
         stopRingtone();
+        unlockCallAudio();
         updateCallStatus('Connected 🟢');
         startCallTimer();
       }
@@ -12534,6 +12567,7 @@ async function acceptIncomingCall() {
       console.log('[WebRTC] Callee ICE state:', peerConnection.iceConnectionState);
       if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
         stopRingtone();
+        unlockCallAudio();
         updateCallStatus('Connected 🟢');
         startCallTimer();
       }
@@ -12585,16 +12619,18 @@ async function acceptIncomingCall() {
       offerToReceiveAudio: true,
       offerToReceiveVideo: isVideo
     });
-    await peerConnection.setLocalDescription(answer);
+    const enhancedAnswerSdp = enhanceSdpForHdAudio(answer.sdp);
+    await peerConnection.setLocalDescription(new RTCSessionDescription({ type: answer.type, sdp: enhancedAnswerSdp }));
 
     await callRef.update({
       status: 'accepted',
-      answer: { sdp: answer.sdp, type: answer.type }
+      answer: { sdp: enhancedAnswerSdp, type: answer.type }
     });
 
     unlockCallAudio();
     updateCallStatus('Connected 🟢');
     startCallTimer();
+
 
 
     // Process queued candidates if any
