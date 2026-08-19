@@ -11910,33 +11910,27 @@ function handleRemoteTrack(event) {
   const hasVideo = currentCallIsVideo && remoteMediaStream.getVideoTracks().length > 0;
 
   if (hasVideo && remoteVideoEl) {
-    // VIDEO CALL: attach stream to video element with muted=FALSE so it outputs audio+video
-    // The video element was started by user gesture (Accept/Call click) so audio is allowed
+    // VIDEO CALL: video element shows image (muted=true for iOS autoplay compatibility)
     remoteVideoEl.srcObject = remoteMediaStream;
-    remoteVideoEl.muted = false;
-    remoteVideoEl.volume = 1.0;
+    remoteVideoEl.muted = true;
     remoteVideoEl.playsInline = true;
     remoteVideoEl.autoplay = true;
     remoteVideoEl.style.display = 'block';
     remoteVideoEl.style.zIndex = '1';
     remoteVideoEl.play().catch(e => console.warn('[WebRTC] video.play:', e.name));
     if (avView) avView.style.display = 'none';
-    // Backup: also feed the pre-primed audio element
-    if (remoteAudioEl) {
-      remoteAudioEl.srcObject = remoteMediaStream;
-      remoteAudioEl.muted = false;
-      remoteAudioEl.play().catch(() => {});
-    }
-  } else {
-    // AUDIO-ONLY CALL
-    if (remoteAudioEl) {
-      remoteAudioEl.srcObject = remoteMediaStream;
-      remoteAudioEl.muted = false;
-      remoteAudioEl.volume = 1.0;
-      remoteAudioEl.play().catch(e => console.warn('[WebRTC] audio.play:', e.name));
-    }
+  } else if (remoteVideoEl) {
+    remoteVideoEl.style.display = 'none';
     if (avView) avView.style.display = 'flex';
-    if (remoteVideoEl) remoteVideoEl.style.display = 'none';
+  }
+
+  // AUDIO: always route through pre-primed <audio> element (works on iOS/Android)
+  // The element was primed with new MediaStream() in user gesture context
+  if (remoteAudioEl) {
+    remoteAudioEl.srcObject = remoteMediaStream;
+    remoteAudioEl.muted = false;
+    remoteAudioEl.volume = 1.0;
+    remoteAudioEl.play().catch(e => console.warn('[WebRTC] audio.play:', e.name, '- trying setSinkId workaround'));
   }
 }
 
@@ -11955,11 +11949,17 @@ let iceCandidatesUnsub = null;
 let pendingRemoteCandidates = [];
 
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
-  // PRIME audio/video elements while inside user gesture - CRITICAL for mobile autoplay
-  var _pa = document.getElementById('callRemoteAudio');
-  var _pv = document.getElementById('callRemoteVideo');
-  if (_pa) { _pa.muted = false; _pa.volume = 1.0; _pa.play().catch(function(){}); }
-  if (_pv) { _pv.muted = false; _pv.volume = 1.0; _pv.play().catch(function(){}); }
+  // PRIME <audio> with empty MediaStream NOW while inside user gesture
+  // This is the ONLY reliable way to unlock audio autoplay on iOS Safari + Android Chrome
+  (function() {
+    var _pa = document.getElementById('callRemoteAudio');
+    if (_pa) {
+      _pa.srcObject = new MediaStream(); // empty but valid - unlocks the element
+      _pa.muted = false;
+      _pa.volume = 1.0;
+      var p = _pa.play(); if (p) p.catch(function(){});
+    }
+  })();
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
   if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
@@ -12472,11 +12472,17 @@ function hideIncomingCallBox() {
 
 // ── Accept Incoming Call (Callee) ──
 async function acceptIncomingCall() {
-  // PRIME audio/video elements while inside user gesture (Accept button) - CRITICAL for mobile
-  var _pa = document.getElementById('callRemoteAudio');
-  var _pv = document.getElementById('callRemoteVideo');
-  if (_pa) { _pa.muted = false; _pa.volume = 1.0; _pa.play().catch(function(){}); }
-  if (_pv) { _pv.muted = false; _pv.volume = 1.0; _pv.play().catch(function(){}); }
+  // PRIME <audio> with empty MediaStream NOW while inside user gesture (Accept button click)
+  // This is the ONLY reliable way to unlock audio autoplay on iOS Safari + Android Chrome
+  (function() {
+    var _pa = document.getElementById('callRemoteAudio');
+    if (_pa) {
+      _pa.srcObject = new MediaStream(); // empty but valid - unlocks the element
+      _pa.muted = false;
+      _pa.volume = 1.0;
+      var p = _pa.play(); if (p) p.catch(function(){});
+    }
+  })();
   if (!incomingCallData || !db) return;
   const callData = incomingCallData;
   hideIncomingCallBox();
