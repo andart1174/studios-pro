@@ -11888,9 +11888,9 @@ async function acquireLocalMedia(isVideo) {
 
   return stream;
 }
-// ── Remote audio/video attachment (SIMPLE & RELIABLE) ──
+// Remote audio/video handler
 function handleRemoteTrack(event) {
-  console.log('[WebRTC] ontrack:', event.track.kind, event.track.id, event.track.readyState);
+  console.log('[WebRTC] ontrack:', event.track.kind, event.track.readyState);
   event.track.enabled = true;
 
   if (!remoteMediaStream) remoteMediaStream = new MediaStream();
@@ -11907,35 +11907,72 @@ function handleRemoteTrack(event) {
   const remoteAudioEl = document.getElementById('callRemoteAudio');
   const remoteVideoEl = document.getElementById('callRemoteVideo');
   const avView = document.getElementById('callAvatarView');
-  const hasVideo = currentCallIsVideo && remoteMediaStream.getVideoTracks().length > 0;
+  const audioTracks = remoteMediaStream.getAudioTracks();
+  const videoTracks = remoteMediaStream.getVideoTracks();
+  const hasVideo = currentCallIsVideo && videoTracks.length > 0;
 
+  console.log('[WebRTC] stream has audio=' + audioTracks.length + ' video=' + videoTracks.length);
+
+  // VIDEO
   if (hasVideo && remoteVideoEl) {
-    // VIDEO CALL: video element shows image (muted=true for iOS autoplay compatibility)
     remoteVideoEl.srcObject = remoteMediaStream;
     remoteVideoEl.muted = true;
     remoteVideoEl.playsInline = true;
-    remoteVideoEl.autoplay = true;
     remoteVideoEl.style.display = 'block';
-    remoteVideoEl.style.zIndex = '1';
-    remoteVideoEl.play().catch(e => console.warn('[WebRTC] video.play:', e.name));
+    remoteVideoEl.play().catch(() => {});
     if (avView) avView.style.display = 'none';
-  } else if (remoteVideoEl) {
-    remoteVideoEl.style.display = 'none';
+  } else {
+    if (remoteVideoEl) remoteVideoEl.style.display = 'none';
     if (avView) avView.style.display = 'flex';
   }
 
-  // AUDIO: always route through pre-primed <audio> element (works on iOS/Android)
-  // The element was primed with new MediaStream() in user gesture context
-  if (remoteAudioEl) {
-    remoteAudioEl.srcObject = remoteMediaStream;
-    remoteAudioEl.muted = false;
-    remoteAudioEl.volume = 1.0;
-    remoteAudioEl.play().catch(e => console.warn('[WebRTC] audio.play:', e.name, '- trying setSinkId workaround'));
+  // AUDIO — try multiple approaches
+  if (audioTracks.length > 0) {
+    // Use audio-only MediaStream to avoid conflicts
+    var audioOnlyStream = new MediaStream(audioTracks);
+
+    // Approach 1: <audio> element
+    if (remoteAudioEl) {
+      remoteAudioEl.srcObject = audioOnlyStream;
+      remoteAudioEl.muted = false;
+      remoteAudioEl.volume = 1.0;
+      var p = remoteAudioEl.play();
+      if (p) p.catch(function(e) {
+        console.warn('[WebRTC] audio.play blocked:', e.name);
+        // Approach 2: show tap button (direct user gesture bypass)
+        showCallAudioTapBtn(audioOnlyStream);
+      });
+    }
+
+    // Approach 3: setSinkId speaker route (Android Chrome)
+    if (remoteAudioEl && typeof remoteAudioEl.setSinkId === 'function') {
+      remoteAudioEl.setSinkId('').catch(() => {});
+    }
   }
 }
 
+// Fallback button shown when autoplay is blocked on mobile
+function showCallAudioTapBtn(audioStream) {
+  if (document.getElementById('callAudioTapBtn')) return;
+  var btn = document.createElement('button');
+  btn.id = 'callAudioTapBtn';
+  btn.innerHTML = '&#128266; Tap to Hear Audio';
+  btn.style.cssText = 'position:fixed;bottom:140px;left:50%;transform:translateX(-50%);z-index:999999;padding:14px 28px;background:#e53935;color:#fff;border:none;border-radius:28px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.4);animation:pulse 1.5s infinite;';
+  btn.onclick = function() {
+    var el = document.getElementById('callRemoteAudio');
+    if (el) {
+      el.srcObject = audioStream;
+      el.muted = false;
+      el.volume = 1.0;
+      el.play().catch(() => {});
+    }
+    btn.remove();
+  };
+  document.body.appendChild(btn);
+}
+
 function unlockCallAudio() {
-  const el = document.getElementById('callRemoteAudio');
+  var el = document.getElementById('callRemoteAudio');
   if (!el) return;
   el.muted = false;
   el.volume = 1.0;
@@ -12650,6 +12687,7 @@ async function declineIncomingCall() {
 
 // ── End / Hang Up Call ──
 async function endCall(notifyDb = true) {
+  var _tb = document.getElementById("callAudioTapBtn"); if (_tb) _tb.remove();
   stopRingtone();
   const duration = callSecondsElapsed;
   stopCallTimer();
