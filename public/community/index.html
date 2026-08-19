@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9908,7 +9908,7 @@ async function toggleFollow(targetUid) {
     <!-- Video Streams & Audio Output -->
     <video id="callRemoteVideo" class="call-remote-video" autoplay playsinline style="display:none"></video>
     <video id="callLocalVideo" class="call-local-video" autoplay playsinline muted style="display:none"></video>
-    <audio id="callRemoteAudio" autoplay playsinline style="position:fixed;top:-5000px;left:-5000px;width:100px;height:100px;"></audio>
+    <audio id="callRemoteAudio" autoplay playsinline style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.01;z-index:9999;"></audio>
 
 
 
@@ -11888,164 +11888,54 @@ async function acquireLocalMedia(isVideo) {
 
   return stream;
 }
-
-// ── Opus HD Fullband Audio SDP Enhancer ──
-function enhanceSdpForHdAudio(sdp) {
-  if (!sdp) return sdp;
-  return sdp.replace(/a=fmtp:(\d+) (.*)/g, (match, pt, rest) => {
-    if (rest.includes('minptime') || rest.includes('useinbandfec') || pt === '111') {
-      return `a=fmtp:${pt} ${rest};maxaveragebitrate=64000;stereo=1;sprop-stereo=1;useinbandfec=1;cbr=0`;
-    }
-    return match;
-  });
-}
-
-// ── Web Audio Direct Speaker Bridge & Hardware Routing ──
-let webrtcAudioCtx = null;
-let webrtcAudioSource = null;
-let webrtcGainNode = null;
-
-function routeAudioViaWebAudio(stream) {
-  try {
-    if (!stream) return;
-    const audioTracks = stream.getAudioTracks();
-    if (!audioTracks || audioTracks.length === 0) return;
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    if (!webrtcAudioCtx || webrtcAudioCtx.state === 'closed') {
-      webrtcAudioCtx = new AudioContextClass();
-    }
-    if (webrtcAudioCtx.state === 'suspended') {
-      webrtcAudioCtx.resume().catch(()=>{});
-    }
-
-    if (webrtcAudioSource) {
-      try { webrtcAudioSource.disconnect(); } catch(e){}
-      webrtcAudioSource = null;
-    }
-
-    const audioStream = new MediaStream(audioTracks);
-    webrtcAudioSource = webrtcAudioCtx.createMediaStreamSource(audioStream);
-    
-    webrtcGainNode = webrtcAudioCtx.createGain();
-    webrtcGainNode.gain.value = 1.6; // Boost volume for crisp phone speaker output
-
-    webrtcAudioSource.connect(webrtcGainNode);
-    webrtcGainNode.connect(webrtcAudioCtx.destination);
-    console.log('[WebRTC] WebAudio direct speaker pipeline connected successfully!');
-  } catch(err) {
-    console.warn('[WebRTC] WebAudio pipeline error:', err);
-  }
-}
-
-// Helper: Attach Remote Stream & Play Video / Audio with Loudspeaker Priority
+// ── Remote audio/video attachment (SIMPLE & RELIABLE) ──
 function handleRemoteTrack(event) {
-  console.log('[WebRTC] Remote track received:', event.track ? event.track.kind : 'stream', event.track ? event.track.id : '');
-  const remoteVideoEl = document.getElementById('callRemoteVideo');
-  const remoteAudioEl = document.getElementById('callRemoteAudio');
-  const avView = document.getElementById('callAvatarView');
+  console.log('[WebRTC] ontrack:', event.track.kind, event.track.id, event.track.readyState);
+  event.track.enabled = true;
 
-  if (!remoteMediaStream) {
-    remoteMediaStream = new MediaStream();
-  }
-
-  if (event.track) {
-    if (!remoteMediaStream.getTracks().some(t => t.id === event.track.id)) {
-      remoteMediaStream.addTrack(event.track);
-      event.track.enabled = true;
-    }
+  if (!remoteMediaStream) remoteMediaStream = new MediaStream();
+  if (!remoteMediaStream.getTracks().some(t => t.id === event.track.id)) {
+    remoteMediaStream.addTrack(event.track);
   }
   if (event.streams && event.streams[0]) {
     event.streams[0].getTracks().forEach(t => {
-      if (!remoteMediaStream.getTracks().some(existing => existing.id === t.id)) {
-        remoteMediaStream.addTrack(t);
-        t.enabled = true;
-      }
+      t.enabled = true;
+      if (!remoteMediaStream.getTracks().some(x => x.id === t.id)) remoteMediaStream.addTrack(t);
     });
   }
 
-  const effectiveStream = (remoteMediaStream.getTracks().length > 0) ? remoteMediaStream : (event.streams && event.streams[0]);
+  const remoteAudioEl = document.getElementById('callRemoteAudio');
+  const remoteVideoEl = document.getElementById('callRemoteVideo');
+  const avView = document.getElementById('callAvatarView');
+  const hasVideo = currentCallIsVideo && remoteMediaStream.getVideoTracks().length > 0;
 
-  if (effectiveStream) {
-    const audioTracks = effectiveStream.getAudioTracks();
-    const videoTracks = effectiveStream.getVideoTracks();
-    console.log('[WebRTC] Effective stream has ' + audioTracks.length + ' audio tracks and ' + videoTracks.length + ' video tracks');
+  // AUDIO: always attach full stream to <audio> element - most reliable across devices
+  if (remoteAudioEl) {
+    remoteAudioEl.srcObject = remoteMediaStream;
+    remoteAudioEl.muted = false;
+    remoteAudioEl.volume = 1.0;
+    remoteAudioEl.play().catch(e => console.warn('[WebRTC] audio.play error:', e.name));
+  }
 
-    // 1. Direct WebAudio hardware pipeline (bypasses all mobile HTML5 media bugs)
-    if (audioTracks.length > 0) {
-      routeAudioViaWebAudio(effectiveStream);
-    }
-
-    const isVideo = currentCallIsVideo && videoTracks.length > 0;
-
-    if (isVideo && remoteVideoEl) {
-      // VIDEO CALL: Remote video element outputs video
-      if (remoteVideoEl.srcObject !== effectiveStream) {
-        remoteVideoEl.srcObject = effectiveStream;
-      }
-      remoteVideoEl.muted = false;
-      remoteVideoEl.volume = 1.0;
-      remoteVideoEl.playsInline = true;
-      remoteVideoEl.autoplay = true;
-      remoteVideoEl.style.display = 'block';
-      remoteVideoEl.style.zIndex = '1';
-      if (avView) avView.style.display = 'none';
-      const playP = remoteVideoEl.play();
-      if (playP !== undefined) playP.catch(e => console.warn('[WebRTC] Video play error:', e));
-
-      // Also attach audio stream to remoteAudioEl as backup
-      if (remoteAudioEl && audioTracks.length > 0) {
-        const pureAudioStream = new MediaStream(audioTracks);
-        if (remoteAudioEl.srcObject !== pureAudioStream) {
-          remoteAudioEl.srcObject = pureAudioStream;
-        }
-        remoteAudioEl.muted = false;
-        remoteAudioEl.volume = 1.0;
-        remoteAudioEl.autoplay = true;
-        const playP2 = remoteAudioEl.play();
-        if (playP2 !== undefined) playP2.catch(e => console.warn('[WebRTC] Audio play error:', e));
-      }
-    } else if (remoteAudioEl) {
-      // AUDIO CALL: Remote audio element outputs voice
-      if (remoteAudioEl.srcObject !== effectiveStream) {
-        remoteAudioEl.srcObject = effectiveStream;
-      }
-      remoteAudioEl.muted = false;
-      remoteAudioEl.volume = 1.0;
-      remoteAudioEl.autoplay = true;
-      if (avView) avView.style.display = 'flex';
-      if (remoteVideoEl) { remoteVideoEl.style.display = 'none'; }
-      const playP3 = remoteAudioEl.play();
-      if (playP3 !== undefined) playP3.catch(e => console.warn('[WebRTC] Audio-only play error:', e));
-    }
+  // VIDEO: show remote video if video call
+  if (hasVideo && remoteVideoEl) {
+    remoteVideoEl.srcObject = remoteMediaStream;
+    remoteVideoEl.muted = true;
+    remoteVideoEl.playsInline = true;
+    remoteVideoEl.autoplay = true;
+    remoteVideoEl.style.display = 'block';
+    remoteVideoEl.style.zIndex = '1';
+    remoteVideoEl.play().catch(() => {});
+    if (avView) avView.style.display = 'none';
   }
 }
 
 function unlockCallAudio() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (AudioContextClass) {
-    if (!webrtcAudioCtx || webrtcAudioCtx.state === 'closed') {
-      try { webrtcAudioCtx = new AudioContextClass(); } catch(e){}
-    }
-    if (webrtcAudioCtx && webrtcAudioCtx.state === 'suspended') {
-      webrtcAudioCtx.resume().catch(()=>{});
-    }
-  }
-
-  const remoteVideoEl = document.getElementById('callRemoteVideo');
-  const remoteAudioEl = document.getElementById('callRemoteAudio');
-  if (remoteVideoEl) {
-    remoteVideoEl.muted = false;
-    remoteVideoEl.volume = 1.0;
-    remoteVideoEl.play().catch(()=>{});
-  }
-  if (remoteAudioEl) {
-    remoteAudioEl.muted = false;
-    remoteAudioEl.volume = 1.0;
-    remoteAudioEl.play().catch(()=>{});
-  }
+  const el = document.getElementById('callRemoteAudio');
+  if (!el) return;
+  el.muted = false;
+  el.volume = 1.0;
+  if (el.srcObject) el.play().catch(() => {});
 }
 
 
@@ -12055,9 +11945,6 @@ let iceCandidatesUnsub = null;
 let pendingRemoteCandidates = [];
 
 async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
-  // Synchronously unlock audio playback on direct user gesture
-  unlockCallAudio();
-
   if (!curUser) { openAuth(); return; }
   const partnerUid = targetPartnerUid || activePartnerUid;
   if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
@@ -12143,8 +12030,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       offerToReceiveAudio: true,
       offerToReceiveVideo: isVideo
     });
-    const enhancedOfferSdp = enhanceSdpForHdAudio(offer.sdp);
-    await peerConnection.setLocalDescription(new RTCSessionDescription({ type: offer.type, sdp: enhancedOfferSdp }));
+    await peerConnection.setLocalDescription(offer);
 
     const callData = {
       chatId,
@@ -12158,7 +12044,7 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       calleeAv: partnerAv,
       isVideo,
       status: 'calling',
-      offer: { sdp: enhancedOfferSdp, type: offer.type },
+      offer: { sdp: offer.sdp, type: offer.type },
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -12676,12 +12562,11 @@ async function acceptIncomingCall() {
       offerToReceiveAudio: true,
       offerToReceiveVideo: isVideo
     });
-    const enhancedAnswerSdp = enhanceSdpForHdAudio(answer.sdp);
-    await peerConnection.setLocalDescription(new RTCSessionDescription({ type: answer.type, sdp: enhancedAnswerSdp }));
+    await peerConnection.setLocalDescription(answer);
 
     await callRef.update({
       status: 'accepted',
-      answer: { sdp: enhancedAnswerSdp, type: answer.type }
+      answer: { sdp: answer.sdp, type: answer.type }
     });
 
     unlockCallAudio();
@@ -12752,14 +12637,6 @@ async function endCall(notifyDb = true) {
   if (localMediaStream) {
     localMediaStream.getTracks().forEach(t => t.stop());
     localMediaStream = null;
-  }
-  if (webrtcAudioSource) {
-    try { webrtcAudioSource.disconnect(); } catch(e){}
-    webrtcAudioSource = null;
-  }
-  if (webrtcAudioCtx && webrtcAudioCtx.state !== 'closed') {
-    try { webrtcAudioCtx.close(); } catch(e){}
-    webrtcAudioCtx = null;
   }
   const remAudio = document.getElementById('callRemoteAudio');
   if (remAudio) { remAudio.pause(); remAudio.srcObject = null; }
