@@ -9908,7 +9908,8 @@ async function toggleFollow(targetUid) {
     <!-- Video Streams & Audio Output -->
     <video id="callRemoteVideo" class="call-remote-video" autoplay playsinline style="display:none"></video>
     <video id="callLocalVideo" class="call-local-video" autoplay playsinline muted style="display:none"></video>
-    <audio id="callRemoteAudio" autoplay playsinline style="position:absolute;width:1px;height:1px;opacity:0.001;pointer-events:none;"></audio>
+    <audio id="callRemoteAudio" autoplay playsinline style="position:fixed;top:-5000px;left:-5000px;width:100px;height:100px;"></audio>
+
 
 
     <!-- Floating Call Controls -->
@@ -11899,6 +11900,46 @@ function enhanceSdpForHdAudio(sdp) {
   });
 }
 
+// ── Web Audio Direct Speaker Bridge & Hardware Routing ──
+let webrtcAudioCtx = null;
+let webrtcAudioSource = null;
+let webrtcGainNode = null;
+
+function routeAudioViaWebAudio(stream) {
+  try {
+    if (!stream) return;
+    const audioTracks = stream.getAudioTracks();
+    if (!audioTracks || audioTracks.length === 0) return;
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!webrtcAudioCtx || webrtcAudioCtx.state === 'closed') {
+      webrtcAudioCtx = new AudioContextClass();
+    }
+    if (webrtcAudioCtx.state === 'suspended') {
+      webrtcAudioCtx.resume().catch(()=>{});
+    }
+
+    if (webrtcAudioSource) {
+      try { webrtcAudioSource.disconnect(); } catch(e){}
+      webrtcAudioSource = null;
+    }
+
+    const audioStream = new MediaStream(audioTracks);
+    webrtcAudioSource = webrtcAudioCtx.createMediaStreamSource(audioStream);
+    
+    webrtcGainNode = webrtcAudioCtx.createGain();
+    webrtcGainNode.gain.value = 1.6; // Boost volume for crisp phone speaker output
+
+    webrtcAudioSource.connect(webrtcGainNode);
+    webrtcGainNode.connect(webrtcAudioCtx.destination);
+    console.log('[WebRTC] WebAudio direct speaker pipeline connected successfully!');
+  } catch(err) {
+    console.warn('[WebRTC] WebAudio pipeline error:', err);
+  }
+}
+
 // Helper: Attach Remote Stream & Play Video / Audio with Loudspeaker Priority
 function handleRemoteTrack(event) {
   console.log('[WebRTC] Remote track received:', event.track ? event.track.kind : 'stream', event.track ? event.track.id : '');
@@ -11932,10 +11973,15 @@ function handleRemoteTrack(event) {
     const videoTracks = effectiveStream.getVideoTracks();
     console.log('[WebRTC] Effective stream has ' + audioTracks.length + ' audio tracks and ' + videoTracks.length + ' video tracks');
 
+    // 1. Direct WebAudio hardware pipeline (bypasses all mobile HTML5 media bugs)
+    if (audioTracks.length > 0) {
+      routeAudioViaWebAudio(effectiveStream);
+    }
+
     const isVideo = currentCallIsVideo && videoTracks.length > 0;
 
     if (isVideo && remoteVideoEl) {
-      // VIDEO CALL: Remote video element outputs both video AND audio directly
+      // VIDEO CALL: Remote video element outputs video
       if (remoteVideoEl.srcObject !== effectiveStream) {
         remoteVideoEl.srcObject = effectiveStream;
       }
@@ -11949,7 +11995,7 @@ function handleRemoteTrack(event) {
       const playP = remoteVideoEl.play();
       if (playP !== undefined) playP.catch(e => console.warn('[WebRTC] Video play error:', e));
 
-      // Also attach audio stream to remoteAudioEl for mobile speaker routing
+      // Also attach audio stream to remoteAudioEl as backup
       if (remoteAudioEl && audioTracks.length > 0) {
         const pureAudioStream = new MediaStream(audioTracks);
         if (remoteAudioEl.srcObject !== pureAudioStream) {
@@ -11978,6 +12024,16 @@ function handleRemoteTrack(event) {
 }
 
 function unlockCallAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (AudioContextClass) {
+    if (!webrtcAudioCtx || webrtcAudioCtx.state === 'closed') {
+      try { webrtcAudioCtx = new AudioContextClass(); } catch(e){}
+    }
+    if (webrtcAudioCtx && webrtcAudioCtx.state === 'suspended') {
+      webrtcAudioCtx.resume().catch(()=>{});
+    }
+  }
+
   const remoteVideoEl = document.getElementById('callRemoteVideo');
   const remoteAudioEl = document.getElementById('callRemoteAudio');
   if (remoteVideoEl) {
@@ -11991,6 +12047,7 @@ function unlockCallAudio() {
     remoteAudioEl.play().catch(()=>{});
   }
 }
+
 
 
 // ── Initiate Call (Caller) ──
@@ -12696,11 +12753,24 @@ async function endCall(notifyDb = true) {
     localMediaStream.getTracks().forEach(t => t.stop());
     localMediaStream = null;
   }
+  if (webrtcAudioSource) {
+    try { webrtcAudioSource.disconnect(); } catch(e){}
+    webrtcAudioSource = null;
+  }
+  if (webrtcAudioCtx && webrtcAudioCtx.state !== 'closed') {
+    try { webrtcAudioCtx.close(); } catch(e){}
+    webrtcAudioCtx = null;
+  }
+  const remAudio = document.getElementById('callRemoteAudio');
+  if (remAudio) { remAudio.pause(); remAudio.srcObject = null; }
+  const remVideo = document.getElementById('callRemoteVideo');
+  if (remVideo) { remVideo.pause(); remVideo.srcObject = null; }
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
   remoteMediaStream = null;
+
 
   // 💾 Record Call Log Entry
   if (curUser && activeCallPartnerUid) {
