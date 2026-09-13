@@ -316,6 +316,18 @@ const converters = [
     h1Fr: 'Générateur de Parcours G-Code CNC depuis DXF Gratuit',
     featureEn: 'Tool diameter offset, feedrate controls, 3D toolpath preview, and G-Code file download.',
     featureFr: 'Compensation de diamètre d\'outil, contrôle des avances, aperçu 3D et export G-Code.'
+  },
+  {
+    id: 'photo-to-3d-relief-stl',
+    ref: 'depth-maps',
+    titleEn: 'Convert Photo to 3D Relief STL Online Free | Studios-Pro',
+    titleFr: 'Convertir Photo en Bas-Relief 3D STL Gratuit | Studios-Pro',
+    descEn: 'Turn any 2D photo, picture, or sketch into a 3D relief STL file for CNC wood carving and 3D printing. 100% free online converter with instant AI depth maps.',
+    descFr: 'Transformez n\'importe quelle photo 2D ou dessin en fichier STL bas-relief 3D pour gravure CNC et impression 3D. Convertisseur en ligne 100% gratuit avec cartes de profondeur IA.',
+    h1En: 'Free Photo to 3D Relief STL Converter for CNC & 3D Printing',
+    h1Fr: 'Convertisseur Photo en Relief 3D STL Gratuit pour CNC & Impression 3D',
+    featureEn: 'AI monocular depth estimation, customizable relief height and smoothing, inverted bas-relief carving, and instant watertight STL download.',
+    featureFr: 'Estimation de profondeur par IA, hauteur de relief et lissage ajustables, bas-relief inversé et téléchargement direct STL étanche.'
   }
 ];
 
@@ -439,6 +451,18 @@ const nicheTools = [
     h1Fr: 'Extrudeur de Texte 3D & Lettrage vers STL Gratuit',
     featureEn: 'Google Fonts typography integration, extrusion depth slider, baseplate backing option, and instant STL 3D printing export.',
     featureFr: 'Intégration typographique Google Fonts, curseur de profondeur, socle de support automatique et export STL instantané.'
+  },
+  {
+    id: '3d-print-file-analyzer',
+    ref: 's3dviewer',
+    titleEn: 'Free 3D Print File Analyzer & Mesh Checker Online | Studios-Pro',
+    titleFr: 'Analyseur de Fichiers d\'Impression 3D & Vérificateur de Maillage Gratuit | Studios-Pro',
+    descEn: 'Check and analyze STL, OBJ, and 3MF models for 3D printing. Inspect bounding box dimensions, volume, surface area, polygon count, and manifold watertightness.',
+    descFr: 'Analysez et vérifiez vos modèles STL, OBJ et 3MF pour l\'impression 3D. Inspectez dimensions, volume, surface, nombre de polygones et étanchéité.',
+    h1En: 'Free Online 3D Print File Analyzer & Mesh Inspector',
+    h1Fr: 'Analyseur de Fichiers d\'Impression 3D & Inspecteur de Maillage Gratuit',
+    featureEn: 'Instant bounding box dimensions in mm/inches, automated volume and weight estimation, triangle count check, and 3D cross-section inspection.',
+    featureFr: 'Dimensions de boîte englobante en mm/pouces, estimation de volume et poids, calcul de polygones et coupe transversale 3D.'
   }
 ];
 
@@ -562,6 +586,26 @@ const comparisons = [
       { featureEn: 'One-Click Standalone HTML Export', featureFr: 'Export HTML autonome en 1 clic', us: 'Included', competitor: 'Requires Complex Addons' },
       { featureEn: 'AR Mobile Preview for Clients', featureFr: 'Aperçu Réalité Augmentée pour clients', us: 'Built-in WebAR', competitor: 'Not Available' }
     ]
+  },
+  {
+    id: 'sketchfab-free-alternative-ar-viewer',
+    targetSoftware: 'Sketchfab',
+    ref: 'arviewer',
+    titleEn: 'Best Free Sketchfab Alternative for 3D Model AR Viewing | Studios-Pro',
+    titleFr: 'Meilleure Alternative Gratuite à Sketchfab pour Visualisation AR 3D | Studios-Pro',
+    descEn: 'Looking for a free Sketchfab alternative to view and share 3D models in Augmented Reality without limits or subscriptions? Studios-Pro AR Viewer offers instant WebXR projection and private client-side viewing.',
+    descFr: 'Vous cherchez une alternative gratuite à Sketchfab pour visualiser et partager des modèles 3D en Réalité Augmentée sans abonnement ? Studios-Pro AR Viewer offre une projection WebXR instantanée.',
+    h1En: 'Best Free Sketchfab Alternative for 3D & AR Model Viewing',
+    h1Fr: 'Meilleure Alternative Gratuite à Sketchfab pour la Réalité Augmentée',
+    leadEn: 'View STL, OBJ, and GLB files in 3D and project them directly into physical spaces using Augmented Reality with zero registration, zero fees, and 100% privacy.',
+    leadFr: 'Visualisez vos fichiers STL, OBJ et GLB en 3D et projetez-les directement dans votre espace physique en Réalité Augmentée sans inscription et gratuitement.',
+    table: [
+      { featureEn: 'AR Phone Projection', featureFr: 'Projection Réalité Augmentée sur Mobile', us: 'Free & Instant (QR Code WebXR)', competitor: 'Paid / Limited on Free Plan' },
+      { featureEn: 'File Size & Upload Limits', featureFr: 'Limites de taille et de téléchargement', us: 'Unlimited Client-Side', competitor: 'Monthly Upload Quotas' },
+      { featureEn: 'Account Registration Required', featureFr: 'Création de compte obligatoire', us: 'No (Instant Guest Access)', competitor: 'Mandatory Account Required' },
+      { featureEn: 'Data Privacy & Local Processing', featureFr: 'Confidentialité des données & Traitement local', us: '100% In-Browser Privacy', competitor: 'Cloud Hosted Models' },
+      { featureEn: 'Direct STL / OBJ Support', featureFr: 'Support direct des fichiers STL / OBJ', us: 'Native Auto-Conversion to AR', competitor: 'Requires GLTF / Blender Prep' }
+    ]
   }
 ];
 
@@ -666,6 +710,8 @@ const template = (page) => {
     <!-- Hreflang for internationalized search results -->
     <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
     <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
+    <link rel="alternate" hreflang="es" href="https://studios-pro.com/${pagePath}?lang=es" />
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -903,6 +949,36 @@ const template = (page) => {
             "text": "${page.featureEn}"
           }
         ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is ${page.h1En.replace(/"/g, '\\"')} free to use online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, Studios-Pro provides this tool 100% free directly in your web browser with no account registration or software installation required."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are my design files uploaded to a remote server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. All 3D rendering, mesh parsing, and CAD vector algorithms run locally on your device via client-side WebAssembly and WebGL, guaranteeing complete file privacy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What export features are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "${page.featureEn.replace(/"/g, '\\"')}"
+            }
+          }
+        ]
       }
     ]
     </script>
@@ -1107,6 +1183,8 @@ const compareTemplate = (comp) => {
     <!-- Hreflang -->
     <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
     <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
+    <link rel="alternate" hreflang="es" href="https://studios-pro.com/${pagePath}?lang=es" />
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -1604,6 +1682,12 @@ const baseUrls = `  <url>
   </url>\n`;
 
 const appsUrls = `  <url>
+    <loc>https://studios-pro.com/apps/ar-viewer/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://studios-pro.com/apps/artgen/</loc>
     <lastmod>${date}</lastmod>
     <changefreq>monthly</changefreq>
