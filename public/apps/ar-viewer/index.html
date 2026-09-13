@@ -435,62 +435,34 @@
 
           let res = null;
 
-          // Strategy 1: Direct CDN fetch for catbox / files with full CORS * support
-          if (fetchUrl.includes('catbox.moe') || fetchUrl.includes('files.catbox')) {
-            res = await fetchWithTimeout(fetchUrl, {}, 18000);
-            if (res && res.ok) {
-              const cType = (res.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) res = null; // Ignore if HTML error page
-            } else {
-              res = null;
-            }
+          // Strategy 1: Dedicated Netlify /api/ar-proxy (guaranteed CORS *, resolves HTML landing page, binary stream)
+          const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
+          const proxyEndpoint = `${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`;
+          res = await fetchWithTimeout(proxyEndpoint, {}, 25000);
+          if (res && res.ok) {
+            const cType = (res.headers.get('content-type') || '').toLowerCase();
+            if (cType.includes('html')) res = null; // Reject if error HTML
           }
 
-          // Strategy 2: If tmpfiles.org, use Netlify same-origin proxy to bypass mobile CORS
-          if ((!res || !res.ok) && fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-
-            let pRes = await fetchWithTimeout(proxyUrl, {}, 18000);
-            if (pRes && pRes.ok) {
-              const cType = (pRes.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) {
-                // Interstitial HTML landing page: extract real binary download link
-                const htmlText = await pRes.text();
-                const m = htmlText.match(/href=["']([^"']*\/(?:dl|files)\/[^"']+)["']/i) || htmlText.match(/href=["']([^"']+)["']>Download/i);
-                if (m) {
-                  let realLink = m[1];
-                  if (!realLink.startsWith('http')) {
-                    realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
-                  }
-                  let proxiedReal = realLink.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-                  let binRes = await fetchWithTimeout(proxiedReal, {}, 20000);
-                  if (binRes && binRes.ok) {
-                    const bType = (binRes.headers.get('content-type') || '').toLowerCase();
-                    if (!bType.includes('html')) res = binRes;
-                  }
-                  if (!res) {
-                    let dirRes = await fetchWithTimeout(realLink, {}, 15000);
-                    if (dirRes && dirRes.ok) {
-                      const dType = (dirRes.headers.get('content-type') || '').toLowerCase();
-                      if (!dType.includes('html')) res = dirRes;
-                    }
-                  }
-                }
-              } else {
-                res = pRes;
-              }
-            }
-          }
-
-          // Strategy 3: General direct fetch fallback
+          // Strategy 2: Direct fetch (for CDNs with full CORS * support, e.g. catbox files)
           if (!res || !res.ok) {
             let dRes = await fetchWithTimeout(fetchUrl, {}, 15000);
             if (dRes && dRes.ok) {
               const cType = (dRes.headers.get('content-type') || '').toLowerCase();
               if (!cType.includes('html')) res = dRes;
+            }
+          }
+
+          // Strategy 3: Netlify legacy proxy rewrite fallback
+          if ((!res || !res.ok) && fetchUrl.includes('tmpfiles.org')) {
+            let proxyUrl = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
+              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+            }
+            let pRes = await fetchWithTimeout(proxyUrl, {}, 15000);
+            if (pRes && pRes.ok) {
+              const cType = (pRes.headers.get('content-type') || '').toLowerCase();
+              if (!cType.includes('html')) res = pRes;
             }
           }
 
@@ -1169,90 +1141,59 @@
 
       let directDlUrl = null;
 
-      // -- Service 1: Catbox.moe (Direct CDN link, CORS *, permanent, works 100% on mobile) --
+      // -- Primary Service: tmpfiles.org (Direct browser upload, CORS *, 5GB limit) --
       try {
-        const fdCat = new FormData();
-        fdCat.append('reqtype', 'fileupload');
-        fdCat.append('fileToUpload', file, fileName);
+        const formData = new FormData();
+        formData.append('file', file, fileName);
 
-        // Try via Netlify proxy first (same-origin, bypasses browser CORS)
-        let rCat = await fetch('/api/proxy-catbox/user/api.php', {
+        // Try direct first (fastest, client-to-CDN)
+        let response = await fetch('https://tmpfiles.org/api/v1/upload', {
           method: 'POST',
-          body: fdCat,
+          body: formData,
           signal: AbortSignal.timeout(15000)
         }).catch(() => null);
 
-        // Fallback: direct upload if proxy is not responding
-        if (!rCat || !rCat.ok) {
-          const fdDirect = new FormData();
-          fdDirect.append('reqtype', 'fileupload');
-          fdDirect.append('fileToUpload', file, fileName);
-          rCat = await fetch('https://catbox.moe/user/api.php', {
+        // Fallback to same-origin proxy if direct is blocked by client adblocker
+        if (!response || !response.ok) {
+          const fdProxy = new FormData();
+          fdProxy.append('file', file, fileName);
+          response = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
-            body: fdDirect,
+            body: fdProxy,
             signal: AbortSignal.timeout(15000)
           }).catch(() => null);
         }
 
-        if (rCat && rCat.ok) {
-          const urlText = (await rCat.text()).trim();
-          if (urlText.startsWith('https://')) {
-            directDlUrl = urlText;
+        if (response && response.ok) {
+          const json = await response.json();
+          if (json && json.status === 'success' && json.data && json.data.url) {
+            directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
           }
         }
-      } catch(e) {
-        console.warn('Service 1 (catbox.moe) failed:', e.message);
+      } catch (err) {
+        console.warn('tmpfiles upload failed:', err.message);
       }
 
-      // -- Service 2: tmpfiles.org (Dual via Netlify proxy & desktop pre-resolution) --
+      // -- Fallback Service: Catbox.moe --
       if (!directDlUrl) {
         try {
-          const fd2 = new FormData();
-          fd2.append('file', file, fileName);
-          let r2 = await fetch('/api/proxy/api/v1/upload', {
+          const fdCat = new FormData();
+          fdCat.append('reqtype', 'fileupload');
+          fdCat.append('fileToUpload', file, fileName);
+          let rCat = await fetch('/api/proxy-catbox/user/api.php', {
             method: 'POST',
-            body: fd2,
+            body: fdCat,
             signal: AbortSignal.timeout(15000)
           }).catch(() => null);
 
-          if (!r2 || !r2.ok) {
-            const fdDirect = new FormData();
-            fdDirect.append('file', file, fileName);
-            r2 = await fetch('https://tmpfiles.org/api/v1/upload', {
-              method: 'POST',
-              body: fdDirect,
-              signal: AbortSignal.timeout(15000)
-            }).catch(() => null);
-          }
-
-          if (r2 && r2.ok) {
-            const json = await r2.json();
-            if (json && json.status === 'success' && json.data && json.data.url) {
-              let initialUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-              directDlUrl = initialUrl;
-
-              // Pre-resolve the real binary link on desktop right now so mobile doesn't need to parse HTML
-              try {
-                const proxyLanding = initialUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-                const pRes = await fetch(proxyLanding, { signal: AbortSignal.timeout(8000) });
-                if (pRes && pRes.ok) {
-                  const html = await pRes.text();
-                  const m = html.match(/href=["']([^"']*\/(?:dl|files)\/[^"']+)["']/i) || html.match(/href=["']([^"']+)["']>Download/i);
-                  if (m) {
-                    let realLink = m[1];
-                    if (!realLink.startsWith('http')) {
-                      realLink = 'https://tmpfiles.org' + (realLink.startsWith('/') ? '' : '/') + realLink;
-                    }
-                    directDlUrl = realLink;
-                  }
-                }
-              } catch(preErr) {
-                console.warn('Desktop pre-resolve note:', preErr.message);
-              }
+          if (rCat && rCat.ok) {
+            const urlText = (await rCat.text()).trim();
+            if (urlText.startsWith('https://')) {
+              directDlUrl = urlText;
             }
           }
         } catch(e) {
-          console.warn('Service 2 (tmpfiles.org) failed:', e.message);
+          console.warn('Catbox upload failed:', e.message);
         }
       }
 

@@ -6,6 +6,16 @@
   NODE_VERSION = "20"
   SECRETS_SCAN_ENABLED = "false"
 
+[[edge_functions]]
+  path = "/api/ar-proxy"
+  function = "ar-proxy"
+
+[[redirects]]
+  from = "/api/ar-proxy"
+  to = "/.netlify/functions/ar-proxy"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/proxy/*"
   to = "https://tmpfiles.org/:splat"
