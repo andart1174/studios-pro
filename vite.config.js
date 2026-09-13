@@ -10,7 +10,13 @@ export default defineConfig({
         target: 'https://tmpfiles.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/proxy/, '')
+      },
+      '/api/proxy-catbox': {
+        target: 'https://catbox.moe',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/proxy-catbox/, '')
       }
+
     }
   },
   build: {

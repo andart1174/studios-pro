@@ -18,6 +18,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/proxy-catbox/*"
+  to = "https://catbox.moe/:splat"
+  status = 200
+  force = true
+
 # Static HTML pages — serve them as-is (MUST be before the SPA catch-all)
 [[redirects]]
   from = "/faq.html"
@@ -185,6 +191,21 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+[[headers]]
+  for = "/api/proxy/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "*"
+
+[[headers]]
+  for = "/api/proxy-catbox/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "*"
+
 
 
 # =====================================================
