@@ -463,6 +463,102 @@ const nicheTools = [
     h1Fr: 'Analyseur de Fichiers d\'Impression 3D & Inspecteur de Maillage Gratuit',
     featureEn: 'Instant bounding box dimensions in mm/inches, automated volume and weight estimation, triangle count check, and 3D cross-section inspection.',
     featureFr: 'Dimensions de boîte englobante en mm/pouces, estimation de volume et poids, calcul de polygones et coupe transversale 3D.'
+  },
+  {
+    id: '3d-watch-mechanism-generator',
+    ref: 'polymorph',
+    titleEn: 'Free Online 3D Watch Mechanism Generator (STL/OBJ) | Studios-Pro',
+    titleFr: 'Générateur de Mécanisme de Montre 3D Gratuit (STL/OBJ) | Studios-Pro',
+    descEn: 'Design real 3D printable mechanical watch movements, tourbillons, skeleton dials, cases, bezels, and luxury bracelets online. Export watertight STL/OBJ files.',
+    descFr: 'Concevez de véritables mouvements de montre mécaniques imprimables en 3D, tourbillons, cadrans squelette, boîtiers et bracelets de luxe. Exportez en STL/OBJ.',
+    h1En: 'Free Online 3D Watch Movement & Horology Generator',
+    h1Fr: 'Générateur de Mouvements d\'Horlogerie & Montres 3D Gratuit',
+    featureEn: 'Procedural tourbillon, gyrotourbillon, co-axial escapement, skeleton dial guilloché, luxury watch cases (Oyster, Cushion, Royal Oak), Milanese mesh bracelets, and watertight 3D STL/OBJ export.',
+    featureFr: 'Tourbillon procédural, gyrotourbillon, échappement coaxial, guilloché squelette, boîtiers de luxe (Oyster, Coussin, Royal Oak), bracelets milanais et export STL/OBJ étanche.'
+  },
+  {
+    id: 'cryptex-puzzle-box-stl-generator',
+    ref: 'polymorph',
+    titleEn: 'Free Online Cryptex & Puzzle Box 3D STL Generator | Studios-Pro',
+    titleFr: 'Générateur de Cryptex & Boîte Secrète 3D STL Gratuit | Studios-Pro',
+    descEn: 'Create custom 3D printable Da Vinci Cryptex puzzle cylinders with secret passwords, Japanese trick boxes, and 3D maze spheres. Export ready-to-print STL files.',
+    descFr: 'Créez des cylindres Cryptex Da Vinci personnalisés avec mot de passe secret, des boîtes japonaises à tiroirs et des sphères labyrinthes 3D. Exportez en STL.',
+    h1En: 'Free Online Cryptex & Mechanical Puzzle Box STL Generator',
+    h1Fr: 'Générateur de Cryptex & Casse-Tête Mécanique 3D Gratuit',
+    featureEn: 'Customizable 5-letter rotating cipher dials, internal hidden chamber, Japanese Himitsu-Bako sliding trick panels, and print-in-place tolerances for STL/OBJ export.',
+    featureFr: 'Cadrans rotatifs à 5 lettres personnalisables, compartiment secret interne, panneaux coulissants Himitsu-Bako et tolérances d\'impression pour export STL/OBJ.'
+  },
+  {
+    id: 'ambiguous-cylinder-illusion-maker',
+    ref: 'polymorph',
+    titleEn: 'Ambiguous Cylinder Illusion 3D Model Maker (STL) | Studios-Pro',
+    titleFr: 'Générateur d\'Illusion de Cylindre Ambigu 3D (STL) | Studios-Pro',
+    descEn: 'Generate 3D printable Kokichi Sugihara ambiguous cylinder illusions that appear circular from one angle and square in a mirror. Download STL files instantly.',
+    descFr: 'Générez des illusions d\'optique de cylindre ambigu de Kokichi Sugihara qui semblent circulaires sous un angle et carrées dans un miroir. Téléchargez en STL.',
+    h1En: 'Online Ambiguous Cylinder & Optical Illusion 3D Generator',
+    h1Fr: 'Générateur d\'Illusions d\'Optique & Cylindres Ambigus 3D',
+    featureEn: 'Sugihara mathematical wave equations, dual-perspective anamorphic curves, mirror viewing optimization, and watertight 3D printable STL mesh export.',
+    featureFr: 'Équations mathématiques d\'ondes de Sugihara, courbes anamorphiques à double perspective, optimisation miroir et export STL étanche.'
+  },
+  {
+    id: 'pepakura-papercraft-3d-unfolder',
+    ref: 'polymorph',
+    titleEn: 'Free Online 3D to Papercraft Unfolder (Pepakura Alternative) | Studios-Pro',
+    titleFr: 'Déplieur 3D vers Papercraft en Ligne Gratuit (Alternative Pepakura) | Studios-Pro',
+    descEn: 'Unfold any 3D model into 2D printable papercraft nets with numbered gluing tabs and crease fold lines. Export to PDF, SVG, or DXF for printing and cutting.',
+    descFr: 'Dépliez n\'importe quel modèle 3D en patrons de papercraft 2D avec onglets de collage numérotés et lignes de pliage. Exportez en PDF, SVG ou DXF.',
+    h1En: 'Free Online 3D Mesh to Papercraft 2D Pattern Unfolder',
+    h1Fr: 'Déplieur de Modèles 3D en Patrons Papercraft 2D Gratuit',
+    featureEn: 'Automated 3D polygon unwrapping, boundary edge seams, numbered trapezoidal glue tabs, valley/mountain fold indicators, and printable PDF/SVG vector export.',
+    featureFr: 'Dépliage polygonal 3D automatique, découpe de coutures, languettes de colle trapézoïdales numérotées, plis vallée/montagne et export vectoriel PDF/SVG.'
+  },
+  {
+    id: 'flexi-articulated-3d-generator',
+    ref: 'polymorph',
+    titleEn: 'Free Print-in-Place Flexi Articulated 3D Model Maker | Studios-Pro',
+    titleFr: 'Générateur de Modèles Articulés Flexi 3D Imprimables en Place | Studios-Pro',
+    descEn: 'Generate print-in-place articulated flexi dragons, snakes, lizards, and triple-gimbal gyro fidget spinners online. Download ready-to-print STL files.',
+    descFr: 'Générez des dragons articulés flexi, serpents, lézards et gyroscopes à cardans imprimables en une seule pièce sans assemblage. Téléchargez en STL.',
+    h1En: 'Free Print-in-Place Flexi Articulated 3D Model Generator',
+    h1Fr: 'Générateur de Modèles 3D Articulés Flexi Print-in-Place',
+    featureEn: 'Integrated interlocking hinge mechanics, zero-assembly print-in-place tolerances, multi-joint flex motion physics, and watertight 3D STL export.',
+    featureFr: 'Mécanismes de charnières emboîtables, tolérances d\'impression sans assemblage, physique articulée multi-segments et export STL 3D étanche.'
+  },
+  {
+    id: 'dungeon-tiles-rpg-scenery-generator',
+    ref: 'polymorph',
+    titleEn: 'Free 3D Printable Modular Dungeon Tile & Scenery Maker | Studios-Pro',
+    titleFr: 'Générateur de Tuiles de Donjon & Décors RPG 3D Imprimables | Studios-Pro',
+    descEn: 'Create modular 28mm tabletop RPG dungeon tiles, cobblestone crypts, gothic doors, treasure chests, and stone walls compatible with OpenLOCK and OpenForge. Export STL.',
+    descFr: 'Créez des tuiles de donjon modulaires 28mm, cryptes pavées, portes gothiques et murs de pierre compatibles OpenLOCK et OpenForge. Exportez en STL.',
+    h1En: 'Modular 3D Printable Dungeon Tiles & Tabletop Scenery Generator',
+    h1Fr: 'Générateur de Décors & Tuiles de Donjon 3D pour JDR sur Table',
+    featureEn: '28mm heroic miniature scale, OpenLOCK and magnetic clip slots, procedural stone textures, modular wall connectors, and batch STL 3D print export.',
+    featureFr: 'Échelle figurines 28mm, fentes de clips magnétiques et OpenLOCK, textures de pierre procédurales, connecteurs modulaires et export par lot STL 3D.'
+  },
+  {
+    id: '3d-topographic-terrain-cityscape-generator',
+    ref: 'polymorph',
+    titleEn: 'Free 3D Topographic Terrain & Cityscape Map Generator | Studios-Pro',
+    titleFr: 'Générateur de Relief Topographique & Ville 3D Gratuit | Studios-Pro',
+    descEn: 'Generate 3D printable topographic relief maps and urban cityscapes from real-world elevation data with multi-tile interlocking dovetails. Export STL.',
+    descFr: 'Générez des cartes de relief topographique et des paysages urbains 3D imprimables à partir de données réelles d\'élévation avec tuiles emboîtables. Exportez en STL.',
+    h1En: 'Free 3D Topographic Terrain & 3D Cityscape Generator',
+    h1Fr: 'Générateur de Terrains Topographiques & Villes 3D Gratuit',
+    featureEn: 'Real-world mountain elevation grids, OpenStreetMap 3D building extrusions, modular 2x2/3x3 dovetail tile splitting with magnet sockets, and STL export.',
+    featureFr: 'Grilles d\'élévation réelles, bâtiments 3D OpenStreetMap, découpage modulaire 2x2/3x3 à queue d\'aronde et aimants, et export STL.'
+  },
+  {
+    id: 'voronoi-parametric-lamp-vase-generator',
+    ref: 'polymorph',
+    titleEn: 'Free Parametric Voronoi 3D Vase & Lampshade Generator (STL) | Studios-Pro',
+    titleFr: 'Générateur Paramétrique de Vases & Abat-Jour Voronoi 3D (STL) | Studios-Pro',
+    descEn: 'Design mathematical Voronoi cellular lampshades, organic spiral vases, and helical plant pots for 3D printing. Download watertight STL files.',
+    descFr: 'Concevez des abat-jour cellulaires Voronoi, vases spirales organiques et pots hélicoïdaux pour l\'impression 3D. Téléchargez des fichiers STL étanches.',
+    h1En: 'Parametric Voronoi 3D Vase & Lampshade Generator',
+    h1Fr: 'Générateur de Vases & Abat-Jour Voronoi 3D Paramétrique',
+    featureEn: 'Parametric Voronoi tessellation, spiral curve frequency controls, dual-wall watertight thickness, spiral vase mode preview, and direct STL export.',
+    featureFr: 'Pavages de Voronoi paramétriques, contrôle de fréquence de spirale, double paroi étanche, mode vase et export STL direct.'
   }
 ];
 
@@ -1788,6 +1884,12 @@ const appsUrls = `  <url>
     <lastmod>${date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/apps/polymorph-3d/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
   </url>
 \n`;
 
