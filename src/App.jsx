@@ -796,6 +796,7 @@ const StudiosPro = () => {
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [isArtGenOpen, setIsArtGenOpen] = useState(false);
+  const [isPolyMorphOpen, setIsPolyMorphOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -1172,6 +1173,7 @@ const StudiosPro = () => {
       if (ref === 'mechgen') setIsMechGenProOpen(true);
       if (ref === 'sandbox') setIsSandboxOpen(true);
       if (ref === 'artgen') setIsArtGenOpen(true);
+      if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
     }
   }, [lang, user]);
 
@@ -1264,6 +1266,7 @@ const StudiosPro = () => {
         setIsScriptingOpen(false);
         setIsSandboxOpen(false);
         setIsArtGenOpen(false);
+        setIsPolyMorphOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -1350,6 +1353,7 @@ const StudiosPro = () => {
       if (ref === 'artgen') setIsArtGenOpen(true);
       if (ref === 'scripting') setIsScriptingOpen(true);
       if (ref === 'arviewer') setIsARViewerOpen(true);
+      if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
     }
     if (room) {
       setIsScriptingOpen(true);
@@ -1450,6 +1454,7 @@ const StudiosPro = () => {
       scriptingStudio: "Studio Scripting",
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
+      polymorph3d: "PolyMorph 3D Studio",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -1500,6 +1505,7 @@ const StudiosPro = () => {
       scriptingStudio: "Scripting Studio",
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
+      polymorph3d: "PolyMorph 3D Studio",
       faqBtn: "FAQ",
       communityBtn: "Community"
     }
@@ -1508,7 +1514,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -1994,6 +2000,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.artGenStudio}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPolyMorphOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #6366f1, #06b6d4, #10b981)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="PolyMorph 3D Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.polymorph3d}</div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
@@ -2268,6 +2286,11 @@ const StudiosPro = () => {
         {isArtGenOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/artgen/index.html" className="studio-iframe" title="ArtGen Studio" />
+          </motion.div>
+        )}
+        {isPolyMorphOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/polymorph-3d/index.html" className="studio-iframe" title="PolyMorph 3D Studio" />
           </motion.div>
         )}
       </AnimatePresence>
