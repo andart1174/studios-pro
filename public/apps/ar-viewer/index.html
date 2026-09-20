@@ -50,6 +50,45 @@
         </div>
       </div>
 
+      <!-- 1-Click Demo AR Gallery -->
+      <div class="panel-section demo-gallery-section">
+        <div class="demo-section-header">
+          <span class="demo-badge">1-CLICK AR</span>
+          <h2 class="lang-text" data-fr="Modèles Démo 1-Clic" data-en="1-Click Demo Models">1-Click Demo Models</h2>
+        </div>
+        <p class="demo-intro lang-text" data-fr="Testez l'AR instantanément sans chercher de fichier 3D :" data-en="Test AR immediately without uploading any file:">Test AR immediately without uploading any file:</p>
+        <div class="demo-cards-grid">
+          <button type="button" class="demo-card-btn" data-demo="gear" onclick="window.triggerDemoModel('gear')">
+            <span class="demo-icon">⚙️</span>
+            <div class="demo-meta">
+              <span class="demo-title lang-text" data-fr="Engrenage CAD" data-en="CAD Gear">CAD Gear</span>
+              <span class="demo-subtitle">STL / Precision</span>
+            </div>
+          </button>
+          <button type="button" class="demo-card-btn" data-demo="fox" onclick="window.triggerDemoModel('fox')">
+            <span class="demo-icon">🦊</span>
+            <div class="demo-meta">
+              <span class="demo-title lang-text" data-fr="Renard Poly" data-en="Low-Poly Fox">Low-Poly Fox</span>
+              <span class="demo-subtitle">GLB / 48 KB</span>
+            </div>
+          </button>
+          <button type="button" class="demo-card-btn" data-demo="boombox" onclick="window.triggerDemoModel('boombox')">
+            <span class="demo-icon">📻</span>
+            <div class="demo-meta">
+              <span class="demo-title lang-text" data-fr="BoomBox Retro" data-en="Retro BoomBox">Retro BoomBox</span>
+              <span class="demo-subtitle">GLB / Studio PBR</span>
+            </div>
+          </button>
+          <button type="button" class="demo-card-btn" data-demo="relief" onclick="window.triggerDemoModel('relief')">
+            <span class="demo-icon">🪵</span>
+            <div class="demo-meta">
+              <span class="demo-title lang-text" data-fr="Relief CNC Bois" data-en="CNC Wood Relief">CNC Wood Relief</span>
+              <span class="demo-subtitle">3D Relief / Art</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- Model Stats / Info -->
       <div id="info-section" class="panel-section" style="display: none;">
         <h2 class="lang-text" data-fr="Informations du Modèle" data-en="Model Information">Model Information</h2>
@@ -229,15 +268,34 @@
         <p id="loader-text" class="lang-text" data-fr="Chargement et conversion du modèle..." data-en="Loading and converting model...">Loading and converting model...</p>
       </div>
 
-      <!-- Placeholder before upload -->
+      <!-- Placeholder before upload with 1-Click Demo AR chips -->
       <div id="placeholder" class="placeholder-content">
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
           <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
           <line x1="12" y1="22.08" x2="12" y2="12"/>
         </svg>
-        <h3 class="lang-text" data-fr="Aucun modèle chargé" data-en="No Model Loaded">No Model Loaded</h3>
-        <p class="lang-text" data-fr="Importez un fichier 3D dans le panneau de gauche pour commencer." data-en="Import a 3D file in the left panel to begin.">Import a 3D file in the left panel to begin.</p>
+        <h3 class="lang-text" data-fr="Visualiseur 3D & Réalité Augmentée" data-en="3D & Augmented Reality Viewer">3D & Augmented Reality Viewer</h3>
+        <p class="lang-text" data-fr="Glissez votre fichier 3D (.glb, .stl, .obj) ou testez immédiatement un modèle démo :" data-en="Drop your 3D file (.glb, .stl, .obj) or test an instant demo model in 1 click:">Drop your 3D file (.glb, .stl, .obj) or test an instant demo model in 1 click:</p>
+        
+        <div class="placeholder-demo-chips">
+          <button type="button" class="placeholder-chip" onclick="window.triggerDemoModel('gear')">
+            <span class="chip-icon">⚙️</span>
+            <span class="chip-label lang-text" data-fr="Engrenage CAD" data-en="CAD Gear">CAD Gear</span>
+          </button>
+          <button type="button" class="placeholder-chip" onclick="window.triggerDemoModel('fox')">
+            <span class="chip-icon">🦊</span>
+            <span class="chip-label lang-text" data-fr="Renard Poly" data-en="Low-Poly Fox">Low-Poly Fox</span>
+          </button>
+          <button type="button" class="placeholder-chip" onclick="window.triggerDemoModel('boombox')">
+            <span class="chip-icon">📻</span>
+            <span class="chip-label lang-text" data-fr="BoomBox Retro" data-en="Retro BoomBox">Retro BoomBox</span>
+          </button>
+          <button type="button" class="placeholder-chip" onclick="window.triggerDemoModel('relief')">
+            <span class="chip-icon">🪵</span>
+            <span class="chip-label lang-text" data-fr="Relief CNC Bois" data-en="CNC Wood Relief">CNC Wood Relief</span>
+          </button>
+        </div>
       </div>
 
       <!-- Floating Controls -->
@@ -491,6 +549,16 @@
       })();
     }
 
+    // Auto-load 1-Click Demo model if ?demo=... is specified in URL
+    const demoParam = urlParams.get('demo');
+    if (demoParam) {
+      setTimeout(() => {
+        if (typeof window.triggerDemoModel === 'function') {
+          window.triggerDemoModel(demoParam);
+        }
+      }, 120);
+    }
+
     // Check if parent window has passed model data directly
     if (window.parent && window.parent.lastArModelData) {
       const modelData = window.parent.lastArModelData;
@@ -531,8 +599,6 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-
-
     // Scale normalization to prevent oversized/microscopic models in AR
     function normalizeObjectScale(object) {
       const box = new THREE.Box3().setFromObject(object);
@@ -549,6 +615,171 @@
         object.scale.multiplyScalar(0.1 / maxDim);
       }
     }
+
+    // ----------------------------------------------------------------------
+    // 1-CLICK DEMO AR GALLERY CONTROLLER
+    // ----------------------------------------------------------------------
+    const DEMO_MODELS = {
+      gear: {
+        id: 'gear',
+        name: 'CAD_Mechanical_Gear.glb',
+        ext: 'glb',
+        format: 'STL / CAD',
+        isProcedural: true
+      },
+      fox: {
+        id: 'fox',
+        name: 'Low_Poly_Fox.glb',
+        ext: 'glb',
+        format: 'GLB / 3D',
+        url: '/ar/models/card-220.glb'
+      },
+      boombox: {
+        id: 'boombox',
+        name: 'Retro_Boombox_PBR.glb',
+        ext: 'glb',
+        format: 'GLB / PBR',
+        url: '/ar/models/card-199.glb'
+      },
+      relief: {
+        id: 'relief',
+        name: 'CNC_Wood_Relief.glb',
+        ext: 'glb',
+        format: '3D Relief / Art',
+        url: '/ar/models/card-235.glb'
+      }
+    };
+
+    let activeDemoId = null;
+
+    function generateDemoQR(demoId) {
+      const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        qrSection.style.display = 'none';
+        return;
+      }
+
+      qrSection.style.display = 'block';
+      qrLoading.style.display = 'none';
+      qrCodeImg.style.display = 'block';
+      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+
+      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+      const targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&demo=${demoId}`;
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
+
+      lastShareUrl = targetARUrl;
+      qrCodeImg.src = qrApiUrl;
+    }
+
+    window.triggerDemoModel = async function(demoId) {
+      const demo = DEMO_MODELS[demoId] || DEMO_MODELS.fox;
+      activeDemoId = demo.id;
+      hasReceivedFile = true;
+
+      // Highlight active demo card in sidebar
+      document.querySelectorAll('.demo-card-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-demo') === demo.id);
+      });
+
+      showLoader(currentLang === 'fr' ? `Chargement du modèle ${demo.name}...` : `Loading ${demo.name}...`);
+
+      try {
+        if (demo.isProcedural && demo.id === 'gear') {
+          // Generate high-precision CAD mechanical gear
+          const numTeeth = 16;
+          const outerR = 0.22;
+          const innerR = 0.17;
+          const toothH = 0.04;
+          const shape = new THREE.Shape();
+          const delta = (Math.PI * 2) / numTeeth;
+
+          for (let i = 0; i < numTeeth; i++) {
+            const a0 = i * delta;
+            const a1 = a0 + delta * 0.25;
+            const a2 = a0 + delta * 0.5;
+            const a3 = a0 + delta * 0.75;
+
+            const p0 = new THREE.Vector2(Math.cos(a0) * innerR, Math.sin(a0) * innerR);
+            const p1 = new THREE.Vector2(Math.cos(a1) * (outerR + toothH), Math.sin(a1) * (outerR + toothH));
+            const p2 = new THREE.Vector2(Math.cos(a2) * (outerR + toothH), Math.sin(a2) * (outerR + toothH));
+            const p3 = new THREE.Vector2(Math.cos(a3) * innerR, Math.sin(a3) * innerR);
+
+            if (i === 0) shape.moveTo(p0.x, p0.y);
+            else shape.lineTo(p0.x, p0.y);
+            shape.lineTo(p1.x, p1.y);
+            shape.lineTo(p2.x, p2.y);
+            shape.lineTo(p3.x, p3.y);
+          }
+          shape.closePath();
+
+          // Central axle bore hole
+          const hole = new THREE.Path();
+          hole.absarc(0, 0, 0.065, 0, Math.PI * 2, true);
+          shape.holes.push(hole);
+
+          const geom = new THREE.ExtrudeGeometry(shape, {
+            depth: 0.06,
+            bevelEnabled: true,
+            bevelThickness: 0.012,
+            bevelSize: 0.01,
+            bevelSegments: 3
+          });
+          geom.center();
+
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0x06b6d4,
+            metalness: 0.88,
+            roughness: 0.2
+          });
+          const mesh = new THREE.Mesh(geom, mat);
+          const scene = new THREE.Scene();
+          scene.add(mesh);
+
+          currentThreeScene = scene;
+          currentModelName = demo.name;
+          currentModelExtension = 'glb';
+
+          modelNameEl.textContent = demo.name;
+          modelFormatEl.textContent = demo.format;
+          modelSizeEl.textContent = '145 KB (PBR)';
+
+          const exporter = new THREE.GLTFExporter();
+          exporter.parse(scene, function(result) {
+            const isBinary = (result instanceof ArrayBuffer);
+            const glbBlob = isBinary ?
+              new Blob([result], { type: 'application/octet-stream' }) :
+              new Blob([JSON.stringify(result)], { type: 'application/json' });
+            lastExportedBlob = glbBlob;
+            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
+            loadIntoModelViewer(fileUrl);
+            generateDemoQR(demo.id);
+          }, { binary: true });
+
+        } else {
+          // Static pre-optimized model
+          const response = await fetch(demo.url);
+          if (!response.ok) throw new Error('Demo fetch failed');
+          const blob = await response.blob();
+
+          modelNameEl.textContent = demo.name;
+          modelFormatEl.textContent = demo.format;
+          modelSizeEl.textContent = formatBytes(blob.size);
+
+          currentThreeScene = null;
+          currentModelName = demo.name;
+          currentModelExtension = demo.ext;
+          lastExportedBlob = blob;
+
+          const fileUrl = URL.createObjectURL(blob) + '#model.glb';
+          loadIntoModelViewer(fileUrl);
+          generateDemoQR(demo.id);
+        }
+      } catch (err) {
+        console.error('Error loading demo model:', err);
+        hideLoader();
+      }
+    };
 
     // Main file processor
     async function handleFile(file) {
@@ -1103,7 +1334,12 @@
     // Shared QR code generator helper incorporating dynamic color params
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
+      let targetARUrl;
+      if (directDlUrl.includes('?demo=') || directDlUrl.includes('&demo=')) {
+        targetARUrl = directDlUrl.split('&color=')[0];
+      } else {
+        targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
+      }
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }

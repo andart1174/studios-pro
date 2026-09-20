@@ -4887,6 +4887,11 @@ PRINT SETTINGS:
   const leftSidebar = document.querySelector('.sidebar:not(.right-sidebar)');
   const rightSidebar = document.querySelector('.right-sidebar');
 
+  // On mobile screens, collapse left sidebar on start so 3D viewport and "View in AR" are immediately visible
+  if (window.innerWidth <= 768 && leftSidebar) {
+    leftSidebar.classList.add('collapsed-left');
+  }
+
   safeOn('toggle-left-sidebar', 'click', () => {
     if (leftSidebar) leftSidebar.classList.toggle('collapsed-left');
   });
