@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const key = '9d0577c5cff561d2b034963557598da2';
+const key = '33056f88047a43eaaaedef730f4f21cc';
 const keyFile = path.join(__dirname, 'public', `${key}.txt`);
 
 // 1. Ensure the key file exists in public/
