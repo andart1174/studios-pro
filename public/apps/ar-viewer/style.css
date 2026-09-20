@@ -766,3 +766,100 @@ body, html {
 .placeholder-chip span:first-child {
   font-size: 1.1rem;
 }
+
+/* Viral 3D Share Link Action Button in QR panel */
+.share-link-action-btn {
+  margin-top: 14px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #0284c7, #06b6d4);
+  color: #ffffff;
+  border: 1px solid #22d3ee;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+  transition: all 0.2s ease;
+}
+
+.share-link-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.55);
+}
+
+.share-link-action-btn svg {
+  flex-shrink: 0;
+}
+
+/* Floating Viral Banner (Powered by Studios-Pro) in 3D Preview */
+.studios-share-badge {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+.share-badge-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 30px;
+  padding: 6px 14px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.share-badge-link:hover {
+  border-color: #00f3ff;
+  background: rgba(15, 23, 42, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 243, 255, 0.3);
+}
+
+.badge-sparkle {
+  font-size: 13px;
+}
+
+.badge-brand {
+  font-weight: 800;
+  background: linear-gradient(135deg, #00f3ff, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.01em;
+}
+
+.badge-cta {
+  color: #94a3b8;
+  font-size: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 8px;
+}
+
+.share-badge-link:hover .badge-cta {
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .studios-share-badge {
+    top: 10px;
+    right: 10px;
+  }
+  .badge-cta {
+    display: none;
+  }
+}
+

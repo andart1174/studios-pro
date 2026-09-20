@@ -27,7 +27,6 @@
 
   <link rel="alternate" hreflang="en" href="https://studios-pro.com/?lang=en" />
   <link rel="alternate" hreflang="fr" href="https://studios-pro.com/?lang=fr" />
-  <link rel="alternate" hreflang="es" href="https://studios-pro.com/?lang=es" />
   <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/" />
   <link rel="canonical" href="https://studios-pro.com/" />
 
@@ -55,8 +54,10 @@
     "name": "Studios-Pro",
     "operatingSystem": "Web",
     "applicationCategory": "DesignApplication",
-    "description": "Professional 3D, ArtGen Studio AI vector generator, 3D relief STL exporter, DFX, AI Depth Maps, and CNC Vector creative hub.",
+    "description": "Professional 3D, PolyMorph 3D Studio, WebAR model viewer, ArtGen Studio AI vector generator, CNC 3D relief STL exporter, DFX, AI Depth Maps, and CNC Vector creative hub.",
     "featureList": [
+      "PolyMorph 3D Studio (3D Model Converter STL/GLB/OBJ, 2D to 3D Relief & Lithophane, CAD Slicing, WebGL Inspection)",
+      "AR Viewer 3D (Instant WebAR Projection, 1-Click 3D Demo Models, QR Code Mobile Transfer)",
       "ArtGen Studio (AI Vector Logo Generator, 3D Relief Exports STL/OBJ/GLB, 45+ AI Styles, 35+ Vector Tools)",
       "3D Studio (OBJ/STL export)",
       "DFX Animation Studio",
@@ -70,12 +71,22 @@
       "Studio Pro 2 (Real-time 4D Abstract Scale Rendering)",
       "Mech Gen Pro (Procedural Mechanical Gear Generator DXF/SVG)"
     ],
-    "offers": {
-      "@type": "Offer",
-      "price": "20.00",
-      "priceCurrency": "USD",
-      "description": "Unlimited exports with a $20 monthly subscription. 2 free exports included."
-    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free Tier",
+        "price": "0.00",
+        "priceCurrency": "USD",
+        "description": "Free access with 5 free 3D and CAD exports included."
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium Plan",
+        "price": "10.00",
+        "priceCurrency": "USD",
+        "description": "Unlimited 3D exports, high-resolution models, and commercial usage with a $10/month subscription."
+      }
+    ],
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.9",
@@ -84,6 +95,20 @@
       "worstRating": "1"
     },
     "hasPart": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "PolyMorph 3D Studio",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "description": "Multi-engine 3D model converter (STL, GLB, OBJ, PLY, DXF), 2D photo to 3D relief mesh, lithophane generator, CAD cross-section slicer, and procedural generator."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "AR Viewer 3D",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web",
+        "description": "Instant browser-based WebAR viewer. Upload STL, OBJ, or GLB files, preview in 3D, and project onto any physical surface using WebXR and QR code mobile transfer."
+      },
       {
         "@type": "SoftwareApplication",
         "name": "ArtGen Studio",

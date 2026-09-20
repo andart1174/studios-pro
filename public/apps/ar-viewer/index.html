@@ -10,7 +10,7 @@
   <meta property="og:title" content="AR Viewer 3D | Studios-Pro">
   <meta property="og:description" content="View 3D models in Augmented Reality directly in your web browser. Free WebAR viewer with instant QR code mobile projection.">
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-  <link rel="stylesheet" href="style.css?v=12.0">
+  <link rel="stylesheet" href="style.css?v=13.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -246,6 +246,11 @@
           </div>
           <img id="qr-code-img" src="" alt="AR QR Code" style="display: none;">
           <p class="qr-hint lang-text" data-fr="Scannez ce code QR pour projeter instantanément ce modèle 3D sur votre table en AR !" data-en="Scan this QR code to instantly project this 3D model onto your table in AR!">Scan this QR code to instantly project this 3D model onto your table in AR!</p>
+          
+          <button type="button" id="copy-share-link-btn" class="share-link-action-btn" title="Copy 3D AR Link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span id="copy-share-text" class="lang-text" data-fr="Copier le Lien de Partage 3D" data-en="Copy 3D Share Link">Copy 3D Share Link</span>
+          </button>
         </div>
       </div>
       
@@ -262,6 +267,15 @@
 
     <!-- Right Side: 3D Preview Panel -->
     <div class="preview-area">
+      <!-- Floating Viral Badge (Powered by Studios-Pro) -->
+      <div class="studios-share-badge">
+        <a href="/" target="_blank" rel="noopener" class="share-badge-link" title="Open Studios-Pro 3D Creative Suite">
+          <span class="badge-sparkle">✨</span>
+          <span class="badge-brand">Studios-Pro 3D</span>
+          <span class="badge-cta lang-text" data-en="Create Free 3D Models →" data-fr="Créez vos modèles 3D gratuitement →">Create Free 3D Models →</span>
+        </a>
+      </div>
+
       <!-- Loading indicator -->
       <div id="loader" class="loader-overlay" style="display: none;">
         <div class="spinner"></div>
@@ -1563,6 +1577,31 @@
           : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
         qrSection.appendChild(fallbackText);
       }
+    }
+
+    // -- 1-Click Copy 3D Share Link Handler --
+    const copyShareBtn = document.getElementById('copy-share-link-btn');
+    if (copyShareBtn) {
+      copyShareBtn.onclick = async () => {
+        if (!lastShareUrl) {
+          const isFr = currentLang === 'fr';
+          alert(isFr ? "Veuillez d'abord charger un modèle 3D !" : "Please load a 3D model first!");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(lastShareUrl);
+          const textEl = document.getElementById('copy-share-text');
+          const orig = textEl.textContent;
+          textEl.textContent = currentLang === 'fr' ? "✓ Lien 3D Copié !" : "✓ 3D Link Copied!";
+          copyShareBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+          setTimeout(() => {
+            textEl.textContent = orig;
+            copyShareBtn.style.background = '';
+          }, 2500);
+        } catch (_) {
+          prompt(currentLang === 'fr' ? "Copiez ce lien 3D :" : "Copy this 3D link:", lastShareUrl);
+        }
+      };
     }
   </script>
 

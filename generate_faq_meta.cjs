@@ -81,7 +81,7 @@ const faqHtml = `<!DOCTYPE html>
         "name": "What is the price of Studios-Pro Premium?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Studios-Pro Premium costs $20 USD per month and gives you unlimited exports across all 14 creative studios including 3D Studio, DFX Studio, Vector CNC, AI Depth Maps, Jewelry Maker Pro, Maker Studio 7, and more."
+          "text": "Studios-Pro Premium costs $10 USD per month and gives you unlimited exports across all 14 creative studios including 3D Studio, DFX Studio, Vector CNC, AI Depth Maps, Jewelry Maker Pro, Maker Studio 7, and more."
         }
       },
       {
@@ -97,7 +97,7 @@ const faqHtml = `<!DOCTYPE html>
         "name": "What is the difference between free and premium?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Free users get 2 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB 3D exports, SVG/DXF vector exports, G-code for CNC machines, high-resolution video recordings, and priority support."
+          "text": "Free users get 5 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB 3D exports, SVG/DXF vector exports, G-code for CNC machines, high-resolution video recordings, and priority support."
         }
       },
       {
@@ -229,7 +229,7 @@ const faqHtml = `<!DOCTYPE html>
             </div>
             <div class="question">
                 <h3>Q7 : Quelle est la différence entre gratuit et premium ?</h3>
-                <p><strong>R7 :</strong> Les utilisateurs gratuits reçoivent 2 exportations pour tester la plateforme. Les utilisateurs Premium bénéficient d'exportations illimitées dans tous les studios, y compris STL/OBJ/GLB, SVG/DXF, G-code et enregistrements vidéo haute résolution.</p>
+                <p><strong>R7 :</strong> Les utilisateurs gratuits reçoivent 5 exportations pour tester la plateforme. Les utilisateurs Premium bénéficient d'exportations illimitées dans tous les studios, y compris STL/OBJ/GLB, SVG/DXF, G-code et enregistrements vidéo haute résolution.</p>
             </div>
             <div class="question">
                 <h3>Q8 : Studios-Pro est-il adapté à l'impression 3D ?</h3>

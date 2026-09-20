@@ -806,7 +806,6 @@ const template = (page) => {
     <!-- Hreflang for internationalized search results -->
     <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
     <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
-    <link rel="alternate" hreflang="es" href="https://studios-pro.com/${pagePath}?lang=es" />
     <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
@@ -1279,7 +1278,6 @@ const compareTemplate = (comp) => {
     <!-- Hreflang -->
     <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
     <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
-    <link rel="alternate" hreflang="es" href="https://studios-pro.com/${pagePath}?lang=es" />
     <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
@@ -1470,6 +1468,13 @@ const compareTemplate = (comp) => {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "342",
+            "bestRating": "5",
+            "worstRating": "1"
           },
           "publisher": {
             "@type": "Organization",
