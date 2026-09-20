@@ -4,6 +4,8 @@ import { auth, db } from './firebase.js';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
@@ -100,7 +102,7 @@ import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy, Palette
+  Megaphone, Copy, Palette, Sparkles, Check
 } from 'lucide-react';
 import './App.css';
 
@@ -662,6 +664,8 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       password: "Mot de passe",
       submit: isLogin ? "Connexion" : "Créer un compte",
       switch: isLogin ? "Pas de compte ? Inscrivez-vous" : "Déjà un compte ? Connectez-vous",
+      googleBtn: "Continuer avec Google",
+      orDivider: "ou avec email"
     },
     en: {
       login: "Login",
@@ -670,12 +674,50 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       password: "Password",
       submit: isLogin ? "Login" : "Register",
       switch: isLogin ? "No account? Register" : "Have an account? Login",
+      googleBtn: "Continue with Google",
+      orDivider: "or with email"
     }
   }[lang];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    if (!auth) {
+      setError(lang === 'fr' ? "Le système d'authentification n'est pas configuré." : "Authentication system not configured.");
+      return;
+    }
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'login', { method: 'Google' });
+      }
+
+      const userRef = doc(db, "users", googleUser.uid);
+      const existingDoc = await getDoc(userRef);
+      if (!existingDoc.exists()) {
+        await setDoc(userRef, {
+          email: googleUser.email,
+          displayName: googleUser.displayName || '',
+          isPremium: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      onClose();
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleAuth = async () => {
     if (!auth) {
@@ -730,6 +772,27 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
         <button className="close-btn" onClick={onClose}><X size={20} /></button>
         <h2>{isLogin ? t.login : t.register}</h2>
         {error && <p style={{ color: '#ff4444', fontSize: '0.8rem', marginBottom: '10px' }}>{error}</p>}
+        
+        {/* 1-Click Google Sign-In */}
+        <button 
+          type="button" 
+          className="google-auth-btn" 
+          onClick={handleGoogleSignIn} 
+          disabled={googleLoading}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>{googleLoading ? (lang === 'fr' ? 'Connexion en cours...' : 'Connecting...') : t.googleBtn}</span>
+        </button>
+
+        <div className="auth-divider">
+          <span>{t.orDivider}</span>
+        </div>
+
         <div className="auth-form">
           <div className="input-group">
             <Mail size={18} className="input-icon" />
@@ -924,14 +987,19 @@ const StudiosPro = () => {
         }),
       });
 
-      const { url } = await response.json();
-      if (url) {
-        window.open(url, '_blank');
-        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement dans la nouvelle fenêtre et revenir ici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
+      const data = await response.json();
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(lang === 'fr' 
+          ? "Erreur lors de la redirection vers le paiement. Veuillez réessayer." 
+          : "Error starting checkout. Please try again.");
       }
     } catch (error) {
       console.error("Stripe Redirect Error:", error);
-      alert("Error starting checkout. Please try again.");
+      alert(lang === 'fr' 
+        ? "Erreur de connexion avec le service de paiement. Veuillez réessayer." 
+        : "Error starting checkout. Please try again.");
     }
   };
 
@@ -1536,44 +1604,76 @@ const StudiosPro = () => {
       <AnimatePresence>
         {showPaymentRequest && (
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '500px' }}>
+            <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '680px' }}>
               <button className="close-btn" onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
 
               <div className="pricing-icon">
-                <Box size={48} color="#3b82f6" />
+                <Sparkles size={44} color="#f59e0b" />
               </div>
 
-              <h2>{paymentReason === 'premium_feature' 
-                ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
-                : currentT.freeLimitTitle}</h2>
-              <p className="payment-desc">{paymentReason === 'premium_feature' 
-                ? (lang === 'fr' ? "Cette fonctionnalité (copie de code, exportation, partage) est exclusivement réservée aux abonnés Premium. Abonnez-vous pour y accéder !" : "This feature (code copying, exporting, sharing) is exclusively reserved for Premium subscribers. Subscribe to get access!") 
-                : currentT.freeLimitMsg}</p>
+              <h2>
+                {paymentReason === 'premium_feature' 
+                  ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
+                  : paymentReason === 'pricing_overview'
+                  ? (lang === 'fr' ? "Tarifs & Formules Studios-Pro" : "Studios-Pro Pricing & Plans")
+                  : currentT.freeLimitTitle}
+              </h2>
+              <p className="payment-desc">
+                {paymentReason === 'premium_feature' 
+                  ? (lang === 'fr' ? "Cette fonctionnalité est exclusivement réservée aux utilisateurs Pro. Choisissez votre formule pour débloquer l'accès complet !" : "This feature is reserved for Pro users. Choose your plan to unlock full access!") 
+                  : paymentReason === 'pricing_overview'
+                  ? (lang === 'fr' ? "Exports haute résolution illimités, parcours d'outils CNC, et licence commerciale directe." : "Unlimited high-resolution exports, CNC toolpaths, and commercial license.")
+                  : currentT.freeLimitMsg}
+              </p>
 
-              {!user && (
-                <button
-                  className="auth-submit"
-                  style={{ marginBottom: '20px', background: '#3b82f6' }}
-                  onClick={() => {
-                    setShowPaymentRequest(false);
-                    setIsAuthOpen(true);
-                  }}
-                >
-                  <User size={18} style={{ marginRight: '8px' }} />
-                  {currentT.loginNow}
-                </button>
-              )}
+              <div className="pricing-grid">
+                {/* Single Export Card */}
+                <div className="pricing-card">
+                  <h3>{lang === 'fr' ? "Export Unique" : "Single Export"}</h3>
+                  <div className="pricing-price">$2</div>
+                  <div className="pricing-desc">{lang === 'fr' ? "Paiement unique • Sans abonnement" : "One-time payment • No subscription"}</div>
+                  <ul className="pricing-features-list">
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "1 Export complet (STL, OBJ, DXF ou G-Code)" : "1 Full export (STL, OBJ, DXF or G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Haute résolution sans filigrane" : "High resolution without watermark"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Téléchargement immédiat" : "Instant direct download"}</span></li>
+                  </ul>
+                  <button className="pricing-select single" onClick={() => redirectToStripe('single')}>
+                    {lang === 'fr' ? "Acheter 1 Export (2$)" : "Buy 1 Export ($2)"}
+                  </button>
+                </div>
 
-              <div className="pricing-grid" style={{ display: 'flex', justifyContent: 'center' }}>
-                <div className="pricing-card highlighted">
+                {/* Unlimited Pro Card */}
+                <div className="pricing-card featured">
                   <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
-                  <h3>{currentT.unlimitedTitle}</h3>
-                  <div className="price">{currentT.unlimitedPrice}</div>
+                  <h3>{lang === 'fr' ? "Accès Pro Illimité" : "Unlimited Pro Access"}</h3>
+                  <div className="pricing-price">$10 <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {lang === 'fr' ? 'mois' : 'mo'}</span></div>
+                  <div className="pricing-desc">{lang === 'fr' ? "Accès complet à tous les 15+ studios" : "Full access across all 15+ studios"}</div>
+                  <ul className="pricing-features-list">
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports illimités (STL, OBJ, DXF, G-Code)" : "Unlimited exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Reliefs 3D IA & cartes de profondeur HD" : "AI 3D reliefs & HD depth maps"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Licence commerciale incluse" : "Commercial license included"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports HTML autonomes sans limite" : "Standalone HTML exports without limits"}</span></li>
+                  </ul>
                   <button className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
-                    {currentT.getPremium}
+                    {lang === 'fr' ? "Devenir Pro (10$/mois)" : "Go Pro ($10/mo)"}
                   </button>
                 </div>
               </div>
+
+              {!user && (
+                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span>{lang === 'fr' ? "Vous avez déjà un compte ?" : "Already have an account?"}</span>
+                  <button
+                    style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      setShowPaymentRequest(false);
+                      setIsAuthOpen(true);
+                    }}
+                  >
+                    {currentT.login}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -1615,15 +1715,27 @@ const StudiosPro = () => {
           </div>
 
           <div className="nav-right">
+            {!isPremium && (
+              <button
+                className="nav-pricing-btn"
+                onClick={() => {
+                  setPaymentReason('pricing_overview');
+                  setShowPaymentRequest(true);
+                }}
+              >
+                <Sparkles size={16} />
+                <span>{lang === 'fr' ? 'Tarifs & Pro' : 'Pricing & Pro'}</span>
+              </button>
+            )}
+
             {user ? (
               <div className="user-controls">
-                <button
-                  className={`premium-btn ${isPremium ? 'active-status' : ''}`}
-                  onClick={() => redirectToStripe('premium')}
-                >
-                  <CreditCard size={18} />
-                  <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
-                </button>
+                {isPremium && (
+                  <div className="premium-btn active-status" style={{ cursor: 'default' }}>
+                    <CreditCard size={18} />
+                    <span>{currentT.premiumActive}</span>
+                  </div>
+                )}
                 {isPremium && premiumUntil && (
                   <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
                     <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
@@ -1693,18 +1805,25 @@ const StudiosPro = () => {
         >
           <h2 className="subtitle">{currentT.subtitle}</h2>
           <p className="main-message">{currentT.message}</p>
-          {user && (
-            <motion.div 
-              className={`premium-promo ${isPremium ? 'is-premium' : ''}`} 
-              initial={{ opacity: 0, scale: 0.9 }} 
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={() => redirectToStripe('premium')}
-              style={{ cursor: 'pointer' }}
-            >
-              <span className="promo-tag">PRO</span>
-              <p>{isPremium ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` : currentT.premiumDesc}</p>
-            </motion.div>
-          )}
+          <motion.div 
+            className={`premium-promo ${isPremium ? 'is-premium' : ''}`} 
+            initial={{ opacity: 0, scale: 0.9 }} 
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={() => {
+              if (!isPremium) {
+                setPaymentReason('pricing_overview');
+                setShowPaymentRequest(true);
+              }
+            }}
+            style={{ cursor: isPremium ? 'default' : 'pointer' }}
+          >
+            <span className="promo-tag">PRO</span>
+            <p>
+              {isPremium 
+                ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` 
+                : (lang === 'fr' ? 'Accès Pro Illimité — Dès 2$ ou 10$/mois' : 'Pro Unlimited Access — From $2 or $10/mo')}
+            </p>
+          </motion.div>
         </motion.div>
 
         {/* Social Share Section */}
