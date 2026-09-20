@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=24.0">
+  <link rel="stylesheet" href="css/styles.css?v=35.0">
 </head>
 <body>
   <style>
@@ -5440,8 +5440,13 @@
         </button>
       </div>
 
-      <!-- Bottom Floating Toolbar: Turntable, Slicing Plane, 4K Snapshot, Reset Cam -->
+      <!-- Bottom Floating Toolbar: View in AR First, Turntable, Slicing Plane, 4K Snapshot, Reset Cam -->
       <div class="viewport-overlay-bottom">
+        <button type="button" class="tool-chip" id="tool-view-in-ar" title="View in AR / Launch native Studios-Pro AR Viewer" style="border-color: rgba(6,182,212,0.6); color: #22d3ee; font-weight: 700;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span data-i18n="toolViewInAR">📱 View in AR</span>
+        </button>
+
         <button type="button" class="tool-chip" id="tool-turntable">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           <span data-i18n="toolTurntable">Turntable 360°</span>
@@ -5465,11 +5470,6 @@
         <button type="button" class="tool-chip" id="tool-ar-qr" title="Scan with phone to open in AR">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span data-i18n="toolQRCode">AR QR Code</span>
-        </button>
-
-        <button type="button" class="tool-chip" id="tool-view-in-ar" title="View in AR / Launch native Studios-Pro AR Viewer" style="border-color: rgba(6,182,212,0.4); color: #22d3ee;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          <span data-i18n="toolViewInAR">📱 View in AR</span>
         </button>
 
         <button type="button" class="tool-chip" id="tool-reset-cam">
@@ -5792,46 +5792,46 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <!-- Application Modules -->
-  <script src="js/i18n.js?v=26.0"></script>
-  <script src="js/dxfEngine.js?v=26.0"></script>
-  <script src="js/cadInspector.js?v=26.0"></script>
-  <script src="js/generators.js?v=26.0"></script>
-  <script src="js/draw3dEngine.js?v=26.0"></script>
-  <script src="js/arEngine.js?v=26.0"></script>
-  <script src="js/papercraftEngine.js?v=26.0"></script>
-  <script src="js/puzzleEngine.js?v=26.0"></script>
-  <script src="js/acousticEngine.js?v=26.0"></script>
-  <script src="js/dungeonEngine.js?v=26.0"></script>
-  <script src="js/converters.js?v=26.0"></script>
-  <script src="js/viewer.js?v=26.0"></script>
-  <script src="js/app.js?v=26.0"></script>
+  <script src="js/i18n.js?v=35.0"></script>
+  <script src="js/dxfEngine.js?v=35.0"></script>
+  <script src="js/cadInspector.js?v=35.0"></script>
+  <script src="js/generators.js?v=35.0"></script>
+  <script src="js/draw3dEngine.js?v=35.0"></script>
+  <script src="js/arEngine.js?v=35.0"></script>
+  <script src="js/papercraftEngine.js?v=35.0"></script>
+  <script src="js/puzzleEngine.js?v=35.0"></script>
+  <script src="js/acousticEngine.js?v=35.0"></script>
+  <script src="js/dungeonEngine.js?v=35.0"></script>
+  <script src="js/converters.js?v=35.0"></script>
+  <script src="js/viewer.js?v=35.0"></script>
+  <script src="js/app.js?v=35.0"></script>
 
   <!-- NEW ENGINE MODULES (Tabs: Portrait 3D, Handwriting 3D, GIS Terrain) -->
-  <script src="js/portraitEngine.js?v=4.0"></script>
-  <script src="js/handwritingEngine.js?v=4.0"></script>
-  <script src="js/terrainEngine.js?v=5.0"></script>
+  <script src="js/portraitEngine.js?v=35.0"></script>
+  <script src="js/handwritingEngine.js?v=35.0"></script>
+  <script src="js/terrainEngine.js?v=35.0"></script>
 
   <!-- GROUNDBREAKING ENGINE MODULES -->
-  <script src="js/astroEngine.js?v=1.0"></script>
-  <script src="js/cryptexEngine.js?v=1.0"></script>
-  <script src="js/flexiEngine.js?v=1.0"></script>
-  <script src="js/gearEngine.js?v=1.0"></script>
-  <script src="js/vaseEngine.js?v=1.0"></script>
-  <script src="js/voxelEngine.js?v=1.0"></script>
+  <script src="js/astroEngine.js?v=35.0"></script>
+  <script src="js/cryptexEngine.js?v=35.0"></script>
+  <script src="js/flexiEngine.js?v=35.0"></script>
+  <script src="js/gearEngine.js?v=35.0"></script>
+  <script src="js/vaseEngine.js?v=35.0"></script>
+  <script src="js/voxelEngine.js?v=35.0"></script>
 
   <!-- COMPARTMENT ENGINES (Mask, BasRelief, Fractal, BoardGame, Horology, Artifacts) -->
-  <script src="js/maskEngine.js?v=1.0"></script>
-  <script src="js/basReliefEngine.js?v=1.0"></script>
-  <script src="js/fractalEngine.js?v=1.0"></script>
-  <script src="js/boardGameEngine.js?v=1.0"></script>
-  <script src="js/horologyEngine.js?v=1.0"></script>
-  <script src="js/artifactEngine.js?v=1.0"></script>
+  <script src="js/maskEngine.js?v=35.0"></script>
+  <script src="js/basReliefEngine.js?v=35.0"></script>
+  <script src="js/fractalEngine.js?v=35.0"></script>
+  <script src="js/boardGameEngine.js?v=35.0"></script>
+  <script src="js/horologyEngine.js?v=35.0"></script>
+  <script src="js/artifactEngine.js?v=35.0"></script>
   <!-- GROUNDBREAKING COMPARTMENT ENGINES (Illusion 3D, GridMaster) -->
-  <script src="js/illusionEngine.js?v=1.0"></script>
-  <script src="js/gridmasterEngine.js?v=1.0"></script>
+  <script src="js/illusionEngine.js?v=35.0"></script>
+  <script src="js/gridmasterEngine.js?v=35.0"></script>
 
   <!-- Studios-Pro Integration & Payment Bridge -->
-  <script src="js/studiosProBridge.js?v=1.0"></script>
+  <script src="js/studiosProBridge.js?v=35.0"></script>
 
   <!-- Local Fallback Payment Modal (Standalone & Embedded Fallback) -->
   <div id="local-payment-modal">

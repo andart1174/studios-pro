@@ -20,14 +20,20 @@ class Viewer3D {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0c0e14);
 
+    const parent = this.canvas.parentElement;
+    let w = (parent && parent.clientWidth > 0) ? parent.clientWidth : window.innerWidth;
+    let h = (parent && parent.clientHeight > 0) ? parent.clientHeight : (window.innerHeight - 56);
+    if (w <= 0) w = 360;
+    if (h <= 0) h = 500;
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: true,
       preserveDrawingBuffer: true,
       alpha: true
     });
-    this.renderer.setSize(this.canvas.parentElement.clientWidth, this.canvas.parentElement.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(w, h);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
@@ -35,8 +41,8 @@ class Viewer3D {
     this.renderer.localClippingEnabled = true;
 
     // 2. Camera & OrbitControls
-    const aspect = this.canvas.parentElement.clientWidth / this.canvas.parentElement.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 2000);
+    const aspect = w / h;
+    this.camera = new THREE.PerspectiveCamera(45, (isFinite(aspect) && aspect > 0) ? aspect : (16 / 9), 0.1, 2000);
     this.camera.position.set(60, 50, 80);
 
     this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
@@ -64,8 +70,18 @@ class Viewer3D {
     // 6. Matcap & Shader materials
     this.setupSpecialMaterials();
 
-    // 7. Event Listeners
+    // 7. Event Listeners & ResizeObserver
     window.addEventListener('resize', () => this.onWindowResize());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.onWindowResize(), 150);
+    });
+
+    if (window.ResizeObserver && this.canvas.parentElement) {
+      try {
+        const ro = new ResizeObserver(() => this.onWindowResize());
+        ro.observe(this.canvas.parentElement);
+      } catch (_) {}
+    }
 
     // 8. Animation Loop
     this.animate();
@@ -367,11 +383,18 @@ class Viewer3D {
   }
 
   onWindowResize() {
-    if (!this.canvas.parentElement) return;
-    const w = this.canvas.parentElement.clientWidth;
-    const h = this.canvas.parentElement.clientHeight;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    if (!this.canvas || !this.canvas.parentElement) return;
+    let w = this.canvas.parentElement.clientWidth;
+    let h = this.canvas.parentElement.clientHeight;
+    if (!w || w <= 0) w = window.innerWidth;
+    if (!h || h <= 0) h = window.innerHeight - 56;
+    if (w <= 0 || h <= 0) return;
+
+    const aspect = w / h;
+    if (isFinite(aspect) && aspect > 0) {
+      this.camera.aspect = aspect;
+      this.camera.updateProjectionMatrix();
+    }
     this.renderer.setSize(w, h);
   }
 

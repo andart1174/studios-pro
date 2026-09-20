@@ -4887,18 +4887,34 @@ PRINT SETTINGS:
   const leftSidebar = document.querySelector('.sidebar:not(.right-sidebar)');
   const rightSidebar = document.querySelector('.right-sidebar');
 
-  // On mobile screens, collapse left sidebar on start so 3D viewport and "View in AR" are immediately visible
-  if (window.innerWidth <= 768 && leftSidebar) {
-    leftSidebar.classList.add('collapsed-left');
-  }
-
   safeOn('toggle-left-sidebar', 'click', () => {
-    if (leftSidebar) leftSidebar.classList.toggle('collapsed-left');
+    if (!leftSidebar) return;
+    if (window.innerWidth <= 768) {
+      leftSidebar.classList.toggle('is-open');
+      if (rightSidebar) rightSidebar.classList.remove('is-open');
+    } else {
+      leftSidebar.classList.toggle('collapsed-left');
+    }
+    setTimeout(() => { if (window.Viewer) window.Viewer.onWindowResize(); }, 320);
   });
 
   safeOn('toggle-right-sidebar', 'click', () => {
-    if (rightSidebar) rightSidebar.classList.toggle('collapsed-right');
+    if (!rightSidebar) return;
+    if (window.innerWidth <= 768) {
+      rightSidebar.classList.toggle('is-open');
+      if (leftSidebar) leftSidebar.classList.remove('is-open');
+    } else {
+      rightSidebar.classList.toggle('collapsed-right');
+    }
+    setTimeout(() => { if (window.Viewer) window.Viewer.onWindowResize(); }, 320);
   });
+
+  // Guarantee canvas dimensions and aspect ratio after mobile DOM initialization
+  [50, 150, 300, 600, 1000].forEach(ms => setTimeout(() => {
+    if (window.Viewer && typeof window.Viewer.onWindowResize === 'function') {
+      window.Viewer.onWindowResize();
+    }
+  }, ms));
 
   // Guarantee mouse wheel scroll on both sidebars
   document.querySelectorAll('.sidebar-body').forEach(bodyEl => {

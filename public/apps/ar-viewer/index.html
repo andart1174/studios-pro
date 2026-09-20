@@ -10,7 +10,7 @@
   <meta property="og:title" content="AR Viewer 3D | Studios-Pro">
   <meta property="og:description" content="View 3D models in Augmented Reality directly in your web browser. Free WebAR viewer with instant QR code mobile projection.">
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=12.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -643,10 +643,10 @@
       },
       relief: {
         id: 'relief',
-        name: 'CNC_Wood_Relief.glb',
+        name: 'Panou_Sculptat_Bois_CNC.glb',
         ext: 'glb',
-        format: '3D Relief / Art',
-        url: '/ar/models/card-235.glb'
+        format: 'CNC Relief / Wood PBR',
+        isProcedural: true
       }
     };
 
@@ -743,6 +743,117 @@
           modelNameEl.textContent = demo.name;
           modelFormatEl.textContent = demo.format;
           modelSizeEl.textContent = '145 KB (PBR)';
+
+          const exporter = new THREE.GLTFExporter();
+          exporter.parse(scene, function(result) {
+            const isBinary = (result instanceof ArrayBuffer);
+            const glbBlob = isBinary ?
+              new Blob([result], { type: 'application/octet-stream' }) :
+              new Blob([JSON.stringify(result)], { type: 'application/json' });
+            lastExportedBlob = glbBlob;
+            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
+            loadIntoModelViewer(fileUrl);
+            generateDemoQR(demo.id);
+          }, { binary: true });
+
+        } else if (demo.isProcedural && demo.id === 'relief') {
+          // Authentic Sculpted Wood Relief Panel (Panou sculptat CNC din lemn)
+          const group = new THREE.Group();
+
+          // 1. Backing board (Solid Oak/Walnut wood base)
+          const boardGeom = new THREE.BoxGeometry(0.28, 0.21, 0.02);
+          const boardMat = new THREE.MeshStandardMaterial({
+            color: 0x8a5229,
+            roughness: 0.72,
+            metalness: 0.04
+          });
+          const boardMesh = new THREE.Mesh(boardGeom, boardMat);
+          group.add(boardMesh);
+
+          // 2. Beveled frame moulding around the border
+          const frameShape = new THREE.Shape();
+          frameShape.moveTo(-0.14, -0.105);
+          frameShape.lineTo(0.14, -0.105);
+          frameShape.lineTo(0.14, 0.105);
+          frameShape.lineTo(-0.14, 0.105);
+          frameShape.closePath();
+
+          const holePath = new THREE.Path();
+          holePath.moveTo(-0.12, -0.085);
+          holePath.lineTo(0.12, -0.085);
+          holePath.lineTo(0.12, 0.085);
+          holePath.lineTo(-0.12, 0.085);
+          holePath.closePath();
+          frameShape.holes.push(holePath);
+
+          const frameGeom = new THREE.ExtrudeGeometry(frameShape, {
+            depth: 0.012,
+            bevelEnabled: true,
+            bevelThickness: 0.006,
+            bevelSize: 0.005,
+            bevelSegments: 3
+          });
+          frameGeom.center();
+          const frameMat = new THREE.MeshStandardMaterial({
+            color: 0x76421e,
+            roughness: 0.65,
+            metalness: 0.05
+          });
+          const frameMesh = new THREE.Mesh(frameGeom, frameMat);
+          frameMesh.position.z = 0.012;
+          group.add(frameMesh);
+
+          // 3. Central Carved Rosette Medallion with detailed classical carving
+          const reliefGeom = new THREE.PlaneGeometry(0.23, 0.16, 96, 72);
+          const pos = reliefGeom.attributes.position;
+          for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const y = pos.getY(i);
+            const r = Math.sqrt(x * x + y * y);
+            const theta = Math.atan2(y, x);
+            let h = 0;
+            const maxR = 0.075;
+            if (r < maxR) {
+              const normR = r / maxR;
+              // Classical carved dome
+              const dome = Math.cos(normR * Math.PI * 0.5) * 0.014;
+              // 12 sculpted rosette petals
+              const petals = Math.sin(normR * Math.PI * 2) * Math.cos(12 * theta) * 0.006 * (1 - normR * 0.35);
+              // Concentric fluting rings
+              const ring = Math.sin(normR * Math.PI * 6) * 0.0025;
+              // Center raised jewel / boss
+              const boss = Math.exp(-normR * normR * 35) * 0.008;
+              h = dome + petals + ring + boss;
+            } else {
+              // Beveled inner margin with wave pattern
+              const edgeDist = Math.min(0.115 - Math.abs(x), 0.08 - Math.abs(y));
+              if (edgeDist > 0 && edgeDist < 0.04) {
+                h = Math.sin((0.04 - edgeDist) * 80) * 0.002;
+              }
+            }
+            pos.setZ(i, h);
+          }
+          reliefGeom.computeVertexNormals();
+
+          const reliefMat = new THREE.MeshStandardMaterial({
+            color: 0x965a32,
+            roughness: 0.62,
+            metalness: 0.05
+          });
+          const reliefMesh = new THREE.Mesh(reliefGeom, reliefMat);
+          reliefMesh.position.z = 0.011;
+          group.add(reliefMesh);
+
+          const scene = new THREE.Scene();
+          scene.add(group);
+
+          currentThreeScene = scene;
+          currentModelName = demo.name;
+          currentModelExtension = 'glb';
+
+          modelNameEl.textContent = demo.name;
+          modelFormatEl.textContent = demo.format;
+          modelSizeEl.textContent = '195 KB (Wood PBR)';
 
           const exporter = new THREE.GLTFExporter();
           exporter.parse(scene, function(result) {
