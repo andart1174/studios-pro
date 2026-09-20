@@ -272,24 +272,37 @@ if (mainIndex.includes('og_image_studios_pro.png')) {
   console.log('Fixed index.html og_banner.jpg');
 }
 
-// Inject OG tags to blog HTMLs
+// Inject unique OG tags to blog HTMLs
 const blogDir = path.join(__dirname, 'public/blog');
 const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.html'));
-const ogTags = `
-    <meta property="og:title" content="Studios-Pro | Professional 3D & AI Design Generator">
-    <meta property="og:description" content="A complete tutorial and guide on using Studios-Pro's suite of creative tools ranging from CNC Vector paths to AI Depth maps and 4D Music Visualization.">
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-    <meta property="og:url" content="https://studios-pro.com/">
-    <meta name="twitter:card" content="summary_large_image">`;
 
 files.forEach(f => {
   const file = path.join(blogDir, f);
   let c = fs.readFileSync(file, 'utf8');
-  if (!c.includes('og:title')) {
-    c = c.replace('</head>', `${ogTags}\n</head>`);
-    fs.writeFileSync(file, c);
-    console.log('Injected OG tags into ' + f);
-  }
+
+  // Extract page-specific title and description
+  const titleMatch = c.match(/<title>(.*?)<\/title>/i);
+  const descMatch = c.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i);
+
+  const pageTitle = titleMatch ? titleMatch[1].trim() : 'Studios-Pro | 3D Design & CAD Studio';
+  const pageDesc = descMatch ? descMatch[1].trim() : 'Online 3D CAD design, procedural modeling, and CNC vector converter tools with Studios-Pro.';
+  const pageSlug = f === 'index.html' ? 'blog/' : `blog/${f}`;
+
+  const uniqueOgTags = `    <meta property="og:title" content="${pageTitle.replace(/"/g, '&quot;')}">
+    <meta property="og:description" content="${pageDesc.replace(/"/g, '&quot;')}">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/${pageSlug}">
+    <meta name="twitter:card" content="summary_large_image">`;
+
+  // Remove any legacy duplicate og tags
+  c = c.replace(/<meta\s+property=["']og:title["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:description["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:image["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:url["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+name=["']twitter:card["'].*?>\r?\n?/gi, '');
+
+  c = c.replace('</head>', `${uniqueOgTags}\n</head>`);
+  fs.writeFileSync(file, c);
 });
 
 // Update sitemap
