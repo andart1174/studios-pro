@@ -1264,17 +1264,18 @@ const StudiosPro = () => {
           setShowPaymentRequest(true);
         } else if (hasCred) {
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
-        } else if (used < 2) {
-          // Use one free credit
+        } else if (used < 5) {
+          // Use one free export credit (5 free exports allowed)
           setFreeExportsUsed(prev => {
             const newVal = prev + 1;
             localStorage.setItem('freeExportsUsed', newVal);
             return newVal;
           });
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
+          const remaining = 5 - (used + 1);
           alert(langRef.current === 'fr'
-            ? `Export autorisé ! Il vous reste ${1 - used} export(s) gratuit(s).`
-            : `Export granted! You have ${1 - used} free export(s) left.`);
+            ? `Export autorisé ! Il vous reste ${remaining} export(s) gratuit(s).`
+            : `Export granted! You have ${remaining} free export(s) left.`);
         } else {
           setPaymentReason('free_limit');
           setShowPaymentRequest(true);
@@ -1495,8 +1496,8 @@ const StudiosPro = () => {
       cancel: "Annuler",
       contact: "Contact",
       blogBtn: "Tutoriels",
-      freeLimitTitle: "Limite gratuite atteinte",
-      freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
+      freeLimitTitle: "Vos 5 exports gratuits sont terminés",
+      freeLimitMsg: "Vous avez profité de vos 5 exports gratuits ! Passez à la formule Pro pour continuer à exporter sans aucune limite.",
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
       unlimitedPrice: "10$ / mois",
@@ -1546,8 +1547,8 @@ const StudiosPro = () => {
       cancel: "Cancel",
       contact: "Contact",
       blogBtn: "Tutorials",
-      freeLimitTitle: "Free limit reached",
-      freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
+      freeLimitTitle: "Your 5 free exports are completed",
+      freeLimitMsg: "You have used your 5 free exports! Upgrade to Pro to continue unlimited exports without limits.",
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
       unlimitedPrice: "$10 / month",
@@ -1627,18 +1628,19 @@ const StudiosPro = () => {
               </p>
 
               <div className="pricing-grid">
-                {/* Single Export Card */}
+                {/* Free Plan Card */}
                 <div className="pricing-card">
-                  <h3>{lang === 'fr' ? "Export Unique" : "Single Export"}</h3>
-                  <div className="pricing-price">$2</div>
-                  <div className="pricing-desc">{lang === 'fr' ? "Paiement unique • Sans abonnement" : "One-time payment • No subscription"}</div>
+                  <h3>{lang === 'fr' ? "Formule Gratuite" : "Free Plan"}</h3>
+                  <div className="pricing-price">$0</div>
+                  <div className="pricing-desc">{lang === 'fr' ? "5 Exports inclus pour démarrer" : "5 Free exports included to start"}</div>
                   <ul className="pricing-features-list">
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "1 Export complet (STL, OBJ, DXF ou G-Code)" : "1 Full export (STL, OBJ, DXF or G-Code)"}</span></li>
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Haute résolution sans filigrane" : "High resolution without watermark"}</span></li>
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Téléchargement immédiat" : "Instant direct download"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "5 Exports complets offerts (STL, OBJ, DXF, G-Code)" : "5 Full free exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Accès direct aux 15+ studios 3D et CAD" : "Direct access to all 15+ 3D and CAD studios"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Visualisation 3D & projection AR sur mobile" : "3D viewing & mobile AR projection"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Sans carte bancaire ni engagement" : "No credit card, no commitment"}</span></li>
                   </ul>
-                  <button className="pricing-select single" onClick={() => redirectToStripe('single')}>
-                    {lang === 'fr' ? "Acheter 1 Export (2$)" : "Buy 1 Export ($2)"}
+                  <button className="pricing-select single" onClick={() => setShowPaymentRequest(false)}>
+                    {lang === 'fr' ? "Commencer Gratuitement" : "Start for Free"}
                   </button>
                 </div>
 
@@ -1647,15 +1649,15 @@ const StudiosPro = () => {
                   <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
                   <h3>{lang === 'fr' ? "Accès Pro Illimité" : "Unlimited Pro Access"}</h3>
                   <div className="pricing-price">$10 <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {lang === 'fr' ? 'mois' : 'mo'}</span></div>
-                  <div className="pricing-desc">{lang === 'fr' ? "Accès complet à tous les 15+ studios" : "Full access across all 15+ studios"}</div>
+                  <div className="pricing-desc">{lang === 'fr' ? "Exports illimités pour créateurs et makers" : "Unlimited exports for creators & makers"}</div>
                   <ul className="pricing-features-list">
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports illimités (STL, OBJ, DXF, G-Code)" : "Unlimited exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports 100% illimités (STL, OBJ, DXF, G-Code)" : "100% Unlimited exports (STL, OBJ, DXF, G-Code)"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Reliefs 3D IA & cartes de profondeur HD" : "AI 3D reliefs & HD depth maps"}</span></li>
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Licence commerciale incluse" : "Commercial license included"}</span></li>
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports HTML autonomes sans limite" : "Standalone HTML exports without limits"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Licence commerciale complète incluse" : "Full commercial license included"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports HTML autonomes sans filigrane" : "Standalone HTML exports without watermark"}</span></li>
                   </ul>
                   <button className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
-                    {lang === 'fr' ? "Devenir Pro (10$/mois)" : "Go Pro ($10/mo)"}
+                    {lang === 'fr' ? "Passer à Pro (10$/mois)" : "Upgrade to Pro ($10/mo)"}
                   </button>
                 </div>
               </div>
@@ -1821,7 +1823,7 @@ const StudiosPro = () => {
             <p>
               {isPremium 
                 ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` 
-                : (lang === 'fr' ? 'Accès Pro Illimité — Dès 2$ ou 10$/mois' : 'Pro Unlimited Access — From $2 or $10/mo')}
+                : (lang === 'fr' ? '5 Exports Gratuits Inclus — Puis 10$/mois en Illimité' : '5 Free Exports Included — Then $10/mo for Unlimited')}
             </p>
           </motion.div>
         </motion.div>
