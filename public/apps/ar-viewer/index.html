@@ -87,12 +87,6 @@
             </div>
           </button>
         </div>
-        <div style="margin-top: 10px; text-align: center;">
-          <button type="button" id="btn-sidebar-embed" onclick="window.openEmbedModal && window.openEmbedModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(6,182,212,0.08); border: 1px dashed rgba(6,182,212,0.35); color: #38bdf8; font-size: 11px; font-weight: 600; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            <span class="lang-text" data-fr="📦 Code d'Intégration Web (Embed)" data-en="📦 Web Embed Code Generator">📦 Web Embed Code Generator</span>
-          </button>
-        </div>
       </div>
 
       <!-- Model Stats / Info -->
@@ -271,13 +265,7 @@
             </a>
           </div>
 
-          <!-- 1-Click Embed 3D Player Button -->
-          <div style="margin-top: 12px; width: 100%;">
-            <button type="button" id="btn-open-embed-modal" onclick="window.openEmbedModal && window.openEmbedModal()" class="embed-trigger-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%); border: 1.5px solid #22d3ee; color: #ffffff; font-size: 12px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.45);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(6, 182, 212, 0.65)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(6, 182, 212, 0.45)';">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              <span class="lang-text" data-fr="📦 Intégrer ce 3D / AR sur votre Site" data-en="📦 Embed this 3D / AR on Your Website">📦 Intégrer ce 3D / AR sur votre Site</span>
-            </button>
-          </div>
+
         </div>
       </div>
       
@@ -349,10 +337,7 @@
         <button id="rotate-btn" class="floating-btn active" title="Toggle Auto-Rotate">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         </button>
-        <!-- Embed Player Trigger -->
-        <button id="embed-floating-btn" onclick="window.openEmbedModal && window.openEmbedModal()" class="floating-btn" title="Embed 3D / AR Player">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </button>
+
       </div>
 
       <!-- model-viewer for actual 3D display & AR trigger -->
@@ -390,90 +375,7 @@
     </div>
   </div>
 
-  <!-- Embed 3D / AR Player Modal -->
-  <div id="embed-modal" class="embed-modal-overlay" style="display: none;">
-    <div class="embed-modal-card">
-      <div class="embed-modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 22px;">📦</span>
-          <div>
-            <h3 class="lang-text" data-fr="Intégrer le Lecteur 3D & AR sur votre Site" data-en="Embed 3D & AR Player on Your Website">Embed 3D & AR Player on Your Website</h3>
-            <p class="lang-text" data-fr="Compatible Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace..." data-en="Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...">Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...</p>
-          </div>
-        </div>
-        <button type="button" id="btn-close-embed-modal" class="embed-modal-close" onclick="window.closeEmbedModal ? window.closeEmbedModal() : null" title="Fermer / Close">&times;</button>
-      </div>
 
-      <div class="embed-modal-body">
-        <!-- Configuration Column -->
-        <div class="embed-config-col">
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Fond / Arrière-plan :" data-en="Background Theme:">Background Theme:</label>
-            <div class="embed-theme-options" id="embed-bg-options">
-              <button type="button" class="embed-opt-btn active" data-bg="dark">🌙 Dark</button>
-              <button type="button" class="embed-opt-btn" data-bg="light">☀️ Light</button>
-              <button type="button" class="embed-opt-btn" data-bg="transparent">✨ Transparent</button>
-            </div>
-          </div>
-
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Hauteur du Lecteur :" data-en="Player Height:">Player Height:</label>
-            <div class="embed-height-options" id="embed-height-options">
-              <button type="button" class="embed-opt-btn" data-height="350px">350px (Compact)</button>
-              <button type="button" class="embed-opt-btn active" data-height="450px">450px (Standard)</button>
-              <button type="button" class="embed-opt-btn" data-height="600px">600px (Large)</button>
-            </div>
-          </div>
-
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Options Interactives :" data-en="Interactive Options:">Interactive Options:</label>
-            <div class="embed-checkbox-list">
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-autorotate" checked>
-                <span class="lang-text" data-fr="Rotation automatique 3D (360°)" data-en="3D Auto-Rotate (360°)">3D Auto-Rotate (360°)</span>
-              </label>
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-ar" checked>
-                <span class="lang-text" data-fr="Bouton « Voir en AR » (WebXR Mobile)" data-en="« View in AR » Button (WebXR Mobile)">« View in AR » Button (WebXR Mobile)</span>
-              </label>
-              <label class="embed-checkbox-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="checkbox" id="embed-opt-badge" checked>
-                  <span class="lang-text" data-fr="Badge Studios-Pro (Backlink viral)" data-en="Studios-Pro Badge (Viral backlink)">Studios-Pro Badge (Viral backlink)</span>
-                </div>
-                <span id="badge-pro-tag" style="font-size: 10px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.5px; cursor: pointer;">⭐ PRO</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="embed-compatible-row">
-            <span class="embed-compat-pill">🛍️ Shopify</span>
-            <span class="embed-compat-pill">🟣 WooCommerce</span>
-            <span class="embed-compat-pill">🌐 WordPress</span>
-            <span class="embed-compat-pill">⚡ Wix</span>
-            <span class="embed-compat-pill">🎨 Webflow</span>
-          </div>
-        </div>
-
-        <!-- Preview & Code Column -->
-        <div class="embed-preview-col">
-          <label class="embed-config-label lang-text" data-fr="Aperçu en Direct :" data-en="Live Preview:">Live Preview:</label>
-          <div class="embed-iframe-preview-wrapper">
-            <iframe id="embed-preview-iframe" src="/embed/?demo=gear&bg=dark&autorotate=true&ar=true" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen></iframe>
-          </div>
-
-          <label class="embed-config-label" style="margin-top: 8px;" class="lang-text" data-fr="Code HTML à insérer sur votre site :" data-en="HTML Embed Code to paste on your site:">HTML Embed Code to paste on your site:</label>
-          <div class="embed-code-wrapper">
-            <textarea id="embed-code-textarea" readonly rows="3"></textarea>
-            <button type="button" id="btn-copy-embed-code" class="embed-copy-action-btn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-              <span id="embed-copy-text" class="lang-text" data-fr="Copier le Code d'Intégration" data-en="Copy Embed Code">Copy Embed Code</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <script>
 
@@ -1251,9 +1153,6 @@
       viewer.style.display = 'block';
       infoSection.style.display = 'block';
       hideLoader();
-      if (typeof sendModelToPreviewIframe === 'function') {
-        sendModelToPreviewIframe();
-      }
     }
 
     // Customization & Premium Controls Integration
@@ -1775,7 +1674,6 @@
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
         updateQRCodeWithColorParam(directDlUrl, 'original');
-        updateEmbedCode();
       } else {
         if (!isMobile) {
           qrLoading.style.display = 'none';
@@ -1815,242 +1713,7 @@
       };
     }
 
-    // -- Embed Modal & Code Generator Logic --
-    let embedState = {
-      bg: 'dark',
-      height: '450px',
-      autorotate: true,
-      ar: true,
-      badge: true
-    };
 
-    function getActiveEmbedModelParam() {
-      if (activeDemoId) {
-        return `demo=${activeDemoId}`;
-      }
-      if (lastDirectDlUrl) {
-        return `model=${encodeURIComponent(lastDirectDlUrl)}`;
-      }
-      if (lastShareUrl) {
-        if (lastShareUrl.includes('?demo=') || lastShareUrl.includes('&demo=')) {
-          const match = lastShareUrl.match(/demo=([a-zA-Z0-9_-]+)/);
-          if (match && match[1]) return `demo=${match[1]}`;
-        }
-        if (lastShareUrl.startsWith('http')) {
-          return `model=${encodeURIComponent(lastShareUrl)}`;
-        }
-      }
-      return 'demo=relief';
-    }
-
-    function sendModelToPreviewIframe() {
-      const previewIframe = document.getElementById('embed-preview-iframe');
-      if (!previewIframe || !previewIframe.contentWindow) return;
-
-      if (activeDemoId) {
-        const demoUrls = {
-          gear: '/ar/models/cad-gear.glb',
-          relief: '/ar/models/relief-wood.glb',
-          fox: '/ar/models/card-220.glb',
-          boombox: '/ar/models/card-199.glb'
-        };
-        const url = demoUrls[activeDemoId] || '/ar/models/relief-wood.glb';
-        const name = (DEMO_MODELS[activeDemoId] && DEMO_MODELS[activeDemoId].name) || activeDemoId;
-        previewIframe.contentWindow.postMessage({
-          type: 'LOAD_MODEL',
-          url: url,
-          name: name
-        }, '*');
-      } else if (currentLoadedBlobUrl) {
-        // Direct local blob URL for custom imported model (instant render, zero lag, zero network error!)
-        previewIframe.contentWindow.postMessage({
-          type: 'LOAD_MODEL',
-          url: currentLoadedBlobUrl,
-          name: currentModelName || 'Custom 3D Model'
-        }, '*');
-      } else if (lastDirectDlUrl) {
-        previewIframe.contentWindow.postMessage({
-          type: 'LOAD_MODEL',
-          url: lastDirectDlUrl,
-          name: currentModelName || 'Custom 3D Model'
-        }, '*');
-      }
-    }
-
-    function sendOptionsToPreviewIframe() {
-      const previewIframe = document.getElementById('embed-preview-iframe');
-      if (!previewIframe || !previewIframe.contentWindow) return;
-      previewIframe.contentWindow.postMessage({ type: 'SET_THEME', bg: embedState.bg }, '*');
-      previewIframe.contentWindow.postMessage({ type: 'SET_AUTOROTATE', enabled: embedState.autorotate }, '*');
-      previewIframe.contentWindow.postMessage({ type: 'SET_AR', visible: embedState.ar }, '*');
-      previewIframe.contentWindow.postMessage({ type: 'SET_BADGE', visible: embedState.badge }, '*');
-    }
-
-    function updateEmbedCode() {
-      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-      const modelParam = getActiveEmbedModelParam();
-      const params = new URLSearchParams();
-      
-      const parts = modelParam.split('=');
-      params.set(parts[0], parts[1]);
-      if (currentModelName && !activeDemoId) {
-        params.set('name', currentModelName);
-      }
-      params.set('bg', embedState.bg);
-      if (!embedState.autorotate) params.set('autorotate', 'false');
-      if (!embedState.ar) params.set('ar', 'false');
-      if (!embedState.badge) params.set('badge', 'false');
-
-      const embedUrl = `${baseOrigin}/embed/?${params.toString()}`;
-      let iframeSnippet = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="${embedState.height}"\n  frameborder="0"\n  allow="camera; xr-spatial-tracking; fullscreen"\n  allowfullscreen\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"\n></iframe>`;
-
-      if (!activeDemoId && !lastDirectDlUrl && isUploadingCloud) {
-        iframeSnippet = currentLang === 'fr'
-          ? `<!-- ⏳ Téléversement du modèle 3D sur le CDN en cours... (Patientez quelques secondes) -->\n<!-- Le code d'intégration complet avec le lien permanent apparaîtra ici dès la fin du transfert. -->\n\n` + iframeSnippet
-          : `<!-- ⏳ Uploading 3D model to CDN in progress... (Please wait a few seconds) -->\n<!-- The complete embed code with permanent link will appear here automatically once uploaded. -->\n\n` + iframeSnippet;
-      }
-
-      const codeArea = document.getElementById('embed-code-textarea');
-      if (codeArea) codeArea.value = iframeSnippet;
-
-      const previewIframe = document.getElementById('embed-preview-iframe');
-      if (previewIframe) {
-        if (!previewIframe.getAttribute('data-shell-loaded')) {
-          const shellUrl = `/embed/?bg=${embedState.bg}&autorotate=${embedState.autorotate}&ar=${embedState.ar}&badge=${embedState.badge}`;
-          previewIframe.src = shellUrl;
-          previewIframe.setAttribute('data-shell-loaded', 'true');
-          previewIframe.onload = () => {
-            sendModelToPreviewIframe();
-            sendOptionsToPreviewIframe();
-          };
-        } else {
-          sendOptionsToPreviewIframe();
-          sendModelToPreviewIframe();
-        }
-      }
-    }
-
-    window.openEmbedModal = function() {
-      const modal = document.getElementById('embed-modal');
-      if (modal) {
-        modal.style.display = 'flex';
-      }
-      updateEmbedCode();
-      setTimeout(() => {
-        sendModelToPreviewIframe();
-        sendOptionsToPreviewIframe();
-      }, 150);
-    };
-
-    window.closeEmbedModal = function() {
-      const modal = document.getElementById('embed-modal');
-      if (modal) {
-        modal.style.display = 'none';
-      }
-    };
-
-    // Close on backdrop click and Escape
-    const modalEl = document.getElementById('embed-modal');
-    if (modalEl) {
-      modalEl.onclick = (e) => {
-        if (e.target === modalEl) window.closeEmbedModal();
-      };
-    }
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') window.closeEmbedModal();
-    });
-
-    // Listen for EMBED_PLAYER_READY from preview iframe
-    window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'EMBED_PLAYER_READY') {
-        sendModelToPreviewIframe();
-        sendOptionsToPreviewIframe();
-      }
-    });
-
-    // Theme options
-    document.querySelectorAll('#embed-bg-options .embed-opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#embed-bg-options .embed-opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        embedState.bg = btn.getAttribute('data-bg');
-        updateEmbedCode();
-      };
-    });
-
-    // Height options
-    document.querySelectorAll('#embed-height-options .embed-opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#embed-height-options .embed-opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        embedState.height = btn.getAttribute('data-height');
-        updateEmbedCode();
-      };
-    });
-
-    // Checkboxes
-    const chkAutoRotate = document.getElementById('embed-opt-autorotate');
-    const chkAR = document.getElementById('embed-opt-ar');
-    const chkBadge = document.getElementById('embed-opt-badge');
-
-    const isUserPremium = urlParams.get('premium') === 'true';
-
-    if (chkAutoRotate) chkAutoRotate.onchange = (e) => { embedState.autorotate = e.target.checked; updateEmbedCode(); };
-    if (chkAR) chkAR.onchange = (e) => { embedState.ar = e.target.checked; updateEmbedCode(); };
-    
-    if (chkBadge) {
-      chkBadge.onchange = (e) => {
-        if (!isUserPremium && !e.target.checked) {
-          e.target.checked = true;
-          embedState.badge = true;
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'OPEN_PRICING', reason: 'white_label' }, '*');
-          }
-          alert(currentLang === 'fr' 
-            ? "⭐ Marque Blanche (White-label) :\nLa suppression du badge Studios-Pro est une fonctionnalité réservée aux membres PREMIUM !\n\nPassez à Pro pour intégrer vos modèles 3D sans aucune marque externe." 
-            : "⭐ White-label Feature:\nRemoving the Studios-Pro branding badge is an exclusive PREMIUM feature!\n\nUpgrade to Pro to embed your 3D models with 100% white-label.");
-          return;
-        }
-        embedState.badge = e.target.checked;
-        updateEmbedCode();
-      };
-    }
-
-    const badgeProTag = document.getElementById('badge-pro-tag');
-    if (badgeProTag) {
-      badgeProTag.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'OPEN_PRICING', reason: 'white_label' }, '*');
-        }
-        alert(currentLang === 'fr' 
-          ? "⭐ Marque Blanche (White-label) :\nPassez à Pro pour masquer le badge Studios-Pro et intégrer des modèles 3D avec votre propre marque !" 
-          : "⭐ White-label Feature:\nUpgrade to Pro to remove Studios-Pro branding and showcase 3D models under your own brand!");
-      };
-    }
-
-    // Copy embed code
-    const btnCopyCode = document.getElementById('btn-copy-embed-code');
-    if (btnCopyCode) {
-      btnCopyCode.onclick = async () => {
-        const codeArea = document.getElementById('embed-code-textarea');
-        const copyTxt = document.getElementById('embed-copy-text');
-        if (!codeArea) return;
-        try {
-          await navigator.clipboard.writeText(codeArea.value);
-          const orig = copyTxt ? copyTxt.textContent : '';
-          if (copyTxt) copyTxt.textContent = currentLang === 'fr' ? "✓ Code Copié !" : "✓ Code Copied!";
-          btnCopyCode.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-          setTimeout(() => {
-            if (copyTxt) copyTxt.textContent = orig;
-            btnCopyCode.style.background = '';
-          }, 2500);
-        } catch (_) {
-          codeArea.select();
-        }
-      };
-    }
   </script>
 
   <script src="/community/share-bridge.js?v=14"></script>
