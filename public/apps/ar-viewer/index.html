@@ -251,6 +251,19 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             <span id="copy-share-text" class="lang-text" data-fr="Copier le Lien de Partage 3D" data-en="Copy 3D Share Link">Copy 3D Share Link</span>
           </button>
+
+          <!-- 1-Click Viral Social Share Buttons -->
+          <div class="ar-viral-share-row" style="display: flex; gap: 8px; justify-content: center; margin-top: 10px; width: 100%;">
+            <a id="share-wa-btn" href="#" target="_blank" rel="noopener noreferrer" title="Partager sur WhatsApp / Share on WhatsApp" style="background: #25d366; color: white; padding: 7px 12px; border-radius: 8px; text-decoration: none; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; transition: transform 0.2s;">
+              <span>💬</span> WhatsApp
+            </a>
+            <a id="share-x-btn" href="#" target="_blank" rel="noopener noreferrer" title="Partager sur X / Post on X" style="background: #0f1419; border: 1px solid rgba(255,255,255,0.25); color: white; padding: 7px 12px; border-radius: 8px; text-decoration: none; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; transition: transform 0.2s;">
+              <span>𝕏</span> Post
+            </a>
+            <a id="share-reddit-btn" href="#" target="_blank" rel="noopener noreferrer" title="Partager sur Reddit / Share on Reddit" style="background: #ff4500; color: white; padding: 7px 12px; border-radius: 8px; text-decoration: none; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; transition: transform 0.2s;">
+              <span>🤖</span> Reddit
+            </a>
+          </div>
         </div>
       </div>
       
@@ -728,6 +741,20 @@
 
       lastShareUrl = targetARUrl;
       qrCodeImg.src = qrApiUrl;
+      updateViralShareLinks(targetARUrl);
+    }
+
+    function updateViralShareLinks(targetUrl) {
+      if (!targetUrl) return;
+      const waBtn = document.getElementById('share-wa-btn');
+      const twBtn = document.getElementById('share-x-btn');
+      const rdBtn = document.getElementById('share-reddit-btn');
+      const text = currentLang === 'fr' 
+        ? "Regardez ce modèle 3D interactif en Réalité Augmentée sur Studios-Pro : " + targetUrl 
+        : "Check out this interactive 3D model in Augmented Reality on Studios-Pro: " + targetUrl;
+      if (waBtn) waBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      if (twBtn) twBtn.href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(targetUrl)}&text=${encodeURIComponent(currentLang === 'fr' ? 'Projeter ce modèle 3D en Réalité Augmentée :' : 'Project this 3D model in Augmented Reality:')}`;
+      if (rdBtn) rdBtn.href = `https://reddit.com/submit?url=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent('Check out this 3D model in Augmented Reality')}`;
     }
 
     window.triggerDemoModel = async function(demoId) {
@@ -1612,6 +1639,7 @@
       if (directDlUrl) {
         lastShareUrl = directDlUrl;
         updateQRCodeWithColorParam(directDlUrl, 'original');
+        updateViralShareLinks(directDlUrl);
       } else {
         qrLoading.style.display = 'none';
         const fallbackText = document.createElement('p');

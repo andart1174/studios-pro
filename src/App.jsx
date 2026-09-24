@@ -102,7 +102,7 @@ import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy, Palette, Sparkles, Check
+  Megaphone, Copy, Palette, Sparkles, Check, Share2
 } from 'lucide-react';
 import './App.css';
 
@@ -1051,6 +1051,7 @@ const StudiosPro = () => {
 
   // Social share copy feedback
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [communityCount, setCommunityCount] = useState(null);
 
   // Live community post count
@@ -1908,6 +1909,16 @@ const StudiosPro = () => {
               <span style={{ fontWeight: 'bold' }}>?</span>
               <span>{currentT.faqBtn}</span>
             </a>
+            <button 
+              type="button"
+              className="contact-btn-nav share-btn-nav" 
+              onClick={() => setIsShareModalOpen(true)} 
+              title={lang === 'fr' ? 'Partager Studios-Pro' : 'Share Studios-Pro'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}
+            >
+              <Share2 size={16} />
+              <span>{lang === 'fr' ? 'Partager' : 'Share'}</span>
+            </button>
             <a href="/community/" className="sp-nexus-btn" style={{ textDecoration: 'none' }}>
               <span className="sp-nexus-orbit">
                 <span className="sp-nexus-orbit-dot" style={{ '--d': '0deg' }}></span>
@@ -2511,6 +2522,110 @@ const StudiosPro = () => {
             onClose={() => setIsAdminOpen(false)}
             lang={lang}
           />
+        )}
+        {isShareModalOpen && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsShareModalOpen(false)}>
+            <motion.div className="auth-modal share-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+              <button className="close-btn" onClick={() => setIsShareModalOpen(false)}><X size={20} /></button>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <Share2 size={24} color="#ffffff" />
+                </div>
+                <h2 style={{ fontSize: '1.25rem', margin: '0 0 6px', color: '#ffffff' }}>
+                  {lang === 'fr' ? "Partager Studios-Pro" : "Share Studios-Pro"}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                  {lang === 'fr' 
+                    ? "Recommandez Studios-Pro à vos collègues, makers et créateurs 3D !" 
+                    : "Share Studios-Pro with fellow makers, designers & 3D creators!"}
+                </p>
+              </div>
+
+              <div className="share-buttons-grid">
+                <a 
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D, AR, Laser et CNC en ligne : https://studios-pro.com' : 'Check out Studios-Pro, free online 3D, AR, Laser & CNC creative suite: https://studios-pro.com')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="share-channel-btn whatsapp"
+                >
+                  <span className="share-icon">💬</span>
+                  <span>WhatsApp</span>
+                </a>
+
+                <a 
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="share-channel-btn twitter"
+                >
+                  <span className="share-icon">𝕏</span>
+                  <span>X / Twitter</span>
+                </a>
+
+                <a 
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="share-channel-btn facebook"
+                >
+                  <span className="share-icon">📘</span>
+                  <span>Facebook</span>
+                </a>
+
+                <a 
+                  href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="share-channel-btn reddit"
+                >
+                  <span className="share-icon">🤖</span>
+                  <span>Reddit</span>
+                </a>
+
+                <a 
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="share-channel-btn linkedin"
+                >
+                  <span className="share-icon">💼</span>
+                  <span>LinkedIn</span>
+                </a>
+
+                {typeof navigator !== 'undefined' && navigator.share && (
+                  <button 
+                    type="button"
+                    className="share-channel-btn native-share"
+                    onClick={() => {
+                      navigator.share({
+                        title: 'Studios-Pro 3D & AR Hub',
+                        text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
+                        url: 'https://studios-pro.com'
+                      }).catch(() => {});
+                    }}
+                  >
+                    <span className="share-icon">📱</span>
+                    <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="share-copy-box">
+                <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+                <button 
+                  type="button" 
+                  className="share-copy-btn" 
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://studios-pro.com');
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2200);
+                  }}
+                >
+                  {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
