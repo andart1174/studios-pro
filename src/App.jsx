@@ -824,6 +824,177 @@ import { loadStripe } from '@stripe/stripe-js';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
+const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
+  const isFr = lang === 'fr';
+  return (
+    <footer className="seo-footer">
+      <div className="seo-footer-container">
+        {/* Trust & Performance Highlights */}
+        <div className="seo-footer-trust-banner">
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">⚡</span>
+            <div>
+              <strong>{isFr ? 'Rendu WebGL Haute Performance' : 'High-Performance WebGL Engine'}</strong>
+              <p>{isFr ? 'Visualisation 3D temps réel sans aucun téléchargement' : 'Real-time 3D viewing with zero downloads'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">🔒</span>
+            <div>
+              <strong>{isFr ? 'Confidentialité Client-Side 100%' : '100% Client-Side Privacy'}</strong>
+              <p>{isFr ? 'Vos fichiers 3D et images restent sur votre machine' : 'Your 3D files & images stay in your browser'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">🎁</span>
+            <div>
+              <strong>{isFr ? '5 Exports Gratuits Inclus' : '5 Free Exports Included'}</strong>
+              <p>{isFr ? 'STL, OBJ, DXF, G-Code sans carte bancaire' : 'STL, OBJ, DXF, G-Code with no credit card'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">💎</span>
+            <div>
+              <strong>{isFr ? 'Formule Pro à 10$/mois' : 'Unlimited Pro at $10/mo'}</strong>
+              <p>{isFr ? 'Reliefs CNC HD, WebAR et licence commerciale' : 'HD CNC reliefs, WebAR & commercial license'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 5-Column Categorized Directory */}
+        <div className="seo-footer-grid">
+          {/* Column 1: 3D & CNC Tools */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#f59e0b' }}></span>
+              {isFr ? 'Outils 3D & CNC' : '3D & CNC Tools'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/tools/image-to-cnc-relief">{isFr ? 'Image vers Relief 3D CNC' : 'Image to 3D CNC Relief & STL'}</a></li>
+              <li><a href="/tools/lithophane-maker-online">{isFr ? 'Générateur de Lithophanies 3D' : 'Online Lithophane Maker'}</a></li>
+              <li><a href="/tools/cookie-cutter-stl-generator">{isFr ? 'Générateur Emporte-Pièce STL' : 'Cookie Cutter STL Generator'}</a></li>
+              <li><a href="/tools/3d-keychain-name-generator">{isFr ? 'Porte-Clés 3D Personnalisé' : '3D Keychain Name Maker'}</a></li>
+              <li><a href="/tools/laser-cut-box-generator">{isFr ? 'Boîte Découpe Laser DXF/SVG' : 'Parametric Laser Cut Box Maker'}</a></li>
+              <li><a href="/tools/gcode-previewer-online">{isFr ? 'Visualiseur G-Code CNC & Laser' : 'Online G-Code CNC Previewer'}</a></li>
+              <li><a href="/tools/voronoi-parametric-lamp-vase-generator">{isFr ? 'Lampe & Vase Voronoï 3D' : 'Voronoi Lamp & Vase Generator'}</a></li>
+              <li><a href="/tools/pepakura-papercraft-3d-unfolder">{isFr ? 'Déplieur Papercraft Pepakura 3D' : 'Pepakura Papercraft 3D Unfolder'}</a></li>
+              <li><a href="/tools/ambiguous-cylinder-illusion-maker">{isFr ? 'Illusion Cylindre Ambigu 3D' : 'Ambiguous Cylinder Illusion Maker'}</a></li>
+              <li><a href="/tools/cryptex-puzzle-box-stl-generator">{isFr ? 'Boîte Puzzle Cryptex STL' : 'Cryptex Puzzle Box STL Generator'}</a></li>
+              <li><a href="/tools/gear-sprocket-generator-dxf">{isFr ? 'Générateur d\'Engrenages DXF' : 'Parametric Gear & Sprocket DXF'}</a></li>
+              <li><a href="/tools/custom-3d-ring-designer">{isFr ? 'Concepteur de Bagues 3D' : 'Custom 3D Ring Designer'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 2: 3D Viewers & AR */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#3b82f6' }}></span>
+              {isFr ? 'Visualiseurs 3D & AR' : '3D Viewers & WebAR'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/viewer/stl">{isFr ? 'Visualiseur STL Gratuit en Ligne' : 'Free Online STL Viewer & Slicer'}</a></li>
+              <li><a href="/viewer/obj">{isFr ? 'Visualiseur OBJ 3D en Ligne' : 'Free Online OBJ 3D Viewer'}</a></li>
+              <li><a href="/viewer/glb">{isFr ? 'Visualiseur GLB 3D Binaire' : 'Online GLB Binary 3D Viewer'}</a></li>
+              <li><a href="/viewer/gltf">{isFr ? 'Inspecteur GLTF WebGL' : 'Free Online GLTF Inspector'}</a></li>
+              <li><a href="/viewer/3mf">{isFr ? 'Visualiseur 3MF Impression 3D' : '3MF 3D Manufacturing Inspector'}</a></li>
+              <li><a href="/viewer/ply">{isFr ? 'Visualiseur Nuages de Points PLY' : 'PLY Point Cloud & Polygon Viewer'}</a></li>
+              <li><a href="/viewer/dxf">{isFr ? 'Visualiseur DXF AutoCAD en Ligne' : 'AutoCAD DXF Blueprint CAD Viewer'}</a></li>
+              <li><a href="/viewer/svg">{isFr ? 'Visualiseur & Inspecteur SVG' : 'Online SVG Vector Path Viewer'}</a></li>
+              <li><a href="/apps/ar-viewer/index.html">{isFr ? 'Visualiseur Réalité Augmentée (AR)' : 'Augmented Reality (AR) WebXR'}</a></li>
+              <li><a href="/ar-viewer/stl">{isFr ? 'Projeter Modèle STL en AR' : 'Project STL in AR Phone Viewer'}</a></li>
+              <li><a href="/ar-viewer/glb">{isFr ? 'Projeter Modèle GLB en AR' : 'Project GLB in AR Mobile Viewer'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Converters & CAD */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#10b981' }}></span>
+              {isFr ? 'Convertisseurs & CAD' : 'Converters & CAD'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/convert/2d-image-to-3d-stl">{isFr ? 'Convertir Image 2D en STL 3D' : '2D Image to 3D STL Converter'}</a></li>
+              <li><a href="/convert/photo-to-3d-relief-stl">{isFr ? 'Photo vers Bas-Relief STL' : 'Photo to 3D Relief STL Converter'}</a></li>
+              <li><a href="/convert/png-to-svg">{isFr ? 'Convertisseur PNG en SVG Vectoriel' : 'PNG to SVG Vector Converter'}</a></li>
+              <li><a href="/convert/jpg-to-svg">{isFr ? 'Convertisseur JPG en SVG Vectoriel' : 'JPG to SVG Vector Converter'}</a></li>
+              <li><a href="/convert/dxf-to-svg">{isFr ? 'Convertisseur DXF vers SVG' : 'AutoCAD DXF to SVG Converter'}</a></li>
+              <li><a href="/tools/svg-to-gcode-laser-engraver">{isFr ? 'SVG vers G-Code Laser CNC' : 'SVG to Laser Engraver G-Code'}</a></li>
+              <li><a href="/convert/obj-to-stl">{isFr ? 'Convertisseur OBJ vers STL' : 'OBJ to STL 3D Mesh Converter'}</a></li>
+              <li><a href="/convert/stl-to-obj">{isFr ? 'Convertisseur STL vers OBJ' : 'STL to OBJ 3D Mesh Converter'}</a></li>
+              <li><a href="/convert/glb-to-html">{isFr ? 'Convertir GLB en HTML Autonome' : 'GLB to Standalone HTML Exporter'}</a></li>
+              <li><a href="/apps/depth-maps/">{isFr ? 'Générateur Depth Maps IA' : 'AI Monocular Depth Map Generator'}</a></li>
+              <li><a href="/apps/vector-cnc/">{isFr ? 'Studio Vector CNC (SVG / DXF)' : 'Vector CNC Toolpath Studio'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Free Software Alternatives */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#8b5cf6' }}></span>
+              {isFr ? 'Alternatives Logicielles' : 'Free Alternatives'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/compare/free-alternative-to-meshmixer">{isFr ? 'Alternative Gratuite à Meshmixer' : 'Free Alternative to Meshmixer'}</a></li>
+              <li><a href="/compare/vectric-aspire-free-alternative-browser">{isFr ? 'Alternative Gratuite à Vectric Aspire' : 'Vectric Aspire Free CNC Alternative'}</a></li>
+              <li><a href="/compare/free-online-tinkercad-alternative">{isFr ? 'Alternative Gratuite à Tinkercad' : 'Free Online Tinkercad Alternative'}</a></li>
+              <li><a href="/compare/lightburn-free-dxf-alternative">{isFr ? 'Alternative Gratuite à LightBurn' : 'Free LightBurn Alternative for Laser'}</a></li>
+              <li><a href="/compare/sketchfab-free-alternative-ar-viewer">{isFr ? 'Alternative Gratuite à Sketchfab AR' : 'Sketchfab Free Alternative AR Viewer'}</a></li>
+              <li><a href="/compare/photoshop-3d-relief-alternative">{isFr ? 'Alternative à Photoshop 3D Relief' : 'Photoshop 3D Relief Alternative'}</a></li>
+              <li><a href="/compare/blender-for-3d-printing-simple-alternative">{isFr ? 'Alternative Simple à Blender 3D' : 'Simple Blender Alternative for 3D Print'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 5: Studios & Ecosystem */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#ec4899' }}></span>
+              {isFr ? 'Studios & Communauté' : 'Studios & Community'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/apps/polymorph-3d/index.html">{isFr ? 'PolyMorph 3D Studio' : 'PolyMorph 3D Studio'}</a></li>
+              <li><a href="/community/">{isFr ? 'Communauté SP Nexus 3D' : 'SP Nexus 3D Creator Community'}</a></li>
+              <li><a href="/community/explore.html">{isFr ? 'Explorer Cartes 3D Nexus' : 'Explore Nexus 3D Cards'}</a></li>
+              <li><a href="/blog/">{isFr ? 'Blog & Tutoriels 3D / CNC' : '3D Design Blog & Tutorials'}</a></li>
+              <li><a href="/faq.html">{isFr ? 'Questions Fréquentes (FAQ)' : 'Frequently Asked Questions (FAQ)'}</a></li>
+              <li><a href="/cards/pokemon-card-maker.html">{isFr ? 'Créateur de Cartes 3D Holo' : 'Custom 3D Card Generator'}</a></li>
+              <li>
+                <button type="button" onClick={onOpenPricing} className="seo-footer-btn-link">
+                  💎 {isFr ? 'Tarifs & Formule Pro (10$/mois)' : 'Pricing & Pro Plan ($10/mo)'}
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={onOpenContact} className="seo-footer-btn-link">
+                  ✉️ {isFr ? 'Support & Contact' : 'Support & Contact'}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar: Copyright, Language, Meta */}
+        <div className="seo-footer-bottom">
+          <div className="seo-footer-brand">
+            <img src="/logo_studios_pro.png" alt="Studios-Pro" width="24" height="24" className="seo-footer-logo" />
+            <span className="seo-footer-brand-name">Studios-Pro</span>
+            <span className="seo-footer-tagline">
+              {isFr ? 'Suite Créative 3D, Réalité Augmentée & Reliefs CNC dans votre navigateur.' : 'All-in-one 3D Design, WebAR & CNC Relief browser suite.'}
+            </span>
+          </div>
+
+          <div className="seo-footer-meta-links">
+            <span>© {new Date().getFullYear()} Studios-Pro. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'}</span>
+            <a href="/faq.html">{isFr ? 'Aide & FAQ' : 'Help & FAQ'}</a>
+            <a href="/blog/">{isFr ? 'Guides' : 'Guides'}</a>
+            <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              ↑ {isFr ? 'Haut de page' : 'Back to top'}
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
 const StudiosPro = () => {
   const [lang, setLang] = useState('fr');
   const [user, setUser] = useState(null);
@@ -2215,6 +2386,15 @@ const StudiosPro = () => {
           ))}
         </div>
       </motion.section>
+
+      {/* Visible SEO Footer */}
+      {!isEmbed && (
+        <SeoFooter 
+          lang={lang} 
+          onOpenPricing={() => { setPaymentReason('pricing_overview'); setShowPaymentRequest(true); }}
+          onOpenContact={() => setIsContactOpen(true)}
+        />
+      )}
 
       {/* Newsletter Popup */}
       <AnimatePresence>

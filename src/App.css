@@ -1748,3 +1748,231 @@ body {
     flex-direction: column;
   }
 }
+
+/* ===================================
+   SEO FOOTER — Visible Crawler & User Hub
+   =================================== */
+.seo-footer {
+  width: 100%;
+  margin-top: 90px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(2, 6, 23, 0.98) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 70px 24px 40px;
+  position: relative;
+  z-index: 20;
+}
+
+.seo-footer-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.seo-footer-trust-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding-bottom: 50px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 50px;
+}
+
+.seo-trust-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.seo-trust-item:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.seo-trust-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.seo-trust-item strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #f8fafc;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.seo-trust-item p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.seo-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 32px;
+  margin-bottom: 50px;
+}
+
+.seo-footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.seo-footer-col-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seo-col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.seo-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.seo-footer-links li {
+  line-height: 1.35;
+}
+
+.seo-footer-links a,
+.seo-footer-btn-link {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.seo-footer-links a:hover,
+.seo-footer-btn-link:hover {
+  color: #38bdf8;
+  transform: translateX(3px);
+}
+
+.seo-footer-btn-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.seo-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.seo-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.seo-footer-logo {
+  border-radius: 6px;
+}
+
+.seo-footer-brand-name {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.seo-footer-tagline {
+  font-size: 0.8rem;
+  color: #64748b;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 12px;
+}
+
+.seo-footer-meta-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 0.8rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.seo-footer-meta-links a {
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.seo-footer-meta-links a:hover {
+  color: #38bdf8;
+}
+
+@media (max-width: 1100px) {
+  .seo-footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .seo-footer {
+    padding: 50px 16px 30px;
+  }
+
+  .seo-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .seo-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .seo-footer-tagline {
+    border-left: none;
+    padding-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .seo-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
