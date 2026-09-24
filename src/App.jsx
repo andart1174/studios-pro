@@ -1052,6 +1052,10 @@ const StudiosPro = () => {
   // Social share copy feedback
   const [linkCopied, setLinkCopied] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareTab, setShareTab] = useState('social'); // 'social' | 'embed'
+  const [embedDemo, setEmbedDemo] = useState('gear');
+  const [embedTheme, setEmbedTheme] = useState('dark');
+  const [embedCopied, setEmbedCopied] = useState(false);
   const [communityCount, setCommunityCount] = useState(null);
 
   // Live community post count
@@ -2525,105 +2529,306 @@ const StudiosPro = () => {
         )}
         {isShareModalOpen && (
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsShareModalOpen(false)}>
-            <motion.div className="auth-modal share-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <motion.div className="auth-modal share-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
               <button className="close-btn" onClick={() => setIsShareModalOpen(false)}><X size={20} /></button>
-              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-                  <Share2 size={24} color="#ffffff" />
-                </div>
-                <h2 style={{ fontSize: '1.25rem', margin: '0 0 6px', color: '#ffffff' }}>
-                  {lang === 'fr' ? "Partager Studios-Pro" : "Share Studios-Pro"}
-                </h2>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
-                  {lang === 'fr' 
-                    ? "Recommandez Studios-Pro à vos collègues, makers et créateurs 3D !" 
-                    : "Share Studios-Pro with fellow makers, designers & 3D creators!"}
-                </p>
-              </div>
-
-              <div className="share-buttons-grid">
-                <a 
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D, AR, Laser et CNC en ligne : https://studios-pro.com' : 'Check out Studios-Pro, free online 3D, AR, Laser & CNC creative suite: https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn whatsapp"
-                >
-                  <span className="share-icon">💬</span>
-                  <span>WhatsApp</span>
-                </a>
-
-                <a 
-                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn twitter"
-                >
-                  <span className="share-icon">𝕏</span>
-                  <span>X / Twitter</span>
-                </a>
-
-                <a 
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn facebook"
-                >
-                  <span className="share-icon">📘</span>
-                  <span>Facebook</span>
-                </a>
-
-                <a 
-                  href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn reddit"
-                >
-                  <span className="share-icon">🤖</span>
-                  <span>Reddit</span>
-                </a>
-
-                <a 
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn linkedin"
-                >
-                  <span className="share-icon">💼</span>
-                  <span>LinkedIn</span>
-                </a>
-
-                {typeof navigator !== 'undefined' && navigator.share && (
-                  <button 
-                    type="button"
-                    className="share-channel-btn native-share"
-                    onClick={() => {
-                      navigator.share({
-                        title: 'Studios-Pro 3D & AR Hub',
-                        text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
-                        url: 'https://studios-pro.com'
-                      }).catch(() => {});
-                    }}
-                  >
-                    <span className="share-icon">📱</span>
-                    <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="share-copy-box">
-                <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
-                <button 
-                  type="button" 
-                  className="share-copy-btn" 
-                  onClick={() => {
-                    navigator.clipboard.writeText('https://studios-pro.com');
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 2200);
+              
+              {/* Tab Selector: Partager / Intégrer */}
+              <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '10px', marginBottom: '18px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShareTab('social')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: shareTab === 'social' ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : 'transparent',
+                    color: shareTab === 'social' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
                   }}
                 >
-                  {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                  <Share2 size={15} />
+                  <span>{lang === 'fr' ? 'Partager le Site' : 'Share Website'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShareTab('embed')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: shareTab === 'embed' ? 'linear-gradient(135deg, #0284c7, #06b6d4)' : 'transparent',
+                    color: shareTab === 'embed' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Code size={15} />
+                  <span>{lang === 'fr' ? '📦 Intégrer Lecteur 3D' : '📦 Embed 3D Player'}</span>
                 </button>
               </div>
+
+              {shareTab === 'social' ? (
+                <>
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                      <Share2 size={22} color="#ffffff" />
+                    </div>
+                    <h2 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#ffffff' }}>
+                      {lang === 'fr' ? "Partager Studios-Pro" : "Share Studios-Pro"}
+                    </h2>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                      {lang === 'fr' 
+                        ? "Recommandez Studios-Pro à vos collègues, makers et créateurs 3D !" 
+                        : "Share Studios-Pro with fellow makers, designers & 3D creators!"}
+                    </p>
+                  </div>
+
+                  <div className="share-buttons-grid">
+                    <a 
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D, AR, Laser et CNC en ligne : https://studios-pro.com' : 'Check out Studios-Pro, free online 3D, AR, Laser & CNC creative suite: https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn whatsapp"
+                    >
+                      <span className="share-icon">💬</span>
+                      <span>WhatsApp</span>
+                    </a>
+
+                    <a 
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn twitter"
+                    >
+                      <span className="share-icon">𝕏</span>
+                      <span>X / Twitter</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn facebook"
+                    >
+                      <span className="share-icon">📘</span>
+                      <span>Facebook</span>
+                    </a>
+
+                    <a 
+                      href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn reddit"
+                    >
+                      <span className="share-icon">🤖</span>
+                      <span>Reddit</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn linkedin"
+                    >
+                      <span className="share-icon">💼</span>
+                      <span>LinkedIn</span>
+                    </a>
+
+                    {typeof navigator !== 'undefined' && navigator.share && (
+                      <button 
+                        type="button"
+                        className="share-channel-btn native-share"
+                        onClick={() => {
+                          navigator.share({
+                            title: 'Studios-Pro 3D & AR Hub',
+                            text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
+                            url: 'https://studios-pro.com'
+                          }).catch(() => {});
+                        }}
+                      >
+                        <span className="share-icon">📱</span>
+                        <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="share-copy-box">
+                    <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+                    <button 
+                      type="button" 
+                      className="share-copy-btn" 
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://studios-pro.com');
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2200);
+                      }}
+                    >
+                      {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                      <Code size={22} color="#ffffff" />
+                    </div>
+                    <h2 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#ffffff' }}>
+                      {lang === 'fr' ? "Intégrateur 3D & AR (Embed)" : "3D & AR Embed Player"}
+                    </h2>
+                    <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: 0 }}>
+                      {lang === 'fr'
+                        ? "Copiez le code HTML ci-dessous pour intégrer ce lecteur 3D & Réalité Augmentée sur votre boutique Shopify, WooCommerce ou site WordPress !"
+                        : "Copy the HTML embed code below to display an interactive 3D & AR player on your Shopify, WooCommerce or WordPress site!"}
+                    </p>
+                  </div>
+
+                  {/* Model Choice */}
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                      {lang === 'fr' ? '1. Choisissez le Modèle 3D :' : '1. Select 3D Model:'}
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                      {[
+                        { id: 'gear', label: '⚙️ CAD Gear' },
+                        { id: 'fox', label: '🦊 Fox 3D' },
+                        { id: 'boombox', label: '📻 BoomBox' },
+                        { id: 'lantern', label: '🏮 Lantern' }
+                      ].map(item => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setEmbedDemo(item.id)}
+                          style={{
+                            padding: '6px 8px',
+                            borderRadius: '8px',
+                            border: embedDemo === item.id ? '1px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                            background: embedDemo === item.id ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.04)',
+                            color: embedDemo === item.id ? '#ffffff' : '#94a3b8',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Theme Choice */}
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                      {lang === 'fr' ? '2. Fond / Arrière-plan :' : '2. Background:'}
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[
+                        { id: 'dark', label: '🌙 Dark' },
+                        { id: 'light', label: '☀️ Light' },
+                        { id: 'transparent', label: '✨ Transparent' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setEmbedTheme(t.id)}
+                          style={{
+                            flex: 1,
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: embedTheme === t.id ? '1px solid #06b6d4' : '1px solid rgba(255,255,255,0.1)',
+                            background: embedTheme === t.id ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.04)',
+                            color: embedTheme === t.id ? '#ffffff' : '#94a3b8',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Code snippet & copy */}
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                      {lang === 'fr' ? '3. Code HTML d\'intégration :' : '3. HTML Embed Code:'}
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        readOnly
+                        rows={3}
+                        value={`<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`}
+                        style={{
+                          width: '100%',
+                          background: '#090d16',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '10px',
+                          color: '#a5f3fc',
+                          fontFamily: 'monospace',
+                          fontSize: '0.74rem',
+                          lineHeight: '1.4',
+                          padding: '10px',
+                          resize: 'none',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const code = `<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`;
+                        navigator.clipboard.writeText(code);
+                        setEmbedCopied(true);
+                        setTimeout(() => setEmbedCopied(false), 2200);
+                      }}
+                      style={{
+                        marginTop: '8px',
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: embedCopied ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #0284c7, #06b6d4)',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {embedCopied ? <Check size={16} /> : <Copy size={16} />}
+                      <span>{embedCopied ? (lang === 'fr' ? '✓ Code Iframe Copié !' : '✓ Iframe Code Copied!') : (lang === 'fr' ? 'Copier le Code HTML' : 'Copy HTML Code')}</span>
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {['🛍️ Shopify', '🟣 WooCommerce', '🌐 WordPress', '⚡ Wix', '🎨 Webflow'].map(p => (
+                      <span key={p} style={{ fontSize: '0.7rem', padding: '3px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', color: '#94a3b8' }}>
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

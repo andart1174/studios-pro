@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Studios-Pro 3D & AR Embed Player</title>
+  <meta name="description" content="Free responsive 3D and Augmented Reality (AR) embeddable viewer widget by Studios-Pro.">
+  <link rel="icon" type="image/svg+xml" href="/logo_studios_pro.png">
+
+  <!-- Google Model-Viewer for WebGL 3D & WebXR AR -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+    }
+
+    body.bg-dark {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    body.bg-light {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    body.bg-transparent {
+      background: transparent;
+      color: #f8fafc;
+    }
+
+    .player-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      outline: none;
+      --poster-color: transparent;
+      --progress-bar-color: #06b6d4;
+      --progress-mask: transparent;
+      --progress-bar-height: 3px;
+    }
+
+    /* Loading Overlay */
+    .loader-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      transition: opacity 0.3s ease;
+      gap: 12px;
+    }
+
+    .loader-spinner {
+      width: 38px;
+      height: 38px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #06b6d4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loader-text {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Top Left Model Title */
+    .model-header {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+    }
+
+    .model-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #ffffff;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Floating Toolbar (Top Right) */
+    .controls-bar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .ctrl-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(6, 182, 212, 0.3);
+      border-color: #06b6d4;
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    .ctrl-btn.active {
+      background: #06b6d4;
+      color: #0f172a;
+      border-color: #22d3ee;
+    }
+
+    .ctrl-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    /* View in AR Button */
+    #ar-button {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+      border: 1.5px solid #22d3ee;
+      border-radius: 30px;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 10px 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.65), 0 4px 12px rgba(0,0,0,0.5);
+      z-index: 20;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    #ar-button:hover {
+      transform: translateX(-50%) scale(1.04);
+      box-shadow: 0 0 28px rgba(6, 182, 212, 0.85);
+    }
+
+    #ar-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Viral Branding Badge ("⚡ 3D & AR by Studios-Pro") */
+    .studios-brand-badge {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      z-index: 20;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .studios-brand-badge:hover {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: #06b6d4;
+      transform: translateY(-1px);
+    }
+
+    .badge-icon {
+      font-size: 0.8rem;
+    }
+
+    .badge-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .badge-brand {
+      color: #38bdf8;
+      font-weight: 800;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      #ar-button {
+        bottom: 12px;
+        font-size: 0.76rem;
+        padding: 8px 16px;
+      }
+
+      .studios-brand-badge {
+        bottom: 12px;
+        left: 10px;
+        padding: 4px 10px;
+      }
+
+      .badge-label {
+        display: none;
+      }
+
+      .model-header {
+        top: 10px;
+        left: 10px;
+      }
+
+      .controls-bar {
+        top: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-dark">
+
+  <div class="player-container">
+    <!-- Model Header / Title -->
+    <div id="model-header" class="model-header" style="display: none;">
+      <span style="font-size: 0.85rem;">📦</span>
+      <span id="model-title" class="model-title">3D Model</span>
+    </div>
+
+    <!-- Controls (Top Right) -->
+    <div class="controls-bar">
+      <!-- Auto-rotate Toggle -->
+      <button type="button" id="btn-rotate" class="ctrl-btn active" title="Toggle Auto-Rotate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+      </button>
+
+      <!-- Camera Reset -->
+      <button type="button" id="btn-reset" class="ctrl-btn" title="Reset Camera View">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      </button>
+
+      <!-- Fullscreen Toggle -->
+      <button type="button" id="btn-fullscreen" class="ctrl-btn" title="Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loader" class="loader-overlay">
+      <div class="loader-spinner"></div>
+      <span id="loader-text" class="loader-text">Loading 3D Model...</span>
+    </div>
+
+    <!-- Google Model Viewer Component -->
+    <model-viewer
+      id="viewer"
+      camera-controls
+      touch-action="pan-y"
+      shadow-intensity="1.2"
+      shadow-softness="0.75"
+      exposure="1"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      interaction-prompt="auto"
+      auto-rotate
+      autoplay
+      alt="3D & AR Model Embed Preview">
+      
+      <!-- Native AR Button Slot -->
+      <button slot="ar-button" id="ar-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+        <span id="ar-btn-label">VIEW IN AR</span>
+      </button>
+    </model-viewer>
+
+    <!-- Viral Backlink Badge -->
+    <a id="brand-badge" href="https://studios-pro.com/?ref=embed" target="_blank" rel="noopener" class="studios-brand-badge" title="Created with Studios-Pro 3D & AR Suite">
+      <span class="badge-icon">⚡</span>
+      <span class="badge-label">3D & AR by</span>
+      <span class="badge-brand">Studios-Pro</span>
+    </a>
+  </div>
+
+  <script>
+    // Demo models catalog (CDN hosted high-quality fallback models)
+    const DEMO_MODELS = {
+      gear: {
+        name: 'CAD Mechanical Gear',
+        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb'
+      },
+      fox: {
+        name: 'Fox 3D Character',
+        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF-Binary/Fox.glb'
+      },
+      boombox: {
+        name: 'Retro Boombox',
+        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoomBox/glTF-Binary/BoomBox.glb'
+      },
+      lantern: {
+        name: 'Brass Lantern',
+        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb'
+      }
+    };
+
+    // Parse URL query options
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewer = document.getElementById('viewer');
+    const loader = document.getElementById('loader');
+    const loaderText = document.getElementById('loader-text');
+    const modelHeader = document.getElementById('model-header');
+    const modelTitle = document.getElementById('model-title');
+    const btnRotate = document.getElementById('btn-rotate');
+    const btnReset = document.getElementById('btn-reset');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const arButton = document.getElementById('ar-button');
+    const brandBadge = document.getElementById('brand-badge');
+
+    // 1. Language Localization
+    const lang = (urlParams.get('lang') || 'en').toLowerCase();
+    if (lang === 'fr') {
+      loaderText.textContent = "Chargement du modèle 3D...";
+      document.getElementById('ar-btn-label').textContent = "VOIR EN AR";
+    }
+
+    // 2. Background Theme
+    const bgParam = (urlParams.get('bg') || 'dark').toLowerCase();
+    if (bgParam === 'light') {
+      document.body.className = 'bg-light';
+    } else if (bgParam === 'transparent') {
+      document.body.className = 'bg-transparent';
+    } else if (bgParam.startsWith('#')) {
+      document.body.style.background = bgParam;
+    } else {
+      document.body.className = 'bg-dark';
+    }
+
+    // 3. Auto-rotation control
+    const autoRotateParam = urlParams.get('autorotate');
+    if (autoRotateParam === 'false' || autoRotateParam === '0') {
+      viewer.removeAttribute('auto-rotate');
+      btnRotate.classList.remove('active');
+    } else {
+      viewer.setAttribute('auto-rotate', '');
+      btnRotate.classList.add('active');
+    }
+
+    btnRotate.addEventListener('click', () => {
+      if (viewer.hasAttribute('auto-rotate')) {
+        viewer.removeAttribute('auto-rotate');
+        btnRotate.classList.remove('active');
+      } else {
+        viewer.setAttribute('auto-rotate', '');
+        btnRotate.classList.add('active');
+      }
+    });
+
+    // 4. Reset Camera View
+    btnReset.addEventListener('click', () => {
+      viewer.cameraOrbit = '0deg 75deg 105%';
+      viewer.cameraTarget = 'auto auto auto';
+      viewer.fieldOfView = 'auto';
+    });
+
+    // 5. Fullscreen Toggle
+    btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // 6. AR Button Visibility
+    const arParam = urlParams.get('ar');
+    if (arParam === 'false' || arParam === '0') {
+      if (arButton) arButton.style.display = 'none';
+    }
+
+    // 7. Badge Visibility
+    const badgeParam = urlParams.get('badge');
+    if (badgeParam === 'false' || badgeParam === '0') {
+      if (brandBadge) brandBadge.style.display = 'none';
+    }
+
+    // 8. Custom Title
+    const nameParam = urlParams.get('name');
+    if (nameParam) {
+      modelTitle.textContent = decodeURIComponent(nameParam);
+      modelHeader.style.display = 'flex';
+    }
+
+    // 9. Model Source Loading Logic
+    const modelParam = urlParams.get('model');
+    const demoParam = urlParams.get('demo');
+
+    let targetModelUrl = null;
+
+    if (modelParam) {
+      targetModelUrl = decodeURIComponent(modelParam);
+      if (!nameParam) {
+        const inferredName = targetModelUrl.split('/').pop().split('?')[0];
+        if (inferredName) {
+          modelTitle.textContent = inferredName;
+          modelHeader.style.display = 'flex';
+        }
+      }
+    } else if (demoParam && DEMO_MODELS[demoParam]) {
+      targetModelUrl = DEMO_MODELS[demoParam].url;
+      if (!nameParam) {
+        modelTitle.textContent = DEMO_MODELS[demoParam].name;
+        modelHeader.style.display = 'flex';
+      }
+    } else {
+      // Default sample model: Damaged Helmet
+      targetModelUrl = DEMO_MODELS.gear.url;
+      if (!nameParam) {
+        modelTitle.textContent = DEMO_MODELS.gear.name;
+        modelHeader.style.display = 'flex';
+      }
+    }
+
+    // Set src on model-viewer
+    if (targetModelUrl) {
+      viewer.src = targetModelUrl;
+    }
+
+    // Loading handlers
+    viewer.addEventListener('load', () => {
+      loader.style.opacity = '0';
+      setTimeout(() => { loader.style.display = 'none'; }, 300);
+
+      // Apply color tint if specified
+      const colorParam = urlParams.get('color');
+      if (colorParam && viewer.model && viewer.model.materials) {
+        try {
+          const hex = colorParam.startsWith('#') ? colorParam : '#' + colorParam;
+          const r = parseInt(hex.slice(1, 3), 16) / 255;
+          const g = parseInt(hex.slice(3, 5), 16) / 255;
+          const b = parseInt(hex.slice(5, 7), 16) / 255;
+          viewer.model.materials.forEach(mat => {
+            if (mat.pbrMetallicRoughness) {
+              mat.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1.0]);
+            }
+          });
+        } catch (e) {
+          console.warn('Could not apply color parameter:', e);
+        }
+      }
+    });
+
+    viewer.addEventListener('error', (event) => {
+      console.error('model-viewer error:', event.detail);
+      loaderText.textContent = lang === 'fr' 
+        ? "Erreur de chargement du modèle 3D." 
+        : "Failed to load 3D model.";
+      const spinner = loader.querySelector('.loader-spinner');
+      if (spinner) spinner.style.borderTopColor = '#ef4444';
+    });
+
+    // Listen to parent postMessage for dynamic live updates
+    window.addEventListener('message', (e) => {
+      if (e.data && typeof e.data === 'object') {
+        if (e.data.type === 'LOAD_MODEL' && e.data.url) {
+          loader.style.display = 'flex';
+          loader.style.opacity = '1';
+          viewer.src = e.data.url;
+          if (e.data.name) {
+            modelTitle.textContent = e.data.name;
+            modelHeader.style.display = 'flex';
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
