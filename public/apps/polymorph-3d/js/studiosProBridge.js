@@ -77,11 +77,26 @@
     const arBtn = document.getElementById('tool-view-in-ar');
     if (!arBtn) return;
 
-    arBtn.onclick = function(e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
+    let isExporting = false;
+    let lastTapTime = 0;
+
+    async function handleViewInAR(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      // Debounce touch/click triggers on mobile phones
+      const now = Date.now();
+      if (now - lastTapTime < 800) return;
+      lastTapTime = now;
+
+      if (isExporting) return;
 
       const getModel = window.__polymorphGetModel;
-      const model = (typeof getModel === 'function' && getModel()) || (window.Viewer && window.Viewer.currentModel);
+      const model = (typeof getModel === 'function' && getModel()) ||
+                    (window.Viewer && window.Viewer.currentModel) ||
+                    (window.__polymorphViewer && window.__polymorphViewer.currentModel);
 
       if (!model) {
         const isFr = (window.I18N && window.I18N.currentLang === 'fr');
@@ -89,46 +104,162 @@
         return;
       }
 
-      // Convert current 3D model for AR Viewer
-      if (typeof THREE !== 'undefined' && typeof THREE.OBJExporter !== 'undefined') {
-        try {
-          const exporter = new THREE.OBJExporter();
-          const result = exporter.parse(model);
+      isExporting = true;
+      const originalHtml = arBtn.innerHTML;
+      const isFr = (window.I18N && window.I18N.currentLang === 'fr');
+      arBtn.innerHTML = `<span>⏳ ${isFr ? 'Préparation AR...' : 'Preparing AR...'}</span>`;
 
-          window.lastArModelData = result;
-          window.lastArModelName = 'polymorph_model.obj';
-          window.lastArModelExt = 'obj';
-          window.lastArModelIsBinary = false;
-          window.lastGeneratedModel = result;
+      try {
+        let exportSuccess = false;
 
-          // Notify parent site to open AR Viewer overlay
-          window.parent.postMessage({
-            type: 'OPEN_AR_VIEWER',
-            payload: { url: 'broadcast', modelData: result }
-          }, '*');
+        // Strategy A: Direct high-performance binary GLB via PolyMorph's ModelConverters
+        if (window.ModelConverters && typeof window.ModelConverters.exportModel === 'function') {
+          try {
+            const expResult = await window.ModelConverters.exportModel(model, 'glb', 'polymorph_model');
+            if (expResult && expResult.blob) {
+              const reader = new FileReader();
+              await new Promise((resolve) => {
+                reader.onloadend = function() {
+                  const dataUrl = reader.result;
+                  broadcastARModel(dataUrl, 'polymorph_model.glb', 'glb', true);
+                  exportSuccess = true;
+                  resolve();
+                };
+                reader.readAsDataURL(expResult.blob);
+              });
+            }
+          } catch (glbErr) {
+            console.warn('[StudiosProBridge] ModelConverters GLB export failed:', glbErr);
+          }
+        }
 
-          // Broadcast model directly for AR Viewer iframe
-          channel.postMessage({
+        // Strategy B: Native Three.js GLTFExporter with clean scene clone
+        if (!exportSuccess && typeof THREE !== 'undefined' && typeof THREE.GLTFExporter !== 'undefined') {
+          try {
+            const exportScene = new THREE.Scene();
+            const clone = model.clone(true);
+            exportScene.add(clone);
+            exportScene.updateMatrixWorld(true);
+
+            // Strip visual helpers/lines that can corrupt binary exporters or crash WebGL on phones
+            const toRemove = [];
+            exportScene.traverse((c) => {
+              if (c.isLine || c.isLineSegments || c.isCamera || c.isLight || (c.userData && c.userData.isHelper)) {
+                toRemove.push(c);
+              }
+            });
+            toRemove.forEach(c => { if (c.parent) c.parent.remove(c); });
+
+            const exporter = new THREE.GLTFExporter();
+            const glbBuffer = await new Promise((resolve, reject) => {
+              exporter.parse(
+                exportScene,
+                (gltf) => resolve(gltf),
+                (err) => reject(err),
+                { binary: true }
+              );
+            });
+
+            const blob = new Blob([glbBuffer], { type: 'application/octet-stream' });
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onloadend = function() {
+                const dataUrl = reader.result;
+                broadcastARModel(dataUrl, 'polymorph_model.glb', 'glb', true);
+                exportSuccess = true;
+                resolve();
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (gltfErr) {
+            console.warn('[StudiosProBridge] Native GLTFExporter failed:', gltfErr);
+          }
+        }
+
+        // Strategy C: OBJExporter fallback
+        if (!exportSuccess && typeof THREE !== 'undefined' && typeof THREE.OBJExporter !== 'undefined') {
+          try {
+            const exporter = new THREE.OBJExporter();
+            const result = exporter.parse(model);
+            broadcastARModel(result, 'polymorph_model.obj', 'obj', false);
+            exportSuccess = true;
+          } catch (objErr) {
+            console.error('[StudiosProBridge] OBJ fallback failed:', objErr);
+          }
+        }
+      } catch (err) {
+        console.error('[StudiosProBridge] AR View trigger error:', err);
+      } finally {
+        arBtn.innerHTML = originalHtml;
+        isExporting = false;
+      }
+    }
+
+    function broadcastARModel(modelData, name, extension, isBinary) {
+      window.lastArModelData = modelData;
+      window.lastArModelName = name;
+      window.lastArModelExt = extension;
+      window.lastArModelIsBinary = isBinary;
+      window.lastGeneratedModel = modelData;
+
+      if (window.parent) {
+        window.parent.lastArModelData = modelData;
+        window.parent.lastArModelName = name;
+        window.parent.lastArModelExt = extension;
+        window.parent.lastArModelIsBinary = isBinary;
+      }
+
+      // Notify parent site to open or bring AR Viewer overlay forward
+      window.parent.postMessage({
+        type: 'OPEN_AR_VIEWER',
+        payload: {
+          url: 'broadcast',
+          modelData: modelData,
+          name: name,
+          extension: extension,
+          isBinary: isBinary
+        }
+      }, '*');
+
+      // Direct forward to AR Viewer iframe if mounted in parent DOM
+      try {
+        const arIframe = window.parent && window.parent.document && window.parent.document.querySelector('.ar-viewer-overlay iframe');
+        if (arIframe && arIframe.contentWindow) {
+          arIframe.contentWindow.postMessage({
             type: 'LOAD_EXTERNAL_FILE',
             payload: {
-              name: 'polymorph_model.obj',
-              extension: 'obj',
-              data: result,
-              isBinary: false
+              name: name,
+              extension: extension,
+              data: modelData,
+              isBinary: isBinary
             }
-          });
-
-          // Fallback if tested in standalone mode
-          if (window.parent === window) {
-            setTimeout(function() {
-              window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
-            }, 600);
-          }
-        } catch (err) {
-          console.error('[StudiosProBridge] AR export error:', err);
+          }, '*');
         }
+      } catch (e) {
+        // Cross-origin safe ignore
       }
-    };
+
+      // Broadcast model directly for AR Viewer BroadcastChannel
+      channel.postMessage({
+        type: 'LOAD_EXTERNAL_FILE',
+        payload: {
+          name: name,
+          extension: extension,
+          data: modelData,
+          isBinary: isBinary
+        }
+      });
+
+      // Standalone mode fallback
+      if (window.parent === window) {
+        setTimeout(function() {
+          window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
+        }, 600);
+      }
+    }
+
+    arBtn.addEventListener('click', handleViewInAR);
+    arBtn.addEventListener('touchend', handleViewInAR, { passive: false });
   }
 
   // 4. Setup Local Payment Modal Handlers

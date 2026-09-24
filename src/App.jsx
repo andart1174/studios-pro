@@ -1038,6 +1038,7 @@ const StudiosPro = () => {
   const scriptingIframeRef = useRef(null);
   const isIframeReadyRef = useRef(false);
   const collabMessagesRef = useRef([]);
+  const arViewerIframeRef = useRef(null);
 
   const [announcement, setAnnouncement] = useState(null);
   const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(false);
@@ -1185,6 +1186,8 @@ const StudiosPro = () => {
   const freeUsedRef = useRef(freeExportsUsed);
   const langRef = useRef(lang);
   const collabRoomIdRef = useRef(collabRoomId);
+  const isARViewerOpenRef = useRef(isARViewerOpen);
+  const isPolyMorphOpenRef = useRef(isPolyMorphOpen);
 
   useEffect(() => {
     premiumRef.current = isPremium;
@@ -1194,7 +1197,9 @@ const StudiosPro = () => {
     langRef.current = lang;
     collabRoomIdRef.current = collabRoomId;
     isIframeReadyRef.current = isIframeReady;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady]);
+    isARViewerOpenRef.current = isARViewerOpen;
+    isPolyMorphOpenRef.current = isPolyMorphOpen;
+  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen]);
 
   useEffect(() => {
     if (!auth) {
@@ -1480,9 +1485,41 @@ const StudiosPro = () => {
         setArViewerUrl(payload.url || '');
         if (payload && payload.modelData) {
           window.lastArModelData = payload.modelData;
+          window.lastArModelName = payload.name || 'polymorph_model.glb';
+          window.lastArModelExt = payload.extension || 'glb';
+          window.lastArModelIsBinary = payload.isBinary !== false;
         }
         setIsARViewerOpen(true);
+        // If AR viewer iframe is already mounted, push new model immediately
+        if (arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
+          try {
+            arViewerIframeRef.current.contentWindow.postMessage({
+              type: 'LOAD_EXTERNAL_FILE',
+              payload: {
+                name: payload.name || 'polymorph_model.glb',
+                extension: payload.extension || 'glb',
+                data: payload.modelData,
+                isBinary: payload.isBinary !== false
+              }
+            }, '*');
+          } catch (e) {
+            console.warn('[App] Forward to ar-viewer error:', e);
+          }
+        }
+      } else if (type === 'CLOSE_AR_VIEWER') {
+        setIsARViewerOpen(false);
+        setArViewerUrl('');
+        window.lastArModelData = null;
       } else if (type === 'CLOSE_STUDIO') {
+        // If AR Viewer was active as an overlay over another studio (like PolyMorph), close only AR Viewer!
+        if (isARViewerOpenRef.current) {
+          setIsARViewerOpen(false);
+          setArViewerUrl('');
+          window.lastArModelData = null;
+          if (isPolyMorphOpenRef.current) {
+            return;
+          }
+        }
         setIs3DOpen(false);
         setIs3DViewerOpen(false);
         setIsARViewerOpen(false);
@@ -2491,7 +2528,7 @@ const StudiosPro = () => {
         )}
         {isARViewerOpen && (
           <motion.div className="studio-overlay ar-viewer-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src={`/apps/ar-viewer/index.html?lang=${lang}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
+            <iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?lang=${lang}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
           </motion.div>
         )}
         {isDFXOpen && (

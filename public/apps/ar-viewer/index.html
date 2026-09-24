@@ -399,8 +399,13 @@
     if (backBtn) {
       backBtn.onclick = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        channel.postMessage({ type: 'CLOSE_AR_VIEWER' });
+        window.parent.postMessage({ type: 'CLOSE_AR_VIEWER' }, '*');
         channel.postMessage({ type: 'CLOSE_STUDIO' });
         window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+        if (window.parent === window) {
+          window.location.href = '/';
+        }
       };
     }
 
@@ -449,46 +454,78 @@
       }
     };
 
+    // Universal External File & URL Loaders (Supports BroadcastChannel & window.postMessage)
+    async function loadExternalFilePayload(payload) {
+      if (!payload) return;
+      try {
+        const { name = 'model.glb', extension = 'glb', data, isBinary = true } = payload;
+        console.log("AR Viewer: loading external file:", name);
+        showLoader(currentLang === 'fr' ? "Chargement du modèle 3D..." : "Loading 3D model...");
+        let file;
+        if (data instanceof File) {
+          file = data;
+        } else if (data instanceof Blob) {
+          file = new File([data], name, { type: 'application/octet-stream' });
+        } else if (data instanceof ArrayBuffer) {
+          file = new File([data], name, { type: 'application/octet-stream' });
+        } else if (typeof data === 'string' && (data.startsWith('data:') || data.startsWith('blob:'))) {
+          const res = await fetch(data);
+          const blob = await res.blob();
+          file = new File([blob], name, { type: 'application/octet-stream' });
+        } else if (isBinary) {
+          try {
+            const res = await fetch(data);
+            const blob = await res.blob();
+            file = new File([blob], name, { type: 'application/octet-stream' });
+          } catch (e) {
+            file = new File([data], name, { type: 'application/octet-stream' });
+          }
+        } else {
+          file = new File([data], name, { type: 'text/plain' });
+        }
+        await handleFile(file);
+      } catch (err) {
+        console.error('AR Viewer error loading external file:', err);
+        hideLoader();
+      }
+    }
+
+    async function loadExternalUrlPayload(payload) {
+      if (!payload || !payload.url) return;
+      try {
+        const { url } = payload;
+        const name = url.split('/').pop().split('?')[0] || 'external_model.glb';
+        console.log("AR Viewer: loading external url:", url);
+        showLoader(currentLang === 'fr' ? "Téléchargement du modèle..." : "Downloading model...");
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], name, { type: 'application/octet-stream' });
+        await handleFile(file);
+      } catch (err) {
+        console.error('AR Viewer error loading external url:', err);
+        hideLoader();
+      }
+    }
+
     // BroadcastChannel loader support
     channel.onmessage = (e) => {
-      if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-        (async () => {
-          try {
-            const { name, extension, data, isBinary } = e.data.payload;
-            console.log("AR Viewer: loaded external file:", name);
-            showLoader(currentLang === 'fr' ? "Chargement du modèle externe..." : "Loading external file...");
-            let file;
-            if (isBinary) {
-              const res = await fetch(data);
-              const blob = await res.blob();
-              file = new File([blob], name, { type: 'application/octet-stream' });
-            } else {
-              file = new File([data], name, { type: 'text/plain' });
-            }
-            handleFile(file);
-          } catch (err) {
-            console.error('AR Viewer error loading external file:', err);
-            hideLoader();
-          }
-        })();
-      } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-        (async () => {
-          try {
-            const { url } = e.data.payload;
-            const name = url.split('/').pop().split('?')[0] || 'external_model.glb';
-            console.log("AR Viewer: loaded external url:", url);
-            showLoader(currentLang === 'fr' ? "Téléchargement du modèle..." : "Downloading model...");
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const file = new File([blob], name, { type: 'application/octet-stream' });
-            handleFile(file);
-          } catch (err) {
-            console.error('AR Viewer error loading external url:', err);
-            hideLoader();
-          }
-        })();
+      if (e.data && e.data.type === 'LOAD_EXTERNAL_FILE') {
+        loadExternalFilePayload(e.data.payload);
+      } else if (e.data && e.data.type === 'LOAD_EXTERNAL_URL') {
+        loadExternalUrlPayload(e.data.payload);
       }
     };
+
+    // Direct window.postMessage loader support (cross-frame reliable on iOS Safari & Chrome Mobile)
+    window.addEventListener('message', (e) => {
+      if (e.data && typeof e.data === 'object') {
+        if (e.data.type === 'LOAD_EXTERNAL_FILE') {
+          loadExternalFilePayload(e.data.payload);
+        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
+          loadExternalUrlPayload(e.data.payload);
+        }
+      }
+    });
 
     // Load URL if passed in URL query param (?url=...)
     const queryUrl = urlParams.get('url');
@@ -576,11 +613,18 @@
     // Check if parent window has passed model data directly
     if (window.parent && window.parent.lastArModelData) {
       const modelData = window.parent.lastArModelData;
+      const modelName = window.parent.lastArModelName || 'polymorph_model.glb';
+      const modelExt = window.parent.lastArModelExt || 'glb';
+      const isBinary = window.parent.lastArModelIsBinary !== false;
       window.parent.lastArModelData = null; // clear after reading
       
-      const file = new File([modelData], 'model.obj', { type: 'text/plain' });
       setTimeout(() => {
-        handleFile(file);
+        loadExternalFilePayload({
+          name: modelName,
+          extension: modelExt,
+          data: modelData,
+          isBinary: isBinary
+        });
       }, 100);
     }
 
