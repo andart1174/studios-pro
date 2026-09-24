@@ -10,7 +10,7 @@
   <meta property="og:title" content="AR Viewer 3D | Studios-Pro">
   <meta property="og:description" content="View 3D models in Augmented Reality directly in your web browser. Free WebAR viewer with instant QR code mobile projection.">
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-  <link rel="stylesheet" href="style.css?v=18.0">
+  <link rel="stylesheet" href="style.css?v=19.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -436,9 +436,12 @@
                 <input type="checkbox" id="embed-opt-ar" checked>
                 <span class="lang-text" data-fr="Bouton « Voir en AR » (WebXR Mobile)" data-en="« View in AR » Button (WebXR Mobile)">« View in AR » Button (WebXR Mobile)</span>
               </label>
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-badge" checked>
-                <span class="lang-text" data-fr="Badge Studios-Pro (Lien direct)" data-en="Studios-Pro Badge (Direct link)">Studios-Pro Badge (Direct link)</span>
+              <label class="embed-checkbox-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="embed-opt-badge" checked>
+                  <span class="lang-text" data-fr="Badge Studios-Pro (Backlink viral)" data-en="Studios-Pro Badge (Viral backlink)">Studios-Pro Badge (Viral backlink)</span>
+                </div>
+                <span id="badge-pro-tag" style="font-size: 10px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.5px; cursor: pointer;">⭐ PRO</span>
               </label>
             </div>
           </div>
@@ -1878,9 +1881,42 @@
     const chkAR = document.getElementById('embed-opt-ar');
     const chkBadge = document.getElementById('embed-opt-badge');
 
+    const isUserPremium = urlParams.get('premium') === 'true';
+
     if (chkAutoRotate) chkAutoRotate.onchange = (e) => { embedState.autorotate = e.target.checked; updateEmbedCode(); };
     if (chkAR) chkAR.onchange = (e) => { embedState.ar = e.target.checked; updateEmbedCode(); };
-    if (chkBadge) chkBadge.onchange = (e) => { embedState.badge = e.target.checked; updateEmbedCode(); };
+    
+    if (chkBadge) {
+      chkBadge.onchange = (e) => {
+        if (!isUserPremium && !e.target.checked) {
+          e.target.checked = true;
+          embedState.badge = true;
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'OPEN_PRICING', reason: 'white_label' }, '*');
+          }
+          alert(currentLang === 'fr' 
+            ? "⭐ Marque Blanche (White-label) :\nLa suppression du badge Studios-Pro est une fonctionnalité réservée aux membres PREMIUM !\n\nPassez à Pro pour intégrer vos modèles 3D sans aucune marque externe." 
+            : "⭐ White-label Feature:\nRemoving the Studios-Pro branding badge is an exclusive PREMIUM feature!\n\nUpgrade to Pro to embed your 3D models with 100% white-label.");
+          return;
+        }
+        embedState.badge = e.target.checked;
+        updateEmbedCode();
+      };
+    }
+
+    const badgeProTag = document.getElementById('badge-pro-tag');
+    if (badgeProTag) {
+      badgeProTag.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'OPEN_PRICING', reason: 'white_label' }, '*');
+        }
+        alert(currentLang === 'fr' 
+          ? "⭐ Marque Blanche (White-label) :\nPassez à Pro pour masquer le badge Studios-Pro et intégrer des modèles 3D avec votre propre marque !" 
+          : "⭐ White-label Feature:\nUpgrade to Pro to remove Studios-Pro branding and showcase 3D models under your own brand!");
+      };
+    }
 
     // Copy embed code
     const btnCopyCode = document.getElementById('btn-copy-embed-code');

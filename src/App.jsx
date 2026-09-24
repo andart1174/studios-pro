@@ -1055,6 +1055,7 @@ const StudiosPro = () => {
   const [shareTab, setShareTab] = useState('social'); // 'social' | 'embed'
   const [embedDemo, setEmbedDemo] = useState('gear');
   const [embedTheme, setEmbedTheme] = useState('dark');
+  const [embedBadge, setEmbedBadge] = useState(true);
   const [embedCopied, setEmbedCopied] = useState(false);
   const [communityCount, setCommunityCount] = useState(null);
 
@@ -1514,7 +1515,9 @@ const StudiosPro = () => {
       } else if (type === 'CLOSE_AR_VIEWER') {
         setIsARViewerOpen(false);
         setArViewerUrl('');
-        window.lastArModelData = null;
+      } else if (type === 'OPEN_PRICING') {
+        setPaymentReason('premium_feature');
+        setShowPaymentRequest(true);
       } else if (type === 'CLOSE_STUDIO') {
         // If AR Viewer was active as an overlay over another studio (like PolyMorph), close only AR Viewer!
         if (isARViewerOpenRef.current) {
@@ -2764,6 +2767,35 @@ const StudiosPro = () => {
                     </div>
                   </div>
 
+                  {/* Branding / White-Label Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.78rem', color: '#e2e8f0' }}>
+                      <input
+                        type="checkbox"
+                        checked={embedBadge}
+                        onChange={(e) => {
+                          if (!isPremium && !isAdmin && !e.target.checked) {
+                            setPaymentReason('premium_feature');
+                            setShowPaymentRequest(true);
+                            return;
+                          }
+                          setEmbedBadge(e.target.checked);
+                        }}
+                        style={{ accentColor: '#06b6d4', width: '16px', height: '16px' }}
+                      />
+                      <span>{lang === 'fr' ? 'Badge Studios-Pro (Backlink viral)' : 'Studios-Pro Badge (Viral backlink)'}</span>
+                    </label>
+                    {(!isPremium && !isAdmin) && (
+                      <span 
+                        onClick={() => { setPaymentReason('premium_feature'); setShowPaymentRequest(true); }}
+                        style={{ fontSize: '0.68rem', fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', padding: '2px 8px', borderRadius: '10px', cursor: 'pointer' }}
+                        title={lang === 'fr' ? 'Passer à Pro pour masquer le badge' : 'Upgrade to Pro to remove badge'}
+                      >
+                        ⭐ PRO pour masquer
+                      </span>
+                    )}
+                  </div>
+
                   {/* Code snippet & copy */}
                   <div>
                     <label style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
@@ -2773,7 +2805,7 @@ const StudiosPro = () => {
                       <textarea
                         readOnly
                         rows={3}
-                        value={`<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`}
+                        value={`<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true${!embedBadge ? '&badge=false' : ''}" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`}
                         style={{
                           width: '100%',
                           background: '#090d16',
@@ -2792,7 +2824,7 @@ const StudiosPro = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        const code = `<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`;
+                        const code = `<iframe src="https://studios-pro.com/embed/?demo=${embedDemo}&bg=${embedTheme}&autorotate=true&ar=true${!embedBadge ? '&badge=false' : ''}" width="100%" height="450px" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></iframe>`;
                         navigator.clipboard.writeText(code);
                         setEmbedCopied(true);
                         setTimeout(() => setEmbedCopied(false), 2200);
@@ -2848,7 +2880,7 @@ const StudiosPro = () => {
         )}
         {isARViewerOpen && (
           <motion.div className="studio-overlay ar-viewer-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?v=18&lang=${lang}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
+            <iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?v=19&lang=${lang}&premium=${isPremium || isAdmin}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
           </motion.div>
         )}
         {isDFXOpen && (
