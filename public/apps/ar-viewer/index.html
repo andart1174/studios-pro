@@ -10,7 +10,7 @@
   <meta property="og:title" content="AR Viewer 3D | Studios-Pro">
   <meta property="og:description" content="View 3D models in Augmented Reality directly in your web browser. Free WebAR viewer with instant QR code mobile projection.">
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-  <link rel="stylesheet" href="style.css?v=17.0">
+  <link rel="stylesheet" href="style.css?v=18.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -88,7 +88,7 @@
           </button>
         </div>
         <div style="margin-top: 10px; text-align: center;">
-          <button type="button" id="btn-sidebar-embed" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(6,182,212,0.08); border: 1px dashed rgba(6,182,212,0.35); color: #38bdf8; font-size: 11px; font-weight: 600; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+          <button type="button" id="btn-sidebar-embed" onclick="window.openEmbedModal && window.openEmbedModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(6,182,212,0.08); border: 1px dashed rgba(6,182,212,0.35); color: #38bdf8; font-size: 11px; font-weight: 600; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             <span class="lang-text" data-fr="📦 Code d'Intégration Web (Embed)" data-en="📦 Web Embed Code Generator">📦 Web Embed Code Generator</span>
           </button>
@@ -273,7 +273,7 @@
 
           <!-- 1-Click Embed 3D Player Button -->
           <div style="margin-top: 12px; width: 100%;">
-            <button type="button" id="btn-open-embed-modal" class="embed-trigger-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%); border: 1.5px solid #22d3ee; color: #ffffff; font-size: 12px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.45);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(6, 182, 212, 0.65)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(6, 182, 212, 0.45)';">
+            <button type="button" id="btn-open-embed-modal" onclick="window.openEmbedModal && window.openEmbedModal()" class="embed-trigger-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%); border: 1.5px solid #22d3ee; color: #ffffff; font-size: 12px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.45);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(6, 182, 212, 0.65)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(6, 182, 212, 0.45)';">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
               <span class="lang-text" data-fr="📦 Intégrer ce 3D / AR sur votre Site" data-en="📦 Embed this 3D / AR on Your Website">📦 Intégrer ce 3D / AR sur votre Site</span>
             </button>
@@ -350,7 +350,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         </button>
         <!-- Embed Player Trigger -->
-        <button id="embed-floating-btn" class="floating-btn" title="Embed 3D / AR Player">
+        <button id="embed-floating-btn" onclick="window.openEmbedModal && window.openEmbedModal()" class="floating-btn" title="Embed 3D / AR Player">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         </button>
       </div>
@@ -386,6 +386,88 @@
         <div id="hud-label-x" class="hud-dim-label" style="position:absolute; bottom:80px; left:16px;">X: -</div>
         <div id="hud-label-y" class="hud-dim-label" style="position:absolute; bottom:80px; left:50%; transform:translateX(-50%);">Y: -</div>
         <div id="hud-label-z" class="hud-dim-label" style="position:absolute; bottom:80px; right:16px;">Z: -</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embed 3D / AR Player Modal -->
+  <div id="embed-modal" class="embed-modal-overlay" style="display: none;">
+    <div class="embed-modal-card">
+      <div class="embed-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 22px;">📦</span>
+          <div>
+            <h3 class="lang-text" data-fr="Intégrer le Lecteur 3D & AR sur votre Site" data-en="Embed 3D & AR Player on Your Website">Embed 3D & AR Player on Your Website</h3>
+            <p class="lang-text" data-fr="Compatible Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace..." data-en="Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...">Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-embed-modal" class="embed-modal-close" onclick="window.closeEmbedModal ? window.closeEmbedModal() : null" title="Fermer / Close">&times;</button>
+      </div>
+
+      <div class="embed-modal-body">
+        <!-- Configuration Column -->
+        <div class="embed-config-col">
+          <div class="embed-config-group">
+            <label class="embed-config-label lang-text" data-fr="Fond / Arrière-plan :" data-en="Background Theme:">Background Theme:</label>
+            <div class="embed-theme-options" id="embed-bg-options">
+              <button type="button" class="embed-opt-btn active" data-bg="dark">🌙 Dark</button>
+              <button type="button" class="embed-opt-btn" data-bg="light">☀️ Light</button>
+              <button type="button" class="embed-opt-btn" data-bg="transparent">✨ Transparent</button>
+            </div>
+          </div>
+
+          <div class="embed-config-group">
+            <label class="embed-config-label lang-text" data-fr="Hauteur du Lecteur :" data-en="Player Height:">Player Height:</label>
+            <div class="embed-height-options" id="embed-height-options">
+              <button type="button" class="embed-opt-btn" data-height="350px">350px (Compact)</button>
+              <button type="button" class="embed-opt-btn active" data-height="450px">450px (Standard)</button>
+              <button type="button" class="embed-opt-btn" data-height="600px">600px (Large)</button>
+            </div>
+          </div>
+
+          <div class="embed-config-group">
+            <label class="embed-config-label lang-text" data-fr="Options Interactives :" data-en="Interactive Options:">Interactive Options:</label>
+            <div class="embed-checkbox-list">
+              <label class="embed-checkbox-label">
+                <input type="checkbox" id="embed-opt-autorotate" checked>
+                <span class="lang-text" data-fr="Rotation automatique 3D (360°)" data-en="3D Auto-Rotate (360°)">3D Auto-Rotate (360°)</span>
+              </label>
+              <label class="embed-checkbox-label">
+                <input type="checkbox" id="embed-opt-ar" checked>
+                <span class="lang-text" data-fr="Bouton « Voir en AR » (WebXR Mobile)" data-en="« View in AR » Button (WebXR Mobile)">« View in AR » Button (WebXR Mobile)</span>
+              </label>
+              <label class="embed-checkbox-label">
+                <input type="checkbox" id="embed-opt-badge" checked>
+                <span class="lang-text" data-fr="Badge Studios-Pro (Lien direct)" data-en="Studios-Pro Badge (Direct link)">Studios-Pro Badge (Direct link)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="embed-compatible-row">
+            <span class="embed-compat-pill">🛍️ Shopify</span>
+            <span class="embed-compat-pill">🟣 WooCommerce</span>
+            <span class="embed-compat-pill">🌐 WordPress</span>
+            <span class="embed-compat-pill">⚡ Wix</span>
+            <span class="embed-compat-pill">🎨 Webflow</span>
+          </div>
+        </div>
+
+        <!-- Preview & Code Column -->
+        <div class="embed-preview-col">
+          <label class="embed-config-label lang-text" data-fr="Aperçu en Direct :" data-en="Live Preview:">Live Preview:</label>
+          <div class="embed-iframe-preview-wrapper">
+            <iframe id="embed-preview-iframe" src="/embed/?demo=gear&bg=dark&autorotate=true&ar=true" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen></iframe>
+          </div>
+
+          <label class="embed-config-label" style="margin-top: 8px;" class="lang-text" data-fr="Code HTML à insérer sur votre site :" data-en="HTML Embed Code to paste on your site:">HTML Embed Code to paste on your site:</label>
+          <div class="embed-code-wrapper">
+            <textarea id="embed-code-textarea" readonly rows="3"></textarea>
+            <button type="button" id="btn-copy-embed-code" class="embed-copy-action-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              <span id="embed-copy-text" class="lang-text" data-fr="Copier le Code d'Intégration" data-en="Copy Embed Code">Copy Embed Code</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1695,16 +1777,6 @@
     }
 
     // -- Embed Modal & Code Generator Logic --
-    const embedModal = document.getElementById('embed-modal');
-    const btnOpenEmbedModal = document.getElementById('btn-open-embed-modal');
-    const btnSidebarEmbed = document.getElementById('btn-sidebar-embed');
-    const btnFloatingEmbed = document.getElementById('embed-floating-btn');
-    const btnCloseEmbedModal = document.getElementById('btn-close-embed-modal');
-    const embedCodeTextarea = document.getElementById('embed-code-textarea');
-    const embedPreviewIframe = document.getElementById('embed-preview-iframe');
-    const btnCopyEmbedCode = document.getElementById('btn-copy-embed-code');
-    const embedCopyText = document.getElementById('embed-copy-text');
-
     let embedState = {
       bg: 'dark',
       height: '450px',
@@ -1742,38 +1814,44 @@
       const embedUrl = `${baseOrigin}/embed/?${params.toString()}`;
       const iframeSnippet = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="${embedState.height}"\n  frameborder="0"\n  allow="camera; xr-spatial-tracking; fullscreen"\n  allowfullscreen\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"\n></iframe>`;
 
-      if (embedCodeTextarea) embedCodeTextarea.value = iframeSnippet;
-      if (embedPreviewIframe) {
+      const codeArea = document.getElementById('embed-code-textarea');
+      if (codeArea) codeArea.value = iframeSnippet;
+
+      const previewIframe = document.getElementById('embed-preview-iframe');
+      if (previewIframe) {
         const previewUrl = `/embed/?${params.toString()}`;
-        if (embedPreviewIframe.getAttribute('data-last-src') !== previewUrl) {
-          embedPreviewIframe.src = previewUrl;
-          embedPreviewIframe.setAttribute('data-last-src', previewUrl);
+        if (previewIframe.getAttribute('data-last-src') !== previewUrl) {
+          previewIframe.src = previewUrl;
+          previewIframe.setAttribute('data-last-src', previewUrl);
         }
       }
     }
 
-    function openEmbedModal() {
+    window.openEmbedModal = function() {
+      const modal = document.getElementById('embed-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
       updateEmbedCode();
-      if (embedModal) embedModal.style.display = 'flex';
-    }
+    };
 
-    function closeEmbedModal() {
-      if (embedModal) embedModal.style.display = 'none';
-    }
+    window.closeEmbedModal = function() {
+      const modal = document.getElementById('embed-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    };
 
-    if (btnOpenEmbedModal) btnOpenEmbedModal.onclick = openEmbedModal;
-    if (btnSidebarEmbed) btnSidebarEmbed.onclick = openEmbedModal;
-    if (btnFloatingEmbed) btnFloatingEmbed.onclick = openEmbedModal;
-    if (btnCloseEmbedModal) btnCloseEmbedModal.onclick = closeEmbedModal;
-
-    if (embedModal) {
-      embedModal.onclick = (e) => {
-        if (e.target === embedModal) closeEmbedModal();
+    // Close on backdrop click and Escape
+    const modalEl = document.getElementById('embed-modal');
+    if (modalEl) {
+      modalEl.onclick = (e) => {
+        if (e.target === modalEl) window.closeEmbedModal();
       };
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && embedModal.style.display === 'flex') closeEmbedModal();
-      });
     }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') window.closeEmbedModal();
+    });
 
     // Theme options
     document.querySelectorAll('#embed-bg-options .embed-opt-btn').forEach(btn => {
@@ -1805,106 +1883,27 @@
     if (chkBadge) chkBadge.onchange = (e) => { embedState.badge = e.target.checked; updateEmbedCode(); };
 
     // Copy embed code
-    if (btnCopyEmbedCode) {
-      btnCopyEmbedCode.onclick = async () => {
-        if (!embedCodeTextarea) return;
+    const btnCopyCode = document.getElementById('btn-copy-embed-code');
+    if (btnCopyCode) {
+      btnCopyCode.onclick = async () => {
+        const codeArea = document.getElementById('embed-code-textarea');
+        const copyTxt = document.getElementById('embed-copy-text');
+        if (!codeArea) return;
         try {
-          await navigator.clipboard.writeText(embedCodeTextarea.value);
-          const orig = embedCopyText.textContent;
-          embedCopyText.textContent = currentLang === 'fr' ? "✓ Code Copié !" : "✓ Code Copied!";
-          btnCopyEmbedCode.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+          await navigator.clipboard.writeText(codeArea.value);
+          const orig = copyTxt ? copyTxt.textContent : '';
+          if (copyTxt) copyTxt.textContent = currentLang === 'fr' ? "✓ Code Copié !" : "✓ Code Copied!";
+          btnCopyCode.style.background = 'linear-gradient(135deg, #10b981, #059669)';
           setTimeout(() => {
-            embedCopyText.textContent = orig;
-            btnCopyEmbedCode.style.background = '';
+            if (copyTxt) copyTxt.textContent = orig;
+            btnCopyCode.style.background = '';
           }, 2500);
         } catch (_) {
-          embedCodeTextarea.select();
+          codeArea.select();
         }
       };
     }
   </script>
-
-  <!-- Embed 3D / AR Player Modal -->
-  <div id="embed-modal" class="embed-modal-overlay" style="display: none;">
-    <div class="embed-modal-card">
-      <div class="embed-modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 22px;">📦</span>
-          <div>
-            <h3 class="lang-text" data-fr="Intégrer le Lecteur 3D & AR sur votre Site" data-en="Embed 3D & AR Player on Your Website">Embed 3D & AR Player on Your Website</h3>
-            <p class="lang-text" data-fr="Compatible Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace..." data-en="Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...">Compatible with Shopify, WooCommerce, WordPress, Wix, Webflow, Squarespace...</p>
-          </div>
-        </div>
-        <button type="button" id="btn-close-embed-modal" class="embed-modal-close" title="Fermer / Close">&times;</button>
-      </div>
-
-      <div class="embed-modal-body">
-        <!-- Configuration Column -->
-        <div class="embed-config-col">
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Fond / Arrière-plan :" data-en="Background Theme:">Background Theme:</label>
-            <div class="embed-theme-options" id="embed-bg-options">
-              <button type="button" class="embed-opt-btn active" data-bg="dark">🌙 Dark</button>
-              <button type="button" class="embed-opt-btn" data-bg="light">☀️ Light</button>
-              <button type="button" class="embed-opt-btn" data-bg="transparent">✨ Transparent</button>
-            </div>
-          </div>
-
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Hauteur du Lecteur :" data-en="Player Height:">Player Height:</label>
-            <div class="embed-height-options" id="embed-height-options">
-              <button type="button" class="embed-opt-btn" data-height="350px">350px (Compact)</button>
-              <button type="button" class="embed-opt-btn active" data-height="450px">450px (Standard)</button>
-              <button type="button" class="embed-opt-btn" data-height="600px">600px (Large)</button>
-            </div>
-          </div>
-
-          <div class="embed-config-group">
-            <label class="embed-config-label lang-text" data-fr="Options Interactives :" data-en="Interactive Options:">Interactive Options:</label>
-            <div class="embed-checkbox-list">
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-autorotate" checked>
-                <span class="lang-text" data-fr="Rotation automatique 3D (360°)" data-en="3D Auto-Rotate (360°)">3D Auto-Rotate (360°)</span>
-              </label>
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-ar" checked>
-                <span class="lang-text" data-fr="Bouton « Voir en AR » (WebXR Mobile)" data-en="« View in AR » Button (WebXR Mobile)">« View in AR » Button (WebXR Mobile)</span>
-              </label>
-              <label class="embed-checkbox-label">
-                <input type="checkbox" id="embed-opt-badge" checked>
-                <span class="lang-text" data-fr="Badge Studios-Pro (Lien direct)" data-en="Studios-Pro Badge (Direct link)">Studios-Pro Badge (Direct link)</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="embed-compatible-row">
-            <span class="embed-compat-pill">🛍️ Shopify</span>
-            <span class="embed-compat-pill">🟣 WooCommerce</span>
-            <span class="embed-compat-pill">🌐 WordPress</span>
-            <span class="embed-compat-pill">⚡ Wix</span>
-            <span class="embed-compat-pill">🎨 Webflow</span>
-          </div>
-        </div>
-
-        <!-- Preview & Code Column -->
-        <div class="embed-preview-col">
-          <label class="embed-config-label lang-text" data-fr="Aperçu en Direct :" data-en="Live Preview:">Live Preview:</label>
-          <div class="embed-iframe-preview-wrapper">
-            <iframe id="embed-preview-iframe" src="/embed/?demo=gear&bg=dark&autorotate=true&ar=true" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" allowfullscreen></iframe>
-          </div>
-
-          <label class="embed-config-label" style="margin-top: 8px;" class="lang-text" data-fr="Code HTML à insérer sur votre site :" data-en="HTML Embed Code to paste on your site:">HTML Embed Code to paste on your site:</label>
-          <div class="embed-code-wrapper">
-            <textarea id="embed-code-textarea" readonly rows="3"></textarea>
-            <button type="button" id="btn-copy-embed-code" class="embed-copy-action-btn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-              <span id="embed-copy-text" class="lang-text" data-fr="Copier le Code d'Intégration" data-en="Copy Embed Code">Copy Embed Code</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <script src="/community/share-bridge.js?v=14"></script>
 </body>
