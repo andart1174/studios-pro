@@ -348,25 +348,50 @@
   </div>
 
   <script>
-    // Demo models catalog (CDN hosted high-quality fallback models)
+    // Demo models catalog (High-quality GLBs hosted directly on Studios-Pro CDN)
     const DEMO_MODELS = {
       gear: {
         name: 'CAD Mechanical Gear',
-        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb'
+        url: '/ar/models/cad-gear.glb'
+      },
+      relief: {
+        name: 'Panou Sculptat Bois CNC',
+        url: '/ar/models/relief-wood.glb'
       },
       fox: {
         name: 'Fox 3D Character',
-        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF-Binary/Fox.glb'
+        url: '/ar/models/card-220.glb'
       },
       boombox: {
         name: 'Retro Boombox',
-        url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoomBox/glTF-Binary/BoomBox.glb'
+        url: '/ar/models/card-199.glb'
       },
       lantern: {
         name: 'Brass Lantern',
         url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb'
       }
     };
+
+    // Helper: Resolve external URLs through Studios-Pro CORS & binary stream proxy
+    function resolveModelUrl(rawUrl) {
+      if (!rawUrl) return null;
+      if (rawUrl.startsWith('blob:') || rawUrl.startsWith('data:') || rawUrl.startsWith('/') || rawUrl.startsWith('./')) {
+        return rawUrl;
+      }
+      try {
+        const parsed = new URL(rawUrl);
+        if (parsed.origin === window.location.origin) {
+          return rawUrl;
+        }
+        if (parsed.hostname.includes('raw.githubusercontent.com') || parsed.hostname.includes('modelviewer.dev')) {
+          return rawUrl;
+        }
+        const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+        return `${baseOrigin}/api/ar-proxy?url=${encodeURIComponent(rawUrl)}`;
+      } catch (_) {
+        return rawUrl;
+      }
+    }
 
     // Parse URL query options
     const urlParams = new URLSearchParams(window.location.search);
@@ -390,34 +415,38 @@
 
     // 2. Background Theme
     const bgParam = (urlParams.get('bg') || 'dark').toLowerCase();
-    if (bgParam === 'light') {
-      document.body.className = 'bg-light';
-    } else if (bgParam === 'transparent') {
-      document.body.className = 'bg-transparent';
-    } else if (bgParam.startsWith('#')) {
-      document.body.style.background = bgParam;
-    } else {
-      document.body.className = 'bg-dark';
+    function applyTheme(bg) {
+      if (bg === 'light') {
+        document.body.className = 'bg-light';
+        document.body.style.background = '';
+      } else if (bg === 'transparent') {
+        document.body.className = 'bg-transparent';
+        document.body.style.background = 'transparent';
+      } else if (bg.startsWith('#')) {
+        document.body.className = '';
+        document.body.style.background = bg;
+      } else {
+        document.body.className = 'bg-dark';
+        document.body.style.background = '';
+      }
     }
+    applyTheme(bgParam);
 
     // 3. Auto-rotation control
     const autoRotateParam = urlParams.get('autorotate');
-    if (autoRotateParam === 'false' || autoRotateParam === '0') {
-      viewer.removeAttribute('auto-rotate');
-      btnRotate.classList.remove('active');
-    } else {
-      viewer.setAttribute('auto-rotate', '');
-      btnRotate.classList.add('active');
-    }
-
-    btnRotate.addEventListener('click', () => {
-      if (viewer.hasAttribute('auto-rotate')) {
-        viewer.removeAttribute('auto-rotate');
-        btnRotate.classList.remove('active');
-      } else {
+    function setAutoRotate(enabled) {
+      if (enabled) {
         viewer.setAttribute('auto-rotate', '');
         btnRotate.classList.add('active');
+      } else {
+        viewer.removeAttribute('auto-rotate');
+        btnRotate.classList.remove('active');
       }
+    }
+    setAutoRotate(!(autoRotateParam === 'false' || autoRotateParam === '0'));
+
+    btnRotate.addEventListener('click', () => {
+      setAutoRotate(!viewer.hasAttribute('auto-rotate'));
     });
 
     // 4. Reset Camera View
@@ -477,17 +506,17 @@
         modelHeader.style.display = 'flex';
       }
     } else {
-      // Default sample model: Damaged Helmet
-      targetModelUrl = DEMO_MODELS.gear.url;
+      // Default sample model: CNC Wood Relief
+      targetModelUrl = DEMO_MODELS.relief.url;
       if (!nameParam) {
-        modelTitle.textContent = DEMO_MODELS.gear.name;
+        modelTitle.textContent = DEMO_MODELS.relief.name;
         modelHeader.style.display = 'flex';
       }
     }
 
-    // Set src on model-viewer
+    // Set src on model-viewer through proxy resolver
     if (targetModelUrl) {
-      viewer.src = targetModelUrl;
+      viewer.src = resolveModelUrl(targetModelUrl);
     }
 
     // Loading handlers
@@ -529,14 +558,33 @@
         if (e.data.type === 'LOAD_MODEL' && e.data.url) {
           loader.style.display = 'flex';
           loader.style.opacity = '1';
-          viewer.src = e.data.url;
+          loaderText.textContent = lang === 'fr' ? "Chargement du modèle 3D..." : "Loading 3D model...";
+          const spinner = loader.querySelector('.loader-spinner');
+          if (spinner) spinner.style.borderTopColor = '#06b6d4';
+          
+          viewer.src = resolveModelUrl(e.data.url);
           if (e.data.name) {
             modelTitle.textContent = e.data.name;
             modelHeader.style.display = 'flex';
           }
+        } else if (e.data.type === 'SET_THEME' && e.data.bg) {
+          applyTheme(e.data.bg);
+        } else if (e.data.type === 'SET_AUTOROTATE') {
+          setAutoRotate(!!e.data.enabled);
+        } else if (e.data.type === 'SET_AR') {
+          if (arButton) arButton.style.display = e.data.visible !== false ? 'block' : 'none';
+        } else if (e.data.type === 'SET_BADGE') {
+          if (brandBadge) brandBadge.style.display = e.data.visible !== false ? 'flex' : 'none';
         }
       }
     });
+
+    // Notify parent window when player is initialized
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'EMBED_PLAYER_READY' }, '*');
+      }
+    } catch (_) {}
   </script>
 </body>
 </html>

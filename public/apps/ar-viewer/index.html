@@ -491,6 +491,10 @@
     let currentModelExtension = "";
     let lastExportedBlob = null;
     let lastShareUrl = "";
+    let lastSharePageUrl = "";
+    let lastDirectDlUrl = "";
+    let isUploadingCloud = false;
+    let currentLoadedBlobUrl = "";
     let hasReceivedFile = false;
 
     // Apply translations
@@ -799,6 +803,7 @@
         name: 'CAD_Mechanical_Gear.glb',
         ext: 'glb',
         format: 'STL / CAD',
+        url: '/ar/models/cad-gear.glb',
         isProcedural: true
       },
       fox: {
@@ -820,6 +825,7 @@
         name: 'Panou_Sculptat_Bois_CNC.glb',
         ext: 'glb',
         format: 'CNC Relief / Wood PBR',
+        url: '/ar/models/relief-wood.glb',
         isProcedural: true
       }
     };
@@ -843,6 +849,7 @@
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
 
       lastShareUrl = targetARUrl;
+      lastSharePageUrl = targetARUrl;
       qrCodeImg.src = qrApiUrl;
       updateViralShareLinks(targetARUrl);
     }
@@ -1084,6 +1091,10 @@
     async function handleFile(file) {
       if (!file) return;
       hasReceivedFile = true;
+      activeDemoId = null;
+      lastDirectDlUrl = null;
+      lastSharePageUrl = "";
+      document.querySelectorAll('.demo-card-btn').forEach(btn => btn.classList.remove('active'));
 
       const name = file.name;
       const extension = name.split('.').pop().toLowerCase();
@@ -1234,11 +1245,15 @@
 
     // Load URL to model-viewer
     function loadIntoModelViewer(url) {
+      currentLoadedBlobUrl = url;
       viewer.src = url;
       placeholder.style.display = 'none';
       viewer.style.display = 'block';
       infoSection.style.display = 'block';
       hideLoader();
+      if (typeof sendModelToPreviewIframe === 'function') {
+        sendModelToPreviewIframe();
+      }
     }
 
     // Customization & Premium Controls Integration
@@ -1643,6 +1658,15 @@
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
       }
       
+      lastSharePageUrl = targetARUrl;
+      updateViralShareLinks(targetARUrl);
+
+      const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        qrSection.style.display = 'none';
+        return;
+      }
+      
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
       
       qrCodeImg.src = qrApiUrl;
@@ -1659,98 +1683,109 @@
             qrSection.querySelector('.qr-container').appendChild(localHint);
           }
           localHint.innerHTML = currentLang === 'fr'
-            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquéee par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
+            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
             : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
         }
       };
     }
 
-    // Upload to generate temporary AR shareable link (dual-service fallback)
+    // Upload to generate permanent AR shareable link (Catbox permanent primary + tmpfiles fallback)
     async function generateARShareLink(file, fileName) {
-      // If mobile, skip QR generation (user is already on mobile!)
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
-        return;
+      } else {
+        qrSection.style.display = 'block';
+        qrLoading.style.display = 'flex';
+        qrCodeImg.style.display = 'none';
+        qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
       }
 
-      qrSection.style.display = 'block';
-      qrLoading.style.display = 'flex';
-      qrCodeImg.style.display = 'none';
-      // Remove any previous error messages
-      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
-
+      isUploadingCloud = true;
       let directDlUrl = null;
 
-      // -- Primary Service: tmpfiles.org (Direct browser upload, CORS *, 5GB limit) --
+      // -- Primary Service: Catbox.moe (Permanent cloud storage, direct raw file) --
       try {
-        const formData = new FormData();
-        formData.append('file', file, fileName);
+        const fdCat = new FormData();
+        fdCat.append('reqtype', 'fileupload');
+        fdCat.append('fileToUpload', file, fileName);
 
-        // Try direct first (fastest, client-to-CDN)
-        let response = await fetch('https://tmpfiles.org/api/v1/upload', {
+        // Try /api/catbox proxy (configured in Netlify & Vite)
+        let rCat = await fetch('/api/catbox', {
           method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(15000)
+          body: fdCat,
+          signal: AbortSignal.timeout(20000)
         }).catch(() => null);
 
-        // Fallback to same-origin proxy if direct is blocked by client adblocker
-        if (!response || !response.ok) {
-          const fdProxy = new FormData();
-          fdProxy.append('file', file, fileName);
-          response = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fdProxy,
-            signal: AbortSignal.timeout(15000)
-          }).catch(() => null);
-        }
-
-        if (response && response.ok) {
-          const json = await response.json();
-          if (json && json.status === 'success' && json.data && json.data.url) {
-            directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          }
-        }
-      } catch (err) {
-        console.warn('tmpfiles upload failed:', err.message);
-      }
-
-      // -- Fallback Service: Catbox.moe --
-      if (!directDlUrl) {
-        try {
-          const fdCat = new FormData();
-          fdCat.append('reqtype', 'fileupload');
-          fdCat.append('fileToUpload', file, fileName);
-          let rCat = await fetch('/api/proxy-catbox/user/api.php', {
+        if (!rCat || !rCat.ok) {
+          rCat = await fetch('/api/proxy-catbox/user/api.php', {
             method: 'POST',
             body: fdCat,
+            signal: AbortSignal.timeout(20000)
+          }).catch(() => null);
+        }
+
+        if (rCat && rCat.ok) {
+          const urlText = (await rCat.text()).trim();
+          if (urlText.startsWith('https://')) {
+            directDlUrl = urlText;
+          }
+        }
+      } catch (errCat) {
+        console.warn('Catbox upload attempt failed:', errCat);
+      }
+
+      // -- Fallback Service: tmpfiles.org --
+      if (!directDlUrl) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file, fileName);
+
+          let response = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData,
             signal: AbortSignal.timeout(15000)
           }).catch(() => null);
 
-          if (rCat && rCat.ok) {
-            const urlText = (await rCat.text()).trim();
-            if (urlText.startsWith('https://')) {
-              directDlUrl = urlText;
+          if (!response || !response.ok) {
+            const fdProxy = new FormData();
+            fdProxy.append('file', file, fileName);
+            response = await fetch('/api/proxy/api/v1/upload', {
+              method: 'POST',
+              body: fdProxy,
+              signal: AbortSignal.timeout(15000)
+            }).catch(() => null);
+          }
+
+          if (response && response.ok) {
+            const json = await response.json();
+            if (json && json.status === 'success' && json.data && json.data.url) {
+              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
           }
-        } catch(e) {
-          console.warn('Catbox upload failed:', e.message);
+        } catch (err) {
+          console.warn('tmpfiles fallback upload failed:', err.message);
         }
       }
 
-      // -- Result --------------------------------------------------------
+      isUploadingCloud = false;
+
+      // -- Process Result --
       if (directDlUrl) {
+        lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
         updateQRCodeWithColorParam(directDlUrl, 'original');
-        updateViralShareLinks(directDlUrl);
+        updateEmbedCode();
       } else {
-        qrLoading.style.display = 'none';
-        const fallbackText = document.createElement('p');
-        fallbackText.className = 'qr-error-msg';
-        fallbackText.textContent = currentLang === 'fr'
-          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
-          : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
-        qrSection.appendChild(fallbackText);
+        if (!isMobile) {
+          qrLoading.style.display = 'none';
+          const fallbackText = document.createElement('p');
+          fallbackText.className = 'qr-error-msg';
+          fallbackText.textContent = currentLang === 'fr'
+            ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
+            : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
+          qrSection.appendChild(fallbackText);
+        }
       }
     }
 
@@ -1758,13 +1793,14 @@
     const copyShareBtn = document.getElementById('copy-share-link-btn');
     if (copyShareBtn) {
       copyShareBtn.onclick = async () => {
-        if (!lastShareUrl) {
+        const shareLinkToCopy = lastSharePageUrl || lastShareUrl;
+        if (!shareLinkToCopy) {
           const isFr = currentLang === 'fr';
           alert(isFr ? "Veuillez d'abord charger un modèle 3D !" : "Please load a 3D model first!");
           return;
         }
         try {
-          await navigator.clipboard.writeText(lastShareUrl);
+          await navigator.clipboard.writeText(shareLinkToCopy);
           const textEl = document.getElementById('copy-share-text');
           const orig = textEl.textContent;
           textEl.textContent = currentLang === 'fr' ? "✓ Lien 3D Copié !" : "✓ 3D Link Copied!";
@@ -1774,7 +1810,7 @@
             copyShareBtn.style.background = '';
           }, 2500);
         } catch (_) {
-          prompt(currentLang === 'fr' ? "Copiez ce lien 3D :" : "Copy this 3D link:", lastShareUrl);
+          prompt(currentLang === 'fr' ? "Copiez ce lien 3D :" : "Copy this 3D link:", shareLinkToCopy);
         }
       };
     }
@@ -1789,17 +1825,65 @@
     };
 
     function getActiveEmbedModelParam() {
+      if (activeDemoId) {
+        return `demo=${activeDemoId}`;
+      }
+      if (lastDirectDlUrl) {
+        return `model=${encodeURIComponent(lastDirectDlUrl)}`;
+      }
       if (lastShareUrl) {
         if (lastShareUrl.includes('?demo=') || lastShareUrl.includes('&demo=')) {
           const match = lastShareUrl.match(/demo=([a-zA-Z0-9_-]+)/);
           if (match && match[1]) return `demo=${match[1]}`;
         }
-        return `model=${encodeURIComponent(lastShareUrl)}`;
+        if (lastShareUrl.startsWith('http')) {
+          return `model=${encodeURIComponent(lastShareUrl)}`;
+        }
       }
+      return 'demo=relief';
+    }
+
+    function sendModelToPreviewIframe() {
+      const previewIframe = document.getElementById('embed-preview-iframe');
+      if (!previewIframe || !previewIframe.contentWindow) return;
+
       if (activeDemoId) {
-        return `demo=${activeDemoId}`;
+        const demoUrls = {
+          gear: '/ar/models/cad-gear.glb',
+          relief: '/ar/models/relief-wood.glb',
+          fox: '/ar/models/card-220.glb',
+          boombox: '/ar/models/card-199.glb'
+        };
+        const url = demoUrls[activeDemoId] || '/ar/models/relief-wood.glb';
+        const name = (DEMO_MODELS[activeDemoId] && DEMO_MODELS[activeDemoId].name) || activeDemoId;
+        previewIframe.contentWindow.postMessage({
+          type: 'LOAD_MODEL',
+          url: url,
+          name: name
+        }, '*');
+      } else if (currentLoadedBlobUrl) {
+        // Direct local blob URL for custom imported model (instant render, zero lag, zero network error!)
+        previewIframe.contentWindow.postMessage({
+          type: 'LOAD_MODEL',
+          url: currentLoadedBlobUrl,
+          name: currentModelName || 'Custom 3D Model'
+        }, '*');
+      } else if (lastDirectDlUrl) {
+        previewIframe.contentWindow.postMessage({
+          type: 'LOAD_MODEL',
+          url: lastDirectDlUrl,
+          name: currentModelName || 'Custom 3D Model'
+        }, '*');
       }
-      return 'demo=gear';
+    }
+
+    function sendOptionsToPreviewIframe() {
+      const previewIframe = document.getElementById('embed-preview-iframe');
+      if (!previewIframe || !previewIframe.contentWindow) return;
+      previewIframe.contentWindow.postMessage({ type: 'SET_THEME', bg: embedState.bg }, '*');
+      previewIframe.contentWindow.postMessage({ type: 'SET_AUTOROTATE', enabled: embedState.autorotate }, '*');
+      previewIframe.contentWindow.postMessage({ type: 'SET_AR', visible: embedState.ar }, '*');
+      previewIframe.contentWindow.postMessage({ type: 'SET_BADGE', visible: embedState.badge }, '*');
     }
 
     function updateEmbedCode() {
@@ -1809,23 +1893,39 @@
       
       const parts = modelParam.split('=');
       params.set(parts[0], parts[1]);
+      if (currentModelName && !activeDemoId) {
+        params.set('name', currentModelName);
+      }
       params.set('bg', embedState.bg);
       if (!embedState.autorotate) params.set('autorotate', 'false');
       if (!embedState.ar) params.set('ar', 'false');
       if (!embedState.badge) params.set('badge', 'false');
 
       const embedUrl = `${baseOrigin}/embed/?${params.toString()}`;
-      const iframeSnippet = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="${embedState.height}"\n  frameborder="0"\n  allow="camera; xr-spatial-tracking; fullscreen"\n  allowfullscreen\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"\n></iframe>`;
+      let iframeSnippet = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="${embedState.height}"\n  frameborder="0"\n  allow="camera; xr-spatial-tracking; fullscreen"\n  allowfullscreen\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"\n></iframe>`;
+
+      if (!activeDemoId && !lastDirectDlUrl && isUploadingCloud) {
+        iframeSnippet = currentLang === 'fr'
+          ? `<!-- ⏳ Téléversement du modèle 3D sur le CDN en cours... (Patientez quelques secondes) -->\n<!-- Le code d'intégration complet avec le lien permanent apparaîtra ici dès la fin du transfert. -->\n\n` + iframeSnippet
+          : `<!-- ⏳ Uploading 3D model to CDN in progress... (Please wait a few seconds) -->\n<!-- The complete embed code with permanent link will appear here automatically once uploaded. -->\n\n` + iframeSnippet;
+      }
 
       const codeArea = document.getElementById('embed-code-textarea');
       if (codeArea) codeArea.value = iframeSnippet;
 
       const previewIframe = document.getElementById('embed-preview-iframe');
       if (previewIframe) {
-        const previewUrl = `/embed/?${params.toString()}`;
-        if (previewIframe.getAttribute('data-last-src') !== previewUrl) {
-          previewIframe.src = previewUrl;
-          previewIframe.setAttribute('data-last-src', previewUrl);
+        if (!previewIframe.getAttribute('data-shell-loaded')) {
+          const shellUrl = `/embed/?bg=${embedState.bg}&autorotate=${embedState.autorotate}&ar=${embedState.ar}&badge=${embedState.badge}`;
+          previewIframe.src = shellUrl;
+          previewIframe.setAttribute('data-shell-loaded', 'true');
+          previewIframe.onload = () => {
+            sendModelToPreviewIframe();
+            sendOptionsToPreviewIframe();
+          };
+        } else {
+          sendOptionsToPreviewIframe();
+          sendModelToPreviewIframe();
         }
       }
     }
@@ -1836,6 +1936,10 @@
         modal.style.display = 'flex';
       }
       updateEmbedCode();
+      setTimeout(() => {
+        sendModelToPreviewIframe();
+        sendOptionsToPreviewIframe();
+      }, 150);
     };
 
     window.closeEmbedModal = function() {
@@ -1854,6 +1958,14 @@
     }
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') window.closeEmbedModal();
+    });
+
+    // Listen for EMBED_PLAYER_READY from preview iframe
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'EMBED_PLAYER_READY') {
+        sendModelToPreviewIframe();
+        sendOptionsToPreviewIframe();
+      }
     });
 
     // Theme options

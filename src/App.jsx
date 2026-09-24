@@ -2706,8 +2706,9 @@ const StudiosPro = () => {
                     <label style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
                       {lang === 'fr' ? '1. Choisissez le Modèle 3D :' : '1. Select 3D Model:'}
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: '6px' }}>
                       {[
+                        { id: 'relief', label: lang === 'fr' ? '🪵 Relief Bois' : '🪵 Wood Relief' },
                         { id: 'gear', label: '⚙️ CAD Gear' },
                         { id: 'fox', label: '🦊 Fox 3D' },
                         { id: 'boombox', label: '📻 BoomBox' },
