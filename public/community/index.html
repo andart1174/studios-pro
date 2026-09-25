@@ -1799,35 +1799,6 @@
   50%  { height: 18px; background: #ec4899; }
   100% { height: 8px; background: #38bdf8; }
 }
-
-/* ════════════════════════════════════════════════════════════════════
-   📱 VIRAL FEATURE: AUGMENTED REALITY (AR) IN-ROOM VIEW
-   ════════════════════════════════════════════════════════════════════ */
-model-viewer#spCommunityARViewer {
-  width: 100% !important;
-  height: 100% !important;
-  display: block !important;
-  background-color: transparent !important;
-  --poster-color: transparent !important;
-}
-.sp-ar-mat-chip {
-  transition: all .2s ease;
-  user-select: none;
-}
-.sp-ar-mat-chip:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.2);
-}
-#spARNativeLaunchBtn {
-  transition: transform .2s, box-shadow .2s;
-}
-#spARNativeLaunchBtn:hover {
-  transform: translateX(-50%) scale(1.04);
-  box-shadow: 0 0 35px rgba(0,242,254,.9);
-}
-#spARNativeLaunchBtn:active {
-  transform: translateX(-50%) scale(0.96);
-}
 </style>
 </head>
 <body>
@@ -2180,9 +2151,6 @@ model-viewer#spCommunityARViewer {
         <button onclick="event.stopPropagation();spOpenCardReelGenerator({dateKey:spCardDateKey(),rarityName:'Legendary',cardNum:1})" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:8px 14px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(236,72,153,.5);">
           🎬 Card Reel (9:16)
         </button>
-        <button onclick="event.stopPropagation();spOpenPostAR()" style="background:linear-gradient(135deg,#00f2fe,#3b82f6);border:none;color:#000;padding:8px 14px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(0,242,254,.5);">
-          📱 View in AR
-        </button>
       </div>
     </div>
 
@@ -2191,7 +2159,6 @@ model-viewer#spCommunityARViewer {
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
       <button class="ftab" data-cat="cardduel" onclick="spLaunchCardDuel()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;box-shadow:0 0 16px rgba(239,68,68,.5);cursor:pointer;">⚔️ Card Duel PvP</button>
       <button class="ftab" data-cat="3dreel" onclick="spOpen3DReelGenerator()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;box-shadow:0 0 16px rgba(236,72,153,.5);cursor:pointer;">🎬 3D Reel Studio</button>
-      <button class="ftab" data-cat="arview" onclick="spOpenPostAR()" style="color:#000;font-weight:900;background:linear-gradient(135deg,#00f2fe,#3b82f6);border:none;box-shadow:0 0 16px rgba(0,242,254,.5);cursor:pointer;">📱 AR View</button>
       <button class="ftab" data-cat="arcade" onclick="spArcadeOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);border:none;box-shadow:0 0 15px rgba(16,185,129,.4);">🎮 Arcade 3D</button>
       <button class="ftab" data-cat="dailycard" onclick="spDailyCardOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);border:none;box-shadow:0 0 15px rgba(245,158,11,.45);">🃏 Daily Card</button>
       <button id="adminCardBtn" class="ftab" data-cat="admincards" onclick="spAdminCardOpen()" style="display:none;color:#fff;font-weight:900;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;box-shadow:0 0 15px rgba(124,58,237,.5);">🛡️ Admin Cards</button>
@@ -3032,103 +2999,6 @@ model-viewer#spCommunityARViewer {
             <span>🔄</span> <span>Rematch</span>
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 📱 SP AUGMENTED REALITY (AR) IN-ROOM VIEWER MODAL -->
-<div class="overlay" id="spARModalOverlay" onclick="spCloseARModal(event)">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width: 600px; background: #07090e; border: 2px solid rgba(0, 242, 254, 0.4); box-shadow: 0 0 50px rgba(0, 242, 254, 0.25); border-radius: 24px; font-family: 'Outfit', sans-serif; overflow: hidden;">
-    <div class="mh" style="border-bottom: 1px solid rgba(0, 242, 254, 0.25); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; background: rgba(0, 242, 254, 0.04);">
-      <div class="mt" style="color: #00f2fe; font-size: 1.15rem; font-weight: 900; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 1.3rem;">📱</span>
-        <span id="spARTitle">AR View in Your Room</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="spARRarityBadge" style="background: linear-gradient(135deg, #00f2fe, #3b82f6); color: #000; font-size: 0.68rem; font-weight: 900; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.04em;">3D AR READY</span>
-        <button class="mc" onclick="spCloseARModalDirect()" style="background: none; border: none; color: #fff; font-size: 1.25rem; cursor: pointer; padding: 2px 6px;">✕</button>
-      </div>
-    </div>
-    <div class="mb" style="padding: 18px;">
-      <!-- 3D & AR Interactive Stage -->
-      <div id="spARViewerStage" style="width: 100%; height: 350px; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 50%, #0d1629 0%, #050811 100%); position: relative; border: 1px solid rgba(0, 242, 254, 0.3); margin-bottom: 12px; box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);">
-        <!-- Loading Spinner & State -->
-        <div id="spARSpinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 2; pointer-events: none; background: rgba(5, 8, 17, 0.7); backdrop-filter: blur(4px); transition: opacity 0.3s;">
-          <div class="spinner" style="width: 38px; height: 38px; border: 3px solid rgba(0, 242, 254, 0.2); border-top-color: #00f2fe; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-          <span style="font-size: 0.82rem; font-weight: 800; color: #00f2fe; letter-spacing: 0.03em;" id="spARSpinnerText">🔮 Loading 3D Hologram...</span>
-        </div>
-
-        <model-viewer id="spCommunityARViewer"
-          alt="SP Nexus 3D Augmented Reality Asset"
-          ar
-          ar-modes="webxr scene-viewer quick-look"
-          ar-scale="auto"
-          ar-placement="floor"
-          camera-controls
-          auto-rotate
-          rotation-per-second="25deg"
-          shadow-intensity="1.5"
-          shadow-softness="0.5"
-          exposure="1.1"
-          loading="eager"
-          style="width: 100%; height: 100%; display: block; background: transparent; --poster-color: transparent;">
-          
-          <button slot="ar-button" id="spARNativeLaunchBtn" style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #00f2fe, #3b82f6); color: #000; font-weight: 900; font-size: .86rem; padding: 12px 24px; border-radius: 30px; border: none; cursor: pointer; box-shadow: 0 0 25px rgba(0, 242, 254, 0.7); display: flex; align-items: center; gap: 8px; z-index: 10; letter-spacing: .02em; white-space: nowrap;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-            <span id="spARLaunchTxt">PROJECT IN YOUR ROOM (AR)</span>
-          </button>
-        </model-viewer>
-      </div>
-
-      <!-- Quick Shaders / Material Customizer -->
-      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 10px 12px; margin-bottom: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-size: 0.72rem; font-weight: 800; color: #00f2fe; letter-spacing: 0.04em;" id="spARMatTitle">🎨 LUXURY SHADER FX:</span>
-          <span id="spARActiveMatLabel" style="font-size: 0.7rem; color: #cbd5e1; font-weight: 700;">Original (Authentic)</span>
-        </div>
-        <div style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;">
-          <button type="button" class="sp-ar-mat-chip active" onclick="spARApplyMaterial('original', this)" style="background: rgba(0, 242, 254, 0.15); border: 1px solid #00f2fe; color: #00f2fe; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">🌟 Original</button>
-          <button type="button" class="sp-ar-mat-chip" onclick="spARApplyMaterial('gold', this)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #fbbf24; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">👑 24K Gold</button>
-          <button type="button" class="sp-ar-mat-chip" onclick="spARApplyMaterial('chrome', this)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #e2e8f0; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">⚡ Chrome</button>
-          <button type="button" class="sp-ar-mat-chip" onclick="spARApplyMaterial('cyan', this)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #38bdf8; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">💎 Neon Cyan</button>
-          <button type="button" class="sp-ar-mat-chip" onclick="spARApplyMaterial('obsidian', this)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #c084fc; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">🔮 Obsidian</button>
-          <button type="button" class="sp-ar-mat-chip" onclick="spARApplyMaterial('ruby', this)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #f43f5e; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer; white-space: nowrap;">🔥 Ruby</button>
-        </div>
-      </div>
-
-      <!-- Desktop QR Scan / Mobile Guidance Box -->
-      <div id="spARQrCard" style="display: flex; align-items: center; gap: 14px; background: rgba(0, 242, 254, 0.04); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;">
-        <div style="flex-shrink: 0; text-align: center;">
-          <img id="spARQRCodeImg" src="" alt="AR Room QR Code" style="width: 90px; height: 90px; border-radius: 8px; background: #fff; padding: 4px; display: block; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);">
-          <span style="font-size: 0.62rem; color: #00f2fe; font-weight: 800; margin-top: 4px; display: block;">SCAN CAMERA</span>
-        </div>
-        <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 0.84rem; font-weight: 800; color: #fff; margin-bottom: 4px;" id="spARHowToTitle">
-            📲 View in Your Room via Phone
-          </div>
-          <div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.4;" id="spARInstructions">
-            On smartphone: tap <b style="color:#00f2fe">"PROJECT IN YOUR ROOM"</b>.<br>
-            On desktop: scan this QR code with your phone camera to instantly place this 3D model in your physical room!
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-        <button type="button" onclick="spTakeARSnapshot()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 800; font-size: .84rem; padding: 11px 18px; border-radius: 12px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 16px rgba(236,72,153,.35);">
-          <span>📸</span> <span id="spARSnapBtnTxt">Take AR Photo</span>
-        </button>
-        <button type="button" onclick="spOpenFullARStudio()" style="background: linear-gradient(135deg, #00f2fe, #3b82f6); color: #000; font-weight: 900; font-size: .84rem; padding: 11px 18px; border-radius: 12px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 16px rgba(0,242,254,.4);">
-          <span>🌐</span> <span id="spARStudioBtnTxt">Full AR Studio</span>
-        </button>
-        <button type="button" onclick="spShareARExperience()" style="background: rgba(255, 255, 255, 0.07); color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.35); font-weight: 800; font-size: .84rem; padding: 11px 18px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <span>🔗</span> <span id="spARShareBtnTxt">Share AR</span>
-        </button>
       </div>
     </div>
   </div>
@@ -5138,10 +5008,9 @@ async function spCardViewerOpen(card) {
       <button onclick="spCardCopyViewer()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;">📋 Copy</button>
       <button onclick="spCardDownloadViewer('${card.dateKey}',${card.cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:9px 2px;border-radius:11px;font-weight:800;font-size:.72rem;cursor:pointer;">📥 Save</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-      <button onclick="spOpenDuelChallenge({dateKey:'${card.dateKey}',rarityName:'${card.rarityName}',cardNum:${card.cardNum}})" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:10px 4px;border-radius:11px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;gap:3px;">⚔️ Duel</button>
-      <button onclick="spOpenCardReelGenerator({dateKey:'${card.dateKey}',rarityName:'${card.rarityName}',cardNum:${card.cardNum}})" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:10px 4px;border-radius:11px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(236,72,153,.4);display:flex;align-items:center;justify-content:center;gap:3px;">🎬 Reel</button>
-      <button onclick="spOpenCardAR({dateKey:'${card.dateKey}',rarityName:'${card.rarityName}',cardNum:${card.cardNum}})" style="background:linear-gradient(135deg,#00f2fe,#3b82f6);border:none;color:#000;padding:10px 4px;border-radius:11px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(0,242,254,.4);display:flex;align-items:center;justify-content:center;gap:3px;">📱 View AR</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button onclick="spOpenDuelChallenge({dateKey:'${card.dateKey}',rarityName:'${card.rarityName}',cardNum:${card.cardNum}})" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:10px 4px;border-radius:11px;font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 0 14px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;gap:4px;">⚔️ Card Duel PvP</button>
+      <button onclick="spOpenCardReelGenerator({dateKey:'${card.dateKey}',rarityName:'${card.rarityName}',cardNum:${card.cardNum}})" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:10px 4px;border-radius:11px;font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 0 14px rgba(236,72,153,.4);display:flex;align-items:center;justify-content:center;gap:4px;">🎬 Export Reel 9:16</button>
     </div>
   `;
 }
@@ -5277,16 +5146,11 @@ async function spDailyCardRender(dateKey) {
       </button>
     </div>`}
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:20px;">
       <button onclick="spCardShare('${dateKey}','${rarity.name}',${cardNum})" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">🌐 Share</button>
       <button onclick="spCardDownloadStory('${dateKey}',${cardNum})" style="background:linear-gradient(135deg,#ec4899,#f59e0b);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;box-shadow:0 0 14px rgba(236,72,153,.4);">📸 Story 9:16</button>
       <button onclick="spCardCopyImage()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">📋 Copy</button>
       <button onclick="spCardDownload('${dateKey}',${cardNum})" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:10px 4px;border-radius:12px;font-weight:800;font-size:.75rem;cursor:pointer;">📥 Save</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:20px;">
-      <button onclick="spOpenDuelChallenge({dateKey:'${dateKey}',rarityName:'${rarity.name}',cardNum:${cardNum}})" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;gap:3px;">⚔️ Duel</button>
-      <button onclick="spOpenCardReelGenerator({dateKey:'${dateKey}',rarityName:'${rarity.name}',cardNum:${cardNum}})" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:10px 4px;border-radius:12px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(236,72,153,.4);display:flex;align-items:center;justify-content:center;gap:3px;">🎬 Reel</button>
-      <button onclick="spOpenCardAR({dateKey:'${dateKey}',rarityName:'${rarity.name}',cardNum:${cardNum}})" style="background:linear-gradient(135deg,#00f2fe,#3b82f6);border:none;color:#000;padding:10px 4px;border-radius:12px;font-weight:900;font-size:.76rem;cursor:pointer;box-shadow:0 0 12px rgba(0,242,254,.4);display:flex;align-items:center;justify-content:center;gap:3px;">📱 View AR</button>
     </div>
 
     ${myCards.length > 0 ? `
@@ -6835,7 +6699,6 @@ function buildCard(p) {
           <div class="p-3d-badge">🔮 3D PREVIEW</div>
           <button class="p-3d-exit" onclick="stop3DPreview('${p.id}')">✕ Exit 3D</button>
           <button type="button" onclick="spOpen3DReelGenerator('${p.id}')" style="position:absolute;bottom:10px;left:10px;z-index:3;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:.72rem;padding:6px 12px;border-radius:18px;box-shadow:0 0 15px rgba(236,72,153,.5);cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Reel (9:16)</button>
-          <button type="button" onclick="spOpenPostAR('${p.id}')" style="position:absolute;bottom:10px;right:10px;z-index:3;background:linear-gradient(135deg,#00f2fe,#3b82f6);border:none;color:#000;font-weight:900;font-size:.72rem;padding:6px 12px;border-radius:18px;box-shadow:0 0 15px rgba(0,242,254,.5);cursor:pointer;display:inline-flex;align-items:center;gap:4px;">📱 View in AR</button>
           <div class="p-3d-hint">Drag to rotate</div>
         </div>
       </div>`;
@@ -6934,7 +6797,6 @@ function buildCard(p) {
       ${curUser && p.uid === curUser.uid && !p.boosted ? `<button class="tip-post-btn" onclick="boostPost('${p.id}')" title="Boost this post for 50 coins" style="color:#a78bfa;background:rgba(99,102,241,.08);">🚀 Boost</button>` : ''}
       <button class="tip-post-btn" onclick="spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 TikTok / Instagram Reel" style="color:#f472b6;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.4);font-weight:800;">🎬 Reel (9:16)</button>
       <button class="tip-post-btn" onclick="spDuelChallengePostAuthor('${p.id}')" title="Challenge ${escAttr(p.displayName||'Creator')} to 3D Card Duel" style="color:#fbbf24;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);font-weight:800;">⚔️ Duel</button>
-      <button class="tip-post-btn" onclick="spOpenPostAR('${p.id}')" title="Project in Augmented Reality (AR) in your room" style="color:#00f2fe;background:rgba(0,242,254,.15);border:1px solid rgba(0,242,254,.4);font-weight:800;">📱 AR</button>
       <button class="act-btn share-btn" onclick="sharePost('${p.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -15218,472 +15080,14 @@ spRadioToggle = function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 📱 SP NEXUS AUGMENTED REALITY (AR) VIEWER & IN-ROOM HOLOGRAM ENGINE
-// ═══════════════════════════════════════════════════════════════════════════
-
-const SP_KNOWN_AR_CARDS = [
-  111, 150, 177, 178, 180, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 195, 196, 197, 198, 199, 201, 220, 222, 235, 312, 369, 565, 9999
-];
-
-const SP_AR_MATERIALS = {
-  original: { name: 'Original (Authentic)' },
-  gold: { name: '24K Luxury Gold', color: [1.0, 0.78, 0.1, 1.0], metallic: 1.0, roughness: 0.15 },
-  chrome: { name: 'Cyber Chrome', color: [0.95, 0.95, 1.0, 1.0], metallic: 1.0, roughness: 0.05 },
-  cyan: { name: 'Neon Cyber Cyan', color: [0.0, 0.9, 1.0, 1.0], metallic: 0.85, roughness: 0.1 },
-  obsidian: { name: 'Obsidian Purple', color: [0.35, 0.05, 0.6, 1.0], metallic: 0.9, roughness: 0.2 },
-  ruby: { name: 'Ruby Pulse', color: [0.95, 0.08, 0.2, 1.0], metallic: 0.9, roughness: 0.18 }
-};
-
-let _spCurrentARConfig = null;
-let _spAROriginalMaterials = [];
-
-function spOpenPostAR(postId) {
-  let p = null;
-  if (postId && window.allPosts && Array.isArray(window.allPosts)) {
-    p = window.allPosts.find(x => x && x.id === postId);
-  }
-
-  let postImg = '';
-  let author = 'Creator';
-  let title = '3D Hologram';
-  let badge = '3D AR CREATION';
-  let category = 'showcase';
-  let cardNum = null;
-  let modelData = null;
-
-  if (p) {
-    author = p.displayName || 'Creator';
-    title = p.content ? p.content.slice(0, 42) : (p.title || '3D Hologram');
-    badge = (p.category || '3D AR').toUpperCase();
-    category = p.category || 'showcase';
-    cardNum = p.cardNum ? parseInt(p.cardNum, 10) : null;
-    modelData = p.modelData;
-    if (p.images && p.images.length > 0 && p.images[0]) {
-      postImg = p.images[0];
-    } else if (p.thumbnailUrl) {
-      postImg = p.thumbnailUrl;
-    }
-  }
-
-  // Fallback to DOM elements if not found in allPosts
-  if (postId) {
-    const postEl = document.getElementById(`post-${postId}`) || document.getElementById(`v3d-${postId}`)?.closest('.p-card');
-    if (postEl) {
-      if (!postImg) {
-        const imgEl = postEl.querySelector('.p-img-hotspot-container img, .p-imgs img, .main-img img, img:not(.p-av)');
-        if (imgEl && imgEl.src) postImg = imgEl.src;
-      }
-      if (author === 'Creator') {
-        const aEl = postEl.querySelector('.p-author span');
-        if (aEl && aEl.textContent.trim()) author = aEl.textContent.trim();
-      }
-      if (title === '3D Hologram') {
-        const cEl = postEl.querySelector('.p-content');
-        if (cEl && cEl.textContent.trim()) title = cEl.textContent.trim().slice(0, 42);
-      }
-    }
-  }
-
-  // Select appropriate 3D model
-  let glbUrl = '/ar/models/card-185.glb'; // card-185 has UV-mapped baseColorTexture
-  let isCard = false;
-  let cardId = '185';
-
-  if (cardNum && SP_KNOWN_AR_CARDS.includes(cardNum)) {
-    glbUrl = `/ar/models/card-${cardNum}.glb`;
-    isCard = true;
-    cardId = String(cardNum);
-  } else if (modelData && (modelData.glbUrl || modelData.url)) {
-    glbUrl = modelData.glbUrl || modelData.url;
-  } else if (modelData && modelData.type === 'gear') {
-    glbUrl = '/ar/models/cad-gear.glb';
-  } else if (title.toLowerCase().includes('gear') || category === 'cad') {
-    glbUrl = '/ar/models/cad-gear.glb';
-  } else if (title.toLowerCase().includes('wood') || category === 'wood') {
-    glbUrl = '/ar/models/relief-wood.glb';
-  } else {
-    // Standard post: use card-185.glb with custom texture
-    glbUrl = '/ar/models/card-185.glb';
-    cardId = '185';
-  }
-
-  spLaunchCommunityARModal({
-    glbUrl: glbUrl,
-    title: `${author} • ${title}`,
-    badge: badge,
-    cardId: cardId,
-    postImg: postImg,
-    author: author,
-    rawTitle: title,
-    isCard: isCard
-  });
-}
-
-function spOpenCardAR(card) {
-  const c = card || {
-    cardNum: 184,
-    rarityName: 'Mythic',
-    dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25'
-  };
-
-  const num = parseInt(c.cardNum || 184, 10);
-  const cardId = SP_KNOWN_AR_CARDS.includes(num) ? String(num) : '185';
-  const glbUrl = `/ar/models/card-${cardId}.glb`;
-  const rarity = c.rarityName || 'Collectible';
-  const title = `SP Nexus ${rarity} #${String(num).padStart(4, '0')}`;
-  const badge = `${rarity.toUpperCase()} AR`;
-
-  spLaunchCommunityARModal({
-    glbUrl: glbUrl,
-    title: title,
-    badge: badge,
-    cardId: cardId,
-    postImg: window._spViewerCardDataUrl || null,
-    author: (curUser && curUser.displayName) || 'Collector',
-    rawTitle: title,
-    isCard: true
-  });
-}
-
-function spLaunchCommunityARModal(config) {
-  _spCurrentARConfig = {
-    glbUrl: config.glbUrl,
-    title: config.title,
-    badge: config.badge,
-    cardId: config.cardId || '185',
-    postImg: config.postImg || null,
-    author: config.author || 'Creator',
-    rawTitle: config.rawTitle || config.title,
-    isCard: !!config.isCard,
-    currentMat: 'original'
-  };
-
-  const isFr = (typeof curLang !== 'undefined' && curLang === 'fr');
-
-  // 1. Open modal immediately so layout dimensions are valid
-  const overlay = document.getElementById('spARModalOverlay');
-  if (overlay) {
-    overlay.style.display = 'flex';
-    overlay.classList.add('open');
-  }
-
-  // 2. DOM Elements & Multilingual text
-  const titleEl = document.getElementById('spARTitle');
-  if (titleEl) titleEl.textContent = config.title;
-
-  const badgeEl = document.getElementById('spARRarityBadge');
-  if (badgeEl) badgeEl.textContent = config.badge;
-
-  const launchTxt = document.getElementById('spARLaunchTxt');
-  if (launchTxt) {
-    launchTxt.textContent = isFr ? 'PROJETER DANS VOTRE PIÈCE (AR)' : 'PROJECT IN YOUR ROOM (AR)';
-  }
-
-  const matTitle = document.getElementById('spARMatTitle');
-  if (matTitle) {
-    matTitle.textContent = isFr ? '🎨 SHADERS & MATÉRIAUX LUXE :' : '🎨 LUXURY SHADER FX:';
-  }
-
-  const howToTitle = document.getElementById('spARHowToTitle');
-  if (howToTitle) {
-    howToTitle.textContent = isFr ? '📲 Voir dans votre pièce sur mobile' : '📲 View in Your Room via Phone';
-  }
-
-  const instrEl = document.getElementById('spARInstructions');
-  if (instrEl) {
-    instrEl.innerHTML = isFr
-      ? 'Sur smartphone : appuyez sur <b style="color:#00f2fe">« PROJETER DANS VOTRE PIÈCE »</b>.<br>Sur PC : scannez ce code QR avec l\'appareil photo de votre téléphone pour afficher l\'objet 3D dans votre pièce physique !'
-      : 'On smartphone: tap <b style="color:#00f2fe">"PROJECT IN YOUR ROOM"</b>.<br>On desktop: scan this QR code with your phone camera to instantly place this 3D model in your physical room!';
-  }
-
-  const snapTxt = document.getElementById('spARSnapBtnTxt');
-  if (snapTxt) snapTxt.textContent = isFr ? 'Prendre photo' : 'Take AR Photo';
-
-  const studioTxt = document.getElementById('spARStudioBtnTxt');
-  if (studioTxt) studioTxt.textContent = isFr ? 'Studio AR Complet' : 'Full AR Studio';
-
-  const shareTxt = document.getElementById('spARShareBtnTxt');
-  if (shareTxt) shareTxt.textContent = isFr ? 'Partager AR' : 'Share AR';
-
-  // 3. Show Loading Spinner
-  const spinner = document.getElementById('spARSpinner');
-  const spinnerText = document.getElementById('spARSpinnerText');
-  if (spinner) {
-    spinner.style.display = 'flex';
-    spinner.style.opacity = '1';
-    if (spinnerText) spinnerText.textContent = isFr ? '🔮 Chargement de l\'hologramme 3D...' : '🔮 Loading 3D Hologram...';
-  }
-
-  // 4. Generate Unique QR Code pointing to this exact post/artwork
-  const origin = window.location.origin;
-  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
-  const baseHost = isLocal ? origin : 'https://studios-pro.com';
-
-  let qrTargetUrl;
-  if (config.isCard) {
-    qrTargetUrl = `${baseHost}/ar/?card=${config.cardId}`;
-  } else if (config.postImg) {
-    qrTargetUrl = `${baseHost}/ar/?img=${encodeURIComponent(config.postImg)}&title=${encodeURIComponent(config.rawTitle || config.title)}&author=${encodeURIComponent(config.author || 'Creator')}&card=185`;
-  } else if (config.glbUrl && config.glbUrl.includes('cad-gear')) {
-    qrTargetUrl = `${baseHost}/ar/?model=cad-gear&title=${encodeURIComponent(config.rawTitle || 'CAD Gear')}`;
-  } else if (config.glbUrl && config.glbUrl.includes('relief-wood')) {
-    qrTargetUrl = `${baseHost}/ar/?model=relief-wood&title=${encodeURIComponent(config.rawTitle || 'Relief Wood')}`;
-  } else {
-    qrTargetUrl = `${baseHost}/ar/?card=184`;
-  }
-  _spCurrentARConfig.targetUrl = qrTargetUrl;
-
-  const qrImg = document.getElementById('spARQRCodeImg');
-  if (qrImg) {
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrTargetUrl)}&bgcolor=ffffff&color=050811&margin=1`;
-  }
-
-  // 5. Configure <model-viewer>
-  const viewer = document.getElementById('spCommunityARViewer');
-  if (viewer) {
-    // Reset material button chips
-    document.querySelectorAll('.sp-ar-mat-chip').forEach(c => {
-      c.style.background = 'rgba(255, 255, 255, 0.05)';
-      c.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-    });
-    const firstChip = document.querySelector('.sp-ar-mat-chip');
-    if (firstChip) {
-      firstChip.style.background = 'rgba(0, 242, 254, 0.15)';
-      firstChip.style.borderColor = '#00f2fe';
-    }
-
-    const matLabel = document.getElementById('spARActiveMatLabel');
-    if (matLabel) matLabel.textContent = isFr ? 'Original (Authentique)' : 'Original (Authentic)';
-
-    if (config.postImg) {
-      viewer.setAttribute('poster', config.postImg);
-    } else {
-      viewer.removeAttribute('poster');
-    }
-
-    const onModelLoad = async () => {
-      if (spinner) {
-        spinner.style.opacity = '0';
-        setTimeout(() => { spinner.style.display = 'none'; }, 300);
-      }
-
-      // Apply the post's unique image as the 3D card texture
-      if (config.postImg && viewer.model && viewer.model.materials) {
-        try {
-          const mat = viewer.model.materials[0];
-          if (mat && mat.pbrMetallicRoughness && mat.pbrMetallicRoughness.baseColorTexture) {
-            let safeSrc = config.postImg;
-            if (typeof spLoadSafeReelImage === 'function' && !safeSrc.startsWith('data:')) {
-              try {
-                const safeImg = await spLoadSafeReelImage(safeSrc);
-                if (safeImg && safeImg.naturalWidth > 0) {
-                  const tempC = document.createElement('canvas');
-                  tempC.width = Math.min(safeImg.naturalWidth, 1024);
-                  tempC.height = Math.min(safeImg.naturalHeight, 1024);
-                  const ctx = tempC.getContext('2d');
-                  ctx.drawImage(safeImg, 0, 0, tempC.width, tempC.height);
-                  safeSrc = tempC.toDataURL('image/png');
-                }
-              } catch(e) {}
-            }
-            const texture = await viewer.createTexture(safeSrc);
-            mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
-          }
-        } catch (e) {
-          console.warn('Notice applying AR texture:', e);
-        }
-      }
-
-      // Cache original materials for live shader switcher
-      if (viewer.model && viewer.model.materials) {
-        _spAROriginalMaterials = viewer.model.materials.map(m => {
-          if (m.pbrMetallicRoughness) {
-            const bcf = m.pbrMetallicRoughness.baseColorFactor;
-            return {
-              color: (bcf && bcf.length === 4) ? [bcf[0], bcf[1], bcf[2], bcf[3]] : [1.0, 1.0, 1.0, 1.0],
-              metallic: m.pbrMetallicRoughness.metallicFactor !== undefined ? m.pbrMetallicRoughness.metallicFactor : 0.0,
-              roughness: m.pbrMetallicRoughness.roughnessFactor !== undefined ? m.pbrMetallicRoughness.roughnessFactor : 1.0
-            };
-          }
-          return null;
-        });
-      }
-    };
-
-    if (viewer.loaded && viewer.model) {
-      onModelLoad();
-    } else {
-      viewer.addEventListener('load', onModelLoad, { once: true });
-    }
-
-    // Set model source
-    if (viewer.src !== config.glbUrl) {
-      viewer.src = config.glbUrl;
-    }
-    viewer.addEventListener('error', (err) => {
-      console.warn('AR model load notice:', err);
-      if (spinner) {
-        spinner.style.opacity = '0';
-        setTimeout(() => { spinner.style.display = 'none'; }, 300);
-      }
-    }, { once: true });
-
-    // Trigger canvas resize once modal is displayed
-    setTimeout(() => {
-      try {
-        if (typeof viewer.resize === 'function') viewer.resize();
-        if (typeof viewer.dismissPoster === 'function') viewer.dismissPoster();
-      } catch(e) {}
-      window.dispatchEvent(new Event('resize'));
-    }, 100);
-  }
-}
-
-function spCloseARModal(e) {
-  if (e && e.target !== document.getElementById('spARModalOverlay')) return;
-  spCloseARModalDirect();
-}
-
-function spCloseARModalDirect() {
-  const overlay = document.getElementById('spARModalOverlay');
-  if (overlay) {
-    overlay.classList.remove('open');
-    overlay.style.display = 'none';
-  }
-}
-
-function spARApplyMaterial(matKey, btnEl) {
-  const mat = SP_AR_MATERIALS[matKey] || SP_AR_MATERIALS.original;
-  if (_spCurrentARConfig) _spCurrentARConfig.currentMat = matKey;
-
-  const matLabel = document.getElementById('spARActiveMatLabel');
-  if (matLabel) matLabel.textContent = mat.name;
-
-  // Active state styling
-  document.querySelectorAll('.sp-ar-mat-chip').forEach(b => {
-    b.style.background = 'rgba(255, 255, 255, 0.05)';
-    b.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-  });
-  if (btnEl) {
-    btnEl.style.background = 'rgba(0, 242, 254, 0.15)';
-    btnEl.style.borderColor = '#00f2fe';
-  }
-
-  const viewer = document.getElementById('spCommunityARViewer');
-  if (!viewer || !viewer.model || !viewer.model.materials) return;
-
-  if (matKey === 'original') {
-    viewer.model.materials.forEach((m, idx) => {
-      const orig = _spAROriginalMaterials[idx];
-      if (orig && m.pbrMetallicRoughness) {
-        m.pbrMetallicRoughness.setBaseColorFactor(orig.color);
-        m.pbrMetallicRoughness.setMetallicFactor(orig.metallic);
-        m.pbrMetallicRoughness.setRoughnessFactor(orig.roughness);
-      }
-    });
-  } else {
-    viewer.model.materials.forEach(m => {
-      if (m.pbrMetallicRoughness) {
-        m.pbrMetallicRoughness.setBaseColorFactor(mat.color);
-        m.pbrMetallicRoughness.setMetallicFactor(mat.metallic);
-        m.pbrMetallicRoughness.setRoughnessFactor(mat.roughness);
-      }
-    });
-  }
-}
-
-async function spTakeARSnapshot() {
-  const viewer = document.getElementById('spCommunityARViewer');
-  if (!viewer) return;
-  const isFr = (typeof curLang !== 'undefined' && curLang === 'fr');
-
-  try {
-    const blob = await viewer.toBlob({ mimeType: 'image/png' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const cardId = (_spCurrentARConfig && _spCurrentARConfig.cardId) || 'hologram';
-    a.download = `SP_Nexus_AR_${cardId}_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    if (typeof toast === 'function') {
-      toast(isFr ? '✓ Photo 3D AR sauvegardée !' : '✓ 3D AR Snapshot saved to gallery!', 'success');
-    }
-  } catch (err) {
-    console.error('AR snapshot error:', err);
-    if (typeof toast === 'function') {
-      toast(isFr ? 'Erreur lors de la capture photo' : 'Error capturing AR snapshot', 'error');
-    }
-  }
-}
-
-function spOpenFullARStudio() {
-  const cfg = _spCurrentARConfig;
-  const targetUrl = (cfg && cfg.targetUrl) || (window.location.origin + '/ar/?card=185');
-  window.open(targetUrl, '_blank');
-}
-
-function spShareARExperience() {
-  const cfg = _spCurrentARConfig;
-  const isFr = (typeof curLang !== 'undefined' && curLang === 'fr');
-  const targetUrl = (cfg && cfg.targetUrl) || (window.location.origin + '/ar/?card=185');
-  const title = (cfg && cfg.title) || 'SP Nexus 3D Hologram AR';
-  const text = isFr
-    ? `📱 Regarde ce modèle 3D en Réalité Augmentée dans ta pièce sur SP Nexus ! 🔥 Teste ici : ${targetUrl}`
-    : `📱 Check out this 3D model in Augmented Reality right in your room on SP Nexus! 🔥 View here: ${targetUrl}`;
-
-  if (navigator.share) {
-    navigator.share({
-      title: title,
-      text: text,
-      url: targetUrl
-    }).catch(err => {
-      if (err.name !== 'AbortError') {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(targetUrl);
-          if (typeof toast === 'function') toast(isFr ? '✓ Lien AR copié !' : '✓ AR Link copied!', 'success');
-        }
-      }
-    });
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(targetUrl);
-    if (typeof toast === 'function') {
-      toast(isFr ? '✓ Lien AR copié dans le presse-papier !' : '✓ AR link copied to clipboard!', 'success');
-    }
-  }
-}
-
-function spCheckUrlForAR() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('ar') === '1' || params.get('arview') === '1') {
-    const postParam = params.get('post');
-    const cardParam = params.get('card');
-    setTimeout(() => {
-      if (postParam) {
-        spOpenPostAR(postParam);
-      } else if (cardParam) {
-        spOpenCardAR({ cardNum: parseInt(cardParam, 10), rarityName: 'Mythic' });
-      } else {
-        spOpenPostAR();
-      }
-    }, 900);
-  }
-}
-
 // Boot listeners
 document.addEventListener('DOMContentLoaded', () => {
   spRadioInit();
   spCheckUrlForDuel();
-  spCheckUrlForAR();
 });
 setTimeout(() => {
   spRadioInit();
   spCheckUrlForDuel();
-  spCheckUrlForAR();
 }, 600);
 
 </script>
