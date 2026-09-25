@@ -13679,12 +13679,232 @@ let _reelMediaRecorder = null;
 let _reelChunks = [];
 let _reelDuration = 6;
 let _reelTheme = 'cyber';
+let _reelCardCanvas = null;
+let _reelCardTexture = null;
+let _reelLoadedImage = null;
+
+function spLoadSafeReelImage(url) {
+  if (!url) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    // 1. Data URLs are immediately clean and origin-safe
+    if (url.startsWith('data:')) {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+      return;
+    }
+
+    // 2. Try anonymous CORS load first
+    const img1 = new Image();
+    img1.crossOrigin = 'anonymous';
+    let resolved = false;
+
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        tryProxy();
+      }
+    }, 2000);
+
+    img1.onload = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        resolve(img1);
+      }
+    };
+    img1.onerror = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        tryProxy();
+      }
+    };
+
+    function tryProxy() {
+      // 3. Try Netlify's internal ar-proxy (returns Access-Control-Allow-Origin: *)
+      const proxyUrl = `/api/ar-proxy?url=${encodeURIComponent(url)}`;
+      const img2 = new Image();
+      img2.crossOrigin = 'anonymous';
+      let resolved2 = false;
+
+      const timer2 = setTimeout(() => {
+        if (!resolved2) {
+          resolved2 = true;
+          tryPublicProxy();
+        }
+      }, 2500);
+
+      img2.onload = () => {
+        if (!resolved2) {
+          resolved2 = true;
+          clearTimeout(timer2);
+          resolve(img2);
+        }
+      };
+      img2.onerror = () => {
+        if (!resolved2) {
+          resolved2 = true;
+          clearTimeout(timer2);
+          tryPublicProxy();
+        }
+      };
+      img2.src = proxyUrl;
+    }
+
+    function tryPublicProxy() {
+      // 4. Try public CORS proxy fallback
+      const pUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+      const img3 = new Image();
+      img3.crossOrigin = 'anonymous';
+      img3.onload = () => resolve(img3);
+      img3.onerror = () => resolve(null);
+      img3.src = pUrl;
+    }
+
+    img1.src = url;
+  });
+}
+
+function spDrawReelShowcaseCard(cardCanvas, img, context, theme) {
+  if (!cardCanvas) return;
+  const w = cardCanvas.width, h = cardCanvas.height;
+  const ctx = cardCanvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+
+  const themeColors = {
+    cyber:  { border: '#ec4899', glow: 'rgba(236,72,153,.7)', bg1: '#18122B', bg2: '#080811', accent: '#c084fc', tagBg: 'rgba(236,72,153,.2)' },
+    studio: { border: '#f59e0b', glow: 'rgba(245,158,11,.7)', bg1: '#261805', bg2: '#0d0903', accent: '#fde047', tagBg: 'rgba(245,158,11,.2)' },
+    neon:   { border: '#10b981', glow: 'rgba(16,185,129,.7)', bg1: '#04231b', bg2: '#020d09', accent: '#6ee7b7', tagBg: 'rgba(16,185,129,.2)' }
+  };
+  const tc = themeColors[theme] || themeColors.cyber;
+
+  // 1. Card Base Background with Luxury Gradient
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, tc.bg1);
+  grad.addColorStop(0.5, '#0c1020');
+  grad.addColorStop(1, tc.bg2);
+
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(10, 10, w - 20, h - 20, 26);
+  else ctx.rect(10, 10, w - 20, h - 20);
+  ctx.fill();
+
+  // 2. Glowing Neon Border
+  ctx.strokeStyle = tc.border;
+  ctx.lineWidth = 5;
+  ctx.shadowColor = tc.glow;
+  ctx.shadowBlur = 20;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // 3. Card Header
+  ctx.fillStyle = tc.tagBg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(26, 26, w - 52, 40, 12);
+  else ctx.rect(26, 26, w - 52, 40);
+  ctx.fill();
+  ctx.strokeStyle = tc.border;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '900 14px sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.fillText('✨ SP NEXUS 3D', 40, 51);
+
+  ctx.font = '800 13px monospace';
+  ctx.fillStyle = tc.accent;
+  ctx.textAlign = 'right';
+  ctx.fillText(`@${context.author || 'Creator'}`, w - 40, 51);
+
+  // 4. Central Showcase Artwork Area
+  const artX = 26, artY = 78, artW = w - 52, artH = h - 170;
+  ctx.fillStyle = 'rgba(0,0,0,.75)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(artX, artY, artW, artH, 18);
+  else ctx.rect(artX, artY, artW, artH);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+    ctx.save();
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(artX, artY, artW, artH, 18);
+    else ctx.rect(artX, artY, artW, artH);
+    ctx.clip();
+
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const frameRatio = artW / artH;
+    let dw, dh, dx, dy;
+    if (imgRatio > frameRatio) {
+      dw = artW;
+      dh = artW / imgRatio;
+      dx = artX;
+      dy = artY + (artH - dh) / 2;
+    } else {
+      dh = artH;
+      dw = artH * imgRatio;
+      dx = artX + (artW - dw) / 2;
+      dy = artY;
+    }
+    ctx.drawImage(img, dx, dy, dw, dh);
+    ctx.restore();
+  } else {
+    // Stylized glowing placeholder while loading or for text-only posts
+    ctx.save();
+    ctx.font = '56px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🔮', w / 2, artY + artH / 2 - 25);
+
+    ctx.font = '900 19px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    const textSnippet = context.title ? `"${context.title.slice(0, 30)}"` : 'Studios-Pro 3D Creation';
+    ctx.fillText(textSnippet, w / 2, artY + artH / 2 + 35);
+
+    ctx.font = '700 13px sans-serif';
+    ctx.fillStyle = tc.accent;
+    ctx.fillText('VIRAL 3D SHOWCASE', w / 2, artY + artH / 2 + 65);
+    ctx.restore();
+  }
+
+  // 5. Card Bottom Caption & Branding
+  ctx.font = '800 15px sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  const bottomTitle = context.title ? context.title.slice(0, 36) : 'Interactive 3D Experience';
+  ctx.fillText(bottomTitle, w / 2, h - 52);
+
+  ctx.font = '700 12px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fillText('studios-pro.com • SP Nexus', w / 2, h - 28);
+
+  // 6. Holographic Glass Shine
+  const shine = ctx.createLinearGradient(0, 0, w, h);
+  shine.addColorStop(0, 'rgba(255,255,255,.22)');
+  shine.addColorStop(0.35, 'transparent');
+  shine.addColorStop(0.65, 'rgba(255,255,255,.07)');
+  shine.addColorStop(1, 'transparent');
+  ctx.fillStyle = shine;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(10, 10, w - 20, h - 20, 26);
+  else ctx.rect(10, 10, w - 20, h - 20);
+  ctx.fill();
+
+  ctx.restore();
+}
 
 function spOpen3DReelGenerator(postId) {
   let p = null;
   if (postId && window.allPosts && window.allPosts.length) {
     p = window.allPosts.find(x => String(x.id) === String(postId));
   }
+  let domImg = null;
   if (!p && postId) {
     const postEl = document.getElementById(`post-${postId}`);
     if (postEl) {
@@ -13693,7 +13913,8 @@ function spOpen3DReelGenerator(postId) {
       if (v3d && v3d.dataset && v3d.dataset.model) {
         try { domMd = JSON.parse(v3d.dataset.model); } catch(e){}
       }
-      const imgEl = postEl.querySelector('.p-img-hotspot-container img, .media-img, img');
+      const imgEl = postEl.querySelector('.p-img-hotspot-container img, .p-imgs img, .main-img img, img:not(.p-av)');
+      if (imgEl && imgEl.src) domImg = imgEl.src;
       const authorEl = postEl.querySelector('.p-author span');
       const contentEl = postEl.querySelector('.p-content');
       p = {
@@ -13714,7 +13935,14 @@ function spOpen3DReelGenerator(postId) {
     try { md = JSON.parse(md); } catch(e) {}
   }
   const hasMesh = md && (md.positions || md.vertices);
-  const postImg = (p && p.images && p.images.length > 0 && p.images[0]) ? p.images[0] : null;
+  let postImg = (p && p.images && p.images.length > 0 && p.images[0]) ? p.images[0] : domImg;
+  if (!postImg && p && p.id) {
+    const postEl = document.getElementById(`post-${p.id}`);
+    if (postEl) {
+      const imgEl = postEl.querySelector('.p-img-hotspot-container img, .p-imgs img, .main-img img, img:not(.p-av)');
+      if (imgEl && imgEl.src) postImg = imgEl.src;
+    }
+  }
 
   let reelType = 'procedural';
   if (hasMesh) {
@@ -13728,7 +13956,7 @@ function spOpen3DReelGenerator(postId) {
     postId: p ? p.id : 'demo',
     modelData: hasMesh ? md : null,
     author: (p && p.displayName) || (curUser && curUser.displayName) || 'Studios-Pro Creator',
-    title: (p && p.content) ? p.content.slice(0, 30) : 'Studios-Pro Creation',
+    title: (p && p.content) ? p.content.slice(0, 36) : 'Studios-Pro Creation',
     postImg: postImg,
     dataUrl: null
   };
@@ -13839,39 +14067,33 @@ function spToggleReelTheme() {
 }
 
 function spApplyReelThemeColors() {
-  if (!_reelMesh || !_reelScene) return;
-  // If showing an image or holographic card, keep texture colors 100% natural and bright (white), never tint with dark colors!
-  if (_currentReelContext && (_currentReelContext.type === 'image' || _currentReelContext.type === 'card')) {
-    if (_reelMesh.material && _reelMesh.material.color) {
-      _reelMesh.material.color.setHex(0xffffff);
-    }
-    if (_reelTheme === 'studio') {
-      _reelScene.background = new THREE.Color(0x0c0a09);
-    } else if (_reelTheme === 'neon') {
-      _reelScene.background = new THREE.Color(0x030712);
-    } else {
-      _reelScene.background = new THREE.Color(0x050811);
-    }
+  if (!_reelScene) return;
+
+  if (_reelTheme === 'studio') {
+    _reelScene.background = new THREE.Color(0x0e0a05);
+  } else if (_reelTheme === 'neon') {
+    _reelScene.background = new THREE.Color(0x020d09);
+  } else {
+    _reelScene.background = new THREE.Color(0x050811);
+  }
+
+  // If showing showcase card, redraw with new theme colors
+  if (_reelCardCanvas && _reelCardTexture && _currentReelContext && _currentReelContext.type !== '3d') {
+    spDrawReelShowcaseCard(_reelCardCanvas, _reelLoadedImage, _currentReelContext, _reelTheme);
+    _reelCardTexture.needsUpdate = true;
     return;
   }
 
-  if (_reelTheme === 'studio') {
-    _reelScene.background = new THREE.Color(0x0c0a09);
-    if (_reelMesh.material && _reelMesh.material.color) {
+  if (_reelMesh && _reelMesh.material && _reelMesh.material.color) {
+    if (_reelTheme === 'studio') {
       _reelMesh.material.color.setHex(0xf59e0b);
       _reelMesh.material.metalness = 0.8;
       _reelMesh.material.roughness = 0.25;
-    }
-  } else if (_reelTheme === 'neon') {
-    _reelScene.background = new THREE.Color(0x030712);
-    if (_reelMesh.material && _reelMesh.material.color) {
+    } else if (_reelTheme === 'neon') {
       _reelMesh.material.color.setHex(0x10b981);
       _reelMesh.material.metalness = 0.5;
       _reelMesh.material.roughness = 0.3;
-    }
-  } else {
-    _reelScene.background = new THREE.Color(0x050811);
-    if (_reelMesh.material && _reelMesh.material.color) {
+    } else {
       _reelMesh.material.color.setHex(0x8b5cf6);
       _reelMesh.material.metalness = 0.4;
       _reelMesh.material.roughness = 0.5;
@@ -13901,7 +14123,7 @@ function spInitReel3DPreview() {
   _reelRenderer.setPixelRatio(1);
 
   // Lighting
-  const ambLight = new THREE.AmbientLight(0xffffff, 1.1);
+  const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
   _reelScene.add(ambLight);
 
   const dirLight1 = new THREE.DirectionalLight(0xec4899, 1.6);
@@ -13961,7 +14183,7 @@ function spInitReel3DPreview() {
       _reelScene.add(_reelMesh);
     }
   } else if (_currentReelContext && _currentReelContext.type === 'card' && _currentReelContext.dataUrl) {
-    // 3D Holographic Card Plane
+    // 3D Holographic Daily Card
     const cardGeo = new THREE.PlaneGeometry(3.6, 5.2);
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous');
@@ -13969,50 +14191,34 @@ function spInitReel3DPreview() {
     const cardMat = new THREE.MeshBasicMaterial({ map: canvasTexture, side: THREE.DoubleSide });
     _reelMesh = new THREE.Mesh(cardGeo, cardMat);
     _reelScene.add(_reelMesh);
-  } else if (_currentReelContext && _currentReelContext.postImg) {
-    // 3D Floating Showcase Plane for Image posts (e.g. Zen Sandscape, Omni-Viewer T-Rex, photos)
-    let domImg = null;
-    if (_currentReelContext.postId) {
-      const postEl = document.getElementById(`post-${_currentReelContext.postId}`);
-      if (postEl) domImg = postEl.querySelector('img');
-    }
+  } else {
+    // 3D Floating Showcase Card for Image & Creative posts (NEVER A BLACK SQUARE!)
+    _reelCardCanvas = document.createElement('canvas');
+    _reelCardCanvas.width = 512;
+    _reelCardCanvas.height = 680;
+    _reelLoadedImage = null;
 
-    const setAspectFromImage = (w, h) => {
-      if (!_reelMesh || !w || !h) return;
-      const aspect = h / w;
-      const width = 4.2;
-      const height = Math.min(5.8, Math.max(2.4, width * aspect));
-      if (_reelMesh.geometry) _reelMesh.geometry.dispose();
-      _reelMesh.geometry = new THREE.PlaneGeometry(width, height);
-    };
+    // Immediately draw pristine initial frame (guarantees zero black frames)
+    spDrawReelShowcaseCard(_reelCardCanvas, null, _currentReelContext, _reelTheme);
 
-    let tex = null;
-    if (domImg && domImg.complete && domImg.naturalWidth > 0) {
-      try {
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = domImg.naturalWidth;
-        offCanvas.height = domImg.naturalHeight;
-        const ctx = offCanvas.getContext('2d');
-        ctx.drawImage(domImg, 0, 0);
-        tex = new THREE.CanvasTexture(offCanvas);
-        setAspectFromImage(domImg.naturalWidth, domImg.naturalHeight);
-      } catch(e) {}
-    }
-
-    if (!tex) {
-      const loader = new THREE.TextureLoader();
-      loader.setCrossOrigin('anonymous');
-      tex = loader.load(_currentReelContext.postImg, (t) => {
-        if (t && t.image) setAspectFromImage(t.image.width, t.image.height);
-      });
-    }
-
-    const imgMat = new THREE.MeshBasicMaterial({
-      map: tex,
+    _reelCardTexture = new THREE.CanvasTexture(_reelCardCanvas);
+    const cardMat = new THREE.MeshBasicMaterial({
+      map: _reelCardTexture,
       side: THREE.DoubleSide
     });
-    _reelMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), imgMat);
+    _reelMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 5.1), cardMat);
     _reelScene.add(_reelMesh);
+
+    // If an image URL exists, load it asynchronously with safe multi-proxy fallback
+    if (_currentReelContext && _currentReelContext.postImg) {
+      spLoadSafeReelImage(_currentReelContext.postImg).then((img) => {
+        if (img && _reelCardCanvas && _reelCardTexture) {
+          _reelLoadedImage = img;
+          spDrawReelShowcaseCard(_reelCardCanvas, img, _currentReelContext, _reelTheme);
+          _reelCardTexture.needsUpdate = true;
+        }
+      });
+    }
   }
 
   if (!_reelMesh) {
