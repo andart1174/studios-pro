@@ -2893,17 +2893,38 @@
       <div style="font-size: .84rem; color: #cbd5e1; margin-bottom: 14px;" id="spDuelShareDesc">
         Send this challenge link to a friend on WhatsApp or X to duel in real-time!
       </div>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button type="button" onclick="spShareDuelWhatsApp()" style="background: #25d366; color: #fff; font-weight: 800; font-size: .88rem; padding: 11px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <span>💬</span> <span id="spDuelWaTxt">Challenge on WhatsApp</span>
+      <div style="display: flex; flex-direction: column; gap: 9px;">
+        <!-- Native App Share (Instagram, TikTok, Snapchat, SMS, etc.) -->
+        <button type="button" onclick="spShareDuelNative()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 800; font-size: .88rem; padding: 11px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 15px rgba(236,72,153,.35);">
+          <span>📱</span> <span id="spDuelShareAnyTxt">Share via Any App (Instagram, TikTok, SMS...)</span>
         </button>
-        <button type="button" onclick="spShareDuelX()" style="background: #0f1419; color: #fff; border: 1px solid rgba(255,255,255,.2); font-weight: 800; font-size: .88rem; padding: 11px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <span>𝕏</span> <span id="spDuelXTxt">Post Challenge on X</span>
-        </button>
+
+        <!-- Social Network 2-Column Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" onclick="spShareDuelWhatsApp()" style="background: #25d366; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>💬</span> <span>WhatsApp</span>
+          </button>
+          <button type="button" onclick="spShareDuelTelegram()" style="background: #229ed9; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>✈️</span> <span>Telegram</span>
+          </button>
+          <button type="button" onclick="spShareDuelFacebook()" style="background: #1877f2; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📘</span> <span>Facebook</span>
+          </button>
+          <button type="button" onclick="spShareDuelX()" style="background: #0f1419; color: #fff; border: 1px solid rgba(255,255,255,.2); font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>𝕏</span> <span>X / Twitter</span>
+          </button>
+          <button type="button" onclick="spShareDuelReddit()" style="background: #ff4500; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>🔴</span> <span>Reddit</span>
+          </button>
+          <button type="button" onclick="spShareDuelPinterest()" style="background: #e60023; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📌</span> <span>Pinterest</span>
+          </button>
+        </div>
+
         <button type="button" onclick="spCopyDuelLink()" class="ftab" style="width: 100%; justify-content: center; padding: 10px; font-weight: 800; background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.15);">
           <span>🔗</span> <span id="spDuelCopyTxt">Copy Duel Link</span>
         </button>
-        <button type="button" onclick="spPracticeDuelVsBot()" style="background: linear-gradient(135deg, #f59e0b, #ec4899); color: #fff; font-weight: 900; font-size: .88rem; padding: 12px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 20px rgba(245,158,11,.4); margin-top: 6px;">
+        <button type="button" onclick="spPracticeDuelVsBot()" style="background: linear-gradient(135deg, #f59e0b, #ec4899); color: #fff; font-weight: 900; font-size: .88rem; padding: 12px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 20px rgba(245,158,11,.4); margin-top: 4px;">
           <span>⚔️</span> <span id="spDuelBotTxt">Practice Duel vs AI Bot</span>
         </button>
       </div>
@@ -13659,28 +13680,63 @@ let _reelTheme = 'cyber';
 
 function spOpen3DReelGenerator(postId) {
   let p = null;
-  if (postId && allPosts && allPosts.length) {
-    p = allPosts.find(x => x.id === postId);
+  if (postId && window.allPosts && window.allPosts.length) {
+    p = window.allPosts.find(x => String(x.id) === String(postId));
   }
-  if (!p && allPosts && allPosts.length) {
-    p = allPosts.find(x => x.modelData && (x.modelData.positions || x.modelData.vertices)) || allPosts[0];
+  if (!p && postId) {
+    const postEl = document.getElementById(`post-${postId}`);
+    if (postEl) {
+      const v3d = postEl.querySelector('.p-3dv');
+      let domMd = null;
+      if (v3d && v3d.dataset && v3d.dataset.model) {
+        try { domMd = JSON.parse(v3d.dataset.model); } catch(e){}
+      }
+      const imgEl = postEl.querySelector('.p-img-hotspot-container img, .media-img, img');
+      const authorEl = postEl.querySelector('.p-author span');
+      const contentEl = postEl.querySelector('.p-content');
+      p = {
+        id: postId,
+        modelData: domMd,
+        images: imgEl && imgEl.src ? [imgEl.src] : [],
+        displayName: authorEl ? authorEl.textContent.trim() : 'Creator',
+        content: contentEl ? contentEl.textContent.trim() : ''
+      };
+    }
   }
+  if (!p && window.allPosts && window.allPosts.length) {
+    p = window.allPosts.find(x => x.modelData && (x.modelData.positions || x.modelData.vertices)) || window.allPosts[0];
+  }
+
+  let md = p ? p.modelData : null;
+  if (typeof md === 'string') {
+    try { md = JSON.parse(md); } catch(e) {}
+  }
+  const hasMesh = md && (md.positions || md.vertices);
+  const postImg = (p && p.images && p.images.length > 0 && p.images[0]) ? p.images[0] : null;
+
+  let reelType = 'procedural';
+  if (hasMesh) {
+    reelType = '3d';
+  } else if (postImg) {
+    reelType = 'image';
+  }
+
+  _currentReelContext = {
+    type: reelType,
+    postId: p ? p.id : 'demo',
+    modelData: hasMesh ? md : null,
+    author: (p && p.displayName) || (curUser && curUser.displayName) || 'Studios-Pro Creator',
+    title: (p && p.content) ? p.content.slice(0, 30) : 'Studios-Pro Creation',
+    postImg: postImg,
+    dataUrl: null
+  };
+
   const overlay = document.getElementById('spReelOverlay');
   if (!overlay) return;
 
-  _currentReelContext = {
-    type: (p && p.modelData && (p.modelData.positions || p.modelData.vertices)) ? '3d' : 'card',
-    postId: p ? p.id : 'demo',
-    modelData: (p && p.modelData) ? p.modelData : null,
-    author: (p && p.displayName) || (curUser && curUser.displayName) || 'Studios-Pro Creator',
-    title: (p && p.content) ? p.content.slice(0, 30) : 'Studios-Pro 3D Reel',
-    imgFallback: (p && p.images && p.images[0]) || '/icon-512.png',
-    dataUrl: window._spViewerCardDataUrl || null
-  };
-
   document.getElementById('spReelModalHeaderTitle').textContent = curLang === 'fr'
-    ? '🎬 Générateur de Reel & TikTok 3D'
-    : '🎬 3D Reel & TikTok Video Generator';
+    ? (reelType === '3d' ? '🎬 Générateur de Reel & TikTok 3D' : '🎬 Générateur de Reel & TikTok (9:16)')
+    : (reelType === '3d' ? '🎬 3D Reel & TikTok Video Generator' : '🎬 Reel & TikTok Video Generator (9:16)');
   document.getElementById('spReelWatermarkTxt').textContent = `@${_currentReelContext.author} • SP Nexus`;
   document.getElementById('spReelRecordBtnTxt').textContent = curLang === 'fr'
     ? 'Générer la Vidéo Reel 9:16'
@@ -13853,19 +13909,27 @@ function spInitReel3DPreview() {
   _reelParticles = new THREE.Points(pGeo, pMat);
   _reelScene.add(_reelParticles);
 
-  // Model or Card Geometry
+  // Model, Card, or Image Geometry
   if (_currentReelContext && _currentReelContext.type === '3d' && _currentReelContext.modelData) {
     const md = _currentReelContext.modelData;
     const pos = md.positions || md.vertices;
-    if (pos) {
+    if (pos && pos.length > 0) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
-      if (md.normals) geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(md.normals), 3));
-      else geo.computeVertexNormals();
-      if (md.indices) geo.setIndex(Array.from(md.indices));
+      if (md.normals && md.normals.length === pos.length) {
+        geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(md.normals), 3));
+      } else {
+        geo.computeVertexNormals();
+      }
+      if (md.indices && md.indices.length > 0) geo.setIndex(Array.from(md.indices));
 
-      const col = md.color ? parseInt(md.color.replace('#',''), 16) : 0x8b5cf6;
-      const mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.4, roughness: 0.4, side: THREE.DoubleSide });
+      const col = md.color ? parseInt(String(md.color).replace('#',''), 16) : 0x8b5cf6;
+      const mat = new THREE.MeshStandardMaterial({
+        color: isNaN(col) ? 0x8b5cf6 : col,
+        metalness: 0.45,
+        roughness: 0.35,
+        side: THREE.DoubleSide
+      });
       _reelMesh = new THREE.Mesh(geo, mat);
 
       geo.computeBoundingBox();
@@ -13879,20 +13943,41 @@ function spInitReel3DPreview() {
       _reelMesh.scale.setScalar(4.2 / maxD);
       _reelScene.add(_reelMesh);
     }
-  } else {
-    // 3D Card / Fallback Canvas Plane
+  } else if (_currentReelContext && _currentReelContext.type === 'card' && _currentReelContext.dataUrl) {
+    // 3D Holographic Card Plane
     const cardGeo = new THREE.PlaneGeometry(3.6, 5.2);
-    const canvasTexture = new THREE.TextureLoader().load(
-      (_currentReelContext && _currentReelContext.dataUrl) || (_currentReelContext && _currentReelContext.imgFallback) || '/sp_nexus_og.jpg'
-    );
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    const canvasTexture = loader.load(_currentReelContext.dataUrl);
     const cardMat = new THREE.MeshStandardMaterial({ map: canvasTexture, side: THREE.DoubleSide, metalness: 0.3, roughness: 0.3 });
     _reelMesh = new THREE.Mesh(cardGeo, cardMat);
+    _reelScene.add(_reelMesh);
+  } else if (_currentReelContext && _currentReelContext.postImg) {
+    // 3D Floating Showcase Plane for Image posts (e.g. Zen Sandscape, photos, designs)
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    const imgTex = loader.load(_currentReelContext.postImg, (tex) => {
+      if (tex && tex.image && _reelMesh) {
+        const aspect = (tex.image.height && tex.image.width) ? (tex.image.height / tex.image.width) : 1;
+        const width = 4.2;
+        const height = Math.min(5.8, Math.max(2.4, width * aspect));
+        if (_reelMesh.geometry) _reelMesh.geometry.dispose();
+        _reelMesh.geometry = new THREE.PlaneGeometry(width, height);
+      }
+    });
+    const imgMat = new THREE.MeshStandardMaterial({
+      map: imgTex,
+      side: THREE.DoubleSide,
+      metalness: 0.15,
+      roughness: 0.35
+    });
+    _reelMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), imgMat);
     _reelScene.add(_reelMesh);
   }
 
   if (!_reelMesh) {
     const gemGeo = new THREE.TorusKnotGeometry(1.4, 0.45, 90, 16);
-    const gemMat = new THREE.MeshStandardMaterial({ color: 0xec4899, metalness: 0.6, roughness: 0.3 });
+    const gemMat = new THREE.MeshStandardMaterial({ color: 0xec4899, metalness: 0.65, roughness: 0.25 });
     _reelMesh = new THREE.Mesh(gemGeo, gemMat);
     _reelScene.add(_reelMesh);
   }
@@ -13903,10 +13988,18 @@ function spInitReel3DPreview() {
   let clock = 0;
   function animateReel() {
     _reelAnimId = requestAnimationFrame(animateReel);
-    clock += 0.015;
+    clock += 0.016;
     if (_reelMesh) {
-      _reelMesh.rotation.y += 0.022;
-      _reelMesh.position.y = Math.sin(clock * 1.5) * 0.12;
+      if (_currentReelContext && (_currentReelContext.type === 'image' || _currentReelContext.type === 'card')) {
+        // Floating 3D card tilt & sway with gentle breathing
+        _reelMesh.rotation.y = Math.sin(clock * 1.2) * 0.45;
+        _reelMesh.rotation.x = Math.sin(clock * 0.8) * 0.12;
+        _reelMesh.position.y = Math.sin(clock * 1.6) * 0.14;
+      } else {
+        // 3D Model full 360 spin
+        _reelMesh.rotation.y += 0.022;
+        _reelMesh.position.y = Math.sin(clock * 1.5) * 0.12;
+      }
     }
     if (_reelParticles) {
       _reelParticles.rotation.y += 0.002;
@@ -14093,6 +14186,31 @@ function spOpenDuelChallenge(card) {
     `;
   }
 
+  const descEl = document.getElementById('spDuelShareDesc');
+  if (descEl) {
+    descEl.textContent = curLang === 'fr'
+      ? 'Envoyez ce lien de défi à un ami sur vos réseaux préférés pour un duel en direct !'
+      : 'Send this challenge link to a friend across any social platform to duel in real-time!';
+  }
+  const shareAny = document.getElementById('spDuelShareAnyTxt');
+  if (shareAny) {
+    shareAny.textContent = curLang === 'fr'
+      ? 'Partager via une App (Instagram, TikTok, SMS...)'
+      : 'Share to Any App (Instagram, TikTok, SMS...)';
+  }
+  const botTxt = document.getElementById('spDuelBotTxt');
+  if (botTxt) {
+    botTxt.textContent = curLang === 'fr'
+      ? 'S\'entraîner contre le Bot IA'
+      : 'Practice Duel vs AI Bot';
+  }
+  const copyTxt = document.getElementById('spDuelCopyTxt');
+  if (copyTxt) {
+    copyTxt.textContent = curLang === 'fr'
+      ? 'Copier le Lien de Défi'
+      : 'Copy Duel Link';
+  }
+
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 }
@@ -14114,6 +14232,31 @@ function spGetDuelLink(card) {
   return `${origin}/community/?duel=1&challenger=${encodeURIComponent(user)}&date=${c.dateKey}&num=${c.cardNum}&rarity=${c.rarityName}`;
 }
 
+async function spShareDuelNative() {
+  const card = _currentDuelChallenge;
+  if (!card) return;
+  const stats = spGetCardBattleStats(card);
+  const link = spGetDuelLink(card);
+  const text = curLang === 'fr'
+    ? `⚔️ Je te défie dans un Duel de Cartes 3D sur SP Nexus ! Ma Carte ${card.rarityName} #${card.cardNum} (${stats.atk} ATK). Peux-tu me battre ? Combats ici : ${link}`
+    : `⚔️ I challenge you to an SP Nexus 3D Card Duel! My ${card.rarityName} Card #${card.cardNum} (${stats.atk} ATK). Can you defeat me? Fight here: ${link}`;
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'SP Nexus 3D Card Duel ⚔️',
+        text: text,
+        url: link
+      });
+      if (typeof toast === 'function') toast(curLang === 'fr' ? '✓ Défi partagé !' : '✓ Challenge shared!', 'success');
+      return;
+    } catch(e) {
+      if (e.name !== 'AbortError') spCopyDuelLink();
+    }
+  } else {
+    spCopyDuelLink();
+  }
+}
+
 function spShareDuelWhatsApp() {
   const card = _currentDuelChallenge;
   if (!card) return;
@@ -14123,6 +14266,38 @@ function spShareDuelWhatsApp() {
     ? `⚔️ Je te défie dans un Duel de Cartes 3D sur SP Nexus ! Ma Carte ${card.rarityName} #${String(card.cardNum).padStart(4,'0')} a ${stats.atk} ATK. Peux-tu me battre ? Combats ici : ${link}`
     : `⚔️ I challenge you to an SP Nexus 3D Card Duel! My ${card.rarityName} Card #${String(card.cardNum).padStart(4,'0')} has ${stats.atk} ATK. Can you defeat me? Fight here: ${link}`;
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function spShareDuelTelegram() {
+  const card = _currentDuelChallenge;
+  if (!card) return;
+  const stats = spGetCardBattleStats(card);
+  const link = spGetDuelLink(card);
+  const text = curLang === 'fr'
+    ? `⚔️ Je te défie dans un Duel de Cartes 3D sur SP Nexus ! Ma Carte ${card.rarityName} #${card.cardNum} a ${stats.atk} ATK. Combats ici :`
+    : `⚔️ I challenge you to an SP Nexus 3D Card Duel! My ${card.rarityName} Card #${card.cardNum} has ${stats.atk} ATK. Fight here:`;
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function spShareDuelFacebook() {
+  const link = spGetDuelLink(_currentDuelChallenge);
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
+}
+
+function spShareDuelReddit() {
+  const card = _currentDuelChallenge;
+  if (!card) return;
+  const link = spGetDuelLink(card);
+  const title = `⚔️ 3D Card Duel Challenge on SP Nexus: ${card.rarityName} #${card.cardNum}`;
+  window.open(`https://reddit.com/submit?url=${encodeURIComponent(link)}&title=${encodeURIComponent(title)}`, '_blank');
+}
+
+function spShareDuelPinterest() {
+  const card = _currentDuelChallenge;
+  if (!card) return;
+  const link = spGetDuelLink(card);
+  const desc = `⚔️ 3D Holographic Card Duel Challenge on SP Nexus!`;
+  window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(link)}&description=${encodeURIComponent(desc)}`, '_blank');
 }
 
 function spShareDuelX() {
