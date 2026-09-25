@@ -2825,8 +2825,7 @@
   <div class="modal sp-reel-modal-card" onclick="event.stopPropagation()">
     <div class="mh" style="border-bottom: 1px solid rgba(236,72,153,.3); padding: 14px 18px;">
       <div class="mt" style="color: #ec4899; font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px;">
-        <span>🎬</span>
-        <span id="spReelModalHeaderTitle">3D Reel &amp; TikTok Video Generator</span>
+        <span id="spReelModalHeaderTitle">🎬 3D Reel &amp; TikTok Video Generator</span>
       </div>
       <button class="mc" onclick="spCloseReelGeneratorDirect()">✕</button>
     </div>
@@ -2947,7 +2946,7 @@
         <!-- Fighter 1 (Challenger) -->
         <div class="sp-duel-fighter-box" id="spFighter1Box">
           <div style="font-weight: 800; font-size: .88rem; color: #60a5fa;" id="spFighter1Name">Challenger</div>
-          <div id="spFighter1CardImg" style="width: 140px; height: 190px; margin: 8px auto; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 0 15px rgba(96,165,250,.3); display: flex; align-items: center; justify-content: center;"></div>
+          <div id="spFighter1CardImg" style="width: 140px; height: 190px; margin: 8px auto; border-radius: 12px; overflow: hidden; background: transparent; display: flex; align-items: center; justify-content: center;"></div>
           <div class="sp-duel-hp-bar">
             <div class="sp-duel-hp-fill" id="spFighter1HpFill" style="background: linear-gradient(90deg, #3b82f6, #60a5fa);"></div>
           </div>
@@ -2964,7 +2963,7 @@
         <!-- Fighter 2 (Opponent / You) -->
         <div class="sp-duel-fighter-box" id="spFighter2Box">
           <div style="font-weight: 800; font-size: .88rem; color: #ec4899;" id="spFighter2Name">Defender</div>
-          <div id="spFighter2CardImg" style="width: 140px; height: 190px; margin: 8px auto; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 0 15px rgba(236,72,153,.3); display: flex; align-items: center; justify-content: center;"></div>
+          <div id="spFighter2CardImg" style="width: 140px; height: 190px; margin: 8px auto; border-radius: 12px; overflow: hidden; background: transparent; display: flex; align-items: center; justify-content: center;"></div>
           <div class="sp-duel-hp-bar">
             <div class="sp-duel-hp-fill" id="spFighter2HpFill" style="background: linear-gradient(90deg, #ec4899, #f43f5e);"></div>
           </div>
@@ -2990,8 +2989,11 @@
         <div style="font-size: 1.4rem; font-weight: 900; color: #fbbf24; margin-bottom: 6px;" id="spDuelWinnerTxt">🏆 VICTORY!</div>
         <div style="font-size: .85rem; color: #34d399; font-weight: 800; margin-bottom: 12px;" id="spDuelRewardTxt">🪙 +25 SP Coins Reward Added to Wallet!</div>
         <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          <button type="button" onclick="spShareDuelVictoryNative()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 800; font-size: .82rem; padding: 9px 14px; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 0 12px rgba(236,72,153,.3);">
+            <span>📱</span> <span>Share Victory</span>
+          </button>
           <button type="button" onclick="spShareDuelVictoryWhatsApp()" style="background: #25d366; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px 14px; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-            <span>💬</span> <span>Share Victory</span>
+            <span>💬</span> <span>WhatsApp</span>
           </button>
           <button type="button" onclick="spResetDuelArena()" class="ftab" style="padding: 9px 14px; font-weight: 800; background: rgba(255,255,255,.1); color: #fff;">
             <span>🔄</span> <span>Rematch</span>
@@ -6794,7 +6796,7 @@ function buildCard(p) {
       ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">💰 Tip</button>` : ''}
       ${curUser && p.uid === curUser.uid && !p.boosted ? `<button class="tip-post-btn" onclick="boostPost('${p.id}')" title="Boost this post for 50 coins" style="color:#a78bfa;background:rgba(99,102,241,.08);">🚀 Boost</button>` : ''}
       <button class="tip-post-btn" onclick="spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 TikTok / Instagram Reel" style="color:#f472b6;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.4);font-weight:800;">🎬 Reel (9:16)</button>
-      <button class="tip-post-btn" onclick="spLaunchCardDuel()" title="Challenge Creator to 3D Card Duel" style="color:#fbbf24;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);font-weight:800;">⚔️ Duel</button>
+      <button class="tip-post-btn" onclick="spDuelChallengePostAuthor('${p.id}')" title="Challenge ${escAttr(p.displayName||'Creator')} to 3D Card Duel" style="color:#fbbf24;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);font-weight:800;">⚔️ Duel</button>
       <button class="act-btn share-btn" onclick="sharePost('${p.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -13838,23 +13840,38 @@ function spToggleReelTheme() {
 
 function spApplyReelThemeColors() {
   if (!_reelMesh || !_reelScene) return;
+  // If showing an image or holographic card, keep texture colors 100% natural and bright (white), never tint with dark colors!
+  if (_currentReelContext && (_currentReelContext.type === 'image' || _currentReelContext.type === 'card')) {
+    if (_reelMesh.material && _reelMesh.material.color) {
+      _reelMesh.material.color.setHex(0xffffff);
+    }
+    if (_reelTheme === 'studio') {
+      _reelScene.background = new THREE.Color(0x0c0a09);
+    } else if (_reelTheme === 'neon') {
+      _reelScene.background = new THREE.Color(0x030712);
+    } else {
+      _reelScene.background = new THREE.Color(0x050811);
+    }
+    return;
+  }
+
   if (_reelTheme === 'studio') {
     _reelScene.background = new THREE.Color(0x0c0a09);
-    if (_reelMesh.material) {
+    if (_reelMesh.material && _reelMesh.material.color) {
       _reelMesh.material.color.setHex(0xf59e0b);
       _reelMesh.material.metalness = 0.8;
       _reelMesh.material.roughness = 0.25;
     }
   } else if (_reelTheme === 'neon') {
     _reelScene.background = new THREE.Color(0x030712);
-    if (_reelMesh.material) {
+    if (_reelMesh.material && _reelMesh.material.color) {
       _reelMesh.material.color.setHex(0x10b981);
       _reelMesh.material.metalness = 0.5;
       _reelMesh.material.roughness = 0.3;
     }
   } else {
     _reelScene.background = new THREE.Color(0x050811);
-    if (_reelMesh.material) {
+    if (_reelMesh.material && _reelMesh.material.color) {
       _reelMesh.material.color.setHex(0x8b5cf6);
       _reelMesh.material.metalness = 0.4;
       _reelMesh.material.roughness = 0.5;
@@ -13884,15 +13901,15 @@ function spInitReel3DPreview() {
   _reelRenderer.setPixelRatio(1);
 
   // Lighting
-  const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
+  const ambLight = new THREE.AmbientLight(0xffffff, 1.1);
   _reelScene.add(ambLight);
 
   const dirLight1 = new THREE.DirectionalLight(0xec4899, 1.6);
   dirLight1.position.set(5, 8, 5);
   _reelScene.add(dirLight1);
 
-  const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.2);
-  dirLight2.position.set(-5, -4, 4);
+  const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1.4);
+  dirLight2.position.set(-5, 4, 4);
   _reelScene.add(dirLight2);
 
   // Ambient floating particles for cinematic background
@@ -13949,27 +13966,50 @@ function spInitReel3DPreview() {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous');
     const canvasTexture = loader.load(_currentReelContext.dataUrl);
-    const cardMat = new THREE.MeshStandardMaterial({ map: canvasTexture, side: THREE.DoubleSide, metalness: 0.3, roughness: 0.3 });
+    const cardMat = new THREE.MeshBasicMaterial({ map: canvasTexture, side: THREE.DoubleSide });
     _reelMesh = new THREE.Mesh(cardGeo, cardMat);
     _reelScene.add(_reelMesh);
   } else if (_currentReelContext && _currentReelContext.postImg) {
-    // 3D Floating Showcase Plane for Image posts (e.g. Zen Sandscape, photos, designs)
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-    const imgTex = loader.load(_currentReelContext.postImg, (tex) => {
-      if (tex && tex.image && _reelMesh) {
-        const aspect = (tex.image.height && tex.image.width) ? (tex.image.height / tex.image.width) : 1;
-        const width = 4.2;
-        const height = Math.min(5.8, Math.max(2.4, width * aspect));
-        if (_reelMesh.geometry) _reelMesh.geometry.dispose();
-        _reelMesh.geometry = new THREE.PlaneGeometry(width, height);
-      }
-    });
-    const imgMat = new THREE.MeshStandardMaterial({
-      map: imgTex,
-      side: THREE.DoubleSide,
-      metalness: 0.15,
-      roughness: 0.35
+    // 3D Floating Showcase Plane for Image posts (e.g. Zen Sandscape, Omni-Viewer T-Rex, photos)
+    let domImg = null;
+    if (_currentReelContext.postId) {
+      const postEl = document.getElementById(`post-${_currentReelContext.postId}`);
+      if (postEl) domImg = postEl.querySelector('img');
+    }
+
+    const setAspectFromImage = (w, h) => {
+      if (!_reelMesh || !w || !h) return;
+      const aspect = h / w;
+      const width = 4.2;
+      const height = Math.min(5.8, Math.max(2.4, width * aspect));
+      if (_reelMesh.geometry) _reelMesh.geometry.dispose();
+      _reelMesh.geometry = new THREE.PlaneGeometry(width, height);
+    };
+
+    let tex = null;
+    if (domImg && domImg.complete && domImg.naturalWidth > 0) {
+      try {
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = domImg.naturalWidth;
+        offCanvas.height = domImg.naturalHeight;
+        const ctx = offCanvas.getContext('2d');
+        ctx.drawImage(domImg, 0, 0);
+        tex = new THREE.CanvasTexture(offCanvas);
+        setAspectFromImage(domImg.naturalWidth, domImg.naturalHeight);
+      } catch(e) {}
+    }
+
+    if (!tex) {
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      tex = loader.load(_currentReelContext.postImg, (t) => {
+        if (t && t.image) setAspectFromImage(t.image.width, t.image.height);
+      });
+    }
+
+    const imgMat = new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.DoubleSide
     });
     _reelMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), imgMat);
     _reelScene.add(_reelMesh);
@@ -13992,9 +14032,9 @@ function spInitReel3DPreview() {
     if (_reelMesh) {
       if (_currentReelContext && (_currentReelContext.type === 'image' || _currentReelContext.type === 'card')) {
         // Floating 3D card tilt & sway with gentle breathing
-        _reelMesh.rotation.y = Math.sin(clock * 1.2) * 0.45;
-        _reelMesh.rotation.x = Math.sin(clock * 0.8) * 0.12;
-        _reelMesh.position.y = Math.sin(clock * 1.6) * 0.14;
+        _reelMesh.rotation.y = Math.sin(clock * 1.2) * 0.35;
+        _reelMesh.rotation.x = Math.sin(clock * 0.8) * 0.08;
+        _reelMesh.position.y = Math.sin(clock * 1.6) * 0.12;
       } else {
         // 3D Model full 360 spin
         _reelMesh.rotation.y += 0.022;
@@ -14107,6 +14147,7 @@ function spCopyReelHashtags() {
 // ⚔️ VIRAL FEATURE B: 3D CARD DUEL ARENA (PvP BATTLE ENGINE)
 // ════════════════════════════════════════════════════════════════════
 let _currentDuelChallenge = null;
+let _currentDuelOpponent = null;
 let _duelFighter1 = null;
 let _duelFighter2 = null;
 let _duelRound = 1;
@@ -14120,8 +14161,9 @@ const SP_DUEL_ELEMENTS = [
 ];
 
 function spGetCardBattleStats(card) {
+  if (!card) card = {};
   const seed = spCardSeededRand(card.dateKey || '2026-09-25', card.cardNum || 1);
-  const rarity = SP_CARD_RARITIES.find(r => r.name === card.rarityName) || SP_CARD_RARITIES[0];
+  const rarity = (typeof SP_CARD_RARITIES !== 'undefined' ? SP_CARD_RARITIES : []).find(r => r.name === card.rarityName) || { name: 'Rare', colorA: '#1e40af', colorB: '#3b82f6', colorC: '#60a5fa', glow: 'rgba(59,130,246,.75)' };
 
   let mult = 1.0;
   if (rarity.name === 'Rare') mult = 1.35;
@@ -14146,34 +14188,202 @@ function spGetCardBattleStats(card) {
   };
 }
 
+function spRenderDuelFighterCard(fighter, side) {
+  if (!fighter) return '';
+  const c = fighter.card || {};
+  const stats = fighter.stats || spGetCardBattleStats(c);
+  const rarity = stats.rarity || { name: c.rarityName || 'Rare', colorA: '#1e40af', colorB: '#3b82f6', colorC: '#60a5fa', glow: 'rgba(59,130,246,.75)' };
+  const borderCol = rarity.colorB || (side === 1 ? '#60a5fa' : '#ec4899');
+  const glow = rarity.glow || (side === 1 ? 'rgba(96,165,250,.6)' : 'rgba(236,72,153,.6)');
+  const bgGrad = rarity.colorA && rarity.colorB
+    ? `linear-gradient(135deg, ${rarity.colorA}, #090d16)`
+    : 'linear-gradient(135deg, #1e1b4b, #090d16)';
+
+  let avatarUrl = '';
+  if (c.image) {
+    avatarUrl = c.image;
+  } else if (c.avatar) {
+    avatarUrl = c.avatar;
+  } else {
+    avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fighter.name || 'User')}&background=6366f1&color=fff&bold=true`;
+  }
+
+  const serial = c.cardNum ? String(c.cardNum).padStart(4, '0') : '0001';
+  const elemName = (stats && stats.element) || '⚡ Neon';
+  const elemColor = (stats && stats.elemObj && stats.elemObj.col) || '#fbbf24';
+
+  return `
+    <div style="width:100%;height:100%;border-radius:12px;background:${bgGrad};border:2px solid ${borderCol};box-shadow:0 0 18px ${glow};display:flex;flex-direction:column;justify-content:space-between;padding:10px;box-sizing:border-box;position:relative;overflow:hidden;text-align:center;">
+      <!-- Card Top Bar: Rarity + Serial -->
+      <div style="display:flex;align-items:center;justify-content:space-between;z-index:2;">
+        <span style="font-size:.62rem;font-weight:900;color:#fff;background:rgba(0,0,0,.65);padding:2px 6px;border-radius:6px;border:1px solid ${borderCol};">${rarity.name}</span>
+        <span style="font-size:.62rem;font-weight:800;color:#cbd5e1;font-family:monospace;letter-spacing:.5px;">#${serial}</span>
+      </div>
+
+      <!-- Card Center Image/Avatar -->
+      <div style="display:flex;align-items:center;justify-content:center;flex:1;margin:6px 0;position:relative;z-index:2;">
+        ${c.image ? `
+          <img src="${c.image}" style="width:78px;height:78px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.6);">
+        ` : `
+          <img src="${avatarUrl}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:2px solid ${borderCol};box-shadow:0 0 16px ${glow};">
+        `}
+      </div>
+
+      <!-- Card Bottom: Name & Element -->
+      <div style="z-index:2;">
+        <div style="font-weight:900;font-size:.76rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;">${fighter.name}</div>
+        <div style="font-size:.66rem;font-weight:800;color:${elemColor};margin-top:2px;">${elemName}</div>
+      </div>
+
+      <!-- Holographic Shine -->
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(255,255,255,.16) 0%,transparent 60%,rgba(255,255,255,.05) 100%);pointer-events:none;"></div>
+    </div>
+  `;
+}
+
+function spDuelChallengePostAuthor(postId) {
+  let p = null;
+  if (postId && window.allPosts && window.allPosts.length) {
+    p = window.allPosts.find(x => String(x.id) === String(postId));
+  }
+  if (!p && postId) {
+    const postEl = document.getElementById(`post-${postId}`);
+    if (postEl) {
+      const authorEl = postEl.querySelector('.p-author span');
+      const imgEl = postEl.querySelector('.p-img-hotspot-container img, .media-img, img');
+      p = {
+        id: postId,
+        uid: postEl.dataset ? postEl.dataset.uid : null,
+        displayName: authorEl ? authorEl.textContent.trim() : 'Creator',
+        images: imgEl && imgEl.src ? [imgEl.src] : []
+      };
+    }
+  }
+
+  const authorName = (p && p.displayName) ? p.displayName : 'Creator';
+  const authorImg = (p && p.images && p.images[0]) ? p.images[0] : null;
+  const authorAvatar = (p && (p.authorAvatar || p.photoURL)) ? (p.authorAvatar || p.photoURL) : null;
+
+  // Generate deterministic unique stats for author based on author name/ID
+  const authorSeed = spCardSeededRand(p ? (p.uid || p.id || authorName) : 'default', 42);
+  const rarities = ['Rare', 'Epic', 'Legendary'];
+  const authorRarity = (p && p.foundingMember) ? 'Legendary' : rarities[Math.floor(authorSeed * rarities.length)];
+  const authorCardNum = Math.floor(authorSeed * 500) + 1;
+
+  const opponentCard = {
+    dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
+    rarityName: authorRarity,
+    cardNum: authorCardNum,
+    displayName: authorName,
+    image: authorImg,
+    avatar: authorAvatar,
+    uid: p ? p.uid : null,
+    isOpponent: true
+  };
+
+  // User's own card
+  let playerCard = null;
+  try {
+    const myCards = JSON.parse(localStorage.getItem('sp_my_cards') || '[]');
+    if (myCards && myCards.length) {
+      const priority = { 'Legendary': 4, 'Epic': 3, 'Rare': 2, 'Common': 1 };
+      myCards.sort((a,b) => (priority[b.rarityName] || 1) - (priority[a.rarityName] || 1));
+      playerCard = {
+        ...myCards[0],
+        displayName: (curUser && curUser.displayName) || 'Player',
+        avatar: (curUser && curUser.photoURL) || ''
+      };
+    }
+  } catch(e){}
+
+  if (!playerCard) {
+    playerCard = {
+      dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
+      rarityName: 'Legendary',
+      cardNum: 7,
+      displayName: (curUser && curUser.displayName) || 'Player',
+      avatar: (curUser && curUser.photoURL) || ''
+    };
+  }
+
+  _currentDuelOpponent = opponentCard;
+  _currentDuelChallenge = playerCard;
+
+  spOpenDuelChallenge(playerCard, opponentCard);
+}
+
 function spLaunchCardDuel() {
-  const c = _currentDuelChallenge || {
+  let playerCard = null;
+  try {
+    const myCards = JSON.parse(localStorage.getItem('sp_my_cards') || '[]');
+    if (myCards && myCards.length) {
+      const priority = { 'Legendary': 4, 'Epic': 3, 'Rare': 2, 'Common': 1 };
+      myCards.sort((a,b) => (priority[b.rarityName] || 1) - (priority[a.rarityName] || 1));
+      playerCard = {
+        ...myCards[0],
+        displayName: (curUser && curUser.displayName) || 'Player',
+        avatar: (curUser && curUser.photoURL) || ''
+      };
+    }
+  } catch(e){}
+
+  const c = playerCard || _currentDuelChallenge || {
     dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
     rarityName: 'Legendary',
     cardNum: 1,
-    displayName: (curUser && curUser.displayName) || 'Studios-Pro Challenger'
+    displayName: (curUser && curUser.displayName) || 'Studios-Pro Challenger',
+    avatar: (curUser && curUser.photoURL) || ''
   };
+  _currentDuelOpponent = null;
   spOpenDuelChallenge(c);
 }
 
-function spOpenDuelChallenge(card) {
-  const c = card || {
+function spOpenDuelChallenge(card, opponent) {
+  const c = card || _currentDuelChallenge || {
     dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
     rarityName: 'Legendary',
     cardNum: 1,
-    displayName: (curUser && curUser.displayName) || 'Studios-Pro Challenger'
+    displayName: (curUser && curUser.displayName) || 'Player'
   };
   _currentDuelChallenge = c;
+  if (opponent) _currentDuelOpponent = opponent;
+  const opp = _currentDuelOpponent;
+
   const stats = spGetCardBattleStats(c);
   const overlay = document.getElementById('spDuelChallengeModal');
   if (!overlay) return;
 
+  const titleEl = document.getElementById('spDuelShareTitle');
+  if (titleEl) {
+    if (opp && opp.displayName) {
+      titleEl.textContent = curLang === 'fr'
+        ? `⚔️ Défier ${opp.displayName} en Duel 3D`
+        : `⚔️ Challenge ${opp.displayName} to 3D Card Duel`;
+    } else {
+      titleEl.textContent = curLang === 'fr'
+        ? '⚔️ Défi Duel de Cartes 3D'
+        : '⚔️ Challenge to 3D Card Duel';
+    }
+  }
+
   const preview = document.getElementById('spDuelShareCardPreview');
   if (preview) {
-    const cardDataUrl = window._spViewerCardDataUrl || '';
-    preview.innerHTML = cardDataUrl
-      ? `<img src="${cardDataUrl}" style="width:140px;height:190px;border-radius:12px;box-shadow:0 0 25px ${stats.rarity.glow};display:block;margin:0 auto;object-fit:cover;">`
-      : `<div style="width:140px;height:190px;border-radius:12px;background:#1e1b4b;border:2px solid ${stats.rarity.colorB};display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:900;color:#fff;">${c.rarityName} #${c.cardNum}</div>`;
+    if (opp && opp.displayName) {
+      const pFighter = { card: c, stats: stats, name: c.displayName || 'You' };
+      const oppStats = spGetCardBattleStats(opp);
+      const oFighter = { card: opp, stats: oppStats, name: opp.displayName };
+
+      preview.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto;max-width:320px;">
+          <div style="width:130px;height:180px;">${spRenderDuelFighterCard(pFighter, 1)}</div>
+          <div style="font-weight:900;font-size:1.1rem;color:#f59e0b;text-shadow:0 0 10px rgba(245,158,11,.8);">VS</div>
+          <div style="width:130px;height:180px;">${spRenderDuelFighterCard(oFighter, 2)}</div>
+        </div>
+      `;
+    } else {
+      const pFighter = { card: c, stats: stats, name: c.displayName || 'Challenger' };
+      preview.innerHTML = `<div style="width:140px;height:190px;margin:0 auto;">${spRenderDuelFighterCard(pFighter, 1)}</div>`;
+    }
   }
 
   const statsRow = document.getElementById('spDuelShareStatsRow');
@@ -14188,21 +14398,35 @@ function spOpenDuelChallenge(card) {
 
   const descEl = document.getElementById('spDuelShareDesc');
   if (descEl) {
-    descEl.textContent = curLang === 'fr'
-      ? 'Envoyez ce lien de défi à un ami sur vos réseaux préférés pour un duel en direct !'
-      : 'Send this challenge link to a friend across any social platform to duel in real-time!';
+    if (opp && opp.displayName) {
+      descEl.textContent = curLang === 'fr'
+        ? `Affrontez ${opp.displayName} en direct maintenant ou partagez ce défi sur vos réseaux sociaux !`
+        : `Battle ${opp.displayName} live now or share this duel challenge across your social networks!`;
+    } else {
+      descEl.textContent = curLang === 'fr'
+        ? 'Envoyez ce lien de défi à un ami sur vos réseaux préférés pour un duel en direct !'
+        : 'Send this challenge link to a friend across any social platform to duel in real-time!';
+    }
   }
+
+  const botTxt = document.getElementById('spDuelBotTxt');
+  if (botTxt) {
+    if (opp && opp.displayName) {
+      botTxt.textContent = curLang === 'fr'
+        ? `⚔️ Combattre ${opp.displayName} Maintenant !`
+        : `⚔️ Battle ${opp.displayName} Now!`;
+    } else {
+      botTxt.textContent = curLang === 'fr'
+        ? 'S\'entraîner contre le Bot IA'
+        : 'Practice Duel vs AI Bot';
+    }
+  }
+
   const shareAny = document.getElementById('spDuelShareAnyTxt');
   if (shareAny) {
     shareAny.textContent = curLang === 'fr'
       ? 'Partager via une App (Instagram, TikTok, SMS...)'
       : 'Share to Any App (Instagram, TikTok, SMS...)';
-  }
-  const botTxt = document.getElementById('spDuelBotTxt');
-  if (botTxt) {
-    botTxt.textContent = curLang === 'fr'
-      ? 'S\'entraîner contre le Bot IA'
-      : 'Practice Duel vs AI Bot';
   }
   const copyTxt = document.getElementById('spDuelCopyTxt');
   if (copyTxt) {
@@ -14225,11 +14449,16 @@ function spCloseDuelChallengeDirect() {
   if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
 }
 
-function spGetDuelLink(card) {
-  const c = card || _currentDuelChallenge || { dateKey: spCardDateKey(), rarityName: 'Rare', cardNum: 1 };
+function spGetDuelLink(card, opponent) {
+  const c = card || _currentDuelChallenge || { dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25', rarityName: 'Rare', cardNum: 1 };
+  const opp = opponent || _currentDuelOpponent;
   const origin = window.location.origin;
   const user = (curUser && curUser.displayName) || 'Creator';
-  return `${origin}/community/?duel=1&challenger=${encodeURIComponent(user)}&date=${c.dateKey}&num=${c.cardNum}&rarity=${c.rarityName}`;
+  let url = `${origin}/community/?duel=1&challenger=${encodeURIComponent(user)}&date=${c.dateKey}&num=${c.cardNum}&rarity=${c.rarityName}`;
+  if (opp && opp.displayName) {
+    url += `&target=${encodeURIComponent(opp.displayName)}&targetRarity=${opp.rarityName || 'Rare'}&targetNum=${opp.cardNum || 1}`;
+  }
+  return url;
 }
 
 async function spShareDuelNative() {
@@ -14329,13 +14558,13 @@ function spPracticeDuelVsBot() {
     cardNum: 7,
     displayName: (curUser && curUser.displayName) || 'Player'
   };
-  const botCard = {
+  const opp = _currentDuelOpponent || {
     dateKey: '2026-09-01',
     rarityName: 'Epic',
     cardNum: 42,
     displayName: '🤖 Cyber Mech AI'
   };
-  spOpenDuelArena(playerCard, botCard);
+  spOpenDuelArena(playerCard, opp);
 }
 
 function spCheckUrlForDuel() {
@@ -14343,15 +14572,15 @@ function spCheckUrlForDuel() {
   if (params.get('duel') === '1') {
     const challenger = {
       displayName: params.get('challenger') || 'Challenger',
-      dateKey: params.get('date') || spCardDateKey(),
+      dateKey: params.get('date') || (typeof spCardDateKey === 'function' ? spCardDateKey() : '2026-09-25'),
       rarityName: params.get('rarity') || 'Rare',
       cardNum: parseInt(params.get('num') || '1', 10)
     };
     const defender = {
-      displayName: (curUser && curUser.displayName) || 'Defender',
-      dateKey: spCardDateKey(),
-      rarityName: 'Common',
-      cardNum: 99
+      displayName: params.get('target') || (curUser && curUser.displayName) || 'Defender',
+      dateKey: typeof spCardDateKey === 'function' ? spCardDateKey() : '2026-09-25',
+      rarityName: params.get('targetRarity') || 'Epic',
+      cardNum: parseInt(params.get('targetNum') || '42', 10)
     };
     setTimeout(() => {
       spOpenDuelArena(challenger, defender);
@@ -14386,8 +14615,17 @@ function spOpenDuelArena(f1Card, f2Card) {
     <span class="sp-duel-stat-pill">${_duelFighter2.stats.element}</span>
   `;
 
-  document.getElementById('spFighter1CardImg').innerHTML = `<div style="font-weight:900;font-size:1.1rem;color:#60a5fa;text-align:center;">🎴 ${_duelFighter1.card.rarityName}<br><span style="font-size:.75rem;color:#cbd5e1;">#${String(_duelFighter1.card.cardNum).padStart(4,'0')}</span></div>`;
-  document.getElementById('spFighter2CardImg').innerHTML = `<div style="font-weight:900;font-size:1.1rem;color:#ec4899;text-align:center;">🎴 ${_duelFighter2.card.rarityName}<br><span style="font-size:.75rem;color:#cbd5e1;">#${String(_duelFighter2.card.cardNum).padStart(4,'0')}</span></div>`;
+  // Render real holographic cards with author avatar/art and elemental borders (NO black boxes!)
+  const card1El = document.getElementById('spFighter1CardImg');
+  const card2El = document.getElementById('spFighter2CardImg');
+  if (card1El) {
+    card1El.style.background = 'transparent';
+    card1El.innerHTML = spRenderDuelFighterCard(_duelFighter1, 1);
+  }
+  if (card2El) {
+    card2El.style.background = 'transparent';
+    card2El.innerHTML = spRenderDuelFighterCard(_duelFighter2, 2);
+  }
 
   document.getElementById('spDuelRoundNum').textContent = '1';
   document.getElementById('spDuelLogBox').textContent = curLang === 'fr'
@@ -14519,8 +14757,12 @@ function spExecuteDuelRound() {
       spPlayDuelSound('victory');
 
       // Award +25 SP Coins if current user won
-      if (curUser && typeof addCoins === 'function') {
-        addCoins(25, 'duel_win', null, '3D Card Duel Victory');
+      if (curUser) {
+        if (typeof addCoins === 'function') {
+          addCoins(25, 'duel_win', null, '3D Card Duel Victory');
+        } else if (typeof awardCoinsToUser === 'function') {
+          awardCoinsToUser(curUser.uid, 25, 'duel_win', '3D Card Duel Victory');
+        }
       }
     } else {
       fightBtn.disabled = false;
@@ -14529,9 +14771,26 @@ function spExecuteDuelRound() {
   }, 1100);
 }
 
+function spShareDuelVictoryNative() {
+  const winner = document.getElementById('spDuelWinnerTxt') ? document.getElementById('spDuelWinnerTxt').textContent : 'Victory';
+  const f1 = _duelFighter1 ? _duelFighter1.card : null;
+  const f2 = _duelFighter2 ? _duelFighter2.card : null;
+  const link = spGetDuelLink(f1, f2);
+  const text = curLang === 'fr'
+    ? `🏆 ${winner} dans l'Arène 3D SP Nexus ! Qui ose me défier ? Combats ici : ${link}`
+    : `🏆 ${winner} in the SP Nexus 3D Duel Arena! Who dares challenge me? Fight here: ${link}`;
+  if (navigator.share) {
+    navigator.share({ title: 'SP Nexus 3D Duel Victory 🏆', text, url: link }).catch(()=>{});
+  } else {
+    spShareDuelVictoryWhatsApp();
+  }
+}
+
 function spShareDuelVictoryWhatsApp() {
   const winner = document.getElementById('spDuelWinnerTxt').textContent;
-  const link = spGetDuelLink();
+  const f1 = _duelFighter1 ? _duelFighter1.card : null;
+  const f2 = _duelFighter2 ? _duelFighter2.card : null;
+  const link = spGetDuelLink(f1, f2);
   const text = curLang === 'fr'
     ? `🏆 ${winner} dans l'Arène 3D SP Nexus ! Qui ose me défier ? Combats ici : ${link}`
     : `🏆 ${winner} in the SP Nexus 3D Duel Arena! Who dares challenge me? Fight here: ${link}`;
