@@ -611,12 +611,21 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const cardParam = urlParams.get('card') || urlParams.get('id') || '184';
-            currentCardId = cardParam;
+            const modelParam = urlParams.get('model');
+            const cardParam = urlParams.get('card') || urlParams.get('id') || (!modelParam ? '184' : '');
+            currentCardId = cardParam || modelParam;
 
-            document.getElementById('cardSerialDisplay').innerText = 'SERIAL: #' + cardParam;
+            if (cardParam) {
+                document.getElementById('cardSerialDisplay').innerText = 'SERIAL: #' + cardParam;
+            } else if (modelParam) {
+                document.getElementById('cardSerialDisplay').innerText = 'MODEL: ' + modelParam.toUpperCase();
+            }
             const viewer = document.getElementById('cardModelViewer');
-            viewer.src = `models/card-${cardParam}.glb`;
+            if (modelParam) {
+                viewer.src = modelParam.endsWith('.glb') ? (modelParam.startsWith('/') || modelParam.startsWith('http') ? modelParam : `models/${modelParam}`) : `models/${modelParam}.glb`;
+            } else {
+                viewer.src = cardParam.endsWith('.glb') ? cardParam : `models/card-${cardParam}.glb`;
+            }
 
             // Apply URL material parameter if provided (e.g. ?card=184&mat=original)
             const matParam = urlParams.get('mat') || urlParams.get('material') || 'original';
