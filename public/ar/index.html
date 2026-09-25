@@ -612,15 +612,39 @@
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const modelParam = urlParams.get('model');
-            const cardParam = urlParams.get('card') || urlParams.get('id') || (!modelParam ? '184' : '');
+            const imgParam = urlParams.get('img') || urlParams.get('image');
+            const titleParam = urlParams.get('title');
+            const authorParam = urlParams.get('author');
+            const rarityParam = urlParams.get('rarity');
+
+            // Default to card 185 if an image is provided, since card 185 has UV-mapped baseColorTexture
+            const defaultCard = imgParam ? '185' : '184';
+            const cardParam = urlParams.get('card') || urlParams.get('id') || (!modelParam ? defaultCard : '');
             currentCardId = cardParam || modelParam;
 
-            if (cardParam) {
+            if (titleParam) {
+                const titleEl = document.getElementById('cardNameDisplay');
+                if (titleEl) titleEl.innerText = titleParam;
+            }
+            if (authorParam) {
+                const serialEl = document.getElementById('cardSerialDisplay');
+                if (serialEl) serialEl.innerText = 'CREATOR: ' + authorParam.toUpperCase();
+            } else if (cardParam) {
                 document.getElementById('cardSerialDisplay').innerText = 'SERIAL: #' + cardParam;
             } else if (modelParam) {
                 document.getElementById('cardSerialDisplay').innerText = 'MODEL: ' + modelParam.toUpperCase();
             }
+
+            if (rarityParam) {
+                const rarityEl = document.getElementById('cardRarityDisplay');
+                if (rarityEl) rarityEl.innerText = rarityParam.toUpperCase();
+            }
+
             const viewer = document.getElementById('cardModelViewer');
+            if (imgParam) {
+                viewer.setAttribute('poster', imgParam);
+            }
+
             if (modelParam) {
                 viewer.src = modelParam.endsWith('.glb') ? (modelParam.startsWith('/') || modelParam.startsWith('http') ? modelParam : `models/${modelParam}`) : `models/${modelParam}.glb`;
             } else {
@@ -629,7 +653,19 @@
 
             // Apply URL material parameter if provided (e.g. ?card=184&mat=original)
             const matParam = urlParams.get('mat') || urlParams.get('material') || 'original';
-            viewer.addEventListener('load', () => {
+            viewer.addEventListener('load', async () => {
+                if (imgParam && viewer.model && viewer.model.materials) {
+                    try {
+                        const mat = viewer.model.materials[0];
+                        if (mat && mat.pbrMetallicRoughness && mat.pbrMetallicRoughness.baseColorTexture) {
+                            const texture = await viewer.createTexture(imgParam);
+                            mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+                        }
+                    } catch (e) {
+                        console.warn('Error applying custom image texture in AR:', e);
+                    }
+                }
+
                 if (viewer.model && viewer.model.materials) {
                     originalMaterials = viewer.model.materials.map(m => {
                         if (m.pbrMetallicRoughness) {

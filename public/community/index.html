@@ -1798,9 +1798,18 @@
   0%   { height: 4px; background: #6366f1; }
   50%  { height: 18px; background: #ec4899; }
   100% { height: 8px; background: #38bdf8; }
+}
+
 /* ════════════════════════════════════════════════════════════════════
    📱 VIRAL FEATURE: AUGMENTED REALITY (AR) IN-ROOM VIEW
    ════════════════════════════════════════════════════════════════════ */
+model-viewer#spCommunityARViewer {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  background-color: transparent !important;
+  --poster-color: transparent !important;
+}
 .sp-ar-mat-chip {
   transition: all .2s ease;
   user-select: none;
@@ -3043,9 +3052,14 @@
     </div>
     <div class="mb" style="padding: 18px;">
       <!-- 3D & AR Interactive Stage -->
-      <div style="width: 100%; height: 340px; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 50%, #0d1629 0%, #050811 100%); position: relative; border: 1px solid rgba(0, 242, 254, 0.3); margin-bottom: 12px; box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);">
+      <div id="spARViewerStage" style="width: 100%; height: 350px; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 50%, #0d1629 0%, #050811 100%); position: relative; border: 1px solid rgba(0, 242, 254, 0.3); margin-bottom: 12px; box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);">
+        <!-- Loading Spinner & State -->
+        <div id="spARSpinner" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 2; pointer-events: none; background: rgba(5, 8, 17, 0.7); backdrop-filter: blur(4px); transition: opacity 0.3s;">
+          <div class="spinner" style="width: 38px; height: 38px; border: 3px solid rgba(0, 242, 254, 0.2); border-top-color: #00f2fe; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <span style="font-size: 0.82rem; font-weight: 800; color: #00f2fe; letter-spacing: 0.03em;" id="spARSpinnerText">🔮 Loading 3D Hologram...</span>
+        </div>
+
         <model-viewer id="spCommunityARViewer"
-          src="/ar/models/card-184.glb"
           alt="SP Nexus 3D Augmented Reality Asset"
           ar
           ar-modes="webxr scene-viewer quick-look"
@@ -3058,7 +3072,7 @@
           shadow-softness="0.5"
           exposure="1.1"
           loading="eager"
-          style="width: 100%; height: 100%; background: transparent;">
+          style="width: 100%; height: 100%; display: block; background: transparent; --poster-color: transparent;">
           
           <button slot="ar-button" id="spARNativeLaunchBtn" style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #00f2fe, #3b82f6); color: #000; font-weight: 900; font-size: .86rem; padding: 12px 24px; border-radius: 30px; border: none; cursor: pointer; box-shadow: 0 0 25px rgba(0, 242, 254, 0.7); display: flex; align-items: center; gap: 8px; z-index: 10; letter-spacing: .02em; white-space: nowrap;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -15225,42 +15239,84 @@ let _spCurrentARConfig = null;
 let _spAROriginalMaterials = [];
 
 function spOpenPostAR(postId) {
-  let targetModel = '/ar/models/card-184.glb';
-  let title = 'SP Nexus 3D AR Hologram';
-  let badge = '3D AR READY';
-  let cardId = '184';
+  let p = null;
+  if (postId && window.allPosts && Array.isArray(window.allPosts)) {
+    p = window.allPosts.find(x => x && x.id === postId);
+  }
 
-  if (postId && typeof allPosts !== 'undefined' && Array.isArray(allPosts)) {
-    const post = allPosts.find(p => p && p.id === postId);
-    if (post) {
-      title = (post.displayName || 'Creator') + ' • 3D Hologram';
-      badge = (post.category || '3D AR').toUpperCase();
+  let postImg = '';
+  let author = 'Creator';
+  let title = '3D Hologram';
+  let badge = '3D AR CREATION';
+  let category = 'showcase';
+  let cardNum = null;
+  let modelData = null;
 
-      // Detect specific model
-      if (post.modelData && (post.modelData.glbUrl || post.modelData.url)) {
-        targetModel = post.modelData.glbUrl || post.modelData.url;
-      } else if (post.modelData && post.modelData.type === 'gear') {
-        targetModel = '/ar/models/cad-gear.glb';
-        cardId = '';
-      } else if (post.content && post.content.toLowerCase().includes('gear')) {
-        targetModel = '/ar/models/cad-gear.glb';
-        cardId = '';
-      } else if (post.content && post.content.toLowerCase().includes('wood')) {
-        targetModel = '/ar/models/relief-wood.glb';
-        cardId = '';
-      } else if (post.cardNum && SP_KNOWN_AR_CARDS.includes(parseInt(post.cardNum, 10))) {
-        cardId = String(post.cardNum);
-        targetModel = `/ar/models/card-${cardId}.glb`;
+  if (p) {
+    author = p.displayName || 'Creator';
+    title = p.content ? p.content.slice(0, 42) : (p.title || '3D Hologram');
+    badge = (p.category || '3D AR').toUpperCase();
+    category = p.category || 'showcase';
+    cardNum = p.cardNum ? parseInt(p.cardNum, 10) : null;
+    modelData = p.modelData;
+    if (p.images && p.images.length > 0 && p.images[0]) {
+      postImg = p.images[0];
+    } else if (p.thumbnailUrl) {
+      postImg = p.thumbnailUrl;
+    }
+  }
+
+  // Fallback to DOM elements if not found in allPosts
+  if (postId) {
+    const postEl = document.getElementById(`post-${postId}`) || document.getElementById(`v3d-${postId}`)?.closest('.p-card');
+    if (postEl) {
+      if (!postImg) {
+        const imgEl = postEl.querySelector('.p-img-hotspot-container img, .p-imgs img, .main-img img, img:not(.p-av)');
+        if (imgEl && imgEl.src) postImg = imgEl.src;
+      }
+      if (author === 'Creator') {
+        const aEl = postEl.querySelector('.p-author span');
+        if (aEl && aEl.textContent.trim()) author = aEl.textContent.trim();
+      }
+      if (title === '3D Hologram') {
+        const cEl = postEl.querySelector('.p-content');
+        if (cEl && cEl.textContent.trim()) title = cEl.textContent.trim().slice(0, 42);
       }
     }
   }
 
+  // Select appropriate 3D model
+  let glbUrl = '/ar/models/card-185.glb'; // card-185 has UV-mapped baseColorTexture
+  let isCard = false;
+  let cardId = '185';
+
+  if (cardNum && SP_KNOWN_AR_CARDS.includes(cardNum)) {
+    glbUrl = `/ar/models/card-${cardNum}.glb`;
+    isCard = true;
+    cardId = String(cardNum);
+  } else if (modelData && (modelData.glbUrl || modelData.url)) {
+    glbUrl = modelData.glbUrl || modelData.url;
+  } else if (modelData && modelData.type === 'gear') {
+    glbUrl = '/ar/models/cad-gear.glb';
+  } else if (title.toLowerCase().includes('gear') || category === 'cad') {
+    glbUrl = '/ar/models/cad-gear.glb';
+  } else if (title.toLowerCase().includes('wood') || category === 'wood') {
+    glbUrl = '/ar/models/relief-wood.glb';
+  } else {
+    // Standard post: use card-185.glb with custom texture
+    glbUrl = '/ar/models/card-185.glb';
+    cardId = '185';
+  }
+
   spLaunchCommunityARModal({
-    glbUrl: targetModel,
-    title: title,
+    glbUrl: glbUrl,
+    title: `${author} • ${title}`,
     badge: badge,
     cardId: cardId,
-    isCard: false
+    postImg: postImg,
+    author: author,
+    rawTitle: title,
+    isCard: isCard
   });
 }
 
@@ -15272,7 +15328,7 @@ function spOpenCardAR(card) {
   };
 
   const num = parseInt(c.cardNum || 184, 10);
-  const cardId = SP_KNOWN_AR_CARDS.includes(num) ? String(num) : '184';
+  const cardId = SP_KNOWN_AR_CARDS.includes(num) ? String(num) : '185';
   const glbUrl = `/ar/models/card-${cardId}.glb`;
   const rarity = c.rarityName || 'Collectible';
   const title = `SP Nexus ${rarity} #${String(num).padStart(4, '0')}`;
@@ -15283,6 +15339,9 @@ function spOpenCardAR(card) {
     title: title,
     badge: badge,
     cardId: cardId,
+    postImg: window._spViewerCardDataUrl || null,
+    author: (curUser && curUser.displayName) || 'Collector',
+    rawTitle: title,
     isCard: true
   });
 }
@@ -15292,14 +15351,24 @@ function spLaunchCommunityARModal(config) {
     glbUrl: config.glbUrl,
     title: config.title,
     badge: config.badge,
-    cardId: config.cardId || '184',
+    cardId: config.cardId || '185',
+    postImg: config.postImg || null,
+    author: config.author || 'Creator',
+    rawTitle: config.rawTitle || config.title,
     isCard: !!config.isCard,
     currentMat: 'original'
   };
 
   const isFr = (typeof curLang !== 'undefined' && curLang === 'fr');
 
-  // DOM Elements
+  // 1. Open modal immediately so layout dimensions are valid
+  const overlay = document.getElementById('spARModalOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.classList.add('open');
+  }
+
+  // 2. DOM Elements & Multilingual text
   const titleEl = document.getElementById('spARTitle');
   if (titleEl) titleEl.textContent = config.title;
 
@@ -15337,13 +15406,31 @@ function spLaunchCommunityARModal(config) {
   const shareTxt = document.getElementById('spARShareBtnTxt');
   if (shareTxt) shareTxt.textContent = isFr ? 'Partager AR' : 'Share AR';
 
-  // Target URL for QR Code & Mobile
+  // 3. Show Loading Spinner
+  const spinner = document.getElementById('spARSpinner');
+  const spinnerText = document.getElementById('spARSpinnerText');
+  if (spinner) {
+    spinner.style.display = 'flex';
+    spinner.style.opacity = '1';
+    if (spinnerText) spinnerText.textContent = isFr ? '🔮 Chargement de l\'hologramme 3D...' : '🔮 Loading 3D Hologram...';
+  }
+
+  // 4. Generate Unique QR Code pointing to this exact post/artwork
   const origin = window.location.origin;
   const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
   const baseHost = isLocal ? origin : 'https://studios-pro.com';
-  let qrTargetUrl = `${baseHost}/ar/?card=${_spCurrentARConfig.cardId}`;
-  if (!config.cardId && config.glbUrl) {
-    qrTargetUrl = `${baseHost}/ar/?model=${encodeURIComponent(config.glbUrl)}`;
+
+  let qrTargetUrl;
+  if (config.isCard) {
+    qrTargetUrl = `${baseHost}/ar/?card=${config.cardId}`;
+  } else if (config.postImg) {
+    qrTargetUrl = `${baseHost}/ar/?img=${encodeURIComponent(config.postImg)}&title=${encodeURIComponent(config.rawTitle || config.title)}&author=${encodeURIComponent(config.author || 'Creator')}&card=185`;
+  } else if (config.glbUrl && config.glbUrl.includes('cad-gear')) {
+    qrTargetUrl = `${baseHost}/ar/?model=cad-gear&title=${encodeURIComponent(config.rawTitle || 'CAD Gear')}`;
+  } else if (config.glbUrl && config.glbUrl.includes('relief-wood')) {
+    qrTargetUrl = `${baseHost}/ar/?model=relief-wood&title=${encodeURIComponent(config.rawTitle || 'Relief Wood')}`;
+  } else {
+    qrTargetUrl = `${baseHost}/ar/?card=184`;
   }
   _spCurrentARConfig.targetUrl = qrTargetUrl;
 
@@ -15352,11 +15439,9 @@ function spLaunchCommunityARModal(config) {
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrTargetUrl)}&bgcolor=ffffff&color=050811&margin=1`;
   }
 
-  // Configure <model-viewer>
+  // 5. Configure <model-viewer>
   const viewer = document.getElementById('spCommunityARViewer');
   if (viewer) {
-    viewer.src = config.glbUrl;
-
     // Reset material button chips
     document.querySelectorAll('.sp-ar-mat-chip').forEach(c => {
       c.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -15371,8 +15456,46 @@ function spLaunchCommunityARModal(config) {
     const matLabel = document.getElementById('spARActiveMatLabel');
     if (matLabel) matLabel.textContent = isFr ? 'Original (Authentique)' : 'Original (Authentic)';
 
-    // Cache original materials when model is loaded
-    const onModelLoad = () => {
+    if (config.postImg) {
+      viewer.setAttribute('poster', config.postImg);
+    } else {
+      viewer.removeAttribute('poster');
+    }
+
+    const onModelLoad = async () => {
+      if (spinner) {
+        spinner.style.opacity = '0';
+        setTimeout(() => { spinner.style.display = 'none'; }, 300);
+      }
+
+      // Apply the post's unique image as the 3D card texture
+      if (config.postImg && viewer.model && viewer.model.materials) {
+        try {
+          const mat = viewer.model.materials[0];
+          if (mat && mat.pbrMetallicRoughness && mat.pbrMetallicRoughness.baseColorTexture) {
+            let safeSrc = config.postImg;
+            if (typeof spLoadSafeReelImage === 'function' && !safeSrc.startsWith('data:')) {
+              try {
+                const safeImg = await spLoadSafeReelImage(safeSrc);
+                if (safeImg && safeImg.naturalWidth > 0) {
+                  const tempC = document.createElement('canvas');
+                  tempC.width = Math.min(safeImg.naturalWidth, 1024);
+                  tempC.height = Math.min(safeImg.naturalHeight, 1024);
+                  const ctx = tempC.getContext('2d');
+                  ctx.drawImage(safeImg, 0, 0, tempC.width, tempC.height);
+                  safeSrc = tempC.toDataURL('image/png');
+                }
+              } catch(e) {}
+            }
+            const texture = await viewer.createTexture(safeSrc);
+            mat.pbrMetallicRoughness.baseColorTexture.setTexture(texture);
+          }
+        } catch (e) {
+          console.warn('Notice applying AR texture:', e);
+        }
+      }
+
+      // Cache original materials for live shader switcher
       if (viewer.model && viewer.model.materials) {
         _spAROriginalMaterials = viewer.model.materials.map(m => {
           if (m.pbrMetallicRoughness) {
@@ -15387,14 +15510,33 @@ function spLaunchCommunityARModal(config) {
         });
       }
     };
-    viewer.addEventListener('load', onModelLoad, { once: true });
-  }
 
-  // Open modal
-  const overlay = document.getElementById('spARModalOverlay');
-  if (overlay) {
-    overlay.style.display = 'flex';
-    overlay.classList.add('open');
+    if (viewer.loaded && viewer.model) {
+      onModelLoad();
+    } else {
+      viewer.addEventListener('load', onModelLoad, { once: true });
+    }
+
+    // Set model source
+    if (viewer.src !== config.glbUrl) {
+      viewer.src = config.glbUrl;
+    }
+    viewer.addEventListener('error', (err) => {
+      console.warn('AR model load notice:', err);
+      if (spinner) {
+        spinner.style.opacity = '0';
+        setTimeout(() => { spinner.style.display = 'none'; }, 300);
+      }
+    }, { once: true });
+
+    // Trigger canvas resize once modal is displayed
+    setTimeout(() => {
+      try {
+        if (typeof viewer.resize === 'function') viewer.resize();
+        if (typeof viewer.dismissPoster === 'function') viewer.dismissPoster();
+      } catch(e) {}
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   }
 }
 
@@ -15481,19 +15623,14 @@ async function spTakeARSnapshot() {
 
 function spOpenFullARStudio() {
   const cfg = _spCurrentARConfig;
-  const cardId = cfg ? cfg.cardId : '184';
-  const mat = cfg ? (cfg.currentMat || 'original') : 'original';
-  let url = `/ar/?card=${cardId}&mat=${mat}`;
-  if (cfg && !cfg.cardId && cfg.glbUrl) {
-    url = `/ar/?model=${encodeURIComponent(cfg.glbUrl)}&mat=${mat}`;
-  }
-  window.open(url, '_blank');
+  const targetUrl = (cfg && cfg.targetUrl) || (window.location.origin + '/ar/?card=185');
+  window.open(targetUrl, '_blank');
 }
 
 function spShareARExperience() {
   const cfg = _spCurrentARConfig;
   const isFr = (typeof curLang !== 'undefined' && curLang === 'fr');
-  const targetUrl = (cfg && cfg.targetUrl) || (window.location.origin + '/ar/?card=184');
+  const targetUrl = (cfg && cfg.targetUrl) || (window.location.origin + '/ar/?card=185');
   const title = (cfg && cfg.title) || 'SP Nexus 3D Hologram AR';
   const text = isFr
     ? `📱 Regarde ce modèle 3D en Réalité Augmentée dans ta pièce sur SP Nexus ! 🔥 Teste ici : ${targetUrl}`
@@ -15523,13 +15660,13 @@ function spShareARExperience() {
 function spCheckUrlForAR() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('ar') === '1' || params.get('arview') === '1') {
+    const postParam = params.get('post');
     const cardParam = params.get('card');
-    const modelParam = params.get('model');
     setTimeout(() => {
-      if (cardParam) {
+      if (postParam) {
+        spOpenPostAR(postParam);
+      } else if (cardParam) {
         spOpenCardAR({ cardNum: parseInt(cardParam, 10), rarityName: 'Mythic' });
-      } else if (modelParam) {
-        spOpenPostAR();
       } else {
         spOpenPostAR();
       }
