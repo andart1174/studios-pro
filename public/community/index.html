@@ -1832,6 +1832,16 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- ⚔️ Card Duel PvP Button in Header -->
+    <button onclick="spLaunchCardDuel()" title="3D Card Duel PvP Arena" style="background:linear-gradient(135deg,rgba(239,68,68,.3),rgba(245,158,11,.25));border:1px solid rgba(239,68,68,.6);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 16px rgba(239,68,68,.45);">
+      <span style="font-size:16px;">⚔️</span>
+      <span style="background:linear-gradient(135deg,#f87171,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Card Duel</span>
+    </button>
+    <!-- 🎬 3D Reel Generator Button in Header -->
+    <button onclick="spOpen3DReelGenerator()" title="3D Reel & TikTok Video Generator" style="background:linear-gradient(135deg,rgba(236,72,153,.3),rgba(139,92,246,.25));border:1px solid rgba(236,72,153,.6);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 16px rgba(236,72,153,.45);">
+      <span style="font-size:16px;">🎬</span>
+      <span style="background:linear-gradient(135deg,#ec4899,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">3D Reel Studio</span>
+    </button>
     <!-- 😂 SP Fun & AI Jokes Button in Header -->
     <button onclick="openFunJokesModal()" title="SP Fun & AI Jokes Lab" style="background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(239,68,68,.2));border:1px solid rgba(245,158,11,.5);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 15px rgba(245,158,11,.35);">
       <span style="font-size:16px;">😂</span>
@@ -2006,6 +2016,14 @@
         <button class="nav-item" id="navShop" onclick="openShopModal()" style="color:var(--accent3);font-weight:700;">
           <span class="nav-item-icon">🛍️</span><span>SP Shop</span>
         </button>
+        <button class="nav-item" id="navCardDuel" onclick="spLaunchCardDuel()" style="color:#f59e0b;font-weight:800;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;margin-top:4px;">
+          <span class="nav-item-icon">⚔️</span><span>Card Duel PvP</span>
+          <span style="margin-left:auto;background:#ef4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:6px;font-weight:900;">HOT</span>
+        </button>
+        <button class="nav-item" id="nav3DReelStudio" onclick="spOpen3DReelGenerator()" style="color:#ec4899;font-weight:800;background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.3);border-radius:10px;margin-top:4px;">
+          <span class="nav-item-icon">🎬</span><span>3D Reel Studio</span>
+          <span style="margin-left:auto;background:#ec4899;color:#fff;font-size:9px;padding:2px 6px;border-radius:6px;font-weight:900;">NEW</span>
+        </button>
         <button class="nav-item" id="navAuction" onclick="openAuctionModal()" style="color:#fbbf24;font-weight:700;">
           <span class="nav-item-icon">🏷️</span><span>3D Auction House</span>
         </button>
@@ -2119,13 +2137,19 @@
           </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-        <div style="text-align:right;">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+        <div style="text-align:right;margin-right:4px;">
           <div style="font-size:.62rem;color:var(--muted);font-weight:700;">NEXT DROP</div>
           <div style="font-size:.78rem;font-weight:900;color:#fbbf24;font-family:monospace;" id="spDailyCardCountdown">--:--:--</div>
         </div>
-        <button style="background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;padding:8px 16px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(245,158,11,.5);">
+        <button onclick="spDailyCardOpen()" style="background:linear-gradient(135deg,#f59e0b,#ec4899);border:none;color:#fff;padding:8px 15px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(245,158,11,.5);">
           🎴 Claim Card
+        </button>
+        <button onclick="event.stopPropagation();spLaunchCardDuel()" style="background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;color:#fff;padding:8px 14px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(239,68,68,.5);">
+          ⚔️ Card Duel PvP
+        </button>
+        <button onclick="event.stopPropagation();spOpenCardReelGenerator({dateKey:spCardDateKey(),rarityName:'Legendary',cardNum:1})" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;padding:8px 14px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 15px rgba(236,72,153,.5);">
+          🎬 Card Reel (9:16)
         </button>
       </div>
     </div>
@@ -2133,6 +2157,8 @@
     <!-- Filter tabs (above create bar like YouTube) -->
     <div class="ftabs" id="mainFtabs">
       <button class="ftab active" data-cat="all" onclick="filterTab('all',this)" data-t="all">🌐 All</button>
+      <button class="ftab" data-cat="cardduel" onclick="spLaunchCardDuel()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;box-shadow:0 0 16px rgba(239,68,68,.5);cursor:pointer;">⚔️ Card Duel PvP</button>
+      <button class="ftab" data-cat="3dreel" onclick="spOpen3DReelGenerator()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;box-shadow:0 0 16px rgba(236,72,153,.5);cursor:pointer;">🎬 3D Reel Studio</button>
       <button class="ftab" data-cat="arcade" onclick="spArcadeOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#10b981,#059669);border:none;box-shadow:0 0 15px rgba(16,185,129,.4);">🎮 Arcade 3D</button>
       <button class="ftab" data-cat="dailycard" onclick="spDailyCardOpen()" style="color:#fff;font-weight:900;background:linear-gradient(135deg,#f59e0b,#ec4899,#6366f1);border:none;box-shadow:0 0 15px rgba(245,158,11,.45);">🃏 Daily Card</button>
       <button id="adminCardBtn" class="ftab" data-cat="admincards" onclick="spAdminCardOpen()" style="display:none;color:#fff;font-weight:900;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;box-shadow:0 0 15px rgba(124,58,237,.5);">🛡️ Admin Cards</button>
@@ -6746,7 +6772,8 @@ function buildCard(p) {
       ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="initiateDirectCall(false, '${escAttr(p.uid)}')" title="1-Tap Call Creator" style="color:#34d399;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);">📞 Call</button>` : ''}
       ${curUser && p.uid !== curUser.uid ? `<button class="tip-post-btn" onclick="openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">💰 Tip</button>` : ''}
       ${curUser && p.uid === curUser.uid && !p.boosted ? `<button class="tip-post-btn" onclick="boostPost('${p.id}')" title="Boost this post for 50 coins" style="color:#a78bfa;background:rgba(99,102,241,.08);">🚀 Boost</button>` : ''}
-      ${has3D ? `<button class="tip-post-btn" onclick="spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 TikTok / Instagram Reel" style="color:#f472b6;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.4);font-weight:800;">🎬 Reel (9:16)</button>` : ''}
+      <button class="tip-post-btn" onclick="spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 TikTok / Instagram Reel" style="color:#f472b6;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.4);font-weight:800;">🎬 Reel (9:16)</button>
+      <button class="tip-post-btn" onclick="spLaunchCardDuel()" title="Challenge Creator to 3D Card Duel" style="color:#fbbf24;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);font-weight:800;">⚔️ Duel</button>
       <button class="act-btn share-btn" onclick="sharePost('${p.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -13631,21 +13658,24 @@ let _reelDuration = 6;
 let _reelTheme = 'cyber';
 
 function spOpen3DReelGenerator(postId) {
-  const p = (allPosts && allPosts.length) ? allPosts.find(x => x.id === postId) : null;
-  if (!p) {
-    if (typeof toast === 'function') toast(curLang === 'fr' ? 'Modèle introuvable' : 'Post not found', 'error');
-    return;
+  let p = null;
+  if (postId && allPosts && allPosts.length) {
+    p = allPosts.find(x => x.id === postId);
+  }
+  if (!p && allPosts && allPosts.length) {
+    p = allPosts.find(x => x.modelData && (x.modelData.positions || x.modelData.vertices)) || allPosts[0];
   }
   const overlay = document.getElementById('spReelOverlay');
   if (!overlay) return;
 
   _currentReelContext = {
-    type: '3d',
-    postId: postId,
-    modelData: p.modelData || null,
-    author: p.displayName || 'Creator',
-    title: p.content ? p.content.slice(0, 30) : 'Studios-Pro 3D',
-    imgFallback: (p.images && p.images[0]) || null
+    type: (p && p.modelData && (p.modelData.positions || p.modelData.vertices)) ? '3d' : 'card',
+    postId: p ? p.id : 'demo',
+    modelData: (p && p.modelData) ? p.modelData : null,
+    author: (p && p.displayName) || (curUser && curUser.displayName) || 'Studios-Pro Creator',
+    title: (p && p.content) ? p.content.slice(0, 30) : 'Studios-Pro 3D Reel',
+    imgFallback: (p && p.images && p.images[0]) || '/icon-512.png',
+    dataUrl: window._spViewerCardDataUrl || null
   };
 
   document.getElementById('spReelModalHeaderTitle').textContent = curLang === 'fr'
@@ -13860,6 +13890,13 @@ function spInitReel3DPreview() {
     _reelScene.add(_reelMesh);
   }
 
+  if (!_reelMesh) {
+    const gemGeo = new THREE.TorusKnotGeometry(1.4, 0.45, 90, 16);
+    const gemMat = new THREE.MeshStandardMaterial({ color: 0xec4899, metalness: 0.6, roughness: 0.3 });
+    _reelMesh = new THREE.Mesh(gemGeo, gemMat);
+    _reelScene.add(_reelMesh);
+  }
+
   spApplyReelThemeColors();
 
   // Animation Loop
@@ -14016,9 +14053,25 @@ function spGetCardBattleStats(card) {
   };
 }
 
+function spLaunchCardDuel() {
+  const c = _currentDuelChallenge || {
+    dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
+    rarityName: 'Legendary',
+    cardNum: 1,
+    displayName: (curUser && curUser.displayName) || 'Studios-Pro Challenger'
+  };
+  spOpenDuelChallenge(c);
+}
+
 function spOpenDuelChallenge(card) {
-  _currentDuelChallenge = card;
-  const stats = spGetCardBattleStats(card);
+  const c = card || {
+    dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
+    rarityName: 'Legendary',
+    cardNum: 1,
+    displayName: (curUser && curUser.displayName) || 'Studios-Pro Challenger'
+  };
+  _currentDuelChallenge = c;
+  const stats = spGetCardBattleStats(c);
   const overlay = document.getElementById('spDuelChallengeModal');
   if (!overlay) return;
 
@@ -14027,7 +14080,7 @@ function spOpenDuelChallenge(card) {
     const cardDataUrl = window._spViewerCardDataUrl || '';
     preview.innerHTML = cardDataUrl
       ? `<img src="${cardDataUrl}" style="width:140px;height:190px;border-radius:12px;box-shadow:0 0 25px ${stats.rarity.glow};display:block;margin:0 auto;object-fit:cover;">`
-      : `<div style="width:140px;height:190px;border-radius:12px;background:#1e1b4b;border:2px solid ${stats.rarity.colorB};display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:900;color:#fff;">${card.rarityName} #${card.cardNum}</div>`;
+      : `<div style="width:140px;height:190px;border-radius:12px;background:#1e1b4b;border:2px solid ${stats.rarity.colorB};display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:900;color:#fff;">${c.rarityName} #${c.cardNum}</div>`;
   }
 
   const statsRow = document.getElementById('spDuelShareStatsRow');
@@ -14095,11 +14148,16 @@ function spCopyDuelLink() {
 
 function spPracticeDuelVsBot() {
   spCloseDuelChallengeDirect();
-  const playerCard = _currentDuelChallenge || { dateKey: spCardDateKey(), rarityName: 'Rare', cardNum: 42 };
+  const playerCard = _currentDuelChallenge || {
+    dateKey: (typeof spCardDateKey === 'function') ? spCardDateKey() : '2026-09-25',
+    rarityName: 'Legendary',
+    cardNum: 7,
+    displayName: (curUser && curUser.displayName) || 'Player'
+  };
   const botCard = {
     dateKey: '2026-09-01',
-    rarityName: 'Rare',
-    cardNum: 7,
+    rarityName: 'Epic',
+    cardNum: 42,
     displayName: '🤖 Cyber Mech AI'
   };
   spOpenDuelArena(playerCard, botCard);
