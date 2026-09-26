@@ -1636,25 +1636,25 @@
       .sp-tt-rail {
         display: flex !important;
         position: absolute !important;
-        right: 8px !important;
+        right: 6px !important;
         bottom: 8px !important;
-        z-index: 20 !important;
+        z-index: 50 !important;
         flex-direction: column !important;
         align-items: center !important;
-        gap: 5px !important;
-        width: 44px !important;
+        gap: 3px !important;
+        width: 42px !important;
         pointer-events: auto !important;
       }
       .sp-tt-av-wrap {
         position: relative;
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         margin-bottom: 2px;
         cursor: pointer;
       }
       .sp-tt-av {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         border: 2px solid #fff;
         object-fit: cover;
@@ -1665,13 +1665,13 @@
         bottom: -3px;
         left: 50%;
         transform: translateX(-50%);
-        width: 16px;
-        height: 16px;
+        width: 15px;
+        height: 15px;
         border-radius: 50%;
         background: #ff0050;
         border: 1.5px solid #000;
         color: #fff;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 900;
         display: flex;
         align-items: center;
@@ -1697,11 +1697,11 @@
         padding: 0;
         cursor: pointer;
         font-family: inherit;
-        width: 44px;
+        width: 42px;
       }
       .sp-tt-btn-circle {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         background: rgba(0,0,0,0.45);
         backdrop-filter: blur(8px);
@@ -1716,8 +1716,8 @@
         transform: scale(0.9);
       }
       .sp-tt-act-btn svg {
-        width: 17px;
-        height: 17px;
+        width: 16px;
+        height: 16px;
         stroke: #fff;
       }
       .sp-tt-act-btn.liked svg {
@@ -1748,19 +1748,19 @@
         border-color: rgba(16,185,129,0.5);
       }
       .sp-tt-emoji {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         line-height: 1;
       }
       .sp-tt-cnt, .sp-tt-lbl {
-        font-size: 0.6rem;
+        font-size: 0.58rem;
         font-weight: 800;
         color: #fff;
         text-shadow: 0 1px 4px rgba(0,0,0,0.95);
         line-height: 1;
       }
       .sp-tt-disc-wrap {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: #111;
         padding: 2px;
@@ -1946,7 +1946,14 @@
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
       }
-      .modal {
+      .overlay.open .modal,
+      .overlay.open .tip-modal,
+      .share-sheet-overlay.open .share-sheet-inner {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+      }
+      .modal,
+      .tip-modal {
         width: 100% !important;
         max-width: 100vw !important;
         box-sizing: border-box !important;
@@ -1957,7 +1964,19 @@
         overflow-x: hidden !important;
         border-bottom: none !important;
         margin: 0 !important;
-        padding-bottom: 20px !important;
+        padding-bottom: 26px !important;
+        background: var(--bg2) !important;
+        transform: translateY(0);
+      }
+      .share-sheet-overlay {
+        z-index: 10005 !important;
+      }
+      .share-sheet-inner {
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding: 16px 16px 28px !important;
       }
       .mh {
         padding: 12px 16px !important;
@@ -1965,7 +1984,7 @@
         box-sizing: border-box !important;
       }
       .mt {
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
         min-width: 0 !important;
         word-break: break-word !important;
         white-space: normal !important;
@@ -1975,7 +1994,7 @@
         flex-shrink: 0 !important;
       }
       .mb {
-        padding: 14px 16px !important;
+        padding: 12px 14px 26px !important;
         width: 100% !important;
         box-sizing: border-box !important;
       }
@@ -1989,27 +2008,31 @@
       #spReelModalHeaderTitle,
       #spDuelShareTitle,
       #spDuelArenaTitle {
-        font-size: 0.92rem !important;
-        white-space: normal !important;
-        word-break: break-word !important;
+        font-size: 0.88rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: calc(100% - 40px) !important;
         display: inline-block !important;
         line-height: 1.25 !important;
       }
       .sp-reel-preview-stage {
-        width: min(210px, 58vw) !important;
-        height: min(310px, 38vh) !important;
-        max-height: 38vh !important;
-        margin: 0 auto 10px !important;
+        width: min(180px, 48vw) !important;
+        height: min(230px, 28vh) !important;
+        max-height: 28vh !important;
+        margin: 0 auto 8px !important;
         border-radius: 14px !important;
       }
       .sp-reel-btn-action {
-        padding: 11px 14px !important;
-        font-size: 0.84rem !important;
-        border-radius: 10px !important;
+        padding: 12px 14px !important;
+        font-size: 0.88rem !important;
+        font-weight: 900 !important;
+        border-radius: 12px !important;
+        width: 100% !important;
       }
       #spReelControlsRow {
         gap: 6px !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
       }
       #spReelControlsRow .ftab {
         padding: 6px 4px !important;
@@ -2018,19 +2041,19 @@
       .sp-duel-arena-stage {
         display: grid !important;
         grid-template-columns: 1fr auto 1fr !important;
-        gap: 6px !important;
+        gap: 4px !important;
         align-items: center !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
       }
       .sp-duel-fighter-box {
-        padding: 8px 6px !important;
+        padding: 6px 4px !important;
         border-radius: 12px !important;
       }
       #spFighter1CardImg,
       #spFighter2CardImg {
-        width: min(90px, 26vw) !important;
-        height: min(120px, 34vw) !important;
-        margin: 4px auto !important;
+        width: min(76px, 22vw) !important;
+        height: min(96px, 26vw) !important;
+        margin: 2px auto !important;
       }
       #spFighter1CardImg img,
       #spFighter2CardImg img,
@@ -2041,44 +2064,62 @@
         object-fit: cover !important;
       }
       .sp-duel-vs-circle {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 0.78rem !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.72rem !important;
       }
       .sp-duel-hp-bar {
-        height: 6px !important;
-        margin: 4px 0 !important;
+        height: 5px !important;
+        margin: 3px 0 !important;
       }
       #spFighter1Name,
       #spFighter2Name {
-        font-size: 0.75rem !important;
+        font-size: 0.72rem !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        max-width: 95px !important;
+        max-width: 90px !important;
       }
       #spFighter1HpTxt,
       #spFighter2HpTxt {
-        font-size: 0.62rem !important;
+        font-size: 0.6rem !important;
       }
       .sp-duel-stat-pill {
         padding: 2px 4px !important;
-        font-size: 0.6rem !important;
+        font-size: 0.58rem !important;
       }
       .sp-duel-log-box {
-        padding: 8px 10px !important;
-        min-height: 36px !important;
-        font-size: 0.76rem !important;
-        margin-bottom: 10px !important;
+        padding: 6px 8px !important;
+        min-height: 28px !important;
+        font-size: 0.72rem !important;
+        margin-bottom: 8px !important;
       }
-      #spDuelFightBtn {
-        padding: 11px !important;
-        font-size: 0.88rem !important;
+      #spDuelFightBtn,
+      #spDuelPrimaryFightBtn {
+        padding: 12px !important;
+        font-size: 0.95rem !important;
+        font-weight: 900 !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+      }
+      #spDuelShareCardPreview {
+        margin-bottom: 8px !important;
+      }
+      #spDuelShareCardPreview > div > div {
+        max-width: min(120px, 36vw) !important;
+        max-height: min(165px, 24vh) !important;
       }
       #spRadioBar {
+        z-index: 100 !important;
         bottom: 56px !important;
         padding: 6px 12px !important;
         gap: 8px !important;
+      }
+      body:has(.overlay.open) #spRadioBar,
+      body:has(.share-sheet-overlay.open) #spRadioBar,
+      .overlay.open ~ #spRadioBar {
+        display: none !important;
+        pointer-events: none !important;
       }
       .lightbox {
         display: none !important; /* Never open pitch black lightbox over mobile TikTok feed */
@@ -2130,12 +2171,22 @@
       /* ── Feature 4: Modal Drag Handle ── */
       .sp-modal-drag-handle {
         display: block !important;
-        width: 40px !important;
-        height: 4px !important;
+        width: 44px !important;
+        height: 5px !important;
         border-radius: 99px !important;
-        background: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.35) !important;
         margin: 8px auto 4px !important;
         cursor: grab !important;
+        touch-action: none !important;
+        position: relative !important;
+      }
+      .sp-modal-drag-handle::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -12px !important;
+        bottom: -12px !important;
+        left: -20px !important;
+        right: -20px !important;
       }
 
       /* ── Feature 5: Floating Audio Pill ── */
@@ -3749,45 +3800,48 @@
       </div>
       <button class="mc" onclick="spCloseDuelChallengeDirect()">✕</button>
     </div>
-    <div class="mb" style="padding: 18px; text-align: center;">
-      <div id="spDuelShareCardPreview" style="margin-bottom: 14px;"></div>
-      <div id="spDuelShareStatsRow" style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;"></div>
-      <div style="font-size: .84rem; color: #cbd5e1; margin-bottom: 14px;" id="spDuelShareDesc">
+    <div class="mb" style="padding: 16px; text-align: center;">
+      <div id="spDuelShareCardPreview" style="margin-bottom: 10px;"></div>
+      <div id="spDuelShareStatsRow" style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;"></div>
+
+      <!-- Primary Action: Direct Duel / Fight Button (Immediate visibility) -->
+      <button type="button" onclick="spPracticeDuelVsBot()" id="spDuelPrimaryFightBtn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; font-weight: 900; font-size: 1rem; padding: 13px 18px; border-radius: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 25px rgba(245,158,11,.5); margin: 0 auto 12px; width: 100%;">
+        <span>⚔️</span> <span id="spDuelBotTxt">Practice Duel vs AI Bot</span>
+      </button>
+
+      <div style="font-size: .8rem; color: #cbd5e1; margin-bottom: 10px;" id="spDuelShareDesc">
         Send this challenge link to a friend on WhatsApp or X to duel in real-time!
       </div>
-      <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
         <!-- Native App Share (Instagram, TikTok, Snapchat, SMS, etc.) -->
-        <button type="button" onclick="spShareDuelNative()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 800; font-size: .88rem; padding: 11px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 15px rgba(236,72,153,.35);">
+        <button type="button" onclick="spShareDuelNative()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 800; font-size: .85rem; padding: 10px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 15px rgba(236,72,153,.35);">
           <span>📱</span> <span id="spDuelShareAnyTxt">Share via Any App (Instagram, TikTok, SMS...)</span>
         </button>
 
         <!-- Social Network 2-Column Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <button type="button" onclick="spShareDuelWhatsApp()" style="background: #25d366; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button type="button" onclick="spShareDuelWhatsApp()" style="background: #25d366; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>💬</span> <span>WhatsApp</span>
           </button>
-          <button type="button" onclick="spShareDuelTelegram()" style="background: #229ed9; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button type="button" onclick="spShareDuelTelegram()" style="background: #229ed9; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>✈️</span> <span>Telegram</span>
           </button>
-          <button type="button" onclick="spShareDuelFacebook()" style="background: #1877f2; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button type="button" onclick="spShareDuelFacebook()" style="background: #1877f2; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>📘</span> <span>Facebook</span>
           </button>
-          <button type="button" onclick="spShareDuelX()" style="background: #0f1419; color: #fff; border: 1px solid rgba(255,255,255,.2); font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button type="button" onclick="spShareDuelX()" style="background: #0f1419; color: #fff; border: 1px solid rgba(255,255,255,.2); font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>𝕏</span> <span>X / Twitter</span>
           </button>
-          <button type="button" onclick="spShareDuelReddit()" style="background: #ff4500; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button type="button" onclick="spShareDuelReddit()" style="background: #ff4500; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>🔴</span> <span>Reddit</span>
           </button>
-          <button type="button" onclick="spShareDuelPinterest()" style="background: #e60023; color: #fff; font-weight: 800; font-size: .84rem; padding: 10px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button type="button" onclick="spShareDuelPinterest()" style="background: #e60023; color: #fff; font-weight: 800; font-size: .82rem; padding: 9px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>📌</span> <span>Pinterest</span>
           </button>
         </div>
 
-        <button type="button" onclick="spCopyDuelLink()" class="ftab" style="width: 100%; justify-content: center; padding: 10px; font-weight: 800; background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.15);">
+        <button type="button" onclick="spCopyDuelLink()" class="ftab" style="width: 100%; justify-content: center; padding: 9px; font-weight: 800; background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.15);">
           <span>🔗</span> <span id="spDuelCopyTxt">Copy Duel Link</span>
-        </button>
-        <button type="button" onclick="spPracticeDuelVsBot()" style="background: linear-gradient(135deg, #f59e0b, #ec4899); color: #fff; font-weight: 900; font-size: .88rem; padding: 12px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 20px rgba(245,158,11,.4); margin-top: 4px;">
-          <span>⚔️</span> <span id="spDuelBotTxt">Practice Duel vs AI Bot</span>
         </button>
       </div>
     </div>
@@ -8033,7 +8087,12 @@ async function toggleLike(pid) {
 function openCmts(pid) {
   curPostId = pid; replyParentId = null; replyParentName = null;
   hideReplyBar();
-  document.getElementById('cmtOverlay').classList.add('open');
+  const cmtOv = document.getElementById('cmtOverlay');
+  if (cmtOv) {
+    const modal = cmtOv.querySelector('.modal');
+    if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+    cmtOv.classList.add('open');
+  }
   document.getElementById('cmtList').innerHTML = `<div class="feed-loading"><div class="spinner"></div></div>`;
   document.getElementById('cmtCompose').style.display = curUser ? 'flex' : 'none';
   document.getElementById('cmtLoginMsg').style.display = curUser ? 'none' : 'block';
@@ -8057,7 +8116,16 @@ function openCmts(pid) {
 }
 
 function closeCmts(e) { if (e && e.target!==document.getElementById('cmtOverlay')) return; closeCmtsDirect(); }
-function closeCmtsDirect() { document.getElementById('cmtOverlay').classList.remove('open'); if (unsubCmt){unsubCmt();unsubCmt=null;} hideReplyBar(); }
+function closeCmtsDirect() {
+  const cmtOv = document.getElementById('cmtOverlay');
+  if (cmtOv) {
+    cmtOv.classList.remove('open');
+    const modal = cmtOv.querySelector('.modal');
+    if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+  }
+  if (unsubCmt){unsubCmt();unsubCmt=null;}
+  hideReplyBar();
+}
 
 function buildCmt(c, isReply) {
   const a = c.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.displayName||'U')}&background=6366f1&color=fff&bold=true`;
@@ -8355,6 +8423,8 @@ function sharePost(pid) {
   // Show share sheet
   const el = document.getElementById('shareSheetOverlay');
   if (el) {
+    const inner = el.querySelector('.share-sheet-inner');
+    if (inner) { inner.style.transform = ''; inner.style.transition = ''; }
     document.getElementById('ssPostUrl').textContent = postUrl;
     document.getElementById('shareSheetOverlay').dataset.id = pid;
     document.getElementById('shareSheetOverlay').dataset.url = postUrl;
@@ -8739,12 +8809,43 @@ function toggleSavePost(postId, btn) {
 }
 
 // ─── Modals ────────────────────────────────────────────────
-function openAuth() { if (curUser) return; document.getElementById('authOverlay').classList.add('open'); }
+function openAuth() {
+  if (curUser) return;
+  const el = document.getElementById('authOverlay');
+  if (el) {
+    const m = el.querySelector('.modal');
+    if (m) { m.style.transform = ''; m.style.transition = ''; }
+    el.classList.add('open');
+  }
+}
 function closeAuth(e) { if (e&&e.target!==document.getElementById('authOverlay')) return; closeAuthDirect(); }
-function closeAuthDirect() { document.getElementById('authOverlay').classList.remove('open'); }
-function openCreate() { if (!curUser) { openAuth(); return; } document.getElementById('createOverlay').classList.add('open'); }
+function closeAuthDirect() {
+  const el = document.getElementById('authOverlay');
+  if (el) {
+    el.classList.remove('open');
+    const m = el.querySelector('.modal');
+    if (m) { m.style.transform = ''; m.style.transition = ''; }
+  }
+}
+function openCreate() {
+  if (!curUser) { openAuth(); return; }
+  const el = document.getElementById('createOverlay');
+  if (el) {
+    const m = el.querySelector('.modal');
+    if (m) { m.style.transform = ''; m.style.transition = ''; }
+    el.classList.add('open');
+  }
+}
 function closeCreate(e) { if (e&&e.target!==document.getElementById('createOverlay')) return; closeCreateDirect(); }
-function closeCreateDirect() { document.getElementById('createOverlay').classList.remove('open'); sharedSourcePage = null; }
+function closeCreateDirect() {
+  const el = document.getElementById('createOverlay');
+  if (el) {
+    el.classList.remove('open');
+    const m = el.querySelector('.modal');
+    if (m) { m.style.transform = ''; m.style.transition = ''; }
+  }
+  sharedSourcePage = null;
+}
 
 // ─── Lightbox ──────────────────────────────────────────────
 function openLb(src) { if (window.innerWidth <= 768) return; document.getElementById('lb').classList.add('open'); document.getElementById('lbImg').src=src; }
@@ -9301,7 +9402,14 @@ setTimeout(initCreatorsHubCount, 1500);
 
 // ─── Share Sheet ──────────────────────────────────────────
 function closeShareSheet(e) { if (e.target === document.getElementById('shareSheetOverlay')) closeShareSheetDirect(); }
-function closeShareSheetDirect() { document.getElementById('shareSheetOverlay').classList.remove('open'); }
+function closeShareSheetDirect() {
+  const el = document.getElementById('shareSheetOverlay');
+  if (el) {
+    el.classList.remove('open');
+    const inner = el.querySelector('.share-sheet-inner');
+    if (inner) { inner.style.transform = ''; inner.style.transition = ''; }
+  }
+}
 function ssShareCopy() {
   const url = document.getElementById('shareSheetOverlay').dataset.url;
   navigator.clipboard.writeText(url).then(() => toast('Link copied! 📋', 'success')).catch(() => toast('Copy failed','error'));
@@ -11301,7 +11409,7 @@ async function toggleFollow(targetUid) {
 
 <!-- 🎁 TIP MODAL -->
 <div class="overlay" id="tipOverlay" onclick="closeTipModal(event)">
-  <div class="tip-modal">
+  <div class="modal tip-modal" onclick="event.stopPropagation()">
     <div class="mh">
       <div class="mt">🎁 Send SP Coins Tip</div>
       <button class="mc" onclick="closeTipModalDirect()">✕</button>
@@ -12569,7 +12677,12 @@ function openTipModal(postId, targetUid, targetName) {
   document.getElementById('tipMessageInp').value = '';
   document.querySelectorAll('.tip-amt-btn').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.tip-amt-btn')[0].classList.add('selected');
-  document.getElementById('tipOverlay').classList.add('open');
+  const tipOv = document.getElementById('tipOverlay');
+  if (tipOv) {
+    const tm = tipOv.querySelector('.tip-modal') || tipOv.querySelector('.modal');
+    if (tm) { tm.style.transform = ''; tm.style.transition = ''; }
+    tipOv.classList.add('open');
+  }
 }
 
 function selectTipAmount(amount, btn) {
@@ -12584,7 +12697,12 @@ function closeTipModal(e) {
   closeTipModalDirect();
 }
 function closeTipModalDirect() {
-  document.getElementById('tipOverlay').classList.remove('open');
+  const tipOv = document.getElementById('tipOverlay');
+  if (tipOv) {
+    tipOv.classList.remove('open');
+    const tm = tipOv.querySelector('.tip-modal') || tipOv.querySelector('.modal');
+    if (tm) { tm.style.transform = ''; tm.style.transition = ''; }
+  }
 }
 
 // ── confirmTip — sender first with explicit numeric balance ───────
@@ -15049,6 +15167,8 @@ function spOpen3DReelGenerator(postId) {
   if (recBtn) { recBtn.style.display = 'inline-flex'; recBtn.disabled = false; }
   if (progressFill) progressFill.style.width = '0%';
 
+  const modal = overlay.querySelector('.modal');
+  if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 
@@ -15086,6 +15206,8 @@ function spOpenCardReelGenerator(card) {
   if (recBtn) { recBtn.style.display = 'inline-flex'; recBtn.disabled = false; }
   if (progressFill) progressFill.style.width = '0%';
 
+  const modal = overlay.querySelector('.modal');
+  if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 
@@ -15099,10 +15221,19 @@ function spCloseReelGenerator(e) {
 
 function spCloseReelGeneratorDirect() {
   const overlay = document.getElementById('spReelOverlay');
-  if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.style.display = 'none';
+    const modal = overlay.querySelector('.modal');
+    if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+  }
   if (_reelAnimId) cancelAnimationFrame(_reelAnimId);
   if (_reelMediaRecorder && _reelMediaRecorder.state === 'recording') {
     _reelMediaRecorder.stop();
+  }
+  if (_reelRenderer) {
+    try { _reelRenderer.dispose(); } catch(e){}
+    _reelRenderer = null;
   }
   const video = document.getElementById('spReelVideoOutput');
   if (video) { video.pause(); video.src = ''; }
@@ -15168,15 +15299,27 @@ function spInitReel3DPreview() {
 
   if (_reelAnimId) cancelAnimationFrame(_reelAnimId);
 
+  if (_reelRenderer) {
+    try { _reelRenderer.dispose(); } catch(e){}
+    _reelRenderer = null;
+  }
+
   _reelScene = new THREE.Scene();
   _reelScene.background = new THREE.Color(0x050811);
 
   _reelCamera = new THREE.PerspectiveCamera(55, W / H, 0.1, 1000);
   _reelCamera.position.set(0, 1.5, 7.5);
 
-  _reelRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, alpha: false });
-  _reelRenderer.setSize(W, H, false);
-  _reelRenderer.setPixelRatio(1);
+  try {
+    _reelRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, alpha: false });
+    _reelRenderer.setSize(W, H, false);
+    _reelRenderer.setPixelRatio(1);
+  } catch(e) {
+    console.warn("Reel WebGL fallback:", e);
+    const ctx2d = canvas.getContext('2d');
+    if (ctx2d) spDrawReelShowcaseCard(canvas, null, _currentReelContext, _reelTheme);
+    return;
+  }
 
   // Lighting
   const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -15697,6 +15840,8 @@ function spOpenDuelChallenge(card, opponent) {
       : 'Copy Duel Link';
   }
 
+  const modal = overlay.querySelector('.modal');
+  if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 }
@@ -15708,7 +15853,12 @@ function spCloseDuelChallenge(e) {
 
 function spCloseDuelChallengeDirect() {
   const overlay = document.getElementById('spDuelChallengeModal');
-  if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.style.display = 'none';
+    const modal = overlay.querySelector('.modal');
+    if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+  }
 }
 
 function spGetDuelLink(card, opponent) {
@@ -15900,8 +16050,10 @@ function spOpenDuelArena(f1Card, f2Card) {
     fightBtn.disabled = false;
     fightBtn.textContent = curLang === 'fr' ? '⚔️ COMBATTRE !' : '⚔️ FIGHT ROUND!';
   }
-  document.getElementById('spDuelVictoryPanel').style.display = 'none';
-
+  const vic = document.getElementById('spDuelVictoryPanel');
+  if (vic) vic.style.display = 'none';
+  const modal = overlay.querySelector('.modal');
+  if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
   overlay.style.display = 'flex';
   overlay.classList.add('open');
 }
@@ -15913,7 +16065,12 @@ function spCloseDuelArena(e) {
 
 function spCloseDuelArenaDirect() {
   const overlay = document.getElementById('spDuelArenaOverlay');
-  if (overlay) { overlay.classList.remove('open'); overlay.style.display = 'none'; }
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.style.display = 'none';
+    const modal = overlay.querySelector('.modal');
+    if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+  }
 }
 
 function spPlayDuelSound(type) {
@@ -16289,12 +16446,47 @@ function spInitMobileGyro() {
 
 // 👆 Feature 4: Swipe Down to Dismiss (Drag Handle) for Bottom Sheets
 function spInitModalSwipeToDismiss() {
-  document.querySelectorAll('.overlay').forEach(overlay => {
-    const modal = overlay.querySelector('.modal');
+  // Universal overlay observer to guarantee all modals reset transforms and display states
+  if (!window._spOverlayObserverInitialized) {
+    window._spOverlayObserverInitialized = true;
+    try {
+      const obs = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+          if (m.type === 'attributes' && m.attributeName === 'class') {
+            const overlay = m.target;
+            const modal = overlay.querySelector('.modal, .tip-modal, .share-sheet-inner');
+            if (overlay.classList.contains('open')) {
+              if (modal) {
+                modal.style.transform = '';
+                modal.style.transition = '';
+              }
+              const rb = document.getElementById('spRadioBar');
+              if (rb) rb.style.setProperty('display', 'none', 'important');
+            } else {
+              if (modal) {
+                modal.style.transform = '';
+                modal.style.transition = '';
+              }
+            }
+          }
+        });
+      });
+      document.querySelectorAll('.overlay, .share-sheet-overlay').forEach(o => {
+        obs.observe(o, { attributes: true, attributeFilter: ['class'] });
+      });
+    } catch(e) {}
+  }
+
+  document.querySelectorAll('.overlay, .share-sheet-overlay').forEach(overlay => {
+    if (overlay.dataset.spSwipeInit) return;
+    overlay.dataset.spSwipeInit = '1';
+
+    const modal = overlay.querySelector('.modal, .tip-modal, .share-sheet-inner');
     if (!modal) return;
 
-    if (!modal.querySelector('.sp-modal-drag-handle')) {
-      const handle = document.createElement('div');
+    let handle = modal.querySelector('.sp-modal-drag-handle');
+    if (!handle) {
+      handle = document.createElement('div');
       handle.className = 'sp-modal-drag-handle';
       modal.prepend(handle);
     }
@@ -16305,7 +16497,6 @@ function spInitModalSwipeToDismiss() {
 
     const onTouchStart = (e) => {
       if (window.innerWidth > 768) return;
-      if (modal.scrollTop > 5) return;
       startY = e.touches[0].clientY;
       currentY = startY;
       isDragging = true;
@@ -16325,30 +16516,30 @@ function spInitModalSwipeToDismiss() {
     const onTouchEnd = () => {
       if (!isDragging) return;
       isDragging = false;
-      modal.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+      modal.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
       const deltaY = currentY - startY;
-      if (deltaY > 90) {
+      if (deltaY > 80) {
         modal.style.transform = 'translateY(100%)';
         spHaptic(15);
         setTimeout(() => {
           overlay.classList.remove('open');
-          if (overlay.style.display === 'flex') overlay.style.display = 'none';
+          overlay.style.display = '';
           modal.style.transform = '';
           modal.style.transition = '';
         }, 220);
       } else {
-        modal.style.transform = 'translateY(0)';
+        modal.style.transform = '';
         setTimeout(() => {
           modal.style.transition = '';
-        }, 250);
+        }, 240);
       }
     };
 
-    const mh = modal.querySelector('.mh');
-    const dragTarget = mh || modal.querySelector('.sp-modal-drag-handle') || modal;
-    dragTarget.addEventListener('touchstart', onTouchStart, { passive: true });
-    dragTarget.addEventListener('touchmove', onTouchMove, { passive: false });
-    dragTarget.addEventListener('touchend', onTouchEnd, { passive: true });
+    // STRICTLY attach drag listener ONLY to the dedicated drag handle!
+    // Never attach to mh or modal body to prevent touch hijacking on buttons & scrolls!
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    handle.addEventListener('touchmove', onTouchMove, { passive: false });
+    handle.addEventListener('touchend', onTouchEnd, { passive: true });
   });
 }
 
