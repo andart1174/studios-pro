@@ -133,8 +133,8 @@
       --border:rgba(99,102,241,.25);--border2:rgba(255,255,255,.07);
       --glow:rgba(99,102,241,.4);
     }
-    html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;min-height:100vh;overflow-x:hidden}
+    html{scroll-behavior:smooth;overflow-x:hidden;width:100%;max-width:100vw}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;min-height:100vh;overflow-x:hidden;width:100%;max-width:100vw}
     body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 10%,rgba(99,102,241,.08) 0%,transparent 45%),radial-gradient(ellipse at 85% 85%,rgba(139,92,246,.06) 0%,transparent 45%);pointer-events:none;z-index:0}
 
     /* SCROLLBAR */
@@ -464,13 +464,14 @@
     .login-prompt p{color:var(--muted);font-size:.86rem;margin-bottom:18px}
     .lp-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
     /* MODALS */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(7px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+    #spRadioBar{z-index:1050 !important;}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(7px);z-index:10005;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
     .overlay.open{opacity:1;pointer-events:all}
     .modal{background:var(--bg2);border:1px solid var(--border);border-radius:22px;width:100%;max-width:590px;max-height:92vh;overflow-y:auto;transform:scale(.93) translateY(14px);transition:transform .25s}
     .overlay.open .modal{transform:scale(1) translateY(0)}
     .mh{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--bg2);z-index:1;border-radius:22px 22px 0 0}
     .mt{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.05rem;color:#fff}
-    .mc{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:none;color:var(--muted);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+    .mc{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:none;color:var(--muted);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;flex-shrink:0}
     .mc:hover{background:rgba(255,255,255,.07);color:#fff}
     .mb{padding:22px 24px}
     .mf{padding:14px 24px;border-top:1px solid var(--border2);display:flex;justify-content:flex-end;gap:10px}
@@ -1313,25 +1314,34 @@
 
     /* ── MOBILE TIKTOK IMMERSIVE FEED MODE (Screen width <= 768px) ── */
     @media(max-width: 768px) {
-      body {
+      html, body {
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
         padding-bottom: 0 !important;
+      }
+      body {
         overflow: hidden !important;
       }
 
       /* Clean, uncluttered header on mobile */
       .header {
         height: 50px !important;
-        padding: 0 12px !important;
-        gap: 8px !important;
+        padding: 0 10px !important;
+        gap: 6px !important;
         justify-content: space-between !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
       }
       .header .hlogo-icon {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 0.72rem !important;
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.7rem !important;
       }
       .header .hlogo-text {
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
       }
       .header .hback-btn,
       .header .hsep,
@@ -1342,14 +1352,38 @@
       }
       .header .hactions {
         gap: 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+        max-width: 50% !important;
       }
       .header .lang-btn {
-        padding: 4px 9px !important;
+        padding: 4px 8px !important;
         font-size: 0.72rem !important;
       }
       .header .btn-email {
-        padding: 6px 12px !important;
-        font-size: 0.76rem !important;
+        padding: 5px 10px !important;
+        font-size: 0.74rem !important;
+      }
+      /* Prevent header from overflowing when logged in */
+      .btn-dm-hdr,
+      .hdr-user-btn-name,
+      .hdr-user-btn-caret,
+      .hdr-user-btn .rank-badge {
+        display: none !important;
+      }
+      .hdr-user-btn {
+        padding: 0 !important;
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .hdr-user-btn img {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--accent) !important;
+        display: block !important;
       }
 
       /* Full Viewport App Container */
@@ -1360,7 +1394,7 @@
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 100vw !important;
         padding: 0 !important;
         margin: 0 !important;
         overflow: hidden !important;
@@ -1373,6 +1407,7 @@
       .feed {
         flex: 1 !important;
         width: 100% !important;
+        max-width: 100vw !important;
         height: 100% !important;
         overflow: hidden !important;
         padding: 0 !important;
@@ -1381,7 +1416,12 @@
         flex-direction: column !important;
       }
 
-      /* Hide noisy promo banners & mood bar on mobile */
+      /* Hide noisy promo banners, mood bar, stories, nexus creators, go live on mobile feed */
+      #storiesBarEl,
+      #storiesFullView,
+      #trendingHashtagView,
+      #nchSection,
+      #liveBarBtn,
       #spDailyCardPromoBanner,
       #spMoodBar,
       .create-bar,
@@ -1404,6 +1444,9 @@
         overflow-x: auto !important;
         white-space: nowrap !important;
         scrollbar-width: none !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
       }
       .ftabs::-webkit-scrollbar {
         display: none !important;
@@ -1419,8 +1462,10 @@
       #feedEl, #savedPostsList {
         flex: 1 !important;
         width: 100% !important;
+        max-width: 100vw !important;
         height: 100% !important;
         overflow-y: scroll !important;
+        overflow-x: hidden !important;
         scroll-snap-type: y mandatory !important;
         -webkit-overflow-scrolling: touch !important;
         padding: 0 !important;
@@ -1438,6 +1483,8 @@
       .post-card {
         position: relative !important;
         width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100vw !important;
         height: 100% !important;
         min-height: 100% !important;
         max-height: 100% !important;
@@ -1453,6 +1500,7 @@
         justify-content: flex-end !important;
         overflow: hidden !important;
         box-shadow: none !important;
+        box-sizing: border-box !important;
       }
 
       /* Hide classic desktop rows inside post card on mobile */
@@ -1588,25 +1636,25 @@
       .sp-tt-rail {
         display: flex !important;
         position: absolute !important;
-        right: 6px !important;
-        bottom: 10px !important;
+        right: 8px !important;
+        bottom: 8px !important;
         z-index: 20 !important;
         flex-direction: column !important;
         align-items: center !important;
-        gap: 6px !important;
-        width: 48px !important;
+        gap: 5px !important;
+        width: 44px !important;
         pointer-events: auto !important;
       }
       .sp-tt-av-wrap {
         position: relative;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         margin-bottom: 2px;
         cursor: pointer;
       }
       .sp-tt-av {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         border: 2px solid #fff;
         object-fit: cover;
@@ -1614,16 +1662,16 @@
       }
       .sp-tt-follow-badge {
         position: absolute;
-        bottom: -4px;
+        bottom: -3px;
         left: 50%;
         transform: translateX(-50%);
-        width: 17px;
-        height: 17px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
         background: #ff0050;
         border: 1.5px solid #000;
         color: #fff;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 900;
         display: flex;
         align-items: center;
@@ -1652,8 +1700,8 @@
         width: 44px;
       }
       .sp-tt-btn-circle {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: rgba(0,0,0,0.45);
         backdrop-filter: blur(8px);
@@ -1668,8 +1716,8 @@
         transform: scale(0.9);
       }
       .sp-tt-act-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
         stroke: #fff;
       }
       .sp-tt-act-btn.liked svg {
@@ -1700,25 +1748,25 @@
         border-color: rgba(16,185,129,0.5);
       }
       .sp-tt-emoji {
-        font-size: 1rem;
+        font-size: 0.95rem;
         line-height: 1;
       }
       .sp-tt-cnt, .sp-tt-lbl {
-        font-size: 0.62rem;
+        font-size: 0.6rem;
         font-weight: 800;
         color: #fff;
         text-shadow: 0 1px 4px rgba(0,0,0,0.95);
         line-height: 1;
       }
       .sp-tt-disc-wrap {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         background: #111;
-        padding: 3px;
+        padding: 2px;
         border: 1px solid rgba(255,255,255,0.22);
         cursor: pointer;
-        margin-top: 2px;
+        margin-top: 1px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.6);
       }
       .sp-tt-disc {
@@ -1747,12 +1795,12 @@
       .sp-tt-bottom {
         display: flex !important;
         position: absolute !important;
-        left: 12px !important;
-        bottom: 12px !important;
-        right: 64px !important;
+        left: 10px !important;
+        bottom: 8px !important;
+        right: 56px !important;
         z-index: 20 !important;
         flex-direction: column !important;
-        gap: 5px !important;
+        gap: 4px !important;
         pointer-events: auto !important;
       }
       .sp-tt-user-row {
@@ -1889,21 +1937,148 @@
         line-height: 1;
       }
 
-      /* Mobile Bottom Sheet Modals & Lightbox Protection */
+      /* Mobile Bottom Sheet Modals & Responsive Dialogs */
       .overlay {
+        z-index: 10005 !important;
         padding: 0 !important;
         align-items: flex-end !important;
-        background: rgba(0, 0, 0, 0.65) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.78) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
       }
       .modal {
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
         border-radius: 20px 20px 0 0 !important;
-        max-height: 80vh !important;
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         border-bottom: none !important;
         margin: 0 !important;
+        padding-bottom: 20px !important;
+      }
+      .mh {
+        padding: 12px 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .mt {
+        font-size: 0.95rem !important;
+        min-width: 0 !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+        max-width: calc(100% - 40px) !important;
+      }
+      .mc {
+        flex-shrink: 0 !important;
+      }
+      .mb {
+        padding: 14px 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .sp-reel-modal-card,
+      .sp-duel-modal-card {
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+      #spReelModalHeaderTitle,
+      #spDuelShareTitle,
+      #spDuelArenaTitle {
+        font-size: 0.92rem !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        display: inline-block !important;
+        line-height: 1.25 !important;
+      }
+      .sp-reel-preview-stage {
+        width: min(210px, 58vw) !important;
+        height: min(310px, 38vh) !important;
+        max-height: 38vh !important;
+        margin: 0 auto 10px !important;
+        border-radius: 14px !important;
+      }
+      .sp-reel-btn-action {
+        padding: 11px 14px !important;
+        font-size: 0.84rem !important;
+        border-radius: 10px !important;
+      }
+      #spReelControlsRow {
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+      }
+      #spReelControlsRow .ftab {
+        padding: 6px 4px !important;
+        font-size: 0.72rem !important;
+      }
+      .sp-duel-arena-stage {
+        display: grid !important;
+        grid-template-columns: 1fr auto 1fr !important;
+        gap: 6px !important;
+        align-items: center !important;
+        margin-bottom: 10px !important;
+      }
+      .sp-duel-fighter-box {
+        padding: 8px 6px !important;
+        border-radius: 12px !important;
+      }
+      #spFighter1CardImg,
+      #spFighter2CardImg {
+        width: min(90px, 26vw) !important;
+        height: min(120px, 34vw) !important;
+        margin: 4px auto !important;
+      }
+      #spFighter1CardImg img,
+      #spFighter2CardImg img,
+      #spFighter1CardImg canvas,
+      #spFighter2CardImg canvas {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+      }
+      .sp-duel-vs-circle {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.78rem !important;
+      }
+      .sp-duel-hp-bar {
+        height: 6px !important;
+        margin: 4px 0 !important;
+      }
+      #spFighter1Name,
+      #spFighter2Name {
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 95px !important;
+      }
+      #spFighter1HpTxt,
+      #spFighter2HpTxt {
+        font-size: 0.62rem !important;
+      }
+      .sp-duel-stat-pill {
+        padding: 2px 4px !important;
+        font-size: 0.6rem !important;
+      }
+      .sp-duel-log-box {
+        padding: 8px 10px !important;
+        min-height: 36px !important;
+        font-size: 0.76rem !important;
+        margin-bottom: 10px !important;
+      }
+      #spDuelFightBtn {
+        padding: 11px !important;
+        font-size: 0.88rem !important;
+      }
+      #spRadioBar {
+        bottom: 56px !important;
+        padding: 6px 12px !important;
+        gap: 8px !important;
       }
       .lightbox {
         display: none !important; /* Never open pitch black lightbox over mobile TikTok feed */
@@ -2234,8 +2409,8 @@
 }
 @media (max-width: 600px) {
   .sp-duel-arena-stage {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 6px;
   }
 }
 .sp-duel-fighter-box {
@@ -3365,7 +3540,7 @@
 </div>
 
 <!-- ═══ 🎙️ SP NEXUS RADIO BAR — New self-contained persistent bar ═══ -->
-<div id="spRadioBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,rgba(5,8,18,.97),rgba(11,17,32,.97));backdrop-filter:blur(20px);border-top:1px solid rgba(99,102,241,.3);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 -4px 30px rgba(99,102,241,.2);">
+<div id="spRadioBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1050;background:linear-gradient(90deg,rgba(5,8,18,.97),rgba(11,17,32,.97));backdrop-filter:blur(20px);border-top:1px solid rgba(99,102,241,.3);padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 -4px 30px rgba(99,102,241,.2);">
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <div id="spRadioWave" style="display:flex;gap:2px;align-items:flex-end;height:20px;">
       <span style="width:3px;background:#6366f1;border-radius:2px;animation:spRwave .6s ease-in-out infinite alternate;height:8px;"></span>
