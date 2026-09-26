@@ -1315,80 +1315,144 @@
     @media(max-width: 768px) {
       body {
         padding-bottom: 0 !important;
-        overflow-x: hidden;
-      }
-      .wrap {
-        top: 56px !important;
-        bottom: 0 !important;
-        padding: 0 4px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      .feed {
-        padding: 4px 0 68px 0 !important;
-        scrollbar-width: none;
-      }
-      .feed::-webkit-scrollbar {
-        display: none;
+        overflow: hidden !important;
       }
 
-      /* Compact tickers & category tabs on mobile */
-      #spDailyCardPromoBanner {
-        padding: 8px 10px !important;
-        margin-bottom: 6px !important;
-        border-radius: 12px !important;
+      /* Clean, uncluttered header on mobile */
+      .header {
+        height: 50px !important;
+        padding: 0 12px !important;
+        gap: 8px !important;
+        justify-content: space-between !important;
       }
-      #spDailyCardPromoBanner button {
-        padding: 5px 9px !important;
+      .header .hlogo-icon {
+        width: 32px !important;
+        height: 32px !important;
         font-size: 0.72rem !important;
       }
-      .ftabs {
-        margin-bottom: 6px !important;
-        padding: 2px 2px 4px 2px !important;
+      .header .hlogo-text {
+        font-size: 0.95rem !important;
       }
-      .ftab {
-        padding: 5px 11px !important;
-        font-size: 0.74rem !important;
-      }
-      #spMoodBar {
-        padding: 0 2px 6px !important;
-      }
-      .create-bar {
+      .header .hback-btn,
+      .header .hsep,
+      .header .hcomm,
+      .header .hcenter,
+      .header .hactions > button:not(.notif-bell-btn) {
         display: none !important;
       }
+      .header .hactions {
+        gap: 6px !important;
+      }
+      .header .lang-btn {
+        padding: 4px 9px !important;
+        font-size: 0.72rem !important;
+      }
+      .header .btn-email {
+        padding: 6px 12px !important;
+        font-size: 0.76rem !important;
+      }
+
+      /* Full Viewport App Container */
+      .wrap {
+        position: fixed !important;
+        top: 50px !important;
+        bottom: 56px !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .sl, .sr {
+        display: none !important;
+      }
+      .feed {
+        flex: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      /* Hide noisy promo banners & mood bar on mobile */
+      #spDailyCardPromoBanner,
+      #spMoodBar,
+      .create-bar,
       .sp-mobile-floating-post {
         display: none !important;
       }
 
-      /* Feed container snap-scrolling */
-      #feedEl, #savedPostsList {
+      /* Sleek category scroll tabs right below header */
+      .ftabs {
+        flex-shrink: 0 !important;
+        height: 38px !important;
+        padding: 4px 8px !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        background: rgba(5, 8, 18, 0.96) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
         display: flex !important;
-        flex-direction: column !important;
-        gap: 14px !important;
-        scroll-snap-type: y mandatory;
-        -webkit-overflow-scrolling: touch;
+        align-items: center !important;
+        gap: 6px !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        scrollbar-width: none !important;
+      }
+      .ftabs::-webkit-scrollbar {
+        display: none !important;
+      }
+      .ftab {
+        padding: 4px 10px !important;
+        font-size: 0.73rem !important;
+        border-radius: 8px !important;
+        flex-shrink: 0 !important;
       }
 
-      /* Each post becomes a full viewport TikTok card */
+      /* Feed container snap-scrolling: exactly 1 post framed per viewport */
+      #feedEl, #savedPostsList {
+        flex: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow-y: scroll !important;
+        scroll-snap-type: y mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        scrollbar-width: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+      }
+      #feedEl::-webkit-scrollbar, #savedPostsList::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      /* Each post card fills 100% of feed viewport */
       .post-card {
         position: relative !important;
         width: 100% !important;
-        height: calc(100vh - 128px) !important;
-        height: calc(100dvh - 128px) !important;
-        min-height: 500px !important;
-        max-height: 820px !important;
-        border-radius: 18px !important;
-        overflow: hidden !important;
-        margin: 0 0 14px 0 !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        max-height: 100% !important;
+        scroll-snap-align: start !important;
+        scroll-snap-stop: always !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
         padding: 0 !important;
-        background: #020409 !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.7) !important;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
+        border: none !important;
+        background: #000 !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-end !important;
+        overflow: hidden !important;
+        box-shadow: none !important;
       }
 
       /* Hide classic desktop rows inside post card on mobile */
@@ -1397,7 +1461,7 @@
         display: none !important;
       }
 
-      /* Media fills the entire viewport card */
+      /* Media fills the entire viewport card (FIX FOR BLACK POSTS) */
       .p-media-box {
         position: absolute !important;
         inset: 0 !important;
@@ -1406,35 +1470,63 @@
         z-index: 1 !important;
         margin: 0 !important;
         padding: 0 !important;
+        border: none !important;
         border-radius: 0 !important;
         overflow: hidden !important;
-        background: #030611 !important;
+        background: #000 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
       }
-      .p-media-box .p-3d-card-wrapper,
-      .p-media-box .sp-direct-video-wrapper,
-      .p-media-box .p-img-hotspot-container,
+      .p-media-box .holo-wrap,
+      .p-media-box .holo-tilt-card,
       .p-media-box .p-imgs,
+      .p-media-box .ig-1,
+      .p-media-box .ig-2,
+      .p-media-box .ig-3,
+      .p-media-box .ig-4,
+      .p-media-box .main-img,
+      .p-media-box .p-html3d-wrapper,
+      .p-media-box .p-html3d-embed-wrap,
+      .p-media-box .p-3d-card-wrapper,
+      .p-media-box .p-img-hotspot-container,
+      .p-media-box .sp-direct-video-wrapper,
       .p-media-box .p-video,
-      .p-media-box .p-html3d-embed-wrap {
+      .p-media-box .p-tiktok-clean,
+      .p-media-box .p-instagram-clean {
         position: absolute !important;
         inset: 0 !important;
         width: 100% !important;
         height: 100% !important;
         margin: 0 !important;
+        padding: 0 !important;
         border: none !important;
         border-radius: 0 !important;
         max-height: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #000 !important;
+      }
+      .p-media-box .holo-tilt-card {
+        transform: none !important;
+      }
+      .p-media-box .holo-glare {
+        display: none !important;
       }
       .p-media-box img,
-      .p-media-box video {
+      .p-media-box video,
+      .p-media-box iframe,
+      .p-media-box model-viewer,
+      .p-media-box canvas {
         width: 100% !important;
         height: 100% !important;
-        object-fit: cover !important;
-        max-height: none !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
         display: block !important;
+        background: #000 !important;
+        border: none !important;
         border-radius: 0 !important;
       }
       .p-media-box .p-3dv {
@@ -1442,6 +1534,8 @@
         height: 100% !important;
         position: absolute !important;
         inset: 0 !important;
+        z-index: 22 !important;
+        background: #000 !important;
       }
       .p-3d-play-btn {
         top: 14px !important;
@@ -1487,32 +1581,32 @@
         inset: 0 !important;
         z-index: 2 !important;
         pointer-events: none !important;
-        background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.3) 30%, transparent 60%, rgba(0,0,0,0.35) 100%) !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 28%, transparent 55%, rgba(0,0,0,0.25) 100%) !important;
       }
 
       /* TikTok Floating Right Action Rail */
       .sp-tt-rail {
         display: flex !important;
         position: absolute !important;
-        right: 8px !important;
-        bottom: 14px !important;
+        right: 6px !important;
+        bottom: 10px !important;
         z-index: 20 !important;
         flex-direction: column !important;
         align-items: center !important;
-        gap: 9px !important;
+        gap: 6px !important;
         width: 48px !important;
         pointer-events: auto !important;
       }
       .sp-tt-av-wrap {
         position: relative;
-        width: 42px;
-        height: 42px;
-        margin-bottom: 4px;
+        width: 40px;
+        height: 40px;
+        margin-bottom: 2px;
         cursor: pointer;
       }
       .sp-tt-av {
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         border: 2px solid #fff;
         object-fit: cover;
@@ -1523,13 +1617,13 @@
         bottom: -4px;
         left: 50%;
         transform: translateX(-50%);
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
         border-radius: 50%;
         background: #ff0050;
         border: 1.5px solid #000;
         color: #fff;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 900;
         display: flex;
         align-items: center;
@@ -1551,15 +1645,15 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2px;
+        gap: 1px;
         padding: 0;
         cursor: pointer;
         font-family: inherit;
         width: 44px;
       }
       .sp-tt-btn-circle {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         background: rgba(0,0,0,0.45);
         backdrop-filter: blur(8px);
@@ -1574,8 +1668,8 @@
         transform: scale(0.9);
       }
       .sp-tt-act-btn svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         stroke: #fff;
       }
       .sp-tt-act-btn.liked svg {
@@ -1606,25 +1700,25 @@
         border-color: rgba(16,185,129,0.5);
       }
       .sp-tt-emoji {
-        font-size: 1.1rem;
+        font-size: 1rem;
         line-height: 1;
       }
       .sp-tt-cnt, .sp-tt-lbl {
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         font-weight: 800;
         color: #fff;
         text-shadow: 0 1px 4px rgba(0,0,0,0.95);
         line-height: 1;
       }
       .sp-tt-disc-wrap {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: #111;
         padding: 3px;
         border: 1px solid rgba(255,255,255,0.22);
         cursor: pointer;
-        margin-top: 3px;
+        margin-top: 2px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.6);
       }
       .sp-tt-disc {
@@ -1654,11 +1748,11 @@
         display: flex !important;
         position: absolute !important;
         left: 12px !important;
-        bottom: 14px !important;
+        bottom: 12px !important;
         right: 64px !important;
         z-index: 20 !important;
         flex-direction: column !important;
-        gap: 6px !important;
+        gap: 5px !important;
         pointer-events: auto !important;
       }
       .sp-tt-user-row {
@@ -1730,12 +1824,12 @@
         right: 0 !important;
         top: auto !important;
         width: 100% !important;
-        height: 58px !important;
+        height: 56px !important;
         margin: 0 !important;
         border-radius: 0 !important;
         border: none !important;
         border-top: 1px solid rgba(255,255,255,0.12) !important;
-        background: rgba(6, 9, 18, 0.96) !important;
+        background: rgba(6, 9, 18, 0.98) !important;
         backdrop-filter: blur(24px) !important;
         -webkit-backdrop-filter: blur(24px) !important;
         z-index: 1000 !important;
@@ -1793,6 +1887,26 @@
         font-size: 20px;
         font-weight: 900;
         line-height: 1;
+      }
+
+      /* Mobile Bottom Sheet Modals & Lightbox Protection */
+      .overlay {
+        padding: 0 !important;
+        align-items: flex-end !important;
+        background: rgba(0, 0, 0, 0.65) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+      }
+      .modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 80vh !important;
+        border-bottom: none !important;
+        margin: 0 !important;
+      }
+      .lightbox {
+        display: none !important; /* Never open pitch black lightbox over mobile TikTok feed */
       }
     }
 
@@ -2241,7 +2355,7 @@
 }
 @media (max-width: 768px) {
   .sp-mobile-floating-post {
-    display: flex;
+    display: none !important;
   }
 }
 .sp-wave-bar {
@@ -7144,10 +7258,16 @@ function buildCard(p) {
     mediaHtml = `
       <div class="p-3d-card-wrapper" id="wrap-${p.id}" style="position:relative; border-radius:14px; overflow:hidden; margin-bottom:14px; background:#0b0f19; border:1px solid var(--border);">
         <div class="p-img-hotspot-container" style="position:relative; width:100%; height:320px;">
-          <img src="${mainImg}" id="img-${p.id}" style="width:100%; height:100%; object-fit:cover; display:block;">
+          ${mainImg ? `<img src="${mainImg}" id="img-${p.id}" style="width:100%; height:100%; object-fit:contain; display:block;">` : `
+            <div id="img-${p.id}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at center, #1e1b4b 0%, #050714 100%);color:#a78bfa;gap:12px;padding:20px;text-align:center;">
+              <span style="font-size:3.5rem;animation:pulse 2s infinite;">🔮</span>
+              <div style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;letter-spacing:1px;">3D INTERACTIVE MODEL</div>
+              <div style="font-size:0.78rem;color:var(--muted);max-width:240px;">Tap 'View in 3D' to launch full 3D viewer</div>
+            </div>
+          `}
           ${hasTags ? renderHotspots(p.tags, p.id) : ''}
         </div>
-        <div class="p-3d-play-btn" id="play-${p.id}" onclick="start3DPreview('${p.id}')" style="position:absolute; bottom:14px; right:14px; z-index:3; cursor:pointer;">
+        <div class="p-3d-play-btn" id="play-${p.id}" onclick="event.stopPropagation();start3DPreview('${p.id}')" style="position:absolute; bottom:14px; right:14px; z-index:3; cursor:pointer;">
           <div class="p-3d-play-inner">
             <span class="p-3d-play-icon">🔮</span>
             <span class="p-3d-play-text">View in 3D</span>
@@ -7155,8 +7275,8 @@ function buildCard(p) {
         </div>
         <div class="p-3dv" id="v3d-${p.id}" data-model='${JSON.stringify(p.modelData).replace(/'/g,"&#39;")}' style="display:none; height:320px; width:100%; position:relative;">
           <div class="p-3d-badge">🔮 3D PREVIEW</div>
-          <button class="p-3d-exit" onclick="stop3DPreview('${p.id}')">✕ Exit 3D</button>
-          <button type="button" onclick="spOpen3DReelGenerator('${p.id}')" style="position:absolute;bottom:10px;left:10px;z-index:3;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:.72rem;padding:6px 12px;border-radius:18px;box-shadow:0 0 15px rgba(236,72,153,.5);cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Reel (9:16)</button>
+          <button class="p-3d-exit" onclick="event.stopPropagation();stop3DPreview('${p.id}')">✕ Exit 3D</button>
+          <button type="button" onclick="event.stopPropagation();spOpen3DReelGenerator('${p.id}')" style="position:absolute;bottom:10px;left:10px;z-index:3;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:.72rem;padding:6px 12px;border-radius:18px;box-shadow:0 0 15px rgba(236,72,153,.5);cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Reel (9:16)</button>
           <div class="p-3d-hint">Drag to rotate</div>
         </div>
       </div>`;
@@ -7232,7 +7352,7 @@ function buildCard(p) {
     <!-- FLOATING RIGHT RAIL (TIKTOK STYLE) -->
     <div class="sp-tt-rail">
       <!-- Creator Avatar + Follow badge -->
-      <div class="sp-tt-av-wrap" onclick="openPublicProfile('${p.uid}')" title="View profile">
+      <div class="sp-tt-av-wrap" onclick="event.stopPropagation();openPublicProfile('${p.uid}')" title="View profile">
         <img src="${a}" class="sp-tt-av" data-user-border-uid="${p.uid}" alt="">
         ${curUser && p.uid !== curUser.uid ? `
         <button class="sp-tt-follow-badge ${followingSet.has(p.uid)?'following':''}" data-uid="${p.uid}" onclick="event.stopPropagation();toggleFollow('${p.uid}')" title="${followingSet.has(p.uid)?'Following':'Follow'}">
@@ -7241,7 +7361,7 @@ function buildCard(p) {
       </div>
 
       <!-- Like -->
-      <button class="sp-tt-act-btn${liked?' liked':''}" onclick="toggleLike('${p.id}')" title="Like">
+      <button class="sp-tt-act-btn${liked?' liked':''}" onclick="event.stopPropagation();toggleLike('${p.id}')" title="Like">
         <div class="sp-tt-btn-circle">
           <svg viewBox="0 0 24 24" fill="${liked?'currentColor':'none'}" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
@@ -7249,7 +7369,7 @@ function buildCard(p) {
       </button>
 
       <!-- Comments -->
-      <button class="sp-tt-act-btn" onclick="openCmts('${p.id}')" title="Comments">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();openCmts('${p.id}')" title="Comments">
         <div class="sp-tt-btn-circle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
@@ -7257,7 +7377,7 @@ function buildCard(p) {
       </button>
 
       <!-- 🎬 Reel 9:16 -->
-      <button class="sp-tt-act-btn" onclick="spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 Reel">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();spOpen3DReelGenerator('${p.id}')" title="Generate 9:16 Reel">
         <div class="sp-tt-btn-circle sp-tt-reel-glow">
           <span class="sp-tt-emoji">🎬</span>
         </div>
@@ -7265,7 +7385,7 @@ function buildCard(p) {
       </button>
 
       <!-- ⚔️ Card Duel PvP -->
-      <button class="sp-tt-act-btn" onclick="spDuelChallengePostAuthor('${p.id}')" title="3D Card Duel">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();spDuelChallengePostAuthor('${p.id}')" title="3D Card Duel">
         <div class="sp-tt-btn-circle sp-tt-duel-glow">
           <span class="sp-tt-emoji">⚔️</span>
         </div>
@@ -7274,7 +7394,7 @@ function buildCard(p) {
 
       <!-- 💰 Tip Coins -->
       ${curUser && p.uid !== curUser.uid ? `
-      <button class="sp-tt-act-btn" onclick="openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();openTipModal('${p.id}','${escAttr(p.uid)}','${escAttr(p.displayName||'Creator')}')" title="Send SP Coins tip">
         <div class="sp-tt-btn-circle sp-tt-tip-glow">
           <span class="sp-tt-emoji">💰</span>
         </div>
@@ -7283,7 +7403,7 @@ function buildCard(p) {
 
       <!-- 📞 Call Creator -->
       ${curUser && p.uid !== curUser.uid ? `
-      <button class="sp-tt-act-btn" onclick="initiateDirectCall(false, '${escAttr(p.uid)}')" title="1-Tap Call Creator">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();initiateDirectCall(false, '${escAttr(p.uid)}')" title="1-Tap Call Creator">
         <div class="sp-tt-btn-circle sp-tt-call-glow">
           <span class="sp-tt-emoji">📞</span>
         </div>
@@ -7291,7 +7411,7 @@ function buildCard(p) {
       </button>` : ''}
 
       <!-- 🔖 Bookmark / Save -->
-      <button class="sp-tt-act-btn save-btn${(()=>{try{return JSON.parse(localStorage.getItem('sp_saved_posts')||'[]').includes(p.id)?' saved':''}catch(e){return ''}})()}" onclick="toggleSavePost('${p.id}',this)" title="Save post">
+      <button class="sp-tt-act-btn save-btn${(()=>{try{return JSON.parse(localStorage.getItem('sp_saved_posts')||'[]').includes(p.id)?' saved':''}catch(e){return ''}})()}" onclick="event.stopPropagation();toggleSavePost('${p.id}',this)" title="Save post">
         <div class="sp-tt-btn-circle">
           <span class="sp-tt-emoji">🔖</span>
         </div>
@@ -7299,7 +7419,7 @@ function buildCard(p) {
       </button>
 
       <!-- 🚀 Share -->
-      <button class="sp-tt-act-btn" onclick="sharePost('${p.id}')" title="Share post">
+      <button class="sp-tt-act-btn" onclick="event.stopPropagation();sharePost('${p.id}')" title="Share post">
         <div class="sp-tt-btn-circle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </div>
@@ -7307,7 +7427,7 @@ function buildCard(p) {
       </button>
 
       <!-- 🎵 Spinning Disc Record (TikTok signature) -->
-      <div class="sp-tt-disc-wrap" onclick="${p.audioUrl ? `toggleSPAudio(this, '${escAttr(p.audioUrl)}')` : 'spRadioOpen()'}" title="Audio track / SP Radio">
+      <div class="sp-tt-disc-wrap" onclick="event.stopPropagation();${p.audioUrl ? `toggleSPAudio(this, '${escAttr(p.audioUrl)}')` : 'spRadioOpen()'}" title="Audio track / SP Radio">
         <div class="sp-tt-disc">
           <img src="${a}" class="sp-tt-disc-img" alt="">
         </div>
@@ -7315,17 +7435,17 @@ function buildCard(p) {
     </div>
 
     <!-- BOTTOM INFO OVERLAY (TIKTOK STYLE) -->
-    <div class="sp-tt-bottom">
+    <div class="sp-tt-bottom" onclick="event.stopPropagation()">
       <div class="sp-tt-user-row">
-        <span class="sp-tt-username" onclick="openPublicProfile('${p.uid}')">@${esc(p.displayName||'user')}</span>
+        <span class="sp-tt-username" onclick="event.stopPropagation();openPublicProfile('${p.uid}')">@${esc(p.displayName||'user')}</span>
         ${p.foundingMember ? '<span class="sp-tt-badge">⭐ Founder</span>' : ''}
         ${rankHtml(postCnt)}
         <span data-user-badge-uid="${p.uid}"></span>
         ${catBadge(p.category)}
         ${remixHtml}
       </div>
-      ${p.content ? `<div class="sp-tt-caption" onclick="this.classList.toggle('expanded')" title="Tap to expand / collapse">${renderHashtagText(esc(p.content))}</div>` : ''}
-      <div class="sp-tt-audio-ticker" onclick="${p.audioUrl ? `toggleSPAudio(this, '${escAttr(p.audioUrl)}')` : 'spRadioOpen()'}">
+      ${p.content ? `<div class="sp-tt-caption" onclick="event.stopPropagation();this.classList.toggle('expanded')" title="Tap to expand / collapse">${renderHashtagText(esc(p.content))}</div>` : ''}
+      <div class="sp-tt-audio-ticker" onclick="event.stopPropagation();${p.audioUrl ? `toggleSPAudio(this, '${escAttr(p.audioUrl)}')` : 'spRadioOpen()'}">
         <span class="sp-tt-music-icon">🎵</span>
         <span class="sp-tt-audio-name">${esc(p.audioTitle || 'Original Sound — Studios-PRO')}</span>
       </div>
@@ -7398,10 +7518,10 @@ function start3DPreview(postId) {
   const playBtn = document.getElementById(`play-${postId}`);
   const viewer = document.getElementById(`v3d-${postId}`);
 
-  if (!img || !playBtn || !viewer) return;
+  if (!playBtn || !viewer) return;
 
   // Swap UI visibility
-  img.style.display = 'none';
+  if (img) img.style.display = 'none';
   playBtn.style.display = 'none';
   viewer.style.display = 'block';
 
@@ -7414,7 +7534,7 @@ function stop3DPreview(postId) {
   const playBtn = document.getElementById(`play-${postId}`);
   const viewer = document.getElementById(`v3d-${postId}`);
 
-  if (!img || !playBtn || !viewer) return;
+  if (!playBtn || !viewer) return;
 
   // Fully dispose WebGL memory
   if (activeRenderers[postId]) {
@@ -7554,7 +7674,14 @@ function closeStory() { document.getElementById('storyViewer').classList.remove(
 
 // ─── Likes ─────────────────────────────────────────────────
 async function toggleLike(pid) {
-  if (!curUser) { openAuth(); return; }
+  if (!curUser) {
+    if (window.innerWidth <= 768 && typeof toast === 'function') {
+      toast(curLang === 'fr' ? 'Connectez-vous pour aimer ce post ❤️' : 'Please sign in to like this post ❤️', 'info');
+      return;
+    }
+    openAuth();
+    return;
+  }
   if (!db) return;
   const ref = db.collection(COLL).doc(pid);
   const snap = await ref.get();
@@ -8326,7 +8453,7 @@ function closeCreate(e) { if (e&&e.target!==document.getElementById('createOverl
 function closeCreateDirect() { document.getElementById('createOverlay').classList.remove('open'); sharedSourcePage = null; }
 
 // ─── Lightbox ──────────────────────────────────────────────
-function openLb(src) { document.getElementById('lb').classList.add('open'); document.getElementById('lbImg').src=src; }
+function openLb(src) { if (window.innerWidth <= 768) return; document.getElementById('lb').classList.add('open'); document.getElementById('lbImg').src=src; }
 function closeLb() { document.getElementById('lb').classList.remove('open'); }
 
 // ─── Char count ────────────────────────────────────────────
@@ -8925,6 +9052,7 @@ function ssShareEmbed() {
 
 // ─── 3D Photo Hologram & Mesh Relief Engine ────────────────
 function initHoloTilt(wrap, e) {
+  if (window.innerWidth <= 768) return;
   const card = wrap.querySelector('.holo-tilt-card');
   const glare = wrap.querySelector('.holo-glare');
   if (!card) return;
@@ -12111,7 +12239,14 @@ async function loadWalletTransactions() {
 
 // ── Tip modal ────────────────────────────────────────────────────
 function openTipModal(postId, targetUid, targetName) {
-  if (!curUser) { openAuth(); return; }
+  if (!curUser) {
+    if (window.innerWidth <= 768 && typeof toast === 'function') {
+      toast(curLang === 'fr' ? 'Connectez-vous pour donner un pourboire 💰' : 'Please sign in to send a tip 💰', 'info');
+      return;
+    }
+    openAuth();
+    return;
+  }
   tipTargetUid = targetUid;
   tipTargetPostId = postId;
   tipSelectedAmount = 5;
@@ -13087,7 +13222,14 @@ async function initiateDirectCall(isVideo = false, targetPartnerUid = null) {
       var p = _pa.play(); if (p) p.catch(function(){});
     }
   })();
-  if (!curUser) { openAuth(); return; }
+  if (!curUser) {
+    if (window.innerWidth <= 768 && typeof toast === 'function') {
+      toast(curLang === 'fr' ? 'Connectez-vous pour appeler 📞' : 'Please sign in to make calls 📞', 'info');
+      return;
+    }
+    openAuth();
+    return;
+  }
   const partnerUid = targetPartnerUid || activePartnerUid;
   if (!partnerUid) { toast('Please select a creator to call', 'info'); return; }
   if (!db) return;
