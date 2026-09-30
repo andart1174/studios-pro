@@ -2240,13 +2240,154 @@
         from { height: 3px; }
         to { height: 12px; }
       }
+      /* ── Feature 6: Native Pull to Refresh ── */
+      .sp-ptr-wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        z-index: 45;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        pointer-events: none;
+        transform: translateY(-58px);
+        transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s;
+        opacity: 0;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.7));
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid rgba(99, 102, 241, 0.35);
+      }
+      .sp-ptr-wrap.pulling {
+        transition: none;
+      }
+      .sp-ptr-wrap.refreshing {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+      }
+      .sp-ptr-icon-box {
+        position: relative;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sp-ptr-icon {
+        font-size: 1.2rem;
+        transition: transform 0.15s;
+      }
+      .sp-ptr-spinner {
+        display: none;
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(99, 102, 241, 0.25);
+        border-top-color: #a78bfa;
+        border-radius: 50%;
+        animation: spPtrSpin 0.75s linear infinite;
+      }
+      @keyframes spPtrSpin {
+        to { transform: rotate(360deg); }
+      }
+      .sp-ptr-wrap.refreshing .sp-ptr-spinner {
+        display: block;
+      }
+      .sp-ptr-wrap.refreshing .sp-ptr-icon {
+        opacity: 0;
+      }
+      .sp-ptr-text {
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: #cbd5e1;
+        letter-spacing: 0.3px;
+      }
+
+      /* ── Feature 7: Quick Reaction Long-Press Bar ── */
+      .sp-quick-reaction-wheel {
+        position: fixed;
+        z-index: 10003;
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        padding: 5px 8px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(99, 102, 241, 0.35);
+        animation: spReactionPopIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes spReactionPopIn {
+        from { transform: scale(0.6) translateY(8px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+      }
+      .sp-qr-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.15s, background 0.15s;
+        padding: 0;
+      }
+      .sp-qr-btn:active, .sp-qr-btn:hover {
+        transform: scale(1.35) translateY(-3px);
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .sp-desktop-shortcuts-pill {
+        display: none !important;
+      }
     }
 
     @media(min-width: 769px) {
       .mobile-nav,
       .sp-mobile-audio-pill,
-      .sp-modal-drag-handle {
+      .sp-modal-drag-handle,
+      .sp-ptr-wrap,
+      .sp-quick-reaction-wheel {
         display: none !important;
+      }
+      .sp-desktop-shortcuts-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 13px;
+        border-radius: 12px;
+        background: rgba(99, 102, 241, 0.08);
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        color: #a78bfa;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .sp-desktop-shortcuts-pill:hover {
+        background: rgba(99, 102, 241, 0.16);
+        border-color: rgba(99, 102, 241, 0.45);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+      }
+      .sp-desktop-shortcuts-pill kbd {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 4px;
+        padding: 1px 4px;
+        font-size: 0.68rem;
+        font-family: inherit;
+        color: #fff;
       }
     }
     .live-viewer-panel{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:8900;display:none;flex-direction:column;}
@@ -3194,12 +3335,25 @@
         <button class="btn-email" onclick="openAuth()"><span data-t="emailSignin">Sign in with Email</span></button>
       </div>
     </div>
+    <div id="spPullToRefresh" class="sp-ptr-wrap">
+      <div class="sp-ptr-icon-box">
+        <span class="sp-ptr-icon" id="spPtrIcon">🔮</span>
+        <div class="sp-ptr-spinner"></div>
+      </div>
+      <span class="sp-ptr-text" id="spPtrText">Pull to refresh</span>
+    </div>
     <div id="feedEl"><div class="feed-loading"><div class="spinner"></div><div data-t="loading">Loading posts...</div></div></div>
   </main>
 
 
   <!-- RIGHT SIDEBAR -->
   <aside class="sr">
+    <!-- Desktop Pro Shortcuts hint pill -->
+    <div class="sp-desktop-shortcuts-pill" onclick="spShowKeyboardShortcutsHelp()" title="Click to view desktop navigation shortcuts">
+      <span>⌨️</span>
+      <span id="spDesktopShortcutsText"><b>Shortcuts:</b> <kbd>J</kbd>/<kbd>K</kbd> Scroll • <kbd>Space</kbd> Play • <kbd>L</kbd> Like • <kbd>C</kbd> Comments • <kbd>D</kbd> Duel</span>
+    </div>
+
     <!-- Admin Dashboard (collapsible) -->
     <div id="adminPanel" style="display:none">
       <!-- Toggle bar (always visible) -->
@@ -3921,6 +4075,15 @@
   </div>
 </div>
 
+<!-- Floating Quick Reaction Bar for Mobile Long-Press & Tap -->
+<div id="spQuickReactionWheel" class="sp-quick-reaction-wheel" onclick="event.stopPropagation()">
+  <button type="button" class="sp-qr-btn" onclick="spSelectQuickReaction('🔥', event)" title="Fire">🔥</button>
+  <button type="button" class="sp-qr-btn" onclick="spSelectQuickReaction('🔮', event)" title="Hologram">🔮</button>
+  <button type="button" class="sp-qr-btn" onclick="spSelectQuickReaction('💎', event)" title="Diamond">💎</button>
+  <button type="button" class="sp-qr-btn" onclick="spSelectQuickReaction('🚀', event)" title="Rocket">🚀</button>
+  <button type="button" class="sp-qr-btn" onclick="spSelectQuickReaction('❤️', event)" title="Heart">❤️</button>
+</div>
+
 <!-- 😂 SP FUN & AI JOKES LAB MODAL -->
 <div class="overlay" id="funJokesOverlay" onclick="closeFunJokesModal(event)">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:680px;background:#090d1a;border:2px solid rgba(245,158,11,.4);box-shadow:0 0 40px rgba(245,158,11,.25);font-family:'Outfit',sans-serif;">
@@ -4350,6 +4513,17 @@ function applyLang() {
       }
     }
   });
+
+  const scText = document.getElementById('spDesktopShortcutsText');
+  if (scText) {
+    scText.innerHTML = curLang === 'fr'
+      ? '<b>Raccourcis :</b> <kbd>J</kbd>/<kbd>K</kbd> Défiler • <kbd>Espace</kbd> Lecture • <kbd>L</kbd> J\'aime • <kbd>C</kbd> Commentaires • <kbd>D</kbd> Duel'
+      : '<b>Shortcuts:</b> <kbd>J</kbd>/<kbd>K</kbd> Scroll • <kbd>Space</kbd> Play • <kbd>L</kbd> Like • <kbd>C</kbd> Comments • <kbd>D</kbd> Duel';
+  }
+  const ptrText = document.getElementById('spPtrText');
+  if (ptrText && !_spPtrRefreshing) {
+    ptrText.textContent = curLang === 'fr' ? 'Tirez pour rafraîchir' : 'Pull to refresh';
+  }
 }
 
 // ─── Rank helpers ──────────────────────────────────────────
@@ -4845,6 +5019,7 @@ function renderFeed(posts) {
   el.innerHTML = '';
   el.appendChild(frag);
   initAll3D();
+  if (typeof spObserveAllMedia === 'function') spObserveAllMedia();
 }
 
 function searchPosts(q) {
@@ -7847,6 +8022,8 @@ function buildCard(p) {
   div.querySelectorAll('[data-user-border-uid]').forEach(img => applyUserBorderToAvatar(p.uid, img));
   applyUserBadgeToElement(p.uid);
   div.addEventListener('touchend', (e) => spHandlePostTouch(e, p.id), { passive: true });
+  const mobLikeBtn = div.querySelector('.sp-tt-act-btn[title="Like"]');
+  if (mobLikeBtn && typeof spBindLikeLongPress === 'function') spBindLikeLongPress(mobLikeBtn, p.id);
 
   return div;
 }
@@ -7926,7 +8103,7 @@ function init3D(container, postId) {
     const W = container.clientWidth || 500, H = container.clientHeight || 320;
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth <= 768 ? 1.5 : 2));
     container.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, W/H, 0.01, 1000);
@@ -9446,9 +9623,9 @@ function ssShareEmbed() {
   const postId = overlay ? (overlay.dataset.id || '') : '';
   const embedCode = `<iframe src="https://studios-pro.com/community/embed.html?id=${postId}" width="100%" height="450" frameborder="0" style="border-radius:16px;overflow:hidden;" allowfullscreen></iframe>`;
   navigator.clipboard.writeText(embedCode).then(() => {
-    toast('Embed HTML code copied to clipboard! 📋', 'success');
+    toast(curLang === 'fr' ? 'Code d\'intégration HTML copié dans le presse-papier ! 📋' : 'Embed HTML code copied to clipboard! 📋', 'success');
   }).catch(() => {
-    toast('Failed to copy embed code', 'error');
+    toast(curLang === 'fr' ? 'Échec de la copie du code' : 'Failed to copy embed code', 'error');
   });
 }
 
@@ -16547,7 +16724,304 @@ function spInitMobileExperience() {
   if (window.innerWidth <= 768) {
     spInitMobileGyro();
     spInitModalSwipeToDismiss();
+    spInitPullToRefresh();
+  } else {
+    spInitDesktopKeyboardShortcuts();
   }
+  spObserveAllMedia();
+}
+
+// ⚡ Smart Autoplay & Resource Manager (Mobile & PC)
+let _spMediaObserver = null;
+let _spCurrentVisiblePostId = null;
+
+function spObserveAllMedia() {
+  if (!('IntersectionObserver' in window)) return;
+  if (_spMediaObserver) {
+    try { _spMediaObserver.disconnect(); } catch(e){}
+  }
+
+  _spMediaObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const card = entry.target;
+      const pid = card.id ? card.id.replace('post-', '') : null;
+      const videos = card.querySelectorAll('video');
+
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+        if (pid) _spCurrentVisiblePostId = pid;
+
+        videos.forEach(v => {
+          if (v.id === 'spRadioAudio' || v.id === 'callLocalVideo' || v.id === 'callRemoteVideo') return;
+          if (v.paused && !v.dataset.userPaused) {
+            v.muted = _spGlobalMuted;
+            v.play().catch(() => {});
+          }
+        });
+
+        if (pid && typeof activeRenderers !== 'undefined' && activeRenderers[pid] && !activeRenderers[pid].running) {
+          activeRenderers[pid].running = true;
+        }
+      } else if (entry.intersectionRatio < 0.3) {
+        videos.forEach(v => {
+          if (v.id === 'spRadioAudio' || v.id === 'callLocalVideo' || v.id === 'callRemoteVideo') return;
+          if (!v.paused) {
+            v.pause();
+          }
+        });
+
+        if (pid && typeof activeRenderers !== 'undefined' && activeRenderers[pid] && activeRenderers[pid].running) {
+          activeRenderers[pid].running = false;
+        }
+      }
+    });
+  }, {
+    threshold: [0.25, 0.55]
+  });
+
+  document.querySelectorAll('#feedEl .post-card').forEach(c => _spMediaObserver.observe(c));
+}
+
+// 🔄 Native Pull to Refresh (Mobile <= 768px)
+let _spPtrStartY = 0;
+let _spPtrPulling = false;
+let _spPtrRefreshing = false;
+let _spPtrPullingReached = false;
+
+function spInitPullToRefresh() {
+  if (window.innerWidth > 768) return;
+  const feedEl = document.getElementById('feedEl');
+  const ptr = document.getElementById('spPullToRefresh');
+  const ptrText = document.getElementById('spPtrText');
+  const ptrIcon = document.getElementById('spPtrIcon');
+  if (!feedEl || !ptr || feedEl.dataset.spPtrInit) return;
+  feedEl.dataset.spPtrInit = '1';
+
+  feedEl.addEventListener('touchstart', (e) => {
+    if (window.innerWidth > 768 || _spPtrRefreshing) return;
+    if (feedEl.scrollTop <= 2) {
+      _spPtrStartY = e.touches[0].clientY;
+      _spPtrPulling = true;
+      ptr.classList.add('pulling');
+    }
+  }, { passive: true });
+
+  feedEl.addEventListener('touchmove', (e) => {
+    if (!_spPtrPulling || _spPtrRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - _spPtrStartY;
+    if (delta > 0 && feedEl.scrollTop <= 2) {
+      const distance = Math.min(delta * 0.42, 75);
+      ptr.style.transform = `translateY(${distance - 58}px)`;
+      ptr.style.opacity = String(Math.min(distance / 45, 1));
+      if (ptrIcon) ptrIcon.style.transform = `rotate(${distance * 4}deg)`;
+
+      if (distance >= 52) {
+        if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Relâchez pour rafraîchir' : 'Release to refresh');
+        if (!_spPtrPullingReached) {
+          _spPtrPullingReached = true;
+          spHaptic(14);
+        }
+      } else {
+        if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Tirez pour rafraîchir' : 'Pull to refresh');
+        _spPtrPullingReached = false;
+      }
+    } else {
+      ptr.style.transform = '';
+      ptr.style.opacity = '';
+    }
+  }, { passive: true });
+
+  feedEl.addEventListener('touchend', () => {
+    if (!_spPtrPulling) return;
+    _spPtrPulling = false;
+    ptr.classList.remove('pulling');
+
+    if (_spPtrPullingReached && !_spPtrRefreshing) {
+      _spPtrRefreshing = true;
+      _spPtrPullingReached = false;
+      ptr.classList.add('refreshing');
+      if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Actualisation du flux...' : 'Refreshing feed...');
+      spHaptic([15, 35]);
+
+      if (typeof loadFeed === 'function') {
+        loadFeed();
+      }
+
+      setTimeout(() => {
+        ptr.classList.remove('refreshing');
+        ptr.style.transform = '';
+        ptr.style.opacity = '';
+        _spPtrRefreshing = false;
+      }, 950);
+    } else {
+      _spPtrPullingReached = false;
+      ptr.style.transform = '';
+      ptr.style.opacity = '';
+    }
+  }, { passive: true });
+}
+
+// ⌨️ Desktop Keyboard Navigation & Shortcuts (PC / Ordi > 768px)
+function spInitDesktopKeyboardShortcuts() {
+  if (window._spKeyboardShortcutsInit) return;
+  window._spKeyboardShortcutsInit = true;
+
+  document.addEventListener('keydown', (e) => {
+    if (window.innerWidth <= 768) return;
+
+    // Ignore when typing inside input, textarea, select, or contenteditable
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable)) {
+      return;
+    }
+
+    // Ignore if modal overlay is open
+    const modalOpen = document.querySelector('.overlay.open, .share-sheet-overlay.open');
+    if (modalOpen) return;
+
+    const cards = Array.from(document.querySelectorAll('#feedEl .post-card'));
+    if (!cards.length) return;
+
+    // Find card closest to viewport center
+    const viewCenter = window.innerHeight / 2;
+    let currentIdx = -1;
+    let minDistance = Infinity;
+
+    cards.forEach((card, idx) => {
+      const rect = card.getBoundingClientRect();
+      const cardCenter = rect.top + rect.height / 2;
+      const dist = Math.abs(cardCenter - viewCenter);
+      if (dist < minDistance) {
+        minDistance = dist;
+        currentIdx = idx;
+      }
+    });
+
+    const activeCard = currentIdx >= 0 ? cards[currentIdx] : cards[0];
+    const activePostId = activeCard ? activeCard.id.replace('post-', '') : null;
+
+    if (e.key === 'ArrowDown' || e.key === 'j' || e.key === 'J') {
+      e.preventDefault();
+      const nextIdx = Math.min(currentIdx + 1, cards.length - 1);
+      cards[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (e.key === 'ArrowUp' || e.key === 'k' || e.key === 'K') {
+      e.preventDefault();
+      const prevIdx = Math.max(currentIdx - 1, 0);
+      cards[prevIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (e.code === 'Space') {
+      e.preventDefault();
+      if (activeCard) {
+        const video = activeCard.querySelector('video');
+        if (video) {
+          if (video.paused) video.play().catch(()=>{});
+          else video.pause();
+        } else if (typeof spRadioToggle === 'function') {
+          spRadioToggle();
+        }
+      }
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      if (activePostId && typeof toggleLike === 'function') {
+        toggleLike(activePostId);
+      }
+    } else if (e.key === 'c' || e.key === 'C') {
+      e.preventDefault();
+      if (activePostId && typeof openCmts === 'function') {
+        openCmts(activePostId);
+      }
+    } else if (e.key === 'd' || e.key === 'D') {
+      e.preventDefault();
+      if (activePostId && typeof spDuelChallengePostAuthor === 'function') {
+        spDuelChallengePostAuthor(activePostId);
+      }
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      if (typeof spToggleGlobalMute === 'function') {
+        spToggleGlobalMute();
+      } else if (typeof spRadioToggle === 'function') {
+        spRadioToggle();
+      }
+    } else if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+      spShowKeyboardShortcutsHelp();
+    }
+  });
+}
+
+function spShowKeyboardShortcutsHelp() {
+  const msg = curLang === 'fr'
+    ? '⌨️ Raccourcis : [J/↓] Post suivant • [K/↑] Post précédent • [Espace] Lecture/Pause • [L] J\'aime • [C] Commentaires • [D] Duel 3D • [M] Muet'
+    : '⌨️ Shortcuts: [J/↓] Next post • [K/↑] Prev post • [Space] Play/Pause • [L] Like • [C] Comments • [D] 3D Duel • [M] Mute';
+  if (typeof toast === 'function') {
+    toast(msg, 'info');
+  }
+}
+
+// 🔥 Quick Reaction Long-Press & Menu Engine
+let _spReactionPostId = null;
+let _spReactionTimer = null;
+
+function spBindLikeLongPress(btn, postId) {
+  let touchMoved = false;
+
+  btn.addEventListener('touchstart', (e) => {
+    if (window.innerWidth > 768) return;
+    touchMoved = false;
+    _spReactionTimer = setTimeout(() => {
+      if (!touchMoved) {
+        spShowQuickReactions(btn, postId, e);
+      }
+    }, 340);
+  }, { passive: true });
+
+  btn.addEventListener('touchmove', () => {
+    touchMoved = true;
+    if (_spReactionTimer) clearTimeout(_spReactionTimer);
+  }, { passive: true });
+
+  btn.addEventListener('touchend', () => {
+    if (_spReactionTimer) clearTimeout(_spReactionTimer);
+  }, { passive: true });
+}
+
+function spShowQuickReactions(btn, postId, e) {
+  _spReactionPostId = postId;
+  const wheel = document.getElementById('spQuickReactionWheel');
+  if (!wheel) return;
+
+  const rect = btn.getBoundingClientRect();
+  const rightPos = Math.max(12, window.innerWidth - rect.left + 8);
+  const topPos = Math.max(60, Math.min(window.innerHeight - 60, rect.top - 6));
+
+  wheel.style.top = `${topPos}px`;
+  wheel.style.right = `${rightPos}px`;
+  wheel.style.display = 'flex';
+  spHaptic(18);
+
+  const closeHandler = (evt) => {
+    if (!wheel.contains(evt.target)) {
+      spCloseQuickReactions();
+      document.removeEventListener('touchstart', closeHandler);
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener('touchstart', closeHandler, { passive: true });
+    document.addEventListener('click', closeHandler);
+  }, 50);
+}
+
+function spCloseQuickReactions() {
+  const wheel = document.getElementById('spQuickReactionWheel');
+  if (wheel) wheel.style.display = 'none';
+}
+
+function spSelectQuickReaction(emoji, e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  if (_spReactionPostId && typeof spawnReaction === 'function') {
+    spawnReaction(_spReactionPostId, emoji, e || { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+  }
+  spHaptic([12, 30]);
+  spCloseQuickReactions();
 }
 
 // Boot listeners
