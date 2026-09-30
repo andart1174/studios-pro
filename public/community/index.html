@@ -1347,7 +1347,7 @@
       .header .hsep,
       .header .hcomm,
       .header .hcenter,
-      .header .hactions > button:not(.notif-bell-btn) {
+      .header .hactions > button:not(.notif-bell-btn):not(#spMobileHubBtn) {
         display: none !important;
       }
       .header .hactions {
@@ -1355,7 +1355,7 @@
         display: flex !important;
         align-items: center !important;
         flex-shrink: 0 !important;
-        max-width: 50% !important;
+        max-width: 65% !important;
       }
       .header .lang-btn {
         padding: 4px 8px !important;
@@ -1494,7 +1494,7 @@
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
-        background: #000 !important;
+        background: #0b0f19 !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-end !important;
@@ -1521,7 +1521,7 @@
         border: none !important;
         border-radius: 0 !important;
         overflow: hidden !important;
-        background: #000 !important;
+        background: #0b0f19 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -1946,14 +1946,29 @@
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
       }
+      .overlay.open {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: all !important;
+      }
       .overlay.open .modal,
       .overlay.open .tip-modal,
+      .overlay.open .wallet-modal,
+      .overlay.open .achiev-box,
+      .overlay.open .spin-box,
+      .overlay.open .sp-reel-modal-card,
+      .overlay.open .sp-duel-modal-card,
+      .overlay.open .sp-hub-drawer-modal,
       .share-sheet-overlay.open .share-sheet-inner {
         transform: translateY(0) !important;
         opacity: 1 !important;
       }
       .modal,
-      .tip-modal {
+      .tip-modal,
+      .wallet-modal,
+      .sp-reel-modal-card,
+      .sp-duel-modal-card,
+      .sp-hub-drawer-modal {
         width: 100% !important;
         max-width: 100vw !important;
         box-sizing: border-box !important;
@@ -1965,8 +1980,46 @@
         border-bottom: none !important;
         margin: 0 !important;
         padding-bottom: 26px !important;
-        background: var(--bg2) !important;
+        background: #0b1120 !important;
         transform: translateY(0);
+      }
+      .achiev-modal,
+      .spin-modal {
+        z-index: 10006 !important;
+        padding: 0 !important;
+        align-items: flex-end !important;
+        background: rgba(0, 0, 0, 0.78) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+      }
+      .achiev-modal.open .achiev-box,
+      .spin-modal.open .spin-box {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+      }
+      .achiev-box,
+      .spin-box {
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        border-bottom: none !important;
+        margin: 0 !important;
+        background: #0b1120 !important;
+      }
+      .achiev-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        padding: 12px !important;
+      }
+      .spin-wheel-wrap,
+      .spin-canvas {
+        max-width: 250px !important;
+        max-height: 250px !important;
       }
       .share-sheet-overlay {
         z-index: 10005 !important;
@@ -1977,6 +2030,120 @@
         box-sizing: border-box !important;
         border-radius: 20px 20px 0 0 !important;
         padding: 16px 16px 28px !important;
+      }
+
+      /* ── SP Nexus Mobile Hub Styles ── */
+      .sp-mobile-hub-btn {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(236, 72, 153, 0.22));
+        border: 1px solid rgba(168, 85, 247, 0.6);
+        color: #fff;
+        padding: 5px 12px;
+        border-radius: 18px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+        white-space: nowrap;
+        flex-shrink: 0;
+        animation: hubPulse 3s ease-in-out infinite;
+      }
+      @keyframes hubPulse {
+        0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+        50% { box-shadow: 0 0 18px rgba(236, 72, 153, 0.6); }
+      }
+      .sp-hub-drawer-modal {
+        background: #0b1120 !important;
+        border: 1px solid rgba(168, 85, 247, 0.35) !important;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8) !important;
+      }
+      .sp-hub-banner-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .sp-hub-streak-banner {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(239, 68, 68, 0.12));
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        border-radius: 14px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+      .sp-hub-mini-claim-btn {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        border: none;
+        color: #000;
+        font-weight: 900;
+        font-size: 0.72rem;
+        padding: 5px 9px;
+        border-radius: 10px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .sp-hub-wallet-banner {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.12));
+        border: 1px solid rgba(168, 85, 247, 0.4);
+        border-radius: 14px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+      .sp-hub-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .sp-hub-tile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 10px;
+        border-radius: 14px;
+        border: 1px solid var(--border2);
+        background: var(--bg3);
+        cursor: pointer;
+        transition: transform 0.15s, border-color 0.15s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .sp-hub-tile:active {
+        transform: scale(0.96);
+      }
+      .sp-hub-tile-icon {
+        font-size: 1.45rem;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .sp-hub-tile-info {
+        min-width: 0;
+        overflow: hidden;
+      }
+      .sp-hub-tile-title {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sp-hub-tile-sub {
+        font-size: 0.66rem;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+      }
+      #metaverseOverlay .mh {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
       }
       .mh {
         padding: 12px 16px !important;
@@ -2350,6 +2517,7 @@
 
     @media(min-width: 769px) {
       .mobile-nav,
+      .sp-mobile-hub-btn,
       .sp-mobile-audio-pill,
       .sp-modal-drag-handle,
       .sp-ptr-wrap,
@@ -2882,6 +3050,11 @@
       <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
       <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
     </div>
+    <!-- ✨ Mobile Features Hub Button (Visible only on mobile <= 768px) -->
+    <button id="spMobileHubBtn" class="sp-mobile-hub-btn" onclick="spToggleMobileHub()" title="SP Nexus Features &amp; Tools">
+      <span style="font-size:15px;line-height:1;">✨</span>
+      <span id="spMobileHubBtnTxt">Hub</span>
+    </button>
     <!-- ⚔️ Card Duel PvP Button in Header -->
     <button onclick="spLaunchCardDuel()" title="3D Card Duel PvP Arena" style="background:linear-gradient(135deg,rgba(239,68,68,.3),rgba(245,158,11,.25));border:1px solid rgba(239,68,68,.6);color:#fff;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;box-shadow:0 0 16px rgba(239,68,68,.45);">
       <span style="font-size:16px;">⚔️</span>
@@ -3685,7 +3858,7 @@
       <span style="font-size:1.15rem;font-weight:900;background:linear-gradient(135deg,#ff0050,#00f2fe,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SP Reels &amp; Shorts</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="closeReelsViewerModal();openCreateModal();" style="background:linear-gradient(135deg,#ff0050,#00f2fe);border:none;color:#fff;padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 15px rgba(255,0,80,.4);">➕ Post Reel</button>
+      <button onclick="closeReelsViewerModal();openCreate();" style="background:linear-gradient(135deg,#ff0050,#00f2fe);border:none;color:#fff;padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 15px rgba(255,0,80,.4);">➕ Post Reel</button>
       <button onclick="closeReelsViewerModal()" style="background:rgba(255,255,255,.18);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:bold;backdrop-filter:blur(8px);">✕</button>
     </div>
   </div>
@@ -3696,7 +3869,227 @@
   </div>
 </div>
 
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- 📱 SP NEXUS MOBILE FEATURES HUB DRAWER (ALL DESKTOP FUNCTIONS)     -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="spMobileHubOverlay" onclick="spCloseMobileHub(event)" style="display:none;">
+  <div class="modal sp-hub-drawer-modal" id="spMobileHubModal" onclick="event.stopPropagation()">
+    <!-- Drag Handle for Mobile -->
+    <div class="sp-modal-drag-handle"></div>
 
+    <!-- Header -->
+    <div class="mh" style="background:linear-gradient(135deg,rgba(168,85,247,.22),rgba(236,72,153,.15));border-bottom:1px solid rgba(168,85,247,.3);padding:14px 18px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);">
+      <div class="mt" style="display:flex;align-items:center;gap:8px;font-size:1.05rem;font-weight:900;color:#fff;">
+        <span style="font-size:1.3rem;">✨</span>
+        <span id="spHubTitle">Features &amp; Tools</span>
+      </div>
+      <button class="mc" onclick="spCloseMobileHubDirect()" title="Close">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="mb" style="padding:14px 16px 32px;">
+      <!-- 1. USER QUICK WALLET & DAILY STREAK ROW -->
+      <div class="sp-hub-banner-row">
+        <!-- Daily Streak Quick Tile -->
+        <div class="sp-hub-streak-banner" onclick="spHubClaimStreak()">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span style="font-size:1.45rem;animation:streak-pulse 2s infinite;flex-shrink:0;">🔥</span>
+            <div style="min-width:0;overflow:hidden;">
+              <div style="font-size:.66rem;font-weight:800;color:#fbbf24;text-transform:uppercase;" id="spHubStreakTitle">Daily Streak</div>
+              <div style="font-size:.95rem;font-weight:900;color:#fff;white-space:nowrap;" id="spHubStreakCount">0 Days</div>
+            </div>
+          </div>
+          <button class="sp-hub-mini-claim-btn" id="spHubStreakBtn">+25 💰</button>
+        </div>
+
+        <!-- SP Wallet Quick Tile -->
+        <div class="sp-hub-wallet-banner" onclick="spCloseMobileHubDirect();openWallet();">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <img src="/sp_coin_logo.png" style="width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(245,158,11,.8));flex-shrink:0;" alt="Coin">
+            <div style="min-width:0;overflow:hidden;">
+              <div style="font-size:.66rem;font-weight:800;color:#fbbf24;text-transform:uppercase;" id="spHubWalletTitle">Balance</div>
+              <div style="font-size:1.05rem;font-weight:900;color:#fbbf24;white-space:nowrap;" id="spHubCoinCount">0 💰</div>
+            </div>
+          </div>
+          <span style="font-size:.72rem;color:var(--muted);font-weight:700;flex-shrink:0;">Wallet →</span>
+        </div>
+      </div>
+
+      <!-- 2. THEME COLOR PICKER QUICK ROW -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:14px;padding:9px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;" id="spHubThemeLbl">🎨 Theme</span>
+        <div style="display:flex;gap:10px;">
+          <button type="button" title="Cyber Violet" onclick="setTheme('violet','#6366f1')" style="background:#6366f1;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;"></button>
+          <button type="button" title="Gold Amber" onclick="setTheme('amber','#f59e0b')" style="background:#f59e0b;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;"></button>
+          <button type="button" title="Emerald Green" onclick="setTheme('emerald','#10b981')" style="background:#10b981;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;"></button>
+          <button type="button" title="Electric Pink" onclick="setTheme('pink','#ec4899')" style="background:#ec4899;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;"></button>
+          <button type="button" title="Ruby Red" onclick="setTheme('ruby','#ef4444')" style="background:#ef4444;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;"></button>
+        </div>
+      </div>
+
+      <!-- 3. ALL DESKTOP FEATURES GRID (2 columns of rich cards) -->
+      <div class="sp-hub-grid">
+        <!-- 🎡 Lucky Wheel -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openSpinModal();" style="border-color:rgba(245,158,11,.4);background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(239,68,68,.06));">
+          <div class="sp-hub-tile-icon">🎡</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fbbf24;" id="spHubLuckyWheelTitle">Lucky Wheel</div>
+            <div class="sp-hub-tile-sub" id="spHubLuckyWheelSub">Free Spin • Win 250 💰</div>
+          </div>
+        </div>
+
+        <!-- ⚔️ Card Duel PvP -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();spLaunchCardDuel();" style="border-color:rgba(239,68,68,.4);background:linear-gradient(135deg,rgba(239,68,68,.14),rgba(245,158,11,.08));">
+          <div class="sp-hub-tile-icon">⚔️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#f87171;" id="spHubDuelTitle">Card Duel PvP</div>
+            <div class="sp-hub-tile-sub" id="spHubDuelSub">3D Battle Arena</div>
+          </div>
+        </div>
+
+        <!-- 🎮 3D Mini-Arcade -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();spArcadeOpen();" style="border-color:rgba(16,185,129,.4);background:linear-gradient(135deg,rgba(16,185,129,.14),rgba(5,150,105,.08));">
+          <div class="sp-hub-tile-icon">🎮</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#34d399;" id="spHubArcadeTitle">3D Mini-Arcade</div>
+            <div class="sp-hub-tile-sub" id="spHubArcadeSub">Play &amp; Earn Coins</div>
+          </div>
+        </div>
+
+        <!-- 🎬 3D Reel Generator -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();spOpen3DReelGenerator();" style="border-color:rgba(236,72,153,.4);background:linear-gradient(135deg,rgba(236,72,153,.14),rgba(168,85,247,.08));">
+          <div class="sp-hub-tile-icon">🎬</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#f472b6;" id="spHubReelStudioTitle">3D Reel Studio</div>
+            <div class="sp-hub-tile-sub" id="spHubReelStudioSub">Export 9:16 Video</div>
+          </div>
+        </div>
+
+        <!-- 🍿 SP Reels & Shorts -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openReelsViewerModal();" style="border-color:rgba(255,0,80,.4);background:linear-gradient(135deg,rgba(255,0,80,.14),rgba(0,242,254,.08));">
+          <div class="sp-hub-tile-icon">🍿</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#ff0050;" id="spHubReelsTitle">SP Reels &amp; Shorts</div>
+            <div class="sp-hub-tile-sub" id="spHubReelsSub">Vertical Feed</div>
+          </div>
+        </div>
+
+        <!-- 😂 Fun & AI Jokes -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openFunJokesModal();" style="border-color:rgba(245,158,11,.4);background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.06));">
+          <div class="sp-hub-tile-icon">😂</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fbbf24;" id="spHubJokesTitle">Fun &amp; AI Jokes</div>
+            <div class="sp-hub-tile-sub" id="spHubJokesSub">Bots &amp; Soundboard</div>
+          </div>
+        </div>
+
+        <!-- 📞 Direct Phone Calls -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openPhoneBook(event);" style="border-color:rgba(168,85,247,.4);background:linear-gradient(135deg,rgba(168,85,247,.14),rgba(99,102,241,.08));">
+          <div class="sp-hub-tile-icon">📞</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#c084fc;" id="spHubCallsTitle">Phone &amp; Calls</div>
+            <div class="sp-hub-tile-sub" id="spHubCallsSub">Voice &amp; Contacts</div>
+          </div>
+        </div>
+
+        <!-- 🛍️ SP Marketplace / Shop -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openShopModal();" style="border-color:rgba(99,102,241,.4);background:linear-gradient(135deg,rgba(99,102,241,.14),rgba(168,85,247,.08));">
+          <div class="sp-hub-tile-icon">🛍️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#a78bfa;" id="spHubShopTitle">SP Marketplace</div>
+            <div class="sp-hub-tile-sub" id="spHubShopSub">Borders, Badges, Boosts</div>
+          </div>
+        </div>
+
+        <!-- 🏷️ 3D Auction House -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openAuctionModal();" style="border-color:rgba(245,158,11,.4);background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(217,119,6,.08));">
+          <div class="sp-hub-tile-icon">🏷️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fbbf24;" id="spHubAuctionTitle">3D Auction House</div>
+            <div class="sp-hub-tile-sub" id="spHubAuctionSub">Live Model Bidding</div>
+          </div>
+        </div>
+
+        <!-- 🏛️ Metaverse 3D Gallery -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openMetaverseGalleryModal();" style="border-color:rgba(168,85,247,.4);background:linear-gradient(135deg,rgba(168,85,247,.14),rgba(236,72,153,.08));">
+          <div class="sp-hub-tile-icon">🏛️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#c084fc;" id="spHubMetaverseTitle">Metaverse 3D</div>
+            <div class="sp-hub-tile-sub" id="spHubMetaverseSub">Pedestals &amp; Art</div>
+          </div>
+        </div>
+
+        <!-- 🏅 Achievements -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openAchievModal();" style="border-color:rgba(251,191,36,.4);background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(245,158,11,.06));">
+          <div class="sp-hub-tile-icon">🏅</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fbbf24;" id="spHubAchievTitle">Achievements</div>
+            <div class="sp-hub-tile-sub" id="spHubAchievSub">0/20 Badges Unlocked</div>
+          </div>
+        </div>
+
+        <!-- 🚀 Invite & Earn -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();openReferralModal();" style="border-color:rgba(59,130,246,.4);background:linear-gradient(135deg,rgba(59,130,246,.14),rgba(147,51,234,.08));">
+          <div class="sp-hub-tile-icon">🚀</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#60a5fa;" id="spHubReferralTitle">Invite &amp; Earn</div>
+            <div class="sp-hub-tile-sub" id="spHubReferralSub">+500 💰 per Invite</div>
+          </div>
+        </div>
+
+        <!-- 🎙️ SP Nexus Radio -->
+        <div class="sp-hub-tile" onclick="spRadioToggle();spUpdateMobileHubState();" style="border-color:rgba(139,92,246,.4);background:linear-gradient(135deg,rgba(139,92,246,.14),rgba(99,102,241,.08));">
+          <div class="sp-hub-tile-icon">🎙️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#a78bfa;" id="spHubRadioTitle">SP Nexus Radio</div>
+            <div class="sp-hub-tile-sub" id="spHubRadioSub">Toggle Lo-Fi Stream</div>
+          </div>
+        </div>
+
+        <!-- 🔖 Saved Posts -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();showSavedPosts();" style="border-color:rgba(234,179,8,.4);background:linear-gradient(135deg,rgba(234,179,8,.12),rgba(168,85,247,.06));">
+          <div class="sp-hub-tile-icon">🔖</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fde047;" id="spHubSavedTitle">Saved Posts</div>
+            <div class="sp-hub-tile-sub" id="spHubSavedSub">Bookmarks</div>
+          </div>
+        </div>
+
+        <!-- 🎯 Creator Quests -->
+        <div class="sp-hub-tile" onclick="spCloseMobileHubDirect();spOpenMobileQuestsModal();" style="border-color:rgba(244,63,94,.4);background:linear-gradient(135deg,rgba(244,63,94,.14),rgba(236,72,153,.08));">
+          <div class="sp-hub-tile-icon">🎯</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fb7185;" id="spHubQuestsTitle">Creator Quests</div>
+            <div class="sp-hub-tile-sub" id="spHubQuestsSub">Weekly Missions</div>
+          </div>
+        </div>
+
+        <!-- 🛡️ Admin Dashboard (Admin Only) -->
+        <div class="sp-hub-tile" id="spHubAdminTile" onclick="spCloseMobileHubDirect();toggleAdminPanel();" style="display:none;border-color:rgba(234,179,8,.5);background:linear-gradient(135deg,rgba(234,179,8,.18),rgba(249,115,22,.1));">
+          <div class="sp-hub-tile-icon">🛡️</div>
+          <div class="sp-hub-tile-info">
+            <div class="sp-hub-tile-title" style="color:#fbbf24;" id="spHubAdminTitle">Admin Center</div>
+            <div class="sp-hub-tile-sub" id="spHubAdminSub">Manage &amp; Curate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🎯 CREATOR QUESTS MOBILE MODAL -->
+<div class="overlay" id="questsOverlay" onclick="spCloseQuestsModal(event)" style="display:none;">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px;background:#0b1120;border:1px solid rgba(244,63,94,.4);">
+    <div class="mh" style="background:linear-gradient(135deg,rgba(244,63,94,.2),rgba(236,72,153,.15));">
+      <div class="mt" style="color:#fb7185;font-family:'Outfit',sans-serif;font-weight:900;" id="questsModalTitle">🎯 Creator Quests</div>
+      <button class="mc" onclick="spCloseQuestsModalDirect()">✕</button>
+    </div>
+    <div class="mb" style="padding:16px;">
+      <div id="questsModalList"></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:14px;text-align:center;" id="questsModalSub">Resets every Monday 🗓️</div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 🃏 SP DAILY COLLECTIBLE CARD COMPARTMENT ═══ -->
 <div class="overlay" id="spDailyCardOverlay" onclick="spDailyCardClose(event)" style="display:none;align-items:flex-start;padding-top:5vh;">
@@ -4373,7 +4766,42 @@ const T = {
     radioStation:'🌌 Cyberpunk & Lofi Radio 24/7',
     radioArtist:'🎤 Studios-Pro Chill Station',
     duelWinReward:'+25 SP Coins Earned!',
-    quickPost:'✦ Post'
+    quickPost:'✦ Post',
+    hubTitle:'Features & Tools',
+    hubStreakTitle:'Daily Streak',
+    hubWalletTitle:'Balance',
+    hubTheme:'🎨 Theme',
+    hubLuckyWheel:'Lucky Wheel',
+    hubLuckyWheelSub:'Free Spin • Win 250 💰',
+    hubCardDuel:'Card Duel PvP',
+    hubCardDuelSub:'3D Battle Arena',
+    hubArcade:'3D Mini-Arcade',
+    hubArcadeSub:'Play & Earn Coins',
+    hubReelStudio:'3D Reel Studio',
+    hubReelStudioSub:'Export 9:16 Video',
+    hubReels:'SP Reels & Shorts',
+    hubReelsSub:'Vertical Video Feed',
+    hubFunJokes:'Fun & AI Jokes',
+    hubFunJokesSub:'Bots & Soundboard',
+    hubCalls:'Phone & Calls',
+    hubCallsSub:'Direct Voice & Video',
+    hubShop:'SP Marketplace',
+    hubShopSub:'Borders, Badges, Boosts',
+    hubAuction:'3D Auction House',
+    hubAuctionSub:'Live Model Bidding',
+    hubMetaverse:'Metaverse 3D',
+    hubMetaverseSub:'Pedestals & Art',
+    hubAchievements:'Achievements',
+    hubInvite:'Invite & Earn',
+    hubInviteSub:'+500 💰 per Invite',
+    hubRadio:'SP Nexus Radio',
+    hubSaved:'Saved Posts',
+    hubSavedSub:'Bookmarked Creations',
+    hubQuests:'Creator Quests',
+    hubQuestsSub:'Weekly Missions',
+    hubAdmin:'Admin Center',
+    hubAdminSub:'Manage & Curate',
+    creatorQuests:'Creator Quests'
   },
   fr:{
     community:'SP Nexus', categories:'Catégories', allPosts:'Tous les posts', posts:'Posts', likes:'Likes',
@@ -4425,7 +4853,42 @@ const T = {
     radioStation:'🌌 Cyberpunk & Lofi Radio 24/7',
     radioArtist:'🎤 Station Chill Studios-Pro',
     duelWinReward:'+25 SP Coins Gagnés !',
-    quickPost:'✦ Publier'
+    quickPost:'✦ Publier',
+    hubTitle:'Fonctionnalités & Outils',
+    hubStreakTitle:'Série Quotidienne',
+    hubWalletTitle:'Solde',
+    hubTheme:'🎨 Thème',
+    hubLuckyWheel:'Roue de la Fortune',
+    hubLuckyWheelSub:'Tour Gratuit • Gagnez 250 💰',
+    hubCardDuel:'Duel de Cartes PvP',
+    hubCardDuelSub:'Arène de Combat 3D',
+    hubArcade:'Mini-Arcade 3D',
+    hubArcadeSub:'Jeux & Récompenses',
+    hubReelStudio:'Studio Reel 3D',
+    hubReelStudioSub:'Exporter Vidéo 9:16',
+    hubReels:'SP Reels & Vidéos',
+    hubReelsSub:'Flux Vidéo Vertical',
+    hubFunJokes:'Blagues IA & Humour',
+    hubFunJokesSub:'Robots & Sons Viraux',
+    hubCalls:'Téléphone & Appels',
+    hubCallsSub:'Voix & Contacts',
+    hubShop:'Boutique SP',
+    hubShopSub:'Bordures, Badges, Boosts',
+    hubAuction:'Ventes aux Enchères 3D',
+    hubAuctionSub:'Enchères Modèles 3D',
+    hubMetaverse:'Métavers 3D',
+    hubMetaverseSub:'Piédestaux & Art',
+    hubAchievements:'Succès & Badges',
+    hubInvite:'Parrainage & Gains',
+    hubInviteSub:'+500 💰 par Invité',
+    hubRadio:'Radio SP Nexus',
+    hubSaved:'Posts Sauvegardés',
+    hubSavedSub:'Créations Enregistrées',
+    hubQuests:'Quêtes Créateur',
+    hubQuestsSub:'Missions Hebdomadaires',
+    hubAdmin:'Centre Admin',
+    hubAdminSub:'Gérer & Modérer',
+    creatorQuests:'Quêtes Créateur'
   }
 };
 
@@ -4523,6 +4986,9 @@ function applyLang() {
   const ptrText = document.getElementById('spPtrText');
   if (ptrText && !_spPtrRefreshing) {
     ptrText.textContent = curLang === 'fr' ? 'Tirez pour rafraîchir' : 'Pull to refresh';
+  }
+  if (typeof spUpdateMobileHubState === 'function') {
+    spUpdateMobileHubState();
   }
 }
 
@@ -9024,9 +9490,19 @@ function closeCreateDirect() {
   sharedSourcePage = null;
 }
 
-// ─── Lightbox ──────────────────────────────────────────────
-function openLb(src) { if (window.innerWidth <= 768) return; document.getElementById('lb').classList.add('open'); document.getElementById('lbImg').src=src; }
-function closeLb() { document.getElementById('lb').classList.remove('open'); }
+function openLb(src) {
+  if (window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024)) return;
+  const lb = document.getElementById('lb');
+  const img = document.getElementById('lbImg');
+  if (lb && img && src) {
+    img.src = src;
+    lb.classList.add('open');
+  }
+}
+function closeLb() {
+  const lb = document.getElementById('lb');
+  if (lb) lb.classList.remove('open');
+}
 
 // ─── Char count ────────────────────────────────────────────
 function updChar() { document.getElementById('charCnt').textContent = `${document.getElementById('postContent').value.length} / 2000`; }
@@ -16631,8 +17107,9 @@ function spInitModalSwipeToDismiss() {
         mutations.forEach(m => {
           if (m.type === 'attributes' && m.attributeName === 'class') {
             const overlay = m.target;
-            const modal = overlay.querySelector('.modal, .tip-modal, .share-sheet-inner');
+            const modal = overlay.querySelector('.modal, .tip-modal, .wallet-modal, .achiev-box, .spin-box, .share-sheet-inner, .sp-hub-drawer-modal');
             if (overlay.classList.contains('open')) {
+              overlay.style.setProperty('display', 'flex', 'important');
               if (modal) {
                 modal.style.transform = '';
                 modal.style.transition = '';
@@ -16648,17 +17125,17 @@ function spInitModalSwipeToDismiss() {
           }
         });
       });
-      document.querySelectorAll('.overlay, .share-sheet-overlay').forEach(o => {
+      document.querySelectorAll('.overlay, .share-sheet-overlay, .achiev-modal, .spin-modal').forEach(o => {
         obs.observe(o, { attributes: true, attributeFilter: ['class'] });
       });
     } catch(e) {}
   }
 
-  document.querySelectorAll('.overlay, .share-sheet-overlay').forEach(overlay => {
+  document.querySelectorAll('.overlay, .share-sheet-overlay, .achiev-modal, .spin-modal').forEach(overlay => {
     if (overlay.dataset.spSwipeInit) return;
     overlay.dataset.spSwipeInit = '1';
 
-    const modal = overlay.querySelector('.modal, .tip-modal, .share-sheet-inner');
+    const modal = overlay.querySelector('.modal, .tip-modal, .wallet-modal, .achiev-box, .spin-box, .share-sheet-inner, .sp-hub-drawer-modal');
     if (!modal) return;
 
     let handle = modal.querySelector('.sp-modal-drag-handle');
@@ -16725,6 +17202,7 @@ function spInitMobileExperience() {
     spInitMobileGyro();
     spInitModalSwipeToDismiss();
     spInitPullToRefresh();
+    if (typeof spUpdateMobileHubState === 'function') spUpdateMobileHubState();
   } else {
     spInitDesktopKeyboardShortcuts();
   }
@@ -17022,6 +17500,176 @@ function spSelectQuickReaction(emoji, e) {
   }
   spHaptic([12, 30]);
   spCloseQuickReactions();
+// Universal Safety Aliases to prevent ReferenceErrors on mobile reels, duels & modals
+function openComments(pid) { return typeof openCmts === 'function' ? openCmts(pid) : null; }
+function openCreateModal() { return typeof openCreate === 'function' ? openCreate() : null; }
+function viewUserProfile(uid) { return typeof openPublicProfile === 'function' ? openPublicProfile(uid) : null; }
+
+// ════════════════════════════════════════════════════════════════════
+// 📱 SP NEXUS MOBILE FEATURES HUB CONTROLLER
+// ════════════════════════════════════════════════════════════════════
+function spToggleMobileHub() {
+  const ov = document.getElementById('spMobileHubOverlay');
+  if (!ov) return;
+  if (ov.classList.contains('open') && ov.style.display !== 'none') {
+    spCloseMobileHubDirect();
+  } else {
+    spOpenMobileHub();
+  }
+}
+
+function spOpenMobileHub() {
+  const ov = document.getElementById('spMobileHubOverlay');
+  if (!ov) return;
+  ov.style.setProperty('display', 'flex', 'important');
+  const modal = ov.querySelector('.modal');
+  if (modal) {
+    modal.style.transform = '';
+    modal.style.transition = '';
+    modal.scrollTop = 0;
+  }
+  ov.classList.add('open');
+  spUpdateMobileHubState();
+  spHaptic(14);
+}
+
+function spCloseMobileHub(e) {
+  if (e && e.target !== document.getElementById('spMobileHubOverlay')) return;
+  spCloseMobileHubDirect();
+}
+
+function spCloseMobileHubDirect() {
+  const ov = document.getElementById('spMobileHubOverlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  setTimeout(() => {
+    if (!ov.classList.contains('open')) {
+      ov.style.display = 'none';
+    }
+  }, 220);
+}
+
+function spUpdateMobileHubState() {
+  // Update Streak Count & text
+  const streakEl = document.getElementById('spHubStreakCount');
+  const streakSrc = (document.getElementById('streakCount') && document.getElementById('streakCount').textContent) || '0';
+  if (streakEl) {
+    streakEl.textContent = curLang === 'fr' ? `${streakSrc} Jours` : `${streakSrc} Days`;
+  }
+
+  // Update SP Coins Balance
+  const coinEl = document.getElementById('spHubCoinCount');
+  if (coinEl) {
+    coinEl.textContent = `${typeof spCoinsBalance !== 'undefined' ? spCoinsBalance : 0} 💰`;
+  }
+
+  // Update Achievements Count
+  const achievEl = document.getElementById('spHubAchievSub');
+  const sideCount = (document.getElementById('sideAchievCount') && document.getElementById('sideAchievCount').textContent) || '0/20';
+  if (achievEl) {
+    achievEl.textContent = curLang === 'fr' ? `${sideCount} Badges Débloqués` : `${sideCount} Badges Unlocked`;
+  }
+
+  // Update Radio state
+  const radioSub = document.getElementById('spHubRadioSub');
+  if (radioSub) {
+    radioSub.textContent = (typeof spRadioPlaying !== 'undefined' && spRadioPlaying)
+      ? (curLang === 'fr' ? '▶ En cours de lecture' : '▶ Playing Now')
+      : (curLang === 'fr' ? 'Activer le flux Lo-Fi' : 'Toggle Lo-Fi Stream');
+  }
+
+  // Update Admin Tile visibility
+  const adminTile = document.getElementById('spHubAdminTile');
+  if (adminTile) {
+    adminTile.style.display = isAdmin ? 'flex' : 'none';
+  }
+
+  spUpdateMobileHubLang();
+}
+
+function spUpdateMobileHubLang() {
+  const isFr = curLang === 'fr';
+  const setTxt = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+
+  setTxt('spMobileHubBtnTxt', isFr ? 'Menu' : 'Hub');
+  setTxt('spHubTitle', t('hubTitle'));
+  setTxt('spHubStreakTitle', t('hubStreakTitle'));
+  setTxt('spHubWalletTitle', t('hubWalletTitle'));
+  setTxt('spHubThemeLbl', t('hubTheme'));
+  setTxt('spHubLuckyWheelTitle', t('hubLuckyWheel'));
+  setTxt('spHubLuckyWheelSub', t('hubLuckyWheelSub'));
+  setTxt('spHubDuelTitle', t('hubCardDuel'));
+  setTxt('spHubDuelSub', t('hubCardDuelSub'));
+  setTxt('spHubArcadeTitle', t('hubArcade'));
+  setTxt('spHubArcadeSub', t('hubArcadeSub'));
+  setTxt('spHubReelStudioTitle', t('hubReelStudio'));
+  setTxt('spHubReelStudioSub', t('hubReelStudioSub'));
+  setTxt('spHubReelsTitle', t('hubReels'));
+  setTxt('spHubReelsSub', t('hubReelsSub'));
+  setTxt('spHubJokesTitle', t('hubFunJokes'));
+  setTxt('spHubJokesSub', t('hubFunJokesSub'));
+  setTxt('spHubCallsTitle', t('hubCalls'));
+  setTxt('spHubCallsSub', t('hubCallsSub'));
+  setTxt('spHubShopTitle', t('hubShop'));
+  setTxt('spHubShopSub', t('hubShopSub'));
+  setTxt('spHubAuctionTitle', t('hubAuction'));
+  setTxt('spHubAuctionSub', t('hubAuctionSub'));
+  setTxt('spHubMetaverseTitle', t('hubMetaverse'));
+  setTxt('spHubMetaverseSub', t('hubMetaverseSub'));
+  setTxt('spHubAchievTitle', t('hubAchievements'));
+  setTxt('spHubReferralTitle', t('hubInvite'));
+  setTxt('spHubReferralSub', t('hubInviteSub'));
+  setTxt('spHubRadioTitle', t('hubRadio'));
+  setTxt('spHubSavedTitle', t('hubSaved'));
+  setTxt('spHubSavedSub', t('hubSavedSub'));
+  setTxt('spHubQuestsTitle', t('hubQuests'));
+  setTxt('spHubQuestsSub', t('hubQuestsSub'));
+  setTxt('spHubAdminTitle', t('hubAdmin'));
+  setTxt('spHubAdminSub', t('hubAdminSub'));
+  setTxt('questsModalTitle', isFr ? '🎯 Quêtes Créateur' : '🎯 Creator Quests');
+  setTxt('questsModalSub', isFr ? 'Réinitialisation chaque lundi 🗓️' : 'Resets every Monday 🗓️');
+}
+
+async function spHubClaimStreak() {
+  if (typeof claimDailyStreak === 'function') {
+    await claimDailyStreak();
+    spUpdateMobileHubState();
+  }
+}
+
+// 🎯 Mobile Quests Modal Controller
+function spOpenMobileQuestsModal() {
+  const ov = document.getElementById('questsOverlay');
+  if (!ov) return;
+  const list = document.getElementById('questsModalList');
+  const desktopList = document.getElementById('questList');
+  if (list && desktopList) {
+    list.innerHTML = desktopList.innerHTML || (curLang === 'fr' ? '<div style="text-align:center;padding:20px;color:var(--muted);">Chargement des quêtes...</div>' : '<div style="text-align:center;padding:20px;color:var(--muted);">Loading quests...</div>');
+  }
+  ov.style.setProperty('display', 'flex', 'important');
+  const modal = ov.querySelector('.modal');
+  if (modal) { modal.style.transform = ''; modal.style.transition = ''; }
+  ov.classList.add('open');
+  spHaptic(14);
+}
+
+function spCloseQuestsModal(e) {
+  if (e && e.target !== document.getElementById('questsOverlay')) return;
+  spCloseQuestsModalDirect();
+}
+
+function spCloseQuestsModalDirect() {
+  const ov = document.getElementById('questsOverlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  setTimeout(() => {
+    if (!ov.classList.contains('open')) {
+      ov.style.display = 'none';
+    }
+  }, 220);
 }
 
 // Boot listeners
