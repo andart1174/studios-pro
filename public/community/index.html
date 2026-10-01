@@ -1319,29 +1319,54 @@
         max-width: 100vw !important;
         overflow-x: hidden !important;
         padding-bottom: 0 !important;
+        overscroll-behavior: none !important;
       }
       body {
         overflow: hidden !important;
+        overscroll-behavior-y: none !important;
       }
 
-      /* Clean, uncluttered header on mobile */
+      /* Clean, rock-solid uncluttered fixed header on mobile (NEVER trembles, NEVER flickers) */
       .header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         height: 50px !important;
-        padding: 0 10px !important;
-        gap: 6px !important;
+        padding: 0 8px !important;
+        gap: 4px !important;
         justify-content: space-between !important;
         width: 100% !important;
         max-width: 100vw !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
+        background: rgba(5, 8, 18, 0.98) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        z-index: 1000 !important;
+        transform: translateZ(0) !important;
+        -webkit-transform: translateZ(0) !important;
+        will-change: transform !important;
+        contain: layout paint !important;
+      }
+      .header .hlogo {
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+        text-decoration: none !important;
       }
       .header .hlogo-icon {
-        width: 30px !important;
-        height: 30px !important;
-        font-size: 0.7rem !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.68rem !important;
+        flex-shrink: 0 !important;
       }
       .header .hlogo-text {
-        font-size: 0.92rem !important;
+        font-size: 0.88rem !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
       }
       .header .hback-btn,
       .header .hsep,
@@ -1351,19 +1376,34 @@
         display: none !important;
       }
       .header .hactions {
-        gap: 6px !important;
+        gap: 5px !important;
         display: flex !important;
         align-items: center !important;
         flex-shrink: 0 !important;
-        max-width: 65% !important;
+        flex-wrap: nowrap !important;
+        max-width: 68% !important;
+        margin-left: auto !important;
+      }
+      .header .lang-toggle {
+        display: flex !important;
+        align-items: center !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        flex-shrink: 0 !important;
       }
       .header .lang-btn {
-        padding: 4px 8px !important;
-        font-size: 0.72rem !important;
+        padding: 3px 6px !important;
+        font-size: 0.68rem !important;
+        height: 26px !important;
+        flex-shrink: 0 !important;
       }
       .header .btn-email {
-        padding: 5px 10px !important;
-        font-size: 0.74rem !important;
+        padding: 4px 8px !important;
+        font-size: 0.70rem !important;
+        height: 28px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
       }
       /* Prevent header from overflowing when logged in */
       .btn-dm-hdr,
@@ -1377,13 +1417,21 @@
         background: none !important;
         border: none !important;
         box-shadow: none !important;
+        flex-shrink: 0 !important;
       }
       .hdr-user-btn img {
-        width: 30px !important;
-        height: 30px !important;
+        width: 28px !important;
+        height: 28px !important;
         border-radius: 50% !important;
         border: 2px solid var(--accent) !important;
         display: block !important;
+        flex-shrink: 0 !important;
+      }
+      .header .notif-bell-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.85rem !important;
+        flex-shrink: 0 !important;
       }
 
       /* Full Viewport App Container */
@@ -1938,18 +1986,32 @@
       }
 
       /* Mobile Bottom Sheet Modals & Responsive Dialogs */
-      .overlay {
+      .overlay,
+      .share-sheet-overlay,
+      .achiev-modal,
+      .spin-modal {
+        position: fixed !important;
+        inset: 0 !important;
         z-index: 10005 !important;
         padding: 0 !important;
         align-items: flex-end !important;
-        background: rgba(0, 0, 0, 0.78) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
+        background: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        transition: opacity 0.22s ease !important;
       }
-      .overlay.open {
+      .overlay.open,
+      .share-sheet-overlay.open,
+      .achiev-modal.open,
+      .spin-modal.open {
         display: flex !important;
         opacity: 1 !important;
         pointer-events: all !important;
+        visibility: visible !important;
       }
       .overlay.open .modal,
       .overlay.open .tip-modal,
@@ -1973,14 +2035,18 @@
         max-width: 100vw !important;
         box-sizing: border-box !important;
         border-radius: 20px 20px 0 0 !important;
-        max-height: 88vh !important;
-        max-height: 88dvh !important;
+        max-height: 84vh !important;
+        max-height: 84dvh !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         border-bottom: none !important;
         margin: 0 !important;
-        padding-bottom: 26px !important;
-        background: #0b1120 !important;
+        padding-bottom: 28px !important;
+        background: #0d1424 !important;
+        border-top: 1px solid rgba(168, 85, 247, 0.45) !important;
+        border-left: 1px solid rgba(168, 85, 247, 0.25) !important;
+        border-right: 1px solid rgba(168, 85, 247, 0.25) !important;
+        box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.85) !important;
         transform: translateY(0);
       }
       .achiev-modal,
@@ -1988,9 +2054,9 @@
         z-index: 10006 !important;
         padding: 0 !important;
         align-items: flex-end !important;
-        background: rgba(0, 0, 0, 0.78) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
+        background: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
       }
       .achiev-modal.open .achiev-box,
       .spin-modal.open .spin-box {
@@ -2003,13 +2069,13 @@
         max-width: 100vw !important;
         box-sizing: border-box !important;
         border-radius: 20px 20px 0 0 !important;
-        max-height: 88vh !important;
-        max-height: 88dvh !important;
+        max-height: 84vh !important;
+        max-height: 84dvh !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         border-bottom: none !important;
         margin: 0 !important;
-        background: #0b1120 !important;
+        background: #0d1424 !important;
       }
       .achiev-grid {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -2036,28 +2102,31 @@
       .sp-mobile-hub-btn {
         display: inline-flex !important;
         align-items: center;
-        gap: 5px;
-        background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(236, 72, 153, 0.22));
-        border: 1px solid rgba(168, 85, 247, 0.6);
+        gap: 4px;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.28));
+        border: 1px solid rgba(168, 85, 247, 0.7);
         color: #fff;
-        padding: 5px 12px;
-        border-radius: 18px;
-        font-size: 0.78rem;
+        padding: 4px 10px;
+        height: 28px;
+        border-radius: 14px;
+        font-size: 0.74rem;
         font-weight: 800;
         cursor: pointer;
-        box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
         white-space: nowrap;
         flex-shrink: 0;
-        animation: hubPulse 3s ease-in-out infinite;
+        animation: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        transition: transform 0.15s, background 0.15s;
       }
-      @keyframes hubPulse {
-        0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
-        50% { box-shadow: 0 0 18px rgba(236, 72, 153, 0.6); }
+      .sp-mobile-hub-btn:active {
+        transform: scale(0.93) !important;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(236, 72, 153, 0.45));
       }
       .sp-hub-drawer-modal {
-        background: #0b1120 !important;
-        border: 1px solid rgba(168, 85, 247, 0.35) !important;
-        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8) !important;
+        background: #0d1424 !important;
+        border: 1px solid rgba(168, 85, 247, 0.45) !important;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85) !important;
       }
       .sp-hub-banner-row {
         display: grid;
@@ -3883,7 +3952,7 @@
         <span style="font-size:1.3rem;">✨</span>
         <span id="spHubTitle">Features &amp; Tools</span>
       </div>
-      <button class="mc" onclick="spCloseMobileHubDirect()" title="Close">✕</button>
+      <button class="mc" onclick="spCloseMobileHubDirect()" title="Close" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);color:#fff;font-size:1.15rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">✕</button>
     </div>
 
     <!-- Body -->
@@ -5417,7 +5486,9 @@ function loadFeed() {
   if (!db) return;
   const el = document.getElementById('feedEl');
   if (!el) return;
-  el.innerHTML = `<div class="feed-loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
+  if (!allPosts || allPosts.length === 0) {
+    el.innerHTML = `<div class="feed-loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
+  }
   if (unsub) unsub();
 
   const processSnap = snap => {
@@ -5494,12 +5565,25 @@ function searchPosts(q) {
   renderFeed(allPosts.filter(p => (p.content||'').toLowerCase().includes(ql) || (p.displayName||'').toLowerCase().includes(ql)));
 }
 
+function applyFeedFilter() {
+  if (!allPosts) return;
+  let filtered = allPosts;
+  if (curCat !== 'all') {
+    if (curCat === 'aijokes') {
+      filtered = allPosts.filter(p => p.category === 'aijokes' || p.category === 'funjokes');
+    } else {
+      filtered = allPosts.filter(p => p.category === curCat);
+    }
+  }
+  renderFeed(filtered);
+}
+
 function filterCat(cat, btn) {
   curCat = cat;
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.ftab').forEach(b => { b.classList.remove('active'); if (b.dataset.cat===cat) b.classList.add('active'); });
-  loadFeed();
+  if (allPosts && allPosts.length) { applyFeedFilter(); } else { loadFeed(); }
 }
 
 function filterTab(cat, btn) {
@@ -5507,7 +5591,7 @@ function filterTab(cat, btn) {
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.cat-btn').forEach(b => { b.classList.remove('active'); if (b.dataset.cat===cat) b.classList.add('active'); });
-  loadFeed();
+  if (allPosts && allPosts.length) { applyFeedFilter(); } else { loadFeed(); }
 }
 
 function timeAgo(ts) {
@@ -17117,9 +17201,17 @@ function spInitModalSwipeToDismiss() {
               const rb = document.getElementById('spRadioBar');
               if (rb) rb.style.setProperty('display', 'none', 'important');
             } else {
+              overlay.style.setProperty('display', 'none', 'important');
               if (modal) {
                 modal.style.transform = '';
                 modal.style.transition = '';
+              }
+              const anyOpen = document.querySelector('.overlay.open, .share-sheet-overlay.open, .achiev-modal.open, .spin-modal.open');
+              if (!anyOpen) {
+                const rb = document.getElementById('spRadioBar');
+                if (rb && typeof spRadioPlaying !== 'undefined' && spRadioPlaying) {
+                  rb.style.setProperty('display', 'flex', 'important');
+                }
               }
             }
           }
@@ -17177,7 +17269,7 @@ function spInitModalSwipeToDismiss() {
         spHaptic(15);
         setTimeout(() => {
           overlay.classList.remove('open');
-          overlay.style.display = '';
+          overlay.style.setProperty('display', 'none', 'important');
           modal.style.transform = '';
           modal.style.transition = '';
         }, 220);
@@ -17276,10 +17368,9 @@ function spInitPullToRefresh() {
 
   feedEl.addEventListener('touchstart', (e) => {
     if (window.innerWidth > 768 || _spPtrRefreshing) return;
-    if (feedEl.scrollTop <= 2) {
+    if (feedEl.scrollTop === 0) {
       _spPtrStartY = e.touches[0].clientY;
       _spPtrPulling = true;
-      ptr.classList.add('pulling');
     }
   }, { passive: true });
 
@@ -17287,13 +17378,14 @@ function spInitPullToRefresh() {
     if (!_spPtrPulling || _spPtrRefreshing) return;
     const currentY = e.touches[0].clientY;
     const delta = currentY - _spPtrStartY;
-    if (delta > 0 && feedEl.scrollTop <= 2) {
-      const distance = Math.min(delta * 0.42, 75);
+    if (delta > 20 && feedEl.scrollTop === 0) {
+      ptr.classList.add('pulling');
+      const distance = Math.min(delta * 0.38, 70);
       ptr.style.transform = `translateY(${distance - 58}px)`;
       ptr.style.opacity = String(Math.min(distance / 45, 1));
       if (ptrIcon) ptrIcon.style.transform = `rotate(${distance * 4}deg)`;
 
-      if (distance >= 52) {
+      if (distance >= 58) {
         if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Relâchez pour rafraîchir' : 'Release to refresh');
         if (!_spPtrPullingReached) {
           _spPtrPullingReached = true;
@@ -17303,7 +17395,9 @@ function spInitPullToRefresh() {
         if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Tirez pour rafraîchir' : 'Pull to refresh');
         _spPtrPullingReached = false;
       }
-    } else {
+    } else if (delta < 0) {
+      _spPtrPulling = false;
+      ptr.classList.remove('pulling');
       ptr.style.transform = '';
       ptr.style.opacity = '';
     }
@@ -17318,7 +17412,7 @@ function spInitPullToRefresh() {
       _spPtrRefreshing = true;
       _spPtrPullingReached = false;
       ptr.classList.add('refreshing');
-      if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Actualisation du flux...' : 'Refreshing feed...');
+      if (ptrText) ptrText.textContent = (curLang === 'fr' ? 'Actualisation...' : 'Refreshing...');
       spHaptic([15, 35]);
 
       if (typeof loadFeed === 'function') {
@@ -17523,13 +17617,14 @@ function spToggleMobileHub() {
 function spOpenMobileHub() {
   const ov = document.getElementById('spMobileHubOverlay');
   if (!ov) return;
-  ov.style.setProperty('display', 'flex', 'important');
   const modal = ov.querySelector('.modal');
   if (modal) {
-    modal.style.transform = '';
-    modal.style.transition = '';
+    modal.style.transform = 'translateY(0)';
+    modal.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+    modal.style.opacity = '1';
     modal.scrollTop = 0;
   }
+  ov.style.setProperty('display', 'flex', 'important');
   ov.classList.add('open');
   spUpdateMobileHubState();
   spHaptic(14);
@@ -17544,9 +17639,16 @@ function spCloseMobileHubDirect() {
   const ov = document.getElementById('spMobileHubOverlay');
   if (!ov) return;
   ov.classList.remove('open');
+  const modal = ov.querySelector('.modal');
+  if (modal) {
+    modal.style.transform = 'translateY(100%)';
+  }
   setTimeout(() => {
     if (!ov.classList.contains('open')) {
-      ov.style.display = 'none';
+      ov.style.setProperty('display', 'none', 'important');
+      if (modal) {
+        modal.style.transform = '';
+      }
     }
   }, 220);
 }
