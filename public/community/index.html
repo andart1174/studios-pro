@@ -17500,6 +17500,8 @@ function spSelectQuickReaction(emoji, e) {
   }
   spHaptic([12, 30]);
   spCloseQuickReactions();
+}
+
 // Universal Safety Aliases to prevent ReferenceErrors on mobile reels, duels & modals
 function openComments(pid) { return typeof openCmts === 'function' ? openCmts(pid) : null; }
 function openCreateModal() { return typeof openCreate === 'function' ? openCreate() : null; }
