@@ -132,6 +132,18 @@
   force = false
 
 [[redirects]]
+  from = "/community/embed"
+  to = "/community/embed.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/community/embed/"
+  to = "/community/embed.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/community/*"
   to = "/community/:splat"
   status = 200
@@ -144,14 +156,28 @@
   status = 200
 
 # ─── SECURITY & SEO HEADERS ────────────────────────────────────────────
-# These headers improve Google ranking (Core Web Vitals + Security signals)
+# Allow iframe embedding across external websites (WordPress, blogs, tools) with CSP
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors *"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(self), display-capture=(self), autoplay=(self), fullscreen=(self)"
+    Permissions-Policy = "camera=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
+
+[[headers]]
+  for = "/community/embed.html"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/community/embed"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
