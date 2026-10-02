@@ -156,11 +156,10 @@
   status = 200
 
 # ─── SECURITY & SEO HEADERS ────────────────────────────────────────────
-# Allow iframe embedding across external websites (WordPress, blogs, tools) with CSP
+# Allow iframe embedding across external websites (WordPress, blogs, tools, online viewers)
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "frame-ancestors *"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
@@ -168,14 +167,12 @@
 [[headers]]
   for = "/community/embed.html"
   [headers.values]
-    Content-Security-Policy = "frame-ancestors *"
     Access-Control-Allow-Origin = "*"
     Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/community/embed"
   [headers.values]
-    Content-Security-Policy = "frame-ancestors *"
     Access-Control-Allow-Origin = "*"
     Cache-Control = "public, max-age=0, must-revalidate"
 
