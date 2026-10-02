@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Studios-Pro | 3D Design, WebAR, CAD &amp; CNC Tools</title>
+    <link>https://studios-pro.com/</link>
+    <description>Free browser-based 3D modeling, Augmented Reality (AR) viewer, 2D to 3D relief converters, CNC G-Code tools, and SP Nexus creator community.</description>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 02 Oct 2026 21:00:00 GMT</lastBuildDate>
+    <atom:link href="https://studios-pro.com/feed.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>SP Nexus: Free Daily 3D Collectible Cards &amp; Creator Network</title>
+      <link>https://studios-pro.com/community/</link>
+      <guid isPermaLink="true">https://studios-pro.com/community/</guid>
+      <pubDate>Thu, 01 Oct 2026 12:00:00 GMT</pubDate>
+      <description>Claim daily unique 3D collectible cards with serialized numbers, earn SP Coins, participate in live 3D auctions, and showcase your models in the WebGL metaverse gallery.</description>
+    </item>
+
+    <item>
+      <title>Free Online WebAR 3D Model Viewer (Instant Browser AR for iOS &amp; Android)</title>
+      <link>https://studios-pro.com/apps/ar-viewer/</link>
+      <guid isPermaLink="true">https://studios-pro.com/apps/ar-viewer/</guid>
+      <pubDate>Wed, 30 Sep 2026 10:00:00 GMT</pubDate>
+      <description>Project any STL, OBJ, GLB, or USDZ 3D model into your real room with phone camera augmented reality without installing any third-party apps.</description>
+    </item>
+
+    <item>
+      <title>Convert 2D Image to 3D Relief STL Online</title>
+      <link>https://studios-pro.com/convert/2d-image-to-3d-stl.html</link>
+      <guid isPermaLink="true">https://studios-pro.com/convert/2d-image-to-3d-stl.html</guid>
+      <pubDate>Tue, 29 Sep 2026 14:00:00 GMT</pubDate>
+      <description>Turn photos, sketches, and logos into detailed 3D heightmap meshes and export watertight STL files ready for 3D printing and CNC bas-relief carving.</description>
+    </item>
+
+    <item>
+      <title>Vector CNC: Photo to SVG, DXF &amp; G-Code Toolpaths</title>
+      <link>https://studios-pro.com/tools/svg-to-gcode-laser-engraver.html</link>
+      <guid isPermaLink="true">https://studios-pro.com/tools/svg-to-gcode-laser-engraver.html</guid>
+      <pubDate>Mon, 28 Sep 2026 09:00:00 GMT</pubDate>
+      <description>Generate optimized G-Code toolpaths for GRBL laser engravers, diode cutters, and CNC routers directly in your browser.</description>
+    </item>
+
+    <item>
+      <title>Online Lithophane Maker for 3D Printing</title>
+      <link>https://studios-pro.com/tools/lithophane-maker-online.html</link>
+      <guid isPermaLink="true">https://studios-pro.com/tools/lithophane-maker-online.html</guid>
+      <pubDate>Sun, 27 Sep 2026 16:00:00 GMT</pubDate>
+      <description>Transform your favorite memories into glowing 3D printed lithophanes with customizable curvature, borders, and light thickness.</description>
+    </item>
+
+    <item>
+      <title>How to Convert 2D Images to 3D Models Online - Complete Guide</title>
+      <link>https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html</link>
+      <guid isPermaLink="true">https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html</guid>
+      <pubDate>Sat, 26 Sep 2026 11:00:00 GMT</pubDate>
+      <description>Step-by-step tutorial on AI depth estimation, grayscale heightmaps, and exporting 3D meshes for 3D printers and CNC machines.</description>
+    </item>
+
+    <item>
+      <title>Free Online Meshmixer &amp; Tinkercad Alternative</title>
+      <link>https://studios-pro.com/compare/free-alternative-to-meshmixer.html</link>
+      <guid isPermaLink="true">https://studios-pro.com/compare/free-alternative-to-meshmixer.html</guid>
+      <pubDate>Fri, 25 Sep 2026 08:00:00 GMT</pubDate>
+      <description>Discover why Studios-Pro is the modern browser-based alternative to Meshmixer for mesh inspection, slicing, and 3D printing prep.</description>
+    </item>
+  </channel>
+</rss>

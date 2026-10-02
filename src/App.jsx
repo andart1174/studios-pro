@@ -1049,9 +1049,22 @@ const StudiosPro = () => {
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
   const [newsletterDismissed, setNewsletterDismissed] = useState(() => !!localStorage.getItem('nl_dismissed'));
 
-  // Social share copy feedback
+  // Social share copy feedback & embed generator
   const [linkCopied, setLinkCopied] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareTab, setShareTab] = useState('social');
+  const [embedTool, setEmbedTool] = useState('s3dviewer');
+  const [embedCopied, setEmbedCopied] = useState(false);
+
+  const getEmbedSnippet = () => {
+    let url = 'https://studios-pro.com/?embed=true';
+    if (embedTool === 's3dviewer') url = 'https://studios-pro.com/?embed=true&ref=s3dviewer';
+    else if (embedTool === 'polymorph') url = 'https://studios-pro.com/apps/polymorph-3d/index.html?embed=true';
+    else if (embedTool === 'ar') url = 'https://studios-pro.com/apps/ar-viewer/?embed=true';
+    else if (embedTool === 'depth') url = 'https://studios-pro.com/?embed=true&ref=depth';
+    else if (embedTool === 'vcnc') url = 'https://studios-pro.com/?embed=true&ref=vcnc';
+    return `<iframe src="${url}" width="100%" height="600" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" style="border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5);" loading="lazy"></iframe>\n<p style="text-align:center; font-size:12px; margin-top:6px; color:#94a3b8;"><a href="https://studios-pro.com" target="_blank" rel="noopener" style="color:#38bdf8; text-decoration:none; font-weight:600;">Powered by Studios-Pro 3D Suite</a></p>`;
+  };
   const [communityCount, setCommunityCount] = useState(null);
 
   // Live community post count
@@ -2544,89 +2557,182 @@ const StudiosPro = () => {
                 </p>
               </div>
 
-              <div className="share-buttons-grid">
-                <a 
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D, AR, Laser et CNC en ligne : https://studios-pro.com' : 'Check out Studios-Pro, free online 3D, AR, Laser & CNC creative suite: https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn whatsapp"
-                >
-                  <span className="share-icon">💬</span>
-                  <span>WhatsApp</span>
-                </a>
-
-                <a 
-                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn twitter"
-                >
-                  <span className="share-icon">𝕏</span>
-                  <span>X / Twitter</span>
-                </a>
-
-                <a 
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn facebook"
-                >
-                  <span className="share-icon">📘</span>
-                  <span>Facebook</span>
-                </a>
-
-                <a 
-                  href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn reddit"
-                >
-                  <span className="share-icon">🤖</span>
-                  <span>Reddit</span>
-                </a>
-
-                <a 
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="share-channel-btn linkedin"
-                >
-                  <span className="share-icon">💼</span>
-                  <span>LinkedIn</span>
-                </a>
-
-                {typeof navigator !== 'undefined' && navigator.share && (
-                  <button 
-                    type="button" 
-                    className="share-channel-btn native-share"
-                    onClick={() => {
-                      navigator.share({
-                        title: 'Studios-Pro 3D & AR Hub',
-                        text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
-                        url: 'https://studios-pro.com'
-                      }).catch(() => {});
-                    }}
-                  >
-                    <span className="share-icon">📱</span>
-                    <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="share-copy-box">
-                <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+              <div className="share-tabs">
                 <button 
                   type="button" 
-                  className="share-copy-btn" 
-                  onClick={() => {
-                    navigator.clipboard.writeText('https://studios-pro.com');
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 2200);
-                  }}
+                  className={`share-tab-btn ${shareTab === 'social' ? 'active' : ''}`}
+                  onClick={() => setShareTab('social')}
                 >
-                  {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                  <Share2 size={15} />
+                  <span>{lang === 'fr' ? 'Réseaux & Amis' : 'Social & Friends'}</span>
+                </button>
+                <button 
+                  type="button" 
+                  className={`share-tab-btn ${shareTab === 'embed' ? 'active' : ''}`}
+                  onClick={() => setShareTab('embed')}
+                >
+                  <Code size={15} />
+                  <span>{lang === 'fr' ? 'Intégrer sur un site' : 'Embed on Website'}</span>
                 </button>
               </div>
+
+              {shareTab === 'social' ? (
+                <>
+                  <div className="share-buttons-grid">
+                    <a 
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro : plus de 20 outils gratuits de création 3D, Réalité Augmentée, Lithophanie et CNC directement en ligne : https://studios-pro.com' : 'Check out Studios-Pro: 20+ free 3D, WebAR, Lithophane & CNC maker tools right in your browser! https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn whatsapp"
+                    >
+                      <span className="share-icon">💬</span>
+                      <span>WhatsApp</span>
+                    </a>
+
+                    <a 
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn twitter"
+                    >
+                      <span className="share-icon">𝕏</span>
+                      <span>X / Twitter</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn facebook"
+                    >
+                      <span className="share-icon">📘</span>
+                      <span>Facebook</span>
+                    </a>
+
+                    <a 
+                      href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent('https://studios-pro.com')}&media=${encodeURIComponent('https://studios-pro.com/og_banner.jpg')}&description=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro - Outils gratuits de 3D, Réalité Augmentée, Découpe Laser et CNC' : 'Studios-Pro - Free 3D, WebAR, Laser Cutting & CNC Tools')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn pinterest"
+                    >
+                      <span className="share-icon">📌</span>
+                      <span>Pinterest</span>
+                    </a>
+
+                    <a 
+                      href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn reddit"
+                    >
+                      <span className="share-icon">🤖</span>
+                      <span>Reddit</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn linkedin"
+                    >
+                      <span className="share-icon">💼</span>
+                      <span>LinkedIn</span>
+                    </a>
+
+                    {typeof navigator !== 'undefined' && navigator.share && (
+                      <button 
+                        type="button" 
+                        className="share-channel-btn native-share"
+                        onClick={() => {
+                          navigator.share({
+                            title: 'Studios-Pro 3D & AR Hub',
+                            text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
+                            url: 'https://studios-pro.com'
+                          }).catch(() => {});
+                        }}
+                      >
+                        <span className="share-icon">📱</span>
+                        <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="share-copy-box">
+                    <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+                    <button 
+                      type="button" 
+                      className="share-copy-btn" 
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://studios-pro.com');
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2200);
+                      }}
+                    >
+                      {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="embed-generator-section">
+                  <label className="embed-select-label">
+                    {lang === 'fr' ? "Choisissez l'outil à intégrer :" : "Choose tool to embed:"}
+                  </label>
+                  <select 
+                    className="embed-select" 
+                    value={embedTool} 
+                    onChange={(e) => setEmbedTool(e.target.value)}
+                  >
+                    <option value="s3dviewer">
+                      {lang === 'fr' ? 'Visualiseur 3D & WebAR (STL, OBJ, GLB)' : '3D & WebAR Model Viewer (STL, OBJ, GLB)'}
+                    </option>
+                    <option value="polymorph">
+                      {lang === 'fr' ? 'PolyMorph 3D Studio & Mesh Slicer' : 'PolyMorph 3D Studio & Mesh Slicer'}
+                    </option>
+                    <option value="ar">
+                      {lang === 'fr' ? 'WebAR Instant Camera Viewer' : 'WebAR Instant Camera Viewer'}
+                    </option>
+                    <option value="depth">
+                      {lang === 'fr' ? 'Convertisseur Photo vers Relief 3D (IA)' : 'AI 2D Photo to 3D Relief'}
+                    </option>
+                    <option value="vcnc">
+                      {lang === 'fr' ? 'Vector CNC & Découpe Laser (DXF/G-code)' : 'Vector CNC & Laser G-Code'}
+                    </option>
+                    <option value="suite">
+                      {lang === 'fr' ? 'Suite Complète Studios-Pro' : 'Full Studios-Pro Suite'}
+                    </option>
+                  </select>
+
+                  <textarea 
+                    className="embed-code-textarea" 
+                    readOnly 
+                    value={getEmbedSnippet()} 
+                    onClick={(e) => e.target.select()}
+                  />
+
+                  <button 
+                    type="button" 
+                    className="embed-copy-action-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getEmbedSnippet());
+                      setEmbedCopied(true);
+                      setTimeout(() => setEmbedCopied(false), 2500);
+                    }}
+                  >
+                    {embedCopied ? <Check size={18} /> : <Copy size={18} />}
+                    <span>
+                      {embedCopied 
+                        ? (lang === 'fr' ? '✓ Code d\'intégration copié !' : '✓ Embed code copied!')
+                        : (lang === 'fr' ? 'Copier le code HTML' : 'Copy HTML Embed Code')}
+                    </span>
+                  </button>
+
+                  <p className="embed-badge-note">
+                    {lang === 'fr' 
+                      ? '✓ Compatible WordPress, Wix, Squarespace, Shopify, Ghost et blogs HTML. Inclut le badge interactif Studios-Pro.'
+                      : '✓ Compatible with WordPress, Wix, Squarespace, Shopify, Ghost and HTML blogs. Includes interactive Studios-Pro badge.'}
+                  </p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
