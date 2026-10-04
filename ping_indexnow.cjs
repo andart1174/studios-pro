@@ -7,7 +7,7 @@ const keyFile = path.join(__dirname, 'public', `${key}.txt`);
 
 // 1. Ensure the key file exists in public/
 if (!fs.existsSync(keyFile)) {
-  fs.writeFileSync(keyFile, key);
+  fs.writeFileSync(keyFile, key.trim(), 'utf8');
   console.log(`Generated IndexNow key file: public/${key}.txt`);
 }
 

@@ -996,7 +996,27 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
 };
 
 const StudiosPro = () => {
-  const [lang, setLang] = useState('fr');
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get('lang');
+      if (langParam === 'fr' || langParam === 'en') return langParam;
+      const saved = localStorage.getItem('sp_lang');
+      if (saved === 'fr' || saved === 'en') return saved;
+      if (navigator.language && navigator.language.toLowerCase().startsWith('fr')) return 'fr';
+    }
+    return 'en';
+  });
+
+  // Sync document language attribute and localStorage
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang;
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sp_lang', lang);
+    }
+  }, [lang]);
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
