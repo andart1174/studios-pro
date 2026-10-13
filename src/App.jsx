@@ -870,6 +870,8 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               {isFr ? 'Outils 3D & CNC' : '3D & CNC Tools'}
             </h4>
             <ul className="seo-footer-links">
+              <li><a href="/tools/multicolor-3mf-painter">{isFr ? 'Colorateur 3D 3MF Multi-Couleurs' : 'Multi-Color 3MF Painter & AMS'}</a></li>
+              <li><a href="/tools/3d-qr-wifi-coaster-generator">{isFr ? 'Générateur Sous-Verres QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster'}</a></li>
               <li><a href="/tools/image-to-cnc-relief">{isFr ? 'Image vers Relief 3D CNC' : 'Image to 3D CNC Relief & STL'}</a></li>
               <li><a href="/tools/lithophane-maker-online">{isFr ? 'Générateur de Lithophanies 3D' : 'Online Lithophane Maker'}</a></li>
               <li><a href="/tools/cookie-cutter-stl-generator">{isFr ? 'Générateur Emporte-Pièce STL' : 'Cookie Cutter STL Generator'}</a></li>

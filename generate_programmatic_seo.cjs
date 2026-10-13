@@ -559,6 +559,30 @@ const nicheTools = [
     h1Fr: 'Générateur de Vases & Abat-Jour Voronoi 3D Paramétrique',
     featureEn: 'Parametric Voronoi tessellation, spiral curve frequency controls, dual-wall watertight thickness, spiral vase mode preview, and direct STL export.',
     featureFr: 'Pavages de Voronoi paramétriques, contrôle de fréquence de spirale, double paroi étanche, mode vase et export STL direct.'
+  },
+  {
+    id: 'multicolor-3mf-painter',
+    ref: 'painter',
+    titleEn: 'Free Online Multi-Color 3MF Painter & AMS Model Colorizer | Studios-Pro',
+    titleFr: 'Colorateur 3D 3MF Multi-Couleurs en Ligne Gratuit (Bambu AMS) | Studios-Pro',
+    descEn: 'Colorize 3D models online for Bambu Lab AMS, OrcaSlicer, and Prusa MMU. Paint STL and 3MF files directly in your browser with AI Auto-Color and export native multi-part 3MF assemblies.',
+    descFr: 'Coloriez des modèles 3D en ligne pour Bambu Lab AMS, OrcaSlicer et Prusa MMU. Peignez des fichiers STL et 3MF directement dans votre navigateur avec Peinture IA et exportez en 3MF multi-pièces natif.',
+    h1En: 'Free Online Multi-Color 3MF Painter & AMS Model Colorizer',
+    h1Fr: 'Colorateur 3D 3MF Multi-Couleurs en Ligne Gratuit (Bambu AMS)',
+    featureEn: 'AI 3D geometry auto-painter, 16-color filament swatches, relief separation, cavity ink coloring, purge waste optimizer, and native multi-part 3MF export.',
+    featureFr: 'Peinture IA intelligente par détection anatomique, nuancier 16 filaments, séparation de relief, coloration de rainures, optimiseur de purge et export 3MF multi-pièces natif.'
+  },
+  {
+    id: '3d-qr-wifi-coaster-generator',
+    ref: 'coaster',
+    titleEn: 'Free 3D QR Code & Wi-Fi Coaster Generator (3MF/STL) | Studios-Pro',
+    titleFr: 'Générateur de Sous-Verres QR Code & Wi-Fi 3D Gratuit (3MF/STL) | Studios-Pro',
+    descEn: 'Generate custom 3D printable coasters and stands with scannable Wi-Fi, restaurant menus, Instagram, and payment QR codes. Export multi-color 3MF, separate STLs, and laser DXF files.',
+    descFr: 'Générez des sous-verres et supports 3D personnalisés avec QR codes scannables pour Wi-Fi, menus de restaurant, Instagram et paiement. Exportez en 3MF multi-couleurs, STL séparés et DXF laser.',
+    h1En: 'Free 3D Scannable QR Code & Wi-Fi Coaster Generator',
+    h1Fr: 'Générateur de Sous-Verres & Supports QR Code & Wi-Fi 3D Gratuit',
+    featureEn: 'Dual-sided reversible coaster mode, automated restaurant table number batch generator (.ZIP), 4K photorealistic showcase mockup studio, and AMS multi-color 3MF export.',
+    featureFr: 'Sous-verres réversibles double-face, générateur automatique de séries de tables de restaurant (.ZIP), studio de mockups photo 4K et export 3MF multi-couleurs AMS.'
   }
 ];
 
@@ -1892,6 +1916,18 @@ const appsUrls = `  <url>
   </url>
   <url>
     <loc>https://studios-pro.com/apps/polymorph-3d/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/apps/multicolor-3mf-painter/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/apps/qr-wifi-coaster-generator/</loc>
     <lastmod>${date}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
