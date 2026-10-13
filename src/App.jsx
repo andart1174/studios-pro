@@ -1083,6 +1083,8 @@ const StudiosPro = () => {
   const getEmbedSnippet = () => {
     let url = 'https://studios-pro.com/?embed=true';
     if (embedTool === 's3dviewer') url = 'https://studios-pro.com/?embed=true&ref=s3dviewer';
+    else if (embedTool === 'painter') url = 'https://studios-pro.com/apps/multicolor-3mf-painter/index.html?embed=true';
+    else if (embedTool === 'coaster') url = 'https://studios-pro.com/apps/qr-wifi-coaster-generator/index.html?embed=true';
     else if (embedTool === 'polymorph') url = 'https://studios-pro.com/apps/polymorph-3d/index.html?embed=true';
     else if (embedTool === 'ar') url = 'https://studios-pro.com/apps/ar-viewer/?embed=true';
     else if (embedTool === 'depth') url = 'https://studios-pro.com/?embed=true&ref=depth';
@@ -2746,6 +2748,12 @@ const StudiosPro = () => {
                   >
                     <option value="s3dviewer">
                       {lang === 'fr' ? 'Visualiseur 3D & WebAR (STL, OBJ, GLB)' : '3D & WebAR Model Viewer (STL, OBJ, GLB)'}
+                    </option>
+                    <option value="painter">
+                      {lang === 'fr' ? 'Colorateur 3D 3MF Multi-Couleurs (Bambu AMS)' : 'Multi-Color 3MF Painter (Bambu Lab AMS)'}
+                    </option>
+                    <option value="coaster">
+                      {lang === 'fr' ? 'Générateur Sous-Verres 3D QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster Generator'}
                     </option>
                     <option value="polymorph">
                       {lang === 'fr' ? 'PolyMorph 3D Studio & Mesh Slicer' : 'PolyMorph 3D Studio & Mesh Slicer'}

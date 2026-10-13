@@ -157,11 +157,23 @@
             font-weight: 700;
             border: none;
             box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-        }
-
         .btn-export-main:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        .btn-share-main {
+            background: linear-gradient(135deg, #0284c7, #06b6d4);
+            color: #ffffff;
+            font-weight: 700;
+            border: none;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+        }
+
+        .btn-share-main:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.55);
+            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
         }
 
         /* Workspace */
@@ -1134,6 +1146,12 @@
                 <i data-lucide="download" style="width:16px;height:16px;"></i>
                 <span data-i18n="btnExport">Export Coaster (3MF / STL)</span>
             </button>
+
+            <!-- Share Coaster Design Trigger -->
+            <button class="btn-top btn-share-main" onclick="openShareDesignModal()" title="Share Coaster Design / Partager le sous-verre">
+                <i data-lucide="share-2" style="width:16px;height:16px;"></i>
+                <span data-i18n="btnShareDesign">Share Coaster</span>
+            </button>
         </div>
     </header>
 
@@ -1926,6 +1944,100 @@
         </div>
     </div>
 
+    <!-- 🌐 MODAL: Share My Coaster Design (Viral Showcase) -->
+    <div class="modal-overlay" id="share-design-modal" onclick="if(event.target === this) closeShareDesignModal()">
+        <div class="modal-card" style="width: 520px; max-width: 95vw; max-height: 92vh; display: flex; flex-direction: column;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #0284c7, #06b6d4); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(6,182,212,0.35);">
+                        <i data-lucide="share-2" style="color:#ffffff; width:22px; height:22px;"></i>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem; font-weight:700; color:#fff;" id="share-modal-title" data-i18n="shareModalTitle">Share Your Coaster Design</span>
+                            <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px; background:rgba(6,182,212,0.25); border:1px solid rgba(6,182,212,0.6); color:#38bdf8;">SHOWCASE</span>
+                        </div>
+                        <div style="font-size:11.5px; color:var(--text-sub); margin-top:3px;" id="share-modal-sub" data-i18n="shareModalSub">
+                            Share your custom scannable 3D coaster with friends, restaurant clients, or maker communities!
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeShareDesignModal()" style="background:transparent; border:none; color:var(--text-dim); cursor:pointer; font-size:20px; padding:4px 8px;">✕</button>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div style="flex:1; overflow-y:auto; padding-right:6px; margin-bottom:12px;">
+                <!-- 3D Snapshot Card -->
+                <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.12); background:#0f172a; margin-bottom:14px; text-align:center;">
+                    <img id="share-snapshot-img" style="width:100%; max-height:220px; object-fit:contain; background:radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); display:block;" alt="3D Coaster Preview" />
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(15,23,42,0.9); border-top:1px solid rgba(255,255,255,0.08);">
+                        <span style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:5px;">
+                            <i data-lucide="check" style="width:13px;height:13px;color:#10b981;"></i>
+                            <span id="share-coaster-badge">3D Scannable Coaster</span>
+                        </span>
+                        <button class="btn-top" onclick="downloadShareSnapshot()" style="padding:4px 10px; font-size:11px; background:rgba(56,189,248,0.15); border-color:rgba(56,189,248,0.3); color:#38bdf8;">
+                            <i data-lucide="download" style="width:13px;height:13px;"></i>
+                            <span data-i18n="btnDownloadSnapshot">Save Photo (PNG)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Viral Share Channels Grid -->
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:11px; font-weight:700; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;" data-i18n="labelShareChannels">
+                        Share on Maker & Social Platforms:
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+                        <!-- Reddit -->
+                        <a id="share-link-reddit" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#ff4500; color:#fff; padding:10px 8px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>🤖</span>
+                            <span>Reddit</span>
+                        </a>
+                        <!-- WhatsApp -->
+                        <a id="share-link-whatsapp" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#25d366; color:#fff; padding:10px 8px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>💬</span>
+                            <span>WhatsApp</span>
+                        </a>
+                        <!-- X / Twitter -->
+                        <a id="share-link-twitter" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#000000; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 8px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>𝕏</span>
+                            <span>X / Twitter</span>
+                        </a>
+                        <!-- Facebook -->
+                        <a id="share-link-facebook" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#1877f2; color:#fff; padding:10px 8px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>📘</span>
+                            <span>Facebook</span>
+                        </a>
+                        <!-- Pinterest -->
+                        <a id="share-link-pinterest" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#e60023; color:#fff; padding:10px 8px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>📌</span>
+                            <span>Pinterest</span>
+                        </a>
+                        <!-- Native Share -->
+                        <button id="share-btn-native" onclick="triggerNativeShare()" style="display:flex; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg, #475569, #334155); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px 8px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>📱</span>
+                            <span data-i18n="btnNativeShare">More...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Direct Copy Link Box -->
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px;">
+                    <div style="font-size:11px; font-weight:600; color:#94a3b8; margin-bottom:6px;" data-i18n="labelDirectLink">
+                        Direct Tool Link:
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="share-input-url" readonly value="https://studios-pro.com/tools/3d-qr-wifi-coaster-generator" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:8px 10px; color:#fff; font-size:12px; outline:none;" />
+                        <button class="btn-top" id="btn-copy-share-link" onclick="copyShareLink()" style="background:#0284c7; border:none; color:#fff; font-weight:700; padding:8px 14px;">
+                            <i data-lucide="copy" style="width:14px;height:14px;"></i>
+                            <span id="txt-copy-share-link" data-i18n="btnCopyLink">Copy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <i data-lucide="check-circle" style="color:#10b981;width:18px;height:18px;"></i>
@@ -2084,7 +2196,17 @@
                 featPro2: "AI 3D reliefs & HD depth maps",
                 featPro3: "Full commercial license included",
                 featPro4: "Standalone HTML exports without watermark",
-                btnUpgradePro: "Upgrade to Pro ($10/mo)"
+                btnUpgradePro: "Upgrade to Pro ($10/mo)",
+                btnShareDesign: "Share Coaster",
+                shareModalTitle: "Share Your Coaster Design",
+                shareModalSub: "Share your custom scannable 3D coaster with friends, restaurant clients, or maker communities!",
+                btnDownloadSnapshot: "Save Photo (PNG)",
+                labelShareChannels: "Share on Maker & Social Platforms:",
+                btnNativeShare: "More...",
+                labelDirectLink: "Direct Tool Link:",
+                btnCopyLink: "Copy",
+                toastLinkCopied: "Coaster link copied to clipboard!",
+                toastSnapshotSaved: "HD Coaster photo saved successfully!"
             },
             fr: {
                 headerSubtitle: "Générateur CAO & 3D Print de Sous-Verres Scannables",
@@ -2233,7 +2355,17 @@
                 featPro2: "Reliefs 3D IA & cartes de profondeur HD",
                 featPro3: "Licence commerciale complète incluse",
                 featPro4: "Exports HTML autonomes sans filigrane",
-                btnUpgradePro: "Passer à Pro (10$/mois)"
+                btnUpgradePro: "Passer à Pro (10$/mois)",
+                btnShareDesign: "Partager le Sous-Verre",
+                shareModalTitle: "Partager votre Sous-Verre 3D",
+                shareModalSub: "Partagez votre sous-verre scannable avec des amis, clients de restaurant ou makers !",
+                btnDownloadSnapshot: "Enregistrer Photo (PNG)",
+                labelShareChannels: "Partager sur les Réseaux & Communautés :",
+                btnNativeShare: "Plus...",
+                labelDirectLink: "Lien Direct vers l'Outil :",
+                btnCopyLink: "Copier",
+                toastLinkCopied: "Lien copié dans le presse-papiers !",
+                toastSnapshotSaved: "Photo HD enregistrée avec succès !"
             }
         };
 
@@ -2596,11 +2728,152 @@
         // ==========================================
         // 📸 PHOTO SHOWCASE STUDIO ENGINE
         // ==========================================
+        // 📸 MODALS & SHARE SHOWCASE CONTROLLER
+        // ==========================================
         function closeAllModals() {
-            ['export-modal', 'photo-studio-modal', 'batch-tables-modal'].forEach(id => {
+            ['export-modal', 'photo-studio-modal', 'batch-tables-modal', 'share-design-modal'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
+        }
+
+        function openShareDesignModal(fromExport = false) {
+            closeAllModals();
+            const modal = document.getElementById('share-design-modal');
+            if (!modal) return;
+
+            // 1. Render snapshot
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+                const dataUrl = renderer.domElement.toDataURL('image/png');
+                const img = document.getElementById('share-snapshot-img');
+                if (img) img.src = dataUrl;
+            }
+
+            // 2. Dynamic details badge
+            const badge = document.getElementById('share-coaster-badge');
+            if (badge) {
+                const shapeName = (typeof currentShape !== 'undefined' ? currentShape : '3D').toUpperCase();
+                badge.innerText = currentLang === 'fr' 
+                    ? `Sous-Verre ${shapeName} • Code QR Scannable`
+                    : `3D ${shapeName} Coaster • Scannable QR`;
+            }
+
+            // 3. Share URL and links
+            const shareUrl = 'https://studios-pro.com/tools/3d-qr-wifi-coaster-generator';
+            const inputUrl = document.getElementById('share-input-url');
+            if (inputUrl) inputUrl.value = shareUrl;
+
+            const redditTitle = currentLang === 'fr'
+                ? "Regardez ce sous-verre QR / Wi-Fi 3D imprimable généré avec Studios-Pro !"
+                : "Check out this 3D printable Wi-Fi & QR Coaster made online with Studios-Pro!";
+            const whatsAppText = currentLang === 'fr'
+                ? "Regarde ce sous-verre 3D scannable que j'ai créé gratuitement dans mon navigateur avec Studios-Pro :"
+                : "Check out this scannable 3D coaster I made in my browser with Studios-Pro:";
+            const tweetText = currentLang === 'fr'
+                ? "Générez vos propres sous-verres 3D avec QR code Wi-Fi et menu restaurant sur @studios_pro ! #3DPrinting #BambuLab #Maker"
+                : "Generate custom 3D printed Wi-Fi & QR coasters for your desk or cafe on @studios_pro! #3DPrinting #BambuLab #Maker";
+
+            const linkReddit = document.getElementById('share-link-reddit');
+            if (linkReddit) linkReddit.href = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(redditTitle)}`;
+
+            const linkWhatsApp = document.getElementById('share-link-whatsapp');
+            if (linkWhatsApp) linkWhatsApp.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsAppText + ' ' + shareUrl)}`;
+
+            const linkTwitter = document.getElementById('share-link-twitter');
+            if (linkTwitter) linkTwitter.href = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(tweetText)}`;
+
+            const linkFacebook = document.getElementById('share-link-facebook');
+            if (linkFacebook) linkFacebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+
+            const linkPinterest = document.getElementById('share-link-pinterest');
+            if (linkPinterest) linkPinterest.href = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&media=${encodeURIComponent('https://studios-pro.com/og_banner.jpg')}&description=${encodeURIComponent(tweetText)}`;
+
+            // 4. Modal title adjustments if triggered after export
+            const titleEl = document.getElementById('share-modal-title');
+            const subEl = document.getElementById('share-modal-sub');
+            if (fromExport && titleEl && subEl) {
+                titleEl.innerText = currentLang === 'fr' ? '🎉 Export Sous-Verre Réussi !' : '🎉 Coaster Export Complete!';
+                subEl.innerText = currentLang === 'fr' ? 'Partagez votre sous-verre personnalisé avec vos amis ou clients !' : 'Share your custom coaster with friends, clients, or makers!';
+            } else if (titleEl && subEl) {
+                titleEl.innerText = translations[currentLang].shareModalTitle;
+                subEl.innerText = translations[currentLang].shareModalSub;
+            }
+
+            modal.style.display = 'flex';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeShareDesignModal() {
+            const modal = document.getElementById('share-design-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function downloadShareSnapshot() {
+            if (!renderer || !coasterGroup) return;
+            try {
+                const tempCanvas = document.createElement('canvas');
+                const srcCanvas = renderer.domElement;
+                tempCanvas.width = srcCanvas.width;
+                tempCanvas.height = srcCanvas.height;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.drawImage(srcCanvas, 0, 0);
+
+                const barHeight = Math.max(40, Math.round(tempCanvas.height * 0.07));
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillRect(0, tempCanvas.height - barHeight, tempCanvas.width, barHeight);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = `bold ${Math.round(barHeight * 0.42)}px sans-serif`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Studios-Pro.com', 20, tempCanvas.height - barHeight / 2);
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = `${Math.round(barHeight * 0.36)}px sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.fillText('Free 3D Wi-Fi & QR Coaster Generator', tempCanvas.width - 20, tempCanvas.height - barHeight / 2);
+
+                tempCanvas.toBlob((blob) => {
+                    if (blob) {
+                        downloadBlob(blob, 'StudiosPro_3D_Coaster_Design.png');
+                        showToast(translations[currentLang].toastSnapshotSaved || (currentLang === 'fr' ? 'Photo HD enregistrée !' : 'HD Coaster photo saved!'));
+                    }
+                }, 'image/png');
+            } catch (e) {
+                console.error('Snapshot failed:', e);
+            }
+        }
+
+        function copyShareLink() {
+            const input = document.getElementById('share-input-url');
+            if (!input) return;
+            const textToCopy = input.value;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const btnTxt = document.getElementById('txt-copy-share-link');
+                if (btnTxt) {
+                    btnTxt.innerText = currentLang === 'fr' ? '✓ Copié !' : '✓ Copied!';
+                    setTimeout(() => {
+                        btnTxt.innerText = translations[currentLang].btnCopyLink || (currentLang === 'fr' ? 'Copier' : 'Copy');
+                    }, 2000);
+                }
+                showToast(translations[currentLang].toastLinkCopied || (currentLang === 'fr' ? 'Lien copié dans le presse-papiers !' : 'Link copied!'));
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                showToast(currentLang === 'fr' ? 'Lien copié !' : 'Link copied!');
+            });
+        }
+
+        function triggerNativeShare() {
+            const url = document.getElementById('share-input-url')?.value || 'https://studios-pro.com/tools/3d-qr-wifi-coaster-generator';
+            const title = currentLang === 'fr' ? 'Sous-Verre 3D QR & Wi-Fi - Studios-Pro' : '3D QR & Wi-Fi Coaster - Studios-Pro';
+            const text = currentLang === 'fr' ? 'Découvre ce sous-verre 3D scannable créé sur Studios-Pro :' : 'Check out this 3D scannable coaster created on Studios-Pro:';
+            if (navigator.share) {
+                navigator.share({ title, text, url }).catch(() => {});
+            } else {
+                copyShareLink();
+            }
         }
 
         function openPhotoStudioModal() {
@@ -4534,6 +4807,7 @@
                     const blob = await zip.generateAsync({ type: "blob" });
                     downloadBlob(blob, `StudiosPro_DualColor_Coaster.3mf`);
                     showToast(translations[currentLang].toastExport3MF);
+                    setTimeout(() => openShareDesignModal(true), 750);
                 } catch (err) {
                     console.error("Export 3MF error:", err);
                     showToast("Export error: " + err.message);
@@ -4568,6 +4842,7 @@
                     const blob = await zip.generateAsync({ type: "blob" });
                     downloadBlob(blob, "StudiosPro_Coaster_Separate_STLs.zip");
                     showToast(translations[currentLang].toastExportSTL);
+                    setTimeout(() => openShareDesignModal(true), 750);
                 } catch (err) {
                     console.error("Export STL error:", err);
                     showToast("Export error: " + err.message);
