@@ -102,7 +102,7 @@ import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy, Palette, Sparkles, Check, Share2
+  Megaphone, Copy, Palette, Sparkles, Check, Share2, Paintbrush, QrCode
 } from 'lucide-react';
 import './App.css';
 
@@ -1051,6 +1051,8 @@ const StudiosPro = () => {
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [isArtGenOpen, setIsArtGenOpen] = useState(false);
   const [isPolyMorphOpen, setIsPolyMorphOpen] = useState(false);
+  const [isPainterOpen, setIsPainterOpen] = useState(false);
+  const [isCoasterOpen, setIsCoasterOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -1222,6 +1224,8 @@ const StudiosPro = () => {
   const collabRoomIdRef = useRef(collabRoomId);
   const isARViewerOpenRef = useRef(isARViewerOpen);
   const isPolyMorphOpenRef = useRef(isPolyMorphOpen);
+  const isPainterOpenRef = useRef(isPainterOpen);
+  const isCoasterOpenRef = useRef(isCoasterOpen);
 
   useEffect(() => {
     premiumRef.current = isPremium;
@@ -1233,7 +1237,9 @@ const StudiosPro = () => {
     isIframeReadyRef.current = isIframeReady;
     isARViewerOpenRef.current = isARViewerOpen;
     isPolyMorphOpenRef.current = isPolyMorphOpen;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen]);
+    isPainterOpenRef.current = isPainterOpen;
+    isCoasterOpenRef.current = isCoasterOpen;
+  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen, isPainterOpen, isCoasterOpen]);
 
   useEffect(() => {
     if (!auth) {
@@ -1452,6 +1458,8 @@ const StudiosPro = () => {
       if (ref === 'sandbox') setIsSandboxOpen(true);
       if (ref === 'artgen') setIsArtGenOpen(true);
       if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
+      if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
+      if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
     }
   }, [lang, user]);
 
@@ -1580,6 +1588,8 @@ const StudiosPro = () => {
         setIsSandboxOpen(false);
         setIsArtGenOpen(false);
         setIsPolyMorphOpen(false);
+        setIsPainterOpen(false);
+        setIsCoasterOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -1667,6 +1677,8 @@ const StudiosPro = () => {
       if (ref === 'scripting') setIsScriptingOpen(true);
       if (ref === 'arviewer') setIsARViewerOpen(true);
       if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
+      if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
+      if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
     }
     if (room) {
       setIsScriptingOpen(true);
@@ -1768,6 +1780,8 @@ const StudiosPro = () => {
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
       polymorph3d: "PolyMorph 3D Studio",
+      multicolor3mfPainter: "Studio MultiColor 3MF Painter",
+      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -1819,6 +1833,8 @@ const StudiosPro = () => {
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
       polymorph3d: "PolyMorph 3D Studio",
+      multicolor3mfPainter: "Studio MultiColor 3MF Painter",
+      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
       faqBtn: "FAQ",
       communityBtn: "Community"
     }
@@ -1827,7 +1843,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || isPainterOpen || isCoasterOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -2387,6 +2403,30 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.polymorph3d}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPainterOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)' }} />
+            <Paintbrush size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio MultiColor 3MF Painter Icon" />
+          </div>
+          <div className="card-label">{currentT.multicolor3mfPainter}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsCoasterOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4, #3b82f6)' }} />
+            <QrCode size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio 3D-QR-WiFi-Coaster Generator Icon" />
+          </div>
+          <div className="card-label">{currentT.qrWifiCoaster}</div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
@@ -2873,6 +2913,16 @@ const StudiosPro = () => {
         {isPolyMorphOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/polymorph-3d/index.html" className="studio-iframe" title="PolyMorph 3D Studio" />
+          </motion.div>
+        )}
+        {isPainterOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/multicolor-3mf-painter/index.html" className="studio-iframe" title="Studio MultiColor 3MF Painter" />
+          </motion.div>
+        )}
+        {isCoasterOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/qr-wifi-coaster-generator/index.html" className="studio-iframe" title="Studio 3D-QR-WiFi-Coaster Generator" />
           </motion.div>
         )}
       </AnimatePresence>
