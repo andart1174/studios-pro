@@ -570,7 +570,8 @@ const nicheTools = [
     h1En: 'Free Online Multi-Color 3MF Painter & AMS Model Colorizer',
     h1Fr: 'Colorateur 3D 3MF Multi-Couleurs en Ligne Gratuit (Bambu AMS)',
     featureEn: 'AI 3D geometry auto-painter, 16-color filament swatches, relief separation, cavity ink coloring, purge waste optimizer, and native multi-part 3MF export.',
-    featureFr: 'Peinture IA intelligente par détection anatomique, nuancier 16 filaments, séparation de relief, coloration de rainures, optimiseur de purge et export 3MF multi-pièces natif.'
+    featureFr: 'Peinture IA intelligente par détection anatomique, nuancier 16 filaments, séparation de relief, coloration de rainures, optimiseur de purge et export 3MF multi-pièces natif.',
+    ogImage: 'https://studios-pro.com/og_multicolor_3mf_painter.jpg'
   },
   {
     id: '3d-qr-wifi-coaster-generator',
@@ -582,7 +583,8 @@ const nicheTools = [
     h1En: 'Free 3D Scannable QR Code & Wi-Fi Coaster Generator',
     h1Fr: 'Générateur de Sous-Verres & Supports QR Code & Wi-Fi 3D Gratuit',
     featureEn: 'Dual-sided reversible coaster mode, automated restaurant table number batch generator (.ZIP), 4K photorealistic showcase mockup studio, and AMS multi-color 3MF export.',
-    featureFr: 'Sous-verres réversibles double-face, générateur automatique de séries de tables de restaurant (.ZIP), studio de mockups photo 4K et export 3MF multi-couleurs AMS.'
+    featureFr: 'Sous-verres réversibles double-face, générateur automatique de séries de tables de restaurant (.ZIP), studio de mockups photo 4K et export 3MF multi-couleurs AMS.',
+    ogImage: 'https://studios-pro.com/og_3d_qr_coaster.jpg'
   }
 ];
 
@@ -818,14 +820,14 @@ const template = (page) => {
     <meta property="og:url" content="https://studios-pro.com/${pagePath}" />
     <meta property="og:title" content="${page.titleEn}" />
     <meta property="og:description" content="${page.descEn}" />
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta property="og:image" content="${page.ogImage || 'https://studios-pro.com/og_banner.jpg'}" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://studios-pro.com/${pagePath}" />
     <meta name="twitter:title" content="${page.titleEn}" />
     <meta name="twitter:description" content="${page.descEn}" />
-    <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta name="twitter:image" content="${page.ogImage || 'https://studios-pro.com/og_banner.jpg'}" />
     
     <!-- Hreflang for internationalized search results -->
     <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
