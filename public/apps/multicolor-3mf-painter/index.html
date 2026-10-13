@@ -4233,10 +4233,10 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x06090e);
 
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2500);
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.5, 2500);
             camera.position.set(120, 100, 150);
 
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance", logarithmicDepthBuffer: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
@@ -4277,7 +4277,7 @@
             setupDragAndDrop();
             setupSpectrumInteractions();
             renderFilamentGrid();
-            loadDemoModel('tag');
+            loadDemoModel('robot');
 
             animate();
         }
@@ -5456,6 +5456,7 @@
 
                             const solidWeight = (dC ? 2 : 0) + (d01 ? 1 : 0) + (d12 ? 1 : 0) + (d20 ? 1 : 0) + (d0 ? 1 : 0) + (d1 ? 1 : 0) + (d2 ? 1 : 0);
                             if (solidWeight < 4) return;
+                            if (!dC && solidWeight < 5) return;
                         }
 
                         triangleColors[f] = targetColorSlot;
@@ -9558,7 +9559,10 @@ ${assemblyObjectXml}
                 vertexColors: true,
                 roughness: 0.45,
                 metalness: 0.1,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1
             });
 
             currentMesh = new THREE.Mesh(geometry, material);
@@ -10076,6 +10080,45 @@ ${assemblyObjectXml}
             outGeom.setAttribute('position', new THREE.BufferAttribute(combined, 3));
             outGeom.computeVertexNormals();
             return outGeom;
+        }
+
+        function subdivideGeometryDirect(geom) {
+            const posAttr = geom.attributes.position;
+            if (!posAttr) return geom;
+            const pos = posAttr.array;
+            const faceCount = pos.length / 9;
+            const newPos = new Float32Array(faceCount * 4 * 9);
+            for (let f = 0; f < faceCount; f++) {
+                const p = f * 9;
+                const x0 = pos[p],   y0 = pos[p+1], z0 = pos[p+2];
+                const x1 = pos[p+3], y1 = pos[p+4], z1 = pos[p+5];
+                const x2 = pos[p+6], y2 = pos[p+7], z2 = pos[p+8];
+
+                const m01_x = (x0 + x1) * 0.5, m01_y = (y0 + y1) * 0.5, m01_z = (z0 + z1) * 0.5;
+                const m12_x = (x1 + x2) * 0.5, m12_y = (y1 + y2) * 0.5, m12_z = (z1 + z2) * 0.5;
+                const m20_x = (x2 + x0) * 0.5, m20_y = (y2 + y0) * 0.5, m20_z = (z2 + z0) * 0.5;
+
+                const base = f * 36;
+                newPos[base]    = x0;    newPos[base+1]  = y0;    newPos[base+2]  = z0;
+                newPos[base+3]  = m01_x; newPos[base+4]  = m01_y; newPos[base+5]  = m01_z;
+                newPos[base+6]  = m20_x; newPos[base+7]  = m20_y; newPos[base+8]  = m20_z;
+
+                newPos[base+9]  = m01_x; newPos[base+10] = m01_y; newPos[base+11] = m01_z;
+                newPos[base+12] = x1;    newPos[base+13] = y1;    newPos[base+14] = z1;
+                newPos[base+15] = m12_x; newPos[base+16] = m12_y; newPos[base+17] = m12_z;
+
+                newPos[base+18] = m20_x; newPos[base+19] = m20_y; newPos[base+20] = m20_z;
+                newPos[base+21] = m12_x; newPos[base+22] = m12_y; newPos[base+23] = m12_z;
+                newPos[base+24] = x2;    newPos[base+25] = y2;    newPos[base+26] = z2;
+
+                newPos[base+27] = m01_x; newPos[base+28] = m01_y; newPos[base+29] = m01_z;
+                newPos[base+30] = m12_x; newPos[base+31] = m12_y; newPos[base+32] = m12_z;
+                newPos[base+33] = m20_x; newPos[base+34] = m20_y; newPos[base+35] = m20_z;
+            }
+            const out = new THREE.BufferGeometry();
+            out.setAttribute('position', new THREE.BufferAttribute(newPos, 3));
+            out.computeVertexNormals();
+            return out;
         }
 
         // ==========================================
@@ -10649,12 +10692,15 @@ ${assemblyObjectXml}
                 const extrudeSettings = { depth: 3, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.6, bevelThickness: 0.6 };
                 const baseGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 const loopGeom = new THREE.TorusGeometry(3.5, 1.2, 16, 32); loopGeom.rotateX(Math.PI / 2); loopGeom.translate(0, 24, 1.5);
-                const headGeom = new THREE.CylinderGeometry(5.5, 6, 1.2, 32, 4); headGeom.rotateX(Math.PI / 2); headGeom.translate(0, 4, 3.8);
-                const bodyGeom = new THREE.BoxGeometry(14, 12, 1.2, 14, 12, 4); bodyGeom.translate(0, -7, 3.8);
+                const headGeom = new THREE.CylinderGeometry(5.5, 6, 1.2, 64, 8); headGeom.rotateX(Math.PI / 2); headGeom.translate(0, 4, 4.21);
+                const bodyGeom = new THREE.BoxGeometry(14, 12, 1.2, 28, 24, 4); bodyGeom.translate(0, -7, 4.21);
                 geom = combineGeometries([baseGeom, loopGeom, headGeom, bodyGeom]);
             }
 
             if (geom.index) geom = geom.toNonIndexed();
+            if (geom.attributes && geom.attributes.position && (geom.attributes.position.count / 3) < 18000) {
+                geom = subdivideGeometryDirect(geom);
+            }
             setLoadedGeometry(geom);
         }
 
