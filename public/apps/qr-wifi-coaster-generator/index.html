@@ -2825,8 +2825,10 @@
         }
 
         function downloadShareSnapshot() {
-            if (!renderer || !coasterGroup) return;
+            if (!renderer || !scene || !camera) return;
             try {
+                // Ensure latest 3D render buffer is fresh
+                renderer.render(scene, camera);
                 const tempCanvas = document.createElement('canvas');
                 const srcCanvas = renderer.domElement;
                 tempCanvas.width = srcCanvas.width;
@@ -2849,12 +2851,31 @@
                 ctx.textAlign = 'right';
                 ctx.fillText('Free 3D Wi-Fi & QR Coaster Generator', tempCanvas.width - 20, tempCanvas.height - barHeight / 2);
 
-                tempCanvas.toBlob((blob) => {
-                    if (blob) {
-                        downloadBlob(blob, 'StudiosPro_3D_Coaster_Design.png');
-                        showToast(translations[currentLang].toastSnapshotSaved || (currentLang === 'fr' ? 'Photo HD enregistrée !' : 'HD Coaster photo saved!'));
-                    }
-                }, 'image/png');
+                const savePNG = (url) => {
+                    const a = document.createElement('a');
+                    a.dataset.bypassed = 'true';
+                    a.href = url;
+                    a.download = 'StudiosPro_3D_Coaster_Design.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+                    }, 1500);
+                    showToast(translations[currentLang].toastSnapshotSaved || (currentLang === 'fr' ? 'Photo HD enregistrée !' : 'HD Coaster photo saved!'));
+                };
+
+                if (tempCanvas.toBlob) {
+                    tempCanvas.toBlob((blob) => {
+                        if (blob) {
+                            savePNG(URL.createObjectURL(blob));
+                        } else {
+                            savePNG(tempCanvas.toDataURL('image/png'));
+                        }
+                    }, 'image/png');
+                } else {
+                    savePNG(tempCanvas.toDataURL('image/png'));
+                }
             } catch (e) {
                 console.error('Snapshot failed:', e);
             }
@@ -3356,9 +3377,12 @@
             const canvas = document.getElementById('studio-mockup-canvas');
             if (!canvas) return;
             const a = document.createElement('a');
+            a.dataset.bypassed = 'true';
             a.download = `StudiosPro_Showcase_${currentStudioScene}_${Date.now()}.png`;
             a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a);
             a.click();
+            setTimeout(() => document.body.removeChild(a), 1200);
             showToast(translations[currentLang].toastPhotoDownloaded);
         }
 
