@@ -1055,6 +1055,7 @@ const StudiosPro = () => {
   const [isPolyMorphOpen, setIsPolyMorphOpen] = useState(false);
   const [isPainterOpen, setIsPainterOpen] = useState(false);
   const [isCoasterOpen, setIsCoasterOpen] = useState(false);
+  const [isFilamentPaintingOpen, setIsFilamentPaintingOpen] = useState(false);
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -1230,8 +1231,11 @@ const StudiosPro = () => {
   const isPolyMorphOpenRef = useRef(isPolyMorphOpen);
   const isPainterOpenRef = useRef(isPainterOpen);
   const isCoasterOpenRef = useRef(isCoasterOpen);
+  const isFilamentPaintingOpenRef = useRef(isFilamentPaintingOpen);
+  const userRef = useRef(user);
 
   useEffect(() => {
+    userRef.current = user;
     premiumRef.current = isPremium;
     adminRef.current = isAdmin;
     creditRef.current = hasExportCredit;
@@ -1243,7 +1247,8 @@ const StudiosPro = () => {
     isPolyMorphOpenRef.current = isPolyMorphOpen;
     isPainterOpenRef.current = isPainterOpen;
     isCoasterOpenRef.current = isCoasterOpen;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen, isPainterOpen, isCoasterOpen]);
+    isFilamentPaintingOpenRef.current = isFilamentPaintingOpen;
+  }, [user, isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen, isPainterOpen, isCoasterOpen, isFilamentPaintingOpen]);
 
   useEffect(() => {
     if (!auth) {
@@ -1464,6 +1469,7 @@ const StudiosPro = () => {
       if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
       if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
       if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
+      if (ref === 'filament' || ref === 'filament-painting' || ref === 'filament-painting-studio' || ref === 'layer-swap') setIsFilamentPaintingOpen(true);
     }
   }, [lang, user]);
 
@@ -1474,6 +1480,15 @@ const StudiosPro = () => {
       const { type, payload } = data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
+        const currentUser = userRef.current;
+        if (!currentUser) {
+          alert(langRef.current === 'fr' 
+            ? "Veuillez vous inscrire ou vous connecter pour profiter de vos 5 exports gratuits !"
+            : "Please register or log in to enjoy your 5 free exports!");
+          setIsAuthOpen(true);
+          return;
+        }
+
         const isPrem = premiumRef.current;
         const isAdm = adminRef.current;
         const hasCred = creditRef.current;
@@ -1594,6 +1609,7 @@ const StudiosPro = () => {
         setIsPolyMorphOpen(false);
         setIsPainterOpen(false);
         setIsCoasterOpen(false);
+        setIsFilamentPaintingOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -1683,6 +1699,7 @@ const StudiosPro = () => {
       if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
       if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
       if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
+      if (ref === 'filament' || ref === 'filament-painting' || ref === 'filament-painting-studio' || ref === 'layer-swap') setIsFilamentPaintingOpen(true);
     }
     if (room) {
       setIsScriptingOpen(true);
@@ -1786,6 +1803,7 @@ const StudiosPro = () => {
       polymorph3d: "PolyMorph 3D Studio",
       multicolor3mfPainter: "Studio MultiColor 3MF Painter",
       qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
+      filamentPaintingStudio: "Studio Peinture Filament & Layer-Swap",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -1839,6 +1857,7 @@ const StudiosPro = () => {
       polymorph3d: "PolyMorph 3D Studio",
       multicolor3mfPainter: "Studio MultiColor 3MF Painter",
       qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
+      filamentPaintingStudio: "Filament Painting & Layer-Swap Studio",
       faqBtn: "FAQ",
       communityBtn: "Community"
     }
@@ -1847,7 +1866,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || isPainterOpen || isCoasterOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || isPainterOpen || isCoasterOpen || isFilamentPaintingOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -2431,6 +2450,18 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.qrWifiCoaster}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsFilamentPaintingOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0284c7, #38bdf8, #818cf8)' }} />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Filament Painting & Layer-Swap Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.filamentPaintingStudio}</div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
@@ -2933,6 +2964,11 @@ const StudiosPro = () => {
         {isCoasterOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/qr-wifi-coaster-generator/index.html" className="studio-iframe" title="Studio 3D-QR-WiFi-Coaster Generator" />
+          </motion.div>
+        )}
+        {isFilamentPaintingOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/filament-painting-studio/index.html" className="studio-iframe" title="Filament Painting & Layer-Swap Studio" />
           </motion.div>
         )}
       </AnimatePresence>
