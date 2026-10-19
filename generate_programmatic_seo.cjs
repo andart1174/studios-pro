@@ -328,6 +328,18 @@ const converters = [
     h1Fr: 'Convertisseur Photo en Relief 3D STL Gratuit pour CNC & Impression 3D',
     featureEn: 'AI monocular depth estimation, customizable relief height and smoothing, inverted bas-relief carving, and instant watertight STL download.',
     featureFr: 'Estimation de profondeur par IA, hauteur de relief et lissage ajustables, bas-relief inversé et téléchargement direct STL étanche.'
+  },
+  {
+    id: 'photo-to-filament-painting-3mf',
+    ref: 'filament-painting-studio',
+    titleEn: 'Convert Photo to Multi-Color 3MF Filament Painting Online | Studios-Pro',
+    titleFr: 'Convertir Photo en Filament Painting 3MF Multi-Couleur en Ligne | Studios-Pro',
+    descEn: 'Convert 2D JPG/PNG photographs into multi-color filament painting reliefs and ready-to-print 3MF files with automated layer-swap slicing heights.',
+    descFr: 'Convertissez des photos 2D JPG/PNG en tableaux de filaments 3D et fichiers 3MF prêts à imprimer avec instructions de changement de couleur par couche.',
+    h1En: 'Convert Photo to Multi-Color Filament Painting 3MF Online',
+    h1Fr: 'Convertir une Photo en Filament Painting 3MF Multi-Couleur en Ligne',
+    featureEn: 'Instant 2D-to-3D layer transmission analysis, automated color palette mapping, precise layer height calculation, and direct Bambu Lab / OrcaSlicer 3MF export.',
+    featureFr: 'Analyse instantanée de transmission par couche, cartographie de palette de couleurs, calcul précis des hauteurs et export 3MF direct Bambu Lab / OrcaSlicer.'
   }
 ];
 
@@ -585,6 +597,19 @@ const nicheTools = [
     featureEn: 'Dual-sided reversible coaster mode, automated restaurant table number batch generator (.ZIP), 4K photorealistic showcase mockup studio, and AMS multi-color 3MF export.',
     featureFr: 'Sous-verres réversibles double-face, générateur automatique de séries de tables de restaurant (.ZIP), studio de mockups photo 4K et export 3MF multi-couleurs AMS.',
     ogImage: 'https://studios-pro.com/og_3d_qr_coaster.jpg'
+  },
+  {
+    id: 'filament-painting-studio-online',
+    ref: 'filament-painting-studio',
+    titleEn: 'Free Online Filament Painting & Layer-Swap Studio | Studios-Pro',
+    titleFr: 'Studio Gratuit de Filament Painting & Changement de Couche en Ligne | Studios-Pro',
+    descEn: 'Turn any photograph into a stunning multi-color 3D filament painting. Calculate layer swap heights, optical transmission (TD), and export 3MF for Bambu Lab, Prusa, Creality.',
+    descFr: 'Transformez vos photos en superbes peintures de filaments 3D. Calculez les hauteurs de changement de couche, TD optique et exportez en 3MF pour Bambu Lab, Prusa, Creality.',
+    h1En: 'Free Online Filament Painting & Layer-Swap 3D Studio',
+    h1Fr: 'Studio de Peinture de Filaments & Changement de Couche 3D Gratuit',
+    featureEn: 'Optical transmission distance (TD) modeling, auto-palette color extraction, interactive layer slicing visualizer, G-code swap script generator, and native Bambu AMS 3MF export.',
+    featureFr: 'Modélisation de transmission optique (TD), extraction de palette automatique, visualiseur de tranchage par couches, script G-code et export 3MF natif Bambu AMS.',
+    ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg'
   }
 ];
 
@@ -727,6 +752,28 @@ const comparisons = [
       { featureEn: 'Account Registration Required', featureFr: 'Création de compte obligatoire', us: 'No (Instant Guest Access)', competitor: 'Mandatory Account Required' },
       { featureEn: 'Data Privacy & Local Processing', featureFr: 'Confidentialité des données & Traitement local', us: '100% In-Browser Privacy', competitor: 'Cloud Hosted Models' },
       { featureEn: 'Direct STL / OBJ Support', featureFr: 'Support direct des fichiers STL / OBJ', us: 'Native Auto-Conversion to AR', competitor: 'Requires GLTF / Blender Prep' }
+    ]
+  },
+  {
+    id: 'free-alternative-to-hueforge',
+    targetSoftware: 'HueForge',
+    ref: 'filament-painting-studio',
+    titleEn: 'Best Free Online Alternative to HueForge | Filament Painting Studio | Studios-Pro',
+    titleFr: 'Meilleure Alternative Gratuite en Ligne à HueForge | Filament Painting Studio | Studios-Pro',
+    descEn: 'Looking for a free online alternative to HueForge? Studios-Pro lets you convert photos into multi-color filament painting models and Bambu Lab AMS 3MF files directly in your web browser with zero installation.',
+    descFr: 'Vous cherchez une alternative gratuite en ligne à HueForge ? Studios-Pro transforme vos photos en tableaux 3D de filaments multi-couleurs et fichiers 3MF pour Bambu Lab AMS directement dans le navigateur.',
+    h1En: 'Best Free Online Alternative to HueForge',
+    h1Fr: 'Meilleure Alternative Gratuite en Ligne à HueForge',
+    leadEn: 'Create breathtaking multi-color filament painting reliefs from photographs with optical transmission simulation (TD), automatic palette extraction, layer swap heights, and direct Bambu AMS 3MF export.',
+    leadFr: 'Créez de superbes tableaux 3D en filaments de couleur à partir de photos avec simulation de transmission optique (TD), palette automatique, hauteurs de changement de couche et export 3MF Bambu AMS.',
+    table: [
+      { featureEn: 'Software License Cost', featureFr: 'Coût de la licence logicielle', us: 'Free / $0 Online', competitor: '$18 - $30+ USD (Paid License)' },
+      { featureEn: 'Installation Required', featureFr: 'Installation requise', us: 'No (100% In-Browser)', competitor: 'Yes (Desktop App Download)' },
+      { featureEn: 'Cross-Platform (Windows, Mac, iPad, Chromebook)', featureFr: 'Multiplateforme (Windows, Mac, iPad, Chromebook)', us: 'Full Support (Any Modern Browser)', competitor: 'Limited to Windows / Mac Desktop' },
+      { featureEn: 'Bambu Lab AMS Multi-Color 3MF Export', featureFr: 'Export 3MF Multi-Couleur Bambu Lab AMS', us: 'Direct Instant 3MF Download', competitor: 'Supported' },
+      { featureEn: 'Real-Time Optical Transmission Simulation (TD)', featureFr: 'Simulation de transmission optique (TD) en direct', us: 'Integrated Beer-Lambert Engine', competitor: 'Supported' },
+      { featureEn: 'Layer-by-Layer Slicing Animation & Guide', featureFr: 'Animation de tranchage couche par couche & Guide', us: 'Interactive 3D Slicer Visualizer', competitor: 'Manual Slider View' },
+      { featureEn: 'Interactive Standalone HTML Export', featureFr: 'Export HTML interactif autonome', us: 'Included (Shareable 3D Web File)', competitor: 'No' }
     ]
   }
 ];
@@ -1930,6 +1977,12 @@ const appsUrls = `  <url>
   </url>
   <url>
     <loc>https://studios-pro.com/apps/qr-wifi-coaster-generator/</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://studios-pro.com/apps/filament-painting-studio/</loc>
     <lastmod>${date}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>

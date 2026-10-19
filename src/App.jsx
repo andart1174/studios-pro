@@ -2455,7 +2455,26 @@ const StudiosPro = () => {
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
           onClick={() => setIsFilamentPaintingOpen(true)}
+          style={{ position: 'relative' }}
         >
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+            color: '#ffffff',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '0.8px',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(236, 72, 153, 0.4)',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}>
+            {lang === 'fr' ? 'NOUVEAU • HUEFORGE ALTERNATIVE' : 'NEW • HUEFORGE ALTERNATIVE'}
+          </div>
           <div className="shape-wrapper">
             <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0284c7, #38bdf8, #818cf8)' }} />
             <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Filament Painting & Layer-Swap Studio Icon" />
