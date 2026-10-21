@@ -1056,6 +1056,148 @@ const StudiosPro = () => {
   const [isPainterOpen, setIsPainterOpen] = useState(false);
   const [isCoasterOpen, setIsCoasterOpen] = useState(false);
   const [isFilamentPaintingOpen, setIsFilamentPaintingOpen] = useState(false);
+  const openStudioByRef = (refStr) => {
+    if (!refStr) return false;
+    const r = String(refStr).toLowerCase().trim();
+
+    // 1. Studio 3D (ap3d)
+    if (['ap3d', '3d', 'studio3d', 'studio-3d', 'ap-3d'].includes(r)) {
+      setIs3DOpen(true);
+      return true;
+    }
+    // 2. 3D Viewer (s3dviewer)
+    if (['s3dviewer', 'studio-3d-viewer', '3dviewer', 'stl-viewer', 'obj-viewer', 'glb-viewer', 'stl', 'obj', 'glb', 'gltf', 'ply', '3mf'].includes(r)) {
+      setIs3DViewerOpen(true);
+      return true;
+    }
+    // 3. WebAR Viewer (arviewer)
+    if (['arviewer', 'ar-viewer', 'webar', 'ar'].includes(r)) {
+      setIsARViewerOpen(true);
+      return true;
+    }
+    // 4. DFX Studio (dfx)
+    if (['dfx', 'dxf', 'studio-dfx', 'dxf-viewer', 'dxf-editor'].includes(r)) {
+      setIsDFXOpen(true);
+      return true;
+    }
+    // 5. Rules
+    if (['rules', 'regles', 'site-rules'].includes(r)) {
+      setIsRulesOpen(true);
+      return true;
+    }
+    // 6. Depth Maps / Heightmaps / Lithophane / Relief (depth)
+    if (['depth', 'depth-maps', 'depthmaps', 'lithophane', 'heightmap', 'relief', '2d-to-3d'].includes(r)) {
+      setIsDepthOpen(true);
+      return true;
+    }
+    // 7. New 3D/4D (n3d)
+    if (['n3d', 'new3d4d', 'new-3d-4d', '3d4d', 'cards', 'pokemon-card-maker', 'custom-3d-card-generator'].includes(r)) {
+      setIsNew3DOpen(true);
+      return true;
+    }
+    // 8. Vector CNC / G-Code (vcnc)
+    if (['vcnc', 'vector-cnc', 'vector', 'cnc', 'gcode', 'svg-to-gcode', 'dxf-to-gcode', 'svg-to-dxf', 'dxf-to-svg'].includes(r)) {
+      setIsVectorOpen(true);
+      return true;
+    }
+    // 9. Studio Pro 4D (spro)
+    if (['spro', 'studio-pro', 'studiopro', 'studio-pro-4d'].includes(r)) {
+      setIsStudioProOpen(true);
+      return true;
+    }
+    // 10. Maker Studio 7 / Laser Cut Box (mkr7)
+    if (['mkr7', 'maker7', 'maker-studio-7', 'maker-studio', 'box-generator', 'laser-cut-box'].includes(r)) {
+      setIsMaker7Open(true);
+      return true;
+    }
+    // 11. Jewelry Maker Pro (jwly)
+    if (['jwly', 'jewelry-pro', 'jewelry', 'jewelry-maker-pro', 'ring-designer'].includes(r)) {
+      setIsJewelryOpen(true);
+      return true;
+    }
+    // 12. Architect Pro 1 (arp1)
+    if (['arp1', 'architect-pro-1', 'arch1', 'architect1'].includes(r)) {
+      setIsArchPro1Open(true);
+      return true;
+    }
+    // 13. Architect Pro 2 (arp2)
+    if (['arp2', 'architect-pro-2', 'arch2', 'architect2'].includes(r)) {
+      setIsArchPro2Open(true);
+      return true;
+    }
+    // 14. 4D Figure Builder (figb)
+    if (['figb', 'figure-builder', 'figure', '4d-figure-builder'].includes(r)) {
+      setIsFigureBuilderOpen(true);
+      return true;
+    }
+    // 15. 4D Music Composer (musc)
+    if (['musc', 'music-composer', 'music', '4d-music-composer'].includes(r)) {
+      setIsMusicComposerOpen(true);
+      return true;
+    }
+    // 16. Design Pro Studio (desp)
+    if (['desp', 'design-pro-studio', 'design-pro', 'designpro'].includes(r)) {
+      setIsDesignProOpen(true);
+      return true;
+    }
+    // 17. Studio Pro 2 (spro2)
+    if (['spro2', 'studio-pro-2', 'studiopro2', 'studio-pro-2-0'].includes(r)) {
+      setIsStudioPro2Open(true);
+      return true;
+    }
+    // 18. Mech Gen Pro / Gears (mechgen)
+    if (['mechgen', 'mech-gen-pro', 'gear-generator', 'mech-gen'].includes(r)) {
+      setIsMechGenProOpen(true);
+      return true;
+    }
+    // 19. Scripting Studio Live (scripting)
+    if (['scripting', 'scripting-live', 'code', 'scripting-studio'].includes(r)) {
+      setIsScriptingOpen(true);
+      return true;
+    }
+    // 20. Zen Sandscape (sandbox)
+    if (['sandbox', 'zen-sandscape', 'sandscape', 'zen-sand'].includes(r)) {
+      setIsSandboxOpen(true);
+      return true;
+    }
+    // 21. ArtGen AI Vector Studio (artgen)
+    if (['artgen', 'art-gen', 'ai-art', 'artgen-studio'].includes(r)) {
+      setIsArtGenOpen(true);
+      return true;
+    }
+    // 22. PolyMorph 3D Studio (polymorph)
+    if (['polymorph', 'poly3d', 'polymorph-3d', 'polymorph-studio'].includes(r)) {
+      setIsPolyMorphOpen(true);
+      return true;
+    }
+    // 23. MultiColor 3MF Painter (painter)
+    if (['painter', 'multicolor-3mf-painter', '3mfpainter', '3mf-painter', 'multicolor-painter'].includes(r)) {
+      setIsPainterOpen(true);
+      return true;
+    }
+    // 24. 3D QR WiFi Coaster (coaster)
+    if (['coaster', 'qr-wifi-coaster-generator', 'qrcoaster', 'qr-coaster', 'wifi-coaster'].includes(r)) {
+      setIsCoasterOpen(true);
+      return true;
+    }
+    // 25. Filament Painting & Layer-Swap (filament)
+    if (['filament', 'filament-painting', 'filament-painting-studio', 'layer-swap', 'hueforge-alternative'].includes(r)) {
+      setIsFilamentPaintingOpen(true);
+      return true;
+    }
+    // 26. Standalone AuraGen IDE
+    if (['aurg', 'aura-gen', 'aura-ai', 'auragen'].includes(r)) {
+      window.location.href = '/apps/aura-gen/index.html';
+      return true;
+    }
+    // 27. Standalone IA Architecte
+    if (['iaar', 'ia-architecte', 'ia-arch'].includes(r)) {
+      window.location.href = '/apps/ia-architecte/index.html';
+      return true;
+    }
+    return false;
+  };
+
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -1436,29 +1578,7 @@ const StudiosPro = () => {
 
       // Auto-open studio if ref is present
       const ref = params.get('ref');
-      if (ref === 'ap3d') setIs3DOpen(true);
-      if (ref === 's3dviewer') setIs3DViewerOpen(true);
-      if (ref === 'dfx') setIsDFXOpen(true);
-      if (ref === 'depth' || ref === 'depth-maps' || ref === 'depthmaps') setIsDepthOpen(true);
-      if (ref === 'n3d') setIsNew3DOpen(true);
-      if (ref === 'vcnc') setIsVectorOpen(true);
-      if (ref === 'spro') setIsStudioProOpen(true);
-      if (ref === 'mkr7' || ref === 'maker7') setIsMaker7Open(true);
-      if (ref === 'jwly' || ref === 'jewelry-pro') setIsJewelryOpen(true);
-
-      if (ref === 'arp1') setIsArchPro1Open(true);
-      if (ref === 'arp2') setIsArchPro2Open(true);
-      if (ref === 'figb') setIsFigureBuilderOpen(true);
-      if (ref === 'musc') setIsMusicComposerOpen(true);
-      if (ref === 'desp') setIsDesignProOpen(true);
-      if (ref === 'spro2') setIsStudioPro2Open(true);
-      if (ref === 'mechgen' || ref === 'mech-gen-pro') setIsMechGenProOpen(true);
-      if (ref === 'sandbox') setIsSandboxOpen(true);
-      if (ref === 'artgen') setIsArtGenOpen(true);
-      if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
-      if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
-      if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
-      if (ref === 'filament' || ref === 'filament-painting' || ref === 'filament-painting-studio' || ref === 'layer-swap') setIsFilamentPaintingOpen(true);
+      if (ref) openStudioByRef(ref);
     }
   }, [lang, user]);
 
@@ -1665,30 +1785,7 @@ const StudiosPro = () => {
       setIsEmbed(true);
     }
     if (ref) {
-      if (ref === 'ap3d') setIs3DOpen(true);
-      if (ref === 's3dviewer') setIs3DViewerOpen(true);
-      if (ref === 'dfx') setIsDFXOpen(true);
-      if (ref === 'depth') setIsDepthOpen(true);
-      if (ref === 'n3d') setIsNew3DOpen(true);
-      if (ref === 'vcnc') setIsVectorOpen(true);
-      if (ref === 'spro') setIsStudioProOpen(true);
-      if (ref === 'mkr7') setIsMaker7Open(true);
-      if (ref === 'jwly') setIsJewelryOpen(true);
-      if (ref === 'arp1') setIsArchPro1Open(true);
-      if (ref === 'arp2') setIsArchPro2Open(true);
-      if (ref === 'figb') setIsFigureBuilderOpen(true);
-      if (ref === 'musc') setIsMusicComposerOpen(true);
-      if (ref === 'desp') setIsDesignProOpen(true);
-      if (ref === 'spro2') setIsStudioPro2Open(true);
-      if (ref === 'mechgen') setIsMechGenProOpen(true);
-      if (ref === 'sandbox') setIsSandboxOpen(true);
-      if (ref === 'artgen') setIsArtGenOpen(true);
-      if (ref === 'scripting') setIsScriptingOpen(true);
-      if (ref === 'arviewer') setIsARViewerOpen(true);
-      if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
-      if (ref === 'painter' || ref === 'multicolor-3mf-painter' || ref === '3mfpainter') setIsPainterOpen(true);
-      if (ref === 'coaster' || ref === 'qr-wifi-coaster-generator' || ref === 'qrcoaster') setIsCoasterOpen(true);
-      if (ref === 'filament' || ref === 'filament-painting' || ref === 'filament-painting-studio' || ref === 'layer-swap') setIsFilamentPaintingOpen(true);
+      openStudioByRef(ref);
     }
     if (room) {
       setIsScriptingOpen(true);
