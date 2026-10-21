@@ -950,12 +950,12 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
           <div className="seo-footer-col">
             <h4 className="seo-footer-col-title">
               <span className="seo-col-dot" style={{ background: '#ec4899' }}></span>
-              {isFr ? 'Studios & Communauté' : 'Studios & Community'}
+              {isFr ? 'Studios & Écosystème' : 'Studios & Ecosystem'}
             </h4>
             <ul className="seo-footer-links">
               <li><a href="/apps/polymorph-3d/index.html">{isFr ? 'PolyMorph 3D Studio' : 'PolyMorph 3D Studio'}</a></li>
-              <li><a href="/community/">{isFr ? 'Communauté SP Nexus 3D' : 'SP Nexus 3D Creator Community'}</a></li>
-              <li><a href="/community/explore.html">{isFr ? 'Explorer Cartes 3D Nexus' : 'Explore Nexus 3D Cards'}</a></li>
+              <li><a href="/apps/ar-viewer/">{isFr ? 'Visualiseur WebAR 3D' : 'WebAR 3D Model Viewer'}</a></li>
+              <li><a href="/apps/artgen/">{isFr ? 'ArtGen Studio IA' : 'ArtGen AI Vector Studio'}</a></li>
               <li><a href="/blog/">{isFr ? 'Blog & Tutoriels 3D / CNC' : '3D Design Blog & Tutorials'}</a></li>
               <li><a href="/faq.html">{isFr ? 'Questions Fréquentes (FAQ)' : 'Frequently Asked Questions (FAQ)'}</a></li>
               <li><a href="/cards/pokemon-card-maker.html">{isFr ? 'Créateur de Cartes 3D Holo' : 'Custom 3D Card Generator'}</a></li>
@@ -1092,17 +1092,6 @@ const StudiosPro = () => {
     else if (embedTool === 'vcnc') url = 'https://studios-pro.com/?embed=true&ref=vcnc';
     return `<iframe src="${url}" width="100%" height="600" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" style="border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5);" loading="lazy"></iframe>\n<p style="text-align:center; font-size:12px; margin-top:6px; color:#94a3b8;"><a href="https://studios-pro.com" target="_blank" rel="noopener" style="color:#38bdf8; text-decoration:none; font-weight:600;">Powered by Studios-Pro 3D Suite</a></p>`;
   };
-  const [communityCount, setCommunityCount] = useState(null);
-
-  // Live community post count
-  useEffect(() => {
-    if (!db) return;
-    const q = query(collection(db, 'studios_community_posts'));
-    const unsub = onSnapshot(q, (snap) => {
-      setCommunityCount(snap.size);
-    }, () => {});
-    return () => unsub();
-  }, []);
 
   useEffect(() => {
     if (!db) return;
@@ -1450,12 +1439,12 @@ const StudiosPro = () => {
       if (ref === 'ap3d') setIs3DOpen(true);
       if (ref === 's3dviewer') setIs3DViewerOpen(true);
       if (ref === 'dfx') setIsDFXOpen(true);
-      if (ref === 'depth') setIsDepthOpen(true);
+      if (ref === 'depth' || ref === 'depth-maps' || ref === 'depthmaps') setIsDepthOpen(true);
       if (ref === 'n3d') setIsNew3DOpen(true);
       if (ref === 'vcnc') setIsVectorOpen(true);
       if (ref === 'spro') setIsStudioProOpen(true);
-      if (ref === 'mkr7') setIsMaker7Open(true);
-      if (ref === 'jwly') setIsJewelryOpen(true);
+      if (ref === 'mkr7' || ref === 'maker7') setIsMaker7Open(true);
+      if (ref === 'jwly' || ref === 'jewelry-pro') setIsJewelryOpen(true);
 
       if (ref === 'arp1') setIsArchPro1Open(true);
       if (ref === 'arp2') setIsArchPro2Open(true);
@@ -1463,7 +1452,7 @@ const StudiosPro = () => {
       if (ref === 'musc') setIsMusicComposerOpen(true);
       if (ref === 'desp') setIsDesignProOpen(true);
       if (ref === 'spro2') setIsStudioPro2Open(true);
-      if (ref === 'mechgen') setIsMechGenProOpen(true);
+      if (ref === 'mechgen' || ref === 'mech-gen-pro') setIsMechGenProOpen(true);
       if (ref === 'sandbox') setIsSandboxOpen(true);
       if (ref === 'artgen') setIsArtGenOpen(true);
       if (ref === 'polymorph' || ref === 'poly3d') setIsPolyMorphOpen(true);
@@ -1993,20 +1982,7 @@ const StudiosPro = () => {
               <Share2 size={16} />
               <span>{lang === 'fr' ? 'Partager' : 'Share'}</span>
             </button>
-            <a href="/community/" className="sp-nexus-btn" style={{ textDecoration: 'none' }}>
-              <span className="sp-nexus-orbit">
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '0deg' }}></span>
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '120deg' }}></span>
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '240deg' }}></span>
-              </span>
-              <span className="sp-nexus-inner">
-                <span className="sp-nexus-icon">⊕</span>
-                <span className="sp-nexus-label">SP NEXUS</span>
-              </span>
-              {communityCount !== null && (
-                <span className="sp-nexus-badge">{communityCount > 999 ? '999+' : communityCount}</span>
-              )}
-            </a>
+            
           </div>
 
           <div className="nav-right">

@@ -781,7 +781,7 @@ const comparisons = [
 const cardPages = [
   {
     id: 'pokemon-card-maker',
-    ref: 'spnexus',
+    ref: 'n3d',
     titleEn: 'Free Online Custom Pokémon Card Maker & 3D Generator | Studios-Pro',
     titleFr: 'Générateur de Cartes Pokémon Personnalisées Gratuit 3D | Studios-Pro',
     descEn: 'Create custom printable trading cards with 3D/4D holographic foils, custom photo upload, and A4 print sheets.',
@@ -793,7 +793,7 @@ const cardPages = [
   },
   {
     id: 'custom-3d-card-generator',
-    ref: 'spnexus',
+    ref: 'n3d',
     titleEn: 'Free Printable 3D/4D Physical Card Creator | Studios-Pro',
     titleFr: 'Créateur de Cartes Physique 3D/4D Imprimables Gratuit | Studios-Pro',
     descEn: 'Design, preview, and print 3D physical collectible cards with 9-card A4 sheets, duplex alignment, and foil masks.',
@@ -1659,12 +1659,12 @@ const compareTemplate = (comp) => {
             </div>
             <div class="feature-card">
                 <h3>
-                    <span data-en>🌐 Integrated 3D Creator Community</span>
-                    <span data-fr>🌐 Réseau Créatif 3D Intégré</span>
+                    <span data-en>🌐 Complete 3D & CAD Suite</span>
+                    <span data-fr>🌐 Suite 3D & CAD Complète</span>
                 </h3>
                 <p>
-                    <span data-en>Join SP Nexus to earn SP Coins, claim daily 3D cards, preview models in Augmented Reality, and connect with makers worldwide.</span>
-                    <span data-fr>Rejoignez SP Nexus pour gagner des SP Coins, collectionner des cartes 3D et projeter vos créations en Réalité Augmentée.</span>
+                    <span data-en>Access interactive WebAR previewing, precision relief carving, and direct browser CAD tools all in one place.</span>
+                    <span data-fr>Accédez à la prévisualisation WebAR, au bas-relief de précision et aux outils CAD directement dans votre navigateur.</span>
                 </p>
             </div>
         </div>
@@ -1817,24 +1817,7 @@ if (fs.existsSync(blogDir)) {
   </url>\n`).join('');
 }
 
-const spNexusUrls = `  <url>
-    <loc>https://studios-pro.com/community/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/community/explore.html</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/community/map.html</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`;
+const spNexusUrls = '';
 
 const baseUrls = `  <url>
     <loc>https://studios-pro.com/</loc>
@@ -1991,8 +1974,8 @@ const appsUrls = `  <url>
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${spNexusUrls}${appsUrls}${toolUrls}${compareUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
+${baseUrls}${appsUrls}${toolUrls}${compareUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
 `;
 
 fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
-console.log('Regenerated sitemap.xml with programmatic SEO routes and SP NEXUS community hub');
+console.log('Regenerated sitemap.xml with programmatic SEO routes');

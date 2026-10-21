@@ -95,60 +95,6 @@
   status = 200
   force = false
 
-[[redirects]]
-  from = "/community"
-  to = "/community/index.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/map"
-  to = "/community/map.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/map/"
-  to = "/community/map.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/u/:uid"
-  to = "/community/profile.html?u=:uid"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/post/:id"
-  to = "/community/post.html?id=:id"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/post/"
-  to = "/community/post.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/embed"
-  to = "/community/embed.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/embed/"
-  to = "/community/embed.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/*"
-  to = "/community/:splat"
-  status = 200
-  force = false
-
 # SPA catch-all — React app for everything else
 [[redirects]]
   from = "/*"
@@ -163,18 +109,6 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
-
-[[headers]]
-  for = "/community/embed.html"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-[[headers]]
-  for = "/community/embed"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Cache-Control = "public, max-age=0, must-revalidate"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
@@ -209,21 +143,6 @@
   for = "/sitemap.xml"
   [headers.values]
     Cache-Control = "public, max-age=86400"
-
-# Disable cache for community real-time pages
-[[headers]]
-  for = "/community/share-bridge.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-[[headers]]
-  for = "/community/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
 
 [[headers]]
   for = "/api/proxy/*"
