@@ -1410,6 +1410,194 @@
             background: linear-gradient(135deg, #1d4ed8, #2563eb);
             transform: translateY(-1px);
         }
+    
+        /* ═══════════════════════════════════════════════════════════════
+           📱 COMPREHENSIVE MOBILE RESPONSIVE ENGINE (<= 900px)
+           Strictly isolated to mobile screens: desktop is 100% untouched.
+           ═══════════════════════════════════════════════════════════════ */
+        .mobile-view-bar { display: none; }
+
+        @media (max-width: 900px) {
+            header {
+                height: 52px;
+                padding: 0 10px;
+            }
+            #back-btn {
+                padding: 5px 8px;
+                font-size: 0.72rem;
+                gap: 4px;
+            }
+            .brand {
+                gap: 6px;
+            }
+            .brand-badge {
+                font-size: 0.62rem;
+                padding: 2px 6px;
+            }
+            .brand-title {
+                font-size: 0.95rem;
+                white-space: nowrap;
+            }
+            .brand-sub {
+                display: none !important;
+            }
+            .header-actions {
+                gap: 4px;
+            }
+            .lang-switch {
+                padding: 2px;
+            }
+            .lang-btn {
+                padding: 3px 6px;
+                font-size: 0.7rem;
+            }
+            .btn-top {
+                padding: 5px 8px;
+                font-size: 0.72rem;
+            }
+            /* Hide non-essential button texts on mobile */
+            button[onclick="downloadModelOnlyPNG('auto')"] span[data-i18n],
+            button[onclick="downloadRecipeCardPNG()"] span[data-i18n],
+            button[onclick="openSlicerModal()"] span[data-i18n],
+            .btn-share-main span[data-i18n] {
+                display: none !important;
+            }
+            .btn-export-main {
+                padding: 6px 10px;
+                font-size: 0.76rem;
+            }
+            .btn-export-main span {
+                display: inline !important;
+            }
+
+            .workspace {
+                flex-direction: column;
+                height: calc(100vh - 52px);
+                position: relative;
+            }
+
+            .mobile-view-bar {
+                display: flex !important;
+                position: fixed;
+                bottom: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 999;
+                background: rgba(10, 15, 26, 0.95);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(56, 189, 248, 0.45);
+                border-radius: 30px;
+                padding: 4px;
+                gap: 4px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75);
+            }
+            .mobile-tab-btn {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                padding: 8px 16px;
+                border-radius: 24px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                white-space: nowrap;
+            }
+            .mobile-tab-btn.active {
+                background: linear-gradient(135deg, #0284c7, #38bdf8);
+                color: #000;
+                box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+            }
+
+            /* State 1: Panel View */
+            body.mobile-view-panel .panel-left {
+                display: flex !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 80px !important;
+                border-right: none !important;
+            }
+            body.mobile-view-panel .viewport-container {
+                display: none !important;
+            }
+
+            /* State 2: 3D Canvas View */
+            body.mobile-view-canvas .panel-left {
+                display: none !important;
+            }
+            body.mobile-view-canvas .viewport-container {
+                display: flex !important;
+                width: 100% !important;
+                height: 100% !important;
+                position: relative;
+            }
+
+            /* Responsive Overlays in 3D Canvas View on Mobile */
+            .viewport-mode-tabs {
+                top: 8px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                max-width: 96vw !important;
+                overflow-x: auto !important;
+                white-space: nowrap !important;
+                padding: 3px 6px !important;
+                border-radius: 20px !important;
+                gap: 4px !important;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+            }
+            .viewport-tab-btn {
+                padding: 4px 10px !important;
+                font-size: 0.7rem !important;
+            }
+            .viewport-slicer-hud {
+                bottom: 58px !important;
+                max-width: 95vw !important;
+                font-size: 0.7rem !important;
+                padding: 4px 10px !important;
+            }
+            .viewport-controls-hud {
+                bottom: 12px !important;
+                max-width: 96vw !important;
+                gap: 4px !important;
+            }
+            .btn-hud {
+                padding: 4px 8px !important;
+                font-size: 0.68rem !important;
+            }
+
+            .editor-floating-toolbar {
+                right: 6px !important;
+                top: 56px !important;
+                max-height: calc(100vh - 130px) !important;
+                overflow-y: auto !important;
+                gap: 4px !important;
+                padding: 4px !important;
+            }
+            .editor-floating-toolbar .tool-btn {
+                width: 32px !important;
+                height: 32px !important;
+                padding: 4px !important;
+                font-size: 0.7rem !important;
+            }
+            .editor-floating-toolbar .tool-btn span {
+                display: none !important;
+            }
+
+            .modal-card {
+                width: 95vw !important;
+                max-width: 95vw !important;
+                max-height: 88vh !important;
+                padding: 16px !important;
+                overflow-y: auto !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -4176,6 +4364,10 @@
             currentLang = lang;
             document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
             document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
+            const txtPanel = document.getElementById('txt-tab-panel');
+            const txtCanvas = document.getElementById('txt-tab-canvas');
+            if (txtPanel) txtPanel.innerText = (currentLang === 'fr') ? 'Source & Filaments' : 'Source & Filaments';
+            if (txtCanvas) txtCanvas.innerText = (currentLang === 'fr') ? 'Vue Bas-Relief 3D' : '3D Relief View';
             
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -4500,6 +4692,7 @@
             animate();
         }
 
+        window.addEventListener("resize", onWindowResize);
         function onWindowResize() {
             const container = document.getElementById('viewport-container');
             if (!container || !renderer || !camera) return;
@@ -6610,6 +6803,9 @@
                 const icon = document.getElementById('icon-slicer-play');
                 if (icon) icon.setAttribute('data-lucide', 'play');
                 if (window.lucide) lucide.createIcons();
+            if (window.innerWidth <= 900) {
+                setMobileView('panel');
+            }
             }
             isSlicerSimulationActive = false;
             clipPlane.normal.set(0, 0, -1);
@@ -8995,6 +9191,28 @@
         // ==========================================
         // 🚀 DOM INITIALIZATION
         // ==========================================
+        
+        // Mobile View Controller (Phone Portrait & Landscape)
+        let currentMobileView = 'panel';
+        function setMobileView(view) {
+            currentMobileView = view;
+            if (view === 'canvas') {
+                document.body.classList.add('mobile-view-canvas');
+                document.body.classList.remove('mobile-view-panel');
+            } else {
+                document.body.classList.add('mobile-view-panel');
+                document.body.classList.remove('mobile-view-canvas');
+            }
+            const btnCanvas = document.getElementById('tab-btn-canvas');
+            const btnPanel = document.getElementById('tab-btn-panel');
+            if (btnCanvas) btnCanvas.classList.toggle('active', view === 'canvas');
+            if (btnPanel) btnPanel.classList.toggle('active', view === 'panel');
+
+            setTimeout(() => {
+                if (typeof onWindowResize === 'function') onWindowResize();
+            }, 60);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             init3D();
             setLang(currentLang);
@@ -13799,5 +14017,18 @@
             };
         })();
     </script>
+
+    <!-- 📱 Floating Mobile View Switcher (Visible ONLY on Mobile) -->
+    <div class="mobile-view-bar" id="mobile-view-bar">
+        <button type="button" class="mobile-tab-btn active" id="tab-btn-panel" onclick="setMobileView('panel')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M11 10.27 7 3.34"/></svg>
+            <span id="txt-tab-panel">Source & Filaments</span>
+        </button>
+        <button type="button" class="mobile-tab-btn" id="tab-btn-canvas" onclick="setMobileView('canvas')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+            <span id="txt-tab-canvas">Vue Bas-Relief 3D</span>
+        </button>
+    </div>
+
 </body>
 </html>

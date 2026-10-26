@@ -1100,6 +1100,174 @@
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.65);
         }
+    
+        /* ═══════════════════════════════════════════════════════════════
+           📱 COMPREHENSIVE MOBILE RESPONSIVE ENGINE (<= 900px)
+           Strictly isolated to mobile screens: desktop is 100% untouched.
+           ═══════════════════════════════════════════════════════════════ */
+        .mobile-view-bar { display: none; }
+
+        @media (max-width: 900px) {
+            header {
+                height: 52px;
+                padding: 0 10px;
+            }
+            #back-btn {
+                padding: 5px 8px;
+                font-size: 0.72rem;
+                gap: 4px;
+            }
+            .brand {
+                gap: 6px;
+            }
+            .brand-badge {
+                font-size: 0.62rem;
+                padding: 2px 6px;
+            }
+            .brand-title {
+                font-size: 0.95rem;
+                white-space: nowrap;
+            }
+            .brand-sub {
+                display: none !important;
+            }
+            .header-actions {
+                gap: 4px;
+            }
+            .lang-switch {
+                padding: 2px;
+            }
+            .lang-btn {
+                padding: 3px 6px;
+                font-size: 0.7rem;
+            }
+            .btn-top {
+                padding: 5px 8px;
+                font-size: 0.72rem;
+            }
+            .btn-studio span[data-i18n],
+            .btn-batch span[data-i18n],
+            .btn-share-main span[data-i18n] {
+                display: none !important;
+            }
+            .btn-export-main {
+                padding: 6px 10px;
+                font-size: 0.76rem;
+            }
+            .btn-export-main span {
+                display: inline !important;
+            }
+
+            .workspace {
+                flex-direction: column;
+                height: calc(100vh - 52px);
+                position: relative;
+            }
+
+            .mobile-view-bar {
+                display: flex !important;
+                position: fixed;
+                bottom: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 999;
+                background: rgba(10, 15, 26, 0.95);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(56, 189, 248, 0.45);
+                border-radius: 30px;
+                padding: 4px;
+                gap: 4px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75);
+            }
+            .mobile-tab-btn {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                padding: 8px 16px;
+                border-radius: 24px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                white-space: nowrap;
+            }
+            .mobile-tab-btn.active {
+                background: linear-gradient(135deg, #0284c7, #38bdf8);
+                color: #000;
+                box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+            }
+
+            /* State 1: Panel View */
+            body.mobile-view-panel .panel-left {
+                display: flex !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 80px !important;
+                border-right: none !important;
+            }
+            body.mobile-view-panel #viewport-container {
+                display: none !important;
+            }
+
+            /* State 2: 3D Canvas View */
+            body.mobile-view-canvas .panel-left {
+                display: none !important;
+            }
+            body.mobile-view-canvas #viewport-container {
+                display: flex !important;
+                width: 100% !important;
+                height: 100% !important;
+                position: relative;
+            }
+
+            /* Scan Widget on Mobile inside 3D Canvas */
+            .scan-preview-widget {
+                top: 10px !important;
+                right: 10px !important;
+                width: 140px !important;
+                padding: 8px !important;
+                border-radius: 12px !important;
+                background: rgba(14, 20, 32, 0.95) !important;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+            }
+            .scan-preview-widget .scan-widget-header {
+                font-size: 0.68rem !important;
+                margin-bottom: 4px !important;
+            }
+            .scan-preview-widget .scan-instructions {
+                font-size: 0.62rem !important;
+                margin-top: 4px !important;
+                line-height: 1.2 !important;
+            }
+            #qr-preview-canvas canvas, #qr-preview-canvas img {
+                width: 90px !important;
+                height: 90px !important;
+            }
+
+            .viewport-hud {
+                left: 10px !important;
+                bottom: 64px !important;
+                font-size: 0.7rem !important;
+                padding: 5px 10px !important;
+                flex-direction: column !important;
+                gap: 2px !important;
+            }
+
+            .modal-card, .modal-studio-card {
+                width: 95vw !important;
+                max-width: 95vw !important;
+                max-height: 88vh !important;
+                padding: 16px !important;
+                overflow-y: auto !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2395,6 +2563,10 @@
             
             document.getElementById('btn-lang-en').classList.toggle('active', currentLang === 'en');
             document.getElementById('btn-lang-fr').classList.toggle('active', currentLang === 'fr');
+            const txtPanel = document.getElementById('txt-tab-panel');
+            const txtCanvas = document.getElementById('txt-tab-canvas');
+            if (txtPanel) txtPanel.innerText = (currentLang === 'fr') ? 'Réglages & Wi-Fi' : 'Settings & Social';
+            if (txtCanvas) txtCanvas.innerText = (currentLang === 'fr') ? 'Vue Sous-Verre 3D' : '3D Coaster View';
 
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -2404,6 +2576,9 @@
             });
 
             if (window.lucide) lucide.createIcons();
+            if (window.innerWidth <= 900) {
+                setMobileView('panel');
+            }
             updateContrastBadge();
         }
 
@@ -5242,6 +5417,28 @@
         }
 
         // Initialize on DOM load
+        
+        // Mobile View Controller (Phone Portrait & Landscape)
+        let currentMobileView = 'panel';
+        function setMobileView(view) {
+            currentMobileView = view;
+            if (view === 'canvas') {
+                document.body.classList.add('mobile-view-canvas');
+                document.body.classList.remove('mobile-view-panel');
+            } else {
+                document.body.classList.add('mobile-view-panel');
+                document.body.classList.remove('mobile-view-canvas');
+            }
+            const btnCanvas = document.getElementById('tab-btn-canvas');
+            const btnPanel = document.getElementById('tab-btn-panel');
+            if (btnCanvas) btnCanvas.classList.toggle('active', view === 'canvas');
+            if (btnPanel) btnPanel.classList.toggle('active', view === 'panel');
+
+            setTimeout(() => {
+                if (typeof onWindowResize === 'function') onWindowResize();
+            }, 60);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             init3D();
             setLang(currentLang);
@@ -5470,5 +5667,18 @@
             };
         })();
     </script>
+
+    <!-- 📱 Floating Mobile View Switcher (Visible ONLY on Mobile) -->
+    <div class="mobile-view-bar" id="mobile-view-bar">
+        <button type="button" class="mobile-tab-btn active" id="tab-btn-panel" onclick="setMobileView('panel')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M11 10.27 7 3.34"/></svg>
+            <span id="txt-tab-panel">Réglages & Wi-Fi</span>
+        </button>
+        <button type="button" class="mobile-tab-btn" id="tab-btn-canvas" onclick="setMobileView('canvas')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+            <span id="txt-tab-canvas">Vue Sous-Verre 3D</span>
+        </button>
+    </div>
+
 </body>
 </html>
