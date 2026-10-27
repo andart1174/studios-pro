@@ -1482,6 +1482,10 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="mob-view-tabs" id="mobViewTabs">
+        <button class="mob-tab-btn active" id="btnMobControls">⚙️ Controls</button>
+        <button class="mob-tab-btn" id="btnMobViewport">📦 3D View</button>
+      </div>
       <div class="lang-toggle">
         <button class="lang-btn active" data-lang="en">EN</button>
         <button class="lang-btn" data-lang="fr">FR</button>
@@ -1648,10 +1652,38 @@
         <div class="spanel" id="sp-model3d">
           <div class="sec-label" data-en="3D Conversion Mode" data-fr="Mode de conversion 3D">3D Conversion Mode</div>
           <div class="mode-chips" id="modeChips3d">
-            <button class="mchip active" data-mode3d="heightmap">⛰️ <span data-en="Heightmap" data-fr="Carte hauteur">Heightmap</span></button>
-            <button class="mchip" data-mode3d="relief">🏔️ <span data-en="Relief" data-fr="Relief">Relief</span></button>
-            <button class="mchip" data-mode3d="emboss">🔲 <span data-en="Emboss" data-fr="Embossage">Emboss</span></button>
+            <button class="mchip active" data-mode3d="portrait">👤 <span data-en="Portrait Relief" data-fr="Relief Portrait">Portrait Relief</span></button>
+            <button class="mchip" data-mode3d="cameo">🪙 <span data-en="Coin Cameo" data-fr="Camée Médaille">Coin Cameo</span></button>
+            <button class="mchip" data-mode3d="stamp">🏷️ <span data-en="Logo Stamp" data-fr="Tampon Logo">Logo Stamp</span></button>
+            <button class="mchip" data-mode3d="heightmap">⛰️ <span data-en="Heightmap" data-fr="Carte hauteur">Heightmap</span></button>
+            <button class="mchip" data-mode3d="relief">🏔️ <span data-en="Surface Relief" data-fr="Relief Surface">Surface Relief</span></button>
             <button class="mchip" data-mode3d="lithophane">🕯️ <span data-en="Lithophane" data-fr="Lithophane">Lithophane</span></button>
+            <button class="mchip" data-mode3d="emboss">🔲 <span data-en="Emboss" data-fr="Embossage">Emboss</span></button>
+          </div>
+
+          <!-- Intelligent Relief & Subject Isolation -->
+          <div class="sec-label" style="color:#06d6a0" data-en="Intelligent Relief & Subject Isolation" data-fr="Relief intelligent & Isolation du sujet">Intelligent Relief & Subject Isolation</div>
+          <div class="toggle-row">
+            <div class="tgl-label">
+              <span data-en="✂️ Isolate Subject (Remove Background)" data-fr="✂️ Isoler le sujet (Supprimer le fond)">✂️ Isolate Subject (Remove Background)</span>
+              <small data-en="Suppresses background to flat 0mm base" data-fr="Abaisse le fond à la base plate 0mm">Suppresses background to flat 0mm base</small>
+            </div>
+            <label class="sw"><input type="checkbox" id="tIsolateBg" checked /><span class="sw-track"></span></label>
+          </div>
+          <div class="ctrl-row" id="bgTolRow">
+            <label><span data-en="Background Tolerance" data-fr="Tolérance du fond">Background Tolerance</span> <span class="ctrl-val" id="vBgTolerance">35</span>%</label>
+            <input type="range" id="sBgTolerance" min="5" max="85" value="35" step="1" />
+          </div>
+          <div class="ctrl-row" id="domeDepthRow">
+            <label><span data-en="Anatomical Dome Curvature" data-fr="Courbure anatomique du dôme">Anatomical Dome Curvature</span> <span class="ctrl-val" id="vDomeDepth">65</span>%</label>
+            <input type="range" id="sDomeDepth" min="0" max="100" value="65" step="5" />
+          </div>
+          <div class="toggle-row">
+            <div class="tgl-label">
+              <span data-en="🔄 Invert Depth" data-fr="🔄 Inverser la profondeur">🔄 Invert Depth</span>
+              <small data-en="Swap high and low relief peaks" data-fr="Inverser les reliefs hauts et bas">Swap high and low relief peaks</small>
+            </div>
+            <label class="sw"><input type="checkbox" id="tInvertDepth" /><span class="sw-track"></span></label>
           </div>
 
           <!-- Quality presets -->
@@ -1750,7 +1782,7 @@
               <span>🎨 Bake Colors + AO</span>
               <small>Maps image RGB + cavity AO onto GLB vertex colors</small>
             </div>
-            <label class="sw"><input type="checkbox" id="tBakeColors" /><span class="sw-track"></span></label>
+            <label class="sw"><input type="checkbox" id="tBakeColors" checked /><span class="sw-track"></span></label>
           </div>
           <div class="ctrl-row" id="aoRow" style="display:none">
             <label><span>AO Strength</span> <span class="ctrl-val" id="vAO">0.50</span></label>
@@ -1782,11 +1814,26 @@
           <div class="sec-label" data-en="Animation Type" data-fr="Type d'animation">Animation
             Type</div>
           <div class="mode-chips" id="animChips">
-            <button class="mchip active" data-anim="rotate">🔄 <span data-en="Rotation" data-fr="Rotation">Rotation</span></button>
-            <button class="mchip" data-anim="pulse">💓 <span data-en="Pulse" data-fr="Pulsation">Pulse</span></button>
-            <button class="mchip" data-anim="float">🌊 <span data-en="Float" data-fr="Flotter">Float</span></button>
-            <button class="mchip" data-anim="morph">🌀 <span data-en="Morph" data-fr="Morphe">Morph</span></button>
-            <button class="mchip" data-anim="none">⛔ <span data-en="None" data-fr="Aucun">None</span></button>
+            <button class="mchip active" data-anim="rotate">🔄 <span data-en="Rotation 360°" data-fr="Rotation 360°">Rotation 360°</span></button>
+            <button class="mchip" data-anim="pulse">💓 <span data-en="3D Pulse" data-fr="Pulsation 3D">3D Pulse</span></button>
+            <button class="mchip" data-anim="float">🌊 <span data-en="Float Levitation" data-fr="Lévitation">Float Levitation</span></button>
+            <button class="mchip" data-anim="morph">🌀 <span data-en="2D ↔ 3D Morph" data-fr="Morph 2D ↔ 3D">2D ↔ 3D Morph</span></button>
+            <button class="mchip" data-anim="wave">✨ <span data-en="Surface Wave" data-fr="Onde de surface">Surface Wave</span></button>
+            <button class="mchip" data-anim="none">⛔ <span data-en="Static" data-fr="Statique">Static</span></button>
+          </div>
+
+          <button class="btn btn-primary" id="btnTogglePlay4D" style="width:100%;margin:12px 0 16px 0;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;padding:10px 14px;font-weight:600;font-size:13px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(168,85,247,0.35);color:#fff">
+            ⏸ <span data-en="Pause 4D" data-fr="Pause 4D">Pause 4D</span>
+          </button>
+
+          <div class="sec-label" data-en="Export 4D Media" data-fr="Exporter médias 4D">Export 4D Media</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="btn btn-secondary" id="btnRecordVideo" style="flex:1;padding:8px 6px;font-size:12px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.35);color:#e9d5ff;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:600" title="Record 4D turnaround video clip">
+              🎥 <span data-en="4D Video" data-fr="Vidéo 4D">4D Video</span>
+            </button>
+            <button class="btn btn-secondary" id="btnSnapShot" style="flex:1;padding:8px 6px;font-size:12px;background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.35);color:#a7f3d0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:600" title="Snap high-res 4D snapshot">
+              📸 <span data-en="Snap PNG" data-fr="Capture PNG">Snap PNG</span>
+            </button>
           </div>
 
           <div class="ctrl-row">
@@ -1959,6 +2006,7 @@
           </div>
           <button class="pv-btn" id="btnResetView" title="Reset View">↺</button>
           <button class="pv-btn" id="btnWireframe" title="Wireframe Mode">🕸️</button>
+          <button class="pv-btn pv-btn-play4d" id="btnPlay4D" title="Play/Pause 4D Animation" style="background:rgba(168,85,247,0.22);border-color:#a855f7;color:#c084fc">⏸ 4D</button>
         </div>
       </div>
 
@@ -1983,7 +2031,7 @@
         <div class="pv-panel" id="pv3D" style="display:none">
           <div class="pv-panel-head">
             <span class="pvh-title">📦 <span data-en="3D Model Preview" data-fr="Aperçu modèle 3D">3D Model Preview</span></span>
-            <span class="pvh-badge" style="background:rgba(79,142,255,.2);color:#4f8eff">LIVE 3D</span>
+            <span class="pvh-badge pvh-badge-4d" id="badge4DLive" style="background:rgba(168,85,247,.25);color:#c084fc">✨ 4D RUNNING (60 FPS)</span>
           </div>
           <div class="pv-canvas-wrap" style="padding:0;position:relative">
             <canvas id="canvas3D"></canvas>

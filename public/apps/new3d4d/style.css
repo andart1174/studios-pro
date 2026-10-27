@@ -415,15 +415,87 @@ input:checked+.sw-track::before{transform:translateX(18px)}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-/* Responsive */
-@media(max-width:900px){
-  .sidebar{width:280px;min-width:280px}
-  header{padding:12px 20px}
-  .logo-text{font-size:17px}
-  .hbadge{display:none}
+/* ── MOB VIEW TABS & 4D BADGE ── */
+.mob-view-tabs {
+  display: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
 }
-@media(max-width:640px){
-  .app-layout{flex-direction:column}
-  .sidebar{width:100%;min-width:100%;height:50vh}
-  .preview-area{height:50vh}
+.mob-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mob-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(79, 142, 255, 0.35);
+}
+
+.pvh-badge-4d {
+  animation: pulse-4d 2s infinite ease-in-out;
+}
+@keyframes pulse-4d {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+/* ── RESPONSIVE MOBILE OPTIMIZATION ── */
+@media(max-width:900px){
+  .mob-view-tabs { display: flex; }
+  .hbadge { display: none; }
+  header { padding: 10px 14px; }
+  .logo-text { font-size: 16px; }
+  .logo-sub { display: none; }
+
+  .app-layout {
+    flex-direction: column;
+    height: calc(100vh - 65px);
+    overflow: hidden;
+  }
+  .app-layout.mobile-view-viewport .sidebar {
+    display: none !important;
+  }
+  .app-layout.mobile-view-viewport .preview-area {
+    display: flex !important;
+    flex: 1;
+    height: 100% !important;
+    width: 100% !important;
+  }
+  .app-layout.mobile-view-controls .sidebar {
+    display: flex !important;
+    flex: 1;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: 100% !important;
+  }
+  .app-layout.mobile-view-controls .preview-area {
+    display: none !important;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+  }
+  .preview-area {
+    padding: 8px;
+  }
+  .preview-panels {
+    gap: 8px;
+  }
+  .pv-actions {
+    gap: 4px;
+  }
+  .pv-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
 }

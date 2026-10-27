@@ -2,14 +2,18 @@
  * ENGINE 3D — ULTRA QUALITY — Image to STL/OBJ Converter
  * ────────────────────────────────────────────────────────
  * Algorithms:
- *  • Bicubic interpolation (vs bilinear) for smooth heightmaps
- *  • Super-sampling (2× or 4× internal resolution, then average)
- *  • Bilateral filter (edge-preserving smoothing — keeps contours sharp)
- *  • Laplacian smoothing (proper 3D mesh smoothing)
- *  • Indexed vertex mesh (shared vertices, no duplicates)
+ *  • Intelligent Portrait & Face Relief (convex anatomical dome + facial sculpting)
+ *  • Subject / Background Isolation (detects & suppresses background to 0mm base)
+ *  • Dark Feature Compensation (preserves eyes, pupils, lips from hollow pits)
+ *  • Cameo / Coin Medallion mode (circular coin rim + convex dome)
+ *  • Stamp & Logo mode (flat-top extrusion with beveled edges)
+ *  • Bicubic interpolation (vs bilinear) for ultra-smooth heightmaps
+ *  • Super-sampling (2× or 4× internal resolution, anti-aliased average)
+ *  • Bilateral filter (edge-preserving smoothing — keeps contours razor-sharp)
+ *  • Laplacian smoothing (proper 3D mesh curvature smoothing)
+ *  • Indexed vertex mesh (shared vertices, smooth shading quality)
  *  • Area-weighted vertex normals (smooth shading quality)
- *  • Poisson-inspired depth enhancement
- *  • Adaptive edge detection for enhanced mode
+ *  • Full Vertex Color baking + Cavity Ambient Occlusion
  */
 
 const Engine3D = (() => {
@@ -45,6 +49,57 @@ const Engine3D = (() => {
     return Math.max(0, Math.min(1, cubicHermite(rows[0], rows[1], rows[2], rows[3], ty)));
   }
 
+  // ─── Background Detection & Subject Isolation ─────────────────────────────
+
+  function detectBackgroundColor(data, imgW, imgH) {
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    const border = Math.max(1, Math.min(8, Math.floor(Math.min(imgW, imgH) * 0.04)));
+    for (let y = 0; y < imgH; y++) {
+      for (let x = 0; x < imgW; x++) {
+        if (x < border || x >= imgW - border || y < border || y >= imgH - border) {
+          const idx = (y * imgW + x) * 4;
+          rSum += data[idx];
+          gSum += data[idx + 1];
+          bSum += data[idx + 2];
+          count++;
+        }
+      }
+    }
+    return [rSum / (count || 1), gSum / (count || 1), bSum / (count || 1)];
+  }
+
+  function computeSubjectMask(data, imgW, imgH, gridW, gridH, tolerance, feather) {
+    const bg = detectBackgroundColor(data, imgW, imgH);
+    const mask = new Float32Array(gridW * gridH);
+    const tol = tolerance !== undefined ? tolerance : 0.35;
+    const fth = feather !== undefined ? feather : 0.12;
+    const low = Math.max(0.01, tol - fth);
+    const high = tol + fth;
+    const span = high - low || 0.01;
+
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW; gx++) {
+        const fx = Math.min(imgW - 1, Math.round((gx / (gridW - 1)) * (imgW - 1)));
+        const fy = Math.min(imgH - 1, Math.round((gy / (gridH - 1)) * (imgH - 1)));
+        const idx = (fy * imgW + fx) * 4;
+        const dr = (data[idx] - bg[0]) / 255;
+        const dg = (data[idx + 1] - bg[1]) / 255;
+        const db = (data[idx + 2] - bg[2]) / 255;
+        const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
+
+        if (dist <= low) {
+          mask[gy * gridW + gx] = 0;
+        } else if (dist >= high) {
+          mask[gy * gridW + gx] = 1;
+        } else {
+          const t = (dist - low) / span;
+          mask[gy * gridW + gx] = 0.5 - 0.5 * Math.cos(t * Math.PI);
+        }
+      }
+    }
+    return mask;
+  }
+
   // ─── Bilateral Filter (Edge-Preserving Smoothing) ─────────────────────────
 
   function bilateralFilter(hmap, width, height, radius, sigmaS, sigmaR) {
@@ -67,7 +122,7 @@ const Engine3D = (() => {
             sum += val * w; wsum += w;
           }
         }
-        out[y * width + x] = sum / wsum;
+        out[y * width + x] = sum / (wsum || 1);
       }
     }
     return out;
@@ -83,19 +138,18 @@ const Engine3D = (() => {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const c = cur[y * width + x];
-          // 8-neighbors
           let sum = 0, cnt = 0;
           for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
               if (dx === 0 && dy === 0) continue;
               const nx = Math.max(0, Math.min(width - 1, x + dx));
               const ny = Math.max(0, Math.min(height - 1, y + dy));
-              const w = (dx !== 0 && dy !== 0) ? 0.5 : 1.0; // diagonal weight
+              const w = (dx !== 0 && dy !== 0) ? 0.5 : 1.0;
               sum += cur[ny * width + nx] * w;
               cnt += w;
             }
           }
-          const lap = sum / cnt - c;
+          const lap = sum / (cnt || 1) - c;
           next[y * width + x] = c + lam * lap;
         }
       }
@@ -104,27 +158,161 @@ const Engine3D = (() => {
     return cur;
   }
 
-  // ─── Super-Sampling ───────────────────────────────────────────────────────
+  // ─── Heightmap Generators ─────────────────────────────────────────────────
 
   /**
-   * Build a heightmap at superFactor × resolution, then downsample by averaging.
-   * This gives much better anti-aliasing than direct sampling.
+   * Direct Heightmap builder with support for Portrait, Cameo, Stamp, Lithophane,
+   * Emboss, Relief, and Heightmap modes.
    */
-  function buildSuperSampledHeightmap(data, imgW, imgH, gridW, gridH, mode, superFactor) {
+  function buildHeightMap(data, imgW, imgH, gridW, gridH, mode, opts = {}) {
+    const hmap = new Float32Array(gridW * gridH);
+    const isolateBg = opts.isolateSubject === true || (mode === 'portrait' && opts.isolateSubject !== false);
+    const bgTol = (opts.bgTolerance !== undefined ? opts.bgTolerance : 35) / 100;
+    const invertDepth = opts.invertDepth === true;
+
+    // Optional subject mask
+    let mask = null;
+    if (isolateBg) {
+      mask = computeSubjectMask(data, imgW, imgH, gridW, gridH, bgTol, 0.12);
+    }
+
+    if (mode === 'portrait') {
+      // 1. Calculate centroid of subject from mask
+      let sumX = 0, sumY = 0, sumW = 0;
+      for (let gy = 0; gy < gridH; gy++) {
+        for (let gx = 0; gx < gridW; gx++) {
+          const w = mask ? mask[gy * gridW + gx] : 1;
+          sumX += gx * w;
+          sumY += gy * w;
+          sumW += w;
+        }
+      }
+      const cx = sumW > 10 ? (sumX / sumW) / (gridW - 1) : 0.5;
+      const cy = sumW > 10 ? (sumY / sumW) / (gridH - 1) : 0.45;
+
+      const domeStrength = (opts.domeDepth !== undefined ? opts.domeDepth : 65) / 100;
+      const rx = 0.45, ry = 0.52;
+
+      for (let gy = 0; gy < gridH; gy++) {
+        for (let gx = 0; gx < gridW; gx++) {
+          const fx = (gx / (gridW - 1)) * (imgW - 1);
+          const fy = (gy / (gridH - 1)) * (imgH - 1);
+          const lum = sampleBicubic(data, fx, fy, imgW, imgH);
+
+          // Anatomical convex ellipsoid dome
+          const nx = (gx / (gridW - 1) - cx) / rx;
+          const ny = (gy / (gridH - 1) - cy) / ry;
+          const dist = Math.sqrt(nx * nx + ny * ny);
+          const dome = dist < 1.0 ? Math.pow(Math.cos(dist * Math.PI * 0.5), 0.72) : 0;
+
+          // Dark feature compensation:
+          // In portraits, dark eyes, pupils, nostrils, and lips should NOT be hollow pits.
+          // Lift dark values so eyes sculpt as subtle iris domes on the ocular sphere.
+          let feature = lum;
+          if (feature < 0.38) {
+            feature = feature + (0.38 - feature) * 0.65;
+          }
+
+          let val = domeStrength * dome + (1.0 - domeStrength * 0.45) * feature;
+
+          if (mask) {
+            val *= mask[gy * gridW + gx];
+          }
+
+          if (invertDepth) val = 1.0 - val;
+          hmap[gy * gridW + gx] = Math.max(0, Math.min(1, val));
+        }
+      }
+      return hmap;
+
+    } else if (mode === 'cameo') {
+      // Circular / elliptical coin medallion with raised rim
+      for (let gy = 0; gy < gridH; gy++) {
+        for (let gx = 0; gx < gridW; gx++) {
+          const nx = (gx / (gridW - 1) - 0.5) * 2;
+          const ny = (gy / (gridH - 1) - 0.5) * 2;
+          const r = Math.sqrt(nx * nx + ny * ny);
+
+          if (r > 1.0) {
+            hmap[gy * gridW + gx] = 0;
+          } else {
+            const fx = (gx / (gridW - 1)) * (imgW - 1);
+            const fy = (gy / (gridH - 1)) * (imgH - 1);
+            let lum = sampleBicubic(data, fx, fy, imgW, imgH);
+            if (invertDepth) lum = 1.0 - lum;
+
+            // Raised outer coin rim at r between 0.88 and 0.98
+            let rim = 0;
+            if (r >= 0.88 && r <= 0.98) {
+              rim = Math.sin(((r - 0.88) / 0.10) * Math.PI) * 0.40;
+            }
+            // Convex coin face
+            const coinDome = Math.cos(Math.min(1, r / 0.88) * Math.PI * 0.5) * 0.42;
+            let val = 0.22 + coinDome + rim + lum * 0.36;
+            if (mask) val *= mask[gy * gridW + gx];
+            hmap[gy * gridW + gx] = Math.max(0, Math.min(1, val));
+          }
+        }
+      }
+      return hmap;
+
+    } else if (mode === 'stamp') {
+      // Flat plateau extrusion with 45° beveled chamfer edges
+      const thresh = (opts.stampThreshold !== undefined ? opts.stampThreshold : 50) / 100;
+      const edge = 0.08;
+      for (let gy = 0; gy < gridH; gy++) {
+        for (let gx = 0; gx < gridW; gx++) {
+          const fx = (gx / (gridW - 1)) * (imgW - 1);
+          const fy = (gy / (gridH - 1)) * (imgH - 1);
+          let lum = sampleBicubic(data, fx, fy, imgW, imgH);
+          if (invertDepth) lum = 1.0 - lum;
+
+          let v = 0;
+          if (lum > thresh + edge) v = 1.0;
+          else if (lum < thresh - edge) v = 0.0;
+          else v = (lum - (thresh - edge)) / (2 * edge);
+
+          if (mask) v *= mask[gy * gridW + gx];
+          hmap[gy * gridW + gx] = v;
+        }
+      }
+      return hmap;
+
+    } else {
+      // Standard Heightmap / Relief / Emboss / Lithophane
+      for (let gy = 0; gy < gridH; gy++) {
+        for (let gx = 0; gx < gridW; gx++) {
+          const fx = (gx / (gridW - 1)) * (imgW - 1);
+          const fy = (gy / (gridH - 1)) * (imgH - 1);
+          let v = sampleBicubic(data, fx, fy, imgW, imgH);
+
+          if (mode === 'lithophane') {
+            v = 1.0 - v; // Inverted for light transmittance
+          } else if (mode === 'emboss') {
+            v = v > 0.5 ? 1.0 : 0.0;
+          }
+
+          if (invertDepth && mode !== 'lithophane') {
+            v = 1.0 - v;
+          }
+
+          if (mask) {
+            v *= mask[gy * gridW + gx];
+          }
+
+          hmap[gy * gridW + gx] = Math.max(0, Math.min(1, v));
+        }
+      }
+      return hmap;
+    }
+  }
+
+  // ─── Super-Sampling ───────────────────────────────────────────────────────
+
+  function buildSuperSampledHeightmap(data, imgW, imgH, gridW, gridH, mode, superFactor, opts = {}) {
     const sw = gridW * superFactor;
     const sh = gridH * superFactor;
-    const superHmap = new Float32Array(sw * sh);
-
-    for (let gy = 0; gy < sh; gy++) {
-      for (let gx = 0; gx < sw; gx++) {
-        const fx = (gx / (sw - 1)) * (imgW - 1);
-        const fy = (gy / (sh - 1)) * (imgH - 1);
-        let v = sampleBicubic(data, fx, fy, imgW, imgH);
-        if (mode === 'lithophane') v = 1 - v;
-        else if (mode === 'emboss') v = v > 0.5 ? 1 : 0;
-        superHmap[gy * sw + gx] = v;
-      }
-    }
+    const superHmap = buildHeightMap(data, imgW, imgH, sw, sh, mode, opts);
 
     // Downsample (average pooling)
     const hmap = new Float32Array(gridW * gridH);
@@ -137,23 +325,6 @@ const Engine3D = (() => {
           }
         }
         hmap[gy * gridW + gx] = sum / (superFactor * superFactor);
-      }
-    }
-    return hmap;
-  }
-
-  // ─── Direct Heightmap (no super-sampling) ─────────────────────────────────
-
-  function buildHeightMap(data, imgW, imgH, gridW, gridH, mode) {
-    const hmap = new Float32Array(gridW * gridH);
-    for (let gy = 0; gy < gridH; gy++) {
-      for (let gx = 0; gx < gridW; gx++) {
-        const fx = (gx / (gridW - 1)) * (imgW - 1);
-        const fy = (gy / (gridH - 1)) * (imgH - 1);
-        let v = sampleBicubic(data, fx, fy, imgW, imgH);
-        if (mode === 'lithophane') v = 1 - v;
-        else if (mode === 'emboss') v = v > 0.5 ? 1 : 0;
-        hmap[gy * gridW + gx] = v;
       }
     }
     return hmap;
@@ -182,11 +353,8 @@ const Engine3D = (() => {
     return { min, max, avg: sum / hmap.length };
   }
 
-  // ─── Vertex Color Baking (RGB + AO) ──────────────────────────────────────
+  // ─── Vertex Color Baking (RGB + Cavity AO) ────────────────────────────────
 
-  /**
-   * Sample bilinear RGBA from original image at grid position (gx,gy)
-   */
   function sampleColorBicubic(data, fx, fy, imgW, imgH) {
     const px = Math.max(0, Math.min(imgW - 1, Math.round(fx)));
     const py = Math.max(0, Math.min(imgH - 1, Math.round(fy)));
@@ -194,11 +362,6 @@ const Engine3D = (() => {
     return [data[idx] / 255, data[idx + 1] / 255, data[idx + 2] / 255];
   }
 
-  /**
-   * Bake vertex colors: sample original image RGB per vertex,
-   * then multiply by a cavity-based AO factor derived from height differences.
-   * Returns Float32Array [r, g, b per vertex]
-   */
   function bakeVertexColors(data, imgW, imgH, hmap, gridW, gridH, aoStrength) {
     const colors = new Float32Array(gridW * gridH * 3);
     const ao = aoStrength !== undefined ? aoStrength : 0.6;
@@ -224,9 +387,9 @@ const Engine3D = (() => {
         const cavityAO = 1 - Math.min(ao, (diff / cnt) * ao * 5);
 
         const ci = (gy * gridW + gx) * 3;
-        colors[ci] = r * cavityAO;
-        colors[ci + 1] = g * cavityAO;
-        colors[ci + 2] = b * cavityAO;
+        colors[ci] = Math.max(0, Math.min(1, r * cavityAO));
+        colors[ci + 1] = Math.max(0, Math.min(1, g * cavityAO));
+        colors[ci + 2] = Math.max(0, Math.min(1, b * cavityAO));
       }
     }
     return colors;
@@ -234,50 +397,43 @@ const Engine3D = (() => {
 
   // ─── Midpoint Subdivision Pass ─────────────────────────────────────────────
 
-  /**
-   * Simple 1-pass midpoint subdivision of the heightmap grid.
-   * Doubles resolution using bilinear interpolation between grid points.
-   * Gives a much smoother result than just using a higher resolution input.
-   */
   function subdivide(hmap, gridW, gridH) {
     const nW = gridW * 2 - 1;
     const nH = gridH * 2 - 1;
     const out = new Float32Array(nW * nH);
-    for (let gy = 0; gy < nH; gy++) {
+
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW; gx++) {
+        out[(gy * 2) * nW + (gx * 2)] = hmap[gy * gridW + gx];
+      }
+    }
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW - 1; gx++) {
+        const v0 = hmap[gy * gridW + gx];
+        const v1 = hmap[gy * gridW + gx + 1];
+        out[(gy * 2) * nW + (gx * 2 + 1)] = (v0 + v1) * 0.5;
+      }
+    }
+    for (let gy = 0; gy < gridH - 1; gy++) {
       for (let gx = 0; gx < nW; gx++) {
-        const sx = gx / 2, sy = gy / 2;
-        const ix = Math.floor(sx), iy = Math.floor(sy);
-        const tx = sx - ix, ty = sy - iy;
-        const ix2 = Math.min(gridW - 1, ix + 1);
-        const iy2 = Math.min(gridH - 1, iy + 1);
-        const v00 = hmap[iy * gridW + ix];
-        const v10 = hmap[iy * gridW + ix2];
-        const v01 = hmap[iy2 * gridW + ix];
-        const v11 = hmap[iy2 * gridW + ix2];
-        out[gy * nW + gx] = v00 * (1 - tx) * (1 - ty) + v10 * tx * (1 - ty) + v01 * (1 - tx) * ty + v11 * tx * ty;
+        const v0 = out[(gy * 2) * nW + gx];
+        const v1 = out[((gy + 1) * 2) * nW + gx];
+        out[(gy * 2 + 1) * nW + gx] = (v0 + v1) * 0.5;
       }
     }
     return { hmap: out, gridW: nW, gridH: nH };
   }
 
-  // ─── Indexed Mesh Builder ─────────────────────────────────────────────────
+  // ─── Build Indexed Mesh ───────────────────────────────────────────────────
 
-  /**
-   * Build an INDEXED mesh (shared vertices). Returns:
-   *   vertices: Float32Array [x,y,z per vertex]
-   *   indices:  Uint32Array  [3 per triangle]
-   *   normals:  Float32Array [nx,ny,nz per vertex] — area-weighted
-   */
   function buildIndexedMesh(hmap, gridW, gridH, depthMM, baseMM, scaleMM, solidBase, mirrorY) {
     const aspectY = gridH / gridW;
     const xLen = scaleMM;
     const yLen = scaleMM * aspectY;
 
-    // vertex count: top surface + optionally side walls + base
     const topVerts = gridW * gridH;
-
-    // Build top surface vertices
     const verts = new Float32Array(topVerts * 3);
+
     for (let gy = 0; gy < gridH; gy++) {
       for (let gx = 0; gx < gridW; gx++) {
         const h = hmap[gy * gridW + gx];
@@ -293,21 +449,19 @@ const Engine3D = (() => {
       }
     }
 
-    // Build top surface indices (2 triangles per quad)
     const topTriangles = (gridW - 1) * (gridH - 1) * 2;
     let totalTriangles = topTriangles;
 
-    // Side walls: 4 walls × (nSeg-1) × 2 triangles each
     if (solidBase) {
       totalTriangles += (gridW - 1) * 2 * 2; // front + back
       totalTriangles += (gridH - 1) * 2 * 2; // left + right
-      totalTriangles += 2;                    // base quad
+      totalTriangles += 2;                   // base quad
     }
 
     const indices = new Uint32Array(totalTriangles * 3);
     let iIdx = 0;
 
-    // Top surface
+    // Top surface quads
     for (let gy = 0; gy < gridH - 1; gy++) {
       for (let gx = 0; gx < gridW - 1; gx++) {
         const i00 = gy * gridW + gx;
@@ -319,10 +473,9 @@ const Engine3D = (() => {
       }
     }
 
-    // Compute area-weighted vertex normals
+    // Area-weighted normals
     const normals = new Float32Array(topVerts * 3);
-    const triCount_top = topTriangles;
-    for (let ti = 0; ti < triCount_top; ti++) {
+    for (let ti = 0; ti < topTriangles; ti++) {
       const ii = ti * 3;
       const ai = indices[ii] * 3, bi = indices[ii + 1] * 3, ci = indices[ii + 2] * 3;
       const ax = verts[ai], ay = verts[ai + 1], az = verts[ai + 2];
@@ -333,23 +486,20 @@ const Engine3D = (() => {
       const nx = uy * vvz - uz * vvy;
       const ny = uz * vvx - ux * vvz;
       const nz = ux * vvy - uy * vvx;
-      // Accumulate (area-weighted by cross product magnitude)
       for (const vi of [indices[ii], indices[ii + 1], indices[ii + 2]]) {
         normals[vi * 3] += nx;
         normals[vi * 3 + 1] += ny;
         normals[vi * 3 + 2] += nz;
       }
     }
-    // Normalize
     for (let vi = 0; vi < topVerts; vi++) {
       const ni = vi * 3;
       const len = Math.sqrt(normals[ni] ** 2 + normals[ni + 1] ** 2 + normals[ni + 2] ** 2) || 1;
       normals[ni] /= len; normals[ni + 1] /= len; normals[ni + 2] /= len;
     }
 
-    // Side walls + base: append as extra triangles (non-indexed for simplicity)
-    let extraTriangles = [];
-
+    // Side walls + base plate
+    const extraTriangles = [];
     if (solidBase) {
       const z0 = 0;
       // Front wall (gy=0)
@@ -419,115 +569,117 @@ const Engine3D = (() => {
       view.setFloat32(off, z, true); off += 4;
     }
 
-    // Top surface (indexed — compute per-face normal from cross product for STL)
     for (let ti = 0; ti < topTriangles; ti++) {
       const ii = ti * 3;
-      const ai = indices[ii], bi = indices[ii + 1], ci = indices[ii + 2];
-
-      // Average vertex normals for the face
-      let nx = (normals[ai * 3] + normals[bi * 3] + normals[ci * 3]) / 3;
-      let ny = (normals[ai * 3 + 1] + normals[bi * 3 + 1] + normals[ci * 3 + 1]) / 3;
-      let nz = (normals[ai * 3 + 2] + normals[bi * 3 + 2] + normals[ci * 3 + 2]) / 3;
-      const nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-      nx /= nl; ny /= nl; nz /= nl;
-
-      writeVec3(nx, ny, nz);
-      writeVec3(verts[ai * 3], verts[ai * 3 + 1], verts[ai * 3 + 2]);
-      writeVec3(verts[bi * 3], verts[bi * 3 + 1], verts[bi * 3 + 2]);
-      writeVec3(verts[ci * 3], verts[ci * 3 + 1], verts[ci * 3 + 2]);
+      const i0 = indices[ii] * 3, i1 = indices[ii + 1] * 3, i2 = indices[ii + 2] * 3;
+      const fnx = (normals[i0] + normals[i1] + normals[i2]) / 3;
+      const fny = (normals[i0 + 1] + normals[i1 + 1] + normals[i2 + 1]) / 3;
+      const fnz = (normals[i0 + 2] + normals[i1 + 2] + normals[i2 + 2]) / 3;
+      writeVec3(fnx, fny, fnz);
+      writeVec3(verts[i0], verts[i0 + 1], verts[i0 + 2]);
+      writeVec3(verts[i1], verts[i1 + 1], verts[i1 + 2]);
+      writeVec3(verts[i2], verts[i2 + 1], verts[i2 + 2]);
       view.setUint16(off, 0, true); off += 2;
     }
 
-    // Side walls + base (non-indexed)
-    for (const [a, b, c, n] of extraTriangles) {
-      writeVec3(n[0], n[1], n[2]);
-      writeVec3(a[0], a[1], a[2]);
-      writeVec3(b[0], b[1], b[2]);
-      writeVec3(c[0], c[1], c[2]);
+    for (const tri of extraTriangles) {
+      const [v0, v1, v2, norm] = tri;
+      writeVec3(norm[0], norm[1], norm[2]);
+      writeVec3(v0[0], v0[1], v0[2]);
+      writeVec3(v1[0], v1[1], v1[2]);
+      writeVec3(v2[0], v2[1], v2[2]);
       view.setUint16(off, 0, true); off += 2;
     }
 
     return buf;
   }
 
-  // ─── OBJ Export ───────────────────────────────────────────────────────────
+  // ─── OBJ Wavefront Export ─────────────────────────────────────────────────
 
   function buildOBJ(mesh, mtlName) {
-    const { verts, normals, indices, topVerts, extraTriangles, topTriangles } = mesh;
-    const lines = [
-      '# OBJ — 3D·4D Studio Ultra Quality',
-      `# Vertices: ${topVerts}, Triangles: ${topTriangles + extraTriangles.length}`,
-      `mtllib ${mtlName}.mtl`,
-      'o HeightmapMesh',
-      'usemtl Material',
-      ''
-    ];
+    const { verts, normals, indices, topTriangles, extraTriangles } = mesh;
+    const topVerts = verts.length / 3;
+    const lines = [];
 
-    // Vertices
-    for (let vi = 0; vi < topVerts; vi++) {
-      const b = vi * 3;
-      lines.push(`v ${verts[b].toFixed(4)} ${verts[b + 1].toFixed(4)} ${verts[b + 2].toFixed(4)}`);
+    lines.push('# 3D·4D Studio Ultra — Wavefront OBJ');
+    lines.push(`# Vertices: ${topVerts}`);
+    lines.push(`# Triangles: ${topTriangles + extraTriangles.length}`);
+    if (mtlName) {
+      lines.push(`mtllib ${mtlName}.mtl`);
+      lines.push(`usemtl ${mtlName}`);
     }
-    lines.push('');
 
-    // Vertex normals
+    // Top surface vertices & normals
     for (let vi = 0; vi < topVerts; vi++) {
-      const b = vi * 3;
-      lines.push(`vn ${normals[b].toFixed(4)} ${normals[b + 1].toFixed(4)} ${normals[b + 2].toFixed(4)}`);
+      const i = vi * 3;
+      lines.push(`v ${verts[i].toFixed(4)} ${verts[i + 1].toFixed(4)} ${verts[i + 2].toFixed(4)}`);
     }
-    lines.push('');
+    for (let vi = 0; vi < topVerts; vi++) {
+      const i = vi * 3;
+      lines.push(`vn ${normals[i].toFixed(4)} ${normals[i + 1].toFixed(4)} ${normals[i + 2].toFixed(4)}`);
+    }
 
-    // Faces (1-indexed)
+    // Top surface faces (1-based index)
+    lines.push('s 1');
     for (let ti = 0; ti < topTriangles; ti++) {
       const ii = ti * 3;
       const a = indices[ii] + 1, b = indices[ii + 1] + 1, c = indices[ii + 2] + 1;
       lines.push(`f ${a}//${a} ${b}//${b} ${c}//${c}`);
     }
 
-    // Extra (side walls, base) — write as separate vertices
-    let extraVBase = topVerts + 1;
-    for (const [a, b, c, n] of extraTriangles) {
-      lines.push(`v ${a[0].toFixed(4)} ${a[1].toFixed(4)} ${a[2].toFixed(4)}`);
-      lines.push(`v ${b[0].toFixed(4)} ${b[1].toFixed(4)} ${b[2].toFixed(4)}`);
-      lines.push(`v ${c[0].toFixed(4)} ${c[1].toFixed(4)} ${c[2].toFixed(4)}`);
-      lines.push(`vn ${n[0].toFixed(4)} ${n[1].toFixed(4)} ${n[2].toFixed(4)}`);
-    }
-    let extraNBase = topVerts + 1;
-    for (let i = 0; i < extraTriangles.length; i++) {
-      const vb = extraVBase + i * 3;
-      const nn = extraNBase + i;
-      lines.push(`f ${vb}//${nn} ${vb + 1}//${nn} ${vb + 2}//${nn}`);
+    // Extra triangles (side walls + base)
+    let extraVertBase = topVerts + 1;
+    for (const tri of extraTriangles) {
+      const [v0, v1, v2, norm] = tri;
+      lines.push(`v ${v0[0].toFixed(4)} ${v0[1].toFixed(4)} ${v0[2].toFixed(4)}`);
+      lines.push(`v ${v1[0].toFixed(4)} ${v1[1].toFixed(4)} ${v1[2].toFixed(4)}`);
+      lines.push(`v ${v2[0].toFixed(4)} ${v2[1].toFixed(4)} ${v2[2].toFixed(4)}`);
+      lines.push(`vn ${norm[0].toFixed(4)} ${norm[1].toFixed(4)} ${norm[2].toFixed(4)}`);
+      const vnIdx = extraVertBase;
+      const i0 = extraVertBase, i1 = extraVertBase + 1, i2 = extraVertBase + 2;
+      lines.push(`f ${i0}//${vnIdx} ${i1}//${vnIdx} ${i2}//${vnIdx}`);
+      extraVertBase += 3;
     }
 
     return lines.join('\n');
   }
 
   function buildMTL(opts) {
-    const r = parseInt(opts.color.slice(1, 3), 16) / 255;
-    const g = parseInt(opts.color.slice(3, 5), 16) / 255;
-    const b = parseInt(opts.color.slice(5, 7), 16) / 255;
+    const { color = '#4f8eff', metalness = 0, roughness = 0.5 } = opts;
+    const h = color.replace('#', '');
+    const r = (parseInt(h.slice(0, 2), 16) / 255).toFixed(4);
+    const g = (parseInt(h.slice(2, 4), 16) / 255).toFixed(4);
+    const b = (parseInt(h.slice(4, 6), 16) / 255).toFixed(4);
+    const Ns = ((1 - roughness) * 1000).toFixed(1);
+
     return [
-      '# MTL — 3D·4D Studio',
-      'newmtl Material',
-      `Kd ${r.toFixed(4)} ${g.toFixed(4)} ${b.toFixed(4)}`,
-      `Ka 0.15 0.15 0.15`,
-      `Ks ${(opts.metalness || 0).toFixed(3)} ${(opts.metalness || 0).toFixed(3)} ${(opts.metalness || 0).toFixed(3)}`,
-      `Ns ${((1 - (opts.roughness || 0.5)) * 900 + 10).toFixed(1)}`,
-      `d 1.0`,
-      `illum 2`,
+      '# 3D·4D Studio Ultra — Material Template Library',
+      'newmtl model_3d4d',
+      'Ka 0.1000 0.1000 0.1000',
+      `Kd ${r} ${g} ${b}`,
+      `Ks ${(metalness * 0.9).toFixed(4)} ${(metalness * 0.9).toFixed(4)} ${(metalness * 0.9).toFixed(4)}`,
+      `Ns ${Ns}`,
+      'd 1.0',
+      'illum 2'
     ].join('\n');
   }
 
-  // ─── Main Public API ──────────────────────────────────────────────────────
+  // ─── Edge Boost ───────────────────────────────────────────────────────────
 
-  /**
-   * @param {ImageData} imageData
-   * @param {Object} opts
-   * @param {Function} onProgress  (0..1, message)
-   */
+  function applyEdgeBoost(hmap, w, h) {
+    const blurred = laplacianSmooth(hmap, w, h, 2, 0.5);
+    const out = new Float32Array(hmap.length);
+    for (let i = 0; i < hmap.length; i++) {
+      out[i] = Math.max(0, Math.min(1, hmap[i] + 0.6 * (hmap[i] - blurred[i])));
+    }
+    return out;
+  }
+
+  // ─── Main Pipeline ────────────────────────────────────────────────────────
+
   function generate(imageData, opts, onProgress) {
     const {
-      mode = 'heightmap',
+      mode = 'portrait',
       resolution = 256,
       depthMM = 10,
       baseMM = 2,
@@ -539,9 +691,13 @@ const Engine3D = (() => {
       mirrorY = false,
       gamma = 1.0,
       edgeBoost = false,
-      bakeColors = false,    // bake original image colors + AO onto mesh
-      aoStrength = 0.5,      // AO cavity darkness strength
-      subdivPass = false,    // midpoint subdivision for extra smoothness
+      bakeColors = true,
+      aoStrength = 0.5,
+      subdivPass = false,
+      isolateSubject = true,
+      bgTolerance = 35,
+      domeDepth = 65,
+      invertDepth = false,
       color = '#4f8eff',
       metalness = 0,
       roughness = 0.5,
@@ -550,28 +706,28 @@ const Engine3D = (() => {
     const imgW = imageData.width, imgH = imageData.height;
     const data = imageData.data;
 
-    onProgress && onProgress(0.04, 'Sampling heightmap…');
+    onProgress && onProgress(0.04, 'Analyzing image & contours…');
 
     const gridW = Math.min(resolution, imgW);
     const gridH = Math.min(Math.round(resolution * imgH / imgW), imgH);
 
-    // 1. Build raw heightmap (super-sampled or direct)
+    // 1. Build heightmap (with super-sampling or direct)
     let hmap;
     if (superSample > 1) {
-      onProgress && onProgress(0.08, `Super-sampling ${superSample}× …`);
-      hmap = buildSuperSampledHeightmap(data, imgW, imgH, gridW, gridH, mode, superSample);
+      onProgress && onProgress(0.08, `Super-sampling ${superSample}× anti-aliased…`);
+      hmap = buildSuperSampledHeightmap(data, imgW, imgH, gridW, gridH, mode, superSample, opts);
     } else {
-      hmap = buildHeightMap(data, imgW, imgH, gridW, gridH, mode);
+      hmap = buildHeightMap(data, imgW, imgH, gridW, gridH, mode, opts);
     }
 
-    // 2. Gamma/levels enhancement
+    // 2. Gamma/levels correction
     if (gamma !== 1.0) {
       onProgress && onProgress(0.20, 'Applying gamma correction…');
       const stats = hmapStats(hmap);
       hmap = enhanceHeightmap(hmap, gamma, stats.min, stats.max);
     }
 
-    // 3. Smoothing
+    // 3. Multi-pass Edge-Preserving Smoothing
     if (smoothPasses > 0) {
       if (smoothMethod === 'bilateral' || smoothMethod === 'both') {
         onProgress && onProgress(0.28, 'Bilateral filter (edge-preserving)…');
@@ -580,17 +736,16 @@ const Engine3D = (() => {
         hmap = bilateralFilter(hmap, gridW, gridH, Math.ceil(sigmaS), sigmaS, sigmaR);
       }
       if (smoothMethod === 'laplacian' || smoothMethod === 'both') {
-        onProgress && onProgress(0.38, 'Laplacian smoothing…');
+        onProgress && onProgress(0.38, 'Laplacian organic smoothing…');
         hmap = laplacianSmooth(hmap, gridW, gridH, smoothPasses, 0.4);
       }
       if (smoothMethod === 'box') {
-        // Legacy box blur
         onProgress && onProgress(0.35, 'Box smoothing…');
         hmap = laplacianSmooth(hmap, gridW, gridH, smoothPasses, 0.5);
       }
     }
 
-    // 4. Edge boost (enhance detail sharpness)
+    // 4. Edge boost (micro-contrast unsharp mask)
     if (edgeBoost) {
       onProgress && onProgress(0.45, 'Edge enhancement…');
       hmap = applyEdgeBoost(hmap, gridW, gridH);
@@ -598,35 +753,32 @@ const Engine3D = (() => {
 
     // 4b. Subdivision pass (doubles vertex resolution)
     let finalGridW = gridW, finalGridH = gridH;
-    if (subdivPass && gridW < 257) { // only subdivide if resolution won't be too large
+    if (subdivPass && gridW < 257) {
       onProgress && onProgress(0.48, 'Subdivision pass…');
       const sub = subdivide(hmap, gridW, gridH);
       hmap = sub.hmap;
       finalGridW = sub.gridW;
       finalGridH = sub.gridH;
-    } else {
-      finalGridW = gridW;
-      finalGridH = gridH;
     }
 
-    // 5. Build indexed mesh
-    onProgress && onProgress(0.50, 'Building indexed mesh…');
+    // 5. Build indexed 3D mesh
+    onProgress && onProgress(0.50, 'Sculpting indexed 3D mesh…');
     const mesh = buildIndexedMesh(hmap, finalGridW, finalGridH, depthMM, baseMM, scaleMM, solidBase, mirrorY);
 
-    // 5b. Bake vertex colors from original image + AO
+    // 5b. Bake vertex colors from original image + Cavity AO
     let vertexColors = null;
     if (bakeColors) {
-      onProgress && onProgress(0.68, 'Baking vertex colors + AO…');
+      onProgress && onProgress(0.68, 'Baking photorealistic vertex colors + AO…');
       vertexColors = bakeVertexColors(data, imgW, imgH, hmap, finalGridW, finalGridH, aoStrength);
       mesh.vertexColors = vertexColors;
     }
 
     // 6. STL
-    onProgress && onProgress(0.75, 'Encoding STL binary…');
+    onProgress && onProgress(0.78, 'Encoding STL binary…');
     const stlBuffer = buildSTLBuffer(mesh);
 
-    // 7. OBJ
-    onProgress && onProgress(0.90, 'Encoding OBJ…');
+    // 7. OBJ + MTL
+    onProgress && onProgress(0.90, 'Encoding Wavefront OBJ…');
     const objText = buildOBJ(mesh, 'model_3d4d');
     const mtlText = buildMTL({ color, metalness, roughness });
 
@@ -637,7 +789,7 @@ const Engine3D = (() => {
       z: baseMM + depthMM,
     };
 
-    onProgress && onProgress(1.0, 'Done!');
+    onProgress && onProgress(1.0, 'Ready!');
 
     return {
       stlBuffer, objText, mtlText,
@@ -648,19 +800,17 @@ const Engine3D = (() => {
     };
   }
 
-  // ─── Edge Boost ───────────────────────────────────────────────────────────
-
-  function applyEdgeBoost(hmap, w, h) {
-    // Unsharp mask: result = original + amount × (original - blurred)
-    const blurred = laplacianSmooth(hmap, w, h, 2, 0.5);
-    const out = new Float32Array(hmap.length);
-    for (let i = 0; i < hmap.length; i++) {
-      out[i] = Math.max(0, Math.min(1, hmap[i] + 0.6 * (hmap[i] - blurred[i])));
-    }
-    return out;
-  }
-
-  return { generate, buildHeightMap, sampleBicubic, bilateralFilter, laplacianSmooth };
+  return {
+    generate,
+    buildHeightMap,
+    buildSuperSampledHeightmap,
+    sampleBicubic,
+    bilateralFilter,
+    laplacianSmooth,
+    detectBackgroundColor,
+    computeSubjectMask,
+    bakeVertexColors,
+  };
 
 })();
 
