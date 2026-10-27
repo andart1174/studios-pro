@@ -1623,7 +1623,7 @@
               <small data-en="Convert to grayscale" data-fr="Conversion N&B">Convert to
                 grayscale</small>
             </div>
-            <label class="sw"><input type="checkbox" id="tGrayscale" checked /><span class="sw-track"></span></label>
+            <label class="sw"><input type="checkbox" id="tGrayscale" /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
@@ -1652,11 +1652,11 @@
         <div class="spanel" id="sp-model3d">
           <div class="sec-label" data-en="3D Conversion Mode" data-fr="Mode de conversion 3D">3D Conversion Mode</div>
           <div class="mode-chips" id="modeChips3d">
-            <button class="mchip active" data-mode3d="portrait">👤 <span data-en="Portrait Relief" data-fr="Relief Portrait">Portrait Relief</span></button>
+            <button class="mchip active" data-mode3d="relief">🏔️ <span data-en="Ultra 3D Relief" data-fr="Relief 3D Ultra">Ultra 3D Relief</span></button>
+            <button class="mchip" data-mode3d="portrait">👤 <span data-en="Portrait Dome" data-fr="Dôme Portrait">Portrait Dome</span></button>
             <button class="mchip" data-mode3d="cameo">🪙 <span data-en="Coin Cameo" data-fr="Camée Médaille">Coin Cameo</span></button>
             <button class="mchip" data-mode3d="stamp">🏷️ <span data-en="Logo Stamp" data-fr="Tampon Logo">Logo Stamp</span></button>
             <button class="mchip" data-mode3d="heightmap">⛰️ <span data-en="Heightmap" data-fr="Carte hauteur">Heightmap</span></button>
-            <button class="mchip" data-mode3d="relief">🏔️ <span data-en="Surface Relief" data-fr="Relief Surface">Surface Relief</span></button>
             <button class="mchip" data-mode3d="lithophane">🕯️ <span data-en="Lithophane" data-fr="Lithophane">Lithophane</span></button>
             <button class="mchip" data-mode3d="emboss">🔲 <span data-en="Emboss" data-fr="Embossage">Emboss</span></button>
           </div>
@@ -1668,13 +1668,13 @@
               <span data-en="✂️ Isolate Subject (Remove Background)" data-fr="✂️ Isoler le sujet (Supprimer le fond)">✂️ Isolate Subject (Remove Background)</span>
               <small data-en="Suppresses background to flat 0mm base" data-fr="Abaisse le fond à la base plate 0mm">Suppresses background to flat 0mm base</small>
             </div>
-            <label class="sw"><input type="checkbox" id="tIsolateBg" checked /><span class="sw-track"></span></label>
+            <label class="sw"><input type="checkbox" id="tIsolateBg" /><span class="sw-track"></span></label>
           </div>
-          <div class="ctrl-row" id="bgTolRow">
+          <div class="ctrl-row" id="bgTolRow" style="display:none">
             <label><span data-en="Background Tolerance" data-fr="Tolérance du fond">Background Tolerance</span> <span class="ctrl-val" id="vBgTolerance">35</span>%</label>
             <input type="range" id="sBgTolerance" min="5" max="85" value="35" step="1" />
           </div>
-          <div class="ctrl-row" id="domeDepthRow">
+          <div class="ctrl-row" id="domeDepthRow" style="display:none">
             <label><span data-en="Anatomical Dome Curvature" data-fr="Courbure anatomique du dôme">Anatomical Dome Curvature</span> <span class="ctrl-val" id="vDomeDepth">65</span>%</label>
             <input type="range" id="sDomeDepth" min="0" max="100" value="65" step="5" />
           </div>
@@ -1700,7 +1700,7 @@
           <div class="ctrl-row">
             <label><span data-en="Extrusion Depth (mm)">Extrusion Depth (mm)</span> <span
                 class="ctrl-val" id="vDepth">10</span></label>
-            <input type="range" id="sDepth" min="1" max="100" value="10" />
+            <input type="range" id="sDepth" min="1" max="50" value="6" />
           </div>
           <div class="ctrl-row">
             <label><span data-en="Base Thickness (mm)">Base Thickness (mm)</span> <span

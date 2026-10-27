@@ -206,9 +206,9 @@ function applyMaterialPreset(mat) {
 
 function applyQualityPreset(preset) {
     const presets = {
-        draft: { resolution: 96, smoothing: 1, depth: 8, base: 1, ssuper: 1, method: 'box', gamma: 1.0, edgeBoost: false, bakeColors: true, subdivPass: false },
-        standard: { resolution: 192, smoothing: 3, depth: 10, base: 2, ssuper: 2, method: 'bilateral', gamma: 1.0, edgeBoost: false, bakeColors: true, subdivPass: false },
-        ultra: { resolution: 384, smoothing: 4, depth: 12, base: 3, ssuper: 4, method: 'both', gamma: 1.05, edgeBoost: true, bakeColors: true, subdivPass: true },
+        draft: { resolution: 96, smoothing: 1, depth: 5, base: 1, ssuper: 1, method: 'box', gamma: 1.0, edgeBoost: false, bakeColors: true, subdivPass: false },
+        standard: { resolution: 192, smoothing: 2, depth: 6, base: 2, ssuper: 2, method: 'bilateral', gamma: 1.0, edgeBoost: false, bakeColors: true, subdivPass: false },
+        ultra: { resolution: 320, smoothing: 3, depth: 7, base: 2, ssuper: 2, method: 'both', gamma: 1.0, edgeBoost: false, bakeColors: true, subdivPass: false },
     };
     const p = presets[preset];
     if (!p) return;
@@ -637,34 +637,43 @@ async function doGenerate() {
     showProgress(true, 'Analyzing image & contours…', 5);
 
     const modeEl = document.querySelector('[data-mode3d].active');
-    const mode3d = modeEl ? modeEl.dataset.mode3d : 'portrait';
+    const mode3d = modeEl ? modeEl.dataset.mode3d : 'relief';
 
     const ssuperEl = document.querySelector('[data-ssuper].active');
     const superSample = ssuperEl ? parseInt(ssuperEl.dataset.ssuper) : 2;
 
+    // Extract pure original full-color image data (not affected by grayscale/threshold controls)
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = App.image.naturalWidth;
+    colorCanvas.height = App.image.naturalHeight;
+    const colorCtx = colorCanvas.getContext('2d');
+    colorCtx.drawImage(App.image, 0, 0);
+    const rawColorData = colorCtx.getImageData(0, 0, colorCanvas.width, colorCanvas.height);
+
     const opts3d = {
         mode: mode3d,
         resolution: parseInt($('sResolution').value) || 256,
-        depthMM: parseFloat($('sDepth').value) || 10,
+        depthMM: parseFloat($('sDepth').value) || 6,
         baseMM: parseFloat($('sBase').value) || 2,
         scaleMM: parseFloat($('sScale').value) || 100,
         smoothPasses: parseInt($('sSmoothing').value) || 3,
         smoothMethod: $('sSmoothMethod') ? $('sSmoothMethod').value : 'bilateral',
         superSample,
         gamma: parseFloat($('sGamma').value) || 1.0,
-        edgeBoost: $('tEdgeBoost') ? $('tEdgeBoost').checked : false,
+        edgeBoost: false, // Prevents needle spikes
         bakeColors: $('tBakeColors') ? $('tBakeColors').checked : true,
-        aoStrength: $('sAO') ? parseFloat($('sAO').value) : 0.5,
-        subdivPass: $('tSubdiv') ? $('tSubdiv').checked : false,
+        aoStrength: $('sAO') ? parseFloat($('sAO').value) : 0.35,
+        subdivPass: false,
         solidBase: $('tSolidBase').checked,
         mirrorY: $('tMirrorY').checked,
-        isolateSubject: $('tIsolateBg') ? $('tIsolateBg').checked : true,
-        bgTolerance: $('sBgTolerance') ? parseFloat($('sBgTolerance').value) : 35,
-        domeDepth: $('sDomeDepth') ? parseFloat($('sDomeDepth').value) : 65,
+        isolateSubject: $('tIsolateBg') ? $('tIsolateBg').checked : false, // False by default! No tearing
+        bgTolerance: $('sBgTolerance') ? parseFloat($('sBgTolerance').value) : 40,
+        domeDepth: $('sDomeDepth') ? parseFloat($('sDomeDepth').value) : 55,
         invertDepth: $('tInvertDepth') ? $('tInvertDepth').checked : false,
         color: $('cBaseColor').value,
-        metalness: parseFloat($('sMetalness').value) || 0,
-        roughness: parseFloat($('sRoughness').value) || 0.5,
+        metalness: 0.05,
+        roughness: 0.65,
+        colorData: rawColorData,
     };
 
     await new Promise(r => setTimeout(r, 40));
@@ -749,22 +758,22 @@ function initThreeJS() {
     App.camera = new THREE.PerspectiveCamera(45, 400 / 300, 0.1, 5000);
     App.camera.position.set(60, 60, 160);
 
-    // Studio lighting rig
-    const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+    // Neutral Studio Relief Lighting (No colored purple/blue glares)
+    const ambient = new THREE.AmbientLight(0xffffff, 0.78);
     App.scene.add(ambient);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    keyLight.position.set(120, 180, 120);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    keyLight.position.set(80, 140, 100);
     keyLight.castShadow = true;
     App.scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x4f8eff, 0.55);
-    fillLight.position.set(-120, 60, -80);
+    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 0.35);
+    fillLight.position.set(-80, 60, -60);
     App.scene.add(fillLight);
 
-    const rimLight = new THREE.PointLight(0xa855f7, 0.8, 600);
-    rimLight.position.set(0, 140, -180);
-    App.scene.add(rimLight);
+    const backRim = new THREE.DirectionalLight(0xe2e8f0, 0.25);
+    backRim.position.set(0, 100, -120);
+    App.scene.add(backRim);
 
     setupOrbitControls(canvas3D);
 
@@ -964,8 +973,8 @@ function render3DPreview(result, opts) {
     const mat = new THREE.MeshStandardMaterial({
         color: hasVertexColors ? 0xffffff : colorHex,
         vertexColors: hasVertexColors,
-        metalness: Math.min(opts.metalness || 0, 0.7),
-        roughness: Math.max(opts.roughness || 0.5, 0.25),
+        metalness: hasVertexColors ? 0.05 : Math.min(opts.metalness || 0, 0.7),
+        roughness: hasVertexColors ? 0.65 : Math.max(opts.roughness || 0.5, 0.25),
         wireframe: App.wireframeMode,
         side: THREE.DoubleSide,
     });
