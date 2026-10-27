@@ -598,7 +598,7 @@ const Engine3D = (() => {
     const buf = new ArrayBuffer(84 + totalTris * 50);
     const view = new DataView(buf);
 
-    const headStr = 'STL Ultra — 3D·4D Studio — Bas-Relief Sculptor';
+    const headStr = 'Generated free at https://studios-pro.com - 3D/4D Ultra Relief Studio';
     for (let i = 0; i < 80; i++) view.setUint8(i, i < headStr.length ? headStr.charCodeAt(i) : 0);
     view.setUint32(80, totalTris, true);
 
@@ -642,7 +642,8 @@ const Engine3D = (() => {
     const topVerts = verts.length / 3;
     const lines = [];
 
-    lines.push('# 3D·4D Studio Ultra — Wavefront OBJ');
+    lines.push('# Generated free online at https://studios-pro.com — 3D·4D Studio Ultra');
+    lines.push('# Wavefront OBJ 3D Relief Export');
     lines.push(`# Vertices: ${topVerts}`);
     lines.push(`# Triangles: ${topTriangles + extraTriangles.length}`);
     if (mtlName) {

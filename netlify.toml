@@ -34,7 +34,31 @@
   status = 200
   force = true
 
-# Static HTML pages — serve them as-is (MUST be before the SPA catch-all)
+# Static HTML, XML, and verification files — serve them as-is (MUST be before the SPA catch-all)
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/feed.xml"
+  to = "/feed.xml"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/f89ae7b4f1094014a700fcd8d747035b.txt"
+  to = "/f89ae7b4f1094014a700fcd8d747035b.txt"
+  status = 200
+  force = false
+
 [[redirects]]
   from = "/faq.html"
   to = "/faq.html"
@@ -48,26 +72,56 @@
   force = false
 
 [[redirects]]
+  from = "/blog/"
+  to = "/blog/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/blog/*.html"
+  to = "/blog/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/blog/*"
-  to = "/blog/:splat"
+  to = "/blog/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/viewer/*.html"
+  to = "/viewer/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/viewer/*"
-  to = "/viewer/:splat"
+  to = "/viewer/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/convert/*.html"
+  to = "/convert/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/convert/*"
-  to = "/convert/:splat"
+  to = "/convert/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/ar-viewer/*.html"
+  to = "/ar-viewer/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/ar-viewer/*"
-  to = "/ar-viewer/:splat"
+  to = "/ar-viewer/:splat.html"
   status = 200
   force = false
 
@@ -78,20 +132,38 @@
   force = false
 
 [[redirects]]
+  from = "/cards/*.html"
+  to = "/cards/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/cards/*"
-  to = "/cards/:splat"
+  to = "/cards/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/tools/*.html"
+  to = "/tools/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/tools/*"
-  to = "/tools/:splat"
+  to = "/tools/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/compare/*.html"
+  to = "/compare/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/compare/*"
-  to = "/compare/:splat"
+  to = "/compare/:splat.html"
   status = 200
   force = false
 

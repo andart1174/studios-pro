@@ -610,6 +610,42 @@ const nicheTools = [
     featureEn: 'Optical transmission distance (TD) modeling, auto-palette color extraction, interactive layer slicing visualizer, G-code swap script generator, and native Bambu AMS 3MF export.',
     featureFr: 'Modélisation de transmission optique (TD), extraction de palette automatique, visualiseur de tranchage par couches, script G-code et export 3MF natif Bambu AMS.',
     ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg'
+  },
+  {
+    id: 'photo-to-3d-4d-relief-glb-stl',
+    ref: 'n3d',
+    titleEn: 'Free Photo to 3D Bas-Relief STL & 4D Animated GLB Generator | Studios-Pro',
+    titleFr: 'Convertisseur Photo en Bas-Relief 3D STL & GLB 4D Animé Gratuit | Studios-Pro',
+    descEn: 'Convert any 2D photograph into an ultra-smooth 3D portrait bas-relief STL/OBJ or 60 FPS animated 4D GLB and video hologram online in your browser.',
+    descFr: 'Transformez n\'importe quelle photo 2D en bas-relief 3D ultra-lisse STL/OBJ ou modèle GLB 4D animé à 60 FPS et vidéo hologramme en ligne.',
+    h1En: 'Free Photo to 3D Ultra Bas-Relief STL & 4D Animated GLB Studio',
+    h1Fr: 'Studio Photo vers Bas-Relief 3D Ultra STL & GLB 4D Animé Gratuit',
+    featureEn: 'Multi-scale Gaussian volume sculpting, anti-spike slope clamping, true RGB photo vertex color baking, 5 live 60 FPS 4D animations, and STL/OBJ/GLB/Video export.',
+    featureFr: 'Sculpture volumétrique multi-échelle, limiteur de pente anti-pics, couleurs photo RVB réelles par sommet, 5 animations 4D 60 FPS et export STL/OBJ/GLB/Vidéo.'
+  },
+  {
+    id: '3d-portrait-bas-relief-coin-medal-maker',
+    ref: 'n3d',
+    titleEn: 'Free 3D Portrait Bas-Relief, Coin & Medal STL Maker Online | Studios-Pro',
+    titleFr: 'Créateur de Portrait Bas-Relief 3D, Pièce & Médaille STL Gratuit | Studios-Pro',
+    descEn: 'Turn portraits, pets, and logos into 3D printable bas-relief sculptures, commemorative coins, and medals with smooth organic cushions and watertight STL export.',
+    descFr: 'Transformez portraits, animaux et logos en sculptures bas-relief 3D, pièces commémoratives et médailles avec coussin organique lisse et export STL étanche.',
+    h1En: 'Free Online 3D Portrait Bas-Relief, Coin & Medal STL Sculptor',
+    h1Fr: 'Sculpteur en Ligne de Portrait Bas-Relief 3D, Pièces & Médailles STL',
+    featureEn: 'Coin & Medal circular bevel framing, portrait dome inflation, bilateral harmonic smoothing, millimeter depth calibration, and watertight binary STL/OBJ export.',
+    featureFr: 'Cadre circulaire biseauté pour pièces et médailles, dôme de portrait organique, lissage harmonique bilatéral, calibrage en millimètres et export STL/OBJ étanche.'
+  },
+  {
+    id: 'animated-4d-glb-hologram-creator',
+    ref: 'n3d',
+    titleEn: 'Free 2D Photo to 4D Animated GLB & Video Hologram Maker | Studios-Pro',
+    titleFr: 'Créateur de GLB 4D Animé & Hologramme Vidéo depuis Photo 2D | Studios-Pro',
+    descEn: 'Create animated 4D GLB models and 60 FPS turnaround videos from any 2D image with 360 rotation, 3D pulse, levitation float, 2D-to-3D morphing, and surface waves.',
+    descFr: 'Créez des modèles GLB 4D animés et des vidéos 60 FPS à partir d\'une photo 2D avec rotation 360°, pulsation 3D, lévitation, morphing 2D-3D et onde de surface.',
+    h1En: 'Free 2D Photo to 4D Animated GLB & 60 FPS Video Generator',
+    h1Fr: 'Générateur de Modèles GLB 4D Animés & Vidéo 60 FPS depuis Photo',
+    featureEn: 'Real-time 60 FPS WebGL 4D viewport, embedded GLTF 2.0 keyframe animations (Rotation, Pulse, Float, Morph, Wave), PBR materials, and 1-click MP4/WebM video recording.',
+    featureFr: 'Aperçu WebGL 4D temps réel à 60 FPS, animations clés GLTF 2.0 intégrées (Rotation, Pulsation, Lévitation, Morph, Onde), matériaux PBR et enregistrement vidéo en 1 clic.'
   }
 ];
 
@@ -774,6 +810,46 @@ const comparisons = [
       { featureEn: 'Real-Time Optical Transmission Simulation (TD)', featureFr: 'Simulation de transmission optique (TD) en direct', us: 'Integrated Beer-Lambert Engine', competitor: 'Supported' },
       { featureEn: 'Layer-by-Layer Slicing Animation & Guide', featureFr: 'Animation de tranchage couche par couche & Guide', us: 'Interactive 3D Slicer Visualizer', competitor: 'Manual Slider View' },
       { featureEn: 'Interactive Standalone HTML Export', featureFr: 'Export HTML interactif autonome', us: 'Included (Shareable 3D Web File)', competitor: 'No' }
+    ]
+  },
+  {
+    id: 'free-alternative-to-bambu-studio-color-painting',
+    targetSoftware: 'Desktop 3MF Color Slicers',
+    ref: 'painter',
+    titleEn: 'Free Online Multi-Color 3MF Painter for Bambu Lab AMS & OrcaSlicer | Studios-Pro',
+    titleFr: 'Colorateur 3MF Multi-Couleurs en Ligne Gratuit pour Bambu Lab AMS & OrcaSlicer | Studios-Pro',
+    descEn: 'Paint STL and 3MF models directly in your browser on PC, Mac, iPad, or phone with AI Auto-Color, smart fill, and layer bands. Export multi-part 3MF for Bambu Studio and OrcaSlicer.',
+    descFr: 'Peignez vos modèles STL et 3MF directement dans le navigateur sur PC, Mac, iPad ou mobile avec IA Auto-Color et exportez en 3MF multi-pièces pour Bambu Studio et OrcaSlicer.',
+    h1En: 'Best Free Browser Multi-Color 3MF Painter for Bambu AMS & OrcaSlicer',
+    h1Fr: 'Meilleur Colorateur 3MF Multi-Couleurs en Ligne pour Bambu AMS & OrcaSlicer',
+    leadEn: 'Colorize single-color STL files into multi-color 3MF print projects anywhere—even on mobile phones and tablets—with 1-click AI anatomical auto-painting and purge waste estimation.',
+    leadFr: 'Transformez vos fichiers STL monochromes en projets 3MF multi-couleurs partout — même sur téléphone et tablette — avec peinture IA automatique en 1 clic et calcul de purge.',
+    table: [
+      { featureEn: 'Works on Mobile Phone, iPad & Chromebook', featureFr: 'Fonctionne sur Téléphone, iPad & Chromebook', us: 'Yes (Full Touch & Orbit UI)', competitor: 'No (Desktop Only)' },
+      { featureEn: '1-Click AI Anatomical Auto-Paint', featureFr: 'Peinture IA anatomique en 1 clic', us: 'Included (Eyes, Relief, Cavities, Base)', competitor: 'Manual Painting Only' },
+      { featureEn: 'Zero Software Installation', featureFr: 'Aucune installation requise', us: '100% Instant Web Browser', competitor: 'Heavy Desktop Installer' },
+      { featureEn: 'Multi-Part AMS 3MF Export', featureFr: 'Export 3MF Multi-Pièces pour AMS', us: 'Native Sub-Mesh 3MF Packaging', competitor: 'Supported' },
+      { featureEn: 'Real-Time Filament Purge Waste Calculator', featureFr: 'Calculateur de purge de filament en direct', us: 'Instant Gram & Swap Estimate', competitor: 'Requires Full G-Code Slice' }
+    ]
+  },
+  {
+    id: 'free-photo-to-3d-relief-sculptok-itslitho-alternative',
+    targetSoftware: 'SculptOK & ItsLitho',
+    ref: 'n3d',
+    titleEn: 'Best Free Unlimited Alternative to SculptOK & ItsLitho for 3D Relief | Studios-Pro',
+    titleFr: 'Meilleure Alternative Gratuite à SculptOK & ItsLitho pour Bas-Relief 3D | Studios-Pro',
+    descEn: 'Convert photos into ultra-smooth 3D bas-reliefs, portraits, coins, lithophanes, and animated 4D GLB models in your browser with no credit limits or cloud queues.',
+    descFr: 'Convertissez vos photos en bas-reliefs 3D ultra-lisses, portraits, médailles, lithophanies et modèles GLB 4D animés dans le navigateur sans file d\'attente cloud.',
+    h1En: 'Best Free In-Browser Alternative to SculptOK & ItsLitho',
+    h1Fr: 'Meilleure Alternative Gratuite en Ligne à SculptOK & ItsLitho',
+    leadEn: 'Generate professional 3D portrait bas-reliefs, lithophanes, embossed coins, and 60 FPS animated 4D GLB holograms locally on your GPU with full RGB photo color baking.',
+    leadFr: 'Générez des bas-reliefs de portraits 3D, lithophanies, pièces gravées et hologrammes GLB 4D animés à 60 FPS localement sur votre GPU avec couleurs photo RVB.',
+    table: [
+      { featureEn: 'Subscription / Credit Coins Required', featureFr: 'Abonnement ou crédits requis', us: 'Free Tier Included ($0)', competitor: 'Paid Credits per Image ($9 - $29/mo)' },
+      { featureEn: 'Multi-Scale Anti-Spike Bas-Relief Engine', featureFr: 'Moteur bas-relief multi-échelle sans pics', us: 'Gaussian Macro + Clamped Micro Detail', competitor: 'Cloud AI / Basic Heightmap' },
+      { featureEn: 'Animated 4D GLB & 60 FPS Video Export', featureFr: 'Export GLB 4D Animé & Vidéo 60 FPS', us: '5 Live 4D Animations + MP4/WebM Recorder', competitor: 'Static STL Only' },
+      { featureEn: 'True RGB Photo Vertex Color Baking', featureFr: 'Couleurs photo RVB réelles par sommet', us: 'Full Color 3D & 4D Mesh', competitor: 'Grayscale Only' },
+      { featureEn: '100% Private Local GPU Processing', featureFr: 'Traitement GPU 100% local et privé', us: 'Files Never Leave Your Device', competitor: 'Uploaded to Remote Servers' }
     ]
   }
 ];
@@ -1070,12 +1146,8 @@ const template = (page) => {
         "offers": {
           "@type": "Offer",
           "price": "0.00",
-          "priceCurrency": "USD"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "ratingCount": "142"
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
         },
         "description": "${page.descEn}",
         "url": "https://studios-pro.com/${pagePath}",
@@ -1289,6 +1361,92 @@ const template = (page) => {
                 <span data-fr>Ouvrir l'App Gratuite</span>
             </a>
         </div>
+
+        <!-- Technical Specifications & Workflow Table -->
+        <section style="margin-top: 55px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 32px; overflow-x: auto;">
+            <h2 style="font-size: 1.65rem; font-weight: 800; margin-top: 0; margin-bottom: 18px; color: #38bdf8;">
+                <span data-en>Technical Specifications &amp; Hardware Compatibility</span>
+                <span data-fr>Spécifications Techniques &amp; Compatibilité Matérielle</span>
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted); width: 35%;"><span data-en>Tool / Module</span><span data-fr>Outil / Module</span></th>
+                        <td style="padding: 12px 14px; color: #fff; font-weight: 600;"><span data-en>${page.h1En}</span><span data-fr>${page.h1Fr}</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Core Capabilities</span><span data-fr>Fonctionnalités Clés</span></th>
+                        <td style="padding: 12px 14px; color: #e2e8f0;"><span data-en>${page.featureEn}</span><span data-fr>${page.featureFr}</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Supported Formats</span><span data-fr>Formats Supportés</span></th>
+                        <td style="padding: 12px 14px; color: #38bdf8; font-weight: 600;">STL, OBJ, 3MF (Bambu AMS / OrcaSlicer), GLB / GLTF 2.0, DXF, SVG, G-Code, PNG/JPG</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Target Machines</span><span data-fr>Machines Compatibles</span></th>
+                        <td style="padding: 12px 14px; color: #e2e8f0;">Bambu Lab (X1C, P1S, A1 AMS), Prusa, Creality, Anycubic, Elegoo Resin, GRBL CNC &amp; Diode/CO2 Laser</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Execution &amp; Privacy</span><span data-fr>Exécution &amp; Confidentialité</span></th>
+                        <td style="padding: 12px 14px; color: #10b981; font-weight: 600;"><span data-en>100% Local In-Browser WebGL2 / WebAssembly (Desktop &amp; Mobile — No Cloud Upload)</span><span data-fr>100% Local dans le Navigateur WebGL2 / WebAssembly (PC &amp; Mobile — Aucun Envoi Cloud)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Internal SEO Cross-Linking Directory -->
+        <nav aria-label="Studios-Pro Complete Tool Directory" style="margin-top: 50px; padding: 32px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px;">
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 0; margin-bottom: 16px;">
+                <span data-en>Explore All Free 3D, 4D, Multi-Color 3MF &amp; CNC Studios</span>
+                <span data-fr>Explorer Tous les Studios 3D, 4D, 3MF Multi-Couleurs &amp; CNC Gratuits</span>
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; font-size: 0.9rem;">
+                <div>
+                    <strong style="color: #38bdf8; display: block; margin-bottom: 8px;">🔥 Flagship 3D &amp; 4D Studios</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/tools/photo-to-3d-4d-relief-glb-stl" style="color: var(--muted); text-decoration: none;">Photo to 3D/4D Relief &amp; GLB</a></li>
+                        <li><a href="/tools/multicolor-3mf-painter" style="color: var(--muted); text-decoration: none;">Multi-Color 3MF Painter (AMS)</a></li>
+                        <li><a href="/tools/3d-qr-wifi-coaster-generator" style="color: var(--muted); text-decoration: none;">3D QR Wi-Fi Coaster Maker</a></li>
+                        <li><a href="/tools/filament-painting-studio-online" style="color: var(--muted); text-decoration: none;">Filament Layer-Swap Painting</a></li>
+                        <li><a href="/tools/3d-portrait-bas-relief-coin-medal-maker" style="color: var(--muted); text-decoration: none;">3D Portrait Coin &amp; Medal STL</a></li>
+                        <li><a href="/tools/animated-4d-glb-hologram-creator" style="color: var(--muted); text-decoration: none;">4D Animated GLB &amp; Video Maker</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #a855f7; display: block; margin-bottom: 8px;">🛠️ Makers &amp; Generators</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/tools/lithophane-maker-online" style="color: var(--muted); text-decoration: none;">3D Lithophane Maker Online</a></li>
+                        <li><a href="/tools/image-to-cnc-relief" style="color: var(--muted); text-decoration: none;">Image to CNC Wood Relief STL</a></li>
+                        <li><a href="/tools/cryptex-puzzle-box-stl-generator" style="color: var(--muted); text-decoration: none;">Cryptex Puzzle Box STL Maker</a></li>
+                        <li><a href="/tools/3d-watch-mechanism-generator" style="color: var(--muted); text-decoration: none;">3D Watch Mechanism Generator</a></li>
+                        <li><a href="/tools/flexi-articulated-3d-generator" style="color: var(--muted); text-decoration: none;">Flexi Articulated 3D Generator</a></li>
+                        <li><a href="/tools/laser-cut-box-generator" style="color: var(--muted); text-decoration: none;">Laser Cut Finger-Joint Box DXF</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #00f3ff; display: block; margin-bottom: 8px;">🔄 Viewers &amp; Converters</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/viewer/stl" style="color: var(--muted); text-decoration: none;">Free Online STL Viewer</a></li>
+                        <li><a href="/viewer/3mf" style="color: var(--muted); text-decoration: none;">Online 3MF Print Inspector</a></li>
+                        <li><a href="/viewer/glb" style="color: var(--muted); text-decoration: none;">GLB / GLTF 3D Model Viewer</a></li>
+                        <li><a href="/viewer/dxf" style="color: var(--muted); text-decoration: none;">AutoCAD DXF Viewer Online</a></li>
+                        <li><a href="/convert/photo-to-3d-relief-stl" style="color: var(--muted); text-decoration: none;">Photo to 3D Relief STL</a></li>
+                        <li><a href="/convert/photo-to-filament-painting-3mf" style="color: var(--muted); text-decoration: none;">Photo to Filament Painting 3MF</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #10b981; display: block; margin-bottom: 8px;">⚖️ Free Software Alternatives</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/compare/free-alternative-to-hueforge" style="color: var(--muted); text-decoration: none;">Free HueForge Alternative</a></li>
+                        <li><a href="/compare/free-alternative-to-bambu-studio-color-painting" style="color: var(--muted); text-decoration: none;">Bambu 3MF Painter Alternative</a></li>
+                        <li><a href="/compare/free-photo-to-3d-relief-sculptok-itslitho-alternative" style="color: var(--muted); text-decoration: none;">SculptOK &amp; ItsLitho Alternative</a></li>
+                        <li><a href="/compare/free-alternative-to-meshmixer" style="color: var(--muted); text-decoration: none;">Free Meshmixer Alternative</a></li>
+                        <li><a href="/compare/vectric-aspire-free-alternative-browser" style="color: var(--muted); text-decoration: none;">Vectric Aspire CNC Alternative</a></li>
+                        <li><a href="/blog/" style="color: var(--muted); text-decoration: none;">📚 3D &amp; CNC Guides &amp; Tutorials</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
     </div>
 
     <script>
@@ -1540,14 +1698,8 @@ const compareTemplate = (comp) => {
           "offers": {
             "@type": "Offer",
             "price": "0",
-            "priceCurrency": "USD"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.9",
-            "ratingCount": "342",
-            "bestRating": "5",
-            "worstRating": "1"
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
           },
           "publisher": {
             "@type": "Organization",
@@ -1683,6 +1835,92 @@ const compareTemplate = (comp) => {
                 <span data-fr>Lancer l'Outil Gratuit</span>
             </a>
         </div>
+
+        <!-- Technical Specifications & Workflow Table -->
+        <section style="margin-top: 55px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 32px; overflow-x: auto;">
+            <h2 style="font-size: 1.65rem; font-weight: 800; margin-top: 0; margin-bottom: 18px; color: #38bdf8;">
+                <span data-en>Technical Specifications &amp; Hardware Compatibility</span>
+                <span data-fr>Spécifications Techniques &amp; Compatibilité Matérielle</span>
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted); width: 35%;"><span data-en>Tool / Module</span><span data-fr>Outil / Module</span></th>
+                        <td style="padding: 12px 14px; color: #fff; font-weight: 600;"><span data-en>${comp.h1En}</span><span data-fr>${comp.h1Fr}</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Core Capabilities</span><span data-fr>Fonctionnalités Clés</span></th>
+                        <td style="padding: 12px 14px; color: #e2e8f0;"><span data-en>${comp.leadEn}</span><span data-fr>${comp.leadFr}</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Supported Formats</span><span data-fr>Formats Supportés</span></th>
+                        <td style="padding: 12px 14px; color: #38bdf8; font-weight: 600;">STL, OBJ, 3MF (Bambu AMS / OrcaSlicer), GLB / GLTF 2.0, DXF, SVG, G-Code, PNG/JPG</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Target Machines</span><span data-fr>Machines Compatibles</span></th>
+                        <td style="padding: 12px 14px; color: #e2e8f0;">Bambu Lab (X1C, P1S, A1 AMS), Prusa, Creality, Anycubic, Elegoo Resin, GRBL CNC &amp; Diode/CO2 Laser</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 12px 14px; color: var(--muted);"><span data-en>Execution &amp; Privacy</span><span data-fr>Exécution &amp; Confidentialité</span></th>
+                        <td style="padding: 12px 14px; color: #10b981; font-weight: 600;"><span data-en>100% Local In-Browser WebGL2 / WebAssembly (Desktop &amp; Mobile — No Cloud Upload)</span><span data-fr>100% Local dans le Navigateur WebGL2 / WebAssembly (PC &amp; Mobile — Aucun Envoi Cloud)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Internal SEO Cross-Linking Directory -->
+        <nav aria-label="Studios-Pro Complete Tool Directory" style="margin-top: 50px; padding: 32px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px;">
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 0; margin-bottom: 16px;">
+                <span data-en>Explore All Free 3D, 4D, Multi-Color 3MF &amp; CNC Studios</span>
+                <span data-fr>Explorer Tous les Studios 3D, 4D, 3MF Multi-Couleurs &amp; CNC Gratuits</span>
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; font-size: 0.9rem;">
+                <div>
+                    <strong style="color: #38bdf8; display: block; margin-bottom: 8px;">🔥 Flagship 3D &amp; 4D Studios</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/tools/photo-to-3d-4d-relief-glb-stl" style="color: var(--muted); text-decoration: none;">Photo to 3D/4D Relief &amp; GLB</a></li>
+                        <li><a href="/tools/multicolor-3mf-painter" style="color: var(--muted); text-decoration: none;">Multi-Color 3MF Painter (AMS)</a></li>
+                        <li><a href="/tools/3d-qr-wifi-coaster-generator" style="color: var(--muted); text-decoration: none;">3D QR Wi-Fi Coaster Maker</a></li>
+                        <li><a href="/tools/filament-painting-studio-online" style="color: var(--muted); text-decoration: none;">Filament Layer-Swap Painting</a></li>
+                        <li><a href="/tools/3d-portrait-bas-relief-coin-medal-maker" style="color: var(--muted); text-decoration: none;">3D Portrait Coin &amp; Medal STL</a></li>
+                        <li><a href="/tools/animated-4d-glb-hologram-creator" style="color: var(--muted); text-decoration: none;">4D Animated GLB &amp; Video Maker</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #a855f7; display: block; margin-bottom: 8px;">🛠️ Makers &amp; Generators</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/tools/lithophane-maker-online" style="color: var(--muted); text-decoration: none;">3D Lithophane Maker Online</a></li>
+                        <li><a href="/tools/image-to-cnc-relief" style="color: var(--muted); text-decoration: none;">Image to CNC Wood Relief STL</a></li>
+                        <li><a href="/tools/cryptex-puzzle-box-stl-generator" style="color: var(--muted); text-decoration: none;">Cryptex Puzzle Box STL Maker</a></li>
+                        <li><a href="/tools/3d-watch-mechanism-generator" style="color: var(--muted); text-decoration: none;">3D Watch Mechanism Generator</a></li>
+                        <li><a href="/tools/flexi-articulated-3d-generator" style="color: var(--muted); text-decoration: none;">Flexi Articulated 3D Generator</a></li>
+                        <li><a href="/tools/laser-cut-box-generator" style="color: var(--muted); text-decoration: none;">Laser Cut Finger-Joint Box DXF</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #00f3ff; display: block; margin-bottom: 8px;">🔄 Viewers &amp; Converters</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/viewer/stl" style="color: var(--muted); text-decoration: none;">Free Online STL Viewer</a></li>
+                        <li><a href="/viewer/3mf" style="color: var(--muted); text-decoration: none;">Online 3MF Print Inspector</a></li>
+                        <li><a href="/viewer/glb" style="color: var(--muted); text-decoration: none;">GLB / GLTF 3D Model Viewer</a></li>
+                        <li><a href="/viewer/dxf" style="color: var(--muted); text-decoration: none;">AutoCAD DXF Viewer Online</a></li>
+                        <li><a href="/convert/photo-to-3d-relief-stl" style="color: var(--muted); text-decoration: none;">Photo to 3D Relief STL</a></li>
+                        <li><a href="/convert/photo-to-filament-painting-3mf" style="color: var(--muted); text-decoration: none;">Photo to Filament Painting 3MF</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong style="color: #10b981; display: block; margin-bottom: 8px;">⚖️ Free Software Alternatives</strong>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="/compare/free-alternative-to-hueforge" style="color: var(--muted); text-decoration: none;">Free HueForge Alternative</a></li>
+                        <li><a href="/compare/free-alternative-to-bambu-studio-color-painting" style="color: var(--muted); text-decoration: none;">Bambu 3MF Painter Alternative</a></li>
+                        <li><a href="/compare/free-photo-to-3d-relief-sculptok-itslitho-alternative" style="color: var(--muted); text-decoration: none;">SculptOK &amp; ItsLitho Alternative</a></li>
+                        <li><a href="/compare/free-alternative-to-meshmixer" style="color: var(--muted); text-decoration: none;">Free Meshmixer Alternative</a></li>
+                        <li><a href="/compare/vectric-aspire-free-alternative-browser" style="color: var(--muted); text-decoration: none;">Vectric Aspire CNC Alternative</a></li>
+                        <li><a href="/blog/" style="color: var(--muted); text-decoration: none;">📚 3D &amp; CNC Guides &amp; Tutorials</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
     </div>
 
     <script>
