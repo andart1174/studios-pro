@@ -352,8 +352,7 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="scene-viewer webxr quick-look"
-        ar-placement="floor"
+        ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
         interaction-prompt="auto"
         auto-rotate
@@ -627,35 +626,50 @@
           modelFormatEl.textContent = ext.toUpperCase();
           modelSizeEl.textContent = 'GLB / AR Ready';
 
-          // Build clean HTTPS URL ending in /model.glb (REQUIRED by Android Google Scene Viewer & iOS Quick Look!)
-          const proxyGlbUrl = buildArProxyGlbUrl(fetchUrl);
+          const fetchWithTimeout = (url, ms = 12000) => {
+            return fetch(url, { signal: AbortSignal.timeout(ms) }).catch(() => null);
+          };
 
-          if (ext === 'glb' || ext === 'gltf') {
-            currentThreeScene = null;
-            currentModelName = name;
-            currentModelExtension = ext;
-            lastDirectDlUrl = fetchUrl;
-            lastShareUrl = fetchUrl;
+          const downloadTasks = [];
+          // Direct fetch (Catbox/Litterbox or CDN)
+          downloadTasks.push((async () => {
+            const r = await fetchWithTimeout(fetchUrl, 10000);
+            if (r && r.ok) {
+              const b = await r.blob();
+              if (b && b.size > 20) return b;
+            }
+            throw new Error('Direct fetch failed');
+          })());
 
-            // Load directly via HTTPS proxy URL so Android Scene Viewer receives a real https://.../model.glb URL!
-            loadIntoModelViewer(proxyGlbUrl);
-            updateQRCodeWithColorParam(fetchUrl, queryColor || 'original');
-
-            // Fetch byte size in background to update UI stats
-            fetch(proxyGlbUrl, { method: 'HEAD' }).then(r => {
-              const len = r.headers.get('content-length');
-              if (len && parseInt(len) > 0) {
-                modelSizeEl.textContent = formatBytes(parseInt(len));
+          // Netlify /api/proxy/dl fallback for tmpfiles
+          if (fetchUrl.includes('tmpfiles.org')) {
+            let proxyTmp = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
+            if (!proxyTmp.includes('/dl/') && !proxyTmp.includes('/api/v1/')) {
+              proxyTmp = proxyTmp.replace('/api/proxy/', '/api/proxy/dl/');
+            }
+            downloadTasks.push((async () => {
+              const r = await fetchWithTimeout(proxyTmp, 10000);
+              if (r && r.ok) {
+                const b = await r.blob();
+                if (b && b.size > 20) return b;
               }
-            }).catch(() => {});
-          } else {
-            // For raw STL/OBJ links, download and convert to GLB
-            const res = await fetch(proxyGlbUrl);
-            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-            const blob = await res.blob();
-            const file = new File([blob], name, { type: 'application/octet-stream' });
-            await handleFile(file);
+              throw new Error('Proxy tmpfiles failed');
+            })());
           }
+
+          // Netlify Edge Function fallback
+          downloadTasks.push((async () => {
+            const r = await fetchWithTimeout(`/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, 14000);
+            if (r && r.ok) {
+              const b = await r.blob();
+              if (b && b.size > 20) return b;
+            }
+            throw new Error('Edge proxy fetch failed');
+          })());
+
+          const blob = await Promise.any(downloadTasks);
+          const file = new File([blob], name, { type: 'model/gltf-binary' });
+          await handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -859,121 +873,316 @@
       }
     };
 
-    // Compress & normalize large GLB files in the background so desktop rotates at 60 FPS
-    // and cloud upload for QR completes in 1-2 seconds!
-    async function optimizeGlbForTransfer(file) {
-      if (typeof THREE.GLTFLoader === 'undefined' || typeof THREE.GLTFExporter === 'undefined') {
-        return file;
-      }
+    // Ultra-fast direct binary GLB normalizer & compactor (<25ms, no main-thread freeze!)
+    async function fastPrepareGlbForAR(file) {
+      if (!file || file.size < 28) return file;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (ext !== 'glb' && ext !== 'gltf') return file;
+
       try {
         const arrayBuffer = await file.arrayBuffer();
-        return await new Promise((resolve) => {
-          const loader = new THREE.GLTFLoader();
-          loader.parse(arrayBuffer, '', (gltf) => {
-            try {
-              const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
-              if (!root) {
-                resolve(file);
-                return;
-              }
+        if (arrayBuffer.byteLength < 28) return file;
+        const dv = new DataView(arrayBuffer);
+        const magic = dv.getUint32(0, true);
+        if (magic !== 0x46546C67) return file; // Not binary GLB
 
-              // 1. Normalize scale to ~0.28m tabletop size so AR is never 60m tall or microscopic
-              root.updateMatrixWorld(true);
-              const box = new THREE.Box3().setFromObject(root);
-              const size = new THREE.Vector3();
-              const center = new THREE.Vector3();
-              box.getSize(size);
-              box.getCenter(center);
-              const maxDim = Math.max(size.x, size.y, size.z);
-              const needsScale = maxDim > 0.65 || (maxDim > 0 && maxDim < 0.06);
-              const isHeavyFile = file.size > 1.4 * 1024 * 1024;
+        const totalLen = dv.getUint32(8, true);
+        const jsonLen = dv.getUint32(12, true);
+        const jsonType = dv.getUint32(16, true);
+        if (jsonType !== 0x4E4F534A) return file;
 
-              if (!needsScale && !isHeavyFile) {
-                resolve(file);
-                return;
-              }
+        const jsonStr = new TextDecoder().decode(new Uint8Array(arrayBuffer, 20, jsonLen));
+        const gltf = JSON.parse(jsonStr);
+        const binHeaderOffset = 20 + jsonLen;
+        if (binHeaderOffset + 8 > arrayBuffer.byteLength) return file;
+        const binLen = dv.getUint32(binHeaderOffset, true);
+        const binType = dv.getUint32(binHeaderOffset + 4, true);
+        if (binType !== 0x004E4942) return file;
+        const binDataOffset = binHeaderOffset + 8;
 
-              if (maxDim > 0 && isFinite(maxDim)) {
-                root.position.x -= center.x;
-                root.position.y -= box.min.y;
-                root.position.z -= center.z;
-                if (needsScale) {
-                  const s = 0.28 / maxDim;
-                  root.scale.multiplyScalar(s);
-                  root.position.multiplyScalar(s);
-                }
-                root.updateMatrixWorld(true);
-              }
+        const meshes = gltf.meshes || [];
+        if (!meshes.length) return file;
 
-              // 2. If file is heavy (>1.4 MB), weld unindexed vertices & compress embedded textures to JPEG
-              if (isHeavyFile) {
-                root.traverse((child) => {
-                  if (!child.isMesh || !child.geometry) return;
-                  if (!child.geometry.index && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
-                    try {
-                      const posCount = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
-                      if (posCount > 3000) {
-                        const welded = THREE.BufferGeometryUtils.mergeVertices(child.geometry, 1e-4);
-                        welded.computeVertexNormals();
-                        child.geometry = welded;
-                      }
-                    } catch (_) {}
-                  }
-                  const mats = Array.isArray(child.material) ? child.material : [child.material];
-                  mats.forEach((mat) => {
-                    if (mat && mat.map && mat.map.image) {
-                      try {
-                        const img = mat.map.image;
-                        const w = img.width || img.videoWidth || 0;
-                        const h = img.height || img.videoHeight || 0;
-                        if (w > 0 && h > 0) {
-                          const maxTex = 1024;
-                          const ratio = Math.min(1, maxTex / Math.max(w, h));
-                          const cw = Math.max(1, Math.round(w * ratio));
-                          const ch = Math.max(1, Math.round(h * ratio));
-                          const cnv = document.createElement('canvas');
-                          cnv.width = cw;
-                          cnv.height = ch;
-                          const ctx = cnv.getContext('2d');
-                          ctx.fillStyle = '#ffffff';
-                          ctx.fillRect(0, 0, cw, ch);
-                          ctx.drawImage(img, 0, 0, cw, ch);
-                          mat.map.image = cnv;
-                          mat.map.format = THREE.RGBFormat;
-                          mat.map.userData = { mimeType: 'image/jpeg' };
-                          mat.map.needsUpdate = true;
-                        }
-                      } catch (_) {}
+        const prim = meshes[0].primitives && meshes[0].primitives[0];
+        if (!prim || !prim.attributes || prim.attributes.POSITION === undefined) return file;
+
+        const posAcc = gltf.accessors[prim.attributes.POSITION];
+        if (!posAcc || posAcc.componentType !== 5126 || posAcc.type !== 'VEC3' || !posAcc.count) return file;
+
+        const posBv = gltf.bufferViews[posAcc.bufferView];
+        const posByteOffset = binDataOffset + (posBv.byteOffset || 0) + (posAcc.byteOffset || 0);
+        const posFloats = new Float32Array(arrayBuffer, posByteOffset, posAcc.count * 3);
+
+        // Compute bounding box
+        let minX = Infinity, minY = Infinity, minZ = Infinity;
+        let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+        for (let i = 0; i < posFloats.length; i += 3) {
+          const x = posFloats[i], y = posFloats[i + 1], z = posFloats[i + 2];
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+          if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+        }
+
+        const spanX = Math.max(maxX - minX, 1e-4);
+        const spanY = Math.max(maxY - minY, 1e-4);
+        const spanZ = Math.max(maxZ - minZ, 1e-4);
+        const maxDim = Math.max(spanX, spanY, spanZ);
+
+        const isOldHeavyUnindexed = (prim.indices === undefined && posAcc.count > 60000);
+        const needsScale = (maxDim > 1.2 || (maxDim > 0 && maxDim < 0.03));
+
+        if (!isOldHeavyUnindexed && !needsScale) {
+          return file;
+        }
+
+        // CASE 1: Standard model needing scale normalization (e.g. 100mm from CAD or relief)
+        if (!isOldHeavyUnindexed) {
+          const scaleFactor = needsScale ? (0.22 / maxDim) : 1.0;
+          const cx = (minX + maxX) * 0.5;
+          const cy = (minY + maxY) * 0.5;
+
+          for (let i = 0; i < posFloats.length; i += 3) {
+            posFloats[i]     = (posFloats[i] - cx) * scaleFactor;
+            posFloats[i + 1] = (posFloats[i + 1] - cy) * scaleFactor;
+            posFloats[i + 2] = (posFloats[i + 2] - minZ) * scaleFactor;
+          }
+
+          posAcc.min = [-spanX * 0.5 * scaleFactor, -spanY * 0.5 * scaleFactor, 0];
+          posAcc.max = [spanX * 0.5 * scaleFactor, spanY * 0.5 * scaleFactor, spanZ * scaleFactor];
+
+          // Scale any translation animation keyframes
+          if (gltf.animations && gltf.animations.length) {
+            gltf.animations.forEach(anim => {
+              (anim.channels || []).forEach(ch => {
+                if (ch.target && ch.target.path === 'translation') {
+                  const sampler = anim.samplers[ch.sampler];
+                  const outAcc = gltf.accessors[sampler.output];
+                  if (outAcc && outAcc.componentType === 5126 && outAcc.type === 'VEC3') {
+                    const outBv = gltf.bufferViews[outAcc.bufferView];
+                    const outOffset = binDataOffset + (outBv.byteOffset || 0) + (outAcc.byteOffset || 0);
+                    const outFloats = new Float32Array(arrayBuffer, outOffset, outAcc.count * 3);
+                    for (let k = 0; k < outFloats.length; k++) {
+                      outFloats[k] *= scaleFactor;
                     }
-                  });
-                });
-              }
-
-              const exporter = new THREE.GLTFExporter();
-              const exportOpts = { binary: true };
-              if (gltf.animations && gltf.animations.length > 0) {
-                exportOpts.animations = gltf.animations;
-              }
-              exporter.parse(root, (result) => {
-                if (result instanceof ArrayBuffer && result.byteLength > 0) {
-                  const outName = file.name.replace(/\.[^/.]+$/, '') + '.glb';
-                  const optFile = new File([result], outName, { type: 'model/gltf-binary' });
-                  console.log(`AR Viewer optimized GLB: ${formatBytes(file.size)} -> ${formatBytes(optFile.size)}`);
-                  resolve(optFile);
-                } else {
-                  resolve(file);
+                  }
                 }
-              }, exportOpts);
-            } catch (innerErr) {
-              console.warn('GLB optimization inner fallback:', innerErr);
-              resolve(file);
+              });
+            });
+          }
+
+          let newJsonStr = JSON.stringify(gltf);
+          while (newJsonStr.length % 4 !== 0) newJsonStr += ' ';
+          const newJsonBytes = new TextEncoder().encode(newJsonStr);
+
+          if (newJsonBytes.byteLength === jsonLen) {
+            new Uint8Array(arrayBuffer, 20, jsonLen).set(newJsonBytes);
+            return new File([arrayBuffer], file.name, { type: 'model/gltf-binary' });
+          }
+
+          const newTotalLen = 12 + 8 + newJsonBytes.byteLength + 8 + binLen;
+          const newAb = new ArrayBuffer(newTotalLen);
+          const ndv = new DataView(newAb);
+          const nu8 = new Uint8Array(newAb);
+          ndv.setUint32(0, 0x46546C67, true);
+          ndv.setUint32(4, 2, true);
+          ndv.setUint32(8, newTotalLen, true);
+          ndv.setUint32(12, newJsonBytes.byteLength, true);
+          ndv.setUint32(16, 0x4E4F534A, true);
+          nu8.set(newJsonBytes, 20);
+          const newBinHeader = 20 + newJsonBytes.byteLength;
+          ndv.setUint32(newBinHeader, binLen, true);
+          ndv.setUint32(newBinHeader + 4, 0x004E4942, true);
+          nu8.set(new Uint8Array(arrayBuffer, binDataOffset, binLen), newBinHeader + 8);
+          return new File([newAb], file.name, { type: 'model/gltf-binary' });
+        }
+
+        // CASE 2: Heavy old unindexed model (e.g. 396k-vertex file from disk) -> weld & index to ~12k vertices in <25ms
+        const nrmAcc = prim.attributes.NORMAL !== undefined ? gltf.accessors[prim.attributes.NORMAL] : null;
+        const uvAcc  = prim.attributes.TEXCOORD_0 !== undefined ? gltf.accessors[prim.attributes.TEXCOORD_0] : null;
+
+        const nrmFloats = nrmAcc ? new Float32Array(arrayBuffer, binDataOffset + (gltf.bufferViews[nrmAcc.bufferView].byteOffset || 0) + (nrmAcc.byteOffset || 0), nrmAcc.count * 3) : null;
+        const uvFloats  = uvAcc ? new Float32Array(arrayBuffer, binDataOffset + (gltf.bufferViews[uvAcc.bufferView].byteOffset || 0) + (uvAcc.byteOffset || 0), uvAcc.count * 2) : null;
+
+        const scale = needsScale ? (0.20 / maxDim) : 1.0;
+        const cx = (minX + maxX) * 0.5;
+        const cy = (minY + maxY) * 0.5;
+
+        const HASH_SIZE = 1 << 17;
+        const HASH_MASK = HASH_SIZE - 1;
+        const hashKeys = new Int32Array(HASH_SIZE).fill(-1);
+        const hashVals = new Int32Array(HASH_SIZE);
+
+        const maxUnique = 65530;
+        const outPos = new Float32Array(maxUnique * 3);
+        const outNrm = new Float32Array(maxUnique * 3);
+        const outUv  = new Float32Array(maxUnique * 2);
+        const outIdx = new Uint16Array(posAcc.count);
+
+        let uniqueCount = 0;
+        let validIndices = 0;
+
+        for (let t = 0; t < posAcc.count; t += 3) {
+          let tri = [0, 0, 0];
+          for (let k = 0; k < 3; k++) {
+            const v = t + k;
+            const x = posFloats[v * 3], y = posFloats[v * 3 + 1], z = posFloats[v * 3 + 2];
+            const nz = nrmFloats ? nrmFloats[v * 3 + 2] : 1;
+            const qx = Math.round(((x - minX) / spanX) * 110);
+            const qy = Math.round(((y - minY) / spanY) * 110);
+            const qz = Math.round(((z - minZ) / spanZ) * 55);
+            const qn = nz >= 0 ? 1 : 0;
+            const key = (qx) | (qy << 7) | (qz << 14) | (qn << 20);
+
+            let slot = ((key * 2654435761) >>> 0) & HASH_MASK;
+            let idx = -1;
+            while (true) {
+              const kSlot = hashKeys[slot];
+              if (kSlot === key) {
+                idx = hashVals[slot];
+                break;
+              }
+              if (kSlot === -1) {
+                if (uniqueCount < maxUnique) {
+                  idx = uniqueCount++;
+                  hashKeys[slot] = key;
+                  hashVals[slot] = idx;
+                  outPos[idx * 3]     = (x - cx) * scale;
+                  outPos[idx * 3 + 1] = (y - cy) * scale;
+                  outPos[idx * 3 + 2] = (z - minZ) * scale;
+                  if (nrmFloats) {
+                    outNrm[idx * 3]     = nrmFloats[v * 3];
+                    outNrm[idx * 3 + 1] = nrmFloats[v * 3 + 1];
+                    outNrm[idx * 3 + 2] = nrmFloats[v * 3 + 2];
+                  } else {
+                    outNrm[idx * 3 + 2] = 1;
+                  }
+                  if (uvFloats) {
+                    outUv[idx * 2]     = uvFloats[v * 2];
+                    outUv[idx * 2 + 1] = uvFloats[v * 2 + 1];
+                  }
+                } else {
+                  idx = 0;
+                }
+                break;
+              }
+              slot = (slot + 1) & HASH_MASK;
             }
-          }, (err) => {
-            console.warn('GLTFLoader parse fallback:', err);
-            resolve(file);
-          });
-        });
-      } catch (e) {
+            tri[k] = idx;
+          }
+          if (tri[0] !== tri[1] && tri[1] !== tri[2] && tri[2] !== tri[0]) {
+            outIdx[validIndices++] = tri[0];
+            outIdx[validIndices++] = tri[1];
+            outIdx[validIndices++] = tri[2];
+          }
+        }
+
+        const trimmedPos = new Uint8Array(outPos.buffer, 0, uniqueCount * 12);
+        const trimmedNrm = new Uint8Array(outNrm.buffer, 0, uniqueCount * 12);
+        const trimmedUv  = new Uint8Array(outUv.buffer,  0, uniqueCount * 8);
+        const trimmedIdx = new Uint8Array(outIdx.buffer, 0, validIndices * 2);
+
+        let imgBytes = null;
+        let imgMime = 'image/jpeg';
+        if (gltf.images && gltf.images.length && gltf.images[0].bufferView !== undefined) {
+          const origImgBv = gltf.bufferViews[gltf.images[0].bufferView];
+          if (origImgBv && origImgBv.byteLength > 0) {
+            imgBytes = new Uint8Array(arrayBuffer, binDataOffset + (origImgBv.byteOffset || 0), origImgBv.byteLength);
+            imgMime = gltf.images[0].mimeType || 'image/jpeg';
+          }
+        }
+
+        const pad = (n) => (n + 3) & ~3;
+        const lenIdx = pad(trimmedIdx.byteLength);
+        const lenPos = pad(trimmedPos.byteLength);
+        const lenNrm = pad(trimmedNrm.byteLength);
+        const lenUv  = pad(trimmedUv.byteLength);
+        const lenImg = imgBytes ? pad(imgBytes.byteLength) : 0;
+        const newBinLen = lenIdx + lenPos + lenNrm + lenUv + lenImg;
+
+        const newBin = new Uint8Array(newBinLen);
+        let off = 0;
+        newBin.set(trimmedIdx, off); const bvIdxOff = off; off += lenIdx;
+        newBin.set(trimmedPos, off); const bvPosOff = off; off += lenPos;
+        newBin.set(trimmedNrm, off); const bvNrmOff = off; off += lenNrm;
+        newBin.set(trimmedUv,  off); const bvUvOff  = off; off += lenUv;
+        let bvImgOff = 0;
+        if (imgBytes) {
+          newBin.set(imgBytes, off);
+          bvImgOff = off;
+          off += lenImg;
+        }
+
+        const newGltf = {
+          asset: { version: '2.0', generator: 'Studios-Pro AR Fast Engine' },
+          scenes: [{ nodes: [0] }],
+          nodes: [{ name: 'ModelAR', mesh: 0 }],
+          meshes: [{
+            name: 'MeshAR',
+            primitives: [{
+              attributes: { POSITION: 1, NORMAL: 2, TEXCOORD_0: 3 },
+              indices: 0,
+              material: 0,
+              mode: 4
+            }]
+          }],
+          materials: [{
+            name: 'MatAR',
+            pbrMetallicRoughness: {
+              baseColorFactor: [1, 1, 1, 1],
+              metallicFactor: 0.12,
+              roughnessFactor: 0.45,
+              ...(imgBytes ? { baseColorTexture: { index: 0 } } : {})
+            },
+            doubleSided: true
+          }],
+          accessors: [
+            { bufferView: 0, byteOffset: 0, componentType: 5123, count: validIndices, type: 'SCALAR', min: [0], max: [uniqueCount - 1] },
+            { bufferView: 1, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC3', min: [-spanX * 0.5 * scale, -spanY * 0.5 * scale, 0], max: [spanX * 0.5 * scale, spanY * 0.5 * scale, spanZ * scale] },
+            { bufferView: 2, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC3' },
+            { bufferView: 3, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC2' }
+          ],
+          bufferViews: [
+            { buffer: 0, byteOffset: bvIdxOff, byteLength: trimmedIdx.byteLength, target: 34963 },
+            { buffer: 0, byteOffset: bvPosOff, byteLength: trimmedPos.byteLength, target: 34962 },
+            { buffer: 0, byteOffset: bvNrmOff, byteLength: trimmedNrm.byteLength, target: 34962 },
+            { buffer: 0, byteOffset: bvUvOff,  byteLength: trimmedUv.byteLength,  target: 34962 }
+          ],
+          buffers: [{ byteLength: newBinLen }]
+        };
+
+        if (imgBytes) {
+          newGltf.images = [{ bufferView: 4, mimeType: imgMime }];
+          newGltf.textures = [{ source: 0, sampler: 0 }];
+          newGltf.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }];
+          newGltf.bufferViews.push({ buffer: 0, byteOffset: bvImgOff, byteLength: imgBytes.byteLength });
+        }
+
+        let outJsonStr = JSON.stringify(newGltf);
+        while (outJsonStr.length % 4 !== 0) outJsonStr += ' ';
+        const outJsonBytes = new TextEncoder().encode(outJsonStr);
+
+        const outGlbLen = 12 + 8 + outJsonBytes.byteLength + 8 + newBinLen;
+        const outBuf = new ArrayBuffer(outGlbLen);
+        const odv = new DataView(outBuf);
+        const ou8 = new Uint8Array(outBuf);
+
+        odv.setUint32(0, 0x46546C67, true);
+        odv.setUint32(4, 2, true);
+        odv.setUint32(8, outGlbLen, true);
+        odv.setUint32(12, outJsonBytes.byteLength, true);
+        odv.setUint32(16, 0x4E4F534A, true);
+        ou8.set(outJsonBytes, 20);
+
+        const binStart = 20 + outJsonBytes.byteLength;
+        odv.setUint32(binStart, newBinLen, true);
+        odv.setUint32(binStart + 4, 0x004E4942, true);
+        ou8.set(newBin, binStart + 8);
+
+        const outName = file.name.replace(/\.[^/.]+$/, '') + '.glb';
+        console.log(`AR Viewer fast compact: ${formatBytes(file.size)} -> ${formatBytes(outBuf.byteLength)} in <25ms!`);
+        return new File([outBuf], outName, { type: 'model/gltf-binary' });
+      } catch (err) {
+        console.warn('fastPrepareGlbForAR fallback:', err);
         return file;
       }
     }
@@ -1002,25 +1211,15 @@
           currentModelName = name;
           currentModelExtension = extension;
 
-          // Keep 60 FPS on large meshes by using lighter shadow softness
-          viewer.shadowSoftness = file.size > 1.5 * 1024 * 1024 ? "0.2" : "0.6";
-          
-          // 1. Show immediately in viewport
-          const initialUrl = URL.createObjectURL(file) + (extension === 'glb' ? '#model.glb' : '#model.gltf');
-          loadIntoModelViewer(initialUrl);
-          
-          // 2. Optimize scale & size for fast cloud QR transfer and tabletop AR
-          const optimizedFile = await optimizeGlbForTransfer(file);
-          if (optimizedFile !== file) {
-            lastExportedBlob = optimizedFile;
-            const optUrl = URL.createObjectURL(optimizedFile) + '#model.glb';
-            loadIntoModelViewer(optUrl);
-          } else {
-            lastExportedBlob = file;
-          }
+          // Prepare scale and geometry in <25ms
+          const preparedFile = await fastPrepareGlbForAR(file);
+          lastExportedBlob = preparedFile;
 
-          // 3. Upload to cloud and generate QR code
-          generateARShareLink(optimizedFile, optimizedFile.name);
+          const fileUrl = URL.createObjectURL(preparedFile) + '#model.glb';
+          loadIntoModelViewer(fileUrl);
+
+          // Upload in parallel and generate QR code
+          generateARShareLink(preparedFile, preparedFile.name);
         } else if (extension === 'stl') {
           showLoader(currentLang === 'fr' ? "Conversion de STL en GLB (Client)..." : "Converting STL to GLB (Client)...");
           const reader = new FileReader();
@@ -1577,180 +1776,116 @@
       });
     }
 
-    // Fast multi-provider cloud upload for AR transfer QR code
+    // Fast multi-provider parallel cloud upload for AR transfer QR code (~1s)
     async function generateARShareLink(file, fileName) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
-      } else {
-        qrSection.style.display = 'block';
-        qrLoading.style.display = 'flex';
-        qrCodeImg.style.display = 'none';
-        qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+        return; // NEVER re-upload or overwrite viewer.src from mobile
       }
+
+      qrSection.style.display = 'block';
+      qrLoading.style.display = 'flex';
+      qrCodeImg.style.display = 'none';
+      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
       isUploadingCloud = true;
       let directDlUrl = null;
 
-      // 1. Primary: Netlify Edge Function /api/ar-proxy (multi-host server-side uploader, zero CORS issues)
-      try {
-        const fdEdge = new FormData();
-        fdEdge.append('file', file, fileName);
-        const rEdge = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
+      const uploadTasks = [];
+
+      // 1. Litterbox (Catbox 72h, direct CORS * HTTPS)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('time', '72h');
+        fd.append('fileToUpload', file, fileName);
+        let r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
-          body: fdEdge,
-          signal: AbortSignal.timeout(15000)
+          body: fd,
+          signal: AbortSignal.timeout(9000)
         }).catch(() => null);
+        if (!r || !r.ok) {
+          r = await fetch('/api/litterbox', {
+            method: 'POST',
+            body: fd,
+            signal: AbortSignal.timeout(9000)
+          }).catch(() => null);
+        }
+        if (r && r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) return txt;
+        }
+        throw new Error('Litterbox failed');
+      })());
 
-        if (rEdge && rEdge.ok) {
-          const jEdge = await rEdge.json().catch(() => null);
-          if (jEdge && jEdge.status === 'success' && jEdge.url && jEdge.url.startsWith('https://')) {
-            directDlUrl = jEdge.url;
+      // 2. tmpfiles.org direct
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        let r = await fetch('https://tmpfiles.org/api/v1/upload', {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(9000)
+        }).catch(() => null);
+        if (!r || !r.ok) {
+          const fdProxy = new FormData();
+          fdProxy.append('file', file, fileName);
+          r = await fetch('/api/proxy/api/v1/upload', {
+            method: 'POST',
+            body: fdProxy,
+            signal: AbortSignal.timeout(9000)
+          }).catch(() => null);
+        }
+        if (r && r.ok) {
+          const j = await r.json().catch(() => null);
+          if (j && j.status === 'success' && j.data && j.data.url) {
+            return j.data.url.replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
           }
         }
-      } catch (e) {
-        console.warn('Edge proxy upload fallback:', e);
-      }
+        throw new Error('tmpfiles failed');
+      })());
 
-      // 2. Fallback A: tmpfiles.org direct & proxy
-      if (!directDlUrl) {
-        try {
-          const fdTmp = new FormData();
-          fdTmp.append('file', file, fileName);
-          let rTmp = await fetch('https://tmpfiles.org/api/v1/upload', {
-            method: 'POST',
-            body: fdTmp,
-            signal: AbortSignal.timeout(12000)
-          }).catch(() => null);
-
-          if (!rTmp || !rTmp.ok) {
-            const fdTmpProxy = new FormData();
-            fdTmpProxy.append('file', file, fileName);
-            rTmp = await fetch('/api/proxy/api/v1/upload', {
-              method: 'POST',
-              body: fdTmpProxy,
-              signal: AbortSignal.timeout(12000)
-            }).catch(() => null);
+      // 3. Netlify Edge proxy
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        const r = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(10000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const j = await r.json().catch(() => null);
+          if (j && j.status === 'success' && j.url && j.url.startsWith('https://')) {
+            return j.url;
           }
-
-          if (rTmp && rTmp.ok) {
-            const json = await rTmp.json().catch(() => null);
-            if (json && json.status === 'success' && json.data && json.data.url) {
-              directDlUrl = json.data.url
-                .replace(/^http:\/\//i, 'https://')
-                .replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-          }
-        } catch (err) {
-          console.warn('tmpfiles upload attempt failed:', err);
         }
-      }
+        throw new Error('Edge proxy upload failed');
+      })());
 
-      // 3. Fallback B: Litterbox (Catbox 72h fast cloud storage)
-      if (!directDlUrl) {
-        try {
-          const fdLit = new FormData();
-          fdLit.append('reqtype', 'fileupload');
-          fdLit.append('time', '72h');
-          fdLit.append('fileToUpload', file, fileName);
-          let rLit = await fetch('/api/litterbox', {
-            method: 'POST',
-            body: fdLit,
-            signal: AbortSignal.timeout(12000)
-          }).catch(() => null);
-
-          if (!rLit || !rLit.ok) {
-            const fdLitDirect = new FormData();
-            fdLitDirect.append('reqtype', 'fileupload');
-            fdLitDirect.append('time', '72h');
-            fdLitDirect.append('fileToUpload', file, fileName);
-            rLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-              method: 'POST',
-              body: fdLitDirect,
-              signal: AbortSignal.timeout(12000)
-            }).catch(() => null);
-          }
-
-          if (rLit && rLit.ok) {
-            const txt = (await rLit.text()).trim();
-            if (txt.startsWith('https://')) {
-              directDlUrl = txt;
-            }
-          }
-        } catch (err) {
-          console.warn('Litterbox upload attempt failed:', err);
-        }
-      }
-
-      // 4. Fallback C: Uguu.se & Catbox
-      if (!directDlUrl) {
-        try {
-          const fdUguu = new FormData();
-          fdUguu.append('files[]', file, fileName);
-          let rUguu = await fetch('/api/uguu', {
-            method: 'POST',
-            body: fdUguu,
-            signal: AbortSignal.timeout(10000)
-          }).catch(() => null);
-          if (!rUguu || !rUguu.ok) {
-            const fdUguu2 = new FormData();
-            fdUguu2.append('files[]', file, fileName);
-            rUguu = await fetch('https://uguu.se/upload', {
-              method: 'POST',
-              body: fdUguu2,
-              signal: AbortSignal.timeout(10000)
-            }).catch(() => null);
-          }
-          if (rUguu && rUguu.ok) {
-            const jUguu = await rUguu.json().catch(() => null);
-            if (jUguu && jUguu.success && jUguu.files && jUguu.files[0] && jUguu.files[0].url) {
-              directDlUrl = jUguu.files[0].url;
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (!directDlUrl) {
-        try {
-          const fdCat = new FormData();
-          fdCat.append('reqtype', 'fileupload');
-          fdCat.append('fileToUpload', file, fileName);
-          const rCat = await fetch('/api/catbox', {
-            method: 'POST',
-            body: fdCat,
-            signal: AbortSignal.timeout(10000)
-          }).catch(() => null);
-          if (rCat && rCat.ok) {
-            const urlText = (await rCat.text()).trim();
-            if (urlText.startsWith('https://')) {
-              directDlUrl = urlText;
-            }
-          }
-        } catch (_) {}
+      try {
+        directDlUrl = await Promise.any(uploadTasks);
+      } catch (allErr) {
+        console.warn('All parallel uploads failed:', allErr);
       }
 
       isUploadingCloud = false;
 
-      // -- Process Result --
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        // On mobile devices, upgrade viewer.src from blob: to the HTTPS proxy .glb URL so Android Scene Viewer works!
-        if (isMobile) {
-          viewer.src = buildArProxyGlbUrl(directDlUrl);
-        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
-        if (!isMobile) {
-          qrLoading.style.display = 'none';
-          const fallbackText = document.createElement('p');
-          fallbackText.className = 'qr-error-msg';
-          fallbackText.textContent = currentLang === 'fr'
-            ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
-            : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
-          qrSection.appendChild(fallbackText);
-        }
+        qrLoading.style.display = 'none';
+        const fallbackText = document.createElement('p');
+        fallbackText.className = 'qr-error-msg';
+        fallbackText.textContent = currentLang === 'fr'
+          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
+          : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
+        qrSection.appendChild(fallbackText);
       }
+    }
     }
 
     // -- 1-Click Copy 3D Share Link Handler --

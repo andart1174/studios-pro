@@ -634,7 +634,10 @@ function initMobileViewSwitcher() {
 
 function canvasToPngBytes(canvas) {
     try {
-        const dataUrl = canvas.toDataURL('image/png');
+        let dataUrl = canvas.toDataURL('image/jpeg', 0.90);
+        if (!dataUrl || !dataUrl.startsWith('data:image/jpeg')) {
+            dataUrl = canvas.toDataURL('image/png');
+        }
         const base64 = dataUrl.split(',')[1];
         const binStr = atob(base64);
         const bytes = new Uint8Array(binStr.length);
@@ -643,7 +646,7 @@ function canvasToPngBytes(canvas) {
         }
         return bytes;
     } catch (e) {
-        console.warn('Could not encode PNG texture for GLB:', e);
+        console.warn('Could not encode texture for GLB:', e);
         return null;
     }
 }
@@ -1071,7 +1074,7 @@ function updateStats(result) {
     $('statDims').textContent = `${d.x.toFixed(1)} × ${d.y.toFixed(1)} × ${d.z.toFixed(1)} mm`;
     const stlKB = Math.ceil(result.stlBuffer.byteLength / 1024);
     $('statSTLSize').textContent = stlKB > 1024 ? (stlKB / 1024).toFixed(1) + ' MB' : stlKB + ' KB';
-    const glbKB = Math.ceil(stlKB * 0.85 + (App.pngBytes ? App.pngBytes.byteLength / 1024 : 0));
+    const glbKB = Math.ceil(Math.min(stlKB * 0.85, 890) + (App.pngBytes ? App.pngBytes.byteLength / 1024 : 0));
     $('statGLBSize').textContent = glbKB > 1024 ? (glbKB / 1024).toFixed(1) + ' MB' : '~' + Math.round(glbKB) + ' KB';
 
     if ($('exportStats')) {
