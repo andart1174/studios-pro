@@ -10,9 +10,31 @@
   path = "/api/ar-proxy"
   function = "ar-proxy"
 
+[[edge_functions]]
+  path = "/api/ar-proxy/*"
+  function = "ar-proxy"
+
 [[redirects]]
   from = "/api/ar-proxy"
   to = "/.netlify/functions/ar-proxy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ar-proxy/*"
+  to = "/.netlify/functions/ar-proxy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/litterbox"
+  to = "https://litterbox.catbox.moe/resources/internals/api.php"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/uguu"
+  to = "https://uguu.se/upload"
   status = 200
   force = true
 

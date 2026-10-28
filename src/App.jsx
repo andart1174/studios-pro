@@ -1654,27 +1654,27 @@ const StudiosPro = () => {
       } else if (type === 'OPEN_AR_VIEWER') {
         setArViewerUrl(payload.url || '');
         if (payload && payload.modelData) {
+          const isObjText = typeof payload.modelData === 'string' && (payload.modelData.trim().startsWith('#') || payload.modelData.trim().startsWith('o ') || payload.modelData.trim().startsWith('v ') || payload.modelData.includes('\nv '));
+          const resolvedExt = payload.extension || (isObjText ? 'obj' : 'glb');
+          const resolvedName = payload.name || (isObjText ? 'studio_pro_model.obj' : 'studio_pro_model.glb');
+          const resolvedBinary = isObjText ? false : (payload.isBinary !== false);
           window.lastArModelData = payload.modelData;
-          window.lastArModelName = payload.name || 'polymorph_model.glb';
-          window.lastArModelExt = payload.extension || 'glb';
-          window.lastArModelIsBinary = payload.isBinary !== false;
-        }
-        setIsARViewerOpen(true);
-        // If AR viewer iframe is already mounted, push new model immediately
-        if (arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
-          try {
-            arViewerIframeRef.current.contentWindow.postMessage({
-              type: 'LOAD_EXTERNAL_FILE',
-              payload: {
-                name: payload.name || 'polymorph_model.glb',
-                extension: payload.extension || 'glb',
-                data: payload.modelData,
-                isBinary: payload.isBinary !== false
-              }
-            }, '*');
-          } catch (e) {
-            console.warn('[App] Forward to ar-viewer error:', e);
+          window.lastArModelName = resolvedName;
+          window.lastArModelExt = resolvedExt;
+          window.lastArModelIsBinary = resolvedBinary;
+          setIsARViewerOpen(true);
+          if (arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
+            try {
+              arViewerIframeRef.current.contentWindow.postMessage({
+                type: 'LOAD_EXTERNAL_FILE',
+                payload: { name: resolvedName, extension: resolvedExt, data: payload.modelData, isBinary: resolvedBinary }
+              }, '*');
+            } catch (e) {
+              console.warn('[App] Forward to ar-viewer error:', e);
+            }
           }
+        } else {
+          setIsARViewerOpen(true);
         }
       } else if (type === 'CLOSE_AR_VIEWER') {
         setIsARViewerOpen(false);
@@ -1683,14 +1683,11 @@ const StudiosPro = () => {
         setPaymentReason('premium_feature');
         setShowPaymentRequest(true);
       } else if (type === 'CLOSE_STUDIO') {
-        // If AR Viewer was active as an overlay over another studio (like PolyMorph), close only AR Viewer!
         if (isARViewerOpenRef.current) {
           setIsARViewerOpen(false);
           setArViewerUrl('');
           window.lastArModelData = null;
-          if (isPolyMorphOpenRef.current) {
-            return;
-          }
+          return;
         }
         setIs3DOpen(false);
         setIs3DViewerOpen(false);

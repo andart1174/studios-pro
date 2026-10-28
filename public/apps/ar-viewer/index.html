@@ -15,7 +15,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <!-- Google model-viewer for web-AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
@@ -33,7 +36,7 @@
         <div class="logo">AR</div>
         <div>
           <h1 class="app-title lang-text" data-fr="Studio AR Viewer" data-en="AR Viewer 3D">AR Viewer 3D</h1>
-          <p class="app-subtitle lang-text" data-fr="Visualisez vos modles 3D en Ralit Augmente" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
+          <p class="app-subtitle lang-text" data-fr="Visualisez vos modèles 3D en Réalité Augmentée" data-en="View your 3D models in Augmented Reality">View your 3D models in Augmented Reality</p>
         </div>
       </div>
 
@@ -349,7 +352,8 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="scene-viewer webxr quick-look"
+        ar-placement="floor"
         ar-scale="auto"
         interaction-prompt="auto"
         auto-rotate
@@ -362,7 +366,7 @@
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span class="lang-text" data-fr="VOIR EN RALIT AUGMENTE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
+          <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
       </model-viewer>
 
@@ -477,33 +481,84 @@
     };
 
     // Universal External File & URL Loaders (Supports BroadcastChannel & window.postMessage)
+    function encodeBase64Url(str) {
+      return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function buildArProxyGlbUrl(upstreamUrl) {
+      const cleanUrl = upstreamUrl
+        .replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/')
+        .replace(/^(https:\/\/tmpfiles\.org\/(?!dl\/|api\/v1\/))/, 'https://tmpfiles.org/dl/');
+      const b64 = encodeBase64Url(cleanUrl);
+      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+      return `${baseOrigin}/api/ar-proxy/${b64}/model.glb`;
+    }
+
+    function renderQrToImg(targetUrl, onDone) {
+      if (typeof QRious !== 'undefined') {
+        try {
+          const qr = new QRious({
+            value: targetUrl,
+            size: 220,
+            level: 'M',
+            foreground: '#06b6d4',
+            background: '#111827',
+            padding: 12
+          });
+          qrCodeImg.onload = () => {
+            if (onDone) onDone();
+          };
+          qrCodeImg.src = qr.toDataURL('image/png');
+          return;
+        } catch (err) {
+          console.warn('QRious fallback to API:', err);
+        }
+      }
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetUrl)}&color=06b6d4&bgcolor=111827`;
+      qrCodeImg.onload = () => {
+        if (onDone) onDone();
+      };
+      qrCodeImg.src = qrApiUrl;
+    }
+
     async function loadExternalFilePayload(payload) {
-      if (!payload) return;
+      if (!payload || payload.data === undefined || payload.data === null) return;
       try {
-        const { name = 'model.glb', extension = 'glb', data, isBinary = true } = payload;
+        let { name = 'studio_pro_model.glb', extension = 'glb', data, isBinary = true } = payload;
         console.log("AR Viewer: loading external file:", name);
         showLoader(currentLang === 'fr' ? "Chargement du modèle 3D..." : "Loading 3D model...");
+
         let file;
         if (data instanceof File) {
           file = data;
         } else if (data instanceof Blob) {
-          file = new File([data], name, { type: 'application/octet-stream' });
-        } else if (data instanceof ArrayBuffer) {
-          file = new File([data], name, { type: 'application/octet-stream' });
-        } else if (typeof data === 'string' && (data.startsWith('data:') || data.startsWith('blob:'))) {
-          const res = await fetch(data);
-          const blob = await res.blob();
-          file = new File([blob], name, { type: 'application/octet-stream' });
-        } else if (isBinary) {
-          try {
+          file = new File([data], name, { type: 'model/gltf-binary' });
+        } else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+          file = new File([data], name, { type: 'model/gltf-binary' });
+        } else if (typeof data === 'string') {
+          const trimmed = data.trim();
+          const looksLikeObj = trimmed.startsWith('#') || trimmed.startsWith('o ') || trimmed.startsWith('v ') || trimmed.startsWith('g ') || trimmed.startsWith('mtllib ') || data.includes('\nv ');
+          const looksLikeGltfJson = trimmed.startsWith('{') && trimmed.includes('"asset"');
+
+          if (looksLikeObj) {
+            const objName = name.replace(/\.[^/.]+$/, '') + '.obj';
+            file = new File([data], objName, { type: 'text/plain' });
+          } else if (looksLikeGltfJson) {
+            const gltfName = name.replace(/\.[^/.]+$/, '') + '.gltf';
+            file = new File([data], gltfName, { type: 'application/json' });
+          } else if (data.startsWith('data:') || data.startsWith('blob:') || data.startsWith('http://') || data.startsWith('https://') || data.startsWith('/')) {
             const res = await fetch(data);
             const blob = await res.blob();
             file = new File([blob], name, { type: 'application/octet-stream' });
-          } catch (e) {
-            file = new File([data], name, { type: 'application/octet-stream' });
+          } else {
+            file = new File([data], name, { type: isBinary ? 'application/octet-stream' : 'text/plain' });
           }
         } else {
-          file = new File([data], name, { type: 'text/plain' });
+          file = new File([data], name, { type: 'application/octet-stream' });
+        }
+
+        if (!file || file.size === 0) {
+          throw new Error('Received empty 3D model file');
         }
         await handleFile(file);
       } catch (err) {
@@ -554,66 +609,53 @@
     if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
+          hasReceivedFile = true;
           const rawUrl = decodeURIComponent(queryUrl);
-          let fetchUrl = rawUrl.split('#')[0];
+          let fetchUrl = rawUrl.split('#')[0].replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/');
+          if (fetchUrl.includes('tmpfiles.org') && !fetchUrl.includes('/dl/') && !fetchUrl.includes('/api/v1/')) {
+            fetchUrl = fetchUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          }
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           if (rawUrl.includes('#')) {
             name = rawUrl.split('#').pop();
           }
+          const ext = (name.split('.').pop() || 'glb').toLowerCase();
 
-          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
+          showLoader(currentLang === 'fr' ? "Ouverture du modèle AR..." : "Opening AR model...");
 
-          const fetchWithTimeout = (url, opts = {}, ms = 15000) => {
-            return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) }).catch(err => {
-              console.warn('Fetch failed for', url, err.message);
-              return null;
-            });
-          };
+          modelNameEl.textContent = name;
+          modelFormatEl.textContent = ext.toUpperCase();
+          modelSizeEl.textContent = 'GLB / AR Ready';
 
-          let res = null;
+          // Build clean HTTPS URL ending in /model.glb (REQUIRED by Android Google Scene Viewer & iOS Quick Look!)
+          const proxyGlbUrl = buildArProxyGlbUrl(fetchUrl);
 
-          // Strategy 1: Dedicated Netlify /api/ar-proxy (guaranteed CORS *, resolves HTML landing page, binary stream)
-          const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
-          const proxyEndpoint = `${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`;
-          res = await fetchWithTimeout(proxyEndpoint, {}, 25000);
-          if (res && res.ok) {
-            const cType = (res.headers.get('content-type') || '').toLowerCase();
-            if (cType.includes('html')) res = null; // Reject if error HTML
+          if (ext === 'glb' || ext === 'gltf') {
+            currentThreeScene = null;
+            currentModelName = name;
+            currentModelExtension = ext;
+            lastDirectDlUrl = fetchUrl;
+            lastShareUrl = fetchUrl;
+
+            // Load directly via HTTPS proxy URL so Android Scene Viewer receives a real https://.../model.glb URL!
+            loadIntoModelViewer(proxyGlbUrl);
+            updateQRCodeWithColorParam(fetchUrl, queryColor || 'original');
+
+            // Fetch byte size in background to update UI stats
+            fetch(proxyGlbUrl, { method: 'HEAD' }).then(r => {
+              const len = r.headers.get('content-length');
+              if (len && parseInt(len) > 0) {
+                modelSizeEl.textContent = formatBytes(parseInt(len));
+              }
+            }).catch(() => {});
+          } else {
+            // For raw STL/OBJ links, download and convert to GLB
+            const res = await fetch(proxyGlbUrl);
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+            const blob = await res.blob();
+            const file = new File([blob], name, { type: 'application/octet-stream' });
+            await handleFile(file);
           }
-
-          // Strategy 2: Direct fetch (for CDNs with full CORS * support, e.g. catbox files)
-          if (!res || !res.ok) {
-            let dRes = await fetchWithTimeout(fetchUrl, {}, 15000);
-            if (dRes && dRes.ok) {
-              const cType = (dRes.headers.get('content-type') || '').toLowerCase();
-              if (!cType.includes('html')) res = dRes;
-            }
-          }
-
-          // Strategy 3: Netlify legacy proxy rewrite fallback
-          if ((!res || !res.ok) && fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            let pRes = await fetchWithTimeout(proxyUrl, {}, 15000);
-            if (pRes && pRes.ok) {
-              const cType = (pRes.headers.get('content-type') || '').toLowerCase();
-              if (!cType.includes('html')) res = pRes;
-            }
-          }
-
-          if (!res || !res.ok) {
-            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
-          }
-
-          const blob = await res.blob();
-          if (!blob || blob.size < 20) {
-            throw new Error("Invalid or empty file downloaded.");
-          }
-
-          const file = new File([blob], name, { type: 'application/octet-stream' });
-          handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -629,13 +671,13 @@
         if (typeof window.triggerDemoModel === 'function') {
           window.triggerDemoModel(demoParam);
         }
-      }, 120);
+      }, 80);
     }
 
     // Check if parent window has passed model data directly
     if (window.parent && window.parent.lastArModelData) {
       const modelData = window.parent.lastArModelData;
-      const modelName = window.parent.lastArModelName || 'polymorph_model.glb';
+      const modelName = window.parent.lastArModelName || 'studio_pro_model.glb';
       const modelExt = window.parent.lastArModelExt || 'glb';
       const isBinary = window.parent.lastArModelIsBinary !== false;
       window.parent.lastArModelData = null; // clear after reading
@@ -647,7 +689,7 @@
           data: modelData,
           isBinary: isBinary
         });
-      }, 100);
+      }, 80);
     }
 
     // Send ready signal to parent/sibling to request model transfer repeatedly
@@ -672,28 +714,36 @@
 
     // Format file size
     function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
+      if (!bytes || bytes === 0) return '0 Bytes';
       const k = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Scale normalization to prevent oversized/microscopic models in AR
+    // Scale & center normalization so every model sits on the table at ~28cm in AR
     function normalizeObjectScale(object) {
+      object.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(object);
       const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
       box.getSize(size);
+      box.getCenter(center);
       const maxDim = Math.max(size.x, size.y, size.z);
-      
-      // If the model is likely in millimeters (max dimension > 5.0, e.g., 50mm to 300mm),
-      // we scale it down by 1000 to convert to meters for correct AR representation.
-      if (maxDim > 5.0) {
-        object.scale.multiplyScalar(0.001);
-      } else if (maxDim < 0.01 && maxDim > 0) {
-        // If microscopic (less than 1cm), scale up to a visible size
-        object.scale.multiplyScalar(0.1 / maxDim);
+      if (maxDim <= 0 || !isFinite(maxDim)) return;
+
+      // Center object horizontally and place bottom on y = 0 floor plane
+      object.position.x -= center.x;
+      object.position.y -= box.min.y;
+      object.position.z -= center.z;
+
+      // Normalize to comfortable tabletop AR size (~0.28m = 28cm) if oversized or microscopic
+      if (maxDim > 0.65 || maxDim < 0.06) {
+        const scaleFactor = 0.28 / maxDim;
+        object.scale.multiplyScalar(scaleFactor);
+        object.position.multiplyScalar(scaleFactor);
       }
+      object.updateMatrixWorld(true);
     }
 
     // ----------------------------------------------------------------------
@@ -706,21 +756,23 @@
         ext: 'glb',
         format: 'STL / CAD',
         url: '/ar/models/cad-gear.glb',
-        isProcedural: true
+        sizeLabel: '133 KB (PBR)'
       },
       fox: {
         id: 'fox',
         name: 'Low_Poly_Fox.glb',
         ext: 'glb',
         format: 'GLB / 3D',
-        url: '/ar/models/card-220.glb'
+        url: '/ar/models/card-220.glb',
+        sizeLabel: '48.5 KB'
       },
       boombox: {
         id: 'boombox',
         name: 'Retro_Boombox_PBR.glb',
         ext: 'glb',
         format: 'GLB / PBR',
-        url: '/ar/models/card-199.glb'
+        url: '/ar/models/card-199.glb',
+        sizeLabel: '155 KB'
       },
       relief: {
         id: 'relief',
@@ -728,7 +780,7 @@
         ext: 'glb',
         format: 'CNC Relief / Wood PBR',
         url: '/ar/models/relief-wood.glb',
-        isProcedural: true
+        sizeLabel: '318 KB (Wood PBR)'
       }
     };
 
@@ -736,6 +788,16 @@
 
     function generateDemoQR(demoId) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
+      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+      let targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&demo=${demoId}`;
+      if (activeMaterial && activeMaterial !== 'original') {
+        targetARUrl += `&mat=${encodeURIComponent(activeMaterial)}`;
+      }
+
+      lastShareUrl = targetARUrl;
+      lastSharePageUrl = targetARUrl;
+      updateViralShareLinks(targetARUrl);
+
       if (isMobile) {
         qrSection.style.display = 'none';
         return;
@@ -746,14 +808,7 @@
       qrCodeImg.style.display = 'block';
       qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
-      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-      const targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&demo=${demoId}`;
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
-
-      lastShareUrl = targetARUrl;
-      lastSharePageUrl = targetARUrl;
-      qrCodeImg.src = qrApiUrl;
-      updateViralShareLinks(targetARUrl);
+      renderQrToImg(targetARUrl);
     }
 
     function updateViralShareLinks(targetUrl) {
@@ -782,212 +837,146 @@
       showLoader(currentLang === 'fr' ? `Chargement du modèle ${demo.name}...` : `Loading ${demo.name}...`);
 
       try {
-        if (demo.isProcedural && demo.id === 'gear') {
-          // Generate high-precision CAD mechanical gear
-          const numTeeth = 16;
-          const outerR = 0.22;
-          const innerR = 0.17;
-          const toothH = 0.04;
-          const shape = new THREE.Shape();
-          const delta = (Math.PI * 2) / numTeeth;
+        // Always pass the real, public HTTPS .glb URL to <model-viewer> (NEVER a blob: URL!)
+        // so Android Google Scene Viewer & iOS Quick Look can fetch it directly in AR!
+        const directHttpsUrl = new URL(demo.url, window.location.origin).href;
 
-          for (let i = 0; i < numTeeth; i++) {
-            const a0 = i * delta;
-            const a1 = a0 + delta * 0.25;
-            const a2 = a0 + delta * 0.5;
-            const a3 = a0 + delta * 0.75;
+        modelNameEl.textContent = demo.name;
+        modelFormatEl.textContent = demo.format;
+        modelSizeEl.textContent = demo.sizeLabel || 'GLB / PBR';
 
-            const p0 = new THREE.Vector2(Math.cos(a0) * innerR, Math.sin(a0) * innerR);
-            const p1 = new THREE.Vector2(Math.cos(a1) * (outerR + toothH), Math.sin(a1) * (outerR + toothH));
-            const p2 = new THREE.Vector2(Math.cos(a2) * (outerR + toothH), Math.sin(a2) * (outerR + toothH));
-            const p3 = new THREE.Vector2(Math.cos(a3) * innerR, Math.sin(a3) * innerR);
+        currentThreeScene = null;
+        currentModelName = demo.name;
+        currentModelExtension = demo.ext;
+        lastDirectDlUrl = directHttpsUrl;
 
-            if (i === 0) shape.moveTo(p0.x, p0.y);
-            else shape.lineTo(p0.x, p0.y);
-            shape.lineTo(p1.x, p1.y);
-            shape.lineTo(p2.x, p2.y);
-            shape.lineTo(p3.x, p3.y);
-          }
-          shape.closePath();
-
-          // Central axle bore hole
-          const hole = new THREE.Path();
-          hole.absarc(0, 0, 0.065, 0, Math.PI * 2, true);
-          shape.holes.push(hole);
-
-          const geom = new THREE.ExtrudeGeometry(shape, {
-            depth: 0.06,
-            bevelEnabled: true,
-            bevelThickness: 0.012,
-            bevelSize: 0.01,
-            bevelSegments: 3
-          });
-          geom.center();
-
-          const mat = new THREE.MeshStandardMaterial({
-            color: 0x06b6d4,
-            metalness: 0.88,
-            roughness: 0.2
-          });
-          const mesh = new THREE.Mesh(geom, mat);
-          const scene = new THREE.Scene();
-          scene.add(mesh);
-
-          currentThreeScene = scene;
-          currentModelName = demo.name;
-          currentModelExtension = 'glb';
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = '145 KB (PBR)';
-
-          const exporter = new THREE.GLTFExporter();
-          exporter.parse(scene, function(result) {
-            const isBinary = (result instanceof ArrayBuffer);
-            const glbBlob = isBinary ?
-              new Blob([result], { type: 'application/octet-stream' }) :
-              new Blob([JSON.stringify(result)], { type: 'application/json' });
-            lastExportedBlob = glbBlob;
-            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
-            loadIntoModelViewer(fileUrl);
-            generateDemoQR(demo.id);
-          }, { binary: true });
-
-        } else if (demo.isProcedural && demo.id === 'relief') {
-          // Authentic Sculpted Wood Relief Panel (Panou sculptat CNC din lemn)
-          const group = new THREE.Group();
-
-          // 1. Backing board (Solid Oak/Walnut wood base)
-          const boardGeom = new THREE.BoxGeometry(0.28, 0.21, 0.02);
-          const boardMat = new THREE.MeshStandardMaterial({
-            color: 0x8a5229,
-            roughness: 0.72,
-            metalness: 0.04
-          });
-          const boardMesh = new THREE.Mesh(boardGeom, boardMat);
-          group.add(boardMesh);
-
-          // 2. Beveled frame moulding around the border
-          const frameShape = new THREE.Shape();
-          frameShape.moveTo(-0.14, -0.105);
-          frameShape.lineTo(0.14, -0.105);
-          frameShape.lineTo(0.14, 0.105);
-          frameShape.lineTo(-0.14, 0.105);
-          frameShape.closePath();
-
-          const holePath = new THREE.Path();
-          holePath.moveTo(-0.12, -0.085);
-          holePath.lineTo(0.12, -0.085);
-          holePath.lineTo(0.12, 0.085);
-          holePath.lineTo(-0.12, 0.085);
-          holePath.closePath();
-          frameShape.holes.push(holePath);
-
-          const frameGeom = new THREE.ExtrudeGeometry(frameShape, {
-            depth: 0.012,
-            bevelEnabled: true,
-            bevelThickness: 0.006,
-            bevelSize: 0.005,
-            bevelSegments: 3
-          });
-          frameGeom.center();
-          const frameMat = new THREE.MeshStandardMaterial({
-            color: 0x76421e,
-            roughness: 0.65,
-            metalness: 0.05
-          });
-          const frameMesh = new THREE.Mesh(frameGeom, frameMat);
-          frameMesh.position.z = 0.012;
-          group.add(frameMesh);
-
-          // 3. Central Carved Rosette Medallion with detailed classical carving
-          const reliefGeom = new THREE.PlaneGeometry(0.23, 0.16, 96, 72);
-          const pos = reliefGeom.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const y = pos.getY(i);
-            const r = Math.sqrt(x * x + y * y);
-            const theta = Math.atan2(y, x);
-            let h = 0;
-            const maxR = 0.075;
-            if (r < maxR) {
-              const normR = r / maxR;
-              // Classical carved dome
-              const dome = Math.cos(normR * Math.PI * 0.5) * 0.014;
-              // 12 sculpted rosette petals
-              const petals = Math.sin(normR * Math.PI * 2) * Math.cos(12 * theta) * 0.006 * (1 - normR * 0.35);
-              // Concentric fluting rings
-              const ring = Math.sin(normR * Math.PI * 6) * 0.0025;
-              // Center raised jewel / boss
-              const boss = Math.exp(-normR * normR * 35) * 0.008;
-              h = dome + petals + ring + boss;
-            } else {
-              // Beveled inner margin with wave pattern
-              const edgeDist = Math.min(0.115 - Math.abs(x), 0.08 - Math.abs(y));
-              if (edgeDist > 0 && edgeDist < 0.04) {
-                h = Math.sin((0.04 - edgeDist) * 80) * 0.002;
-              }
-            }
-            pos.setZ(i, h);
-          }
-          reliefGeom.computeVertexNormals();
-
-          const reliefMat = new THREE.MeshStandardMaterial({
-            color: 0x965a32,
-            roughness: 0.62,
-            metalness: 0.05
-          });
-          const reliefMesh = new THREE.Mesh(reliefGeom, reliefMat);
-          reliefMesh.position.z = 0.011;
-          group.add(reliefMesh);
-
-          const scene = new THREE.Scene();
-          scene.add(group);
-
-          currentThreeScene = scene;
-          currentModelName = demo.name;
-          currentModelExtension = 'glb';
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = '195 KB (Wood PBR)';
-
-          const exporter = new THREE.GLTFExporter();
-          exporter.parse(scene, function(result) {
-            const isBinary = (result instanceof ArrayBuffer);
-            const glbBlob = isBinary ?
-              new Blob([result], { type: 'application/octet-stream' }) :
-              new Blob([JSON.stringify(result)], { type: 'application/json' });
-            lastExportedBlob = glbBlob;
-            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
-            loadIntoModelViewer(fileUrl);
-            generateDemoQR(demo.id);
-          }, { binary: true });
-
-        } else {
-          // Static pre-optimized model
-          const response = await fetch(demo.url);
-          if (!response.ok) throw new Error('Demo fetch failed');
-          const blob = await response.blob();
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = formatBytes(blob.size);
-
-          currentThreeScene = null;
-          currentModelName = demo.name;
-          currentModelExtension = demo.ext;
-          lastExportedBlob = blob;
-
-          const fileUrl = URL.createObjectURL(blob) + '#model.glb';
-          loadIntoModelViewer(fileUrl);
-          generateDemoQR(demo.id);
-        }
+        viewer.shadowSoftness = "0.6";
+        loadIntoModelViewer(directHttpsUrl);
+        generateDemoQR(demo.id);
       } catch (err) {
         console.error('Error loading demo model:', err);
         hideLoader();
       }
     };
+
+    // Compress & normalize large GLB files in the background so desktop rotates at 60 FPS
+    // and cloud upload for QR completes in 1-2 seconds!
+    async function optimizeGlbForTransfer(file) {
+      if (typeof THREE.GLTFLoader === 'undefined' || typeof THREE.GLTFExporter === 'undefined') {
+        return file;
+      }
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        return await new Promise((resolve) => {
+          const loader = new THREE.GLTFLoader();
+          loader.parse(arrayBuffer, '', (gltf) => {
+            try {
+              const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+              if (!root) {
+                resolve(file);
+                return;
+              }
+
+              // 1. Normalize scale to ~0.28m tabletop size so AR is never 60m tall or microscopic
+              root.updateMatrixWorld(true);
+              const box = new THREE.Box3().setFromObject(root);
+              const size = new THREE.Vector3();
+              const center = new THREE.Vector3();
+              box.getSize(size);
+              box.getCenter(center);
+              const maxDim = Math.max(size.x, size.y, size.z);
+              const needsScale = maxDim > 0.65 || (maxDim > 0 && maxDim < 0.06);
+              const isHeavyFile = file.size > 1.4 * 1024 * 1024;
+
+              if (!needsScale && !isHeavyFile) {
+                resolve(file);
+                return;
+              }
+
+              if (maxDim > 0 && isFinite(maxDim)) {
+                root.position.x -= center.x;
+                root.position.y -= box.min.y;
+                root.position.z -= center.z;
+                if (needsScale) {
+                  const s = 0.28 / maxDim;
+                  root.scale.multiplyScalar(s);
+                  root.position.multiplyScalar(s);
+                }
+                root.updateMatrixWorld(true);
+              }
+
+              // 2. If file is heavy (>1.4 MB), weld unindexed vertices & compress embedded textures to JPEG
+              if (isHeavyFile) {
+                root.traverse((child) => {
+                  if (!child.isMesh || !child.geometry) return;
+                  if (!child.geometry.index && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
+                    try {
+                      const posCount = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+                      if (posCount > 3000) {
+                        const welded = THREE.BufferGeometryUtils.mergeVertices(child.geometry, 1e-4);
+                        welded.computeVertexNormals();
+                        child.geometry = welded;
+                      }
+                    } catch (_) {}
+                  }
+                  const mats = Array.isArray(child.material) ? child.material : [child.material];
+                  mats.forEach((mat) => {
+                    if (mat && mat.map && mat.map.image) {
+                      try {
+                        const img = mat.map.image;
+                        const w = img.width || img.videoWidth || 0;
+                        const h = img.height || img.videoHeight || 0;
+                        if (w > 0 && h > 0) {
+                          const maxTex = 1024;
+                          const ratio = Math.min(1, maxTex / Math.max(w, h));
+                          const cw = Math.max(1, Math.round(w * ratio));
+                          const ch = Math.max(1, Math.round(h * ratio));
+                          const cnv = document.createElement('canvas');
+                          cnv.width = cw;
+                          cnv.height = ch;
+                          const ctx = cnv.getContext('2d');
+                          ctx.fillStyle = '#ffffff';
+                          ctx.fillRect(0, 0, cw, ch);
+                          ctx.drawImage(img, 0, 0, cw, ch);
+                          mat.map.image = cnv;
+                          mat.map.format = THREE.RGBFormat;
+                          mat.map.userData = { mimeType: 'image/jpeg' };
+                          mat.map.needsUpdate = true;
+                        }
+                      } catch (_) {}
+                    }
+                  });
+                });
+              }
+
+              const exporter = new THREE.GLTFExporter();
+              const exportOpts = { binary: true };
+              if (gltf.animations && gltf.animations.length > 0) {
+                exportOpts.animations = gltf.animations;
+              }
+              exporter.parse(root, (result) => {
+                if (result instanceof ArrayBuffer && result.byteLength > 0) {
+                  const outName = file.name.replace(/\.[^/.]+$/, '') + '.glb';
+                  const optFile = new File([result], outName, { type: 'model/gltf-binary' });
+                  console.log(`AR Viewer optimized GLB: ${formatBytes(file.size)} -> ${formatBytes(optFile.size)}`);
+                  resolve(optFile);
+                } else {
+                  resolve(file);
+                }
+              }, exportOpts);
+            } catch (innerErr) {
+              console.warn('GLB optimization inner fallback:', innerErr);
+              resolve(file);
+            }
+          }, (err) => {
+            console.warn('GLTFLoader parse fallback:', err);
+            resolve(file);
+          });
+        });
+      } catch (e) {
+        return file;
+      }
+    }
 
     // Main file processor
     async function handleFile(file) {
@@ -1009,16 +998,29 @@
 
       try {
         if (extension === 'glb' || extension === 'gltf') {
-          // Direct 3D files don't use client Three.js parser
           currentThreeScene = null;
           currentModelName = name;
           currentModelExtension = extension;
+
+          // Keep 60 FPS on large meshes by using lighter shadow softness
+          viewer.shadowSoftness = file.size > 1.5 * 1024 * 1024 ? "0.2" : "0.6";
           
-          const fileUrl = URL.createObjectURL(file) + (extension === 'glb' ? '#model.glb' : '#model.gltf');
-          loadIntoModelViewer(fileUrl);
+          // 1. Show immediately in viewport
+          const initialUrl = URL.createObjectURL(file) + (extension === 'glb' ? '#model.glb' : '#model.gltf');
+          loadIntoModelViewer(initialUrl);
           
-          // Generate upload link
-          generateARShareLink(file, name);
+          // 2. Optimize scale & size for fast cloud QR transfer and tabletop AR
+          const optimizedFile = await optimizeGlbForTransfer(file);
+          if (optimizedFile !== file) {
+            lastExportedBlob = optimizedFile;
+            const optUrl = URL.createObjectURL(optimizedFile) + '#model.glb';
+            loadIntoModelViewer(optUrl);
+          } else {
+            lastExportedBlob = file;
+          }
+
+          // 3. Upload to cloud and generate QR code
+          generateARShareLink(optimizedFile, optimizedFile.name);
         } else if (extension === 'stl') {
           showLoader(currentLang === 'fr' ? "Conversion de STL en GLB (Client)..." : "Converting STL to GLB (Client)...");
           const reader = new FileReader();
@@ -1026,12 +1028,19 @@
             try {
               const contents = e.target.result;
               const loaderStl = new THREE.STLLoader();
-              const geometry = loaderStl.parse(contents);
+              let geometry = loaderStl.parse(contents);
+              if (THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
+                try {
+                  geometry = THREE.BufferGeometryUtils.mergeVertices(geometry, 1e-4);
+                } catch (_) {}
+              }
+              geometry.computeVertexNormals();
               
               const material = new THREE.MeshStandardMaterial({ 
                 color: 0xcccccc, 
-                roughness: 0.4, 
-                metalness: 0.2 
+                roughness: 0.38, 
+                metalness: 0.22,
+                side: THREE.DoubleSide
               });
               const mesh = new THREE.Mesh(geometry, material);
               
@@ -1039,7 +1048,6 @@
               scene.add(mesh);
               normalizeObjectScale(mesh);
               
-              // Set global sharing references
               currentThreeScene = scene;
               currentModelName = name;
               currentModelExtension = extension;
@@ -1064,10 +1072,14 @@
               
               objGroup.traverse((child) => {
                 if (child.isMesh) {
+                  if (child.geometry && !child.geometry.attributes.normal) {
+                    child.geometry.computeVertexNormals();
+                  }
                   child.material = new THREE.MeshStandardMaterial({ 
-                    color: 0xcccccc, 
-                    roughness: 0.4, 
-                    metalness: 0.2 
+                    color: (child.material && child.material.color) ? child.material.color : 0xcccccc, 
+                    roughness: 0.38, 
+                    metalness: 0.22,
+                    side: THREE.DoubleSide
                   });
                 }
               });
@@ -1076,7 +1088,6 @@
               scene.add(objGroup);
               normalizeObjectScale(objGroup);
               
-              // Set global sharing references
               currentThreeScene = scene;
               currentModelName = name;
               currentModelExtension = extension;
@@ -1107,7 +1118,6 @@
       if (isFirstLoad) {
         showLoader(currentLang === 'fr' ? "Génération du modèle 3D..." : "Generating 3D model...");
       } else {
-        // Show QR loading indicator
         qrLoading.style.display = 'flex';
         qrCodeImg.style.display = 'none';
       }
@@ -1115,7 +1125,7 @@
       const callback = function (result) {
         const isBinary = (result instanceof ArrayBuffer);
         const glbBlob = isBinary ?
-          new Blob([result], { type: 'application/octet-stream' }) :
+          new Blob([result], { type: 'model/gltf-binary' }) :
           new Blob([JSON.stringify(result)], { type: 'application/json' });
         
         lastExportedBlob = glbBlob;
@@ -1126,9 +1136,10 @@
         }
         
         const finalExt = isBinary ? '.glb' : '.gltf';
-        const finalMime = isBinary ? 'application/octet-stream' : 'application/json';
-        const glbFile = new File([glbBlob], name.replace(/\.[^/.]+$/, "") + finalExt, { type: finalMime });
-        generateARShareLink(glbFile, name.replace(/\.[^/.]+$/, "") + finalExt);
+        const finalMime = isBinary ? 'model/gltf-binary' : 'application/json';
+        const cleanBase = name.replace(/\.[^/.]+$/, "");
+        const glbFile = new File([glbBlob], cleanBase + finalExt, { type: finalMime });
+        generateARShareLink(glbFile, cleanBase + finalExt);
       };
 
       const onError = function (err) {
@@ -1525,36 +1536,29 @@
         document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         applyMaterialPreset(btn.getAttribute('data-mat'));
+        if (activeDemoId) {
+          generateDemoQR(activeDemoId);
+        } else if (lastDirectDlUrl) {
+          updateQRCodeWithColorParam(lastDirectDlUrl, 'original');
+        }
       };
     });
 
 
-    // -- Live dimension update on camera change ---------------------
-    viewer.addEventListener('camera-change', () => {
-      try {
-        const dims = viewer.getDimensions();
-        if (!dims) return;
-        const fmt = (v) => v >= 1.0 ? `${v.toFixed(2)} m` : `${(v * 100).toFixed(1)} cm`;
-        const lx = document.getElementById('hud-label-x');
-        const ly = document.getElementById('hud-label-y');
-        const lz = document.getElementById('hud-label-z');
-        if (lx) lx.textContent = `X: ${fmt(dims.x)}`;
-        if (ly) ly.textContent = `Y: ${fmt(dims.y)}`;
-        if (lz) lz.textContent = `Z: ${fmt(dims.z)}`;
-      } catch(_) {}
-    });
-
-    // Shared QR code generator helper incorporating dynamic color params
+    // Shared QR code generator helper incorporating dynamic color & material params
     function updateQRCodeWithColorParam(directDlUrl, colorString) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
       let targetARUrl;
       if (directDlUrl.includes('?demo=') || directDlUrl.includes('&demo=')) {
-        targetARUrl = directDlUrl.split('&color=')[0];
+        targetARUrl = directDlUrl.split('&color=')[0].split('&mat=')[0];
       } else {
         targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(directDlUrl)}`;
       }
       if (colorString && colorString !== 'original') {
         targetARUrl += `&color=${encodeURIComponent(colorString)}`;
+      }
+      if (activeMaterial && activeMaterial !== 'original') {
+        targetARUrl += `&mat=${encodeURIComponent(activeMaterial)}`;
       }
       
       lastSharePageUrl = targetARUrl;
@@ -1566,29 +1570,14 @@
         return;
       }
       
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
-      
-      qrCodeImg.src = qrApiUrl;
-      qrCodeImg.onload = () => {
+      qrSection.style.display = 'block';
+      renderQrToImg(targetARUrl, () => {
         qrLoading.style.display = 'none';
         qrCodeImg.style.display = 'block';
-        
-        if (window.location.origin.includes('localhost')) {
-          let localHint = document.getElementById('local-testing-hint');
-          if (!localHint) {
-            localHint = document.createElement('p');
-            localHint.id = 'local-testing-hint';
-            localHint.style.cssText = 'font-size: 10px; color: #fbbf24; margin-top: 10px; text-align: center; line-height: 1.4; border: 1px dashed rgba(251,191,36,0.3); padding: 8px; border-radius: 8px;';
-            qrSection.querySelector('.qr-container').appendChild(localHint);
-          }
-          localHint.innerHTML = currentLang === 'fr'
-            ? "<strong>Note:</strong> Ce QR code pointe vers le site de production. Pour tester vos modifications locales sur mobile, ouvrez l'adresse réseau locale indiquée par Vite (ex. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) sur votre téléphone."
-            : "<strong>Note:</strong> This QR code points to the production site. To test local changes on mobile, open your Vite local Network IP address (e.g. <code>http://192.168.X.X:5173/apps/ar-viewer/index.html</code>) directly on your phone.";
-        }
-      };
+      });
     }
 
-    // Upload to generate permanent AR shareable link (Catbox permanent primary + tmpfiles fallback)
+    // Fast multi-provider cloud upload for AR transfer QR code
     async function generateARShareLink(file, fileName) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
@@ -1603,68 +1592,141 @@
       isUploadingCloud = true;
       let directDlUrl = null;
 
-      // -- Primary Service: Catbox.moe (Permanent cloud storage, direct raw file) --
+      // 1. Primary: Netlify Edge Function /api/ar-proxy (multi-host server-side uploader, zero CORS issues)
       try {
-        const fdCat = new FormData();
-        fdCat.append('reqtype', 'fileupload');
-        fdCat.append('fileToUpload', file, fileName);
-
-        // Try /api/catbox proxy (configured in Netlify & Vite)
-        let rCat = await fetch('/api/catbox', {
+        const fdEdge = new FormData();
+        fdEdge.append('file', file, fileName);
+        const rEdge = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
           method: 'POST',
-          body: fdCat,
-          signal: AbortSignal.timeout(20000)
+          body: fdEdge,
+          signal: AbortSignal.timeout(15000)
         }).catch(() => null);
 
-        if (!rCat || !rCat.ok) {
-          rCat = await fetch('/api/proxy-catbox/user/api.php', {
-            method: 'POST',
-            body: fdCat,
-            signal: AbortSignal.timeout(20000)
-          }).catch(() => null);
-        }
-
-        if (rCat && rCat.ok) {
-          const urlText = (await rCat.text()).trim();
-          if (urlText.startsWith('https://')) {
-            directDlUrl = urlText;
+        if (rEdge && rEdge.ok) {
+          const jEdge = await rEdge.json().catch(() => null);
+          if (jEdge && jEdge.status === 'success' && jEdge.url && jEdge.url.startsWith('https://')) {
+            directDlUrl = jEdge.url;
           }
         }
-      } catch (errCat) {
-        console.warn('Catbox upload attempt failed:', errCat);
+      } catch (e) {
+        console.warn('Edge proxy upload fallback:', e);
       }
 
-      // -- Fallback Service: tmpfiles.org --
+      // 2. Fallback A: tmpfiles.org direct & proxy
       if (!directDlUrl) {
         try {
-          const formData = new FormData();
-          formData.append('file', file, fileName);
-
-          let response = await fetch('https://tmpfiles.org/api/v1/upload', {
+          const fdTmp = new FormData();
+          fdTmp.append('file', file, fileName);
+          let rTmp = await fetch('https://tmpfiles.org/api/v1/upload', {
             method: 'POST',
-            body: formData,
-            signal: AbortSignal.timeout(15000)
+            body: fdTmp,
+            signal: AbortSignal.timeout(12000)
           }).catch(() => null);
 
-          if (!response || !response.ok) {
-            const fdProxy = new FormData();
-            fdProxy.append('file', file, fileName);
-            response = await fetch('/api/proxy/api/v1/upload', {
+          if (!rTmp || !rTmp.ok) {
+            const fdTmpProxy = new FormData();
+            fdTmpProxy.append('file', file, fileName);
+            rTmp = await fetch('/api/proxy/api/v1/upload', {
               method: 'POST',
-              body: fdProxy,
-              signal: AbortSignal.timeout(15000)
+              body: fdTmpProxy,
+              signal: AbortSignal.timeout(12000)
             }).catch(() => null);
           }
 
-          if (response && response.ok) {
-            const json = await response.json();
+          if (rTmp && rTmp.ok) {
+            const json = await rTmp.json().catch(() => null);
             if (json && json.status === 'success' && json.data && json.data.url) {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+              directDlUrl = json.data.url
+                .replace(/^http:\/\//i, 'https://')
+                .replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
           }
         } catch (err) {
-          console.warn('tmpfiles fallback upload failed:', err.message);
+          console.warn('tmpfiles upload attempt failed:', err);
         }
+      }
+
+      // 3. Fallback B: Litterbox (Catbox 72h fast cloud storage)
+      if (!directDlUrl) {
+        try {
+          const fdLit = new FormData();
+          fdLit.append('reqtype', 'fileupload');
+          fdLit.append('time', '72h');
+          fdLit.append('fileToUpload', file, fileName);
+          let rLit = await fetch('/api/litterbox', {
+            method: 'POST',
+            body: fdLit,
+            signal: AbortSignal.timeout(12000)
+          }).catch(() => null);
+
+          if (!rLit || !rLit.ok) {
+            const fdLitDirect = new FormData();
+            fdLitDirect.append('reqtype', 'fileupload');
+            fdLitDirect.append('time', '72h');
+            fdLitDirect.append('fileToUpload', file, fileName);
+            rLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+              method: 'POST',
+              body: fdLitDirect,
+              signal: AbortSignal.timeout(12000)
+            }).catch(() => null);
+          }
+
+          if (rLit && rLit.ok) {
+            const txt = (await rLit.text()).trim();
+            if (txt.startsWith('https://')) {
+              directDlUrl = txt;
+            }
+          }
+        } catch (err) {
+          console.warn('Litterbox upload attempt failed:', err);
+        }
+      }
+
+      // 4. Fallback C: Uguu.se & Catbox
+      if (!directDlUrl) {
+        try {
+          const fdUguu = new FormData();
+          fdUguu.append('files[]', file, fileName);
+          let rUguu = await fetch('/api/uguu', {
+            method: 'POST',
+            body: fdUguu,
+            signal: AbortSignal.timeout(10000)
+          }).catch(() => null);
+          if (!rUguu || !rUguu.ok) {
+            const fdUguu2 = new FormData();
+            fdUguu2.append('files[]', file, fileName);
+            rUguu = await fetch('https://uguu.se/upload', {
+              method: 'POST',
+              body: fdUguu2,
+              signal: AbortSignal.timeout(10000)
+            }).catch(() => null);
+          }
+          if (rUguu && rUguu.ok) {
+            const jUguu = await rUguu.json().catch(() => null);
+            if (jUguu && jUguu.success && jUguu.files && jUguu.files[0] && jUguu.files[0].url) {
+              directDlUrl = jUguu.files[0].url;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!directDlUrl) {
+        try {
+          const fdCat = new FormData();
+          fdCat.append('reqtype', 'fileupload');
+          fdCat.append('fileToUpload', file, fileName);
+          const rCat = await fetch('/api/catbox', {
+            method: 'POST',
+            body: fdCat,
+            signal: AbortSignal.timeout(10000)
+          }).catch(() => null);
+          if (rCat && rCat.ok) {
+            const urlText = (await rCat.text()).trim();
+            if (urlText.startsWith('https://')) {
+              directDlUrl = urlText;
+            }
+          }
+        } catch (_) {}
       }
 
       isUploadingCloud = false;
@@ -1673,6 +1735,10 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
+        // On mobile devices, upgrade viewer.src from blob: to the HTTPS proxy .glb URL so Android Scene Viewer works!
+        if (isMobile) {
+          viewer.src = buildArProxyGlbUrl(directDlUrl);
+        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
         if (!isMobile) {
