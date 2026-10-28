@@ -29,35 +29,35 @@ exports.handler = async (event) => {
       const blob = new Blob([rawBuf], { type: 'model/gltf-binary' });
       const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-      // 1. tmpfiles.org
-      try {
-        const fd = new FormData();
-        fd.append('file', blob, fileName);
-        const r = await fetch('https://tmpfiles.org/api/v1/upload', {
-          method: 'POST',
-          headers: { 'User-Agent': ua, 'Accept': 'application/json' },
-          body: fd
-        });
-        if (r.ok) {
-          const json = await r.json();
-          if (json && json.status === 'success' && json.data && json.data.url) {
-            const dlUrl = json.data.url.replace(/^http:\/\//i, 'https://').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            return {
-              statusCode: 200,
-              headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'success', url: dlUrl })
-            };
-          }
-        }
-      } catch (_) {}
-
-      // 2. Litterbox
+      // 1. Litterbox (direct .glb binary with CORS *)
       try {
         const fd = new FormData();
         fd.append('reqtype', 'fileupload');
         fd.append('time', '72h');
         fd.append('fileToUpload', blob, fileName);
         const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+          method: 'POST',
+          headers: { 'User-Agent': ua },
+          body: fd
+        });
+        if (r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) {
+            return {
+              statusCode: 200,
+              headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'success', url: txt })
+            };
+          }
+        }
+      } catch (_) {}
+
+      // 2. Catbox (direct .glb binary with CORS *)
+      try {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('fileToUpload', blob, fileName);
+        const r = await fetch('https://catbox.moe/user/api.php', {
           method: 'POST',
           headers: { 'User-Agent': ua },
           body: fd

@@ -610,10 +610,7 @@
         try {
           hasReceivedFile = true;
           const rawUrl = decodeURIComponent(queryUrl);
-          let fetchUrl = rawUrl.split('#')[0].replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/');
-          if (fetchUrl.includes('tmpfiles.org') && !fetchUrl.includes('/dl/') && !fetchUrl.includes('/api/v1/')) {
-            fetchUrl = fetchUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          }
+          let fetchUrl = rawUrl.split('#')[0];
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
           if (rawUrl.includes('#')) {
             name = rawUrl.split('#').pop();
@@ -626,45 +623,39 @@
           modelFormatEl.textContent = ext.toUpperCase();
           modelSizeEl.textContent = 'GLB / AR Ready';
 
-          const fetchWithTimeout = (url, ms = 12000) => {
+          const fetchWithTimeout = (url, ms = 15000) => {
             return fetch(url, { signal: AbortSignal.timeout(ms) }).catch(() => null);
           };
 
           const downloadTasks = [];
-          // Direct fetch (Catbox/Litterbox or CDN)
+          // Direct fetch (Litterbox, Catbox, or CDN with CORS *)
           downloadTasks.push((async () => {
-            const r = await fetchWithTimeout(fetchUrl, 10000);
+            const r = await fetchWithTimeout(fetchUrl, 12000);
             if (r && r.ok) {
               const b = await r.blob();
-              if (b && b.size > 20) return b;
+              if (b && b.size > 50) {
+                const head = await b.slice(0, 50).text().catch(() => '');
+                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
+                  return b;
+                }
+              }
             }
-            throw new Error('Direct fetch failed');
+            throw new Error('Direct fetch failed or returned HTML');
           })());
 
-          // Netlify /api/proxy/dl fallback for tmpfiles
-          if (fetchUrl.includes('tmpfiles.org')) {
-            let proxyTmp = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!proxyTmp.includes('/dl/') && !proxyTmp.includes('/api/v1/')) {
-              proxyTmp = proxyTmp.replace('/api/proxy/', '/api/proxy/dl/');
-            }
-            downloadTasks.push((async () => {
-              const r = await fetchWithTimeout(proxyTmp, 10000);
-              if (r && r.ok) {
-                const b = await r.blob();
-                if (b && b.size > 20) return b;
-              }
-              throw new Error('Proxy tmpfiles failed');
-            })());
-          }
-
-          // Netlify Edge Function fallback
+          // Netlify Edge Proxy fallback (guaranteed CORS * binary stream)
           downloadTasks.push((async () => {
-            const r = await fetchWithTimeout(`/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, 14000);
+            const r = await fetchWithTimeout(`/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, 15000);
             if (r && r.ok) {
               const b = await r.blob();
-              if (b && b.size > 20) return b;
+              if (b && b.size > 50) {
+                const head = await b.slice(0, 50).text().catch(() => '');
+                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
+                  return b;
+                }
+              }
             }
-            throw new Error('Edge proxy fetch failed');
+            throw new Error('Proxy fetch failed or returned HTML');
           })());
 
           const blob = await Promise.any(downloadTasks);
@@ -1228,11 +1219,6 @@
               const contents = e.target.result;
               const loaderStl = new THREE.STLLoader();
               let geometry = loaderStl.parse(contents);
-              if (THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
-                try {
-                  geometry = THREE.BufferGeometryUtils.mergeVertices(geometry, 1e-4);
-                } catch (_) {}
-              }
               geometry.computeVertexNormals();
               
               const material = new THREE.MeshStandardMaterial({ 
@@ -1321,24 +1307,33 @@
         qrCodeImg.style.display = 'none';
       }
 
-      const callback = function (result) {
-        const isBinary = (result instanceof ArrayBuffer);
-        const glbBlob = isBinary ?
-          new Blob([result], { type: 'model/gltf-binary' }) :
-          new Blob([JSON.stringify(result)], { type: 'application/json' });
-        
-        lastExportedBlob = glbBlob;
-        
-        const fileUrl = URL.createObjectURL(glbBlob) + (isBinary ? '#model.glb' : '#model.gltf');
-        if (isFirstLoad) {
-          loadIntoModelViewer(fileUrl);
+      const callback = async function (result) {
+        try {
+          const isBinary = (result instanceof ArrayBuffer);
+          const glbBlob = isBinary ?
+            new Blob([result], { type: 'model/gltf-binary' }) :
+            new Blob([JSON.stringify(result)], { type: 'application/json' });
+          
+          const finalExt = isBinary ? '.glb' : '.gltf';
+          const finalMime = isBinary ? 'model/gltf-binary' : 'application/json';
+          const cleanBase = name.replace(/\.[^/.]+$/, "");
+          const rawGlbFile = new File([glbBlob], cleanBase + finalExt, { type: finalMime });
+
+          // Fast compact & meter-scale normalization (<25ms)
+          const preparedFile = await fastPrepareGlbForAR(rawGlbFile);
+          lastExportedBlob = preparedFile;
+
+          const fileUrl = URL.createObjectURL(preparedFile) + '#model.glb';
+          if (isFirstLoad) {
+            loadIntoModelViewer(fileUrl);
+          }
+
+          generateARShareLink(preparedFile, cleanBase + finalExt);
+        } catch (err) {
+          console.error("Export post-processing error:", err);
+          hideLoader();
+          qrLoading.style.display = 'none';
         }
-        
-        const finalExt = isBinary ? '.glb' : '.gltf';
-        const finalMime = isBinary ? 'model/gltf-binary' : 'application/json';
-        const cleanBase = name.replace(/\.[^/.]+$/, "");
-        const glbFile = new File([glbBlob], cleanBase + finalExt, { type: finalMime });
-        generateARShareLink(glbFile, cleanBase + finalExt);
       };
 
       const onError = function (err) {
@@ -1794,7 +1789,7 @@
 
       const uploadTasks = [];
 
-      // 1. Litterbox (Catbox 72h, direct CORS * HTTPS)
+      // 1. Litterbox (Catbox 72h, direct CORS * raw .glb binary - NEVER HTML!)
       uploadTasks.push((async () => {
         const fd = new FormData();
         fd.append('reqtype', 'fileupload');
@@ -1803,65 +1798,55 @@
         let r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
           body: fd,
-          signal: AbortSignal.timeout(9000)
+          signal: AbortSignal.timeout(18000)
         }).catch(() => null);
         if (!r || !r.ok) {
           r = await fetch('/api/litterbox', {
             method: 'POST',
             body: fd,
-            signal: AbortSignal.timeout(9000)
+            signal: AbortSignal.timeout(18000)
           }).catch(() => null);
         }
         if (r && r.ok) {
           const txt = (await r.text()).trim();
-          if (txt.startsWith('https://')) return txt;
+          if (txt.startsWith('https://') && !txt.includes('tmpfiles.org')) return txt;
         }
         throw new Error('Litterbox failed');
       })());
 
-      // 2. tmpfiles.org direct
-      uploadTasks.push((async () => {
-        const fd = new FormData();
-        fd.append('file', file, fileName);
-        let r = await fetch('https://tmpfiles.org/api/v1/upload', {
-          method: 'POST',
-          body: fd,
-          signal: AbortSignal.timeout(9000)
-        }).catch(() => null);
-        if (!r || !r.ok) {
-          const fdProxy = new FormData();
-          fdProxy.append('file', file, fileName);
-          r = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fdProxy,
-            signal: AbortSignal.timeout(9000)
-          }).catch(() => null);
-        }
-        if (r && r.ok) {
-          const j = await r.json().catch(() => null);
-          if (j && j.status === 'success' && j.data && j.data.url) {
-            return j.data.url.replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-          }
-        }
-        throw new Error('tmpfiles failed');
-      })());
-
-      // 3. Netlify Edge proxy
+      // 2. Netlify Edge Proxy /api/ar-proxy (server-side uploader to Litterbox/Catbox - guaranteed CORS *)
       uploadTasks.push((async () => {
         const fd = new FormData();
         fd.append('file', file, fileName);
         const r = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
           method: 'POST',
           body: fd,
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(18000)
         }).catch(() => null);
         if (r && r.ok) {
           const j = await r.json().catch(() => null);
-          if (j && j.status === 'success' && j.url && j.url.startsWith('https://')) {
+          if (j && j.status === 'success' && j.url && j.url.startsWith('https://') && !j.url.includes('tmpfiles.org')) {
             return j.url;
           }
         }
         throw new Error('Edge proxy upload failed');
+      })());
+
+      // 3. Catbox.moe via Netlify proxy /api/catbox (permanent storage, direct raw binary)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('fileToUpload', file, fileName);
+        let r = await fetch('/api/catbox', {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(18000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) return txt;
+        }
+        throw new Error('Catbox proxy failed');
       })());
 
       try {
