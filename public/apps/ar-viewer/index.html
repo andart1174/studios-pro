@@ -352,7 +352,8 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="scene-viewer webxr quick-look"
+        ar-placement="floor"
         ar-scale="auto"
         interaction-prompt="auto"
         auto-rotate
@@ -623,44 +624,23 @@
           modelFormatEl.textContent = ext.toUpperCase();
           modelSizeEl.textContent = 'GLB / AR Ready';
 
-          const fetchWithTimeout = (url, ms = 15000) => {
-            return fetch(url, { signal: AbortSignal.timeout(ms) }).catch(() => null);
-          };
+          currentThreeScene = null;
+          currentModelName = name;
+          currentModelExtension = ext;
+          lastDirectDlUrl = fetchUrl;
+          lastShareUrl = fetchUrl;
 
-          const downloadTasks = [];
-          // Direct fetch (Litterbox, Catbox, or CDN with CORS *)
-          downloadTasks.push((async () => {
-            const r = await fetchWithTimeout(fetchUrl, 12000);
-            if (r && r.ok) {
-              const b = await r.blob();
-              if (b && b.size > 50) {
-                const head = await b.slice(0, 50).text().catch(() => '');
-                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
-                  return b;
-                }
-              }
+          // Always set viewer.src to the public HTTPS URL so Android Google Scene Viewer & iOS Quick Look can load it in AR!
+          loadIntoModelViewer(fetchUrl);
+          updateQRCodeWithColorParam(fetchUrl, queryColor || 'original');
+
+          // Fetch byte size in background for UI display
+          fetch(fetchUrl, { method: 'HEAD' }).then(r => {
+            const len = r.headers.get('content-length');
+            if (len && parseInt(len) > 0) {
+              modelSizeEl.textContent = formatBytes(parseInt(len));
             }
-            throw new Error('Direct fetch failed or returned HTML');
-          })());
-
-          // Netlify Edge Proxy fallback (guaranteed CORS * binary stream)
-          downloadTasks.push((async () => {
-            const r = await fetchWithTimeout(`/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, 15000);
-            if (r && r.ok) {
-              const b = await r.blob();
-              if (b && b.size > 50) {
-                const head = await b.slice(0, 50).text().catch(() => '');
-                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
-                  return b;
-                }
-              }
-            }
-            throw new Error('Proxy fetch failed or returned HTML');
-          })());
-
-          const blob = await Promise.any(downloadTasks);
-          const file = new File([blob], name, { type: 'model/gltf-binary' });
-          await handleFile(file);
+          }).catch(() => {});
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -930,16 +910,18 @@
         if (!isOldHeavyUnindexed) {
           const scaleFactor = needsScale ? (0.22 / maxDim) : 1.0;
           const cx = (minX + maxX) * 0.5;
-          const cy = (minY + maxY) * 0.5;
+          const cz = (minZ + maxZ) * 0.5;
 
           for (let i = 0; i < posFloats.length; i += 3) {
             posFloats[i]     = (posFloats[i] - cx) * scaleFactor;
-            posFloats[i + 1] = (posFloats[i + 1] - cy) * scaleFactor;
-            posFloats[i + 2] = (posFloats[i + 2] - minZ) * scaleFactor;
+            posFloats[i + 1] = (posFloats[i + 1] - minY) * scaleFactor;
+            posFloats[i + 2] = (posFloats[i + 2] - cz) * scaleFactor;
           }
 
-          posAcc.min = [-spanX * 0.5 * scaleFactor, -spanY * 0.5 * scaleFactor, 0];
-          posAcc.max = [spanX * 0.5 * scaleFactor, spanY * 0.5 * scaleFactor, spanZ * scaleFactor];
+          posAcc.min = [-spanX * 0.5 * scaleFactor, 0, -spanZ * 0.5 * scaleFactor];
+          posAcc.max = [spanX * 0.5 * scaleFactor, spanY * scaleFactor, spanZ * 0.5 * scaleFactor];
+
+          (gltf.materials || []).forEach(m => { m.doubleSided = true; });
 
           // Scale any translation animation keyframes
           if (gltf.animations && gltf.animations.length) {
@@ -996,7 +978,7 @@
 
         const scale = needsScale ? (0.20 / maxDim) : 1.0;
         const cx = (minX + maxX) * 0.5;
-        const cy = (minY + maxY) * 0.5;
+        const cz = (minZ + maxZ) * 0.5;
 
         const HASH_SIZE = 1 << 17;
         const HASH_MASK = HASH_SIZE - 1;
@@ -1038,8 +1020,8 @@
                   hashKeys[slot] = key;
                   hashVals[slot] = idx;
                   outPos[idx * 3]     = (x - cx) * scale;
-                  outPos[idx * 3 + 1] = (y - cy) * scale;
-                  outPos[idx * 3 + 2] = (z - minZ) * scale;
+                  outPos[idx * 3 + 1] = (y - minY) * scale;
+                  outPos[idx * 3 + 2] = (z - cz) * scale;
                   if (nrmFloats) {
                     outNrm[idx * 3]     = nrmFloats[v * 3];
                     outNrm[idx * 3 + 1] = nrmFloats[v * 3 + 1];
@@ -1071,6 +1053,7 @@
         const trimmedNrm = new Uint8Array(outNrm.buffer, 0, uniqueCount * 12);
         const trimmedUv  = new Uint8Array(outUv.buffer,  0, uniqueCount * 8);
         const trimmedIdx = new Uint8Array(outIdx.buffer, 0, validIndices * 2);
+        (gltf.materials || []).forEach(m => { m.doubleSided = true; });
 
         let imgBytes = null;
         let imgMime = 'image/jpeg';
