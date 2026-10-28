@@ -352,7 +352,7 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="scene-viewer webxr quick-look"
+        ar-modes="webxr scene-viewer quick-look"
         ar-placement="floor"
         ar-scale="auto"
         interaction-prompt="auto"
@@ -360,8 +360,17 @@
         autoplay
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
-        
 
+        <!-- WebXR Placement Guidance Prompt (shows during AR surface scanning) -->
+        <div id="ar-prompt" slot="ar-prompt">
+          <div class="ar-guide-pill">
+            <span class="ar-guide-icon">📲</span>
+            <div class="ar-guide-text">
+              <strong class="lang-text" data-fr="Pointez vers la table & touchez l'écran !" data-en="Point at table & tap screen to place!">Point at table & tap screen to place!</strong>
+              <small class="lang-text" data-fr="Déplacez doucement pour détecter la surface" data-en="Move phone slowly to scan surface">Move phone slowly to scan surface</small>
+            </div>
+          </div>
+        </div>
 
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
@@ -369,6 +378,17 @@
           <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
       </model-viewer>
+
+      <!-- Active AR Status Floating Banner (displays on phone screen in WebXR) -->
+      <div id="ar-guide-banner" class="ar-guide-banner" style="display:none;">
+        <div class="ar-guide-content">
+          <span class="ar-guide-hand">👆</span>
+          <div>
+            <div class="ar-guide-title lang-text" data-fr="1. Scannez la table avec la caméra" data-en="1. Scan the table with camera">1. Scan the table with camera</div>
+            <div class="ar-guide-sub lang-text" data-fr="2. Quand le cercle blanc apparaît, touchez l'écran pour poser l'objet !" data-en="2. When the white ring appears, TAP screen to place!">2. When the white ring appears, TAP screen to place!</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Holographic HUD CAD Dimension Labels (overlay on canvas) -->
       <div id="hud-overlay" style="display:none; position:absolute; inset:0; pointer-events:none; z-index:8;">
@@ -441,6 +461,32 @@
     const viewer = document.getElementById('viewer');
     viewer.addEventListener('error', (event) => {
       console.error("model-viewer error detail:", event.detail);
+    });
+    viewer.addEventListener('ar-status', (event) => {
+      const status = event.detail.status;
+      console.log('model-viewer ar-status:', status);
+      const guideBanner = document.getElementById('ar-guide-banner');
+      if (status === 'session-started') {
+        if (guideBanner) {
+          guideBanner.style.display = 'block';
+          if (typeof applyTranslations === 'function') applyTranslations(currentLang);
+        }
+      } else if (status === 'object-placed') {
+        if (guideBanner) {
+          const isFr = currentLang === 'fr';
+          guideBanner.innerHTML = `
+            <div class="ar-guide-content" style="border-color:#10b981; box-shadow:0 0 25px rgba(16,185,129,0.5);">
+              <span class="ar-guide-hand">✅</span>
+              <div>
+                <div class="ar-guide-title" style="color:#10b981;">\${isFr ? "Modèle placé avec succès !" : "Model placed successfully!"}</div>
+                <div class="ar-guide-sub">\${isFr ? "Pincez pour redimensionner, tournez avec un doigt" : "Pinch to scale, drag to rotate"}</div>
+              </div>
+            </div>`;
+          setTimeout(() => { if (guideBanner) guideBanner.style.display = 'none'; }, 3500);
+        }
+      } else if (status === 'not-presenting' || status === 'failed') {
+        if (guideBanner) guideBanner.style.display = 'none';
+      }
     });
     const placeholder = document.getElementById('placeholder');
     const loader = document.getElementById('loader');
@@ -1111,7 +1157,7 @@
           }],
           accessors: [
             { bufferView: 0, byteOffset: 0, componentType: 5123, count: validIndices, type: 'SCALAR', min: [0], max: [uniqueCount - 1] },
-            { bufferView: 1, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC3', min: [-spanX * 0.5 * scale, -spanY * 0.5 * scale, 0], max: [spanX * 0.5 * scale, spanY * 0.5 * scale, spanZ * scale] },
+            { bufferView: 1, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC3', min: [-spanX * 0.5 * scale, 0, -spanZ * 0.5 * scale], max: [spanX * 0.5 * scale, spanY * scale, spanZ * 0.5 * scale] },
             { bufferView: 2, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC3' },
             { bufferView: 3, byteOffset: 0, componentType: 5126, count: uniqueCount, type: 'VEC2' }
           ],
