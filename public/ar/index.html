@@ -480,6 +480,13 @@
                 exposure="1.1"
                 loading="eager">
                 
+                                <!-- WebXR AR placement prompt banner -->
+                <div slot="ar-prompt" id="ar-prompt" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:999999; pointer-events:none;">
+                  <div style="background:rgba(15,23,42,0.95); border:2px solid #00f2fe; box-shadow:0 8px 30px rgba(0,0,0,0.6); padding:10px 20px; border-radius:30px; display:flex; align-items:center; gap:10px; color:#fff;">
+                    <span style="font-size:22px;">👇</span>
+                    <strong style="color:#00f2fe; font-size:13px;">TOUCHEZ L'ÉCRAN POUR POSER LE MODÈLE !</strong>
+                  </div>
+                </div>
                 <button slot="ar-button" class="ar-custom-btn" id="customArBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>

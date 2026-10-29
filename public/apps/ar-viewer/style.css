@@ -862,3 +862,147 @@ body, html {
     display: none;
   }
 }
+
+/* WebXR AR placement prompt banner */
+#ar-prompt {
+  display: none;
+}
+
+model-viewer[ar-status="session-started"] > #ar-prompt {
+  display: flex !important;
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999;
+  pointer-events: none;
+  animation: arPulse 1.5s infinite alternate ease-in-out;
+  width: 90%;
+  max-width: 440px;
+  justify-content: center;
+}
+
+model-viewer[ar-status="object-placed"] > #ar-prompt {
+  display: none !important;
+}
+
+.ar-tap-banner {
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #06b6d4;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(6, 182, 212, 0.6);
+  padding: 12px 20px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: white;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.ar-tap-hand-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ar-tap-icon {
+  font-size: 28px;
+  animation: arBounce 0.7s infinite alternate ease-in-out;
+  z-index: 2;
+}
+
+.ar-tap-ripple {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #06b6d4;
+  animation: arRipple 1.4s infinite ease-out;
+  opacity: 0;
+}
+
+@keyframes arRipple {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.ar-tap-texts {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.ar-tap-texts strong {
+  font-size: 13px;
+  color: #22d3ee;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.ar-tap-texts small {
+  font-size: 11px;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+/* Object Placed Confirmation Banner */
+#ar-placed-hint {
+  display: none;
+}
+
+model-viewer[ar-status="object-placed"] > #ar-placed-hint {
+  display: flex !important;
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 185, 129, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.5);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 999999;
+  animation: fadeOutHint 4.5s forwards ease-in-out;
+}
+
+.ar-placed-icon {
+  font-size: 16px;
+  background: white;
+  color: #10b981;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+@keyframes fadeOutHint {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); display: none; }
+}
+
+@keyframes arBounce {
+  from { transform: translateY(-3px); }
+  to { transform: translateY(5px); }
+}
+
+@keyframes arPulse {
+  from { transform: translateX(-50%) scale(0.97); }
+  to { transform: translateX(-50%) scale(1.03); }
+}

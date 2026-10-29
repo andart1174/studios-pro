@@ -362,6 +362,25 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
+
+        <!-- WebXR AR placement prompt banner -->
+        <div id="ar-prompt" slot="ar-prompt">
+          <div class="ar-tap-banner">
+            <div class="ar-tap-hand-wrapper">
+              <span class="ar-tap-icon">📲</span>
+              <span class="ar-tap-ripple"></span>
+            </div>
+            <div class="ar-tap-texts">
+              <strong class="lang-text" data-fr="Pointez & Touchez l'écran" data-en="Point Camera & Tap Screen">Point Camera &amp; Tap Screen</strong>
+              <small class="lang-text" data-fr="pour poser l'objet 3D sur votre table" data-en="to place the 3D model on your table">to place the 3D model on your table</small>
+            </div>
+          </div>
+        </div>
+
+        <div id="ar-placed-hint">
+          <span class="ar-placed-icon">✓</span>
+          <span class="lang-text" data-fr="Modèle placé ! Pincez pour redimensionner" data-en="Model placed! Pinch to resize">Model placed! Pinch to resize</span>
+        </div>
       </model-viewer>
 
       <!-- Holographic HUD CAD Dimension Labels (overlay on canvas) -->

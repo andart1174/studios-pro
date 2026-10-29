@@ -208,7 +208,7 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
+Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
@@ -297,4 +297,15 @@
   for = "/ar/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# AR viewer app — completely un-cached for instant updates on mobile
+[[headers]]
+  for = "/apps/ar-viewer/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
