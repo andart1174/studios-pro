@@ -862,3 +862,52 @@ body, html {
     display: none;
   }
 }
+
+/* WebXR AR placement prompt banner */
+#ar-prompt {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999;
+  pointer-events: none;
+  animation: arPulse 1.5s infinite alternate ease-in-out;
+}
+.ar-tap-banner {
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #06b6d4;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(6, 182, 212, 0.6);
+  padding: 12px 24px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  white-space: nowrap;
+}
+.ar-tap-icon {
+  font-size: 26px;
+  animation: arBounce 0.8s infinite alternate ease-in-out;
+}
+.ar-tap-texts {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.ar-tap-texts strong {
+  font-size: 13px;
+  color: #22d3ee;
+  letter-spacing: 0.5px;
+}
+.ar-tap-texts small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+@keyframes arBounce {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(4px); }
+}
+@keyframes arPulse {
+  from { transform: translateX(-50%) scale(0.97); }
+  to { transform: translateX(-50%) scale(1.03); }
+}

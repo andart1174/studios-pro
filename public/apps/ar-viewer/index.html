@@ -251,19 +251,29 @@
         id="viewer"
         camera-controls 
         touch-action="pan-y" 
-        shadow-intensity="1"
-        shadow-softness="0.8"
-        exposure="1"
+        shadow-intensity="1.2"
+        shadow-softness="0.5"
+        exposure="1.1"
         ar
         ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
+        ar-placement="floor"
         interaction-prompt="auto"
         auto-rotate
         autoplay
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
-        
 
+        <!-- AR Surface Placement Prompt -->
+        <div slot="ar-prompt" id="ar-prompt">
+          <div class="ar-tap-banner">
+            <span class="ar-tap-icon">👇</span>
+            <div class="ar-tap-texts">
+              <strong class="lang-text" data-fr="TOUCHEZ L'ÉCRAN POUR AFFICHER L'OBJET !" data-en="TAP SCREEN TO PLACE 3D MODEL !">TAP SCREEN TO PLACE 3D MODEL !</strong>
+              <small class="lang-text" data-fr="Pointez vers la table ou le sol" data-en="Point camera at table or floor">Point camera at table or floor</small>
+            </div>
+          </div>
+        </div>
 
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
@@ -330,6 +340,24 @@
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const viewer = document.getElementById('viewer');
+    
+    // Auto-placement tap helper in WebXR mode
+    viewer.addEventListener('ar-status', (event) => {
+      console.log('model-viewer ar-status:', event.detail.status);
+      if (event.detail.status === 'session-started') {
+        // When WebXR session starts, attempt auto-placement tap after 1.5s
+        setTimeout(() => {
+          try {
+            const rect = viewer.getBoundingClientRect();
+            const clientX = rect.left + rect.width / 2;
+            const clientY = rect.top + rect.height / 2;
+            viewer.dispatchEvent(new PointerEvent('pointerdown', { clientX, clientY, bubbles: true }));
+            viewer.dispatchEvent(new PointerEvent('pointerup', { clientX, clientY, bubbles: true }));
+          } catch(_) {}
+        }, 1500);
+      }
+    });
+
     viewer.addEventListener('error', (event) => {
       console.error("model-viewer error detail:", event.detail);
     });
@@ -544,20 +572,25 @@
 
 
 
-    // Scale normalization to prevent oversized/microscopic models in AR
+    // Scale & center normalization to prevent oversized/microscopic or off-center models in AR
     function normalizeObjectScale(object) {
       const box = new THREE.Box3().setFromObject(object);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      // Center horizontally at (0, 0)
+      object.position.x -= center.x;
+      object.position.z -= center.z;
+      // Position bottom at y = 0 so it rests naturally on table/floor in AR
+      object.position.y -= box.min.y;
+
       const size = new THREE.Vector3();
       box.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
-      
-      // If the model is likely in millimeters (max dimension > 5.0, e.g., 50mm to 300mm),
-      // we scale it down by 1000 to convert to meters for correct AR representation.
-      if (maxDim > 5.0) {
-        object.scale.multiplyScalar(0.001);
-      } else if (maxDim < 0.01 && maxDim > 0) {
-        // If microscopic (less than 1cm), scale up to a visible size
-        object.scale.multiplyScalar(0.1 / maxDim);
+      if (maxDim > 0) {
+        // Target ideal 35cm (0.35m) tabletop AR size
+        const targetSize = 0.35;
+        const scaleFactor = targetSize / maxDim;
+        object.scale.multiplyScalar(scaleFactor);
       }
     }
 
@@ -595,6 +628,8 @@
               const contents = e.target.result;
               const loaderStl = new THREE.STLLoader();
               const geometry = loaderStl.parse(contents);
+              geometry.center();
+              geometry.computeVertexNormals();
               
               const material = new THREE.MeshStandardMaterial({ 
                 color: 0xcccccc, 
@@ -732,6 +767,15 @@
       try {
         const dimensions = viewer.getDimensions();
         if (dimensions) {
+          // Auto-normalize AR scale: if model is microscopic (< 0.15m = 15cm) or huge (> 1.2m), scale to 35cm
+          const maxDim = Math.max(dimensions.x, dimensions.y, dimensions.z);
+          if (maxDim > 0 && (maxDim < 0.15 || maxDim > 1.2)) {
+            const factor = (0.35 / maxDim);
+            viewer.scale = `${factor.toFixed(4)} ${factor.toFixed(4)} ${factor.toFixed(4)}`;
+            console.log(`Auto-scaled AR model for visibility: factor ${factor} -> target size 35cm`);
+          } else {
+            viewer.scale = '1 1 1';
+          }
           const formatDim = (val) => {
             if (val >= 1.0) {
               return `${val.toFixed(2)} m`;
