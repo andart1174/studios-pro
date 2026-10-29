@@ -135,7 +135,7 @@
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(self), display-capture=(self), autoplay=(self), fullscreen=(self)"
+    Permissions-Policy = "camera=(self), microphone=(self), display-capture=(self), autoplay=(self), fullscreen=(self), xr-spatial-tracking=(self)"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
