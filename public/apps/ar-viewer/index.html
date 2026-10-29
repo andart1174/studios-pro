@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR Viewer 3D | Studios-Pro</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=26">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -264,15 +264,24 @@
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
 
-        <!-- AR Surface Placement Prompt -->
-        <div slot="ar-prompt" id="ar-prompt">
+        <!-- AR Surface Placement Prompt Overlay in WebXR -->
+        <div id="ar-prompt">
           <div class="ar-tap-banner">
-            <span class="ar-tap-icon">👇</span>
+            <div class="ar-tap-hand-wrapper">
+              <span class="ar-tap-icon">👆</span>
+              <div class="ar-tap-ripple"></div>
+            </div>
             <div class="ar-tap-texts">
-              <strong class="lang-text" data-fr="TOUCHEZ L'ÉCRAN POUR AFFICHER L'OBJET !" data-en="TAP SCREEN TO PLACE 3D MODEL !">TAP SCREEN TO PLACE 3D MODEL !</strong>
-              <small class="lang-text" data-fr="Pointez vers la table ou le sol" data-en="Point camera at table or floor">Point camera at table or floor</small>
+              <strong class="lang-text" data-fr="TOUCHEZ L'ÉCRAN POUR PLACER L'OBJET 3D !" data-en="TAP SCREEN TO PLACE 3D MODEL !" data-ro="ATINGEȚI ECRANUL PENTRU A PLASA MODELUL 3D !">TOUCHEZ L'ÉCRAN POUR PLACER L'OBJET 3D !</strong>
+              <small class="lang-text" data-fr="Pointez vers le sol ou la table, puis touchez" data-en="Point at floor or table, then tap screen" data-ro="Îndreptați spre podea/masă și atingeți ecranul">Pointez vers le sol ou la table, puis touchez</small>
             </div>
           </div>
+        </div>
+
+        <!-- AR Object Placed Toast -->
+        <div id="ar-placed-hint">
+          <span class="ar-placed-icon">✓</span>
+          <span class="lang-text" data-fr="Modèle 3D placé ! Glissez avec 1 doigt pour déplacer." data-en="3D Model placed! Drag with 1 finger to move." data-ro="Model 3D plasat! Glisați cu 1 deget pentru a muta.">Modèle 3D placé ! Glissez avec 1 doigt pour déplacer.</span>
         </div>
 
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
