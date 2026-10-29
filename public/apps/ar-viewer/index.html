@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
-  <script type="module" src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -349,29 +349,21 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="scene-viewer webxr quick-look"
         ar-scale="auto"
+        ar-placement="floor"
         interaction-prompt="auto"
         auto-rotate
         autoplay
+        loading="eager"
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
-        
-
 
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
-
-        <!-- WebXR AR surface scanning & placement guidance banner -->
-        <div id="ar-prompt" slot="ar-prompt">
-          <div class="ar-prompt-box">
-            <span style="font-size: 16px;">📲</span>
-            <span class="lang-text" data-fr="Pointez vers la table/sol & TOUCHEZ l'écran pour poser l'objet !" data-en="Point at floor/table & TAP screen to place model!">Point at floor/table & TAP screen to place model!</span>
-          </div>
-        </div>
       </model-viewer>
 
       <!-- Holographic HUD CAD Dimension Labels (overlay on canvas) -->
@@ -622,6 +614,16 @@
 
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
+          // Set viewer.src to the public HTTPS URL so native SceneViewer can project it on Android!
+          if (fetchUrl && (fetchUrl.startsWith('http://') || fetchUrl.startsWith('https://'))) {
+            let directModelHttps = fetchUrl.replace(/^http:\/\//i, 'https://');
+            if (directModelHttps.includes('tmpfiles.org') && !directModelHttps.includes('/dl/') && !directModelHttps.includes('/api/v1/')) {
+              directModelHttps = directModelHttps.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+            viewer.src = directModelHttps;
+            lastDirectDlUrl = directModelHttps;
+            lastShareUrl = directModelHttps;
+          }
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -713,8 +715,7 @@
         name: 'CAD_Mechanical_Gear.glb',
         ext: 'glb',
         format: 'STL / CAD',
-        url: '/ar/models/cad-gear.glb',
-        isProcedural: true
+        url: '/ar/models/cad-gear.glb'
       },
       fox: {
         id: 'fox',
@@ -735,8 +736,7 @@
         name: 'Panou_Sculptat_Bois_CNC.glb',
         ext: 'glb',
         format: 'CNC Relief / Wood PBR',
-        url: '/ar/models/relief-wood.glb',
-        isProcedural: true
+        url: '/ar/models/relief-wood.glb'
       }
     };
 
@@ -777,7 +777,7 @@
       if (rdBtn) rdBtn.href = `https://reddit.com/submit?url=${encodeURIComponent(targetUrl)}&title=${encodeURIComponent('Check out this 3D model in Augmented Reality')}`;
     }
 
-    window.triggerDemoModel = async function(demoId) {
+    window.triggerDemoModel = function(demoId) {
       const demo = DEMO_MODELS[demoId] || DEMO_MODELS.fox;
       activeDemoId = demo.id;
       hasReceivedFile = true;
@@ -787,214 +787,19 @@
         btn.classList.toggle('active', btn.getAttribute('data-demo') === demo.id);
       });
 
-      showLoader(currentLang === 'fr' ? `Chargement du modèle ${demo.name}...` : `Loading ${demo.name}...`);
+      modelNameEl.textContent = demo.name;
+      modelFormatEl.textContent = demo.format;
+      modelSizeEl.textContent = '100% PBR';
 
-      try {
-        if (demo.isProcedural && demo.id === 'gear') {
-          // Generate high-precision CAD mechanical gear
-          const numTeeth = 16;
-          const outerR = 0.22;
-          const innerR = 0.17;
-          const toothH = 0.04;
-          const shape = new THREE.Shape();
-          const delta = (Math.PI * 2) / numTeeth;
+      currentThreeScene = null;
+      currentModelName = demo.name;
+      currentModelExtension = demo.ext;
 
-          for (let i = 0; i < numTeeth; i++) {
-            const a0 = i * delta;
-            const a1 = a0 + delta * 0.25;
-            const a2 = a0 + delta * 0.5;
-            const a3 = a0 + delta * 0.75;
-
-            const p0 = new THREE.Vector2(Math.cos(a0) * innerR, Math.sin(a0) * innerR);
-            const p1 = new THREE.Vector2(Math.cos(a1) * (outerR + toothH), Math.sin(a1) * (outerR + toothH));
-            const p2 = new THREE.Vector2(Math.cos(a2) * (outerR + toothH), Math.sin(a2) * (outerR + toothH));
-            const p3 = new THREE.Vector2(Math.cos(a3) * innerR, Math.sin(a3) * innerR);
-
-            if (i === 0) shape.moveTo(p0.x, p0.y);
-            else shape.lineTo(p0.x, p0.y);
-            shape.lineTo(p1.x, p1.y);
-            shape.lineTo(p2.x, p2.y);
-            shape.lineTo(p3.x, p3.y);
-          }
-          shape.closePath();
-
-          // Central axle bore hole
-          const hole = new THREE.Path();
-          hole.absarc(0, 0, 0.065, 0, Math.PI * 2, true);
-          shape.holes.push(hole);
-
-          const geom = new THREE.ExtrudeGeometry(shape, {
-            depth: 0.06,
-            bevelEnabled: true,
-            bevelThickness: 0.012,
-            bevelSize: 0.01,
-            bevelSegments: 3
-          });
-          geom.center();
-
-          const mat = new THREE.MeshStandardMaterial({
-            color: 0x06b6d4,
-            metalness: 0.88,
-            roughness: 0.2
-          });
-          const mesh = new THREE.Mesh(geom, mat);
-          const scene = new THREE.Scene();
-          scene.add(mesh);
-
-          currentThreeScene = scene;
-          currentModelName = demo.name;
-          currentModelExtension = 'glb';
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = '145 KB (PBR)';
-
-          const exporter = new THREE.GLTFExporter();
-          exporter.parse(scene, function(result) {
-            const isBinary = (result instanceof ArrayBuffer);
-            const glbBlob = isBinary ?
-              new Blob([result], { type: 'application/octet-stream' }) :
-              new Blob([JSON.stringify(result)], { type: 'application/json' });
-            lastExportedBlob = glbBlob;
-            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
-            loadIntoModelViewer(fileUrl);
-            generateDemoQR(demo.id);
-          }, { binary: true });
-
-        } else if (demo.isProcedural && demo.id === 'relief') {
-          // Authentic Sculpted Wood Relief Panel (Panou sculptat CNC din lemn)
-          const group = new THREE.Group();
-
-          // 1. Backing board (Solid Oak/Walnut wood base)
-          const boardGeom = new THREE.BoxGeometry(0.28, 0.21, 0.02);
-          const boardMat = new THREE.MeshStandardMaterial({
-            color: 0x8a5229,
-            roughness: 0.72,
-            metalness: 0.04
-          });
-          const boardMesh = new THREE.Mesh(boardGeom, boardMat);
-          group.add(boardMesh);
-
-          // 2. Beveled frame moulding around the border
-          const frameShape = new THREE.Shape();
-          frameShape.moveTo(-0.14, -0.105);
-          frameShape.lineTo(0.14, -0.105);
-          frameShape.lineTo(0.14, 0.105);
-          frameShape.lineTo(-0.14, 0.105);
-          frameShape.closePath();
-
-          const holePath = new THREE.Path();
-          holePath.moveTo(-0.12, -0.085);
-          holePath.lineTo(0.12, -0.085);
-          holePath.lineTo(0.12, 0.085);
-          holePath.lineTo(-0.12, 0.085);
-          holePath.closePath();
-          frameShape.holes.push(holePath);
-
-          const frameGeom = new THREE.ExtrudeGeometry(frameShape, {
-            depth: 0.012,
-            bevelEnabled: true,
-            bevelThickness: 0.006,
-            bevelSize: 0.005,
-            bevelSegments: 3
-          });
-          frameGeom.center();
-          const frameMat = new THREE.MeshStandardMaterial({
-            color: 0x76421e,
-            roughness: 0.65,
-            metalness: 0.05
-          });
-          const frameMesh = new THREE.Mesh(frameGeom, frameMat);
-          frameMesh.position.z = 0.012;
-          group.add(frameMesh);
-
-          // 3. Central Carved Rosette Medallion with detailed classical carving
-          const reliefGeom = new THREE.PlaneGeometry(0.23, 0.16, 96, 72);
-          const pos = reliefGeom.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const y = pos.getY(i);
-            const r = Math.sqrt(x * x + y * y);
-            const theta = Math.atan2(y, x);
-            let h = 0;
-            const maxR = 0.075;
-            if (r < maxR) {
-              const normR = r / maxR;
-              // Classical carved dome
-              const dome = Math.cos(normR * Math.PI * 0.5) * 0.014;
-              // 12 sculpted rosette petals
-              const petals = Math.sin(normR * Math.PI * 2) * Math.cos(12 * theta) * 0.006 * (1 - normR * 0.35);
-              // Concentric fluting rings
-              const ring = Math.sin(normR * Math.PI * 6) * 0.0025;
-              // Center raised jewel / boss
-              const boss = Math.exp(-normR * normR * 35) * 0.008;
-              h = dome + petals + ring + boss;
-            } else {
-              // Beveled inner margin with wave pattern
-              const edgeDist = Math.min(0.115 - Math.abs(x), 0.08 - Math.abs(y));
-              if (edgeDist > 0 && edgeDist < 0.04) {
-                h = Math.sin((0.04 - edgeDist) * 80) * 0.002;
-              }
-            }
-            pos.setZ(i, h);
-          }
-          reliefGeom.computeVertexNormals();
-
-          const reliefMat = new THREE.MeshStandardMaterial({
-            color: 0x965a32,
-            roughness: 0.62,
-            metalness: 0.05
-          });
-          const reliefMesh = new THREE.Mesh(reliefGeom, reliefMat);
-          reliefMesh.position.z = 0.011;
-          group.add(reliefMesh);
-
-          const scene = new THREE.Scene();
-          scene.add(group);
-
-          currentThreeScene = scene;
-          currentModelName = demo.name;
-          currentModelExtension = 'glb';
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = '195 KB (Wood PBR)';
-
-          const exporter = new THREE.GLTFExporter();
-          exporter.parse(scene, function(result) {
-            const isBinary = (result instanceof ArrayBuffer);
-            const glbBlob = isBinary ?
-              new Blob([result], { type: 'application/octet-stream' }) :
-              new Blob([JSON.stringify(result)], { type: 'application/json' });
-            lastExportedBlob = glbBlob;
-            const fileUrl = URL.createObjectURL(glbBlob) + '#model.glb';
-            loadIntoModelViewer(fileUrl);
-            generateDemoQR(demo.id);
-          }, { binary: true });
-
-        } else {
-          // Static pre-optimized model
-          const response = await fetch(demo.url);
-          if (!response.ok) throw new Error('Demo fetch failed');
-          const blob = await response.blob();
-
-          modelNameEl.textContent = demo.name;
-          modelFormatEl.textContent = demo.format;
-          modelSizeEl.textContent = formatBytes(blob.size);
-
-          currentThreeScene = null;
-          currentModelName = demo.name;
-          currentModelExtension = demo.ext;
-          lastExportedBlob = blob;
-
-          const fileUrl = URL.createObjectURL(blob) + '#model.glb';
-          loadIntoModelViewer(fileUrl);
-          generateDemoQR(demo.id);
-        }
-      } catch (err) {
-        console.error('Error loading demo model:', err);
-        hideLoader();
-      }
+      // Direct public HTTPS URL for SceneViewer & QuickLook!
+      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
+      const directHttpsUrl = `${baseOrigin}${demo.url}`;
+      loadIntoModelViewer(directHttpsUrl);
+      generateDemoQR(demo.id);
     };
 
     // Main file processor
@@ -1672,6 +1477,9 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
+        if (isMobile && viewer) {
+          viewer.src = directDlUrl;
+        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
         if (!isMobile) {

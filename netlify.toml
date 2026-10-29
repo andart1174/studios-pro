@@ -154,6 +154,12 @@
   force = false
 
 [[redirects]]
+  from = "/ar/*"
+  to = "/ar/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/cards/*.html"
   to = "/cards/:splat.html"
   status = 200
