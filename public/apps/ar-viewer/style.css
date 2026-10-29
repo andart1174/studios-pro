@@ -865,3 +865,34 @@ body, html {
 
 
 
+
+/* Android: direct Google Scene Viewer launcher button (sits above the model-viewer AR button) */
+#scene-viewer-btn {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+}
+
+@media (max-width: 767px) {
+  #scene-viewer-btn {
+    bottom: 70px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 11px;
+  }
+}
