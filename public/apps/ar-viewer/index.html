@@ -10,7 +10,7 @@
   <meta property="og:title" content="AR Viewer 3D | Studios-Pro">
   <meta property="og:description" content="View 3D models in Augmented Reality directly in your web browser. Free WebAR viewer with instant QR code mobile projection.">
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-  <link rel="stylesheet" href="style.css?v=20.0">
+  <link rel="stylesheet" href="style.css?v=21.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -362,15 +362,17 @@
         <!-- Native AR Button (hidden default styling, styled via custom CSS class) -->
         <button slot="ar-button" id="ar-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span class="lang-text" data-fr="VOIR EN RALIT AUGMENTE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
+          <span class="lang-text" data-fr="VOIR EN RÉALITÉ AUGMENTÉE" data-en="VIEW IN AUGMENTED REALITY">VIEW IN AUGMENTED REALITY</span>
         </button>
-      </model-viewer>
 
-      <!-- Android: direct Google Scene Viewer launcher (uses the public HTTPS model URL, works even if in-browser WebXR shows only the camera) -->
-      <button id="scene-viewer-btn" type="button" style="display:none;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <span id="scene-viewer-btn-text">VIEW IN AR (GOOGLE)</span>
-      </button>
+        <!-- WebXR AR surface scanning & placement guidance banner -->
+        <div id="ar-prompt" slot="ar-prompt">
+          <div class="ar-prompt-box">
+            <span style="font-size: 16px;">📲</span>
+            <span class="lang-text" data-fr="Pointez vers la table/sol & TOUCHEZ l'écran pour poser l'objet !" data-en="Point at floor/table & TAP screen to place model!">Point at floor/table & TAP screen to place model!</span>
+          </div>
+        </div>
+      </model-viewer>
 
       <!-- Holographic HUD CAD Dimension Labels (overlay on canvas) -->
       <div id="hud-overlay" style="display:none; position:absolute; inset:0; pointer-events:none; z-index:8;">
@@ -404,43 +406,6 @@
     let isUploadingCloud = false;
     let currentLoadedBlobUrl = "";
     let hasReceivedFile = false;
-    let publicModelUrl = "";
-
-    // ---- Android Google Scene Viewer launcher (needs a PUBLIC https model URL, never a blob:) ----
-    const isAndroidDevice = /Android/i.test(navigator.userAgent);
-    function publicOrigin() {
-      return window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-    }
-    function buildPublicGlbUrl(upstreamUrl) {
-      if (!upstreamUrl) return "";
-      if (upstreamUrl.startsWith('/')) return publicOrigin() + upstreamUrl;
-      if (upstreamUrl.startsWith(publicOrigin() + '/ar/models/')) return upstreamUrl;
-      let clean = upstreamUrl.replace(/^http:\/\/tmpfiles\.org\//i, 'https://tmpfiles.org/');
-      if (/^https:\/\/tmpfiles\.org\//.test(clean) && !/tmpfiles\.org\/(dl|api\/v1)\//.test(clean)) {
-        clean = clean.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-      }
-      const b64 = btoa(clean).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      return `${publicOrigin()}/api/ar-proxy/${b64}/model.glb`;
-    }
-    function setPublicModelUrl(url) {
-      publicModelUrl = url || "";
-      const btn = document.getElementById('scene-viewer-btn');
-      if (!btn) return;
-      btn.style.display = (isAndroidDevice && publicModelUrl) ? 'flex' : 'none';
-      const txt = document.getElementById('scene-viewer-btn-text');
-      if (txt) txt.textContent = currentLang === 'fr' ? 'VOIR EN AR (GOOGLE)' : 'VIEW IN AR (GOOGLE)';
-    }
-    function launchSceneViewer() {
-      if (!publicModelUrl) return;
-      const params = new URLSearchParams({
-        file: publicModelUrl,
-        mode: 'ar_preferred',
-        title: currentModelName || '3D Model'
-      });
-      const fallback = encodeURIComponent('https://developers.google.com/ar');
-      window.location.href = `intent://arvr.google.com/scene-viewer/1.0?${params.toString()}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
-    }
-    document.getElementById('scene-viewer-btn').addEventListener('click', launchSceneViewer);
 
     // Apply translations
     function translateUI() {
@@ -657,7 +622,6 @@
 
           const file = new File([blob], name, { type: 'application/octet-stream' });
           handleFile(file);
-          setPublicModelUrl(buildPublicGlbUrl(fetchUrl));
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -817,7 +781,6 @@
       const demo = DEMO_MODELS[demoId] || DEMO_MODELS.fox;
       activeDemoId = demo.id;
       hasReceivedFile = true;
-      setPublicModelUrl(buildPublicGlbUrl(demo.url));
 
       // Highlight active demo card in sidebar
       document.querySelectorAll('.demo-card-btn').forEach(btn => {
@@ -1040,7 +1003,6 @@
       hasReceivedFile = true;
       activeDemoId = null;
       lastDirectDlUrl = null;
-      setPublicModelUrl('');
       lastSharePageUrl = "";
       document.querySelectorAll('.demo-card-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -1649,67 +1611,58 @@
       isUploadingCloud = true;
       let directDlUrl = null;
 
-      // -- Primary Service: Catbox.moe (Permanent cloud storage, direct raw file) --
+      // -- Primary Service: Fast tmpfiles.org direct upload (~600ms) --
       try {
-        const fdCat = new FormData();
-        fdCat.append('reqtype', 'fileupload');
-        fdCat.append('fileToUpload', file, fileName);
+        const formData = new FormData();
+        formData.append('file', file, fileName);
 
-        // Try /api/catbox proxy (configured in Netlify & Vite)
-        let rCat = await fetch('/api/catbox', {
+        let response = await fetch('https://tmpfiles.org/api/v1/upload', {
           method: 'POST',
-          body: fdCat,
-          signal: AbortSignal.timeout(20000)
+          body: formData,
+          signal: AbortSignal.timeout(10000)
         }).catch(() => null);
 
-        if (!rCat || !rCat.ok) {
-          rCat = await fetch('/api/proxy-catbox/user/api.php', {
+        if (!response || !response.ok) {
+          const fdProxy = new FormData();
+          fdProxy.append('file', file, fileName);
+          response = await fetch('/api/proxy/api/v1/upload', {
             method: 'POST',
-            body: fdCat,
-            signal: AbortSignal.timeout(20000)
+            body: fdProxy,
+            signal: AbortSignal.timeout(10000)
           }).catch(() => null);
         }
 
-        if (rCat && rCat.ok) {
-          const urlText = (await rCat.text()).trim();
-          if (urlText.startsWith('https://')) {
-            directDlUrl = urlText;
+        if (response && response.ok) {
+          const json = await response.json().catch(() => null);
+          if (json && json.status === 'success' && json.data && json.data.url) {
+            directDlUrl = json.data.url.replace(/^http:\/\//i, 'https://').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
           }
         }
-      } catch (errCat) {
-        console.warn('Catbox upload attempt failed:', errCat);
+      } catch (err) {
+        console.warn('tmpfiles upload failed:', err.message);
       }
 
-      // -- Fallback Service: tmpfiles.org --
+      // -- Fallback Service: Catbox.moe --
       if (!directDlUrl) {
         try {
-          const formData = new FormData();
-          formData.append('file', file, fileName);
+          const fdCat = new FormData();
+          fdCat.append('reqtype', 'fileupload');
+          fdCat.append('fileToUpload', file, fileName);
 
-          let response = await fetch('https://tmpfiles.org/api/v1/upload', {
+          let rCat = await fetch('/api/catbox', {
             method: 'POST',
-            body: formData,
-            signal: AbortSignal.timeout(15000)
+            body: fdCat,
+            signal: AbortSignal.timeout(10000)
           }).catch(() => null);
 
-          if (!response || !response.ok) {
-            const fdProxy = new FormData();
-            fdProxy.append('file', file, fileName);
-            response = await fetch('/api/proxy/api/v1/upload', {
-              method: 'POST',
-              body: fdProxy,
-              signal: AbortSignal.timeout(15000)
-            }).catch(() => null);
-          }
-
-          if (response && response.ok) {
-            const json = await response.json();
-            if (json && json.status === 'success' && json.data && json.data.url) {
-              directDlUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+          if (rCat && rCat.ok) {
+            const urlText = (await rCat.text()).trim();
+            if (urlText.startsWith('https://')) {
+              directDlUrl = urlText;
             }
           }
-        } catch (err) {
-          console.warn('tmpfiles fallback upload failed:', err.message);
+        } catch (errCat) {
+          console.warn('Catbox upload attempt failed:', errCat);
         }
       }
 
@@ -1719,7 +1672,6 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        setPublicModelUrl(buildPublicGlbUrl(directDlUrl));
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
         if (!isMobile) {

@@ -202,7 +202,7 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
+    Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)

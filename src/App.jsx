@@ -2942,7 +2942,7 @@ const StudiosPro = () => {
         )}
         {isARViewerOpen && (
           <motion.div className="studio-overlay ar-viewer-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?v=19&lang=${lang}&premium=${isPremium || isAdmin}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" />
+            <iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?v=21&lang=${lang}&premium=${isPremium || isAdmin}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" allow="camera; xr-spatial-tracking; fullscreen; accelerometer; gyroscope" />
           </motion.div>
         )}
         {isDFXOpen && (
