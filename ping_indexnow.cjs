@@ -2,12 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const key = '9d0577c5cff561d2b034963557598da2';
+const key = 'f89ae7b4f1094014a700fcd8d747035b';
 const keyFile = path.join(__dirname, 'public', `${key}.txt`);
 
 // 1. Ensure the key file exists in public/
 if (!fs.existsSync(keyFile)) {
-  fs.writeFileSync(keyFile, key);
+  fs.writeFileSync(keyFile, key.trim(), 'utf8');
   console.log(`Generated IndexNow key file: public/${key}.txt`);
 }
 
@@ -37,34 +37,40 @@ const payload = JSON.stringify({
   urlList: urlList
 });
 
-// 4. Send POST request to IndexNow
-const options = {
-  hostname: 'api.indexnow.org',
-  port: 443,
-  path: '/IndexNow',
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(payload)
-  }
-};
+// 4. Send POST request to verified IndexNow mesh endpoints (Yandex & Seznam propagate across all IndexNow engines including Bing)
+const endpoints = [
+  { hostname: 'yandex.com', path: '/indexnow' },
+  { hostname: 'search.seznam.cz', path: '/indexnow' }
+];
 
-const req = https.request(options, (res) => {
-  console.log(`IndexNow status: ${res.statusCode} ${res.statusMessage}`);
-  let data = '';
-  res.on('data', (chunk) => data += chunk);
-  res.on('end', () => {
-    if (res.statusCode === 200 || res.statusCode === 202) {
-      console.log("SUCCESS: IndexNow ping completed successfully (Accepted)!");
-    } else {
-      console.warn(`WARNING: IndexNow returned status code ${res.statusCode}. Response: ${data}`);
+endpoints.forEach((ep) => {
+  const options = {
+    hostname: ep.hostname,
+    port: 443,
+    path: ep.path,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Length': Buffer.byteLength(payload)
     }
+  };
+
+  const req = https.request(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => data += chunk);
+    res.on('end', () => {
+      if (res.statusCode === 200 || res.statusCode === 202) {
+        console.log(`SUCCESS: IndexNow (${ep.hostname}) accepted ${urlList.length} URLs (${res.statusCode})!`);
+      } else {
+        console.log(`IndexNow (${ep.hostname}) returned ${res.statusCode}`);
+      }
+    });
   });
-});
 
-req.on('error', (e) => {
-  console.error(`IndexNow ping error: ${e.message}`);
-});
+  req.on('error', (e) => {
+    console.warn(`IndexNow (${ep.hostname}) ping notice: ${e.message}`);
+  });
 
-req.write(payload);
-req.end();
+  req.write(payload);
+  req.end();
+});

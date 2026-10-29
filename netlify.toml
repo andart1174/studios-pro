@@ -6,6 +6,38 @@
   NODE_VERSION = "20"
   SECRETS_SCAN_ENABLED = "false"
 
+[[edge_functions]]
+  path = "/api/ar-proxy"
+  function = "ar-proxy"
+
+[[edge_functions]]
+  path = "/api/ar-proxy/*"
+  function = "ar-proxy"
+
+[[redirects]]
+  from = "/api/ar-proxy"
+  to = "/.netlify/functions/ar-proxy"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/api/ar-proxy/*"
+  to = "/.netlify/functions/ar-proxy"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/api/litterbox"
+  to = "https://litterbox.catbox.moe/resources/internals/api.php"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/uguu"
+  to = "https://uguu.se/upload"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/proxy/*"
   to = "https://tmpfiles.org/:splat"
@@ -18,7 +50,37 @@
   status = 200
   force = true
 
-# Static HTML pages — serve them as-is (MUST be before the SPA catch-all)
+[[redirects]]
+  from = "/api/proxy-catbox/*"
+  to = "https://catbox.moe/:splat"
+  status = 200
+  force = true
+
+# Static HTML, XML, and verification files — serve them as-is (MUST be before the SPA catch-all)
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap.xml"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/feed.xml"
+  to = "/feed.xml"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/f89ae7b4f1094014a700fcd8d747035b.txt"
+  to = "/f89ae7b4f1094014a700fcd8d747035b.txt"
+  status = 200
+  force = false
+
 [[redirects]]
   from = "/faq.html"
   to = "/faq.html"
@@ -32,26 +94,56 @@
   force = false
 
 [[redirects]]
+  from = "/blog/"
+  to = "/blog/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/blog/*.html"
+  to = "/blog/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/blog/*"
-  to = "/blog/:splat"
+  to = "/blog/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/viewer/*.html"
+  to = "/viewer/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/viewer/*"
-  to = "/viewer/:splat"
+  to = "/viewer/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/convert/*.html"
+  to = "/convert/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/convert/*"
-  to = "/convert/:splat"
+  to = "/convert/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/ar-viewer/*.html"
+  to = "/ar-viewer/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/ar-viewer/*"
-  to = "/ar-viewer/:splat"
+  to = "/ar-viewer/:splat.html"
   status = 200
   force = false
 
@@ -62,62 +154,44 @@
   force = false
 
 [[redirects]]
+  from = "/ar/*"
+  to = "/ar/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/cards/*.html"
+  to = "/cards/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/cards/*"
-  to = "/cards/:splat"
+  to = "/cards/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/tools/*.html"
+  to = "/tools/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/tools/*"
-  to = "/tools/:splat"
+  to = "/tools/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/compare/*.html"
+  to = "/compare/:splat.html"
   status = 200
   force = false
 
 [[redirects]]
   from = "/compare/*"
-  to = "/compare/:splat"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community"
-  to = "/community/index.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/map"
-  to = "/community/map.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/map/"
-  to = "/community/map.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/u/:uid"
-  to = "/community/profile.html?u=:uid"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/post/:id"
-  to = "/community/post.html?id=:id"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/post/"
-  to = "/community/post.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/community/*"
-  to = "/community/:splat"
+  to = "/compare/:splat.html"
   status = 200
   force = false
 
@@ -128,14 +202,13 @@
   status = 200
 
 # ─── SECURITY & SEO HEADERS ────────────────────────────────────────────
-# These headers improve Google ranking (Core Web Vitals + Security signals)
+# Allow iframe embedding across external websites (WordPress, blogs, tools, online viewers)
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(self), microphone=(self), display-capture=(self), autoplay=(self), fullscreen=(self), xr-spatial-tracking=(self)"
+Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
 
 
 # Aggressive caching for immutable hashed JS/CSS (browser won't re-download)
@@ -171,20 +244,20 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
 
-# Disable cache for community real-time pages
 [[headers]]
-  for = "/community/share-bridge.js"
+  for = "/api/proxy/*"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "*"
 
 [[headers]]
-  for = "/community/index.html"
+  for = "/api/proxy-catbox/*"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "*"
+
 
 
 # =====================================================

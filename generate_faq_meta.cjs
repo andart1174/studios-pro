@@ -81,7 +81,7 @@ const faqHtml = `<!DOCTYPE html>
         "name": "What is the price of Studios-Pro Premium?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Studios-Pro Premium costs $20 USD per month and gives you unlimited exports across all 14 creative studios including 3D Studio, DFX Studio, Vector CNC, AI Depth Maps, Jewelry Maker Pro, Maker Studio 7, and more."
+          "text": "Studios-Pro Premium costs $10 USD per month and gives you unlimited exports across all 14 creative studios including 3D Studio, DFX Studio, Vector CNC, AI Depth Maps, Jewelry Maker Pro, Maker Studio 7, and more."
         }
       },
       {
@@ -97,7 +97,7 @@ const faqHtml = `<!DOCTYPE html>
         "name": "What is the difference between free and premium?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Free users get 2 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB 3D exports, SVG/DXF vector exports, G-code for CNC machines, high-resolution video recordings, and priority support."
+          "text": "Free users get 5 exports to try the platform. Premium users get unlimited exports across all 14 studios, including STL/OBJ/GLB 3D exports, SVG/DXF vector exports, G-code for CNC machines, high-resolution video recordings, and priority support."
         }
       },
       {
@@ -106,6 +106,14 @@ const faqHtml = `<!DOCTYPE html>
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Yes! Studios-Pro is specifically designed for 3D printing workflows. You can design models in 3D Studio, generate depth maps for lithophane printing, create parametric boxes in Maker Studio 7, design custom jewelry in Jewelry Maker Pro, and export directly to STL format compatible with all 3D printers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I design 3D watch movements, Cryptex puzzles, and papercraft in PolyMorph 3D Studio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! PolyMorph 3D Studio includes specialized procedural engines for luxury watch movements with tourbillons, Da Vinci Cryptex puzzle boxes, Sugihara ambiguous cylinder illusions, low-poly papercraft unfolders, modular RPG dungeon tiles, and flexi articulated print-in-place models, with instant AR projection."
         }
       }
     ]
@@ -188,6 +196,10 @@ const faqHtml = `<!DOCTYPE html>
                 <h3>Q8: Does Studios-Pro work for 3D printing?</h3>
                 <p><strong>A8:</strong> Absolutely! Studios-Pro is designed for 3D printing workflows — from Jewelry Maker Pro to Maker Studio 7 and the main 3D Studio — all exporting STL files compatible with all 3D printers.</p>
             </div>
+            <div class="question">
+                <h3>Q9: Can I design 3D watch movements, Cryptex puzzles, and papercraft in PolyMorph 3D Studio?</h3>
+                <p><strong>A9:</strong> Yes! PolyMorph 3D Studio includes procedural engines for luxury watch movements with tourbillons, Da Vinci Cryptex puzzle boxes, Sugihara ambiguous cylinder illusions, low-poly papercraft unfolders, modular RPG dungeon tiles, and flexi articulated print-in-place models, with instant AR projection.</p>
+            </div>
         </div>
 
         <div data-fr>
@@ -204,24 +216,28 @@ const faqHtml = `<!DOCTYPE html>
                 <p><strong>R3:</strong> Oui ! Étant donné que les calculs s'exécutent localement sur votre appareil via notre architecture WebGL avancée, aucune de vos conceptions géométriques n'est stockée sur nos serveurs. Vos plans architecturaux restent totalement sécurisés.</p>
             </div>
             <div class="question">
-                <h3>Q4 : Comment fonctionne le syst\u00e8me de paiement ?</h3>
-                <p><strong>R4 :</strong> La plateforme est gratuite pour explorer et concevoir. Cependant, pour exporter, t\u00e9l\u00e9charger ou enregistrer des fichiers de production finaux (comme les STL 3D, les vid\u00e9os HD ou les DXF vectoris\u00e9s), vous devez activer un abonnement Premium qui d\u00e9bloque les exportations sur l'ensemble de nos 14 d\u00e9partements.</p>
+                <h3>Q4 : Comment fonctionne le système de paiement ?</h3>
+                <p><strong>R4 :</strong> La plateforme est gratuite pour explorer et concevoir. Cependant, pour exporter, télécharger ou enregistrer des fichiers de production finaux (comme les STL 3D, les vidéos HD ou les DXF vectorisés), vous devez activer un abonnement Premium qui débloque les exportations sur l'ensemble de nos studios créatifs.</p>
             </div>
             <div class="question">
                 <h3>Q5 : Quel est le prix de Studios-Pro Premium ?</h3>
-                <p><strong>R5 :</strong> Studios-Pro Premium co\u00fbte 20 $ USD par mois et vous donne des exportations illimit\u00e9es dans les 14 studios cr\u00e9atifs.</p>
+                <p><strong>R5 :</strong> Studios-Pro Premium coûte 10 $ USD par mois et vous donne des exportations illimitées dans tous les studios créatifs.</p>
             </div>
             <div class="question">
                 <h3>Q6 : Studios-Pro fonctionne-t-il sur les appareils mobiles ?</h3>
-                <p><strong>R6 :</strong> Oui ! Studios-Pro est enti\u00e8rement responsive. Cependant, pour les t\u00e2ches complexes de mod\u00e9lisation 3D, nous recommandons un ordinateur de bureau avec un GPU d\u00e9di\u00e9.</p>
+                <p><strong>R6 :</strong> Oui ! Studios-Pro est entièrement responsive. Cependant, pour les tâches complexes de modélisation 3D, nous recommandons un ordinateur de bureau avec un GPU dédié.</p>
             </div>
             <div class="question">
-                <h3>Q7 : Quelle est la diff\u00e9rence entre gratuit et premium ?</h3>
-                <p><strong>R7 :</strong> Les utilisateurs gratuits re\u00e7oivent 2 exportations pour tester la plateforme. Les utilisateurs Premium b\u00e9n\u00e9ficient d'exportations illimit\u00e9es dans les 14 studios, y compris STL/OBJ/GLB, SVG/DXF, G-code et enregistrements vid\u00e9o haute r\u00e9solution.</p>
+                <h3>Q7 : Quelle est la différence entre gratuit et premium ?</h3>
+                <p><strong>R7 :</strong> Les utilisateurs gratuits reçoivent 5 exportations pour tester la plateforme. Les utilisateurs Premium bénéficient d'exportations illimitées dans tous les studios, y compris STL/OBJ/GLB, SVG/DXF, G-code et enregistrements vidéo haute résolution.</p>
             </div>
             <div class="question">
-                <h3>Q8 : Studios-Pro est-il adapt\u00e9 \u00e0 l'impression 3D ?</h3>
-                <p><strong>R8 :</strong> Absolument ! Studios-Pro est con\u00e7u pour les flux de travail d'impression 3D — de Jewelry Maker Pro \u00e0 Maker Studio 7 et le Studio 3D principal — tous exportant des fichiers STL compatibles avec toutes les imprimantes 3D.</p>
+                <h3>Q8 : Studios-Pro est-il adapté à l'impression 3D ?</h3>
+                <p><strong>R8 :</strong> Absolument ! Studios-Pro est conçu pour les flux de travail d'impression 3D — de Jewelry Maker Pro à Maker Studio 7 et le Studio 3D principal — tous exportant des fichiers STL compatibles avec toutes les imprimantes 3D.</p>
+            </div>
+            <div class="question">
+                <h3>Q9 : Puis-je concevoir des mouvements de montre 3D, des Cryptex et du papercraft dans PolyMorph 3D Studio ?</h3>
+                <p><strong>R9 :</strong> Oui ! PolyMorph 3D Studio intègre des moteurs procéduraux pour mouvements de montre avec tourbillon, boîtes Cryptex Da Vinci, illusions de cylindre ambigu de Sugihara, dépliage papercraft, tuiles de donjon RPG et modèles articulés flexi, avec projection AR instantanée.</p>
             </div>
         </div>
     </div>
@@ -256,24 +272,37 @@ if (mainIndex.includes('og_image_studios_pro.png')) {
   console.log('Fixed index.html og_banner.jpg');
 }
 
-// Inject OG tags to blog HTMLs
+// Inject unique OG tags to blog HTMLs
 const blogDir = path.join(__dirname, 'public/blog');
 const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.html'));
-const ogTags = `
-    <meta property="og:title" content="Studios-Pro | Professional 3D & AI Design Generator">
-    <meta property="og:description" content="A complete tutorial and guide on using Studios-Pro's suite of creative tools ranging from CNC Vector paths to AI Depth maps and 4D Music Visualization.">
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-    <meta property="og:url" content="https://studios-pro.com/">
-    <meta name="twitter:card" content="summary_large_image">`;
 
 files.forEach(f => {
   const file = path.join(blogDir, f);
   let c = fs.readFileSync(file, 'utf8');
-  if (!c.includes('og:title')) {
-    c = c.replace('</head>', `${ogTags}\n</head>`);
-    fs.writeFileSync(file, c);
-    console.log('Injected OG tags into ' + f);
-  }
+
+  // Extract page-specific title and description
+  const titleMatch = c.match(/<title>(.*?)<\/title>/i);
+  const descMatch = c.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i);
+
+  const pageTitle = titleMatch ? titleMatch[1].trim() : 'Studios-Pro | 3D Design & CAD Studio';
+  const pageDesc = descMatch ? descMatch[1].trim() : 'Online 3D CAD design, procedural modeling, and CNC vector converter tools with Studios-Pro.';
+  const pageSlug = f === 'index.html' ? 'blog/' : `blog/${f}`;
+
+  const uniqueOgTags = `    <meta property="og:title" content="${pageTitle.replace(/"/g, '&quot;')}">
+    <meta property="og:description" content="${pageDesc.replace(/"/g, '&quot;')}">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/${pageSlug}">
+    <meta name="twitter:card" content="summary_large_image">`;
+
+  // Remove any legacy duplicate og tags
+  c = c.replace(/<meta\s+property=["']og:title["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:description["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:image["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+property=["']og:url["'].*?>\r?\n?/gi, '');
+  c = c.replace(/<meta\s+name=["']twitter:card["'].*?>\r?\n?/gi, '');
+
+  c = c.replace('</head>', `${uniqueOgTags}\n</head>`);
+  fs.writeFileSync(file, c);
 });
 
 // Update sitemap

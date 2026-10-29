@@ -942,29 +942,124 @@
 
     document.getElementById('btn-ar-viewer').addEventListener('click', () => {
       const group = window.SketchExtruder ? window.SketchExtruder.getGroup() : null;
-      if (!group || group.children.length === 0) {
+      const scn = window.SketchExtruder && typeof window.SketchExtruder.getScene === 'function' ? window.SketchExtruder.getScene() : null;
+
+      const exportGroup = new THREE.Group();
+      const collectMeshes = (root) => {
+        if (!root) return;
+        root.updateMatrixWorld(true);
+        root.traverse((child) => {
+          if (!child.isMesh || !child.visible || !child.geometry) return;
+          let p = child;
+          while (p) {
+            if (p.visible === false) return;
+            if (p.isTransformControls || p.isGridHelper || p.isAxesHelper || (p.name && p.name.includes('Helper'))) return;
+            p = p.parent;
+          }
+          try {
+            const geo = child.geometry.clone();
+            geo.applyMatrix4(child.matrixWorld);
+            if (!geo.attributes.normal) geo.computeVertexNormals();
+
+            const srcMat = Array.isArray(child.material) ? child.material[0] : child.material;
+            let matParams = {
+              color: 0xcccccc,
+              metalness: 0.25,
+              roughness: 0.45,
+              side: THREE.DoubleSide
+            };
+            if (srcMat) {
+              if (srcMat.color) matParams.color = srcMat.color.clone();
+              if (srcMat.isMeshBasicMaterial && srcMat.color) {
+                matParams.emissive = srcMat.color.clone();
+                matParams.emissiveIntensity = 0.35;
+                matParams.metalness = 0.1;
+                matParams.roughness = 0.25;
+              } else {
+                if (srcMat.emissive) matParams.emissive = srcMat.emissive.clone();
+                if (typeof srcMat.emissiveIntensity === 'number') matParams.emissiveIntensity = srcMat.emissiveIntensity;
+                if (typeof srcMat.metalness === 'number') matParams.metalness = srcMat.metalness;
+                if (typeof srcMat.roughness === 'number') matParams.roughness = srcMat.roughness;
+              }
+              if (srcMat.map) matParams.map = srcMat.map;
+              if (srcMat.vertexColors) matParams.vertexColors = true;
+              if (srcMat.transparent && typeof srcMat.opacity === 'number' && srcMat.opacity < 1) {
+                matParams.transparent = true;
+                matParams.opacity = Math.max(0.25, srcMat.opacity);
+              }
+            }
+            const cleanMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial(matParams));
+            cleanMesh.name = child.name || 'part';
+            exportGroup.add(cleanMesh);
+          } catch (err) {
+            console.warn('AR mesh clone skipped:', err);
+          }
+        });
+      };
+
+      collectMeshes(group);
+      if (exportGroup.children.length === 0 && scn) {
+        collectMeshes(scn);
+      }
+
+      if (exportGroup.children.length === 0) {
         toast(currentLang === 'fr' ? '❌ Aucun modèle à visualiser' : '❌ No models to view');
         return;
       }
-      if (typeof THREE.OBJExporter === 'undefined') {
-        toast('❌ OBJExporter not loaded');
-        return;
+
+      // Normalize bounding box to tabletop AR scale (~0.28m) and center on floor
+      const box = new THREE.Box3().setFromObject(exportGroup);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+      const maxDim = Math.max(size.x, size.y, size.z, 0.0001);
+      const scale = 0.28 / maxDim;
+      exportGroup.children.forEach((m) => {
+        m.geometry.translate(-center.x, -box.min.y, -center.z);
+        m.geometry.scale(scale, scale, scale);
+      });
+
+      const sendToArViewer = (data, name, extension, isBinary) => {
+        window.lastGeneratedModel = data;
+        window.lastGeneratedArPayload = { name, extension, data, isBinary };
+        window.parent.postMessage({
+          type: 'OPEN_AR_VIEWER',
+          payload: { url: 'broadcast', modelData: data, name, extension, isBinary }
+        }, '*');
+        toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
+        if (window.parent === window) {
+          setTimeout(() => {
+            window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
+          }, 500);
+        }
+      };
+
+      if (typeof THREE.GLTFExporter !== 'undefined') {
+        try {
+          const gltfExporter = new THREE.GLTFExporter();
+          gltfExporter.parse(exportGroup, (result) => {
+            if (result instanceof ArrayBuffer && result.byteLength > 0) {
+              sendToArViewer(result, 'studio_pro_model.glb', 'glb', true);
+            } else if (result && typeof result === 'object') {
+              const jsonStr = JSON.stringify(result);
+              sendToArViewer(jsonStr, 'studio_pro_model.gltf', 'gltf', false);
+            } else if (typeof THREE.OBJExporter !== 'undefined') {
+              const objStr = new THREE.OBJExporter().parse(exportGroup);
+              sendToArViewer(objStr, 'studio_pro_model.obj', 'obj', false);
+            }
+          }, { binary: true });
+          return;
+        } catch (e) {
+          console.warn('GLTFExporter fallback to OBJExporter:', e);
+        }
       }
-      const exporter = new THREE.OBJExporter();
-      const result = exporter.parse(group);
-      
-      // Save model data for BroadcastChannel transfer
-      window.lastGeneratedModel = result;
-      
-      // Open model in parent's AR Viewer iframe
-      window.parent.postMessage({ type: 'OPEN_AR_VIEWER', payload: { url: 'broadcast', modelData: result } }, '*');
-      toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
-      
-      // Fallback for standalone mode testing (opens in new tab)
-      if (window.parent === window) {
-        setTimeout(() => {
-          window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
-        }, 1000);
+
+      if (typeof THREE.OBJExporter !== 'undefined') {
+        const objStr = new THREE.OBJExporter().parse(exportGroup);
+        sendToArViewer(objStr, 'studio_pro_model.obj', 'obj', false);
+      } else {
+        toast('❌ Exporter not loaded');
       }
     });
 
@@ -995,11 +1090,16 @@
         isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
         window.isPremiumUser = isPremiumUser;
       } else if (e.data.type === 'AR_VIEWER_READY') {
-        if (window.lastGeneratedModel) {
+        if (window.lastGeneratedArPayload) {
+          channel.postMessage({
+            type: 'LOAD_EXTERNAL_FILE',
+            payload: window.lastGeneratedArPayload
+          });
+        } else if (window.lastGeneratedModel) {
           channel.postMessage({
             type: 'LOAD_EXTERNAL_FILE',
             payload: {
-              name: 'model.obj',
+              name: 'studio_pro_model.obj',
               extension: 'obj',
               data: window.lastGeneratedModel,
               isBinary: false
@@ -1017,7 +1117,7 @@
         return;
       }
 
-      const target = e.target.closest('#btn-screenshot, #btn-export-video, #btn-copy-code, #btn-dl-html, #btn-export-zip, #btn-export-obj, #btn-ar-viewer');
+      const target = e.target.closest('#btn-screenshot, #btn-export-video, #btn-copy-code, #btn-dl-html, #btn-export-zip, #btn-export-obj');
       if (target) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -1095,6 +1195,5 @@
     </div>
   </div>
 
-  <script src="/community/share-bridge.js?v=15"></script>
-</body>
+  </body>
 </html>

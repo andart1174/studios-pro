@@ -4,6 +4,8 @@ import { auth, db } from './firebase.js';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
@@ -100,7 +102,7 @@ import {
   Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
   ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
   Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy, Palette
+  Megaphone, Copy, Palette, Sparkles, Check, Share2, Paintbrush, QrCode
 } from 'lucide-react';
 import './App.css';
 
@@ -662,6 +664,8 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       password: "Mot de passe",
       submit: isLogin ? "Connexion" : "Créer un compte",
       switch: isLogin ? "Pas de compte ? Inscrivez-vous" : "Déjà un compte ? Connectez-vous",
+      googleBtn: "Continuer avec Google",
+      orDivider: "ou avec email"
     },
     en: {
       login: "Login",
@@ -670,12 +674,50 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       password: "Password",
       submit: isLogin ? "Login" : "Register",
       switch: isLogin ? "No account? Register" : "Have an account? Login",
+      googleBtn: "Continue with Google",
+      orDivider: "or with email"
     }
   }[lang];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    if (!auth) {
+      setError(lang === 'fr' ? "Le système d'authentification n'est pas configuré." : "Authentication system not configured.");
+      return;
+    }
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'login', { method: 'Google' });
+      }
+
+      const userRef = doc(db, "users", googleUser.uid);
+      const existingDoc = await getDoc(userRef);
+      if (!existingDoc.exists()) {
+        await setDoc(userRef, {
+          email: googleUser.email,
+          displayName: googleUser.displayName || '',
+          isPremium: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      onClose();
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleAuth = async () => {
     if (!auth) {
@@ -730,6 +772,27 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
         <button className="close-btn" onClick={onClose}><X size={20} /></button>
         <h2>{isLogin ? t.login : t.register}</h2>
         {error && <p style={{ color: '#ff4444', fontSize: '0.8rem', marginBottom: '10px' }}>{error}</p>}
+        
+        {/* 1-Click Google Sign-In */}
+        <button 
+          type="button" 
+          className="google-auth-btn" 
+          onClick={handleGoogleSignIn} 
+          disabled={googleLoading}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>{googleLoading ? (lang === 'fr' ? 'Connexion en cours...' : 'Connecting...') : t.googleBtn}</span>
+        </button>
+
+        <div className="auth-divider">
+          <span>{t.orDivider}</span>
+        </div>
+
         <div className="auth-form">
           <div className="input-group">
             <Mail size={18} className="input-icon" />
@@ -761,8 +824,201 @@ import { loadStripe } from '@stripe/stripe-js';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
+const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
+  const isFr = lang === 'fr';
+  return (
+    <footer className="seo-footer">
+      <div className="seo-footer-container">
+        {/* Trust & Performance Highlights */}
+        <div className="seo-footer-trust-banner">
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">⚡</span>
+            <div>
+              <strong>{isFr ? 'Rendu WebGL Haute Performance' : 'High-Performance WebGL Engine'}</strong>
+              <p>{isFr ? 'Visualisation 3D temps réel sans aucun téléchargement' : 'Real-time 3D viewing with zero downloads'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">🔒</span>
+            <div>
+              <strong>{isFr ? 'Confidentialité Client-Side 100%' : '100% Client-Side Privacy'}</strong>
+              <p>{isFr ? 'Vos fichiers 3D et images restent sur votre machine' : 'Your 3D files & images stay in your browser'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">🎁</span>
+            <div>
+              <strong>{isFr ? '5 Exports Gratuits Inclus' : '5 Free Exports Included'}</strong>
+              <p>{isFr ? 'STL, OBJ, DXF, G-Code sans carte bancaire' : 'STL, OBJ, DXF, G-Code with no credit card'}</p>
+            </div>
+          </div>
+          <div className="seo-trust-item">
+            <span className="seo-trust-icon">💎</span>
+            <div>
+              <strong>{isFr ? 'Formule Pro à 10$/mois' : 'Unlimited Pro at $10/mo'}</strong>
+              <p>{isFr ? 'Reliefs CNC HD, WebAR et licence commerciale' : 'HD CNC reliefs, WebAR & commercial license'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 5-Column Categorized Directory */}
+        <div className="seo-footer-grid">
+          {/* Column 1: 3D & CNC Tools */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#f59e0b' }}></span>
+              {isFr ? 'Outils 3D & CNC' : '3D & CNC Tools'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/tools/multicolor-3mf-painter">{isFr ? 'Colorateur 3D 3MF Multi-Couleurs' : 'Multi-Color 3MF Painter & AMS'}</a></li>
+              <li><a href="/tools/3d-qr-wifi-coaster-generator">{isFr ? 'Générateur Sous-Verres QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster'}</a></li>
+              <li><a href="/tools/image-to-cnc-relief">{isFr ? 'Image vers Relief 3D CNC' : 'Image to 3D CNC Relief & STL'}</a></li>
+              <li><a href="/tools/lithophane-maker-online">{isFr ? 'Générateur de Lithophanies 3D' : 'Online Lithophane Maker'}</a></li>
+              <li><a href="/tools/cookie-cutter-stl-generator">{isFr ? 'Générateur Emporte-Pièce STL' : 'Cookie Cutter STL Generator'}</a></li>
+              <li><a href="/tools/3d-keychain-name-generator">{isFr ? 'Porte-Clés 3D Personnalisé' : '3D Keychain Name Maker'}</a></li>
+              <li><a href="/tools/laser-cut-box-generator">{isFr ? 'Boîte Découpe Laser DXF/SVG' : 'Parametric Laser Cut Box Maker'}</a></li>
+              <li><a href="/tools/gcode-previewer-online">{isFr ? 'Visualiseur G-Code CNC & Laser' : 'Online G-Code CNC Previewer'}</a></li>
+              <li><a href="/tools/voronoi-parametric-lamp-vase-generator">{isFr ? 'Lampe & Vase Voronoï 3D' : 'Voronoi Lamp & Vase Generator'}</a></li>
+              <li><a href="/tools/pepakura-papercraft-3d-unfolder">{isFr ? 'Déplieur Papercraft Pepakura 3D' : 'Pepakura Papercraft 3D Unfolder'}</a></li>
+              <li><a href="/tools/ambiguous-cylinder-illusion-maker">{isFr ? 'Illusion Cylindre Ambigu 3D' : 'Ambiguous Cylinder Illusion Maker'}</a></li>
+              <li><a href="/tools/cryptex-puzzle-box-stl-generator">{isFr ? 'Boîte Puzzle Cryptex STL' : 'Cryptex Puzzle Box STL Generator'}</a></li>
+              <li><a href="/tools/gear-sprocket-generator-dxf">{isFr ? 'Générateur d\'Engrenages DXF' : 'Parametric Gear & Sprocket DXF'}</a></li>
+              <li><a href="/tools/custom-3d-ring-designer">{isFr ? 'Concepteur de Bagues 3D' : 'Custom 3D Ring Designer'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 2: 3D Viewers & AR */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#3b82f6' }}></span>
+              {isFr ? 'Visualiseurs 3D & AR' : '3D Viewers & WebAR'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/viewer/stl">{isFr ? 'Visualiseur STL Gratuit en Ligne' : 'Free Online STL Viewer & Slicer'}</a></li>
+              <li><a href="/viewer/obj">{isFr ? 'Visualiseur OBJ 3D en Ligne' : 'Free Online OBJ 3D Viewer'}</a></li>
+              <li><a href="/viewer/glb">{isFr ? 'Visualiseur GLB 3D Binaire' : 'Online GLB Binary 3D Viewer'}</a></li>
+              <li><a href="/viewer/gltf">{isFr ? 'Inspecteur GLTF WebGL' : 'Free Online GLTF Inspector'}</a></li>
+              <li><a href="/viewer/3mf">{isFr ? 'Visualiseur 3MF Impression 3D' : '3MF 3D Manufacturing Inspector'}</a></li>
+              <li><a href="/viewer/ply">{isFr ? 'Visualiseur Nuages de Points PLY' : 'PLY Point Cloud & Polygon Viewer'}</a></li>
+              <li><a href="/viewer/dxf">{isFr ? 'Visualiseur DXF AutoCAD en Ligne' : 'AutoCAD DXF Blueprint CAD Viewer'}</a></li>
+              <li><a href="/viewer/svg">{isFr ? 'Visualiseur & Inspecteur SVG' : 'Online SVG Vector Path Viewer'}</a></li>
+              <li><a href="/apps/ar-viewer/index.html">{isFr ? 'Visualiseur Réalité Augmentée (AR)' : 'Augmented Reality (AR) WebXR'}</a></li>
+              <li><a href="/ar-viewer/stl">{isFr ? 'Projeter Modèle STL en AR' : 'Project STL in AR Phone Viewer'}</a></li>
+              <li><a href="/ar-viewer/glb">{isFr ? 'Projeter Modèle GLB en AR' : 'Project GLB in AR Mobile Viewer'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Converters & CAD */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#10b981' }}></span>
+              {isFr ? 'Convertisseurs & CAD' : 'Converters & CAD'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/convert/2d-image-to-3d-stl">{isFr ? 'Convertir Image 2D en STL 3D' : '2D Image to 3D STL Converter'}</a></li>
+              <li><a href="/convert/photo-to-3d-relief-stl">{isFr ? 'Photo vers Bas-Relief STL' : 'Photo to 3D Relief STL Converter'}</a></li>
+              <li><a href="/convert/png-to-svg">{isFr ? 'Convertisseur PNG en SVG Vectoriel' : 'PNG to SVG Vector Converter'}</a></li>
+              <li><a href="/convert/jpg-to-svg">{isFr ? 'Convertisseur JPG en SVG Vectoriel' : 'JPG to SVG Vector Converter'}</a></li>
+              <li><a href="/convert/dxf-to-svg">{isFr ? 'Convertisseur DXF vers SVG' : 'AutoCAD DXF to SVG Converter'}</a></li>
+              <li><a href="/tools/svg-to-gcode-laser-engraver">{isFr ? 'SVG vers G-Code Laser CNC' : 'SVG to Laser Engraver G-Code'}</a></li>
+              <li><a href="/convert/obj-to-stl">{isFr ? 'Convertisseur OBJ vers STL' : 'OBJ to STL 3D Mesh Converter'}</a></li>
+              <li><a href="/convert/stl-to-obj">{isFr ? 'Convertisseur STL vers OBJ' : 'STL to OBJ 3D Mesh Converter'}</a></li>
+              <li><a href="/convert/glb-to-html">{isFr ? 'Convertir GLB en HTML Autonome' : 'GLB to Standalone HTML Exporter'}</a></li>
+              <li><a href="/apps/depth-maps/">{isFr ? 'Générateur Depth Maps IA' : 'AI Monocular Depth Map Generator'}</a></li>
+              <li><a href="/apps/vector-cnc/">{isFr ? 'Studio Vector CNC (SVG / DXF)' : 'Vector CNC Toolpath Studio'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Free Software Alternatives */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#8b5cf6' }}></span>
+              {isFr ? 'Alternatives Logicielles' : 'Free Alternatives'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/compare/free-alternative-to-meshmixer">{isFr ? 'Alternative Gratuite à Meshmixer' : 'Free Alternative to Meshmixer'}</a></li>
+              <li><a href="/compare/vectric-aspire-free-alternative-browser">{isFr ? 'Alternative Gratuite à Vectric Aspire' : 'Vectric Aspire Free CNC Alternative'}</a></li>
+              <li><a href="/compare/free-online-tinkercad-alternative">{isFr ? 'Alternative Gratuite à Tinkercad' : 'Free Online Tinkercad Alternative'}</a></li>
+              <li><a href="/compare/lightburn-free-dxf-alternative">{isFr ? 'Alternative Gratuite à LightBurn' : 'Free LightBurn Alternative for Laser'}</a></li>
+              <li><a href="/compare/sketchfab-free-alternative-ar-viewer">{isFr ? 'Alternative Gratuite à Sketchfab AR' : 'Sketchfab Free Alternative AR Viewer'}</a></li>
+              <li><a href="/compare/photoshop-3d-relief-alternative">{isFr ? 'Alternative à Photoshop 3D Relief' : 'Photoshop 3D Relief Alternative'}</a></li>
+              <li><a href="/compare/blender-for-3d-printing-simple-alternative">{isFr ? 'Alternative Simple à Blender 3D' : 'Simple Blender Alternative for 3D Print'}</a></li>
+            </ul>
+          </div>
+
+          {/* Column 5: Studios & Ecosystem */}
+          <div className="seo-footer-col">
+            <h4 className="seo-footer-col-title">
+              <span className="seo-col-dot" style={{ background: '#ec4899' }}></span>
+              {isFr ? 'Studios & Écosystème' : 'Studios & Ecosystem'}
+            </h4>
+            <ul className="seo-footer-links">
+              <li><a href="/apps/polymorph-3d/index.html">{isFr ? 'PolyMorph 3D Studio' : 'PolyMorph 3D Studio'}</a></li>
+              <li><a href="/apps/ar-viewer/">{isFr ? 'Visualiseur WebAR 3D' : 'WebAR 3D Model Viewer'}</a></li>
+              <li><a href="/apps/artgen/">{isFr ? 'ArtGen Studio IA' : 'ArtGen AI Vector Studio'}</a></li>
+              <li><a href="/blog/">{isFr ? 'Blog & Tutoriels 3D / CNC' : '3D Design Blog & Tutorials'}</a></li>
+              <li><a href="/faq.html">{isFr ? 'Questions Fréquentes (FAQ)' : 'Frequently Asked Questions (FAQ)'}</a></li>
+              <li><a href="/cards/pokemon-card-maker.html">{isFr ? 'Créateur de Cartes 3D Holo' : 'Custom 3D Card Generator'}</a></li>
+              <li>
+                <button type="button" onClick={onOpenPricing} className="seo-footer-btn-link">
+                  💎 {isFr ? 'Tarifs & Formule Pro (10$/mois)' : 'Pricing & Pro Plan ($10/mo)'}
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={onOpenContact} className="seo-footer-btn-link">
+                  ✉️ {isFr ? 'Support & Contact' : 'Support & Contact'}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar: Copyright, Language, Meta */}
+        <div className="seo-footer-bottom">
+          <div className="seo-footer-brand">
+            <img src="/logo_studios_pro.png" alt="Studios-Pro" width="24" height="24" className="seo-footer-logo" />
+            <span className="seo-footer-brand-name">Studios-Pro</span>
+            <span className="seo-footer-tagline">
+              {isFr ? 'Suite Créative 3D, Réalité Augmentée & Reliefs CNC dans votre navigateur.' : 'All-in-one 3D Design, WebAR & CNC Relief browser suite.'}
+            </span>
+          </div>
+
+          <div className="seo-footer-meta-links">
+            <span>© {new Date().getFullYear()} Studios-Pro. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'}</span>
+            <a href="/faq.html">{isFr ? 'Aide & FAQ' : 'Help & FAQ'}</a>
+            <a href="/blog/">{isFr ? 'Guides' : 'Guides'}</a>
+            <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              ↑ {isFr ? 'Haut de page' : 'Back to top'}
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
 const StudiosPro = () => {
-  const [lang, setLang] = useState('fr');
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get('lang');
+      if (langParam === 'fr' || langParam === 'en') return langParam;
+      const saved = localStorage.getItem('sp_lang');
+      if (saved === 'fr' || saved === 'en') return saved;
+      if (navigator.language && navigator.language.toLowerCase().startsWith('fr')) return 'fr';
+    }
+    return 'en';
+  });
+
+  // Sync document language attribute and localStorage
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang;
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sp_lang', lang);
+    }
+  }, [lang]);
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
@@ -796,6 +1052,152 @@ const StudiosPro = () => {
   const [isScriptingOpen, setIsScriptingOpen] = useState(false);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [isArtGenOpen, setIsArtGenOpen] = useState(false);
+  const [isPolyMorphOpen, setIsPolyMorphOpen] = useState(false);
+  const [isPainterOpen, setIsPainterOpen] = useState(false);
+  const [isCoasterOpen, setIsCoasterOpen] = useState(false);
+  const [isFilamentPaintingOpen, setIsFilamentPaintingOpen] = useState(false);
+  const openStudioByRef = (refStr) => {
+    if (!refStr) return false;
+    const r = String(refStr).toLowerCase().trim();
+
+    // 1. Studio 3D (ap3d)
+    if (['ap3d', '3d', 'studio3d', 'studio-3d', 'ap-3d'].includes(r)) {
+      setIs3DOpen(true);
+      return true;
+    }
+    // 2. 3D Viewer (s3dviewer)
+    if (['s3dviewer', 'studio-3d-viewer', '3dviewer', 'stl-viewer', 'obj-viewer', 'glb-viewer', 'stl', 'obj', 'glb', 'gltf', 'ply', '3mf'].includes(r)) {
+      setIs3DViewerOpen(true);
+      return true;
+    }
+    // 3. WebAR Viewer (arviewer)
+    if (['arviewer', 'ar-viewer', 'webar', 'ar'].includes(r)) {
+      setIsARViewerOpen(true);
+      return true;
+    }
+    // 4. DFX Studio (dfx)
+    if (['dfx', 'dxf', 'studio-dfx', 'dxf-viewer', 'dxf-editor'].includes(r)) {
+      setIsDFXOpen(true);
+      return true;
+    }
+    // 5. Rules
+    if (['rules', 'regles', 'site-rules'].includes(r)) {
+      setIsRulesOpen(true);
+      return true;
+    }
+    // 6. Depth Maps / Heightmaps / Lithophane / Relief (depth)
+    if (['depth', 'depth-maps', 'depthmaps', 'lithophane', 'heightmap', 'relief', '2d-to-3d'].includes(r)) {
+      setIsDepthOpen(true);
+      return true;
+    }
+    // 7. New 3D/4D (n3d)
+    if (['n3d', 'new3d4d', 'new-3d-4d', '3d4d', 'cards', 'pokemon-card-maker', 'custom-3d-card-generator'].includes(r)) {
+      setIsNew3DOpen(true);
+      return true;
+    }
+    // 8. Vector CNC / G-Code (vcnc)
+    if (['vcnc', 'vector-cnc', 'vector', 'cnc', 'gcode', 'svg-to-gcode', 'dxf-to-gcode', 'svg-to-dxf', 'dxf-to-svg'].includes(r)) {
+      setIsVectorOpen(true);
+      return true;
+    }
+    // 9. Studio Pro 4D (spro)
+    if (['spro', 'studio-pro', 'studiopro', 'studio-pro-4d'].includes(r)) {
+      setIsStudioProOpen(true);
+      return true;
+    }
+    // 10. Maker Studio 7 / Laser Cut Box (mkr7)
+    if (['mkr7', 'maker7', 'maker-studio-7', 'maker-studio', 'box-generator', 'laser-cut-box'].includes(r)) {
+      setIsMaker7Open(true);
+      return true;
+    }
+    // 11. Jewelry Maker Pro (jwly)
+    if (['jwly', 'jewelry-pro', 'jewelry', 'jewelry-maker-pro', 'ring-designer'].includes(r)) {
+      setIsJewelryOpen(true);
+      return true;
+    }
+    // 12. Architect Pro 1 (arp1)
+    if (['arp1', 'architect-pro-1', 'arch1', 'architect1'].includes(r)) {
+      setIsArchPro1Open(true);
+      return true;
+    }
+    // 13. Architect Pro 2 (arp2)
+    if (['arp2', 'architect-pro-2', 'arch2', 'architect2'].includes(r)) {
+      setIsArchPro2Open(true);
+      return true;
+    }
+    // 14. 4D Figure Builder (figb)
+    if (['figb', 'figure-builder', 'figure', '4d-figure-builder'].includes(r)) {
+      setIsFigureBuilderOpen(true);
+      return true;
+    }
+    // 15. 4D Music Composer (musc)
+    if (['musc', 'music-composer', 'music', '4d-music-composer'].includes(r)) {
+      setIsMusicComposerOpen(true);
+      return true;
+    }
+    // 16. Design Pro Studio (desp)
+    if (['desp', 'design-pro-studio', 'design-pro', 'designpro'].includes(r)) {
+      setIsDesignProOpen(true);
+      return true;
+    }
+    // 17. Studio Pro 2 (spro2)
+    if (['spro2', 'studio-pro-2', 'studiopro2', 'studio-pro-2-0'].includes(r)) {
+      setIsStudioPro2Open(true);
+      return true;
+    }
+    // 18. Mech Gen Pro / Gears (mechgen)
+    if (['mechgen', 'mech-gen-pro', 'gear-generator', 'mech-gen'].includes(r)) {
+      setIsMechGenProOpen(true);
+      return true;
+    }
+    // 19. Scripting Studio Live (scripting)
+    if (['scripting', 'scripting-live', 'code', 'scripting-studio'].includes(r)) {
+      setIsScriptingOpen(true);
+      return true;
+    }
+    // 20. Zen Sandscape (sandbox)
+    if (['sandbox', 'zen-sandscape', 'sandscape', 'zen-sand'].includes(r)) {
+      setIsSandboxOpen(true);
+      return true;
+    }
+    // 21. ArtGen AI Vector Studio (artgen)
+    if (['artgen', 'art-gen', 'ai-art', 'artgen-studio'].includes(r)) {
+      setIsArtGenOpen(true);
+      return true;
+    }
+    // 22. PolyMorph 3D Studio (polymorph)
+    if (['polymorph', 'poly3d', 'polymorph-3d', 'polymorph-studio'].includes(r)) {
+      setIsPolyMorphOpen(true);
+      return true;
+    }
+    // 23. MultiColor 3MF Painter (painter)
+    if (['painter', 'multicolor-3mf-painter', '3mfpainter', '3mf-painter', 'multicolor-painter'].includes(r)) {
+      setIsPainterOpen(true);
+      return true;
+    }
+    // 24. 3D QR WiFi Coaster (coaster)
+    if (['coaster', 'qr-wifi-coaster-generator', 'qrcoaster', 'qr-coaster', 'wifi-coaster'].includes(r)) {
+      setIsCoasterOpen(true);
+      return true;
+    }
+    // 25. Filament Painting & Layer-Swap (filament)
+    if (['filament', 'filament-painting', 'filament-painting-studio', 'layer-swap', 'hueforge-alternative'].includes(r)) {
+      setIsFilamentPaintingOpen(true);
+      return true;
+    }
+    // 26. Standalone AuraGen IDE
+    if (['aurg', 'aura-gen', 'aura-ai', 'auragen'].includes(r)) {
+      window.location.href = '/apps/aura-gen/index.html';
+      return true;
+    }
+    // 27. Standalone IA Architecte
+    if (['iaar', 'ia-architecte', 'ia-arch'].includes(r)) {
+      window.location.href = '/apps/ia-architecte/index.html';
+      return true;
+    }
+    return false;
+  };
+
   const [paymentReason, setPaymentReason] = useState('free_limit');
   const [collabRoomId, setCollabRoomId] = useState(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
@@ -803,6 +1205,7 @@ const StudiosPro = () => {
   const scriptingIframeRef = useRef(null);
   const isIframeReadyRef = useRef(false);
   const collabMessagesRef = useRef([]);
+  const arViewerIframeRef = useRef(null);
 
   const [announcement, setAnnouncement] = useState(null);
   const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(false);
@@ -813,19 +1216,24 @@ const StudiosPro = () => {
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
   const [newsletterDismissed, setNewsletterDismissed] = useState(() => !!localStorage.getItem('nl_dismissed'));
 
-  // Social share copy feedback
+  // Social share copy feedback & embed generator
   const [linkCopied, setLinkCopied] = useState(false);
-  const [communityCount, setCommunityCount] = useState(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareTab, setShareTab] = useState('social');
+  const [embedTool, setEmbedTool] = useState('s3dviewer');
+  const [embedCopied, setEmbedCopied] = useState(false);
 
-  // Live community post count
-  useEffect(() => {
-    if (!db) return;
-    const q = query(collection(db, 'studios_community_posts'));
-    const unsub = onSnapshot(q, (snap) => {
-      setCommunityCount(snap.size);
-    }, () => {});
-    return () => unsub();
-  }, []);
+  const getEmbedSnippet = () => {
+    let url = 'https://studios-pro.com/?embed=true';
+    if (embedTool === 's3dviewer') url = 'https://studios-pro.com/?embed=true&ref=s3dviewer';
+    else if (embedTool === 'painter') url = 'https://studios-pro.com/apps/multicolor-3mf-painter/index.html?embed=true';
+    else if (embedTool === 'coaster') url = 'https://studios-pro.com/apps/qr-wifi-coaster-generator/index.html?embed=true';
+    else if (embedTool === 'polymorph') url = 'https://studios-pro.com/apps/polymorph-3d/index.html?embed=true';
+    else if (embedTool === 'ar') url = 'https://studios-pro.com/apps/ar-viewer/?embed=true';
+    else if (embedTool === 'depth') url = 'https://studios-pro.com/?embed=true&ref=depth';
+    else if (embedTool === 'vcnc') url = 'https://studios-pro.com/?embed=true&ref=vcnc';
+    return `<iframe src="${url}" width="100%" height="600" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" style="border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5);" loading="lazy"></iframe>\n<p style="text-align:center; font-size:12px; margin-top:6px; color:#94a3b8;"><a href="https://studios-pro.com" target="_blank" rel="noopener" style="color:#38bdf8; text-decoration:none; font-weight:600;">Powered by Studios-Pro 3D Suite</a></p>`;
+  };
 
   useEffect(() => {
     if (!db) return;
@@ -923,14 +1331,19 @@ const StudiosPro = () => {
         }),
       });
 
-      const { url } = await response.json();
-      if (url) {
-        window.open(url, '_blank');
-        alert(lang === 'fr' ? "Redirection vers Stripe... Veuillez compléter le paiement dans la nouvelle fenêtre et revenir ici." : "Redirecting to Stripe... Please complete the payment in the new window and return here.");
+      const data = await response.json();
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(lang === 'fr' 
+          ? "Erreur lors de la redirection vers le paiement. Veuillez réessayer." 
+          : "Error starting checkout. Please try again.");
       }
     } catch (error) {
       console.error("Stripe Redirect Error:", error);
-      alert("Error starting checkout. Please try again.");
+      alert(lang === 'fr' 
+        ? "Erreur de connexion avec le service de paiement. Veuillez réessayer." 
+        : "Error starting checkout. Please try again.");
     }
   };
 
@@ -945,8 +1358,15 @@ const StudiosPro = () => {
   const freeUsedRef = useRef(freeExportsUsed);
   const langRef = useRef(lang);
   const collabRoomIdRef = useRef(collabRoomId);
+  const isARViewerOpenRef = useRef(isARViewerOpen);
+  const isPolyMorphOpenRef = useRef(isPolyMorphOpen);
+  const isPainterOpenRef = useRef(isPainterOpen);
+  const isCoasterOpenRef = useRef(isCoasterOpen);
+  const isFilamentPaintingOpenRef = useRef(isFilamentPaintingOpen);
+  const userRef = useRef(user);
 
   useEffect(() => {
+    userRef.current = user;
     premiumRef.current = isPremium;
     adminRef.current = isAdmin;
     creditRef.current = hasExportCredit;
@@ -954,7 +1374,12 @@ const StudiosPro = () => {
     langRef.current = lang;
     collabRoomIdRef.current = collabRoomId;
     isIframeReadyRef.current = isIframeReady;
-  }, [isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady]);
+    isARViewerOpenRef.current = isARViewerOpen;
+    isPolyMorphOpenRef.current = isPolyMorphOpen;
+    isPainterOpenRef.current = isPainterOpen;
+    isCoasterOpenRef.current = isCoasterOpen;
+    isFilamentPaintingOpenRef.current = isFilamentPaintingOpen;
+  }, [user, isPremium, isAdmin, hasExportCredit, freeExportsUsed, lang, collabRoomId, isIframeReady, isARViewerOpen, isPolyMorphOpen, isPainterOpen, isCoasterOpen, isFilamentPaintingOpen]);
 
   useEffect(() => {
     if (!auth) {
@@ -1153,25 +1578,7 @@ const StudiosPro = () => {
 
       // Auto-open studio if ref is present
       const ref = params.get('ref');
-      if (ref === 'ap3d') setIs3DOpen(true);
-      if (ref === 's3dviewer') setIs3DViewerOpen(true);
-      if (ref === 'dfx') setIsDFXOpen(true);
-      if (ref === 'depth') setIsDepthOpen(true);
-      if (ref === 'n3d') setIsNew3DOpen(true);
-      if (ref === 'vcnc') setIsVectorOpen(true);
-      if (ref === 'spro') setIsStudioProOpen(true);
-      if (ref === 'mkr7') setIsMaker7Open(true);
-      if (ref === 'jwly') setIsJewelryOpen(true);
-
-      if (ref === 'arp1') setIsArchPro1Open(true);
-      if (ref === 'arp2') setIsArchPro2Open(true);
-      if (ref === 'figb') setIsFigureBuilderOpen(true);
-      if (ref === 'musc') setIsMusicComposerOpen(true);
-      if (ref === 'desp') setIsDesignProOpen(true);
-      if (ref === 'spro2') setIsStudioPro2Open(true);
-      if (ref === 'mechgen') setIsMechGenProOpen(true);
-      if (ref === 'sandbox') setIsSandboxOpen(true);
-      if (ref === 'artgen') setIsArtGenOpen(true);
+      if (ref) openStudioByRef(ref);
     }
   }, [lang, user]);
 
@@ -1182,6 +1589,15 @@ const StudiosPro = () => {
       const { type, payload } = data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
+        const currentUser = userRef.current;
+        if (!currentUser) {
+          alert(langRef.current === 'fr' 
+            ? "Veuillez vous inscrire ou vous connecter pour profiter de vos 5 exports gratuits !"
+            : "Please register or log in to enjoy your 5 free exports!");
+          setIsAuthOpen(true);
+          return;
+        }
+
         const isPrem = premiumRef.current;
         const isAdm = adminRef.current;
         const hasCred = creditRef.current;
@@ -1194,17 +1610,18 @@ const StudiosPro = () => {
           setShowPaymentRequest(true);
         } else if (hasCred) {
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
-        } else if (used < 2) {
-          // Use one free credit
+        } else if (used < 5) {
+          // Use one free export credit (5 free exports allowed)
           setFreeExportsUsed(prev => {
             const newVal = prev + 1;
             localStorage.setItem('freeExportsUsed', newVal);
             return newVal;
           });
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
+          const remaining = 5 - (used + 1);
           alert(langRef.current === 'fr'
-            ? `Export autorisé ! Il vous reste ${1 - used} export(s) gratuit(s).`
-            : `Export granted! You have ${1 - used} free export(s) left.`);
+            ? `Export autorisé ! Il vous reste ${remaining} export(s) gratuit(s).`
+            : `Export granted! You have ${remaining} free export(s) left.`);
         } else {
           setPaymentReason('free_limit');
           setShowPaymentRequest(true);
@@ -1237,10 +1654,41 @@ const StudiosPro = () => {
       } else if (type === 'OPEN_AR_VIEWER') {
         setArViewerUrl(payload.url || '');
         if (payload && payload.modelData) {
+          const isObjText = typeof payload.modelData === 'string' && (payload.modelData.trim().startsWith('#') || payload.modelData.trim().startsWith('o ') || payload.modelData.trim().startsWith('v ') || payload.modelData.includes('\nv '));
+          const resolvedExt = payload.extension || (isObjText ? 'obj' : 'glb');
+          const resolvedName = payload.name || (isObjText ? 'studio_pro_model.obj' : 'studio_pro_model.glb');
+          const resolvedBinary = isObjText ? false : (payload.isBinary !== false);
           window.lastArModelData = payload.modelData;
+          window.lastArModelName = resolvedName;
+          window.lastArModelExt = resolvedExt;
+          window.lastArModelIsBinary = resolvedBinary;
+          setIsARViewerOpen(true);
+          if (arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
+            try {
+              arViewerIframeRef.current.contentWindow.postMessage({
+                type: 'LOAD_EXTERNAL_FILE',
+                payload: { name: resolvedName, extension: resolvedExt, data: payload.modelData, isBinary: resolvedBinary }
+              }, '*');
+            } catch (e) {
+              console.warn('[App] Forward to ar-viewer error:', e);
+            }
+          }
+        } else {
+          setIsARViewerOpen(true);
         }
-        setIsARViewerOpen(true);
+      } else if (type === 'CLOSE_AR_VIEWER') {
+        setIsARViewerOpen(false);
+        setArViewerUrl('');
+      } else if (type === 'OPEN_PRICING') {
+        setPaymentReason('premium_feature');
+        setShowPaymentRequest(true);
       } else if (type === 'CLOSE_STUDIO') {
+        if (isARViewerOpenRef.current) {
+          setIsARViewerOpen(false);
+          setArViewerUrl('');
+          window.lastArModelData = null;
+          return;
+        }
         setIs3DOpen(false);
         setIs3DViewerOpen(false);
         setIsARViewerOpen(false);
@@ -1264,6 +1712,10 @@ const StudiosPro = () => {
         setIsScriptingOpen(false);
         setIsSandboxOpen(false);
         setIsArtGenOpen(false);
+        setIsPolyMorphOpen(false);
+        setIsPainterOpen(false);
+        setIsCoasterOpen(false);
+        setIsFilamentPaintingOpen(false);
         setCollabRoomId(null);
         setIsIframeReady(false);
         isIframeReadyRef.current = false;
@@ -1330,26 +1782,7 @@ const StudiosPro = () => {
       setIsEmbed(true);
     }
     if (ref) {
-      if (ref === 'ap3d') setIs3DOpen(true);
-      if (ref === 's3dviewer') setIs3DViewerOpen(true);
-      if (ref === 'dfx') setIsDFXOpen(true);
-      if (ref === 'depth') setIsDepthOpen(true);
-      if (ref === 'n3d') setIsNew3DOpen(true);
-      if (ref === 'vcnc') setIsVectorOpen(true);
-      if (ref === 'spro') setIsStudioProOpen(true);
-      if (ref === 'mkr7') setIsMaker7Open(true);
-      if (ref === 'jwly') setIsJewelryOpen(true);
-      if (ref === 'arp1') setIsArchPro1Open(true);
-      if (ref === 'arp2') setIsArchPro2Open(true);
-      if (ref === 'figb') setIsFigureBuilderOpen(true);
-      if (ref === 'musc') setIsMusicComposerOpen(true);
-      if (ref === 'desp') setIsDesignProOpen(true);
-      if (ref === 'spro2') setIsStudioPro2Open(true);
-      if (ref === 'mechgen') setIsMechGenProOpen(true);
-      if (ref === 'sandbox') setIsSandboxOpen(true);
-      if (ref === 'artgen') setIsArtGenOpen(true);
-      if (ref === 'scripting') setIsScriptingOpen(true);
-      if (ref === 'arviewer') setIsARViewerOpen(true);
+      openStudioByRef(ref);
     }
     if (room) {
       setIsScriptingOpen(true);
@@ -1423,8 +1856,8 @@ const StudiosPro = () => {
       cancel: "Annuler",
       contact: "Contact",
       blogBtn: "Tutoriels",
-      freeLimitTitle: "Limite gratuite atteinte",
-      freeLimitMsg: "Vous avez utilisé vos 2 exports gratuits. Connectez-vous pour profiter pleinement de Studios-Pro et débloquer plus d'options !",
+      freeLimitTitle: "Vos 5 exports gratuits sont terminés",
+      freeLimitMsg: "Vous avez profité de vos 5 exports gratuits ! Passez à la formule Pro pour continuer à exporter sans aucune limite.",
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
       unlimitedPrice: "10$ / mois",
@@ -1450,6 +1883,10 @@ const StudiosPro = () => {
       scriptingStudio: "Studio Scripting",
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
+      polymorph3d: "PolyMorph 3D Studio",
+      multicolor3mfPainter: "Studio MultiColor 3MF Painter",
+      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
+      filamentPaintingStudio: "Studio Peinture Filament & Layer-Swap",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -1473,8 +1910,8 @@ const StudiosPro = () => {
       cancel: "Cancel",
       contact: "Contact",
       blogBtn: "Tutorials",
-      freeLimitTitle: "Free limit reached",
-      freeLimitMsg: "You have used your 2 free exports. Log in to fully enjoy Studios-Pro and unlock more options!",
+      freeLimitTitle: "Your 5 free exports are completed",
+      freeLimitMsg: "You have used your 5 free exports! Upgrade to Pro to continue unlimited exports without limits.",
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
       unlimitedPrice: "$10 / month",
@@ -1500,6 +1937,10 @@ const StudiosPro = () => {
       scriptingStudio: "Scripting Studio",
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
+      polymorph3d: "PolyMorph 3D Studio",
+      multicolor3mfPainter: "Studio MultiColor 3MF Painter",
+      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
+      filamentPaintingStudio: "Filament Painting & Layer-Swap Studio",
       faqBtn: "FAQ",
       communityBtn: "Community"
     }
@@ -1508,7 +1949,7 @@ const StudiosPro = () => {
   const currentT = t[lang];
 
   return (
-    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+    <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || isPainterOpen || isCoasterOpen || isFilamentPaintingOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
@@ -1530,44 +1971,77 @@ const StudiosPro = () => {
       <AnimatePresence>
         {showPaymentRequest && (
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '500px' }}>
+            <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '680px' }}>
               <button className="close-btn" onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
 
               <div className="pricing-icon">
-                <Box size={48} color="#3b82f6" />
+                <Sparkles size={44} color="#f59e0b" />
               </div>
 
-              <h2>{paymentReason === 'premium_feature' 
-                ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
-                : currentT.freeLimitTitle}</h2>
-              <p className="payment-desc">{paymentReason === 'premium_feature' 
-                ? (lang === 'fr' ? "Cette fonctionnalité (copie de code, exportation, partage) est exclusivement réservée aux abonnés Premium. Abonnez-vous pour y accéder !" : "This feature (code copying, exporting, sharing) is exclusively reserved for Premium subscribers. Subscribe to get access!") 
-                : currentT.freeLimitMsg}</p>
+              <h2>
+                {paymentReason === 'premium_feature' 
+                  ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
+                  : paymentReason === 'pricing_overview'
+                  ? (lang === 'fr' ? "Tarifs & Formules Studios-Pro" : "Studios-Pro Pricing & Plans")
+                  : currentT.freeLimitTitle}
+              </h2>
+              <p className="payment-desc">
+                {paymentReason === 'premium_feature' 
+                  ? (lang === 'fr' ? "Cette fonctionnalité est exclusivement réservée aux utilisateurs Pro. Choisissez votre formule pour débloquer l'accès complet !" : "This feature is reserved for Pro users. Choose your plan to unlock full access!") 
+                  : paymentReason === 'pricing_overview'
+                  ? (lang === 'fr' ? "Exports haute résolution illimités, parcours d'outils CNC, et licence commerciale directe." : "Unlimited high-resolution exports, CNC toolpaths, and commercial license.")
+                  : currentT.freeLimitMsg}
+              </p>
 
-              {!user && (
-                <button
-                  className="auth-submit"
-                  style={{ marginBottom: '20px', background: '#3b82f6' }}
-                  onClick={() => {
-                    setShowPaymentRequest(false);
-                    setIsAuthOpen(true);
-                  }}
-                >
-                  <User size={18} style={{ marginRight: '8px' }} />
-                  {currentT.loginNow}
-                </button>
-              )}
+              <div className="pricing-grid">
+                {/* Free Plan Card */}
+                <div className="pricing-card">
+                  <h3>{lang === 'fr' ? "Formule Gratuite" : "Free Plan"}</h3>
+                  <div className="pricing-price">$0</div>
+                  <div className="pricing-desc">{lang === 'fr' ? "5 Exports inclus pour démarrer" : "5 Free exports included to start"}</div>
+                  <ul className="pricing-features-list">
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "5 Exports complets offerts (STL, OBJ, DXF, G-Code)" : "5 Full free exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Accès direct aux 15+ studios 3D et CAD" : "Direct access to all 15+ 3D and CAD studios"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Visualisation 3D & projection AR sur mobile" : "3D viewing & mobile AR projection"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Sans carte bancaire ni engagement" : "No credit card, no commitment"}</span></li>
+                  </ul>
+                  <button className="pricing-select single" onClick={() => setShowPaymentRequest(false)}>
+                    {lang === 'fr' ? "Commencer Gratuitement" : "Start for Free"}
+                  </button>
+                </div>
 
-              <div className="pricing-grid" style={{ display: 'flex', justifyContent: 'center' }}>
-                <div className="pricing-card highlighted">
+                {/* Unlimited Pro Card */}
+                <div className="pricing-card featured">
                   <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
-                  <h3>{currentT.unlimitedTitle}</h3>
-                  <div className="price">{currentT.unlimitedPrice}</div>
+                  <h3>{lang === 'fr' ? "Accès Pro Illimité" : "Unlimited Pro Access"}</h3>
+                  <div className="pricing-price">$10 <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {lang === 'fr' ? 'mois' : 'mo'}</span></div>
+                  <div className="pricing-desc">{lang === 'fr' ? "Exports illimités pour créateurs et makers" : "Unlimited exports for creators & makers"}</div>
+                  <ul className="pricing-features-list">
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports 100% illimités (STL, OBJ, DXF, G-Code)" : "100% Unlimited exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Reliefs 3D IA & cartes de profondeur HD" : "AI 3D reliefs & HD depth maps"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Licence commerciale complète incluse" : "Full commercial license included"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports HTML autonomes sans filigrane" : "Standalone HTML exports without watermark"}</span></li>
+                  </ul>
                   <button className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
-                    {currentT.getPremium}
+                    {lang === 'fr' ? "Passer à Pro (10$/mois)" : "Upgrade to Pro ($10/mo)"}
                   </button>
                 </div>
               </div>
+
+              {!user && (
+                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span>{lang === 'fr' ? "Vous avez déjà un compte ?" : "Already have an account?"}</span>
+                  <button
+                    style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      setShowPaymentRequest(false);
+                      setIsAuthOpen(true);
+                    }}
+                  >
+                    {currentT.login}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -1592,32 +2066,41 @@ const StudiosPro = () => {
               <span style={{ fontWeight: 'bold' }}>?</span>
               <span>{currentT.faqBtn}</span>
             </a>
-            <a href="/community/" className="sp-nexus-btn" style={{ textDecoration: 'none' }}>
-              <span className="sp-nexus-orbit">
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '0deg' }}></span>
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '120deg' }}></span>
-                <span className="sp-nexus-orbit-dot" style={{ '--d': '240deg' }}></span>
-              </span>
-              <span className="sp-nexus-inner">
-                <span className="sp-nexus-icon">⊕</span>
-                <span className="sp-nexus-label">SP NEXUS</span>
-              </span>
-              {communityCount !== null && (
-                <span className="sp-nexus-badge">{communityCount > 999 ? '999+' : communityCount}</span>
-              )}
-            </a>
+            <button 
+              type="button"
+              className="contact-btn-nav share-btn-nav" 
+              onClick={() => setIsShareModalOpen(true)} 
+              title={lang === 'fr' ? 'Partager Studios-Pro' : 'Share Studios-Pro'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}
+            >
+              <Share2 size={16} />
+              <span>{lang === 'fr' ? 'Partager' : 'Share'}</span>
+            </button>
+            
           </div>
 
           <div className="nav-right">
+            {!isPremium && (
+              <button
+                className="nav-pricing-btn"
+                onClick={() => {
+                  setPaymentReason('pricing_overview');
+                  setShowPaymentRequest(true);
+                }}
+              >
+                <Sparkles size={16} />
+                <span>{lang === 'fr' ? 'Tarifs & Pro' : 'Pricing & Pro'}</span>
+              </button>
+            )}
+
             {user ? (
               <div className="user-controls">
-                <button
-                  className={`premium-btn ${isPremium ? 'active-status' : ''}`}
-                  onClick={() => redirectToStripe('premium')}
-                >
-                  <CreditCard size={18} />
-                  <span>{isPremium ? currentT.premiumActive : currentT.getPremium}</span>
-                </button>
+                {isPremium && (
+                  <div className="premium-btn active-status" style={{ cursor: 'default' }}>
+                    <CreditCard size={18} />
+                    <span>{currentT.premiumActive}</span>
+                  </div>
+                )}
                 {isPremium && premiumUntil && (
                   <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
                     <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
@@ -1687,18 +2170,25 @@ const StudiosPro = () => {
         >
           <h2 className="subtitle">{currentT.subtitle}</h2>
           <p className="main-message">{currentT.message}</p>
-          {user && (
-            <motion.div 
-              className={`premium-promo ${isPremium ? 'is-premium' : ''}`} 
-              initial={{ opacity: 0, scale: 0.9 }} 
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={() => redirectToStripe('premium')}
-              style={{ cursor: 'pointer' }}
-            >
-              <span className="promo-tag">PRO</span>
-              <p>{isPremium ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` : currentT.premiumDesc}</p>
-            </motion.div>
-          )}
+          <motion.div 
+            className={`premium-promo ${isPremium ? 'is-premium' : ''}`} 
+            initial={{ opacity: 0, scale: 0.9 }} 
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={() => {
+              if (!isPremium) {
+                setPaymentReason('pricing_overview');
+                setShowPaymentRequest(true);
+              }
+            }}
+            style={{ cursor: isPremium ? 'default' : 'pointer' }}
+          >
+            <span className="promo-tag">PRO</span>
+            <p>
+              {isPremium 
+                ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` 
+                : (lang === 'fr' ? '5 Exports Gratuits Inclus — Puis 10$/mois en Illimité' : '5 Free Exports Included — Then $10/mo for Unlimited')}
+            </p>
+          </motion.div>
         </motion.div>
 
         {/* Social Share Section */}
@@ -1994,6 +2484,73 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.artGenStudio}</div>
         </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPolyMorphOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #6366f1, #06b6d4, #10b981)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="PolyMorph 3D Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.polymorph3d}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPainterOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)' }} />
+            <Paintbrush size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio MultiColor 3MF Painter Icon" />
+          </div>
+          <div className="card-label">{currentT.multicolor3mfPainter}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsCoasterOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4, #3b82f6)' }} />
+            <QrCode size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio 3D-QR-WiFi-Coaster Generator Icon" />
+          </div>
+          <div className="card-label">{currentT.qrWifiCoaster}</div>
+        </motion.div>
+
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsFilamentPaintingOpen(true)}
+          style={{ position: 'relative' }}
+        >
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+            color: '#ffffff',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '0.8px',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(236, 72, 153, 0.4)',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}>
+            {lang === 'fr' ? 'NOUVEAU • HUEFORGE ALTERNATIVE' : 'NEW • HUEFORGE ALTERNATIVE'}
+          </div>
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0284c7, #38bdf8, #818cf8)' }} />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Filament Painting & Layer-Swap Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.filamentPaintingStudio}</div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
@@ -2077,6 +2634,15 @@ const StudiosPro = () => {
         </div>
       </motion.section>
 
+      {/* Visible SEO Footer */}
+      {!isEmbed && (
+        <SeoFooter 
+          lang={lang} 
+          onOpenPricing={() => { setPaymentReason('pricing_overview'); setShowPaymentRequest(true); }}
+          onOpenContact={() => setIsContactOpen(true)}
+        />
+      )}
+
       {/* Newsletter Popup */}
       <AnimatePresence>
         {showNewsletter && !newsletterDismissed && !user && (
@@ -2156,6 +2722,210 @@ const StudiosPro = () => {
             lang={lang}
           />
         )}
+        {isShareModalOpen && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsShareModalOpen(false)}>
+            <motion.div className="auth-modal share-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
+              <button className="close-btn" onClick={() => setIsShareModalOpen(false)}><X size={20} /></button>
+              
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                  <Share2 size={22} color="#ffffff" />
+                </div>
+                <h2 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#ffffff' }}>
+                  {lang === 'fr' ? "Partager Studios-Pro" : "Share Studios-Pro"}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                  {lang === 'fr' 
+                    ? "Recommandez Studios-Pro à vos collègues, makers et créateurs 3D !" 
+                    : "Share Studios-Pro with fellow makers, designers & 3D creators!"}
+                </p>
+              </div>
+
+              <div className="share-tabs">
+                <button 
+                  type="button" 
+                  className={`share-tab-btn ${shareTab === 'social' ? 'active' : ''}`}
+                  onClick={() => setShareTab('social')}
+                >
+                  <Share2 size={15} />
+                  <span>{lang === 'fr' ? 'Réseaux & Amis' : 'Social & Friends'}</span>
+                </button>
+                <button 
+                  type="button" 
+                  className={`share-tab-btn ${shareTab === 'embed' ? 'active' : ''}`}
+                  onClick={() => setShareTab('embed')}
+                >
+                  <Code size={15} />
+                  <span>{lang === 'fr' ? 'Intégrer sur un site' : 'Embed on Website'}</span>
+                </button>
+              </div>
+
+              {shareTab === 'social' ? (
+                <>
+                  <div className="share-buttons-grid">
+                    <a 
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro : plus de 20 outils gratuits de création 3D, Réalité Augmentée, Lithophanie et CNC directement en ligne : https://studios-pro.com' : 'Check out Studios-Pro: 20+ free 3D, WebAR, Lithophane & CNC maker tools right in your browser! https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn whatsapp"
+                    >
+                      <span className="share-icon">💬</span>
+                      <span>WhatsApp</span>
+                    </a>
+
+                    <a 
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn twitter"
+                    >
+                      <span className="share-icon">𝕏</span>
+                      <span>X / Twitter</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn facebook"
+                    >
+                      <span className="share-icon">📘</span>
+                      <span>Facebook</span>
+                    </a>
+
+                    <a 
+                      href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent('https://studios-pro.com')}&media=${encodeURIComponent('https://studios-pro.com/og_banner.jpg')}&description=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro - Outils gratuits de 3D, Réalité Augmentée, Découpe Laser et CNC' : 'Studios-Pro - Free 3D, WebAR, Laser Cutting & CNC Tools')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn pinterest"
+                    >
+                      <span className="share-icon">📌</span>
+                      <span>Pinterest</span>
+                    </a>
+
+                    <a 
+                      href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn reddit"
+                    >
+                      <span className="share-icon">🤖</span>
+                      <span>Reddit</span>
+                    </a>
+
+                    <a 
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="share-channel-btn linkedin"
+                    >
+                      <span className="share-icon">💼</span>
+                      <span>LinkedIn</span>
+                    </a>
+
+                    {typeof navigator !== 'undefined' && navigator.share && (
+                      <button 
+                        type="button" 
+                        className="share-channel-btn native-share"
+                        onClick={() => {
+                          navigator.share({
+                            title: 'Studios-Pro 3D & AR Hub',
+                            text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
+                            url: 'https://studios-pro.com'
+                          }).catch(() => {});
+                        }}
+                      >
+                        <span className="share-icon">📱</span>
+                        <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="share-copy-box">
+                    <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+                    <button 
+                      type="button" 
+                      className="share-copy-btn" 
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://studios-pro.com');
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2200);
+                      }}
+                    >
+                      {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="embed-generator-section">
+                  <label className="embed-select-label">
+                    {lang === 'fr' ? "Choisissez l'outil à intégrer :" : "Choose tool to embed:"}
+                  </label>
+                  <select 
+                    className="embed-select" 
+                    value={embedTool} 
+                    onChange={(e) => setEmbedTool(e.target.value)}
+                  >
+                    <option value="s3dviewer">
+                      {lang === 'fr' ? 'Visualiseur 3D & WebAR (STL, OBJ, GLB)' : '3D & WebAR Model Viewer (STL, OBJ, GLB)'}
+                    </option>
+                    <option value="painter">
+                      {lang === 'fr' ? 'Colorateur 3D 3MF Multi-Couleurs (Bambu AMS)' : 'Multi-Color 3MF Painter (Bambu Lab AMS)'}
+                    </option>
+                    <option value="coaster">
+                      {lang === 'fr' ? 'Générateur Sous-Verres 3D QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster Generator'}
+                    </option>
+                    <option value="polymorph">
+                      {lang === 'fr' ? 'PolyMorph 3D Studio & Mesh Slicer' : 'PolyMorph 3D Studio & Mesh Slicer'}
+                    </option>
+                    <option value="ar">
+                      {lang === 'fr' ? 'WebAR Instant Camera Viewer' : 'WebAR Instant Camera Viewer'}
+                    </option>
+                    <option value="depth">
+                      {lang === 'fr' ? 'Convertisseur Photo vers Relief 3D (IA)' : 'AI 2D Photo to 3D Relief'}
+                    </option>
+                    <option value="vcnc">
+                      {lang === 'fr' ? 'Vector CNC & Découpe Laser (DXF/G-code)' : 'Vector CNC & Laser G-Code'}
+                    </option>
+                    <option value="suite">
+                      {lang === 'fr' ? 'Suite Complète Studios-Pro' : 'Full Studios-Pro Suite'}
+                    </option>
+                  </select>
+
+                  <textarea 
+                    className="embed-code-textarea" 
+                    readOnly 
+                    value={getEmbedSnippet()} 
+                    onClick={(e) => e.target.select()}
+                  />
+
+                  <button 
+                    type="button" 
+                    className="embed-copy-action-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getEmbedSnippet());
+                      setEmbedCopied(true);
+                      setTimeout(() => setEmbedCopied(false), 2500);
+                    }}
+                  >
+                    {embedCopied ? <Check size={18} /> : <Copy size={18} />}
+                    <span>
+                      {embedCopied 
+                        ? (lang === 'fr' ? '✓ Code d\'intégration copié !' : '✓ Embed code copied!')
+                        : (lang === 'fr' ? 'Copier le code HTML' : 'Copy HTML Embed Code')}
+                    </span>
+                  </button>
+
+                  <p className="embed-badge-note">
+                    {lang === 'fr' 
+                      ? '✓ Compatible WordPress, Wix, Squarespace, Shopify, Ghost et blogs HTML. Inclut le badge interactif Studios-Pro.'
+                      : '✓ Compatible with WordPress, Wix, Squarespace, Shopify, Ghost and HTML blogs. Includes interactive Studios-Pro badge.'}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Full-screen Studio Overlays */}
@@ -2172,7 +2942,7 @@ const StudiosPro = () => {
         )}
         {isARViewerOpen && (
           <motion.div className="studio-overlay ar-viewer-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src={`/apps/ar-viewer/index.html?lang=${lang}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" allow="camera; xr-spatial-tracking; fullscreen; accelerometer; gyroscope; microphone" />
+<iframe ref={arViewerIframeRef} src={`/apps/ar-viewer/index.html?v=21&lang=${lang}&premium=${isPremium || isAdmin}${arViewerUrl ? '&url=' + encodeURIComponent(arViewerUrl) : ''}`} className="studio-iframe" title="AR Viewer 3D" allow="camera; xr-spatial-tracking; fullscreen; accelerometer; gyroscope; microphone" />
           </motion.div>
         )}
         {isDFXOpen && (
@@ -2268,6 +3038,26 @@ const StudiosPro = () => {
         {isArtGenOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe src="/apps/artgen/index.html" className="studio-iframe" title="ArtGen Studio" />
+          </motion.div>
+        )}
+        {isPolyMorphOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/polymorph-3d/index.html" className="studio-iframe" title="PolyMorph 3D Studio" />
+          </motion.div>
+        )}
+        {isPainterOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/multicolor-3mf-painter/index.html" className="studio-iframe" title="Studio MultiColor 3MF Painter" />
+          </motion.div>
+        )}
+        {isCoasterOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/qr-wifi-coaster-generator/index.html" className="studio-iframe" title="Studio 3D-QR-WiFi-Coaster Generator" />
+          </motion.div>
+        )}
+        {isFilamentPaintingOpen && (
+          <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <iframe src="/apps/filament-painting-studio/index.html" className="studio-iframe" title="Filament Painting & Layer-Swap Studio" />
           </motion.div>
         )}
       </AnimatePresence>
