@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css?v=21.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
@@ -345,12 +346,13 @@
         id="viewer"
         camera-controls 
         touch-action="pan-y" 
-        shadow-intensity="1"
-        shadow-softness="0.8"
+        shadow-intensity="1.2"
+        shadow-softness="0.5"
         exposure="1"
         ar
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="scene-viewer quick-look webxr"
         ar-scale="auto"
+        ar-placement="floor"
         interaction-prompt="auto"
         auto-rotate
         autoplay
@@ -578,58 +580,33 @@
             name = rawUrl.split('#').pop();
           }
 
-          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
-
-          const fetchWithTimeout = (url, opts = {}, ms = 12000) => {
-            return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) }).catch(err => {
-              console.warn('Fetch failed for', url, err.message);
-              return null;
-            });
-          };
-
-          const downloadTasks = [];
-
-          // 1. Direct fetch (instant for Litterbox/Catbox which have native CORS *)
-          downloadTasks.push((async () => {
-            const r = await fetchWithTimeout(fetchUrl, {}, 9000);
-            if (r && r.ok) {
-              const b = await r.blob();
-              if (b && b.size > 50) {
-                const head = await b.slice(0, 50).text().catch(() => '');
-                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
-                  return b;
-                }
-              }
-            }
-            throw new Error('Direct fetch failed');
-          })());
-
-          // 2. Dedicated Netlify /api/ar-proxy (server-side guaranteed CORS * binary stream)
-          downloadTasks.push((async () => {
-            const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
-            const r = await fetchWithTimeout(`${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, {}, 14000);
-            if (r && r.ok) {
-              const b = await r.blob();
-              if (b && b.size > 50) {
-                const head = await b.slice(0, 50).text().catch(() => '');
-                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
-                  return b;
-                }
-              }
-            }
-            throw new Error('Proxy fetch failed');
-          })());
-
-          const blob = await Promise.any(downloadTasks);
-          if (!blob || blob.size < 20) {
-            throw new Error("Invalid or empty file downloaded.");
-          }
-
-          const file = new File([blob], name, { type: 'model/gltf-binary' });
-          await handleFile(file);
-
+          hasReceivedFile = true;
+          activeDemoId = null;
           lastDirectDlUrl = fetchUrl;
           lastShareUrl = fetchUrl;
+
+          modelNameEl.textContent = name;
+          modelFormatEl.textContent = (name.split('.').pop() || 'GLB').toUpperCase();
+          modelSizeEl.textContent = '3D Cloud';
+
+          showLoader(currentLang === 'fr' ? "Chargement du modèle AR..." : "Loading AR model...");
+
+          // Feed direct public HTTPS URL so Google Scene Viewer & iOS Quick Look can launch natively!
+          let retryCount = 0;
+          const handleViewerError = () => {
+            if (retryCount === 0) {
+              retryCount++;
+              console.warn("Direct load failed, retrying via proxy stream...");
+              const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
+              viewer.src = `${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`;
+            } else {
+              hideLoader();
+              alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
+            }
+          };
+
+          viewer.addEventListener('error', handleViewerError, { once: false });
+          loadIntoModelViewer(fetchUrl);
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -860,7 +837,15 @@
             try {
               const contents = e.target.result;
               const loaderStl = new THREE.STLLoader();
-              const geometry = loaderStl.parse(contents);
+              let geometry = loaderStl.parse(contents);
+              if (window.THREE && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
+                try {
+                  geometry = THREE.BufferGeometryUtils.mergeVertices(geometry, 1e-4);
+                } catch(e) {
+                  console.warn("Could not merge STL vertices:", e);
+                }
+              }
+              geometry.computeVertexNormals();
               
               const material = new THREE.MeshStandardMaterial({ 
                 color: 0xcccccc, 
@@ -898,6 +883,12 @@
               
               objGroup.traverse((child) => {
                 if (child.isMesh) {
+                  if (window.THREE && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices && child.geometry) {
+                    try {
+                      child.geometry = THREE.BufferGeometryUtils.mergeVertices(child.geometry, 1e-4);
+                    } catch(_) {}
+                  }
+                  if (child.geometry) child.geometry.computeVertexNormals();
                   child.material = new THREE.MeshStandardMaterial({ 
                     color: 0xcccccc, 
                     roughness: 0.4, 
@@ -999,6 +990,16 @@
       try {
         const dimensions = viewer.getDimensions();
         if (dimensions) {
+          const maxDim = Math.max(dimensions.x, dimensions.y, dimensions.z, 0.001);
+          // Scale normalization for oversized CAD (millimeters) or microscopic models
+          if (maxDim > 5.0) {
+            const s = (0.28 / maxDim).toFixed(5);
+            viewer.setAttribute('scale', `${s} ${s} ${s}`);
+          } else if (maxDim < 0.02 && maxDim > 0) {
+            const s = (0.20 / maxDim).toFixed(5);
+            viewer.setAttribute('scale', `${s} ${s} ${s}`);
+          }
+
           const formatDim = (val) => {
             if (val >= 1.0) {
               return `${val.toFixed(2)} m`;
@@ -1411,25 +1412,47 @@
       };
     }
 
-    // Upload to generate permanent AR shareable link (Fast parallel Litterbox + Catbox/Proxy)
+    // Upload to generate permanent AR shareable link (Fast parallel Catbox/Proxy + Litterbox + Uguu)
     async function generateARShareLink(file, fileName) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
-      if (isMobile) {
-        qrSection.style.display = 'none';
-        return; // Mobile users are viewers; never upload or overwrite viewer.src!
+      if (!isMobile) {
+        qrSection.style.display = 'block';
+        qrLoading.style.display = 'flex';
+        qrCodeImg.style.display = 'none';
+        qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+        const spinnerText = qrLoading.querySelector('.spinner-text');
+        if (spinnerText) {
+          spinnerText.textContent = currentLang === 'fr'
+            ? `Génération du lien AR (${formatBytes(file.size)})...`
+            : `Generating AR link (${formatBytes(file.size)})...`;
+        }
       }
-
-      qrSection.style.display = 'block';
-      qrLoading.style.display = 'flex';
-      qrCodeImg.style.display = 'none';
-      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
       isUploadingCloud = true;
       let directDlUrl = null;
 
       const uploadTasks = [];
 
-      // 1. Litterbox (Catbox 72h - direct HTTPS, permanent CORS *, raw binary .glb, ~600ms)
+      // 1. Primary: Netlify Edge/Function & Dev Server /api/ar-proxy (Catbox + Litterbox + Uguu server-to-server)
+      uploadTasks.push((async () => {
+        const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        const r = await fetch(`${baseHost}/api/ar-proxy?name=` + encodeURIComponent(fileName), {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(45000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const j = await r.json().catch(() => null);
+          if (j && j.status === 'success' && j.url && j.url.startsWith('https://')) {
+            return j.url;
+          }
+        }
+        throw new Error('Proxy upload failed');
+      })());
+
+      // 2. Direct Litterbox (Catbox 72h - direct HTTPS, permanent CORS *, raw binary .glb)
       uploadTasks.push((async () => {
         const fd = new FormData();
         fd.append('reqtype', 'fileupload');
@@ -1438,7 +1461,7 @@
         const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
           body: fd,
-          signal: AbortSignal.timeout(12000)
+          signal: AbortSignal.timeout(35000)
         }).catch(() => null);
         if (r && r.ok) {
           const txt = (await r.text()).trim();
@@ -1447,39 +1470,40 @@
         throw new Error('Litterbox direct failed');
       })());
 
-      // 2. Netlify Edge/Function /api/ar-proxy (server-side uploader, guaranteed CORS *, direct .glb)
+      // 3. Catbox.moe via Netlify proxy /api/catbox (permanent storage)
       uploadTasks.push((async () => {
-        const fd = new FormData();
-        fd.append('file', file, fileName);
-        const r = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
-          method: 'POST',
-          body: fd,
-          signal: AbortSignal.timeout(14000)
-        }).catch(() => null);
-        if (r && r.ok) {
-          const j = await r.json().catch(() => null);
-          if (j && j.status === 'success' && j.url && j.url.startsWith('https://')) {
-            return j.url;
-          }
-        }
-        throw new Error('Edge proxy upload failed');
-      })());
-
-      // 3. Catbox.moe via Netlify proxy /api/catbox (permanent storage fallback)
-      uploadTasks.push((async () => {
+        const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
         const fd = new FormData();
         fd.append('reqtype', 'fileupload');
         fd.append('fileToUpload', file, fileName);
-        const r = await fetch('/api/catbox', {
+        const r = await fetch(`${baseHost}/api/catbox`, {
           method: 'POST',
           body: fd,
-          signal: AbortSignal.timeout(15000)
+          signal: AbortSignal.timeout(45000)
         }).catch(() => null);
         if (r && r.ok) {
           const txt = (await r.text()).trim();
           if (txt.startsWith('https://')) return txt;
         }
         throw new Error('Catbox proxy failed');
+      })());
+
+      // 4. Uguu.se (100MB fallback)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('files[]', file, fileName);
+        const r = await fetch('https://uguu.se/upload', {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(35000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const j = await r.json().catch(() => null);
+          if (j && j.success && j.files && j.files[0] && j.files[0].url) {
+            return j.files[0].url;
+          }
+        }
+        throw new Error('Uguu direct failed');
       })());
 
       try {
@@ -1494,15 +1518,22 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        updateQRCodeWithColorParam(directDlUrl, 'original');
+        if (isMobile && viewer) {
+          // Provide direct public HTTPS URL to model-viewer so Google Scene Viewer can open natively
+          viewer.src = directDlUrl;
+        } else {
+          updateQRCodeWithColorParam(directDlUrl, 'original');
+        }
       } else {
-        qrLoading.style.display = 'none';
-        const fallbackText = document.createElement('p');
-        fallbackText.className = 'qr-error-msg';
-        fallbackText.textContent = currentLang === 'fr'
-          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement direct sur votre mobile."
-          : "Unable to generate transfer QR code. Please use direct load on your mobile device.";
-        qrSection.appendChild(fallbackText);
+        if (!isMobile) {
+          qrLoading.style.display = 'none';
+          const fallbackText = document.createElement('p');
+          fallbackText.className = 'qr-error-msg';
+          fallbackText.textContent = currentLang === 'fr'
+            ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement direct sur votre mobile."
+            : "Unable to generate transfer QR code. Please use direct load on your mobile device.";
+          qrSection.appendChild(fallbackText);
+        }
       }
     }
 

@@ -29,7 +29,30 @@ exports.handler = async (event) => {
       const blob = new Blob([rawBuf], { type: 'model/gltf-binary' });
       const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-      // 1. Litterbox (direct .glb binary with CORS *)
+      // 1. Catbox (direct .glb binary with CORS *, 200MB limit)
+      try {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('fileToUpload', blob, fileName);
+        const r = await fetch('https://catbox.moe/user/api.php', {
+          method: 'POST',
+          headers: { 'User-Agent': ua },
+          body: fd,
+          signal: AbortSignal.timeout(45000)
+        });
+        if (r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) {
+            return {
+              statusCode: 200,
+              headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'success', url: txt, provider: 'catbox' })
+            };
+          }
+        }
+      } catch (_) {}
+
+      // 2. Litterbox (direct .glb binary with CORS *)
       try {
         const fd = new FormData();
         fd.append('reqtype', 'fileupload');
@@ -38,7 +61,8 @@ exports.handler = async (event) => {
         const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
           headers: { 'User-Agent': ua },
-          body: fd
+          body: fd,
+          signal: AbortSignal.timeout(30000)
         });
         if (r.ok) {
           const txt = (await r.text()).trim();
@@ -46,29 +70,29 @@ exports.handler = async (event) => {
             return {
               statusCode: 200,
               headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'success', url: txt })
+              body: JSON.stringify({ status: 'success', url: txt, provider: 'litterbox' })
             };
           }
         }
       } catch (_) {}
 
-      // 2. Catbox (direct .glb binary with CORS *)
+      // 3. Uguu (100MB fallback)
       try {
         const fd = new FormData();
-        fd.append('reqtype', 'fileupload');
-        fd.append('fileToUpload', blob, fileName);
-        const r = await fetch('https://catbox.moe/user/api.php', {
+        fd.append('files[]', blob, fileName);
+        const r = await fetch('https://uguu.se/upload', {
           method: 'POST',
           headers: { 'User-Agent': ua },
-          body: fd
+          body: fd,
+          signal: AbortSignal.timeout(30000)
         });
         if (r.ok) {
-          const txt = (await r.text()).trim();
-          if (txt.startsWith('https://')) {
+          const j = await r.json().catch(() => null);
+          if (j && j.success && j.files && j.files[0] && j.files[0].url) {
             return {
               statusCode: 200,
               headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'success', url: txt })
+              body: JSON.stringify({ status: 'success', url: j.files[0].url, provider: 'uguu' })
             };
           }
         }

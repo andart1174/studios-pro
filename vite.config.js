@@ -36,31 +36,71 @@ export default defineConfig({
               const chunks = [];
               for await (const chunk of req) chunks.push(chunk);
               const bodyBuf = Buffer.concat(chunks);
-              const cType = req.headers['content-type'] || 'application/octet-stream';
-
-              const fd = new FormData();
-              fd.append('reqtype', 'fileupload');
-              fd.append('time', '72h');
               const qName = urlObj.searchParams.get('name') || 'model.glb';
-              fd.append('fileToUpload', new Blob([bodyBuf], { type: 'model/gltf-binary' }), qName);
 
-              const rLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-                method: 'POST',
-                body: fd
-              }).catch(() => null);
-
-              if (rLit && rLit.ok) {
-                const txt = (await rLit.text()).trim();
-                if (txt.startsWith('https://')) {
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ status: 'success', url: txt }));
-                  return;
+              // 1. Catbox permanent (guaranteed CORS *, direct .glb, 200MB capacity)
+              try {
+                const fdCat = new FormData();
+                fdCat.append('reqtype', 'fileupload');
+                fdCat.append('fileToUpload', new Blob([bodyBuf], { type: 'model/gltf-binary' }), qName);
+                const rCat = await fetch('https://catbox.moe/user/api.php', {
+                  method: 'POST',
+                  body: fdCat,
+                  signal: AbortSignal.timeout(45000)
+                }).catch(() => null);
+                if (rCat && rCat.ok) {
+                  const txt = (await rCat.text()).trim();
+                  if (txt.startsWith('https://')) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ status: 'success', url: txt, provider: 'catbox' }));
+                    return;
+                  }
                 }
-              }
+              } catch (_) {}
+
+              // 2. Litterbox (72h temporary storage)
+              try {
+                const fdLit = new FormData();
+                fdLit.append('reqtype', 'fileupload');
+                fdLit.append('time', '72h');
+                fdLit.append('fileToUpload', new Blob([bodyBuf], { type: 'model/gltf-binary' }), qName);
+                const rLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+                  method: 'POST',
+                  body: fdLit,
+                  signal: AbortSignal.timeout(30000)
+                }).catch(() => null);
+                if (rLit && rLit.ok) {
+                  const txt = (await rLit.text()).trim();
+                  if (txt.startsWith('https://')) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ status: 'success', url: txt, provider: 'litterbox' }));
+                    return;
+                  }
+                }
+              } catch (_) {}
+
+              // 3. Uguu.se (100MB capacity fallback)
+              try {
+                const fdUguu = new FormData();
+                fdUguu.append('files[]', new Blob([bodyBuf], { type: 'model/gltf-binary' }), qName);
+                const rUguu = await fetch('https://uguu.se/upload', {
+                  method: 'POST',
+                  body: fdUguu,
+                  signal: AbortSignal.timeout(30000)
+                }).catch(() => null);
+                if (rUguu && rUguu.ok) {
+                  const j = await rUguu.json().catch(() => null);
+                  if (j && j.success && j.files && j.files[0] && j.files[0].url) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ status: 'success', url: j.files[0].url, provider: 'uguu' }));
+                    return;
+                  }
+                }
+              } catch (_) {}
 
               res.statusCode = 502;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ status: 'error', error: 'Dev upload proxy fallback' }));
+              res.end(JSON.stringify({ status: 'error', error: 'All upload providers failed' }));
               return;
             } catch (err) {
               res.statusCode = 500;

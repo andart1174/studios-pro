@@ -52,7 +52,29 @@ async function handleUpload(request) {
 
   const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-  // 1. Try Litterbox (Catbox 72h temporary storage - guaranteed direct .glb binary with CORS *)
+  // 1. Try Catbox permanent (guaranteed direct .glb binary with CORS *, 200MB limit)
+  try {
+    const fd = new FormData();
+    fd.append('reqtype', 'fileupload');
+    fd.append('fileToUpload', fileBlob, fileName);
+    const r = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      headers: { 'User-Agent': ua },
+      body: fd,
+      signal: AbortSignal.timeout(45000)
+    });
+    if (r.ok) {
+      const txt = (await r.text()).trim();
+      if (txt.startsWith('https://')) {
+        return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'catbox' }), {
+          status: 200,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+  } catch (_) {}
+
+  // 2. Try Litterbox (Catbox 72h temporary storage - guaranteed direct .glb binary with CORS *)
   try {
     const fd = new FormData();
     fd.append('reqtype', 'fileupload');
@@ -62,34 +84,12 @@ async function handleUpload(request) {
       method: 'POST',
       headers: { 'User-Agent': ua },
       body: fd,
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(30000)
     });
     if (r.ok) {
       const txt = (await r.text()).trim();
       if (txt.startsWith('https://')) {
         return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'litterbox' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
-      }
-    }
-  } catch (_) {}
-
-  // 2. Try Catbox permanent (guaranteed direct .glb binary with CORS *)
-  try {
-    const fd = new FormData();
-    fd.append('reqtype', 'fileupload');
-    fd.append('fileToUpload', fileBlob, fileName);
-    const r = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      headers: { 'User-Agent': ua },
-      body: fd,
-      signal: AbortSignal.timeout(15000)
-    });
-    if (r.ok) {
-      const txt = (await r.text()).trim();
-      if (txt.startsWith('https://')) {
-        return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'catbox' }), {
           status: 200,
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
         });
