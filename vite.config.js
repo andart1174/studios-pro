@@ -38,18 +38,22 @@ export default defineConfig({
               const bodyBuf = Buffer.concat(chunks);
               const cType = req.headers['content-type'] || 'application/octet-stream';
 
-              const rTmp = await fetch('https://tmpfiles.org/api/v1/upload', {
+              const fd = new FormData();
+              fd.append('reqtype', 'fileupload');
+              fd.append('time', '72h');
+              const qName = urlObj.searchParams.get('name') || 'model.glb';
+              fd.append('fileToUpload', new Blob([bodyBuf], { type: 'model/gltf-binary' }), qName);
+
+              const rLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
                 method: 'POST',
-                headers: { 'Content-Type': cType },
-                body: bodyBuf
+                body: fd
               }).catch(() => null);
 
-              if (rTmp && rTmp.ok) {
-                const json = await rTmp.json().catch(() => null);
-                if (json && json.status === 'success' && json.data && json.data.url) {
-                  const dlUrl = json.data.url.replace(/^http:\/\//i, 'https://').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+              if (rLit && rLit.ok) {
+                const txt = (await rLit.text()).trim();
+                if (txt.startsWith('https://')) {
                   res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ status: 'success', url: dlUrl }));
+                  res.end(JSON.stringify({ status: 'success', url: txt }));
                   return;
                 }
               }

@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <!-- Google model-viewer for web-AR -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -349,13 +349,11 @@
         shadow-softness="0.8"
         exposure="1"
         ar
-        ar-modes="scene-viewer webxr quick-look"
+        ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
-        ar-placement="floor"
         interaction-prompt="auto"
         auto-rotate
         autoplay
-        loading="eager"
         alt="A 3D model preview in AR"
         style="width: 100%; height: 100%; display: none;">
 
@@ -563,67 +561,56 @@
 
           showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          const fetchWithTimeout = (url, opts = {}, ms = 15000) => {
+          const fetchWithTimeout = (url, opts = {}, ms = 12000) => {
             return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) }).catch(err => {
               console.warn('Fetch failed for', url, err.message);
               return null;
             });
           };
 
-          let res = null;
+          const downloadTasks = [];
 
-          // Strategy 1: Dedicated Netlify /api/ar-proxy (guaranteed CORS *, resolves HTML landing page, binary stream)
-          const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
-          const proxyEndpoint = `${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`;
-          res = await fetchWithTimeout(proxyEndpoint, {}, 25000);
-          if (res && res.ok) {
-            const cType = (res.headers.get('content-type') || '').toLowerCase();
-            if (cType.includes('html')) res = null; // Reject if error HTML
-          }
-
-          // Strategy 2: Direct fetch (for CDNs with full CORS * support, e.g. catbox files)
-          if (!res || !res.ok) {
-            let dRes = await fetchWithTimeout(fetchUrl, {}, 15000);
-            if (dRes && dRes.ok) {
-              const cType = (dRes.headers.get('content-type') || '').toLowerCase();
-              if (!cType.includes('html')) res = dRes;
+          // 1. Direct fetch (instant for Litterbox/Catbox which have native CORS *)
+          downloadTasks.push((async () => {
+            const r = await fetchWithTimeout(fetchUrl, {}, 9000);
+            if (r && r.ok) {
+              const b = await r.blob();
+              if (b && b.size > 50) {
+                const head = await b.slice(0, 50).text().catch(() => '');
+                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
+                  return b;
+                }
+              }
             }
-          }
+            throw new Error('Direct fetch failed');
+          })());
 
-          // Strategy 3: Netlify legacy proxy rewrite fallback
-          if ((!res || !res.ok) && fetchUrl.includes('tmpfiles.org')) {
-            let proxyUrl = fetchUrl.replace(/^https?:\/\/tmpfiles\.org\//, '/api/proxy/');
-            if (!proxyUrl.includes('/dl/') && !proxyUrl.includes('/api/v1/')) {
-              proxyUrl = proxyUrl.replace('/api/proxy/', '/api/proxy/dl/');
+          // 2. Dedicated Netlify /api/ar-proxy (server-side guaranteed CORS * binary stream)
+          downloadTasks.push((async () => {
+            const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
+            const r = await fetchWithTimeout(`${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, {}, 14000);
+            if (r && r.ok) {
+              const b = await r.blob();
+              if (b && b.size > 50) {
+                const head = await b.slice(0, 50).text().catch(() => '');
+                if (!head.trim().startsWith('<') && !head.includes('<!DOCTYPE') && !head.includes('<html')) {
+                  return b;
+                }
+              }
             }
-            let pRes = await fetchWithTimeout(proxyUrl, {}, 15000);
-            if (pRes && pRes.ok) {
-              const cType = (pRes.headers.get('content-type') || '').toLowerCase();
-              if (!cType.includes('html')) res = pRes;
-            }
-          }
+            throw new Error('Proxy fetch failed');
+          })());
 
-          if (!res || !res.ok) {
-            throw new Error(`HTTP error ${res ? res.status : 'no response'}`);
-          }
-
-          const blob = await res.blob();
+          const blob = await Promise.any(downloadTasks);
           if (!blob || blob.size < 20) {
             throw new Error("Invalid or empty file downloaded.");
           }
 
-          const file = new File([blob], name, { type: 'application/octet-stream' });
-          handleFile(file);
-          // Set viewer.src to the public HTTPS URL so native SceneViewer can project it on Android!
-          if (fetchUrl && (fetchUrl.startsWith('http://') || fetchUrl.startsWith('https://'))) {
-            let directModelHttps = fetchUrl.replace(/^http:\/\//i, 'https://');
-            if (directModelHttps.includes('tmpfiles.org') && !directModelHttps.includes('/dl/') && !directModelHttps.includes('/api/v1/')) {
-              directModelHttps = directModelHttps.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-            viewer.src = directModelHttps;
-            lastDirectDlUrl = directModelHttps;
-            lastShareUrl = directModelHttps;
-          }
+          const file = new File([blob], name, { type: 'model/gltf-binary' });
+          await handleFile(file);
+
+          lastDirectDlUrl = fetchUrl;
+          lastShareUrl = fetchUrl;
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -689,21 +676,38 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Scale normalization to prevent oversized/microscopic models in AR
+    // Scale and position normalization to ensure models are centered, grounded, and appropriately sized for tabletop/floor AR
     function normalizeObjectScale(object) {
       const box = new THREE.Box3().setFromObject(object);
       const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
       box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
+      box.getCenter(center);
+      const maxDim = Math.max(size.x, size.y, size.z, 0.001);
       
-      // If the model is likely in millimeters (max dimension > 5.0, e.g., 50mm to 300mm),
-      // we scale it down by 1000 to convert to meters for correct AR representation.
+      let scale = 1.0;
       if (maxDim > 5.0) {
-        object.scale.multiplyScalar(0.001);
-      } else if (maxDim < 0.01 && maxDim > 0) {
-        // If microscopic (less than 1cm), scale up to a visible size
-        object.scale.multiplyScalar(0.1 / maxDim);
+        // Likely millimeters (e.g. 50mm - 500mm CAD) -> convert to meters
+        scale = 0.001;
+      } else if (maxDim < 0.02) {
+        // Microscopic (less than 2cm) -> scale up to ~15cm
+        scale = 0.15 / maxDim;
+      } else if (maxDim > 2.5) {
+        // Architectural/huge model (>2.5m) -> scale to tabletop size (~0.3m)
+        scale = 0.3 / maxDim;
       }
+
+      // Center geometry horizontally and ground to base (y=0)
+      object.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          child.geometry.center();
+          child.geometry.computeBoundingBox();
+          if (child.geometry.boundingBox) {
+            child.geometry.translate(0, -child.geometry.boundingBox.min.y, 0);
+          }
+        }
+      });
+      object.scale.multiplyScalar(scale);
     }
 
     // ----------------------------------------------------------------------
@@ -795,10 +799,8 @@
       currentModelName = demo.name;
       currentModelExtension = demo.ext;
 
-      // Direct public HTTPS URL for SceneViewer & QuickLook!
-      const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-      const directHttpsUrl = `${baseOrigin}${demo.url}`;
-      loadIntoModelViewer(directHttpsUrl);
+      // Direct instant load from clean local path
+      loadIntoModelViewer(demo.url);
       generateDemoQR(demo.id);
     };
 
@@ -989,26 +991,15 @@
           document.getElementById('model-dimensions').textContent = formattedText;
 
           // Holographic HUD labels text
-          document.getElementById('hud-label-x').textContent = `X: ${formatDim(dimensions.x)}`;
-          document.getElementById('hud-label-y').textContent = `Y: ${formatDim(dimensions.y)}`;
-          document.getElementById('hud-label-z').textContent = `Z: ${formatDim(dimensions.z)}`;
-
-          // Position HUD hotspots on model bounding box faces
-          viewer.updateHotspot({
-            name: 'hotspot-hud-x',
-            position: `0 ${-dimensions.y / 2} ${dimensions.z / 2}`
-          });
-          viewer.updateHotspot({
-            name: 'hotspot-hud-y',
-            position: `${dimensions.x / 2} 0 0`
-          });
-          viewer.updateHotspot({
-            name: 'hotspot-hud-z',
-            position: `0 ${-dimensions.y / 2} ${-dimensions.z / 2}`
-          });
+          const lx = document.getElementById('hud-label-x');
+          const ly = document.getElementById('hud-label-y');
+          const lz = document.getElementById('hud-label-z');
+          if (lx) lx.textContent = `X: ${formatDim(dimensions.x)}`;
+          if (ly) ly.textContent = `Y: ${formatDim(dimensions.y)}`;
+          if (lz) lz.textContent = `Z: ${formatDim(dimensions.z)}`;
         }
       } catch (err) {
-        console.error("Error reading model dimensions:", err);
+        console.warn("Model dimensions calculation notice:", err);
         document.getElementById('model-dimensions').textContent = "-";
       }
 
@@ -1401,74 +1392,81 @@
       };
     }
 
-    // Upload to generate permanent AR shareable link (Catbox permanent primary + tmpfiles fallback)
+    // Upload to generate permanent AR shareable link (Fast parallel Litterbox + Catbox/Proxy)
     async function generateARShareLink(file, fileName) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
       if (isMobile) {
         qrSection.style.display = 'none';
-      } else {
-        qrSection.style.display = 'block';
-        qrLoading.style.display = 'flex';
-        qrCodeImg.style.display = 'none';
-        qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+        return; // Mobile users are viewers; never upload or overwrite viewer.src!
       }
+
+      qrSection.style.display = 'block';
+      qrLoading.style.display = 'flex';
+      qrCodeImg.style.display = 'none';
+      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
 
       isUploadingCloud = true;
       let directDlUrl = null;
 
-      // -- Primary Service: Fast tmpfiles.org direct upload (~600ms) --
-      try {
-        const formData = new FormData();
-        formData.append('file', file, fileName);
+      const uploadTasks = [];
 
-        let response = await fetch('https://tmpfiles.org/api/v1/upload', {
+      // 1. Litterbox (Catbox 72h - direct HTTPS, permanent CORS *, raw binary .glb, ~600ms)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('time', '72h');
+        fd.append('fileToUpload', file, fileName);
+        const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
           method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(10000)
+          body: fd,
+          signal: AbortSignal.timeout(12000)
         }).catch(() => null);
-
-        if (!response || !response.ok) {
-          const fdProxy = new FormData();
-          fdProxy.append('file', file, fileName);
-          response = await fetch('/api/proxy/api/v1/upload', {
-            method: 'POST',
-            body: fdProxy,
-            signal: AbortSignal.timeout(10000)
-          }).catch(() => null);
+        if (r && r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) return txt;
         }
+        throw new Error('Litterbox direct failed');
+      })());
 
-        if (response && response.ok) {
-          const json = await response.json().catch(() => null);
-          if (json && json.status === 'success' && json.data && json.data.url) {
-            directDlUrl = json.data.url.replace(/^http:\/\//i, 'https://').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+      // 2. Netlify Edge/Function /api/ar-proxy (server-side uploader, guaranteed CORS *, direct .glb)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('file', file, fileName);
+        const r = await fetch('/api/ar-proxy?name=' + encodeURIComponent(fileName), {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(14000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const j = await r.json().catch(() => null);
+          if (j && j.status === 'success' && j.url && j.url.startsWith('https://')) {
+            return j.url;
           }
         }
+        throw new Error('Edge proxy upload failed');
+      })());
+
+      // 3. Catbox.moe via Netlify proxy /api/catbox (permanent storage fallback)
+      uploadTasks.push((async () => {
+        const fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('fileToUpload', file, fileName);
+        const r = await fetch('/api/catbox', {
+          method: 'POST',
+          body: fd,
+          signal: AbortSignal.timeout(15000)
+        }).catch(() => null);
+        if (r && r.ok) {
+          const txt = (await r.text()).trim();
+          if (txt.startsWith('https://')) return txt;
+        }
+        throw new Error('Catbox proxy failed');
+      })());
+
+      try {
+        directDlUrl = await Promise.any(uploadTasks);
       } catch (err) {
-        console.warn('tmpfiles upload failed:', err.message);
-      }
-
-      // -- Fallback Service: Catbox.moe --
-      if (!directDlUrl) {
-        try {
-          const fdCat = new FormData();
-          fdCat.append('reqtype', 'fileupload');
-          fdCat.append('fileToUpload', file, fileName);
-
-          let rCat = await fetch('/api/catbox', {
-            method: 'POST',
-            body: fdCat,
-            signal: AbortSignal.timeout(10000)
-          }).catch(() => null);
-
-          if (rCat && rCat.ok) {
-            const urlText = (await rCat.text()).trim();
-            if (urlText.startsWith('https://')) {
-              directDlUrl = urlText;
-            }
-          }
-        } catch (errCat) {
-          console.warn('Catbox upload attempt failed:', errCat);
-        }
+        console.warn('All parallel upload tasks failed:', err);
       }
 
       isUploadingCloud = false;
@@ -1477,20 +1475,15 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        if (isMobile && viewer) {
-          viewer.src = directDlUrl;
-        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
-        if (!isMobile) {
-          qrLoading.style.display = 'none';
-          const fallbackText = document.createElement('p');
-          fallbackText.className = 'qr-error-msg';
-          fallbackText.textContent = currentLang === 'fr'
-            ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement local direct sur votre mobile."
-            : "Unable to generate transfer QR code. Please use direct local load on your mobile device.";
-          qrSection.appendChild(fallbackText);
-        }
+        qrLoading.style.display = 'none';
+        const fallbackText = document.createElement('p');
+        fallbackText.className = 'qr-error-msg';
+        fallbackText.textContent = currentLang === 'fr'
+          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement direct sur votre mobile."
+          : "Unable to generate transfer QR code. Please use direct load on your mobile device.";
+        qrSection.appendChild(fallbackText);
       }
     }
 
