@@ -574,6 +574,9 @@
     if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
+          // Defer until the whole script has run, so all let/const variables
+          // declared further below (activeDemoId, etc.) are initialized.
+          await new Promise(r => setTimeout(r, 0));
           const rawUrl = decodeURIComponent(queryUrl);
           const fetchUrl = rawUrl.split('#')[0];
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
