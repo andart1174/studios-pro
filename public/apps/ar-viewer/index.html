@@ -731,6 +731,12 @@
         return;
       }
       channel.postMessage({ type: 'AR_VIEWER_READY' });
+      // Also notify parent window (App.jsx) that we are ready
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'AR_VIEWER_READY_RECEIVED' }, '*');
+        }
+      } catch(e) {}
     }, 250);
 
     // Helper: show/hide loading screen

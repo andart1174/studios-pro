@@ -1651,6 +1651,22 @@ const StudiosPro = () => {
         channel.postMessage({ type: 'LOAD_EXTERNAL_FILE', payload });
       } else if (type === 'LOAD_EXTERNAL_URL') {
         channel.postMessage({ type: 'LOAD_EXTERNAL_URL', payload });
+      } else if (type === 'AR_VIEWER_READY_RECEIVED') {
+        // AR Viewer iframe is ready - send pending model if any
+        if (window.lastArModelData && arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
+          try {
+            arViewerIframeRef.current.contentWindow.postMessage({
+              type: 'LOAD_EXTERNAL_FILE',
+              payload: {
+                name: window.lastArModelName || 'studio_pro_model.glb',
+                extension: window.lastArModelExt || 'glb',
+                data: window.lastArModelData,
+                isBinary: window.lastArModelIsBinary !== false
+              }
+            }, '*');
+            console.log('[App] Sent pending model to AR Viewer after ready signal');
+          } catch (e) {}
+        }
       } else if (type === 'OPEN_AR_VIEWER') {
         setArViewerUrl(payload.url || '');
         if (payload && payload.modelData) {
