@@ -594,6 +594,19 @@
 
           showLoader(currentLang === 'fr' ? 'Chargement du mod\u00e8le AR...' : 'Loading AR model...');
 
+          // Route external URLs through our own domain proxy: guarantees CORS *,
+          // correct MIME type (model/gltf-binary) and an HTTPS .glb URL that
+          // Android Scene Viewer / iOS Quick Look / WebXR can all open.
+          let primaryUrl = fetchUrl;
+          try {
+            const isSameOrigin = fetchUrl.startsWith('/') || fetchUrl.startsWith(window.location.origin);
+            if (!isSameOrigin && /^https?:\/\//i.test(fetchUrl) && !window.location.origin.includes('localhost')) {
+              const b64 = btoa(fetchUrl).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+              primaryUrl = window.location.origin + '/api/ar-proxy/' + b64 + '/model.glb';
+            }
+          } catch (e) { primaryUrl = fetchUrl; }
+          console.log('[AR-URL] Loading via:', primaryUrl);
+
           // === STRATEGY 1: Load URL directly into model-viewer (fastest) ===
           // model-viewer handles fetching internally with proper CORS handling
           let loadedDirectly = false;
@@ -614,7 +627,7 @@
             viewer.addEventListener('error', onError, { once: true });
 
             // Attempt direct load
-            loadIntoModelViewer(fetchUrl);
+            loadIntoModelViewer(primaryUrl);
 
             // Timeout: if no load/error event after 8s, move on to fallback
             setTimeout(() => {
@@ -624,7 +637,7 @@
                 console.warn('[AR-URL] Timeout waiting for direct load, trying fetch fallback');
                 resolve();
               }
-            }, 8000);
+            }, 30000);
           });
 
           if (loadedDirectly) return;
@@ -1088,6 +1101,7 @@
     let originalRoughness = [];
     let activeMaterial = 'original';
     viewer.addEventListener('load', () => {
+      { const eb = document.getElementById('model-load-error'); if (eb) eb.remove(); const le = document.getElementById('ar-load-error'); if (le) le.remove(); }
       // 1. Calculate & display dimensions
       try {
         const dimensions = viewer.getDimensions();
@@ -1633,16 +1647,6 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        // CRITICAL FIX: Update model-viewer src to HTTPS URL.
-        // blob: URLs cannot be opened by Android Scene Viewer or iOS Quick Look.
-        // By switching to the HTTPS catbox URL, the AR button works correctly.
-        if (viewer && viewer.src && viewer.src.startsWith('blob:')) {
-          // Replace blob URL with the persistent HTTPS URL for AR to work
-          const httpsUrl = directDlUrl + (directDlUrl.endsWith('.glb') ? '' : '');
-          viewer.src = httpsUrl;
-          currentLoadedBlobUrl = httpsUrl;
-          console.log('[AR] viewer.src updated to HTTPS URL for Scene Viewer / Quick Look compatibility');
-        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
         qrLoading.style.display = 'none';
