@@ -352,7 +352,8 @@
         ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
         ar-placement="floor"
-        interaction-prompt="none"
+        xr-environment
+        interaction-prompt="auto"
         auto-rotate
         autoplay
         alt="A 3D model preview in AR"
@@ -576,65 +577,120 @@
           const rawUrl = decodeURIComponent(queryUrl);
           const fetchUrl = rawUrl.split('#')[0];
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
-          if (!name.match(/\.glb|\.gltf|\.stl|\.obj/i)) name += '.glb';
+          if (!name.match(/\.(glb|gltf|stl|obj)$/i)) name += '.glb';
 
           hasReceivedFile = true;
           activeDemoId = null;
           lastDirectDlUrl = fetchUrl;
           lastShareUrl = fetchUrl;
 
-          showLoader(currentLang === 'fr' ? 'Chargement du mod\u00e8le AR...' : 'Loading AR model...');
-
-          // Set up model info display
+          // Show model info
           modelNameEl.textContent = name;
           modelFormatEl.textContent = name.split('.').pop().toUpperCase();
           modelSizeEl.textContent = '-';
-
-          // PRIMARY: Load directly into model-viewer using the HTTPS URL.
-          // model-viewer fetches the file itself and handles CORS.
-          // This works for catbox, litterbox, uguu, and studios-pro.com URLs.
           currentThreeScene = null;
           currentModelName = name;
           currentModelExtension = name.split('.').pop().toLowerCase();
 
-          // Listen for load success
-          const onLoadSuccess = () => {
-            hideLoader();
-            infoSection.style.display = 'block';
-            qrSection.style.display = 'none'; // On mobile, no QR needed
-            const errBadge = document.getElementById('model-load-error');
-            if (errBadge) errBadge.remove();
-            console.log('[AR] Model loaded successfully from URL:', fetchUrl);
-          };
-          viewer.addEventListener('load', onLoadSuccess, { once: true });
+          showLoader(currentLang === 'fr' ? 'Chargement du mod\u00e8le AR...' : 'Loading AR model...');
 
-          // Listen for load error → show friendly message
-          const onLoadError = (evt) => {
-            console.error('[AR] model-viewer failed to load URL directly:', fetchUrl, evt.detail);
-            viewer.removeEventListener('load', onLoadSuccess);
-            hideLoader();
-            placeholder.style.display = 'flex';
-            placeholder.style.flexDirection = 'column';
-            placeholder.style.alignItems = 'center';
-            let errEl = document.getElementById('ar-load-error');
-            if (!errEl) {
-              errEl = document.createElement('div');
-              errEl.id = 'ar-load-error';
-              errEl.style.cssText = 'padding:16px 20px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:12px;color:#fca5a5;font-size:13px;text-align:center;margin:16px;max-width:320px;line-height:1.6;';
-              placeholder.appendChild(errEl);
+          // === STRATEGY 1: Load URL directly into model-viewer (fastest) ===
+          // model-viewer handles fetching internally with proper CORS handling
+          let loadedDirectly = false;
+
+          await new Promise((resolve) => {
+            const onSuccess = () => {
+              loadedDirectly = true;
+              hideLoader();
+              qrSection.style.display = 'none'; // On mobile, no QR needed
+              console.log('[AR-URL] Loaded directly:', fetchUrl);
+              resolve();
+            };
+            const onError = (evt) => {
+              console.warn('[AR-URL] Direct load failed, will try fetch fallback:', evt.detail || '');
+              resolve(); // Don't reject, try fallback
+            };
+            viewer.addEventListener('load', onSuccess, { once: true });
+            viewer.addEventListener('error', onError, { once: true });
+
+            // Attempt direct load
+            loadIntoModelViewer(fetchUrl);
+
+            // Timeout: if no load/error event after 8s, move on to fallback
+            setTimeout(() => {
+              if (!loadedDirectly) {
+                viewer.removeEventListener('load', onSuccess);
+                viewer.removeEventListener('error', onError);
+                console.warn('[AR-URL] Timeout waiting for direct load, trying fetch fallback');
+                resolve();
+              }
+            }, 8000);
+          });
+
+          if (loadedDirectly) return;
+
+          // === STRATEGY 2: Fetch via proxy then load as blob ===
+          showLoader(currentLang === 'fr' ? 'T\u00e9l\u00e9chargement alternatif...' : 'Trying alternative download...');
+
+          const fetchWithTimeout = async (url, ms = 12000) => {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), ms);
+            try {
+              const r = await fetch(url, { signal: ctrl.signal });
+              clearTimeout(timer);
+              return r;
+            } catch (e) {
+              clearTimeout(timer);
+              return null;
             }
-            errEl.innerHTML = currentLang === 'fr'
-              ? '\u26a0\ufe0f Impossible de charger le mod\u00e8le partag\u00e9.<br><small style="color:#9ca3af">Le lien a peut-\u00eatre expir\u00e9. Essayez de partager \u00e0 nouveau.</small>'
-              : '\u26a0\ufe0f Could not load the shared model.<br><small style="color:#9ca3af">The link may have expired. Try sharing again.</small>';
-            viewer.style.display = 'none';
           };
-          viewer.addEventListener('error', onLoadError, { once: true });
 
-          // Do the actual load
-          loadIntoModelViewer(fetchUrl);
+          let res = null;
+          // Try direct fetch (works for catbox, uguu, etc. that have CORS *)
+          res = await fetchWithTimeout(fetchUrl, 10000);
+          if (res && res.ok) {
+            const cType = (res.headers.get('content-type') || '').toLowerCase();
+            if (cType.includes('html')) res = null;
+          }
+
+          // Try server proxy if direct failed
+          if (!res || !res.ok) {
+            const baseHost = window.location.origin;
+            res = await fetchWithTimeout(baseHost + '/api/ar-proxy?url=' + encodeURIComponent(fetchUrl), 15000);
+            if (res && res.ok) {
+              const cType = (res.headers.get('content-type') || '').toLowerCase();
+              if (cType.includes('html')) res = null;
+            }
+          }
+
+          if (res && res.ok) {
+            const blob = await res.blob();
+            if (blob && blob.size > 20) {
+              const file = new File([blob], name, { type: 'model/gltf-binary' });
+              await handleFile(file);
+              return;
+            }
+          }
+
+          // === ALL FAILED: show helpful error ===
+          hideLoader();
+          placeholder.style.display = 'flex';
+          placeholder.style.flexDirection = 'column';
+          placeholder.style.alignItems = 'center';
+          let errEl = document.getElementById('ar-load-error');
+          if (!errEl) {
+            errEl = document.createElement('div');
+            errEl.id = 'ar-load-error';
+            errEl.style.cssText = 'padding:16px 20px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:12px;color:#fca5a5;font-size:13px;text-align:center;margin:16px;max-width:320px;line-height:1.6;';
+            placeholder.appendChild(errEl);
+          }
+          errEl.innerHTML = currentLang === 'fr'
+            ? '\u26a0\ufe0f Lien expir\u00e9 ou inaccessible.<br><small style="opacity:0.7">R\u00e9g\u00e9n\u00e9rez le QR code depuis votre ordinateur.</small>'
+            : '\u26a0\ufe0f Link expired or inaccessible.<br><small style="opacity:0.7">Please regenerate the QR code from your desktop.</small>';
+          viewer.style.display = 'none';
 
         } catch (err) {
-          console.error('Error in URL load block:', err);
+          console.error('[AR-URL] Unexpected error:', err);
           hideLoader();
         }
       })();
