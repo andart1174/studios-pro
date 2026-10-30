@@ -349,7 +349,7 @@
         shadow-softness="0.5"
         exposure="1"
         ar
-        ar-modes="scene-viewer webxr quick-look"
+        ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
         ar-placement="floor"
         interaction-prompt="none"
@@ -574,112 +574,68 @@
       (async () => {
         try {
           const rawUrl = decodeURIComponent(queryUrl);
-          let fetchUrl = rawUrl.split('#')[0];
+          const fetchUrl = rawUrl.split('#')[0];
           let name = fetchUrl.split('/').pop().split('?')[0] || 'ar_model.glb';
-          if (rawUrl.includes('#')) {
-            name = rawUrl.split('#').pop();
-          }
+          if (!name.match(/\.glb|\.gltf|\.stl|\.obj/i)) name += '.glb';
 
           hasReceivedFile = true;
           activeDemoId = null;
           lastDirectDlUrl = fetchUrl;
           lastShareUrl = fetchUrl;
 
-          showLoader(currentLang === 'fr' ? "Chargement du modèle AR..." : "Loading AR model...");
+          showLoader(currentLang === 'fr' ? 'Chargement du mod\u00e8le AR...' : 'Loading AR model...');
 
-          // Strategy 0: Load directly into model-viewer (instant, no download needed)
-          // Works for any HTTPS URL - model-viewer handles CORS natively
-          const ext = (fetchUrl.split('.').pop().split('?')[0] || 'glb').toLowerCase();
-          const isGlbLike = (ext === 'glb' || ext === 'gltf' || name.toLowerCase().endsWith('.glb') || name.toLowerCase().endsWith('.gltf'));
+          // Set up model info display
+          modelNameEl.textContent = name;
+          modelFormatEl.textContent = name.split('.').pop().toUpperCase();
+          modelSizeEl.textContent = '-';
 
-          if (isGlbLike) {
-            try {
-              currentThreeScene = null;
-              currentModelName = name;
-              currentModelExtension = ext || 'glb';
-              modelNameEl.textContent = name;
-              modelFormatEl.textContent = (ext || 'GLB').toUpperCase();
-              modelSizeEl.textContent = '-';
-              // Load directly - model-viewer can handle HTTPS urls with proper CORS
-              loadIntoModelViewer(fetchUrl);
-              // Generate QR with the original share URL
-              const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
-              const shareUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(fetchUrl)}`;
-              lastSharePageUrl = shareUrl;
-              lastShareUrl = fetchUrl;
-              updateQRCodeWithColorParam(fetchUrl, 'original');
-              qrSection.style.display = 'block';
-              hideLoader();
-              return; // Success - no need for download
-            } catch (directErr) {
-              console.warn('Direct model-viewer load attempt noted, trying fetch fallback:', directErr);
-              showLoader(currentLang === 'fr' ? "Téléchargement du modèle..." : "Downloading model...");
-            }
-          }
-
-          const fetchWithTimeout = (url, opts = {}, ms = 12000) => {
-            return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) }).catch(err => {
-              console.warn('Fetch failed for', url, err.message);
-              return null;
-            });
-          };
-
-          let res = null;
-
-          // Strategy 1: Direct fetch (instant for Catbox / Litterbox / Uguu with CORS *)
-          res = await fetchWithTimeout(fetchUrl, {}, 10000);
-          if (res && res.ok) {
-            const cType = (res.headers.get('content-type') || '').toLowerCase();
-            if (cType.includes('html')) res = null;
-          }
-
-          // Strategy 2: Dedicated /api/ar-proxy (server-side stream fallback)
-          if (!res || !res.ok) {
-            const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
-            res = await fetchWithTimeout(`${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, {}, 20000);
-            if (res && res.ok) {
-              const cType = (res.headers.get('content-type') || '').toLowerCase();
-              if (cType.includes('html')) res = null;
-            }
-          }
-
-          if (res && res.ok) {
-            const blob = await res.blob();
-            if (blob && blob.size >= 20) {
-              const file = new File([blob], name, { type: 'model/gltf-binary' });
-              await handleFile(file);
-              return;
-            }
-          }
-
-          // Last resort: try direct model-viewer load regardless of format
-          console.warn('All fetch strategies failed, attempting direct model-viewer load as fallback...');
+          // PRIMARY: Load directly into model-viewer using the HTTPS URL.
+          // model-viewer fetches the file itself and handles CORS.
+          // This works for catbox, litterbox, uguu, and studios-pro.com URLs.
           currentThreeScene = null;
           currentModelName = name;
-          currentModelExtension = ext || 'glb';
-          modelNameEl.textContent = name;
-          modelFormatEl.textContent = (ext || 'GLB').toUpperCase();
-          modelSizeEl.textContent = '-';
+          currentModelExtension = name.split('.').pop().toLowerCase();
+
+          // Listen for load success
+          const onLoadSuccess = () => {
+            hideLoader();
+            infoSection.style.display = 'block';
+            qrSection.style.display = 'none'; // On mobile, no QR needed
+            const errBadge = document.getElementById('model-load-error');
+            if (errBadge) errBadge.remove();
+            console.log('[AR] Model loaded successfully from URL:', fetchUrl);
+          };
+          viewer.addEventListener('load', onLoadSuccess, { once: true });
+
+          // Listen for load error → show friendly message
+          const onLoadError = (evt) => {
+            console.error('[AR] model-viewer failed to load URL directly:', fetchUrl, evt.detail);
+            viewer.removeEventListener('load', onLoadSuccess);
+            hideLoader();
+            placeholder.style.display = 'flex';
+            placeholder.style.flexDirection = 'column';
+            placeholder.style.alignItems = 'center';
+            let errEl = document.getElementById('ar-load-error');
+            if (!errEl) {
+              errEl = document.createElement('div');
+              errEl.id = 'ar-load-error';
+              errEl.style.cssText = 'padding:16px 20px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:12px;color:#fca5a5;font-size:13px;text-align:center;margin:16px;max-width:320px;line-height:1.6;';
+              placeholder.appendChild(errEl);
+            }
+            errEl.innerHTML = currentLang === 'fr'
+              ? '\u26a0\ufe0f Impossible de charger le mod\u00e8le partag\u00e9.<br><small style="color:#9ca3af">Le lien a peut-\u00eatre expir\u00e9. Essayez de partager \u00e0 nouveau.</small>'
+              : '\u26a0\ufe0f Could not load the shared model.<br><small style="color:#9ca3af">The link may have expired. Try sharing again.</small>';
+            viewer.style.display = 'none';
+          };
+          viewer.addEventListener('error', onLoadError, { once: true });
+
+          // Do the actual load
           loadIntoModelViewer(fetchUrl);
-          hideLoader();
 
         } catch (err) {
-          console.error("Error loading query url:", err);
+          console.error('Error in URL load block:', err);
           hideLoader();
-          // Show non-blocking error in UI instead of disruptive alert
-          const errMsg = currentLang === 'fr'
-            ? "Erreur de chargement du modèle AR. Vérifiez votre connexion et réessayez."
-            : "Error loading AR model. Check your connection and try again.";
-          placeholder.style.display = 'flex';
-          placeholder.style.flexDirection = 'column';
-          placeholder.style.alignItems = 'center';
-          const errEl = document.createElement('div');
-          errEl.style.cssText = 'padding:16px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:12px;color:#fca5a5;font-size:13px;text-align:center;margin:12px;max-width:360px;';
-          errEl.textContent = errMsg;
-          if (!document.getElementById('ar-load-error')) {
-            errEl.id = 'ar-load-error';
-            placeholder.appendChild(errEl);
-          }
         }
       })();
     }
@@ -1615,6 +1571,16 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
+        // CRITICAL FIX: Update model-viewer src to HTTPS URL.
+        // blob: URLs cannot be opened by Android Scene Viewer or iOS Quick Look.
+        // By switching to the HTTPS catbox URL, the AR button works correctly.
+        if (viewer && viewer.src && viewer.src.startsWith('blob:')) {
+          // Replace blob URL with the persistent HTTPS URL for AR to work
+          const httpsUrl = directDlUrl + (directDlUrl.endsWith('.glb') ? '' : '');
+          viewer.src = httpsUrl;
+          currentLoadedBlobUrl = httpsUrl;
+          console.log('[AR] viewer.src updated to HTTPS URL for Scene Viewer / Quick Look compatibility');
+        }
         updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
         qrLoading.style.display = 'none';
