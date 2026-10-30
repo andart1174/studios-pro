@@ -13,12 +13,11 @@
   <link rel="stylesheet" href="style.css?v=21.0">
   <!-- Three.js and Loaders/Exporters for client-side conversion -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-  <!-- Google model-viewer for web-AR -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
+  <!-- Google model-viewer for web-AR (stable 3.4.0) -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </head>
 <body>
   <!-- Back Button (posts CLOSE_STUDIO to parent) -->
@@ -350,7 +349,7 @@
         shadow-softness="0.5"
         exposure="1"
         ar
-        ar-modes="scene-viewer quick-look webxr"
+        ar-modes="webxr scene-viewer quick-look"
         ar-scale="auto"
         ar-placement="floor"
         interaction-prompt="auto"
@@ -585,28 +584,45 @@
           lastDirectDlUrl = fetchUrl;
           lastShareUrl = fetchUrl;
 
-          modelNameEl.textContent = name;
-          modelFormatEl.textContent = (name.split('.').pop() || 'GLB').toUpperCase();
-          modelSizeEl.textContent = '3D Cloud';
+          showLoader(currentLang === 'fr' ? "Téléchargement du modèle de transfert..." : "Downloading transfer model...");
 
-          showLoader(currentLang === 'fr' ? "Chargement du modèle AR..." : "Loading AR model...");
-
-          // Feed direct public HTTPS URL so Google Scene Viewer & iOS Quick Look can launch natively!
-          let retryCount = 0;
-          const handleViewerError = () => {
-            if (retryCount === 0) {
-              retryCount++;
-              console.warn("Direct load failed, retrying via proxy stream...");
-              const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
-              viewer.src = `${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`;
-            } else {
-              hideLoader();
-              alert(currentLang === 'fr' ? "Erreur de chargement du modèle AR partagé." : "Error loading shared AR model.");
-            }
+          const fetchWithTimeout = (url, opts = {}, ms = 20000) => {
+            return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) }).catch(err => {
+              console.warn('Fetch failed for', url, err.message);
+              return null;
+            });
           };
 
-          viewer.addEventListener('error', handleViewerError, { once: false });
-          loadIntoModelViewer(fetchUrl);
+          let res = null;
+
+          // Strategy 1: Direct fetch (instant for Catbox / Litterbox / Uguu with CORS *)
+          res = await fetchWithTimeout(fetchUrl, {}, 12000);
+          if (res && res.ok) {
+            const cType = (res.headers.get('content-type') || '').toLowerCase();
+            if (cType.includes('html')) res = null;
+          }
+
+          // Strategy 2: Dedicated /api/ar-proxy (server-side stream fallback)
+          if (!res || !res.ok) {
+            const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
+            res = await fetchWithTimeout(`${baseHost}/api/ar-proxy?url=${encodeURIComponent(fetchUrl)}`, {}, 25000);
+            if (res && res.ok) {
+              const cType = (res.headers.get('content-type') || '').toLowerCase();
+              if (cType.includes('html')) res = null;
+            }
+          }
+
+          if (!res || !res.ok) {
+            throw new Error('Download failed');
+          }
+
+          const blob = await res.blob();
+          if (!blob || blob.size < 20) {
+            throw new Error("Invalid or empty file downloaded.");
+          }
+
+          const file = new File([blob], name, { type: 'model/gltf-binary' });
+          await handleFile(file);
         } catch (err) {
           console.error("Error loading query url:", err);
           hideLoader();
@@ -837,15 +853,7 @@
             try {
               const contents = e.target.result;
               const loaderStl = new THREE.STLLoader();
-              let geometry = loaderStl.parse(contents);
-              if (window.THREE && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices) {
-                try {
-                  geometry = THREE.BufferGeometryUtils.mergeVertices(geometry, 1e-4);
-                } catch(e) {
-                  console.warn("Could not merge STL vertices:", e);
-                }
-              }
-              geometry.computeVertexNormals();
+              const geometry = loaderStl.parse(contents);
               
               const material = new THREE.MeshStandardMaterial({ 
                 color: 0xcccccc, 
@@ -883,12 +891,6 @@
               
               objGroup.traverse((child) => {
                 if (child.isMesh) {
-                  if (window.THREE && THREE.BufferGeometryUtils && THREE.BufferGeometryUtils.mergeVertices && child.geometry) {
-                    try {
-                      child.geometry = THREE.BufferGeometryUtils.mergeVertices(child.geometry, 1e-4);
-                    } catch(_) {}
-                  }
-                  if (child.geometry) child.geometry.computeVertexNormals();
                   child.material = new THREE.MeshStandardMaterial({ 
                     color: 0xcccccc, 
                     roughness: 0.4, 
@@ -1415,17 +1417,20 @@
     // Upload to generate permanent AR shareable link (Fast parallel Catbox/Proxy + Litterbox + Uguu)
     async function generateARShareLink(file, fileName) {
       const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
-      if (!isMobile) {
-        qrSection.style.display = 'block';
-        qrLoading.style.display = 'flex';
-        qrCodeImg.style.display = 'none';
-        qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
-        const spinnerText = qrLoading.querySelector('.spinner-text');
-        if (spinnerText) {
-          spinnerText.textContent = currentLang === 'fr'
-            ? `Génération du lien AR (${formatBytes(file.size)})...`
-            : `Generating AR link (${formatBytes(file.size)})...`;
-        }
+      if (isMobile) {
+        qrSection.style.display = 'none';
+        return; // Mobile users already have the model loaded in viewer; skip QR upload
+      }
+
+      qrSection.style.display = 'block';
+      qrLoading.style.display = 'flex';
+      qrCodeImg.style.display = 'none';
+      qrSection.querySelectorAll('.qr-error-msg').forEach(el => el.remove());
+      const spinnerText = qrLoading.querySelector('.spinner-text');
+      if (spinnerText) {
+        spinnerText.textContent = currentLang === 'fr'
+          ? `Génération du lien AR (${formatBytes(file.size)})...`
+          : `Generating AR link (${formatBytes(file.size)})...`;
       }
 
       isUploadingCloud = true;
@@ -1518,22 +1523,15 @@
       if (directDlUrl) {
         lastDirectDlUrl = directDlUrl;
         lastShareUrl = directDlUrl;
-        if (isMobile && viewer) {
-          // Provide direct public HTTPS URL to model-viewer so Google Scene Viewer can open natively
-          viewer.src = directDlUrl;
-        } else {
-          updateQRCodeWithColorParam(directDlUrl, 'original');
-        }
+        updateQRCodeWithColorParam(directDlUrl, 'original');
       } else {
-        if (!isMobile) {
-          qrLoading.style.display = 'none';
-          const fallbackText = document.createElement('p');
-          fallbackText.className = 'qr-error-msg';
-          fallbackText.textContent = currentLang === 'fr'
-            ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement direct sur votre mobile."
-            : "Unable to generate transfer QR code. Please use direct load on your mobile device.";
-          qrSection.appendChild(fallbackText);
-        }
+        qrLoading.style.display = 'none';
+        const fallbackText = document.createElement('p');
+        fallbackText.className = 'qr-error-msg';
+        fallbackText.textContent = currentLang === 'fr'
+          ? "Impossible de générer le QR code de transfert. Veuillez utiliser le chargement direct sur votre mobile."
+          : "Unable to generate transfer QR code. Please use direct load on your mobile device.";
+        qrSection.appendChild(fallbackText);
       }
     }
 
