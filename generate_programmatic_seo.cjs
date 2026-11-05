@@ -952,10 +952,7 @@ const template = (page) => {
     <meta name="twitter:description" content="${page.descEn}" />
     <meta name="twitter:image" content="${page.ogImage || 'https://studios-pro.com/og_banner.jpg'}" />
     
-    <!-- Hreflang for internationalized search results -->
-    <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
-    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
-    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
+    <!-- Canonical -->
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -1506,10 +1503,7 @@ const compareTemplate = (comp) => {
     <meta name="twitter:description" content="${comp.descEn}" />
     <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
     
-    <!-- Hreflang -->
-    <link rel="alternate" hreflang="en" href="https://studios-pro.com/${pagePath}?lang=en" />
-    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/${pagePath}?lang=fr" />
-    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/${pagePath}" />
+    <!-- Canonical -->
     <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">

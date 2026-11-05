@@ -9,7 +9,7 @@ exports.handler = async (event) => {
         const { priceType, email, origin, refStudio } = JSON.parse(event.body);
 
         let baseUrl = origin || process.env.SITE_URL;
-        let successParams = `?payment_success=true&type=${priceType}`;
+        let successParams = `?payment_success=true&type=${priceType}&session_id={CHECKOUT_SESSION_ID}`;
         if (refStudio) successParams += `&ref=${refStudio}`;
 
         let sessionConfig = {

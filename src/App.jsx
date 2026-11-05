@@ -1060,6 +1060,10 @@ const StudiosPro = () => {
     if (!refStr) return false;
     const r = String(refStr).toLowerCase().trim();
 
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('event', 'open_studio', { studio_id: r });
+    }
+
     // 1. Studio 3D (ap3d)
     if (['ap3d', '3d', 'studio3d', 'studio-3d', 'ap-3d'].includes(r)) {
       setIs3DOpen(true);
@@ -1541,6 +1545,13 @@ const StudiosPro = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
+      const sessionId = params.get('session_id');
+      // Validate session_id presence to prevent simple URL parameter manipulation
+      if (!sessionId || sessionId.length < 8) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
       const type = params.get('type');
       if (type === 'premium') {
         const thirtyDaysFromNow = new Date();
@@ -1590,14 +1601,6 @@ const StudiosPro = () => {
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
         const currentUser = userRef.current;
-        if (!currentUser) {
-          alert(langRef.current === 'fr' 
-            ? "Veuillez vous inscrire ou vous connecter pour profiter de vos 5 exports gratuits !"
-            : "Please register or log in to enjoy your 5 free exports!");
-          setIsAuthOpen(true);
-          return;
-        }
-
         const isPrem = premiumRef.current;
         const isAdm = adminRef.current;
         const hasCred = creditRef.current;
@@ -1610,7 +1613,16 @@ const StudiosPro = () => {
           setShowPaymentRequest(true);
         } else if (hasCred) {
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
+          if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+            window.gtag('event', 'export_model', { used_count: used + 1 });
+          }
         } else if (used < 5) {
+          // If guest has used 2 initial trials, invite them to sign up to claim their next 3 free exports
+          if (!currentUser && used >= 2) {
+            setIsAuthOpen(true);
+            return;
+          }
+
           // Use one free export credit (5 free exports allowed)
           setFreeExportsUsed(prev => {
             const newVal = prev + 1;
@@ -1618,10 +1630,16 @@ const StudiosPro = () => {
             return newVal;
           });
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
+          if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+            window.gtag('event', 'export_model', { used_count: used + 1 });
+          }
           const remaining = 5 - (used + 1);
-          alert(langRef.current === 'fr'
-            ? `Export autorisé ! Il vous reste ${remaining} export(s) gratuit(s).`
-            : `Export granted! You have ${remaining} free export(s) left.`);
+          // Show gentle notice only when reaching the end of quota
+          if (remaining <= 1) {
+            alert(langRef.current === 'fr'
+              ? `Export autorisé ! Il vous reste ${remaining} export(s) gratuit(s).`
+              : `Export granted! You have ${remaining} free export(s) left.`);
+          }
         } else {
           setPaymentReason('free_limit');
           setShowPaymentRequest(true);
@@ -1854,8 +1872,9 @@ const StudiosPro = () => {
     fr: {
       // ... existing translations ...
       welcome: "Bienvenue sur Studios-Pro",
-      subtitle: "Votre hub créatif professionnel",
-      message: "Nous espérons que vous réaliserez votre modèle à la qualité souhaitée et que vous reviendrez sur notre site.",
+      heroTagline: "Studio 3D Gratuit en Ligne, 3MF Multi-Couleur & WebAR",
+      subtitle: "Suite Créative pour Impression 3D, Découpe Laser & Relief CNC",
+      message: "Colorisez vos modèles 3MF pour Bambu AMS, créez des tableaux de filaments style HueForge, générez des sous-verres QR scannables et projetez vos modèles en réalité augmentée. 100% privé et local dans votre navigateur.",
       app3d: "Studio 3D",
       app3dViewer: "Studio 3D Viewer",
       appARViewer: "AR Viewer",
@@ -1908,8 +1927,9 @@ const StudiosPro = () => {
     },
     en: {
       welcome: "Welcome to Studios-Pro",
-      subtitle: "Your professional creative hub",
-      message: "We hope you will create your model at the desired quality and return to our site.",
+      heroTagline: "Free In-Browser 3D, Multi-Color 3MF & WebAR Studio",
+      subtitle: "Professional 3D Printing, Laser CAD & CNC Relief Suite",
+      message: "Colorize 3MF models for Bambu AMS, create HueForge-style filament art, generate scannable 3D QR coasters, and project 3D models in WebAR. 100% client-side privacy, zero installation.",
       app3d: "3D Studio",
       app3dViewer: "Studio 3D Viewer",
       appARViewer: "AR Viewer",
@@ -2084,6 +2104,15 @@ const StudiosPro = () => {
             </a>
             <button 
               type="button"
+              className="contact-btn-nav" 
+              onClick={() => setIsRulesOpen(true)} 
+              title={currentT.rules}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span>{currentT.rules}</span>
+            </button>
+            <button 
+              type="button"
               className="contact-btn-nav share-btn-nav" 
               onClick={() => setIsShareModalOpen(true)} 
               title={lang === 'fr' ? 'Partager Studios-Pro' : 'Share Studios-Pro'}
@@ -2159,24 +2188,20 @@ const StudiosPro = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            Studios-Pro <span style={{ fontSize: '0.8rem', opacity: 0.5, verticalAlign: 'middle' }}>(v2.0 - Single Page)</span>
+            Studios-Pro
+            <span style={{
+              display: 'block',
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              marginTop: '10px',
+              letterSpacing: '0.5px',
+              background: 'linear-gradient(135deg, #00f3ff, #38bdf8, #818cf8)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              {currentT.heroTagline || "Free In-Browser 3D, WebAR & CNC Creative Hub"}
+            </span>
           </motion.h1>
-
-          {/* Semantic SEO Description (Hidden) */}
-          <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
-            <h3>AI Design & CNC Tools: 3D Modeling, Depth Map Generation, and Vector Conversion</h3>
-            <p>Studios-Pro is a professional creative hub specializing in high-fidelity 3D rendering, AI monocular depth estimation, and technical vector exports. </p>
-            <ul>
-              <li><strong>3D Studio & New 3D 4D:</strong> Convert images to STL, OBJ, and GLB for 3D printing and animation.</li>
-              <li><strong>AI Depth Maps:</strong> Generate accurate depth maps from single photos for lithophanes and CNC relief carving.</li>
-              <li><strong>Vector CNC:</strong> Professional photo-to-vector conversion for SVG, DXF, and G-code, optimized for laser and router CNC machines.</li>
-              <li><strong>DFX Studio:</strong> Specialized sequences and animations for high-end digital design.</li>
-              <li><strong>Maker Studio 7:</strong> All-in-one generator for parametric boxes, spherical lithophanes, halftones, voronoi structures, and AI-powered PBR textures.</li>
-              <li><strong>Jewelry Maker Pro:</strong> Design custom 3D printable jewelry, rings, and accessories directly in your browser with precise CAD parameters and photo-relief mapping.</li>
-              <li><strong>Studio Pro 2:</strong> Advanced scale 4D rendering library providing real-time multifold topological mapping and physically-based material lighting for high-fidelity interactive browser experiences.</li>
-              <li><strong>Mech Gen Pro:</strong> Professional browser-based procedural mechanical part and gear generator outputting DXF/SVG for laser cutters and STL for functional resin SLA 3D printed transmissions.</li>
-            </ul>
-          </div>
 
         <motion.div
           className="hero-section"
@@ -2249,294 +2274,7 @@ const StudiosPro = () => {
       )}
 
       <div className="compartments-grid">
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIs3DOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" />
-            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Modeling Icon" />
-          </div>
-          <div className="card-label">{currentT.app3d}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIs3DViewerOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }} />
-            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Viewer Icon" />
-          </div>
-          <div className="card-label">{currentT.app3dViewer}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsARViewerOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }} />
-            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="AR Viewer Icon" />
-          </div>
-          <div className="card-label">{currentT.appARViewer}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsDFXOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-2" />
-            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="DFX Animation Icon" />
-          </div>
-          <div className="card-label">{currentT.appdfx}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsRulesOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-3" />
-            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Rules Icon" />
-          </div>
-           <div className="card-label">{currentT.rules}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsDepthOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-4" />
-            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Depth Maps Icon" />
-          </div>
-          <div className="card-label">{currentT.depthMaps}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsNew3DOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-5" />
-            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="New 3D Icon" />
-          </div>
-          <div className="card-label">{currentT.new3d4d}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsVectorOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-6" />
-            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Vector CNC Icon" />
-          </div>
-          <div className="card-label">{currentT.vectorCnc}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsStudioProOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6)' }} />
-            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 4D Icon" />
-          </div>
-          <div className="card-label">{currentT.studioPro}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsMaker7Open(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f43f5e, #fb923c)' }} />
-            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Maker Studio 7 Icon" />
-          </div>
-          <div className="card-label">{currentT.maker7}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsJewelryOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }} />
-            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Jewelry Maker Pro Icon" />
-          </div>
-          <div className="card-label">{currentT.jewelry}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsArchPro1Open(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }} />
-            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 1 Icon" />
-          </div>
-          <div className="card-label">{currentT.archPro1}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsArchPro2Open(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }} />
-            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 2 Icon" />
-          </div>
-          <div className="card-label">{currentT.archPro2}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsFigureBuilderOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-6" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }} />
-            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Figure Builder Icon" />
-          </div>
-          <div className="card-label">{currentT.figureBuilder}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsMusicComposerOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }} />
-            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Music Composer Icon" />
-          </div>
-          <div className="card-label">{currentT.musicComposer}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsDesignProOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #14b8a6)' }} />
-            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Design Pro Studio Icon" />
-          </div>
-          <div className="card-label">{currentT.designPro}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsStudioPro2Open(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #f43f5e, #8b5cf6)' }} />
-            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 2 Icon" />
-          </div>
-          <div className="card-label">{currentT.studioPro2}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsMechGenProOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #14b8a6, #eab308)' }} />
-            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Mech Gen Pro Icon" />
-          </div>
-          <div className="card-label">{currentT.mechGenPro}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsScriptingOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-3" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)' }} />
-            <Code size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Scripting Studio Icon" />
-          </div>
-          <div className="card-label">{currentT.scriptingStudio}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsSandboxOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }} />
-            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Zen Sandscape Icon" />
-          </div>
-          <div className="card-label">{currentT.sandbox}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsArtGenOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #f472b6)' }} />
-            <Palette size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="ArtGen Studio Icon" />
-          </div>
-          <div className="card-label">{currentT.artGenStudio}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsPolyMorphOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #6366f1, #06b6d4, #10b981)' }} />
-            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="PolyMorph 3D Studio Icon" />
-          </div>
-          <div className="card-label">{currentT.polymorph3d}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsPainterOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)' }} />
-            <Paintbrush size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio MultiColor 3MF Painter Icon" />
-          </div>
-          <div className="card-label">{currentT.multicolor3mfPainter}</div>
-        </motion.div>
-
-        <motion.div
-          className="compartment-card"
-          whileHover={{ y: -15, scale: 1.02 }}
-          onClick={() => setIsCoasterOpen(true)}
-        >
-          <div className="shape-wrapper">
-            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4, #3b82f6)' }} />
-            <QrCode size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio 3D-QR-WiFi-Coaster Generator Icon" />
-          </div>
-          <div className="card-label">{currentT.qrWifiCoaster}</div>
-        </motion.div>
-
+        {/* 1. Filament Painting Studio • HueForge Alternative */}
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2567,64 +2305,410 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.filamentPaintingStudio}</div>
         </motion.div>
+
+        {/* 2. MultiColor 3MF Painter */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPainterOpen(true)}
+          style={{ position: 'relative' }}
+        >
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+            color: '#ffffff',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '0.8px',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}>
+            {lang === 'fr' ? 'BAMBU AMS & ORCASLICER' : 'BAMBU AMS & ORCASLICER'}
+          </div>
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)' }} />
+            <Paintbrush size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio MultiColor 3MF Painter Icon" />
+          </div>
+          <div className="card-label">{currentT.multicolor3mfPainter}</div>
+        </motion.div>
+
+        {/* 3. 3D QR WiFi Coaster & Sign Generator */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsCoasterOpen(true)}
+          style={{ position: 'relative' }}
+        >
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+            color: '#ffffff',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '0.8px',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}>
+            {lang === 'fr' ? '3MF & STL PRINTABLE' : '3MF & STL PRINTABLE'}
+          </div>
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4, #3b82f6)' }} />
+            <QrCode size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio 3D-QR-WiFi-Coaster Generator Icon" />
+          </div>
+          <div className="card-label">{currentT.qrWifiCoaster}</div>
+        </motion.div>
+
+        {/* 4. New 3D 4D Bas-Relief & Lithophane Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsNew3DOpen(true)}
+          style={{ position: 'relative' }}
+        >
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+            color: '#ffffff',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '0.8px',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}>
+            {lang === 'fr' ? 'PHOTO VERS 3D & 4D' : 'PHOTO TO 3D & 4D'}
+          </div>
+          <div className="shape-wrapper">
+            <div className="shape-5" />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="New 3D Icon" />
+          </div>
+          <div className="card-label">{currentT.new3d4d}</div>
+        </motion.div>
+
+        {/* 5. AR Viewer 3D */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsARViewerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="AR Viewer Icon" />
+          </div>
+          <div className="card-label">{currentT.appARViewer}</div>
+        </motion.div>
+
+        {/* 6. PolyMorph 3D Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsPolyMorphOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #6366f1, #06b6d4, #10b981)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="PolyMorph 3D Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.polymorph3d}</div>
+        </motion.div>
+
+        {/* 7. AI Depth Maps */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsDepthOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Depth Maps Icon" />
+          </div>
+          <div className="card-label">{currentT.depthMaps}</div>
+        </motion.div>
+
+        {/* 8. Vector CNC Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsVectorOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-6" />
+            <Cpu size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Vector CNC Icon" />
+          </div>
+          <div className="card-label">{currentT.vectorCnc}</div>
+        </motion.div>
+
+        {/* 9. Studio 3D Viewer */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIs3DViewerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Viewer Icon" />
+          </div>
+          <div className="card-label">{currentT.app3dViewer}</div>
+        </motion.div>
+
+        {/* 10. Studio 3D */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIs3DOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="3D Modeling Icon" />
+          </div>
+          <div className="card-label">{currentT.app3d}</div>
+        </motion.div>
+
+        {/* 11. Jewelry Maker Pro */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsJewelryOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }} />
+            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Jewelry Maker Pro Icon" />
+          </div>
+          <div className="card-label">{currentT.jewelry}</div>
+        </motion.div>
+
+        {/* 12. Maker Studio 7 */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMaker7Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f43f5e, #fb923c)' }} />
+            <Box size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Maker Studio 7 Icon" />
+          </div>
+          <div className="card-label">{currentT.maker7}</div>
+        </motion.div>
+
+        {/* 13. Mech Gen Pro */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMechGenProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #14b8a6, #eab308)' }} />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Mech Gen Pro Icon" />
+          </div>
+          <div className="card-label">{currentT.mechGenPro}</div>
+        </motion.div>
+
+        {/* 14. ArtGen AI Vector Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArtGenOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #f472b6)' }} />
+            <Palette size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="ArtGen Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.artGenStudio}</div>
+        </motion.div>
+
+        {/* 15. Studio Pro 4D */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsStudioProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 4D Icon" />
+          </div>
+          <div className="card-label">{currentT.studioPro}</div>
+        </motion.div>
+
+        {/* 16. Studio Pro 2 */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsStudioPro2Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #f43f5e, #8b5cf6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Studio Pro 2 Icon" />
+          </div>
+          <div className="card-label">{currentT.studioPro2}</div>
+        </motion.div>
+
+        {/* 17. Studio DFX */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsDFXOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" />
+            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="DFX Animation Icon" />
+          </div>
+          <div className="card-label">{currentT.appdfx}</div>
+        </motion.div>
+
+        {/* 18. Architect Pro 1 */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArchPro1Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-4" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }} />
+            <Hexagon size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 1 Icon" />
+          </div>
+          <div className="card-label">{currentT.archPro1}</div>
+        </motion.div>
+
+        {/* 19. Architect Pro 2 */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsArchPro2Open(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-5" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }} />
+            <Layers size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Architect Pro 2 Icon" />
+          </div>
+          <div className="card-label">{currentT.archPro2}</div>
+        </motion.div>
+
+        {/* 20. 4D Figure Builder */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsFigureBuilderOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-6" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }} />
+            <Component size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Figure Builder Icon" />
+          </div>
+          <div className="card-label">{currentT.figureBuilder}</div>
+        </motion.div>
+
+        {/* 21. 4D Music Composer */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsMusicComposerOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }} />
+            <Circle size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="4D Music Composer Icon" />
+          </div>
+          <div className="card-label">{currentT.musicComposer}</div>
+        </motion.div>
+
+        {/* 22. Design Pro Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsDesignProOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #14b8a6)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Design Pro Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.designPro}</div>
+        </motion.div>
+
+        {/* 23. Scripting Studio */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsScriptingOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-3" style={{ background: 'linear-gradient(135deg, #ec4899, #f43f5e)' }} />
+            <Code size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Scripting Studio Icon" />
+          </div>
+          <div className="card-label">{currentT.scriptingStudio}</div>
+        </motion.div>
+
+        {/* 24. Zen Sandscape */}
+        <motion.div
+          className="compartment-card"
+          whileHover={{ y: -15, scale: 1.02 }}
+          onClick={() => setIsSandboxOpen(true)}
+        >
+          <div className="shape-wrapper">
+            <div className="shape-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }} />
+            <Boxes size={50} color="white" style={{ position: 'absolute', zIndex: 2 }} aria-label="Zen Sandscape Icon" />
+          </div>
+          <div className="card-label">{currentT.sandbox}</div>
+        </motion.div>
       </div>
 
-      {/* Testimonials Section */}
+      {/* Why Creators Choose Studios-Pro Section */}
       <motion.section
         className="testimonials-section"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.7 }}
-        aria-label="User Testimonials"
+        aria-label="Features and Capabilities"
       >
         <h2 className="testimonials-title">
-          {lang === 'fr' ? '⭐ Ce que disent nos utilisateurs' : '⭐ What our users say'}
+          {lang === 'fr' ? '⚡ Pourquoi Choisir Studios-Pro ?' : '⚡ Why Makers & Creators Choose Studios-Pro'}
         </h2>
         <div className="testimonials-grid">
           {[
             {
-              name: 'Marc D.',
-              avatar: 'MD',
+              icon: '🔒',
               color: '#3b82f6',
-              en: 'Incredible tool for 3D printing prep! I designed a complete jewelry set in Jewelry Maker Pro and exported to STL in minutes.',
-              fr: 'Outil incroyable pour la préparation d\'impression 3D ! J\'ai conçu un ensemble de bijoux complet dans Jewelry Maker Pro et exporté en STL en quelques minutes.'
+              titleEn: '100% Client-Side Privacy',
+              titleFr: '100% Confidentialité Locale',
+              descEn: 'All mesh generation, 3D tessellation, and slicing algorithms execute locally in your web browser. Your private design files never leave your computer.',
+              descFr: 'Tous les calculs de maillage 3D et d\'extrusion s\'exécutent localement via WebGL et WebAssembly. Vos fichiers restent strictement privés sur votre appareil.'
             },
             {
-              name: 'Sophie L.',
-              avatar: 'SL',
+              icon: '⚡',
               color: '#10b981',
-              en: 'The Vector CNC converter is a game changer for my laser cutting business. Professional SVG and DXF output every time.',
-              fr: 'Le convertisseur Vector CNC change la donne pour mon activité de découpe laser. Des sorties SVG et DXF professionnelles à chaque fois.'
+              titleEn: 'Zero Installation Required',
+              titleFr: 'Zéro Installation Requise',
+              descEn: 'Instant access from Chrome, Safari, Edge, or Firefox across Windows, macOS, iPad, Chromebook, and Linux. No heavy software to install or configure.',
+              descFr: 'Accès direct depuis tout navigateur moderne sur Windows, Mac, iPad et Linux. Aucun logiciel lourd à télécharger ni configurer.'
             },
             {
-              name: 'Alex K.',
-              avatar: 'AK',
-              color: '#f59e0b',
-              en: 'Studio Pro 4D blew my mind. Real-time 4D animations directly in the browser? Nothing else comes close.',
-              fr: 'Studio Pro 4D m\'a époustouflé. Des animations 4D en temps réel directement dans le navigateur ? Rien n\'y ressemble.'
-            },
-            {
-              name: 'Camille R.',
-              avatar: 'CR',
-              color: '#8b5cf6',
-              en: 'I use the Depth Maps tool to create stunning lithophane prints. The AI accuracy is remarkable. 100% recommended!',
-              fr: 'J\'utilise l\'outil Depth Maps pour créer de magnifiques lithophanes. La précision de l\'IA est remarquable. 100% recommandé !'
-            },
-            {
-              name: 'Thomas B.',
-              avatar: 'TB',
+              icon: '🖨️',
               color: '#ec4899',
-              en: 'Mech Gen Pro generated perfect DXF gears for my CNC router in seconds. The parametric controls are very intuitive.',
-              fr: 'Mech Gen Pro a généré des engrenages DXF parfaits pour ma fraiseuse CNC en quelques secondes. Les contrôles paramétriques sont très intuitifs.'
+              titleEn: 'Bambu Lab & Prusa MMU Ready',
+              titleFr: 'Prêt pour Bambu AMS & Prusa MMU',
+              descEn: 'Multi-Color 3MF Painter with smart angle fill, Beer-Lambert layer-swap filament simulation, and 1-click 3MF project exports for OrcaSlicer.',
+              descFr: 'Peinture 3MF multi-couleur intelligente, simulation optique de filament Beer-Lambert, et export 3MF direct prêt à imprimer pour Bambu Studio et OrcaSlicer.'
             },
             {
-              name: 'Isabelle M.',
-              avatar: 'IM',
+              icon: '📱',
               color: '#06b6d4',
-              en: 'Maker Studio 7 saved me hours on my woodworking projects. The parametric box designer is flawless — I exported G-code directly!',
-              fr: 'Maker Studio 7 m\'a économisé des heures sur mes projets de menuiserie. Le designer de boîtes paramétriques est parfait — j\'ai exporté le G-code directement !'
+              titleEn: 'Instant WebAR Mobile Projection',
+              titleFr: 'Projection WebAR Mobile Instantanée',
+              descEn: 'Project your STL, OBJ, and GLB creations directly into your room at true 1:1 scale using your phone camera and QR code transfer, with no external apps.',
+              descFr: 'Projetez vos modèles 3D dans votre pièce à l\'échelle réelle 1:1 grâce au QR code et à WebXR/SceneViewer natif sans installer d\'application tierce.'
             }
-          ].map((testimonial, i) => (
+          ].map((item, i) => (
             <motion.div
               key={i}
               className="testimonial-card"
@@ -2633,18 +2717,15 @@ const StudiosPro = () => {
               transition={{ delay: 0.1 * i }}
               whileHover={{ y: -5, scale: 1.02 }}
             >
-              <div className="testimonial-stars">
-                {'★★★★★'}
+              <div style={{ fontSize: '2rem', marginBottom: '12px' }}>
+                {item.icon}
               </div>
-              <p className="testimonial-text">
-                "{lang === 'fr' ? testimonial.fr : testimonial.en}"
+              <h3 style={{ fontSize: '1.2rem', color: '#ffffff', margin: '0 0 10px 0', fontWeight: '700' }}>
+                {lang === 'fr' ? item.titleFr : item.titleEn}
+              </h3>
+              <p className="testimonial-text" style={{ fontStyle: 'normal', fontSize: '0.95rem' }}>
+                {lang === 'fr' ? item.descFr : item.descEn}
               </p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar" style={{ background: testimonial.color }}>
-                  {testimonial.avatar}
-                </div>
-                <span className="testimonial-name">{testimonial.name}</span>
-              </div>
             </motion.div>
           ))}
         </div>

@@ -707,6 +707,7 @@ const template = (tut) => `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${tut.titleEn}</title>
     <meta name="description" content="${tut.descEn}">
+    <link rel="canonical" href="https://studios-pro.com/blog/${tut.id}">
     <link rel="icon" type="image/png" href="/logo_studios_pro.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -829,6 +830,7 @@ const blogIndexTemplate = (cardsHtml) => `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studios-Pro | Blog & Tutorials</title>
     <meta name="description" content="Discover tutorials and guides for Studios-Pro: Convert images to CNC vectors, generate AI depth maps, and render 3D/4D models in your browser.">
+    <link rel="canonical" href="https://studios-pro.com/blog/">
     <link rel="icon" type="image/png" href="/logo_studios_pro.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
