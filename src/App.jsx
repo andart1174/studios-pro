@@ -1056,6 +1056,81 @@ const StudiosPro = () => {
   const [isPainterOpen, setIsPainterOpen] = useState(false);
   const [isCoasterOpen, setIsCoasterOpen] = useState(false);
   const [isFilamentPaintingOpen, setIsFilamentPaintingOpen] = useState(false);
+
+  // Category filter and search state
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const studioCategories = [
+    { id: 'all', labelEn: 'All Studios (24)', labelFr: 'Tous les Studios (24)', icon: '✨' },
+    { id: '3d-printing', labelEn: '🔥 3D Printing & Bambu', labelFr: '🔥 Impression 3D & Bambu', icon: '🖨️' },
+    { id: 'cnc-laser', labelEn: '⚡ CNC & Laser CAD', labelFr: '⚡ CNC & Découpe Laser', icon: '⚡' },
+    { id: 'cad-arch', labelEn: '📐 CAD & Architecture', labelFr: '📐 CAO & Architecture', icon: '📐' },
+    { id: 'ai-creative', labelEn: '🎨 AI Art & Creative', labelFr: '🎨 Art IA & Créatif', icon: '🎨' }
+  ];
+
+  const isCardVisible = (catId, tags, title) => {
+    if (selectedCategory !== 'all' && selectedCategory !== catId) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const haystack = (tags + ' ' + (title || '')).toLowerCase();
+    return haystack.includes(q);
+  };
+
+  const isAnyStudioOpen = Boolean(
+    is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || 
+    isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || 
+    isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || 
+    isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || 
+    isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || 
+    isPainterOpen || isCoasterOpen || isFilamentPaintingOpen
+  );
+
+  const closeAllStudios = () => {
+    setIs3DOpen(false);
+    setIs3DViewerOpen(false);
+    setIsARViewerOpen(false);
+    setArViewerUrl('');
+    setIsDFXOpen(false);
+    setIsRulesOpen(false);
+    setIsDepthOpen(false);
+    setIsNew3DOpen(false);
+    setIsVectorOpen(false);
+    setIsStudioProOpen(false);
+    setIsMaker7Open(false);
+    setIsJewelryOpen(false);
+    setIsArchPro1Open(false);
+    setIsArchPro2Open(false);
+    setIsFigureBuilderOpen(false);
+    setIsMusicComposerOpen(false);
+    setIsDesignProOpen(false);
+    setIsStudioPro2Open(false);
+    setIsMechGenProOpen(false);
+    setIsScriptingOpen(false);
+    setIsSandboxOpen(false);
+    setIsArtGenOpen(false);
+    setIsPolyMorphOpen(false);
+    setIsPainterOpen(false);
+    setIsCoasterOpen(false);
+    setIsFilamentPaintingOpen(false);
+    setCollabRoomId(null);
+    setIsIframeReady(false);
+    isIframeReadyRef.current = false;
+  };
+
+  // Mobile Back Button Handler (popstate)
+  useEffect(() => {
+    if (isAnyStudioOpen) {
+      window.history.pushState({ studiosProStudioOpen: true }, '');
+      const handlePopState = () => {
+        closeAllStudios();
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [isAnyStudioOpen]);
   const openStudioByRef = (refStr) => {
     if (!refStr) return false;
     const r = String(refStr).toLowerCase().trim();
@@ -1546,50 +1621,81 @@ const StudiosPro = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
       const sessionId = params.get('session_id');
-      // Validate session_id presence to prevent simple URL parameter manipulation
-      if (!sessionId || sessionId.length < 8) {
+      const type = params.get('type') || 'premium';
+      const ref = params.get('ref');
+
+      // Reject forged or invalid session IDs immediately
+      if (!sessionId || !sessionId.startsWith('cs_')) {
+        console.warn('[Security] Invalid Stripe checkout session ID rejected:', sessionId);
         window.history.replaceState({}, document.title, window.location.pathname);
+        alert(lang === 'fr' 
+          ? "Session de paiement invalide. Veuillez réessayer." 
+          : "Invalid checkout session. Please try again.");
         return;
       }
 
-      const type = params.get('type');
-      if (type === 'premium') {
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        const expirationString = thirtyDaysFromNow.toISOString();
+      // Secure server-side verification against Stripe API
+      fetch('/api/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.verified && data.payment_status === 'paid') {
+          if (type === 'premium' || data.mode === 'subscription') {
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+            const expirationString = thirtyDaysFromNow.toISOString();
 
-        setIsPremium(true);
-        setPremiumUntil(expirationString);
+            setIsPremium(true);
+            setPremiumUntil(expirationString);
 
-        if (user) {
-          setDoc(doc(db, "users", user.uid), { 
-            isPremium: true, 
-            premiumUntil: expirationString,
-            lastPaymentDate: new Date().toISOString()
-          }, { merge: true });
+            if (user) {
+              setDoc(doc(db, "users", user.uid), { 
+                isPremium: true, 
+                premiumUntil: expirationString,
+                lastPaymentDate: new Date().toISOString(),
+                stripeSessionId: sessionId
+              }, { merge: true });
+            } else {
+              localStorage.setItem('pendingPremiumActivation', 'true');
+            }
+            alert(lang === 'fr' 
+              ? "Paiement réussi et vérifié ! Votre abonnement est actif pour 30 jours." 
+              : "Payment verified and successful! Your subscription is active for 30 days.");
+          } else if (type === 'single') {
+            setHasExportCredit(true);
+            if (user) {
+              setDoc(doc(db, "users", user.uid), { hasExportCredit: true, stripeSessionId: sessionId }, { merge: true });
+            }
+            alert(lang === 'fr' 
+              ? "Paiement réussi et vérifié ! Vous pouvez maintenant exporter votre modèle." 
+              : "Payment verified and successful! You can now export your model.");
+          }
+
+          // Notify other tabs that payment is confirmed
+          const channel = new BroadcastChannel('studios_pro_channel');
+          channel.postMessage({ type: 'PAYMENT_SUCCESS_INTERNAL', payload: { type } });
+          setTimeout(() => channel.close(), 1000);
+
+          if (ref) openStudioByRef(ref);
         } else {
-          // Store in localStorage if user is not logged in yet
-          localStorage.setItem('pendingPremiumActivation', 'true');
+          console.error('[Security] Stripe session verification rejected:', data);
+          alert(lang === 'fr' 
+            ? "Échec de vérification du paiement auprès de Stripe. Aucun montant débité." 
+            : "Payment verification failed with Stripe. No charges were confirmed.");
         }
-        alert(lang === 'fr' ? "Paiement réussi ! Votre abonnement est actif pour 30 jours." : "Payment successful! Your subscription is active for 30 days.");
-      } else if (type === 'single') {
-        setHasExportCredit(true);
-        if (user) {
-          setDoc(doc(db, "users", user.uid), { hasExportCredit: true }, { merge: true });
-        }
-        alert(lang === 'fr' ? "Paiement réussi ! Vous pouvez maintenant exporter votre modèle." : "Payment successful! You can now export your model.");
-      }
-
-      // Notify other tabs (like the studio one) that the payment is done
-      const channel = new BroadcastChannel('studios_pro_channel');
-      channel.postMessage({ type: 'PAYMENT_SUCCESS_INTERNAL', payload: { type } });
-      setTimeout(() => channel.close(), 1000);
-
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Auto-open studio if ref is present
-      const ref = params.get('ref');
-      if (ref) openStudioByRef(ref);
+      })
+      .catch((err) => {
+        console.error('[Security] Network error during payment verification:', err);
+        alert(lang === 'fr' 
+          ? "Erreur de connexion au serveur de vérification." 
+          : "Network error while verifying payment session.");
+      })
+      .finally(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
     }
   }, [lang, user]);
 
@@ -2273,8 +2379,112 @@ const StudiosPro = () => {
       </header>
       )}
 
+        {/* Studio Categories & Real-Time Search */}
+        <div className="studios-filter-section" style={{
+          maxWidth: '1200px',
+          margin: '25px auto 20px auto',
+          padding: '0 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          {/* Category Tabs */}
+          <div className="category-pill-row" style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            {studioCategories.map(cat => {
+              const active = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    borderRadius: '24px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    border: active ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    background: active ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' : 'rgba(15, 23, 42, 0.6)',
+                    color: active ? '#ffffff' : '#94a3b8',
+                    boxShadow: active ? '0 4px 15px rgba(59, 130, 246, 0.4)' : 'none',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{lang === 'fr' ? cat.labelFr : cat.labelEn}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Bar */}
+          <div className="search-bar-wrapper" style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '520px'
+          }}>
+            <Search size={18} style={{
+              position: 'absolute',
+              left: '16px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#94a3b8',
+              pointerEvents: 'none'
+            }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={lang === 'fr' 
+                ? "Rechercher un studio (ex: 3MF, HueForge, lithophanie, DXF)..." 
+                : "Search studios (e.g. 3MF, HueForge, lithophane, DXF)..."}
+              style={{
+                width: '100%',
+                padding: '11px 40px 11px 44px',
+                borderRadius: '30px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'rgba(15, 23, 42, 0.75)',
+                backdropFilter: 'blur(12px)',
+                color: '#f8fafc',
+                fontSize: '14px',
+                outline: 'none',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                boxSizing: 'border-box'
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: '15px'
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
       <div className="compartments-grid">
         {/* 1. Filament Painting Studio • HueForge Alternative */}
+        {isCardVisible('3d-printing', 'hueforge filament painting layer swap 3mf bambu ams color optical td', currentT.filamentPaintingStudio) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2305,8 +2515,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.filamentPaintingStudio}</div>
         </motion.div>
+        )}
 
+        
         {/* 2. MultiColor 3MF Painter */}
+        {isCardVisible('3d-printing', 'multicolor 3mf painter bambu ams orcaslicer prusa mmu colorize stl', currentT.multicolor3mfPainter) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2337,8 +2550,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.multicolor3mfPainter}</div>
         </motion.div>
+        )}
 
+        
         {/* 3. 3D QR WiFi Coaster & Sign Generator */}
+        {isCardVisible('3d-printing', 'qr code wifi coaster table stand 3mf stl scannable laser dxf', currentT.qrWifiCoaster) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2369,8 +2585,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.qrWifiCoaster}</div>
         </motion.div>
+        )}
 
+        
         {/* 4. New 3D 4D Bas-Relief & Lithophane Studio */}
+        {isCardVisible('3d-printing', 'photo to 3d lithophane bas relief coin medal stl obj glb 4d', currentT.new3d4d) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2401,8 +2620,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.new3d4d}</div>
         </motion.div>
+        )}
 
+        
         {/* 5. AR Viewer 3D */}
+        {isCardVisible('3d-printing', 'ar webar augmented reality viewer mobile 3d model sceneviewer quicklook', currentT.appARViewer) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2414,8 +2636,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.appARViewer}</div>
         </motion.div>
+        )}
 
+        
         {/* 6. PolyMorph 3D Studio */}
+        {isCardVisible('3d-printing', 'polymorph 3d converter voronoi cryptex watch movement flexi stl obj glb', currentT.polymorph3d) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2427,8 +2652,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.polymorph3d}</div>
         </motion.div>
+        )}
 
+        
         {/* 7. AI Depth Maps */}
+        {isCardVisible('cnc-laser', 'depth map heightmap ai 2d to 3d relief grayscale cnc laser', currentT.depthMaps) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2440,8 +2668,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.depthMaps}</div>
         </motion.div>
+        )}
 
+        
         {/* 8. Vector CNC Studio */}
+        {isCardVisible('cnc-laser', 'vector cnc gcode dxf svg toolpath laser router simulator', currentT.vectorCnc) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2453,8 +2684,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.vectorCnc}</div>
         </motion.div>
+        )}
 
+        
         {/* 9. Studio 3D Viewer */}
+        {isCardVisible('3d-printing', '3d viewer stl obj glb gltf 3mf ply inspection measurement', currentT.app3dViewer) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2466,8 +2700,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.app3dViewer}</div>
         </motion.div>
+        )}
 
+        
         {/* 10. Studio 3D */}
+        {isCardVisible('cad-arch', 'studio 3d procedural modeling mesh editor cad', currentT.app3d) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2479,8 +2716,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.app3d}</div>
         </motion.div>
+        )}
 
+        
         {/* 11. Jewelry Maker Pro */}
+        {isCardVisible('cad-arch', 'jewelry maker ring designer gem setting cad 3d print', currentT.jewelry) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2492,8 +2732,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.jewelry}</div>
         </motion.div>
+        )}
 
+        
         {/* 12. Maker Studio 7 */}
+        {isCardVisible('3d-printing', 'maker studio 7 parametric box lithophane pbr texture stl', currentT.maker7) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2505,8 +2748,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.maker7}</div>
         </motion.div>
+        )}
 
+        
         {/* 13. Mech Gen Pro */}
+        {isCardVisible('cnc-laser', 'mech gen gear generator sprocket procedural dxf svg laser cnc', currentT.mechGenPro) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2518,8 +2764,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.mechGenPro}</div>
         </motion.div>
+        )}
 
+        
         {/* 14. ArtGen AI Vector Studio */}
+        {isCardVisible('ai-creative', 'artgen ai vector logo generator 3d relief stl obj glb styles', currentT.artGenStudio) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2531,8 +2780,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.artGenStudio}</div>
         </motion.div>
+        )}
 
+        
         {/* 15. Studio Pro 4D */}
+        {isCardVisible('cad-arch', 'studio pro 4d procedural cad generative', currentT.studioPro) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2544,8 +2796,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.studioPro}</div>
         </motion.div>
+        )}
 
+        
         {/* 16. Studio Pro 2 */}
+        {isCardVisible('cad-arch', 'studio pro 2 advanced cad generative modeling', currentT.studioPro2) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2557,8 +2812,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.studioPro2}</div>
         </motion.div>
+        )}
 
+        
         {/* 17. Studio DFX */}
+        {isCardVisible('cnc-laser', 'dfx dxf 2d cad vector drawings laser cnc drafting', currentT.appdfx) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2570,8 +2828,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.appdfx}</div>
         </motion.div>
+        )}
 
+        
         {/* 18. Architect Pro 1 */}
+        {isCardVisible('cad-arch', 'architect pro 1 floor plan 2d drafting 3d interior room layout', currentT.archPro1) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2583,8 +2844,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.archPro1}</div>
         </motion.div>
+        )}
 
+        
         {/* 19. Architect Pro 2 */}
+        {isCardVisible('cad-arch', 'architect pro 2 structural cad 3d architectural building', currentT.archPro2) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2596,8 +2860,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.archPro2}</div>
         </motion.div>
+        )}
 
+        
         {/* 20. 4D Figure Builder */}
+        {isCardVisible('cad-arch', 'figure builder character posing mannequin 3d anatomy', currentT.figureBuilder) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2609,8 +2876,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.figureBuilder}</div>
         </motion.div>
+        )}
 
+        
         {/* 21. 4D Music Composer */}
+        {isCardVisible('ai-creative', 'music composer audio synthesizer visualizer beats 4d', currentT.musicComposer) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2622,8 +2892,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.musicComposer}</div>
         </motion.div>
+        )}
 
+        
         {/* 22. Design Pro Studio */}
+        {isCardVisible('ai-creative', 'design pro layout ui graphic vector canvas', currentT.designPro) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2635,8 +2908,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.designPro}</div>
         </motion.div>
+        )}
 
+        
         {/* 23. Scripting Studio */}
+        {isCardVisible('ai-creative', 'scripting code editor live webgl shader generator', currentT.scriptingStudio) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2648,8 +2924,11 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.scriptingStudio}</div>
         </motion.div>
+        )}
 
+        
         {/* 24. Zen Sandscape */}
+        {isCardVisible('ai-creative', 'zen sandscape sand art generative patterns relaxing simulation', currentT.sandbox) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2661,6 +2940,7 @@ const StudiosPro = () => {
           </div>
           <div className="card-label">{currentT.sandbox}</div>
         </motion.div>
+        )}
       </div>
 
       {/* Why Creators Choose Studios-Pro Section */}

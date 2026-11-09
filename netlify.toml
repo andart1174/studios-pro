@@ -4,7 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_ENABLED = "true"
 
 [[edge_functions]]
   path = "/api/ar-proxy"
@@ -13,6 +13,12 @@
 [[edge_functions]]
   path = "/api/ar-proxy/*"
   function = "ar-proxy"
+
+[[redirects]]
+  from = "/api/verify-session"
+  to = "/.netlify/functions/verify-session"
+  status = 200
+  force = false
 
 [[redirects]]
   from = "/api/ar-proxy"
@@ -39,20 +45,8 @@
   force = true
 
 [[redirects]]
-  from = "/api/proxy/*"
-  to = "https://tmpfiles.org/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/api/catbox"
   to = "https://catbox.moe/user/api.php"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/proxy-catbox/*"
-  to = "https://catbox.moe/:splat"
   status = 200
   force = true
 
@@ -206,7 +200,9 @@
 [[headers]]
   for = "/*"
   [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
 
@@ -243,22 +239,6 @@ Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), displa
   for = "/sitemap.xml"
   [headers.values]
     Cache-Control = "public, max-age=86400"
-
-[[headers]]
-  for = "/api/proxy/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "*"
-
-[[headers]]
-  for = "/api/proxy-catbox/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "*"
-
-
 
 # =====================================================
 # 🔮 AR / 3D MODEL HEADERS — REQUIRED FOR GOOGLE SCENVIEWER & IOS QUICKLOOK
