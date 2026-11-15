@@ -32,6 +32,7 @@
       "publisher": {"@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com"}
     }
     </script>
+    <script src="../ar-viewer/ar-bridge.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -1391,6 +1392,7 @@
             <button id="btn-export-obj" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-white text-black text-sm font-bold transition-colors">Export OBJ</button>
             <button id="btn-export-glb" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-white text-black text-sm font-bold transition-colors">Export GLB</button>
             <button id="btn-export-stl" class="px-4 py-2 rounded-md bg-gold hover:bg-yellow-400 text-black border border-yellow-600 text-sm font-bold transition-colors shadow-[0_0_10px_rgba(255,215,0,0.3)]" id="ui-export">Export STL</button>
+            <button id="btn-preview-ar" data-bypassed="true" class="px-4 py-2 rounded-md bg-gradient-to-r from-cyan-500 to-violet-600 hover:opacity-90 text-white text-sm font-bold transition-all shadow-[0_0_10px_rgba(6,182,212,0.35)]">📱 View in AR</button>
         </div>
     </div>
 
@@ -4363,6 +4365,49 @@ if (D('btn-export-glb')) D('btn-export-glb').addEventListener('click', () => {
     );
 });
 
+if (D('btn-preview-ar')) D('btn-preview-ar').addEventListener('click', () => {
+    if (!currentMesh || !window.StudiosProAR) return;
+    currentMesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    const sz = new THREE.Vector3();
+    const ctr = new THREE.Vector3();
+    box.getSize(sz);
+    box.getCenter(ctr);
+    const maxD = Math.max(sz.x, sz.y, sz.z, 0.001);
+    const mul = maxD > 5.0 ? 1 : 1000;
+    const dimensionsMm = {
+        x: Math.round(sz.x * mul * 10) / 10,
+        y: Math.round(sz.y * mul * 10) / 10,
+        z: Math.round(sz.z * mul * 10) / 10
+    };
+    const scale = maxD > 5.0 ? 0.001 : 1.0;
+    const arGroup = new THREE.Group();
+    const clone = currentMesh.clone(true);
+    clone.position.set(-ctr.x * scale, -box.min.y * scale, -ctr.z * scale);
+    clone.scale.multiplyScalar(scale);
+    arGroup.add(clone);
+    arGroup.updateMatrixWorld(true);
+
+    const exporter = new GLTFExporter();
+    exporter.parse(
+        arGroup,
+        function (gltf) {
+            const isBin = gltf instanceof ArrayBuffer || (gltf && typeof gltf.byteLength === 'number');
+            window.StudiosProAR.sendModel({
+                modelData: isBin ? gltf : JSON.stringify(gltf),
+                extension: isBin ? 'glb' : 'gltf',
+                isBinary: isBin,
+                name: `jewelry_${state.category}_${state.material}.${isBin ? 'glb' : 'gltf'}`,
+                placement: 'floor',
+                dimensionsMm,
+                sourceStudio: 'jewelry-pro'
+            });
+        },
+        function (error) { console.error('[Jewelry AR]', error); },
+        { binary: true }
+    );
+});
+
 if (D('btn-screenshot')) D('btn-screenshot').addEventListener('click', () => {
     renderer.render(scene, camera);
     const dataURL = renderer.domElement.toDataURL('image/png');
@@ -4424,7 +4469,7 @@ window.getAppTags = function() {
 };
 
 // Mark all non-export UI buttons with data-bypassed="true" so the top payment script never intercepts them
-['btn-open-sculpt', 'btn-sculpt-clear', 'btn-sculpt-close', 'btn-upload-photo', 'btn-remove-photo', 'btn-photo-reset', 'btn-photo-fliph', 'btn-photo-flipv', 'btn-turntable'].forEach(id => {
+['btn-open-sculpt', 'btn-sculpt-clear', 'btn-sculpt-close', 'btn-upload-photo', 'btn-remove-photo', 'btn-photo-reset', 'btn-photo-fliph', 'btn-photo-flipv', 'btn-turntable', 'btn-preview-ar'].forEach(id => {
     const b = D(id);
     if (b) b.dataset.bypassed = 'true';
 });

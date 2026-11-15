@@ -58,6 +58,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+  <script src="../ar-viewer/ar-bridge.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -1007,6 +1008,7 @@
         return;
       }
 
+      const rawDimsMm = (window.StudiosProAR && typeof window.StudiosProAR.measureObjectMm === 'function') ? window.StudiosProAR.measureObjectMm(exportGroup) : null;
       // Normalize bounding box to tabletop AR scale (~0.28m) and center on floor
       const box = new THREE.Box3().setFromObject(exportGroup);
       const size = new THREE.Vector3();
@@ -1022,17 +1024,13 @@
 
       const sendToArViewer = (data, name, extension, isBinary) => {
         window.lastGeneratedModel = data;
-        window.lastGeneratedArPayload = { name, extension, data, isBinary };
+        window.lastGeneratedArPayload = { transferId: ('spro_' + Date.now().toString(36)), name, extension, data, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' };
         window.parent.postMessage({
           type: 'OPEN_AR_VIEWER',
-          payload: { url: 'broadcast', modelData: data, name, extension, isBinary }
+          payload: { transferId: ('spro_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6)), modelData: data, name, extension, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' }
         }, '*');
         toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
-        if (window.parent === window) {
-          setTimeout(() => {
-            window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
-          }, 500);
-        }
+        if (window.parent === window && window.StudiosProAR) { window.StudiosProAR.sendModel({ modelData: data, name, extension, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' }); }
       };
 
       if (typeof THREE.GLTFExporter !== 'undefined') {
@@ -1089,7 +1087,7 @@
       } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
         isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
         window.isPremiumUser = isPremiumUser;
-      } else if (e.data.type === 'AR_VIEWER_READY') {
+      } else if (e.data.type === 'AR_VIEWER_READY' && window.parent === window) {
         if (window.lastGeneratedArPayload) {
           channel.postMessage({
             type: 'LOAD_EXTERNAL_FILE',

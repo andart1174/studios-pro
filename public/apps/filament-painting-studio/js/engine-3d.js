@@ -1131,6 +1131,7 @@ function generate3DReliefMesh() {
     gridGeom.setAttribute('color', new THREE.BufferAttribute(colorAttr, 3));
     gridGeom.setIndex(triIndices);
     gridGeom.computeVertexNormals();
+    gridGeom.userData = { gridCols: cols, gridRows: rows, activeCells: activeCells, cellCols: cellCols, cellRows: cellRows };
 
     // Configure PBR Filament Surface Finish (Standard PLA, Matte, Silk Metallic, Translucent PETG)
     let matRoughness = 0.36;

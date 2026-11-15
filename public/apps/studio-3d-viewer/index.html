@@ -15,6 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script src="../ar-viewer/ar-bridge.js"></script>
 </head>
 <body>
 <!-- Back Button and Payment logic -->
@@ -393,7 +394,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
+        if ((target.dataset && target.dataset.bypassed === 'true') || id === 'btn-preview-ar' || id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
         if (isExport && !isPremiumUser && !window.isPremiumUser) {
           e.stopImmediatePropagation();
@@ -1507,6 +1508,7 @@
           <button class="btn btn-primary" id="export-stl" style="display: none;">STL</button>
           <button class="btn btn-primary" id="export-obj" style="display: none;">OBJ</button>
           <button class="btn btn-primary" id="export-glb" style="display: none;">GLB</button>
+          <button class="btn btn-primary" id="btn-preview-ar" data-bypassed="true" style="display: none; background: linear-gradient(135deg,#06b6d4,#8b5cf6); color:#fff; border:none;">📱 AR</button>
         </div>
         <div id="export-2d-group" style="display: none;">
           <button class="btn btn-primary" id="export-dxf" style="display: none;">DXF</button>

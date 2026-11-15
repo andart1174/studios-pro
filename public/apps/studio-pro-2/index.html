@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/STLExporter.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="../ar-viewer/ar-bridge.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/exporters/OBJExporter.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/utils/BufferGeometryUtils.js"></script>
     <script src="https://unpkg.com/three@0.145.0/examples/js/loaders/FontLoader.js"></script>
@@ -640,7 +641,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
+        if ((target.dataset && target.dataset.bypassed === 'true') || id === 'btn-preview-ar' || id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
         if (isExport && !isPremiumUser && !window.isPremiumUser) {
           e.stopImmediatePropagation();
@@ -2283,6 +2284,7 @@
                     <button class="btn-primary" onclick="exportPDF()">PDF</button>
                     <button class="btn-primary" onclick="exportSVG()">SVG</button>
                     <button class="btn-primary" id="doExportHTML" onclick="exportHTML()" style="background:linear-gradient(135deg, #6366f1, #a855f7);color:#fff;border:none;">HTML</button>
+                    <button class="btn-primary" id="btn-preview-ar" data-bypassed="true" onclick="exportAR()" style="grid-column:span 2;background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;border:none;font-weight:700;">📱 <span data-lang-en>View in AR</span><span data-lang-fr>Voir en AR</span></button>
                 </div>
             </div>
         </aside>
@@ -3728,6 +3730,15 @@
             }
             window.isGeneratingHtmlExport = true;
             exportGLB();
+        }
+
+        function exportAR() {
+            if (!window.StudiosProAR) return alert("AR Bridge not loaded!");
+            window.StudiosProAR.exportSceneAndOpenAR(getExportTarget(), {
+                name: 'StudioPro2_Model',
+                placement: 'floor',
+                sourceStudio: 'studio-pro-2'
+            });
         }
 
         function exportSVG() {

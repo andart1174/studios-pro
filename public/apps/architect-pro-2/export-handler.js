@@ -127,6 +127,19 @@ function exportGLB() {
     }
 }
 
+function exportAR() {
+    if (!window.StudiosProAR || !window._three3DScene) {
+        alert('3D scene not ready for AR preview.');
+        return;
+    }
+    window.StudiosProAR.exportSceneAndOpenAR(window._three3DScene, {
+        name: 'ArchitectPro2_Project',
+        placement: 'floor',
+        unit: 'm',
+        sourceStudio: 'architect-pro-2'
+    });
+}
+
 function exportSTL() {
     if (!window.THREE || !window.THREE.STLExporter) {
         alert('STLExporter not loaded.');

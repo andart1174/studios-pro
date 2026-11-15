@@ -3,8 +3,16 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
   SECRETS_SCAN_ENABLED = "true"
+
+[[edge_functions]]
+  path = "/api/ar-share"
+  function = "ar-share"
+
+[[edge_functions]]
+  path = "/api/ar-share/*"
+  function = "ar-share"
 
 [[edge_functions]]
   path = "/api/ar-proxy"
@@ -289,3 +297,10 @@ Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), displa
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+# Cache local AR Viewer vendor scripts & workers for fast repeat opens
+[[headers]]
+  for = "/apps/ar-viewer/vendor/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=2592000"

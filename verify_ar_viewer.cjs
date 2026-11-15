@@ -117,6 +117,36 @@ check('App.jsx has AR_VIEWER_READY_RECEIVED handler and xr-spatial-tracking perm
   }
 });
 
+// 8. Local vendor scripts & Web Worker exist locally (no slow public CDN blockage)
+check('Local vendor scripts, Web Worker, and StudiosProAR bridge exist', () => {
+  const baseDir = APP_JSX.replace(/src[/\\]App\.jsx$/, 'public/apps/ar-viewer/');
+  const required = [
+    'vendor/three.min.js',
+    'vendor/STLLoader.js',
+    'vendor/OBJLoader.js',
+    'vendor/GLTFExporter.js',
+    'vendor/model-viewer.min.js',
+    'vendor/qrcode.js',
+    'workers/model-worker.js',
+    'ar-bridge.js'
+  ];
+  for (const rel of required) {
+    if (!fs.existsSync(baseDir + rel) || fs.statSync(baseDir + rel).size < 500) {
+      throw new Error(`Missing or empty local asset: public/apps/ar-viewer/${rel}`);
+    }
+  }
+});
+
+// 9. Cross-realm binary validation, HTML guard, and removal of dead broadcast/catbox paths
+check('Cross-realm binary check, HTML sniff guard, and native share/upload hygiene intact', () => {
+  if (!htmlContent.includes('getBinaryTag') || !htmlContent.includes('isHtmlPayloadHeader')) {
+    throw new Error('Missing cross-realm binary detection or HTML 404 payload guard');
+  }
+  if (/\/api\/catbox/.test(htmlContent) || /url:\s*['"]broadcast['"]/.test(htmlContent)) {
+    throw new Error('Legacy broken /api/catbox or url:"broadcast" path detected in AR Viewer');
+  }
+});
+
 console.log(`\n📊 AR Viewer Integrity Check Result: ${passedChecks}/${passedChecks + errors.length} checks passed.\n`);
 
 if (errors.length > 0) {

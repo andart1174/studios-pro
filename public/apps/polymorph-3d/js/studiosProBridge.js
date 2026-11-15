@@ -42,7 +42,7 @@
     } else if (msg.type === 'USER_STATUS_RESPONSE' || msg.type === 'USER_STATUS_CHANGED') {
       isPremiumUser = !!(msg.payload && msg.payload.isPremium);
       window.isPremiumUser = isPremiumUser;
-    } else if (msg.type === 'AR_VIEWER_READY') {
+    } else if (msg.type === 'AR_VIEWER_READY' && window.parent === window) {
       // Send active 3D model to AR Viewer
       if (window.lastArModelData) {
         channel.postMessage({
@@ -112,21 +112,18 @@
       try {
         let exportSuccess = false;
 
+        const rawDimsMm = (window.StudiosProAR && typeof window.StudiosProAR.measureObjectMm === 'function')
+          ? window.StudiosProAR.measureObjectMm(model)
+          : null;
+
         // Strategy A: Direct high-performance binary GLB via PolyMorph's ModelConverters
         if (window.ModelConverters && typeof window.ModelConverters.exportModel === 'function') {
           try {
             const expResult = await window.ModelConverters.exportModel(model, 'glb', 'polymorph_model');
             if (expResult && expResult.blob) {
-              const reader = new FileReader();
-              await new Promise((resolve) => {
-                reader.onloadend = function() {
-                  const dataUrl = reader.result;
-                  broadcastARModel(dataUrl, 'polymorph_model.glb', 'glb', true);
-                  exportSuccess = true;
-                  resolve();
-                };
-                reader.readAsDataURL(expResult.blob);
-              });
+              const glbBuffer = await expResult.blob.arrayBuffer();
+              broadcastARModel(glbBuffer, 'polymorph_model.glb', 'glb', true, rawDimsMm);
+              exportSuccess = true;
             }
           } catch (glbErr) {
             console.warn('[StudiosProBridge] ModelConverters GLB export failed:', glbErr);
@@ -160,17 +157,8 @@
               );
             });
 
-            const blob = new Blob([glbBuffer], { type: 'application/octet-stream' });
-            const reader = new FileReader();
-            await new Promise((resolve) => {
-              reader.onloadend = function() {
-                const dataUrl = reader.result;
-                broadcastARModel(dataUrl, 'polymorph_model.glb', 'glb', true);
-                exportSuccess = true;
-                resolve();
-              };
-              reader.readAsDataURL(blob);
-            });
+            broadcastARModel(glbBuffer, 'polymorph_model.glb', 'glb', true, rawDimsMm);
+            exportSuccess = true;
           } catch (gltfErr) {
             console.warn('[StudiosProBridge] Native GLTFExporter failed:', gltfErr);
           }
@@ -181,7 +169,7 @@
           try {
             const exporter = new THREE.OBJExporter();
             const result = exporter.parse(model);
-            broadcastARModel(result, 'polymorph_model.obj', 'obj', false);
+            broadcastARModel(result, 'polymorph_model.obj', 'obj', false, rawDimsMm);
             exportSuccess = true;
           } catch (objErr) {
             console.error('[StudiosProBridge] OBJ fallback failed:', objErr);
@@ -195,66 +183,39 @@
       }
     }
 
-    function broadcastARModel(modelData, name, extension, isBinary) {
+    function broadcastARModel(modelData, name, extension, isBinary, dimensionsMm) {
+      const transferId = 'poly_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
       window.lastArModelData = modelData;
       window.lastArModelName = name;
       window.lastArModelExt = extension;
       window.lastArModelIsBinary = isBinary;
       window.lastGeneratedModel = modelData;
 
-      if (window.parent) {
-        window.parent.lastArModelData = modelData;
-        window.parent.lastArModelName = name;
-        window.parent.lastArModelExt = extension;
-        window.parent.lastArModelIsBinary = isBinary;
-      }
-
-      // Notify parent site to open or bring AR Viewer overlay forward
-      window.parent.postMessage({
-        type: 'OPEN_AR_VIEWER',
-        payload: {
-          url: 'broadcast',
-          modelData: modelData,
-          name: name,
-          extension: extension,
-          isBinary: isBinary
-        }
-      }, '*');
-
-      // Direct forward to AR Viewer iframe if mounted in parent DOM
-      try {
-        const arIframe = window.parent && window.parent.document && window.parent.document.querySelector('.ar-viewer-overlay iframe');
-        if (arIframe && arIframe.contentWindow) {
-          arIframe.contentWindow.postMessage({
-            type: 'LOAD_EXTERNAL_FILE',
-            payload: {
-              name: name,
-              extension: extension,
-              data: modelData,
-              isBinary: isBinary
-            }
-          }, '*');
-        }
-      } catch (e) {
-        // Cross-origin safe ignore
-      }
-
-      // Broadcast model directly for AR Viewer BroadcastChannel
-      channel.postMessage({
-        type: 'LOAD_EXTERNAL_FILE',
-        payload: {
-          name: name,
-          extension: extension,
-          data: modelData,
-          isBinary: isBinary
-        }
-      });
-
-      // Standalone mode fallback
-      if (window.parent === window) {
-        setTimeout(function() {
-          window.open('/apps/ar-viewer/index.html?url=broadcast', '_blank');
-        }, 600);
+      if (window.StudiosProAR && typeof window.StudiosProAR.sendModel === 'function') {
+        window.StudiosProAR.sendModel({
+          transferId,
+          modelData,
+          name,
+          extension,
+          isBinary,
+          placement: 'floor',
+          dimensionsMm: dimensionsMm || null,
+          sourceStudio: 'polymorph-3d'
+        });
+      } else {
+        window.parent.postMessage({
+          type: 'OPEN_AR_VIEWER',
+          payload: {
+            transferId,
+            modelData,
+            name,
+            extension,
+            isBinary,
+            placement: 'floor',
+            dimensionsMm: dimensionsMm || null,
+            sourceStudio: 'polymorph-3d'
+          }
+        }, '*');
       }
     }
 

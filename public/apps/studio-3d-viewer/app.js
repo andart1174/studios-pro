@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportSTL = document.getElementById('export-stl');
   const btnExportOBJ = document.getElementById('export-obj');
   const btnExportGLB = document.getElementById('export-glb');
+  const btnPreviewAR = document.getElementById('btn-preview-ar');
   const btnExportDXF = document.getElementById('export-dxf');
   const btnExportSVG = document.getElementById('export-svg');
   const btnExportHTML = document.getElementById('export-html');
@@ -534,6 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExportSTL.style.display = extension === 'stl' ? 'block' : 'none';
         btnExportOBJ.style.display = extension === 'obj' ? 'block' : 'none';
         btnExportGLB.style.display = extension === 'glb' ? 'block' : 'none';
+        if (btnPreviewAR) { btnPreviewAR.style.display = 'block'; btnPreviewAR.disabled = false; }
 
         if (extension === 'stl') {
           const loader = new THREE.STLLoader();
@@ -2910,6 +2912,22 @@ document.addEventListener('DOMContentLoaded', () => {
         hideLoading();
       }, { binary: true });
     }, 100);
+  });
+
+  btnPreviewAR?.addEventListener('click', () => {
+    if (!modelMesh || !window.StudiosProAR) return;
+    showLoading(currentLang === 'fr' ? "Préparation AR..." : "Preparing AR...");
+    setTimeout(() => {
+      const exportModel = getSlicedModelForExport();
+      Promise.resolve(window.StudiosProAR.exportSceneAndOpenAR(exportModel, {
+        name: (currentFile?.name || 'model').replace(/\.[^/.]+$/, ''),
+        placement: 'floor',
+        sourceStudio: 'studio-3d-viewer'
+      })).finally(() => {
+        disposeSlicedModel(exportModel);
+        hideLoading();
+      });
+    }, 50);
   });
 
   btnExportDXF.addEventListener('click', () => {

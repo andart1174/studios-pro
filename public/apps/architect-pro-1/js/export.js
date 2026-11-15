@@ -36,6 +36,21 @@ window.Exporter = {
         }
     },
 
+    previewAR() {
+        if (!window.StudiosProAR || !window.Engine3D || !Engine3D.scene) {
+            alert('3D scene not ready for AR preview.');
+            return;
+        }
+        const exportModal = document.getElementById('exportModal');
+        if (exportModal) exportModal.style.display = 'none';
+        window.StudiosProAR.exportSceneAndOpenAR(Engine3D.scene, {
+            name: 'ArchitectPro_Project',
+            placement: 'floor',
+            unit: 'm',
+            sourceStudio: 'architect-pro-1'
+        });
+    },
+
     exportSTL() {
         if (!window.THREE || !window.THREE.STLExporter) {
             alert('STLExporter not loaded.');
@@ -189,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('doExportGLB')?.addEventListener('click', () => Exporter.exportGLB());
+    document.getElementById('btn-preview-ar')?.addEventListener('click', () => Exporter.previewAR());
     document.getElementById('doExportSTL')?.addEventListener('click', () => Exporter.exportSTL());
     document.getElementById('doExportOBJ')?.addEventListener('click', () => Exporter.exportOBJ());
     document.getElementById('doExportHR')?.addEventListener('click', () => Exporter.exportHighResRender());

@@ -43,39 +43,27 @@ async function handleUpload(request) {
     });
   }
 
-  if (!fileBlob || fileBlob.size === 0) {
-    return new Response(JSON.stringify({ status: 'error', error: 'Empty file uploaded' }), {
+  if (!fileBlob || fileBlob.size < 16) {
+    return new Response(JSON.stringify({ status: 'error', error: 'Empty or invalid file uploaded' }), {
       status: 400,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
     });
   }
 
-  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
-  // 1. Try Catbox permanent (guaranteed direct .glb binary with CORS *, 200MB limit)
+  // Guard against accidental HTML 404 payloads masquerading as 3D binaries
   try {
-    const fd = new FormData();
-    fd.append('reqtype', 'fileupload');
-    fd.append('fileToUpload', fileBlob, fileName);
-    const r = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      headers: { 'User-Agent': ua },
-      body: fd,
-      signal: AbortSignal.timeout(45000)
-    });
-    if (r.ok) {
-      const txt = (await r.text()).trim();
-      if (txt.startsWith('https://')) {
-        return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'catbox' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
-      }
+    const headTxt = (await fileBlob.slice(0, 96).text()).trimStart().toLowerCase();
+    if (headTxt.startsWith('<!doctype') || headTxt.startsWith('<html') || headTxt.startsWith('<head')) {
+      return new Response(JSON.stringify({ status: 'error', error: 'Rejected HTML document instead of 3D binary' }), {
+        status: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      });
     }
   } catch (_) {}
 
-  // 2. Try Litterbox (Catbox 72h temporary storage - guaranteed direct .glb binary with CORS *)
-  try {
+  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+  const tryLitterbox = async (timeoutMs = 18000) => {
     const fd = new FormData();
     fd.append('reqtype', 'fileupload');
     fd.append('time', '72h');
@@ -84,63 +72,54 @@ async function handleUpload(request) {
       method: 'POST',
       headers: { 'User-Agent': ua },
       body: fd,
-      signal: AbortSignal.timeout(30000)
+      signal: AbortSignal.timeout(timeoutMs)
     });
     if (r.ok) {
       const txt = (await r.text()).trim();
       if (txt.startsWith('https://')) {
-        return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'litterbox' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
+        return { url: txt, provider: 'litterbox' };
       }
     }
-  } catch (_) {}
+    throw new Error('Litterbox unavailable');
+  };
 
-  // 3. Try Uguu.se
-  try {
+  const tryUguu = async (timeoutMs = 12000) => {
     const fd = new FormData();
     fd.append('files[]', fileBlob, fileName);
     const r = await fetch('https://uguu.se/upload', {
       method: 'POST',
       headers: { 'User-Agent': ua, 'Accept': 'application/json' },
       body: fd,
-      signal: AbortSignal.timeout(12000)
+      signal: AbortSignal.timeout(timeoutMs)
     });
     if (r.ok) {
       const json = await r.json();
       if (json && json.success && json.files && json.files[0] && json.files[0].url) {
-        return new Response(JSON.stringify({ status: 'success', url: json.files[0].url, provider: 'uguu' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
+        return { url: json.files[0].url, provider: 'uguu' };
       }
     }
-  } catch (_) {}
+    throw new Error('Uguu unavailable');
+  };
 
-  // 4. Try 0x0.st
-  try {
+  const tryZeroXZero = async (timeoutMs = 12000) => {
     const fd = new FormData();
     fd.append('file', fileBlob, fileName);
     const r = await fetch('https://0x0.st', {
       method: 'POST',
       headers: { 'User-Agent': 'StudiosProAR/1.0' },
       body: fd,
-      signal: AbortSignal.timeout(12000)
+      signal: AbortSignal.timeout(timeoutMs)
     });
     if (r.ok) {
       const txt = (await r.text()).trim();
       if (txt.startsWith('https://')) {
-        return new Response(JSON.stringify({ status: 'success', url: txt, provider: '0x0' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
+        return { url: txt, provider: '0x0' };
       }
     }
-  } catch (_) {}
+    throw new Error('0x0.st unavailable');
+  };
 
-  // 5. Try Catbox permanent
-  try {
+  const tryCatbox = async (timeoutMs = 15000) => {
     const fd = new FormData();
     fd.append('reqtype', 'fileupload');
     fd.append('fileToUpload', fileBlob, fileName);
@@ -148,17 +127,37 @@ async function handleUpload(request) {
       method: 'POST',
       headers: { 'User-Agent': ua },
       body: fd,
-      signal: AbortSignal.timeout(12000)
+      signal: AbortSignal.timeout(timeoutMs)
     });
     if (r.ok) {
       const txt = (await r.text()).trim();
       if (txt.startsWith('https://')) {
-        return new Response(JSON.stringify({ status: 'success', url: txt, provider: 'catbox' }), {
-          status: 200,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
+        return { url: txt, provider: 'catbox' };
       }
     }
+    throw new Error('Catbox unavailable');
+  };
+
+  // Race fastest healthy providers concurrently instead of waiting 45s on dead upstreams first
+  try {
+    const fastWinner = await Promise.any([
+      tryLitterbox(20000),
+      tryUguu(14000),
+      tryZeroXZero(14000)
+    ]);
+    return new Response(JSON.stringify({ status: 'success', url: fastWinner.url, provider: fastWinner.provider }), {
+      status: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  } catch (_) {}
+
+  // Fallback: Catbox permanent
+  try {
+    const catResult = await tryCatbox(18000);
+    return new Response(JSON.stringify({ status: 'success', url: catResult.url, provider: catResult.provider }), {
+      status: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
   } catch (_) {}
 
   return new Response(JSON.stringify({ status: 'error', error: 'All upstream cloud providers failed' }), {
@@ -234,11 +233,20 @@ export default async (request) => {
             'Accept': '*/*'
           }
         });
+        if (!response.ok) {
+          return new Response(`Upstream error: ${response.status}`, {
+            status: response.status,
+            headers: CORS_HEADERS
+          });
+        }
         contentType = (response.headers.get('content-type') || '').toLowerCase();
+      } else {
+        return new Response('Upstream returned HTML instead of 3D binary', {
+          status: 422,
+          headers: CORS_HEADERS
+        });
       }
     }
-
-    const arrayBuffer = await response.arrayBuffer();
 
     let finalContentType = 'model/gltf-binary';
     if (fetchUrl.endsWith('.gltf') || contentType.includes('json')) {
@@ -247,14 +255,15 @@ export default async (request) => {
       finalContentType = 'model/vnd.usdz+zip';
     }
 
+    const upstreamLength = response.headers.get('content-length');
     const headers = new Headers(CORS_HEADERS);
     headers.set('Content-Type', finalContentType);
-    headers.set('Content-Length', String(arrayBuffer.byteLength));
+    if (upstreamLength) headers.set('Content-Length', upstreamLength);
     headers.set('Content-Disposition', 'inline; filename="model.glb"');
     headers.set('Accept-Ranges', 'bytes');
     headers.set('Cache-Control', 'public, max-age=86400, immutable');
 
-    return new Response(request.method === 'HEAD' ? null : arrayBuffer, {
+    return new Response(request.method === 'HEAD' ? null : response.body, {
       status: 200,
       headers
     });

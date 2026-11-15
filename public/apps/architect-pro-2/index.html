@@ -389,7 +389,7 @@
         const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
         
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
+        if ((target.dataset && target.dataset.bypassed === 'true') || id === 'btn-preview-ar' || id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
         if (isExport && !isPremiumUser && !window.isPremiumUser) {
           e.stopImmediatePropagation();
@@ -1398,6 +1398,7 @@
         <button class="btn-sm" onclick="exportToPrint()">🖨️ <span data-i18n="printProject">Print</span></button>
         <button class="btn-sm" onclick="exportToPDF()">📄 <span data-i18n="exportPDF">Download PDF</span></button>
         <button class="btn-sm" onclick="exportGLB()" id="btn-export-glb">📦 <span data-i18n="exportGLB">Download GLB</span></button>
+        <button class="btn-sm" id="btn-preview-ar" data-bypassed="true" onclick="exportAR()" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;border:none;font-weight:700;">📱 <span data-i18n="previewAR">AR</span></button>
         <button class="btn-sm" onclick="exportSTL()" id="btn-export-stl">📦 <span data-i18n="exportSTL">Download STL</span></button>
         <button class="btn-sm" onclick="exportOBJ()" id="btn-export-obj">📦 <span data-i18n="exportOBJ">Download OBJ</span></button>
         <div class="lang-toggle">
@@ -1596,6 +1597,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+  <script src="../ar-viewer/ar-bridge.js"></script>
   <script src="export-handler.js?v=3"></script>
   <script src="app.js?v=3"></script>
 

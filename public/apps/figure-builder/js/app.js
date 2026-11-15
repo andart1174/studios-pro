@@ -919,6 +919,18 @@ document.getElementById('btn-export-glb')?.addEventListener('click', () => {
     }
 });
 
+// AR Preview
+document.getElementById('btn-preview-ar')?.addEventListener('click', () => {
+    if (!fxGroup) { showToast('No figure loaded'); return; }
+    if (window.StudiosProAR) {
+        window.StudiosProAR.exportSceneAndOpenAR(fxGroup, {
+            name: `4d-${state.figId}-${Date.now()}`,
+            placement: 'floor',
+            sourceStudio: 'figure-builder'
+        });
+    }
+});
+
 // STL Export
 document.getElementById('btn-export-stl')?.addEventListener('click', () => {
     if (!fxGroup) { showToast('No figure loaded'); return; }

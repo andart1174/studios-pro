@@ -1091,6 +1091,8 @@ const StudiosPro = () => {
     setIs3DViewerOpen(false);
     setIsARViewerOpen(false);
     setArViewerUrl('');
+    window.lastArModelData = null;
+    window.lastArModelMeta = null;
     setIsDFXOpen(false);
     setIsRulesOpen(false);
     setIsDepthOpen(false);
@@ -1800,36 +1802,58 @@ const StudiosPro = () => {
       } else if (type === 'AR_VIEWER_READY_RECEIVED') {
         // AR Viewer iframe is ready - send pending model if any
         if (window.lastArModelData && arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
+          const meta = window.lastArModelMeta || {};
+          const payloadToSend = {
+            name: meta.name || window.lastArModelName || 'studio_pro_model.glb',
+            extension: meta.extension || window.lastArModelExt || 'glb',
+            data: window.lastArModelData,
+            isBinary: meta.isBinary !== undefined ? meta.isBinary : (window.lastArModelIsBinary !== false),
+            transferId: meta.transferId || '',
+            placement: meta.placement || null,
+            dimensionsMm: meta.dimensionsMm || null,
+            autoScale: meta.autoScale || null,
+            sourceStudio: meta.sourceStudio || ''
+          };
+          window.lastArModelData = null;
+          window.lastArModelMeta = null;
           try {
             arViewerIframeRef.current.contentWindow.postMessage({
               type: 'LOAD_EXTERNAL_FILE',
-              payload: {
-                name: window.lastArModelName || 'studio_pro_model.glb',
-                extension: window.lastArModelExt || 'glb',
-                data: window.lastArModelData,
-                isBinary: window.lastArModelIsBinary !== false
-              }
+              payload: payloadToSend
             }, '*');
             console.log('[App] Sent pending model to AR Viewer after ready signal');
           } catch (e) {}
         }
       } else if (type === 'OPEN_AR_VIEWER') {
-        setArViewerUrl(payload.url || '');
+        const cleanUrl = (payload && payload.url && payload.url !== 'broadcast') ? payload.url : '';
+        setArViewerUrl(cleanUrl);
         if (payload && payload.modelData) {
           const isObjText = typeof payload.modelData === 'string' && (payload.modelData.trim().startsWith('#') || payload.modelData.trim().startsWith('o ') || payload.modelData.trim().startsWith('v ') || payload.modelData.includes('\nv '));
           const resolvedExt = payload.extension || (isObjText ? 'obj' : 'glb');
           const resolvedName = payload.name || (isObjText ? 'studio_pro_model.obj' : 'studio_pro_model.glb');
           const resolvedBinary = isObjText ? false : (payload.isBinary !== false);
+          const resolvedTransferId = payload.transferId || ('ar_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7));
+          const meta = {
+            transferId: resolvedTransferId,
+            name: resolvedName,
+            extension: resolvedExt,
+            isBinary: resolvedBinary,
+            placement: payload.placement || null,
+            dimensionsMm: payload.dimensionsMm || null,
+            autoScale: payload.autoScale || null,
+            sourceStudio: payload.sourceStudio || ''
+          };
           window.lastArModelData = payload.modelData;
           window.lastArModelName = resolvedName;
           window.lastArModelExt = resolvedExt;
           window.lastArModelIsBinary = resolvedBinary;
+          window.lastArModelMeta = meta;
           setIsARViewerOpen(true);
           if (arViewerIframeRef.current && arViewerIframeRef.current.contentWindow) {
             try {
               arViewerIframeRef.current.contentWindow.postMessage({
                 type: 'LOAD_EXTERNAL_FILE',
-                payload: { name: resolvedName, extension: resolvedExt, data: payload.modelData, isBinary: resolvedBinary }
+                payload: { ...meta, data: payload.modelData }
               }, '*');
             } catch (e) {
               console.warn('[App] Forward to ar-viewer error:', e);
@@ -1841,6 +1865,8 @@ const StudiosPro = () => {
       } else if (type === 'CLOSE_AR_VIEWER') {
         setIsARViewerOpen(false);
         setArViewerUrl('');
+        window.lastArModelData = null;
+        window.lastArModelMeta = null;
       } else if (type === 'OPEN_PRICING') {
         setPaymentReason('premium_feature');
         setShowPaymentRequest(true);
@@ -1849,8 +1875,11 @@ const StudiosPro = () => {
           setIsARViewerOpen(false);
           setArViewerUrl('');
           window.lastArModelData = null;
+          window.lastArModelMeta = null;
           return;
         }
+        window.lastArModelData = null;
+        window.lastArModelMeta = null;
         setIs3DOpen(false);
         setIs3DViewerOpen(false);
         setIsARViewerOpen(false);

@@ -1,4 +1,4 @@
-﻿// DesignPro Studio — app.js
+// DesignPro Studio — app.js
 // ─────────────────────────────────────────────────────────────
 // I18N
 // ─────────────────────────────────────────────────────────────
@@ -1518,6 +1518,17 @@ function setupExportPanel() {
     link.href = URL.createObjectURL(blob);
     link.download = 'design_pro_project.stl';
     link.click();
+  });
+
+  document.getElementById('btn-preview-ar')?.addEventListener('click', () => {
+    if (!viewer3d || !viewer3d.scene) { showToast('Scene 3D non chargée', 'error'); return; }
+    if (window.StudiosProAR) {
+      window.StudiosProAR.exportSceneAndOpenAR(viewer3d.scene, {
+        name: 'DesignProStudio_Project',
+        placement: 'floor',
+        sourceStudio: 'design-pro-studio'
+      });
+    }
   });
 
   document.getElementById('exp-obj')?.addEventListener('click', () => {
