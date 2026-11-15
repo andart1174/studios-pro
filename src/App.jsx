@@ -1701,8 +1701,30 @@ const StudiosPro = () => {
 
   useEffect(() => {
     const channel = new BroadcastChannel('studios_pro_channel');
+    const recentMsgMap = new Map();
 
     const handleMessage = (data) => {
+      if (!data || typeof data !== 'object' || !data.type) return;
+      const now = Date.now();
+      for (const [k, ts] of recentMsgMap) {
+        if (now - ts > 1500) recentMsgMap.delete(k);
+      }
+      if (data._msgId) {
+        if (recentMsgMap.has(data._msgId)) return;
+        recentMsgMap.set(data._msgId, now);
+      } else if (
+        data.type === 'TRIGGER_PAYMENT_MODAL' ||
+        data.type === 'EXPORT_COMPLETED' ||
+        data.type === 'START_STRIPE_PAYMENT' ||
+        data.type === 'PAYMENT_SUCCESS_INTERNAL'
+      ) {
+        let dedupKey = data.type;
+        try { dedupKey += ':' + JSON.stringify(data.payload || null); } catch (e) {}
+        const prevTs = recentMsgMap.get(dedupKey);
+        if (prevTs && now - prevTs < 120) return;
+        recentMsgMap.set(dedupKey, now);
+      }
+
       const { type, payload } = data;
 
       if (type === 'TRIGGER_PAYMENT_MODAL') {
@@ -1910,6 +1932,20 @@ const StudiosPro = () => {
       window.removeEventListener('message', windowListener);
     };
   }, [user]);
+
+  useEffect(() => {
+    try {
+      const channel = new BroadcastChannel('studios_pro_channel');
+      channel.postMessage({
+        type: 'USER_STATUS_CHANGED',
+        payload: {
+          isPremium: isPremium || isAdmin,
+          userEmail: user ? user.email : 'Guest'
+        }
+      });
+      channel.close();
+    } catch (e) {}
+  }, [user, isPremium, isAdmin]);
 
   // Handle startup url parameters to auto-open corresponding studio
   useEffect(() => {
