@@ -30,7 +30,7 @@ const App = {
   jobSeq: 0,
   anim4D: {
     playing: false,
-    type: 'rotate',
+    type: 'none',
     speed: 1.0,
     duration: 3,
     time: 0,
@@ -1400,6 +1400,10 @@ function openInARViewer() {
   }
   try {
     const opts4d = collectOpts4D();
+    // Only bake 4D motion into AR if the user explicitly started a 4D animation;
+    // otherwise send a steady static 3D model so it doesn't spin uncontrollably in AR!
+    const animateInAR = Boolean(App.anim4D.playing && App.anim4D.type !== 'none');
+    opts4d.animType = animateInAR ? App.anim4D.type : 'none';
     const glbBuf = Engine4D.buildGLB(App.lastResult, opts4d);
     const d = App.lastResult.dims;
     const payload = {
