@@ -1,1455 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D·4D Studio — Image to STL & GLB Converter</title>
-  <meta name="description"
-    content="Professional image to 3D model converter. Convert PNG, JPG, BMP to STL (3D) and GLB (4D animated) models with ultra quality." />
+  <title>New 3D · 4D Studio Ultra — Photo to STL, 3MF &amp; AR Sculpture</title>
+  <meta name="description" content="Ultra quality image to 3D sculpture, coin cameo, lithophane lamp, multi-color 3MF and animated 4D GLB/GLTF converter." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
-    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .back-to-studios {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 9999;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      font-family: sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .back-to-studios:hover {
-      background: #3b82f6;
-      transform: translateY(-2px);
-    }
-
-    /* Modal Local Styles */
-    #local-payment-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
-
-    .local-modal-content {
-      background: #0f172a;
-      padding: 40px;
-      border-radius: 40px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .local-modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    .local-modal-content p {
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 25px;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .pay-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .premium-btn {
-      background: #d97706;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .pay-btn:hover,
-    .premium-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
-
-    .close-local-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 20px;
-    }
-  </style>
 </head>
-
 <body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
   <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
     <span>Retour / Back</span>
   </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
-            }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
-
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
-            } else {
-              output = 'solid exported\n';
-            }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let pendingTarget = null;
-      let isPremiumUser = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'n3d' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'n3d' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            pendingTarget.click();
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          if (localModal) {
-            localModal.style.display = 'flex';
-          }
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'n3d' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser) {
-            if (localModal) localModal.style.display = 'flex';
-            channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'n3d' } });
-            return;
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser) {
-              if (localModal) localModal.style.display = 'flex';
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'n3d' } });
-              return false;
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser) {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'n3d' } });
-                return;
-              }
-              
-              if ('n3d' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
-            };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-          }
-        }
-
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = false;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
-  </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-
-  
 
   <div id="local-payment-modal">
     <div class="local-modal-content">
       <button class="close-local-modal" id="modal-close-btn">&times;</button>
-      <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
-      <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">
-        <span data-en>You don't have a Premium account. Would you like to become Premium?</span>
-        <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</span>
+      <div style="font-size: 40px; margin-bottom: 14px;">💎</div>
+      <h2 id="modal-title" data-en="Pro Export" data-fr="Export Pro">Pro Export</h2>
+      <p id="modal-desc" data-en="Unlock unlimited STL, 3MF, GLB, GLTF, Video and Interactive HTML exports." data-fr="Débloquez les exports illimités STL, 3MF, GLB, GLTF, Vidéo et HTML interactif.">
+        Unlock unlimited STL, 3MF, GLB, GLTF, Video and Interactive HTML exports.
       </p>
       <div class="btn-group">
-        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($20)"
-            data-fr="Devenir Premium ($20)">Become Premium ($20)</span></button>
+        <button class="pay-btn" id="pay-single-btn" data-en="Single Export ($2)" data-fr="Export Unique (2$)">Single Export ($2)</button>
+        <button class="premium-btn" id="pay-premium-btn" data-en="Go Premium Pro ($20/mo)" data-fr="Passer Premium Pro (20$/mois)">Go Premium Pro ($20/mo)</button>
       </div>
     </div>
   </div>
 
-  <!-- BG Effects -->
+  <!-- Background Atmosphere -->
   <div class="bg-grid"></div>
   <div class="bg-orb bg-orb-1"></div>
   <div class="bg-orb bg-orb-2"></div>
@@ -1460,635 +41,607 @@
   <header>
     <div class="logo">
       <div class="logo-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#g1)" stroke-width="1.5" stroke-linejoin="round" />
-          <path d="M2 17L12 22L22 17" stroke="url(#g1)" stroke-width="1.5" stroke-linejoin="round" />
-          <path d="M2 12L12 17L22 12" stroke="url(#g2)" stroke-width="1.5" stroke-linejoin="round" />
-          <defs>
-            <linearGradient id="g1" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#4f8eff" />
-              <stop offset="1" stop-color="#a855f7" />
-            </linearGradient>
-            <linearGradient id="g2" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#06d6a0" />
-              <stop offset="1" stop-color="#4f8eff" />
-            </linearGradient>
-          </defs>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M2 17L12 22L22 17" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke="#a7f3d0" stroke-width="1.6" stroke-linejoin="round" />
         </svg>
       </div>
       <div>
-        <div class="logo-text">3D · 4D Studio</div>
-        <div class="logo-sub">Image → STL · GLB · Professional 3D Converter</div>
+        <div class="logo-text">New 3D · 4D Studio Ultra</div>
+        <div class="logo-sub" data-i18n="studioSub">Photo -> Ultra 3D Sculpture · Lithophane · 3MF &amp; 4D AR</div>
       </div>
     </div>
     <div class="header-right">
       <div class="mob-view-tabs" id="mobViewTabs">
-        <button class="mob-tab-btn active" id="btnMobControls">⚙️ Controls</button>
-        <button class="mob-tab-btn" id="btnMobViewport">📦 3D View</button>
+        <button class="mob-tab-btn active" id="btnMobControls">⚙️ <span data-i18n="mobControls">Controls</span></button>
+        <button class="mob-tab-btn" id="btnMobViewport">📦 <span data-i18n="mobViewport">3D View</span></button>
       </div>
       <div class="lang-toggle">
         <button class="lang-btn active" data-lang="en">EN</button>
         <button class="lang-btn" data-lang="fr">FR</button>
       </div>
       <span class="hbadge hbadge-blue">STL</span>
-      <span class="hbadge hbadge-purple">GLB</span>
-      <span class="hbadge hbadge-green">GLTF</span>
+      <span class="hbadge hbadge-cyan">3MF</span>
+      <span class="hbadge hbadge-purple">GLB / GLTF</span>
       <span class="hbadge hbadge-orange">OBJ</span>
+      <span class="hbadge hbadge-green">AR READY</span>
     </div>
   </header>
 
-  <!-- MAIN APP -->
+  <!-- MAIN WORKSPACE -->
   <div class="app-layout">
-
-    <!-- ─── SIDEBAR ─── -->
     <aside class="sidebar">
-      <!-- Sidebar tabs -->
       <div class="stabs">
         <button class="stab active" data-stab="upload" id="stab-upload">
           <span class="stab-icon">📁</span>
-          <span class="stab-label" data-en="Upload" data-fr="Charger">Upload</span>
+          <span class="stab-label" data-i18n="tabUpload">Upload</span>
         </button>
         <button class="stab" data-stab="adjust" id="stab-adjust">
           <span class="stab-icon">🎛️</span>
-          <span class="stab-label" data-en="Adjust" data-fr="Régler">Adjust</span>
+          <span class="stab-label" data-i18n="tabAdjust">Adjust</span>
         </button>
         <button class="stab" data-stab="model3d" id="stab-model3d">
-          <span class="stab-icon">📦</span>
-          <span class="stab-label" data-en="3D" data-fr="3D">3D</span>
+          <span class="stab-icon">🗿</span>
+          <span class="stab-label" data-i18n="tab3D">3D</span>
         </button>
         <button class="stab" data-stab="model4d" id="stab-model4d">
           <span class="stab-icon">✨</span>
-          <span class="stab-label" data-en="4D" data-fr="4D">4D</span>
+          <span class="stab-label" data-i18n="tab4D">4D</span>
         </button>
         <button class="stab" data-stab="export" id="stab-export">
           <span class="stab-icon">💾</span>
-          <span class="stab-label" data-en="Export" data-fr="Exporter">Export</span>
+          <span class="stab-label" data-i18n="tabExport">Export</span>
         </button>
       </div>
 
       <div class="stabs-content">
-
-        <!-- ── UPLOAD TAB ── -->
+        <!-- TAB 1: UPLOAD -->
         <div class="spanel active" id="sp-upload">
           <div class="upload-zone" id="uploadZone" tabindex="0">
             <div class="uz-glow"></div>
             <div class="uz-icon">🖼️</div>
-            <h3 class="uz-title" data-en="Drop Image Here" data-fr="Déposez l'image ici">Drop Image Here</h3>
-            <p class="uz-sub">PNG · JPG · BMP · WebP · TIFF · GIF · AVIF</p>
-            <p class="uz-hint" data-en="or click to browse" data-fr="ou cliquez pour parcourir">or click to browse</p>
-            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-              📂 <span data-en="Choose File" data-fr="Choisir fichier">Choose File</span>
+            <h3 class="uz-title" data-i18n="dropTitle">Drop Image Here</h3>
+            <p class="uz-sub">PNG · JPG · BMP · WebP · SVG · AVIF</p>
+            <p class="uz-hint" data-i18n="dropHint">or click to browse</p>
+            <button type="button" class="btn-upload" id="btnChooseFile">
+              📂 <span data-i18n="chooseFile">Choose File</span>
             </button>
             <input type="file" id="fileInput" accept="image/*" />
           </div>
 
+          <div class="sec-label" data-i18n="trySamples">Quick Samples</div>
+          <div class="sample-row">
+            <button type="button" class="sample-btn" data-sample="portrait">👤 <span data-i18n="samplePortrait">Portrait</span></button>
+            <button type="button" class="sample-btn" data-sample="emblem">🪙 <span data-i18n="sampleLogo">Emblem</span></button>
+            <button type="button" class="sample-btn" data-sample="landscape">🏔️ <span data-i18n="sampleArt">Landscape</span></button>
+          </div>
+
           <div class="file-info" id="fileInfo" style="display:none">
-            <div class="sec-label" data-en="Loaded File" data-fr="Fichier chargé">Loaded File
-            </div>
+            <div class="sec-label" data-i18n="loadedFile">Loaded File</div>
             <div class="info-grid">
               <div class="info-chip full">
-                <div class="ic-label" data-en="Filename" data-fr="Nom">Filename</div>
+                <div class="ic-label" data-i18n="fileName">Filename</div>
                 <div class="ic-val" id="infoFilename">—</div>
               </div>
               <div class="info-chip">
-                <div class="ic-label" data-en="Size" data-fr="Taille">Size</div>
+                <div class="ic-label" data-i18n="fileSize">Size</div>
                 <div class="ic-val" id="infoSize">—</div>
               </div>
               <div class="info-chip">
-                <div class="ic-label" data-en="Pixels" data-fr="Pixels">Pixels</div>
+                <div class="ic-label" data-i18n="filePixels">Pixels</div>
                 <div class="ic-val" id="infoDims">—</div>
               </div>
             </div>
           </div>
 
           <div class="info-box">
-            <div class="ib-icon">💡</div>
+            <div class="ib-icon">💎</div>
             <div>
-              <strong data-en="Best results:" data-fr="Meilleurs résultats:">Best
-                results:</strong>
-              <span
-                data-en=" Use high-contrast images, grayscale drawings, logos or depth maps for optimal 3D extrusion."
-                data-fr=" Utilisez des images à fort contraste pour une extrusion 3D optimale."> Use high-contrast images,
-                grayscale drawings, logos or depth maps for optimal 3D extrusion.</span>
+              <strong data-i18n="tipBestTitle">Best results:</strong>
+              <span data-i18n="tipBestBody">Use crisp portraits, pets, logos, or high-contrast artwork. Our Distance-Field Sculptor automatically separates the subject from its background.</span>
             </div>
           </div>
 
-          <!-- Thumbnail history -->
-          <div class="sec-label" id="historyLabel" style="display:none" data-en="Recent Files"
-            data-fr="Fichiers récents">Recent Files</div>
+          <div class="sec-label" id="historyLabel" style="display:none" data-i18n="recentFiles">Recent Files</div>
           <div class="thumb-grid" id="thumbGrid"></div>
         </div>
 
-        <!-- ── ADJUST TAB ── -->
+        <!-- TAB 2: ADJUST -->
         <div class="spanel" id="sp-adjust">
-          <div class="sec-label" data-en="Brightness & Contrast" data-fr="Luminosité & Contraste">Brightness & Contrast</div>
+          <div class="sec-label" data-i18n="secBrightContrast">Brightness &amp; Contrast</div>
           <div class="ctrl-row">
-            <label><span data-en="Brightness" data-fr="Luminosité">Brightness</span> <span
-                class="ctrl-val" id="vBrightness">0</span></label>
+            <label><span data-i18n="lblBrightness">Brightness</span> <span class="ctrl-val" id="vBrightness">0</span></label>
             <input type="range" id="sBrightness" min="-100" max="100" value="0" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Contrast" data-fr="Contraste">Contrast</span> <span
-                class="ctrl-val" id="vContrast">0</span></label>
+            <label><span data-i18n="lblContrast">Contrast</span> <span class="ctrl-val" id="vContrast">0</span></label>
             <input type="range" id="sContrast" min="-100" max="100" value="0" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Saturation" data-fr="Saturation">Saturation</span> <span
-                class="ctrl-val" id="vSaturation">0</span></label>
+            <label><span data-i18n="lblSaturation">Saturation</span> <span class="ctrl-val" id="vSaturation">0</span></label>
             <input type="range" id="sSaturation" min="-100" max="100" value="0" />
           </div>
 
-          <div class="sec-label" data-en="Preprocessing" data-fr="Prétraitement">Preprocessing
+          <div class="sec-label" data-i18n="secPreproc">Image Cleanup &amp; Detail</div>
+          <div class="ctrl-row">
+            <label><span data-i18n="lblBlur">Blur (pre-smooth)</span> <span class="ctrl-val" id="vBlur">0</span></label>
+            <input type="range" id="sBlur" min="0" max="12" value="0" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Blur (pre-smooth)" data-fr="Flou">Blur (pre-smooth)</span> <span
-                class="ctrl-val" id="vBlur">0</span></label>
-            <input type="range" id="sBlur" min="0" max="20" value="0" />
-          </div>
-          <div class="ctrl-row">
-            <label><span data-en="Sharpen" data-fr="Netteté">Sharpen</span> <span class="ctrl-val"
-                id="vSharpen">0</span></label>
+            <label><span data-i18n="lblSharpen">Sharpen (clarity)</span> <span class="ctrl-val" id="vSharpen">0</span></label>
             <input type="range" id="sSharpen" min="0" max="10" value="0" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="B&W Threshold" data-fr="Seuil N&B">B&W Threshold</span> <span
-                class="ctrl-val" id="vThreshold">128</span></label>
-            <input type="range" id="sThreshold" min="0" max="255" value="128" />
+            <label><span data-i18n="lblThreshold">B&amp;W Threshold</span> <span class="ctrl-val" id="vThreshold">128</span></label>
+            <input type="range" id="sThreshold" min="10" max="245" value="128" />
           </div>
 
-          <div class="sec-label" data-en="Options" data-fr="Options">Options</div>
+          <div class="sec-label" data-i18n="secOptions">Image Toggles</div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Grayscale" data-fr="Niveaux de gris">Grayscale</span>
-              <small data-en="Convert to grayscale" data-fr="Conversion N&B">Convert to
-                grayscale</small>
+              <span data-i18n="lblGrayscale">Grayscale</span>
+              <small data-i18n="lblGrayscaleSub">Convert to luminance map</small>
             </div>
             <label class="sw"><input type="checkbox" id="tGrayscale" /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Invert Colors" data-fr="Inverser">Invert Colors</span>
-              <small data-en="Dark becomes raised" data-fr="Sombre devient haut">Dark
-                becomes raised</small>
+              <span data-i18n="lblInvert">Invert Colors</span>
+              <small data-i18n="lblInvertSub">Dark becomes raised</small>
             </div>
             <label class="sw"><input type="checkbox" id="tInvert" /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Edge Enhance" data-fr="Amélioration bords">Edge
-                Enhance</span>
-              <small data-en="Sharper 3D edges" data-fr="Bords 3D plus nets">Sharper 3D
-                edges</small>
+              <span data-i18n="lblThreshold">Apply B&amp;W Threshold</span>
+              <small data-en="Binarize image for crisp stamps" data-fr="Binariser pour tampons nets">Binarize image for crisp stamps</small>
+            </div>
+            <label class="sw"><input type="checkbox" id="tUseThreshold" /><span class="sw-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="tgl-label">
+              <span data-i18n="lblEdgeEnhance">Edge Enhance</span>
+              <small data-i18n="lblEdgeEnhanceSub">Crisper micro-relief edges</small>
             </div>
             <label class="sw"><input type="checkbox" id="tEdge" /><span class="sw-track"></span></label>
           </div>
-          <button class="btn-sec act-btn" id="btnPreview2D" disabled>
-            👁️ <span data-en="Preview Processed" data-fr="Aperçu traité">Preview
-              Processed</span>
+          <button type="button" class="act-btn" id="btnPreview2D" disabled>
+            👁️ <span data-i18n="btnPreview2D">Preview Processed</span>
           </button>
         </div>
 
-        <!-- ── 3D MODEL TAB ── -->
+        <!-- TAB 3: 3D MODEL -->
         <div class="spanel" id="sp-model3d">
-          <div class="sec-label" data-en="3D Conversion Mode" data-fr="Mode de conversion 3D">3D Conversion Mode</div>
+          <div class="sec-label" data-i18n="sec3DMode">3D Sculpture Mode</div>
           <div class="mode-chips" id="modeChips3d">
-            <button class="mchip active" data-mode3d="relief">🏔️ <span data-en="Ultra 3D Relief" data-fr="Relief 3D Ultra">Ultra 3D Relief</span></button>
-            <button class="mchip" data-mode3d="portrait">👤 <span data-en="Portrait Dome" data-fr="Dôme Portrait">Portrait Dome</span></button>
-            <button class="mchip" data-mode3d="cameo">🪙 <span data-en="Coin Cameo" data-fr="Camée Médaille">Coin Cameo</span></button>
-            <button class="mchip" data-mode3d="stamp">🏷️ <span data-en="Logo Stamp" data-fr="Tampon Logo">Logo Stamp</span></button>
-            <button class="mchip" data-mode3d="heightmap">⛰️ <span data-en="Heightmap" data-fr="Carte hauteur">Heightmap</span></button>
-            <button class="mchip" data-mode3d="lithophane">🕯️ <span data-en="Lithophane" data-fr="Lithophane">Lithophane</span></button>
-            <button class="mchip" data-mode3d="emboss">🔲 <span data-en="Emboss" data-fr="Embossage">Emboss</span></button>
+            <button type="button" class="mchip active" data-mode3d="relief">🏔️ <span data-i18n="modeRelief">Ultra 3D Relief</span></button>
+            <button type="button" class="mchip" data-mode3d="portrait">👤 <span data-i18n="modePortrait">Portrait Dome</span></button>
+            <button type="button" class="mchip" data-mode3d="cameo">🪙 <span data-i18n="modeCameo">Coin Cameo</span></button>
+            <button type="button" class="mchip" data-mode3d="stamp">🏷️ <span data-i18n="modeStamp">Logo Stamp</span></button>
+            <button type="button" class="mchip" data-mode3d="heightmap">⛰️ <span data-i18n="modeHeightmap">Heightmap</span></button>
+            <button type="button" class="mchip" data-mode3d="lithophane">🕯️ <span data-i18n="modeLithophane">Lithophane</span></button>
+            <button type="button" class="mchip" data-mode3d="emboss">🔲 <span data-i18n="modeEmboss">Emboss</span></button>
           </div>
 
-          <!-- Intelligent Relief & Subject Isolation -->
-          <div class="sec-label" style="color:#06d6a0" data-en="Intelligent Relief & Subject Isolation" data-fr="Relief intelligent & Isolation du sujet">Intelligent Relief & Subject Isolation</div>
+          <div class="sec-label" style="color:#38bdf8" data-i18n="secShapeProfile">Physical Shape Profile</div>
+          <div class="mode-chips" id="shapeChips">
+            <button type="button" class="mchip active" data-shape="rect">▭ <span data-i18n="shapeRect">Rectangle</span></button>
+            <button type="button" class="mchip" data-shape="squircle">▢ <span data-i18n="shapeSquircle">Squircle</span></button>
+            <button type="button" class="mchip" data-shape="circle">🪙 <span data-i18n="shapeCircle">Circle / Coin</span></button>
+            <button type="button" class="mchip" data-shape="oval">🥚 <span data-i18n="shapeOval">Oval Cameo</span></button>
+            <button type="button" class="mchip" data-shape="heart">❤️ <span data-i18n="shapeHeart">Heart</span></button>
+            <button type="button" class="mchip" data-shape="curved">🏮 <span data-i18n="shapeCurved">Curved Lamp</span></button>
+          </div>
+
+          <div class="ctrl-row" id="arcAngleRow" style="display:none">
+            <label><span data-i18n="lblArcAngle">Lamp Curve Arc</span> <span class="ctrl-val" id="vArcAngle">120</span>°</label>
+            <input type="range" id="sArcAngle" min="45" max="270" value="120" step="15" />
+          </div>
+
+          <div class="litho-box" id="lithoControlsBox" style="display:none">
+            <div class="toggle-row" style="border:none;padding:0">
+              <div class="tgl-label">
+                <span data-i18n="lblBacklightMode">💡 Backlight Lamp Simulator</span>
+                <small data-i18n="lblBacklightSub">Preview warm LED glow through PLA thickness</small>
+              </div>
+              <label class="sw"><input type="checkbox" id="tBacklight" /><span class="sw-track"></span></label>
+            </div>
+          </div>
+
+          <div class="sec-label" style="color:#06d6a0" data-i18n="secSmartRelief">Smart AI-Style Sculpt &amp; Isolation</div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="✂️ Isolate Subject (Remove Background)" data-fr="✂️ Isoler le sujet (Supprimer le fond)">✂️ Isolate Subject (Remove Background)</span>
-              <small data-en="Suppresses background to flat 0mm base" data-fr="Abaisse le fond à la base plate 0mm">Suppresses background to flat 0mm base</small>
+              <span data-i18n="lblIsolateBg">✂️ Isolate Subject (Flood-Fill)</span>
+              <small data-i18n="lblIsolateBgSub">Suppresses backdrop while keeping eyes/clothes intact</small>
             </div>
             <label class="sw"><input type="checkbox" id="tIsolateBg" /><span class="sw-track"></span></label>
           </div>
           <div class="ctrl-row" id="bgTolRow" style="display:none">
-            <label><span data-en="Background Tolerance" data-fr="Tolérance du fond">Background Tolerance</span> <span class="ctrl-val" id="vBgTolerance">35</span>%</label>
-            <input type="range" id="sBgTolerance" min="5" max="85" value="35" step="1" />
+            <label><span data-i18n="lblBgTol">Background Tolerance</span> <span class="ctrl-val" id="vBgTolerance">35</span>%</label>
+            <input type="range" id="sBgTolerance" min="8" max="85" value="35" step="1" />
           </div>
           <div class="ctrl-row" id="domeDepthRow" style="display:none">
-            <label><span data-en="Anatomical Dome Curvature" data-fr="Courbure anatomique du dôme">Anatomical Dome Curvature</span> <span class="ctrl-val" id="vDomeDepth">65</span>%</label>
+            <label><span data-i18n="lblDomeDepth">Anatomical Dome Volume</span> <span class="ctrl-val" id="vDomeDepth">65</span>%</label>
             <input type="range" id="sDomeDepth" min="0" max="100" value="65" step="5" />
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="🔄 Invert Depth" data-fr="🔄 Inverser la profondeur">🔄 Invert Depth</span>
-              <small data-en="Swap high and low relief peaks" data-fr="Inverser les reliefs hauts et bas">Swap high and low relief peaks</small>
+              <span data-i18n="lblInvertDepth">🔄 Invert Depth</span>
+              <small data-i18n="lblInvertDepthSub">Swap peaks and recessed valleys</small>
             </div>
             <label class="sw"><input type="checkbox" id="tInvertDepth" /><span class="sw-track"></span></label>
           </div>
 
-          <!-- Quality presets -->
-          <div class="sec-label" data-en="Quality Preset" data-fr="Préréglage qualité">
-            Quality Preset</div>
+          <div class="sec-label" data-i18n="secQualityPreset">Quality Presets</div>
           <div class="mode-chips">
-            <button class="mchip" data-preset="draft">⚡ <span data-en="Draft" data-fr="Brouillon">Draft</span></button>
-            <button class="mchip active" data-preset="standard">⭐ <span data-en="Standard">Standard</span></button>
-            <button class="mchip" data-preset="ultra">💎 <span data-en="Ultra">Ultra</span></button>
+            <button type="button" class="mchip" data-preset="draft">⚡ <span data-i18n="presetDraft">Draft</span></button>
+            <button type="button" class="mchip active" data-preset="standard">⭐ <span data-i18n="presetStandard">Standard</span></button>
+            <button type="button" class="mchip" data-preset="ultra">💎 <span data-i18n="presetUltra">Ultra 4K</span></button>
           </div>
 
-          <div class="sec-label" data-en="Geometry Settings" data-fr="Paramètres géométrie">
-            Geometry Settings</div>
+          <div class="sec-label" data-i18n="secGeomSettings">Geometry Settings</div>
           <div class="ctrl-row">
-            <label><span data-en="Extrusion Depth (mm)">Extrusion Depth (mm)</span> <span
-                class="ctrl-val" id="vDepth">5</span></label>
-            <input type="range" id="sDepth" min="1" max="50" value="5" />
+            <label><span data-i18n="lblExtrusion">Extrusion Depth (mm)</span> <span class="ctrl-val" id="vDepth">5.5</span></label>
+            <input type="range" id="sDepth" min="0.5" max="45" value="5.5" step="0.5" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Base Thickness (mm)">Base Thickness (mm)</span> <span
-                class="ctrl-val" id="vBase">2</span></label>
-            <input type="range" id="sBase" min="0" max="20" value="2" />
+            <label><span data-i18n="lblBaseThick">Base Thickness (mm)</span> <span class="ctrl-val" id="vBase">2.0</span></label>
+            <input type="range" id="sBase" min="0.4" max="20" value="2.0" step="0.2" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Resolution (vertices)">Resolution</span> <span
-                class="ctrl-val" id="vResolution">256</span></label>
-            <input type="range" id="sResolution" min="32" max="512" value="256" step="32" />
+            <label><span data-i18n="lblResolution">Resolution (grid)</span> <span class="ctrl-val" id="vResolution">256</span></label>
+            <input type="range" id="sResolution" min="48" max="512" value="256" step="32" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Scale (mm)">Scale (mm)</span> <span class="ctrl-val"
-                id="vScale">100</span></label>
-            <input type="range" id="sScale" min="10" max="500" value="100" step="10" />
+            <label><span data-i18n="lblScale">Scale Width (mm)</span> <span class="ctrl-val" id="vScale">100</span></label>
+            <input type="range" id="sScale" min="20" max="400" value="100" step="5" />
           </div>
 
-          <!-- ✨ ULTRA QUALITY SECTION -->
-          <div class="sec-label" style="color:#a855f7">✨ Ultra Quality Settings</div>
-
+          <div class="sec-label" style="color:#a855f7" data-i18n="secUltraSettings">✨ Ultra Sculpt Engine v2</div>
           <div class="ctrl-row">
-            <label><span data-en="Super-Sampling">Super-Sampling</span>
-              <span class="ctrl-val" id="vSuperSample">2×</span></label>
+            <label><span data-i18n="lblSuperSample">Super-Sampling</span> <span class="ctrl-val" id="vSuperSample">2×</span></label>
             <div class="mode-chips" style="margin-top:4px">
-              <button class="mchip" data-ssuper="1">1× <small>Off</small></button>
-              <button class="mchip active" data-ssuper="2">2× <small>HD</small></button>
-              <button class="mchip" data-ssuper="4">4× <small>Ultra</small></button>
+              <button type="button" class="mchip" data-ssuper="1">1× <small>Fast</small></button>
+              <button type="button" class="mchip active" data-ssuper="2">2× <small>HD</small></button>
+              <button type="button" class="mchip" data-ssuper="4">4× <small>Ultra</small></button>
             </div>
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Smoothing Algorithm">Smoothing Algorithm</span></label>
-            <select id="sSmoothMethod"
-              style="width:100%;padding:6px 8px;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:12px;margin-top:4px">
-              <option value="bilateral">🔬 Bilateral (Edge-Preserving) — Recommended</option>
-              <option value="laplacian">🌊 Laplacian (Organic Smooth)</option>
-              <option value="both">💎 Bilateral + Laplacian (Ultra)</option>
-              <option value="box">📦 Box (Classic/Fast)</option>
+            <label><span data-i18n="lblSmoothAlgo">Smoothing Algorithm</span></label>
+            <select id="sSmoothMethod" class="ctrl-select">
+              <option value="bilateral">🔬 Bilateral (Edge-Preserving)</option>
+              <option value="laplacian">🌊 Laplacian (Organic Stone)</option>
+              <option value="both">💎 Hybrid (Bilateral + Laplacian Ultra)</option>
+              <option value="box">📦 Box Filter (Fast Smooth)</option>
             </select>
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Smoothing Passes">Smoothing Passes</span> <span
-                class="ctrl-val" id="vSmoothing">3</span></label>
-            <input type="range" id="sSmoothing" min="0" max="12" value="3" />
+            <label><span data-i18n="lblSmoothPasses">Smoothing Passes</span> <span class="ctrl-val" id="vSmoothing">3</span></label>
+            <input type="range" id="sSmoothing" min="0" max="10" value="3" />
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Depth Gamma (contrast)">Depth Gamma</span> <span
-                class="ctrl-val" id="vGamma">1.00</span></label>
-            <input type="range" id="sGamma" min="0.3" max="3.0" value="1.0" step="0.05" />
+            <label><span data-i18n="lblGamma">Depth Gamma (contrast)</span> <span class="ctrl-val" id="vGamma">1.00</span></label>
+            <input type="range" id="sGamma" min="0.3" max="2.8" value="1.0" step="0.05" />
           </div>
 
-          <div class="sec-label" data-en="Topology" data-fr="Topologie">Topology</div>
+          <div class="sec-label" data-i18n="secTopology">Topology &amp; Mesh</div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Solid Base Plate">Solid Base Plate</span>
-              <small data-en="Add flat bottom for printing">Add flat bottom for
-                printing</small>
+              <span data-i18n="lblSolidBase">Solid Watertight Base</span>
+              <small data-i18n="lblSolidBaseSub">Closed manifold plaque/medallion for slicing</small>
             </div>
             <label class="sw"><input type="checkbox" id="tSolidBase" checked /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Mirror Y-axis">Mirror Y-axis</span>
+              <span data-i18n="lblMirrorY">Mirror Y-axis</span>
+              <small data-i18n="lblMirrorYSub">Vertical flip for molds &amp; stamps</small>
             </div>
             <label class="sw"><input type="checkbox" id="tMirrorY" /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Edge Boost (Unsharp Mask)">Edge Boost (Unsharp Mask)</span>
-              <small data-en="Enhances fine surface detail">Enhances fine surface
-                detail</small>
+              <span data-i18n="lblEdgeBoost">Scharr Edge Crispness</span>
+              <small data-i18n="lblEdgeBoostSub">Micro-chisels eyes, hair &amp; engraved lines</small>
             </div>
-            <label class="sw"><input type="checkbox" id="tEdgeBoost" /><span class="sw-track"></span></label>
+            <label class="sw"><input type="checkbox" id="tEdgeBoost" checked /><span class="sw-track"></span></label>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span>🎨 Bake Colors + AO</span>
-              <small>Maps image RGB + cavity AO onto GLB vertex colors</small>
+              <span>🎨 <span data-i18n="lblBakeColors">Bake HD Colors + AO</span></span>
+              <small data-i18n="lblBakeColorsSub">Full RGB texture + ambient cavity shading</small>
             </div>
             <label class="sw"><input type="checkbox" id="tBakeColors" checked /><span class="sw-track"></span></label>
           </div>
-          <div class="ctrl-row" id="aoRow" style="display:none">
-            <label><span>AO Strength</span> <span class="ctrl-val" id="vAO">0.50</span></label>
-            <input type="range" id="sAO" min="0" max="1" value="0.5" step="0.05" />
+          <div class="ctrl-row" id="aoRow">
+            <label><span data-i18n="lblAOStrength">Cavity AO Strength</span> <span class="ctrl-val" id="vAO">0.25</span></label>
+            <input type="range" id="sAO" min="0" max="1" value="0.25" step="0.05" />
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span>⬆️ Subdivision Pass</span>
-              <small>Bilinear midpoint subdivision — doubles triangle count</small>
+              <span>⬆️ <span data-i18n="lblSubdiv">Subdivision Pass</span></span>
+              <small data-i18n="lblSubdivSub">Midpoint surface refinement (up to 4x tris)</small>
             </div>
             <label class="sw"><input type="checkbox" id="tSubdiv" /><span class="sw-track"></span></label>
           </div>
         </div>
 
-
-        <!-- ── 4D MODEL TAB ── -->
+        <!-- TAB 4: 4D ANIMATION & PBR -->
         <div class="spanel" id="sp-model4d">
           <div class="badge-4d">
             <span class="b4d-icon">✨</span>
             <div>
-              <strong data-en="4D = 3D + Animation" data-fr="4D = 3D + Animation">4D = 3D +
-                Animation</strong>
-              <small data-en="GLB format with embedded animations, materials & PBR shading"
-                data-fr="Format GLB avec animations, matériaux & ombrage PBR">GLB format with embedded animations, materials
-                & PBR shading</small>
+              <strong data-i18n="badge4DTitle">4D = 3D + True Morph Animation</strong>
+              <small data-i18n="badge4DSub">Khronos GLTF 2.0 / GLB with real Morph Targets, HD PBR &amp; AR Ready</small>
             </div>
           </div>
 
-          <div class="sec-label" data-en="Animation Type" data-fr="Type d'animation">Animation
-            Type</div>
+          <div class="sec-label" data-i18n="secAnimType">Animation Type</div>
           <div class="mode-chips" id="animChips">
-            <button class="mchip active" data-anim="rotate">🔄 <span data-en="Rotation 360°" data-fr="Rotation 360°">Rotation 360°</span></button>
-            <button class="mchip" data-anim="pulse">💓 <span data-en="3D Pulse" data-fr="Pulsation 3D">3D Pulse</span></button>
-            <button class="mchip" data-anim="float">🌊 <span data-en="Float Levitation" data-fr="Lévitation">Float Levitation</span></button>
-            <button class="mchip" data-anim="morph">🌀 <span data-en="2D ↔ 3D Morph" data-fr="Morph 2D ↔ 3D">2D ↔ 3D Morph</span></button>
-            <button class="mchip" data-anim="wave">✨ <span data-en="Surface Wave" data-fr="Onde de surface">Surface Wave</span></button>
-            <button class="mchip" data-anim="none">⛔ <span data-en="Static" data-fr="Statique">Static</span></button>
+            <button type="button" class="mchip active" data-anim="rotate">🔄 <span data-i18n="animRotate">Rotation 360</span></button>
+            <button type="button" class="mchip" data-anim="pulse">💓 <span data-i18n="animPulse">3D Pulse</span></button>
+            <button type="button" class="mchip" data-anim="float">🌊 <span data-i18n="animFloat">Levitation</span></button>
+            <button type="button" class="mchip" data-anim="morph">🌀 <span data-i18n="animMorph">2D &lt;-&gt; 3D Morph</span></button>
+            <button type="button" class="mchip" data-anim="wave">✨ <span data-i18n="animWave">Surface Wave</span></button>
+            <button type="button" class="mchip" data-anim="none">⛔ <span data-i18n="animNone">Static</span></button>
           </div>
 
-          <button class="btn btn-primary" id="btnTogglePlay4D" style="width:100%;margin:12px 0 16px 0;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;padding:10px 14px;font-weight:600;font-size:13px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(168,85,247,0.35);color:#fff">
-            ▶ <span data-en="Play 4D" data-fr="Lire 4D">Play 4D</span>
+          <button type="button" class="btn-gen" id="btnTogglePlay4D" style="padding:10px;font-size:13px">
+            ▶ <span data-i18n="play4D">Play 4D</span>
           </button>
 
-          <div class="sec-label" data-en="Export 4D Media" data-fr="Exporter médias 4D">Export 4D Media</div>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <button class="btn btn-secondary" id="btnRecordVideo" style="flex:1;padding:8px 6px;font-size:12px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.35);color:#e9d5ff;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:600" title="Record 4D turnaround video clip">
-              🎥 <span data-en="4D Video" data-fr="Vidéo 4D">4D Video</span>
-            </button>
-            <button class="btn btn-secondary" id="btnSnapShot" style="flex:1;padding:8px 6px;font-size:12px;background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.35);color:#a7f3d0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:600" title="Snap high-res 4D snapshot">
-              📸 <span data-en="Snap PNG" data-fr="Capture PNG">Snap PNG</span>
-            </button>
+          <div class="sec-label" data-i18n="secExportMedia">Export 4D Media</div>
+          <div class="foot-row">
+            <button type="button" class="btn-sec" id="btnRecordVideo" disabled>🎥 <span data-i18n="btnVideo4D">4D Video</span></button>
+            <button type="button" class="btn-sec" id="btnSnapShot" disabled>📸 <span data-i18n="btnSnapPNG">Snap PNG</span></button>
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Animation Speed" data-fr="Vitesse animation">Animation
-                Speed</span> <span class="ctrl-val" id="vAnimSpeed">1.0</span>×</label>
+            <label><span data-i18n="lblAnimSpeed">Animation Speed</span> <span class="ctrl-val" id="vAnimSpeed">1.0</span>×</label>
             <input type="range" id="sAnimSpeed" min="0.1" max="5" value="1.0" step="0.1" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Animation Duration (s)" data-fr="Durée (s)">Animation Duration
-                (s)</span> <span class="ctrl-val" id="vAnimDur">3</span>s</label>
+            <label><span data-i18n="lblAnimDur">Animation Duration (s)</span> <span class="ctrl-val" id="vAnimDur">3</span>s</label>
             <input type="range" id="sAnimDur" min="1" max="30" value="3" />
           </div>
 
-          <div class="sec-label" data-en="PBR Material" data-fr="Matériau PBR">PBR Material</div>
+          <div class="sec-label" data-i18n="secPbrMat">PBR Material</div>
           <div class="mat-presets" id="matPresets">
             <div class="matcard active" data-mat="plastic">
               <div class="mc-preview" style="background:linear-gradient(135deg,#a8d8ea,#6faed4)"></div>
-              <span data-en="Plastic" data-fr="Plastique">Plastic</span>
+              <span data-i18n="matPlastic">Plastic</span>
             </div>
             <div class="matcard" data-mat="metal">
-              <div class="mc-preview" style="background:linear-gradient(135deg,#c0c0c0,#707070)"></div>
-              <span data-en="Metal" data-fr="Métal">Metal</span>
+              <div class="mc-preview" style="background:linear-gradient(135deg,#cbd5e1,#64748b)"></div>
+              <span data-i18n="matMetal">Metal</span>
             </div>
             <div class="matcard" data-mat="gold">
-              <div class="mc-preview" style="background:linear-gradient(135deg,#ffd700,#c8a000)"></div>
-              <span>Gold</span>
+              <div class="mc-preview" style="background:linear-gradient(135deg,#ffd700,#b48600)"></div>
+              <span data-i18n="matGold">Gold</span>
             </div>
             <div class="matcard" data-mat="wood">
-              <div class="mc-preview" style="background:linear-gradient(135deg,#8B6914,#5c4009)"></div>
-              <span data-en="Wood" data-fr="Bois">Wood</span>
+              <div class="mc-preview" style="background:linear-gradient(135deg,#8b5e34,#5c3a1a)"></div>
+              <span data-i18n="matWood">Wood</span>
             </div>
             <div class="matcard" data-mat="glass">
-              <div class="mc-preview"
-                style="background:linear-gradient(135deg,rgba(150,200,255,0.5),rgba(200,240,255,0.2));border:1px solid rgba(150,200,255,0.5)">
-              </div>
-              <span data-en="Glass" data-fr="Verre">Glass</span>
+              <div class="mc-preview" style="background:linear-gradient(135deg,rgba(186,230,253,0.7),rgba(56,189,248,0.25));border:1px solid rgba(186,230,253,0.5)"></div>
+              <span data-i18n="matGlass">Glass</span>
             </div>
             <div class="matcard" data-mat="custom">
-              <div class="mc-preview" style="background:conic-gradient(red,yellow,green,blue,red)"></div>
-              <span data-en="Custom" data-fr="Personnalisé">Custom</span>
+              <div class="mc-preview" style="background:conic-gradient(#ef4444,#f59e0b,#10b981,#3b82f6,#ef4444)"></div>
+              <span data-i18n="matCustom">Custom</span>
             </div>
           </div>
 
           <div class="ctrl-row">
-            <label><span data-en="Metalness" data-fr="Métallicité">Metalness</span> <span
-                class="ctrl-val" id="vMetalness">0.0</span></label>
-            <input type="range" id="sMetalness" min="0" max="1" value="0.0" step="0.01" />
+            <label><span data-i18n="lblMetalness">Metalness</span> <span class="ctrl-val" id="vMetalness">0.04</span></label>
+            <input type="range" id="sMetalness" min="0" max="1" value="0.04" step="0.01" />
           </div>
           <div class="ctrl-row">
-            <label><span data-en="Roughness" data-fr="Rugosité">Roughness</span> <span
-                class="ctrl-val" id="vRoughness">0.5</span></label>
-            <input type="range" id="sRoughness" min="0" max="1" value="0.5" step="0.01" />
+            <label><span data-i18n="lblRoughness">Roughness</span> <span class="ctrl-val" id="vRoughness">0.58</span></label>
+            <input type="range" id="sRoughness" min="0" max="1" value="0.58" step="0.01" />
           </div>
           <div class="ctrl-row">
-            <label data-en="Base Color" data-fr="Couleur de base">Base Color</label>
+            <label data-i18n="lblBaseColor">Base Color</label>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="color" id="cBaseColor" value="#4f8eff"
-                style="width:40px;height:32px;border:none;background:none;cursor:pointer;border-radius:6px" />
+              <input type="color" id="cBaseColor" value="#4f8eff" style="width:40px;height:30px;border:none;background:none;border-radius:6px" />
               <span class="ctrl-val small" id="vBaseColor">#4f8eff</span>
             </div>
           </div>
           <div class="toggle-row">
             <div class="tgl-label">
-              <span data-en="Emissive Glow" data-fr="Lueur émissive">Emissive Glow</span>
-              <small data-en="Material emits light" data-fr="Le matériau émet de la lumière">Material emits light</small>
+              <span data-i18n="lblEmissive">Emissive Glow</span>
+              <small data-i18n="lblEmissiveSub">Self-illuminated neon shader</small>
             </div>
             <label class="sw"><input type="checkbox" id="tEmissive" /><span class="sw-track"></span></label>
           </div>
         </div>
 
-        <!-- ── EXPORT TAB ── -->
+        <!-- TAB 5: EXPORT -->
         <div class="spanel" id="sp-export">
-          <div class="sec-label" data-en="3D Export — STL" data-fr="Export 3D — STL">3D Export
-            — STL</div>
+          <div class="sec-label" data-i18n="secExp3D">3D Print &amp; Multi-Color CAD</div>
           <div class="export-cards">
-            <div class="ecard ecard-stl" id="ecSTL">
+            <div class="ecard" id="ecSTL">
               <div class="ec-icon">📦</div>
               <div class="ec-name">STL Binary</div>
-              <div class="ec-desc">
-                <span data-en="3D print / CNC machining" data-fr="Impression 3D / CNC">3D
-                  print / CNC machining</span>
-              </div>
-              <span class="ec-badge" style="background:rgba(79,142,255,.2);color:#4f8eff">3D PRINT</span>
+              <div class="ec-desc" data-i18n="ecSTLDesc">Watertight manifold mesh for slicers &amp; CNC</div>
+              <span class="ec-badge" style="background:rgba(79,142,255,.2);color:#60a5fa">3D PRINT</span>
             </div>
-            <div class="ecard ecard-obj" id="ecOBJ">
+            <div class="ecard" id="ec3MF">
+              <div class="ec-icon">🎨</div>
+              <div class="ec-name" data-i18n="ec3MFName">Multi-Color 3MF</div>
+              <div class="ec-desc" data-i18n="ec3MFDesc">Bambu Studio / OrcaSlicer ready + plate preview</div>
+              <span class="ec-badge" style="background:rgba(6,214,160,.2);color:#34d399">BAMBU AMS</span>
+            </div>
+            <div class="ecard" id="ecOBJ">
               <div class="ec-icon">🔷</div>
               <div class="ec-name">OBJ + MTL</div>
-              <div class="ec-desc">
-                <span data-en="Blender, Maya, Cinema4D" data-fr="Blender, Maya, Cinema4D">Blender, Maya, Cinema4D</span>
-              </div>
-              <span class="ec-badge" style="background:rgba(6,214,160,.2);color:#06d6a0">3D CAD</span>
+              <div class="ec-desc" data-i18n="ecOBJDesc">UV mapped with MTL material &amp; vertex colors</div>
+              <span class="ec-badge" style="background:rgba(245,158,11,.2);color:#fbbf24">BLENDER CAD</span>
             </div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-exp" id="btnExportSTL" disabled>⬇ STL</button>
-            <button class="btn-exp" id="btnExportOBJ" disabled>⬇ OBJ</button>
-          </div>
-
-          <div class="sec-label" style="margin-top:18px" data-en="4D Export — GLB/GLTF" data-fr="Export 4D — GLB/GLTF">4D Export — GLB/GLTF</div>
-          <div class="export-cards">
-            <div class="ecard ecard-glb" id="ecGLB">
-              <div class="ec-icon">✨</div>
-              <div class="ec-name">GLB</div>
-              <div class="ec-desc">
-                <span data-en="Binary GLTF, animations + PBR" data-fr="GLTF binaire, animations + PBR">Binary GLTF, animations + PBR</span>
-              </div>
-              <span class="ec-badge" style="background:rgba(168,85,247,.2);color:#a855f7">4D ANIM</span>
-            </div>
-            <div class="ecard ecard-gltf" id="ecGLTF">
+            <div class="ecard" id="ecHTML">
               <div class="ec-icon">🌐</div>
-              <div class="ec-name">GLTF + BIN</div>
-              <div class="ec-desc">
-                <span data-en="JSON + binary assets, web VR/AR" data-fr="JSON + actifs binaires, web VR/AR">JSON + binary assets, web VR/AR</span>
-              </div>
-              <span class="ec-badge" style="background:rgba(6,214,160,.2);color:#06d6a0">VR/AR</span>
+              <div class="ec-name">Interactive HTML</div>
+              <div class="ec-desc">Standalone offline 3D/4D web showcase</div>
+              <span class="ec-badge" style="background:rgba(99,102,241,.22);color:#a5b4fc">SHAREABLE</span>
             </div>
           </div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-exp btn-exp-4d" id="btnExportGLB" disabled>✨ GLB</button>
-            <button class="btn-exp btn-exp-4d" id="btnExportGLTF" disabled>🌐 GLTF</button>
+
+          <div class="foot-row">
+            <button type="button" class="btn-exp" id="btnExportSTL" disabled>⬇ <span data-i18n="btnExpSTL">STL</span></button>
+            <button type="button" class="btn-exp btn-exp-3mf" id="btnExport3MF" disabled>🎨 <span data-i18n="btnExp3MF">3MF Slicer</span></button>
+            <button type="button" class="btn-exp" id="btnExportOBJ" disabled>⬇ <span data-i18n="btnExpOBJ">OBJ+MTL</span></button>
           </div>
 
-          <div class="sec-label" style="margin-top:18px" data-en="Quality Presets" data-fr="Préréglages qualité">Quality Presets</div>
+          <div class="sec-label" style="margin-top:6px" data-i18n="secExp4D">4D Animated &amp; Mobile AR</div>
+          <div class="export-cards">
+            <div class="ecard" id="ecGLB">
+              <div class="ec-icon">✨</div>
+              <div class="ec-name">GLB 4D Binary</div>
+              <div class="ec-desc" data-i18n="ecGLBDesc">Binary GLTF + Morph Targets + HD texture</div>
+              <span class="ec-badge" style="background:rgba(168,85,247,.2);color:#d8b4fe">4D MORPH</span>
+            </div>
+            <div class="ecard" id="ecGLTF">
+              <div class="ec-icon">🧩</div>
+              <div class="ec-name">GLTF 2.0 JSON</div>
+              <div class="ec-desc" data-i18n="ecGLTFDesc">Valid Khronos GLTF 2.0 JSON + embedded binary</div>
+              <span class="ec-badge" style="background:rgba(6,214,160,.2);color:#34d399">KHRONOS</span>
+            </div>
+          </div>
+
+          <div class="foot-row">
+            <button type="button" class="btn-exp btn-exp-4d" id="btnExportGLB" disabled>✨ <span data-i18n="btnExpGLB">GLB</span></button>
+            <button type="button" class="btn-exp btn-exp-4d" id="btnExportGLTF" disabled>🧩 <span data-i18n="btnExpGLTF">GLTF JSON</span></button>
+            <button type="button" class="btn-exp" id="btnExportHTML" disabled>🌐 HTML</button>
+          </div>
+
+          <button type="button" class="btn-ar-quick" id="btnOpenAR" style="width:100%;padding:11px" disabled>
+            📲 <span data-i18n="btnOpenAR">Preview in AR</span>
+          </button>
+
+          <div class="sec-label" style="margin-top:6px" data-i18n="secQualityPreset">Quality Presets</div>
           <div class="mode-chips">
-            <button class="mchip" data-preset="draft">⚡ <span data-en="Draft" data-fr="Brouillon">Draft</span></button>
-            <button class="mchip active" data-preset="standard">⭐ <span data-en="Standard" data-fr="Standard">Standard</span></button>
-            <button class="mchip" data-preset="ultra">💎 <span data-en="Ultra" data-fr="Ultra">Ultra</span></button>
+            <button type="button" class="mchip" data-preset="draft">⚡ <span data-i18n="presetDraft">Draft</span></button>
+            <button type="button" class="mchip active" data-preset="standard">⭐ <span data-i18n="presetStandard">Standard</span></button>
+            <button type="button" class="mchip" data-preset="ultra">💎 <span data-i18n="presetUltra">Ultra 4K</span></button>
           </div>
 
-          <div class="info-box" style="margin-top:14px">
+          <div class="info-box">
             <div class="ib-icon">📊</div>
-            <div id="exportStats">
-              <span data-en="Generate a model first." data-fr="Générez un modèle d'abord.">Generate a model first.</span>
-            </div>
+            <div id="exportStats"><span data-i18n="exportStatsIdle">Generate a model first.</span></div>
           </div>
         </div>
+      </div>
 
-      </div><!-- /stabs-content -->
-
-      <!-- Generate Button -->
+      <!-- Sidebar Sticky Footer -->
       <div class="sidebar-foot">
-        <button class="btn-gen" id="btnGenerate" disabled>
+        <button type="button" class="btn-gen" id="btnGenerate" disabled>
           <span class="gen-icon">⚡</span>
-          <span class="gen-text">
-            <span data-en="Generate 3D Model" data-fr="Générer le modèle 3D">Generate 3D
-              Model</span>
-          </span>
+          <span data-i18n="btnGenerate">Generate Ultra 3D</span>
         </button>
-        <button class="btn-sec" id="btnClear" disabled>
-          🗑️ <span data-en="Clear" data-fr="Effacer">Clear</span>
-        </button>
+        <div class="foot-row">
+          <button type="button" class="btn-ar-quick" id="btnQuickAR" disabled>📲 <span data-i18n="btnOpenAR">Preview in AR</span></button>
+          <button type="button" class="btn-sec" id="btnClear" disabled>🗑️ <span data-i18n="btnClear">Clear</span></button>
+        </div>
       </div>
     </aside>
 
-    <!-- ─── MAIN PREVIEW ─── -->
+    <!-- PREVIEW AREA -->
     <main class="preview-area">
-      <!-- Preview Header -->
       <div class="pv-header">
         <div class="pv-title">
           <div class="pv-dot"></div>
-          <span data-en="3D/4D Preview" data-fr="Aperçu 3D/4D">3D/4D Preview</span>
+          <span data-i18n="pvTitle">3D / 4D Ultra Viewport</span>
         </div>
         <div class="pv-actions">
-          <button class="pv-btn" id="btnViewMode2D" title="2D View">🖼️ 2D</button>
-          <button class="pv-btn active" id="btnViewMode3D" title="3D View">📦 3D</button>
+          <button type="button" class="pv-btn" id="btnViewMode2D" title="Source 2D Only">🖼️ <span data-i18n="btn2DOnly">2D</span></button>
+          <button type="button" class="pv-btn active" id="btnViewModeSplit" title="Split View">⊞ <span data-i18n="btnSplitView">Split</span></button>
+          <button type="button" class="pv-btn" id="btnViewMode3D" title="3D Viewport Only">📦 <span data-i18n="btn3DOnly">3D</span></button>
           <div class="zoom-row">
-            <button class="zm-btn" id="btnZoomOut" title="Zoom Out">−</button>
+            <button type="button" class="zm-btn" id="btnZoomOut" title="Zoom Out">−</button>
             <span class="zm-val" id="zoomVal">100%</span>
-            <button class="zm-btn" id="btnZoomIn" title="Zoom In">+</button>
+            <button type="button" class="zm-btn" id="btnZoomIn" title="Zoom In">+</button>
           </div>
-          <button class="pv-btn" id="btnResetView" title="Reset View">↺</button>
-          <button class="pv-btn" id="btnWireframe" title="Wireframe Mode">🕸️</button>
-          <button class="pv-btn pv-btn-play4d" id="btnPlay4D" title="Play/Pause 4D Animation">▶ 4D</button>
+          <button type="button" class="pv-btn" id="btnResetView" title="Reset Camera">↺</button>
+          <button type="button" class="pv-btn" id="btnWireframe" title="Wireframe">🕸️</button>
+          <button type="button" class="pv-btn pv-btn-lamp" id="btnBacklight" title="Lithophane Backlight Simulator">💡 <span data-i18n="btnBacklight">Lamp</span></button>
+          <button type="button" class="pv-btn pv-btn-play4d" id="btnPlay4D" title="Play/Pause 4D">▶ 4D</button>
         </div>
       </div>
 
-      <!-- Dual panels -->
       <div class="preview-panels" id="previewPanels">
-        <!-- 2D Source Panel -->
         <div class="pv-panel" id="pvOrig">
           <div class="pv-panel-head">
-            <span class="pvh-title">🖼️ <span data-en="Source Image" data-fr="Image source">Source Image</span></span>
-            <span class="pvh-badge">SOURCE</span>
+            <span class="pvh-title">🖼️ <span data-i18n="pvSource">Source Image</span></span>
+            <span class="pvh-badge">2D SOURCE</span>
           </div>
           <div class="pv-canvas-wrap">
             <div class="pv-placeholder" id="pvPlaceholder">
               <div class="pvp-icon">🖼️</div>
-              <p data-en="Drop an image to get started" data-fr="Déposez une image pour commencer">Drop an image to get started</p>
+              <p data-i18n="pvDropHint">Drop an image or pick a Quick Sample to begin</p>
             </div>
             <canvas id="canvas2D" style="display:none;max-width:100%;max-height:100%;object-fit:contain"></canvas>
           </div>
         </div>
 
-        <!-- 3D Preview Panel -->
         <div class="pv-panel" id="pv3D" style="display:none">
           <div class="pv-panel-head">
-            <span class="pvh-title">📦 <span data-en="3D Model Preview" data-fr="Aperçu modèle 3D">3D Model Preview</span></span>
-            <span class="pvh-badge pvh-badge-4d" id="badge4DLive" style="background:rgba(148,163,184,.18);color:#cbd5e1">📦 3D STATIC VIEW</span>
+            <span class="pvh-title">🗿 <span data-i18n="pvModelTitle">3D Sculpted Model</span></span>
+            <span class="pvh-badge pvh-badge-4d" id="badge4DLive">📦 3D STATIC VIEW</span>
           </div>
           <div class="pv-canvas-wrap" style="padding:0;position:relative">
             <canvas id="canvas3D"></canvas>
-            <!-- Processing overlay -->
             <div class="proc-overlay" id="procOverlay" style="display:none">
               <div class="proc-spinner"></div>
-              <div class="proc-text" id="procText">Generating...</div>
-              <div class="proc-bar-wrap">
-                <div class="proc-bar" id="procBar" style="width:0%"></div>
-              </div>
+              <div class="proc-text" id="procText">Generating…</div>
+              <div class="proc-bar-wrap"><div class="proc-bar" id="procBar" style="width:0%"></div></div>
               <div class="proc-pct" id="procPct">0%</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Stats Bar -->
       <div class="stats-bar">
         <div class="stat-chip">
-          <div class="sc-label" data-en="Vertices" data-fr="Vertices">Vertices</div>
+          <div class="sc-label" data-i18n="statVerts">Vertices</div>
           <div class="sc-val" id="statVerts">—</div>
         </div>
         <div class="stat-chip">
-          <div class="sc-label" data-en="Triangles" data-fr="Triangles">Triangles</div>
+          <div class="sc-label" data-i18n="statTris">Triangles</div>
           <div class="sc-val" id="statTris">—</div>
         </div>
         <div class="stat-chip">
-          <div class="sc-label" data-en="Dimensions (mm)" data-fr="Dimensions (mm)">Dimensions
-            (mm)</div>
+          <div class="sc-label" data-i18n="statDims">Dimensions (mm)</div>
           <div class="sc-val" id="statDims">— × — × —</div>
         </div>
         <div class="stat-chip">
-          <div class="sc-label" data-en="STL Size" data-fr="Taille STL">STL Size</div>
+          <div class="sc-label" data-i18n="statSTL">STL Size</div>
           <div class="sc-val" id="statSTLSize">—</div>
         </div>
         <div class="stat-chip">
-          <div class="sc-label" data-en="GLB Size" data-fr="Taille GLB">GLB Size</div>
+          <div class="sc-label" data-i18n="statGLB">GLB Size</div>
           <div class="sc-val" id="statGLBSize">—</div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- Hidden canvas for processing -->
   <canvas id="canvasProc" style="display:none"></canvas>
-
-  <!-- Toast notification -->
   <div class="toast" id="toast"></div>
 
-  <!-- Scripts -->
+  <!-- Vendor & Modular App Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="/apps/ar-viewer/ar-bridge.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="engine3d.js"></script>
+  <script src="js/export-3mf.js"></script>
   <script src="engine4d.js"></script>
+  <script src="js/persistence.js"></script>
   <script src="app.js"></script>
-  
-
-  </body>
-
+</body>
 </html>
