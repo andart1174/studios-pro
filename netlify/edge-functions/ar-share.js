@@ -6,7 +6,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "*",
 };
 
-const MAX_UPLOAD_BYTES = 45 * 1024 * 1024; // 45 MB limit
+const MAX_UPLOAD_BYTES = 5.5 * 1024 * 1024; // ~5.5 MB Netlify Edge CDN body limit
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function getScopedStore(context) {
@@ -57,7 +57,7 @@ async function handleShareUpload(request, context) {
 
   const reqUrl = new URL(request.url);
   const rawHash = (reqUrl.searchParams.get("hash") || "").trim().toLowerCase();
-  const safeHash = /^[a-f0-9]{16,64}$/.test(rawHash) ? rawHash : "";
+  const safeHash = /^[a-f0-9]{16,64}$/.test(rawHash) ? rawHash.slice(0, 16) : "";
   let fileName = sanitizeFileName(reqUrl.searchParams.get("name"), "glb");
 
   // Fast cache check BEFORE reading body if hash matches & caller sent HEAD/check header,
@@ -115,7 +115,7 @@ async function handleShareUpload(request, context) {
     return jsonResponse({ status: "error", error: "Rejected HTML error payload" }, 400);
   }
 
-  const key = safeHash || crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+  const key = safeHash || crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const contentType = inferContentType(fileName);
 
   try {

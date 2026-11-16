@@ -442,7 +442,7 @@
     }
     const queryColor = urlParams.get('color');
     const queryMat = urlParams.get('mat');
-    const queryPlacement = urlParams.get('placement');
+    const queryPlacement = urlParams.get('placement') || (urlParams.get('p') === 'w' ? 'wall' : (urlParams.get('p') === 'f' ? 'floor' : null));
     const queryScale = urlParams.get('scale');
 
     // Global state
@@ -795,8 +795,11 @@
       }
     });
 
-    // Load URL if passed in URL query param (?url=...)
-    const queryUrl = urlParams.get('url');
+    // Load URL if passed in URL query param (?url=... or short alias ?s=...)
+    const queryShareId = urlParams.get('s');
+    const queryUrl = urlParams.get('url') || (queryShareId && /^[a-zA-Z0-9._-]+$/.test(queryShareId)
+      ? `${window.location.origin}/api/ar-share/${encodeURIComponent(queryShareId)}/model.glb`
+      : null);
     if (queryUrl && queryUrl !== 'broadcast') {
       (async () => {
         try {
@@ -1187,8 +1190,12 @@
                 worker.terminate();
                 const mime = msg.isGltfJson ? 'application/json' : 'model/gltf-binary';
                 const outExt = msg.isGltfJson ? '.gltf' : '.glb';
-                const outFile = new File([msg.glbBuffer], file.name.replace(/\.[^/.]+$/, '') + outExt, { type: mime });
-                resolve({ file: outFile, dimsMm: msg.dimsMm || null, ext: outExt.slice(1) });
+                const baseName = file.name.replace(/\.[^/.]+$/, '');
+                const outFile = new File([msg.glbBuffer], baseName + outExt, { type: mime });
+                const mobileFile = msg.mobileGlbBuffer
+                  ? new File([msg.mobileGlbBuffer], baseName + '_ar.glb', { type: 'model/gltf-binary' })
+                  : null;
+                resolve({ file: outFile, mobileFile, dimsMm: msg.dimsMm || null, ext: outExt.slice(1) });
               } else if (msg.type === 'error') {
                 clearTimeout(timeout);
                 worker.terminate();
@@ -1285,7 +1292,7 @@
           currentModelName = converted.file.name;
           currentModelExtension = extension;
           lastExportedFile = converted.file;
-          pendingShareFile = converted.file;
+          pendingShareFile = converted.mobileFile || converted.file;
           modelSizeEl.textContent = formatBytes(converted.file.size) + ' (GLB)';
 
           const fileUrl = URL.createObjectURL(converted.file) + '#' + converted.file.name;
@@ -1708,32 +1715,29 @@
       if (previewArea) previewArea.classList.toggle('grid-active', e.target.checked);
     };
 
-    // Client-side offline QR code renderer (zero external API latency!)
+    // Client-side offline QR code renderer (pure black-on-white ISO contrast & crisp integer modules)
     function renderQRDataUrlOffline(text) {
       if (typeof qrcode !== 'function') return '';
       const qr = qrcode(0, 'M');
       qr.addData(text);
       qr.make();
       const count = qr.getModuleCount();
-      const size = 220;
-      const pad = 14;
-      const cell = (size - pad * 2) / count;
+      const quiet = 4;
+      const totalMods = count + quiet * 2;
+      const modPx = Math.max(4, Math.floor(280 / totalMods));
+      const size = totalMods * modPx;
       const canvas = document.createElement('canvas');
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#0f172a';
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = '#22d3ee';
+      ctx.fillStyle = '#000000';
       for (let r = 0; r < count; r++) {
         for (let c = 0; c < count; c++) {
           if (qr.isDark(r, c)) {
-            ctx.fillRect(
-              Math.floor(pad + c * cell),
-              Math.floor(pad + r * cell),
-              Math.ceil(cell),
-              Math.ceil(cell)
-            );
+            ctx.fillRect((quiet + c) * modPx, (quiet + r) * modPx, modPx, modPx);
           }
         }
       }
@@ -1743,8 +1747,13 @@
     function buildTargetShareUrl(baseOrDirectUrl) {
       const baseOrigin = window.location.origin.includes('localhost') ? 'https://studios-pro.com' : window.location.origin;
       let targetARUrl;
+      const shareMatch = baseOrDirectUrl.match(/\/api\/ar-share\/([a-zA-Z0-9._-]+)/);
       if (baseOrDirectUrl.includes('?demo=') || baseOrDirectUrl.includes('&demo=')) {
         targetARUrl = baseOrDirectUrl.split('&color=')[0].split('&mat=')[0].split('&placement=')[0].split('&scale=')[0];
+      } else if (shareMatch) {
+        // Ultra-short canonical URL -> sparse, instant-scan Version 4 QR matrix!
+        targetARUrl = `${baseOrigin}/apps/ar-viewer/?s=${shareMatch[1]}`;
+        if (currentLang === 'fr') targetARUrl += `&lang=fr`;
       } else {
         targetARUrl = `${baseOrigin}/apps/ar-viewer/index.html?lang=${currentLang}&url=${encodeURIComponent(baseOrDirectUrl)}`;
       }
@@ -1781,7 +1790,7 @@
       const offlineDataUrl = renderQRDataUrlOffline(targetARUrl);
       qrLoading.style.display = 'none';
       qrCodeImg.style.display = 'block';
-      qrCodeImg.src = offlineDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetARUrl)}&color=06b6d4&bgcolor=111827`;
+      qrCodeImg.src = offlineDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=16&data=${encodeURIComponent(targetARUrl)}&color=000000&bgcolor=ffffff`;
 
       if (qrProviderPill && providerName) {
         const labels = {
@@ -1830,7 +1839,8 @@
           : `Preparing mobile QR (${formatBytes(file.size)})...`;
       }
 
-      const fileHash = await computeFileSha256(file);
+      const fullHash = await computeFileSha256(file);
+      const fileHash = fullHash ? fullHash.slice(0, 16) : '';
       if (fileHash && sessionShareCache.has(fileHash)) {
         const hit = sessionShareCache.get(fileHash);
         lastDirectDlUrl = hit.url;
@@ -1841,10 +1851,12 @@
 
       const baseHost = window.location.origin.includes('localhost') ? '' : window.location.origin;
       const isLocal = window.location.origin.includes('localhost') || window.location.protocol === 'file:';
+      const EDGE_LIMIT_BYTES = 4.6 * 1024 * 1024; // Netlify Edge CDN rejects POST > ~6 MB
+      const canUseEdge = !isLocal && file.size <= EDGE_LIMIT_BYTES;
       let result = null;
 
       // 1. Primary: Netlify Blobs edge endpoint (/api/ar-share) with zero-upload hash dedupe
-      if (!isLocal) {
+      if (canUseEdge) {
         try {
           if (fileHash) {
             const probe = await fetch(`${baseHost}/api/ar-share?exists=${fileHash}&name=${encodeURIComponent(fileName)}`, {
@@ -1858,12 +1870,12 @@
             }
           }
 
-          if (!result && file.size <= 42 * 1024 * 1024) {
+          if (!result) {
             const r = await fetch(`${baseHost}/api/ar-share?name=${encodeURIComponent(fileName)}${fileHash ? '&hash=' + fileHash : ''}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/octet-stream' },
               body: file,
-              signal: AbortSignal.timeout(30000)
+              signal: AbortSignal.timeout(45000)
             }).catch(() => null);
             if (r && r.ok) {
               const j = await r.json().catch(() => null);
@@ -1876,7 +1888,7 @@
       }
 
       // 2. Fallback: Fast hedged Edge proxy (/api/ar-proxy) — races Litterbox + Uguu + 0x0.st cleanly in 1 request
-      if (!result && !isLocal) {
+      if (!result && canUseEdge) {
         try {
           const fd = new FormData();
           fd.append('file', file, fileName);
@@ -1894,7 +1906,7 @@
         } catch (_) {}
       }
 
-      // 3. Final Direct fallback: Litterbox (has CORS *) — skips broken legacy catbox & CORS-blocked uguu direct
+      // 3. Direct CORS fallback: Litterbox (up to 1 GB; goes immediately here if file > 4.6 MB CDN Edge limit)
       if (!result) {
         try {
           const fd = new FormData();
@@ -1904,7 +1916,7 @@
           const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
             method: 'POST',
             body: fd,
-            signal: AbortSignal.timeout(30000)
+            signal: AbortSignal.timeout(file.size > EDGE_LIMIT_BYTES ? 90000 : 35000)
           }).catch(() => null);
           if (r && r.ok) {
             const txt = (await r.text()).trim();
