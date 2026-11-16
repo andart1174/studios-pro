@@ -1398,23 +1398,35 @@ function openInARViewer() {
     toast(App.lang === 'fr' ? '⚠️ Générez un modèle d\'abord' : '⚠️ Generate a model first', 'error');
     return;
   }
-  if (!window.StudiosProAR || typeof window.StudiosProAR.postOpenARViewer !== 'function') {
-    toast('⚠️ AR Bridge unavailable', 'error');
-    return;
-  }
   try {
     const opts4d = collectOpts4D();
     const glbBuf = Engine4D.buildGLB(App.lastResult, opts4d);
     const d = App.lastResult.dims;
-    window.StudiosProAR.postOpenARViewer({
+    const payload = {
       modelData: glbBuf,
       extension: 'glb',
       isBinary: true,
       name: `StudiosPro_${App.lastResult.shapeProfile}_4D.glb`,
-      placement: App.lastResult.shapeProfile === 'curved' ? 'floor' : 'wall',
+      placement: 'floor',
       dimensionsMm: { x: Math.round(d.x), y: Math.round(d.y), z: Math.round(d.z) },
       sourceStudio: 'new3d4d',
-    });
+    };
+
+    if (window.StudiosProAR && typeof window.StudiosProAR.sendModel === 'function') {
+      window.StudiosProAR.sendModel(payload);
+    } else if (typeof window.studiosProPostToHost === 'function' && window.parent && window.parent !== window) {
+      window.studiosProPostToHost({
+        type: 'OPEN_AR_VIEWER',
+        payload: {
+          transferId: 'new3d4d_' + Date.now().toString(36),
+          ...payload,
+          autoScale: 'auto',
+        },
+      });
+    } else {
+      toast('⚠️ AR Bridge unavailable', 'error');
+      return;
+    }
     toast(App.lang === 'fr' ? '📲 Ouverture dans AR Viewer…' : '📲 Launching in AR Viewer…', 'success');
   } catch (err) {
     toast('❌ AR launch failed: ' + err.message, 'error');
