@@ -209,23 +209,34 @@
         }
       }
 
-      // Normalize AR stage: centered in X/Z, grounded flush on Y=0
+      // Normalize AR stage into GLTF standard METERS: centered X/Z, flush on Y=0
+      // Wrapping inside arWrapper preserves any pre-existing rootNode rotation/scale cleanly
+      // and prevents <model-viewer> from shrink-rescaling >5m scenes after load (~1s vanish bug).
       rootNode.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(rootNode);
+      const arWrapper = new THREE.Group();
+      arWrapper.name = sourceModel.name || 'PolyMorph_AR_Root';
+      arWrapper.add(rootNode);
       if (!box.isEmpty()) {
+        const size = new THREE.Vector3();
         const center = new THREE.Vector3();
+        box.getSize(size);
         box.getCenter(center);
-        rootNode.position.x -= center.x;
-        rootNode.position.z -= center.z;
-        rootNode.position.y -= box.min.y;
-        rootNode.updateMatrixWorld(true);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        let arScale = maxDim > 5.0 ? 0.001 : 1.0;
+        const scaledMax = maxDim * arScale;
+        if (scaledMax < 0.03) arScale = 0.15 / maxDim;
+        else if (scaledMax > 2.5) arScale = 0.50 / maxDim;
+
+        arWrapper.scale.setScalar(arScale);
+        arWrapper.position.set(-center.x * arScale, -box.min.y * arScale, -center.z * arScale);
       }
 
-      exportScene.add(rootNode);
+      exportScene.add(arWrapper);
       exportScene.updateMatrixWorld(true);
       return {
         exportScene,
-        rootNode,
+        rootNode: arWrapper,
         cleanup: () => { tempDisposableGeos.forEach((g) => g.dispose()); }
       };
     }
