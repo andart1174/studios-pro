@@ -145,12 +145,67 @@ class Viewer3D {
     });
   }
 
+  _collectUsedResources(root, targetSet = new Set()) {
+    if (!root) return targetSet;
+    root.traverse((c) => {
+      if (c.geometry) targetSet.add(c.geometry);
+      if (c.material) {
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach((m) => {
+          if (!m) return;
+          targetSet.add(m);
+          ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap'].forEach((k) => {
+            if (m[k]) targetSet.add(m[k]);
+          });
+        });
+      }
+      if (c.userData && c.userData.originalMaterial) {
+        const om = Array.isArray(c.userData.originalMaterial) ? c.userData.originalMaterial : [c.userData.originalMaterial];
+        om.forEach((m) => { if (m) targetSet.add(m); });
+      }
+    });
+    return targetSet;
+  }
+
+  _disposeUnusedObject(root, keepObjects = []) {
+    if (!root) return;
+    const keep = new Set();
+    keepObjects.forEach((obj) => this._collectUsedResources(obj, keep));
+    const disposed = new Set();
+    root.traverse((c) => {
+      if (c.geometry && !keep.has(c.geometry) && !disposed.has(c.geometry)) {
+        disposed.add(c.geometry);
+        c.geometry.dispose();
+      }
+      if (c.material) {
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach((m) => {
+          if (!m || keep.has(m) || disposed.has(m)) return;
+          ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap'].forEach((k) => {
+            if (m[k] && !keep.has(m[k]) && !disposed.has(m[k])) {
+              disposed.add(m[k]);
+              m[k].dispose();
+            }
+          });
+          disposed.add(m);
+          m.dispose();
+        });
+      }
+    });
+  }
+
   setModel(object3D) {
-    if (this.currentModel) {
-      this.scene.remove(this.currentModel);
+    const prevModel = this.currentModel;
+    if (prevModel) {
+      this.scene.remove(prevModel);
+      if (prevModel !== object3D) {
+        const backup = (typeof window !== 'undefined' && window.__polymorphOriginalBackup) ? window.__polymorphOriginalBackup : null;
+        this._disposeUnusedObject(prevModel, [object3D, backup]);
+      }
     }
     if (this.wireframeOverlayMesh) {
       this.scene.remove(this.wireframeOverlayMesh);
+      this._disposeUnusedObject(this.wireframeOverlayMesh, []);
       this.wireframeOverlayMesh = null;
     }
 
@@ -160,7 +215,9 @@ class Viewer3D {
     // Save original materials
     this.currentModel.traverse((child) => {
       if (child.isMesh) {
-        child.userData.originalMaterial = child.material;
+        if (!child.userData.originalMaterial) {
+          child.userData.originalMaterial = child.material;
+        }
         child.castShadow = true;
         child.receiveShadow = true;
       }
@@ -254,6 +311,7 @@ class Viewer3D {
     if (!enabled) {
       if (this.wireframeOverlayMesh) {
         this.scene.remove(this.wireframeOverlayMesh);
+        this._disposeUnusedObject(this.wireframeOverlayMesh, []);
         this.wireframeOverlayMesh = null;
       }
       return;
@@ -261,6 +319,8 @@ class Viewer3D {
 
     if (this.wireframeOverlayMesh) {
       this.scene.remove(this.wireframeOverlayMesh);
+      this._disposeUnusedObject(this.wireframeOverlayMesh, []);
+      this.wireframeOverlayMesh = null;
     }
 
     const wireframeGroup = new THREE.Group();

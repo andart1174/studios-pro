@@ -77,15 +77,56 @@
       metalness: 0.9
     });
 
+    function mergeGroupByMaterial(group) {
+      var buckets = new Map();
+      var removeList = [];
+      group.updateMatrixWorld(true);
+      group.traverse(function (c) {
+        if (c.isMesh && c.geometry && c.geometry.attributes && c.geometry.attributes.position) {
+          var k = c.material ? c.material.uuid : 'default';
+          if (!buckets.has(k)) buckets.set(k, { mat: c.material || fMat, meshes: [] });
+          buckets.get(k).meshes.push(c);
+          removeList.push(c);
+        }
+      });
+      if (removeList.length <= 2) return;
+      removeList.forEach(function (m) { if (m.parent) m.parent.remove(m); });
+      buckets.forEach(function (bucket) {
+        var totalVerts = 0;
+        var geos = bucket.meshes.map(function (m) {
+          m.updateMatrixWorld(true);
+          var g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+          g.applyMatrix4(m.matrixWorld);
+          if (!g.attributes.normal) g.computeVertexNormals();
+          totalVerts += g.attributes.position.count;
+          return g;
+        });
+        var pos = new Float32Array(totalVerts * 3);
+        var norm = new Float32Array(totalVerts * 3);
+        var off = 0;
+        geos.forEach(function (g) {
+          pos.set(g.attributes.position.array, off * 3);
+          if (g.attributes.normal) norm.set(g.attributes.normal.array, off * 3);
+          off += g.attributes.position.count;
+          g.dispose();
+        });
+        var merged = new T.BufferGeometry();
+        merged.setAttribute('position', new T.BufferAttribute(pos, 3));
+        merged.setAttribute('normal', new T.BufferAttribute(norm, 3));
+        group.add(new T.Mesh(merged, bucket.mat));
+      });
+    }
+
     // ── 1. 3D SIERPINSKI TETRAHEDRON ────────────────────────────────────────
     if (type === 'sierpinski') {
-      var tetraGeo = new T.TetrahedronGeometry(size / 2.0);
+      var effectiveDepth = Math.max(depth, 4); // At least 64 solids (256+ sharp tris) for crisp studio detail
+      var tetraGeo = new T.TetrahedronGeometry(size / 2.0, 0);
 
       function subdivideTetra(center, curSize, curLevel) {
-        if (curLevel >= depth) {
-          var tMesh = new T.Mesh(tetraGeo, fMat);
+        if (curLevel >= effectiveDepth) {
+          var tMesh = new T.Mesh(tetraGeo, ((curLevel + Math.round(center.x)) % 3 === 0) ? accentMat : fMat);
           tMesh.position.copy(center);
-          tMesh.scale.setScalar(curSize / (size / 2.0));
+          tMesh.scale.setScalar((curSize / (size / 2.0)) * 1.03); // 3% overlap avoids floating edge gaps for slicing
           if (twist > 0) {
             tMesh.rotation.y = (center.y / size) * (twist * Math.PI / 180);
           }
@@ -109,6 +150,7 @@
       }
 
       subdivideTetra(new T.Vector3(0, size / 2, 0), size / 2.0, 1);
+      tetraGeo.dispose();
 
     // ── 2. 3D MENGER SPONGE ────────────────────────────────────────────────
     } else if (type === 'menger') {
@@ -217,7 +259,8 @@
       grp.add(cageMesh);
     }
 
-    // Auto-center and ground at Y=0
+    // Consolidate multi-part fractals into <= 2 draw calls & ground at Y=0
+    mergeGroupByMaterial(grp);
     grp.updateMatrixWorld(true);
     var box = new T.Box3().setFromObject(grp);
     var cen = new T.Vector3();

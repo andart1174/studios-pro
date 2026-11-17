@@ -1371,8 +1371,8 @@
               </button>
             </div>
 
-            <button type="button" id="btn-quick-photo-ar-qr" class="btn btn-secondary btn-block" style="border-color: rgba(0, 240, 255, 0.35);">
-              <span>📱</span> <span data-i18n="btnOpenArQR">View in AR & Online Platforms</span>
+            <button type="button" id="btn-quick-photo-ar-qr" class="btn btn-secondary btn-block" style="border-color: rgba(0, 240, 255, 0.45); color: var(--accent-cyan); font-weight: 600;">
+              <span>📱</span> <span data-i18n="btnOpenArQR">Launch AR Viewer &amp; Live Phone QR</span>
             </button>
           </div>
         </div>
@@ -1962,8 +1962,12 @@
 
           <!-- Complete AR Export Suite (Offline & Online) -->
           <div class="control-group" style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: var(--radius-sm); padding: 8px; margin-top: 10px;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan);">📲 Export for AR Visualization on Phone:</span>
-            
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan);">📲 Export &amp; Live AR Camera (Phone + QR):</span>
+
+            <button type="button" id="btn-launch-internal-ar" class="btn btn-primary btn-block" style="margin-top: 6px; background: linear-gradient(135deg, #06b6d4, #2563eb); border: none; font-weight: 700;">
+              <span>📱</span> <span>Open in AR Viewer (Instant QR &amp; Camera)</span>
+            </button>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
               <button type="button" id="btn-export-ar-glb" class="btn btn-secondary btn-sm" style="border-color: rgba(0, 240, 255, 0.4); color: var(--accent-cyan); font-weight: 600;">
                 <span>📥</span> <span>Export (.GLB) Android/Web</span>
@@ -3279,6 +3283,13 @@
             <div class="dropzone-title" data-i18n="portraitDropzoneTitle">Drop Face Photo</div>
             <div class="dropzone-subtitle" data-i18n="portraitDropzoneSubtitle">JPG, PNG, WebP — front-facing works best</div>
             <input type="file" id="portrait-file-input" accept="image/*" style="display: none;">
+          </div>
+
+          <!-- 1-Click Offline Demo Portraits -->
+          <div style="display: flex; gap: 4px; margin-top: -2px; margin-bottom: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm portrait-demo-btn" data-demo="classical" style="flex: 1; font-size: 0.68rem; padding: 4px;">🏛️ Classical Bust</button>
+            <button type="button" class="btn btn-secondary btn-sm portrait-demo-btn" data-demo="emperor" style="flex: 1; font-size: 0.68rem; padding: 4px;">🪙 Coin Profile</button>
+            <button type="button" class="btn btn-secondary btn-sm portrait-demo-btn" data-demo="modern" style="flex: 1; font-size: 0.68rem; padding: 4px;">👤 Studio Portrait</button>
           </div>
 
           <!-- Preview -->
@@ -4625,7 +4636,7 @@
           <div class="control-group">
             <div class="control-label">
               <span data-i18n="reliefDepthLabel">Relief Minting Depth</span>
-              <span id="relief-depth-val" class="control-label-value">3.0mm</span>
+              <span id="basrelief-depth-val" class="control-label-value">3.0mm</span>
             </div>
             <input type="range" id="relief-depth-slider" min="0.8" max="8.0" step="0.2" value="3.0" data-unit="mm">
           </div>
@@ -5186,6 +5197,8 @@
               <option value="tensegrity" data-i18n="illusionTypeTensegrity">🏗️ Tensegrity Anti-Gravity Floating Structure</option>
               <option value="penrose" data-i18n="illusionTypePenrose">📐 Penrose Impossible Triangle</option>
               <option value="moire" data-i18n="illusionTypeMoire">🌀 Moiré Dynamic Interference Discs</option>
+              <option value="sundial">☀️ 3D Digital Sundial (Solar Projection)</option>
+              <option value="ambiguous_arch">🏛️ Sugihara Ambiguous Arch &amp; Columns</option>
             </select>
           </div>
 
@@ -5684,6 +5697,7 @@
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <button type="button" id="quick-launch-ar" class="btn btn-primary btn-sm" style="grid-column: span 2; background: linear-gradient(135deg, #06b6d4, #2563eb); border: none; font-weight: 700;">📱 View in AR (Phone Camera + QR)</button>
             <button type="button" id="quick-export-glb" class="btn btn-primary btn-sm" data-i18n="btnExportGLB">Export GLB</button>
             <button type="button" id="quick-export-stl" class="btn btn-secondary btn-sm" data-i18n="btnExportSTL">Export STL</button>
             <button type="button" id="quick-export-3mf" class="btn btn-secondary btn-sm" style="border-color: rgba(0, 240, 255, 0.35);" title="3D Manufacturing Format (Bambu/Prusa)" data-i18n="btnExport3MF">Export 3MF</button>
@@ -5714,8 +5728,11 @@
 
       <!-- Step 1: Export AR File -->
       <div style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+        <button type="button" id="btn-modal-launch-ar" class="btn btn-primary btn-block" style="margin-bottom: 10px; background: linear-gradient(135deg, #06b6d4, #2563eb); border: none; font-weight: 700;">
+          <span>🚀</span> <span>Launch Built-in AR Viewer (Cloud Share QR)</span>
+        </button>
         <div style="font-weight: 700; font-size: 0.82rem; color: var(--accent-cyan); margin-bottom: 4px;">
-          1️⃣ <span data-i18n="arStep1Title">Export Calibrated AR 3D File</span>
+          1️⃣ <span data-i18n="arStep1Title">Or Export Calibrated AR 3D File</span>
         </div>
         <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 8px 0;" data-i18n="arStep1Desc">
           Download the 3D model with baked 100% HD textures & real-world scale:
@@ -5826,7 +5843,8 @@
   <script src="js/boardGameEngine.js?v=35.0"></script>
   <script src="js/horologyEngine.js?v=35.0"></script>
   <script src="js/artifactEngine.js?v=35.0"></script>
-  <!-- GROUNDBREAKING COMPARTMENT ENGINES (Illusion 3D, GridMaster) -->
+  <!-- GROUNDBREAKING COMPARTMENT ENGINES (Optics 3D, Illusion 3D, GridMaster) -->
+  <script src="js/opticsEngine.js?v=35.0"></script>
   <script src="js/illusionEngine.js?v=35.0"></script>
   <script src="js/gridmasterEngine.js?v=35.0"></script>
 

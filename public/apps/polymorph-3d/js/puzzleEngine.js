@@ -620,32 +620,81 @@ class PuzzleEngine {
       bomCounts.totalStuds += 1;
     });
 
-    // 4. Build Three.js Mesh Group
+    // 4. Build Three.js Mesh Group (Merged per layer & color bucket to avoid 1,800+ draw calls)
     const brickGroup = new THREE.Group();
     brickGroup.name = `${opt.system}_SculptureGroup`;
     const singleBrickGeo = this.getBrickSystemGeometry(opt.system, unitSize);
+    const baseTemplate = singleBrickGeo.index ? singleBrickGeo.toNonIndexed() : singleBrickGeo;
+    const basePos = baseTemplate.attributes.position.array;
+    const baseNorm = baseTemplate.attributes.normal ? baseTemplate.attributes.normal.array : null;
+    const baseUv = baseTemplate.attributes.uv ? baseTemplate.attributes.uv.array : null;
+    const baseVertCount = baseTemplate.attributes.position.count;
     const layerKeys = Array.from(layers.keys()).sort((a, b) => a - b);
 
     layerKeys.forEach(layerNum => {
       const layerGroup = new THREE.Group();
       layerGroup.name = `Brick_Layer_${layerNum}`;
 
+      // Group layer bricks by color hex (max ~9 draw calls per layer instead of hundreds)
+      const byColor = new Map();
       layers.get(layerNum).forEach(brick => {
+        if (!byColor.has(brick.colorHex)) byColor.set(brick.colorHex, []);
+        byColor.get(brick.colorHex).push(brick);
+      });
+
+      byColor.forEach((colorBricks, hex) => {
+        const count = colorBricks.length;
+        const posArr = new Float32Array(count * baseVertCount * 3);
+        const normArr = baseNorm ? new Float32Array(count * baseVertCount * 3) : null;
+        const uvArr = baseUv ? new Float32Array(count * baseVertCount * 2) : null;
+
+        for (let bIdx = 0; bIdx < count; bIdx++) {
+          const brick = colorBricks[bIdx];
+          const ox = brick.pos.x, oy = brick.pos.y, oz = brick.pos.z;
+          const vBase = bIdx * baseVertCount;
+
+          for (let v = 0; v < baseVertCount; v++) {
+            const p3 = (vBase + v) * 3;
+            const s3 = v * 3;
+            posArr[p3] = basePos[s3] + ox;
+            posArr[p3 + 1] = basePos[s3 + 1] + oy;
+            posArr[p3 + 2] = basePos[s3 + 2] + oz;
+            if (normArr) {
+              normArr[p3] = baseNorm[s3];
+              normArr[p3 + 1] = baseNorm[s3 + 1];
+              normArr[p3 + 2] = baseNorm[s3 + 2];
+            }
+            if (uvArr) {
+              const p2 = (vBase + v) * 2;
+              const s2 = v * 2;
+              uvArr[p2] = baseUv[s2];
+              uvArr[p2 + 1] = baseUv[s2 + 1];
+            }
+          }
+        }
+
+        const mergedGeo = new THREE.BufferGeometry();
+        mergedGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        if (normArr) mergedGeo.setAttribute('normal', new THREE.BufferAttribute(normArr, 3));
+        else mergedGeo.computeVertexNormals();
+        if (uvArr) mergedGeo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+
         const mat = new THREE.MeshStandardMaterial({
-          color: brick.colorHex,
+          color: hex,
           roughness: 0.25,
           metalness: 0.1,
           side: THREE.DoubleSide
         });
-        const mesh = new THREE.Mesh(singleBrickGeo, mat);
-        mesh.position.copy(brick.pos);
-        mesh.userData = { brickId: brick.id, layer: layerNum };
-
+        const mesh = new THREE.Mesh(mergedGeo, mat);
+        mesh.userData = { layer: layerNum, brickCount: count };
         layerGroup.add(mesh);
       });
 
       brickGroup.add(layerGroup);
     });
+
+    if (baseTemplate !== singleBrickGeo) baseTemplate.dispose();
+    singleBrickGeo.dispose();
 
     // 5. Pre-generate the 100% Solid Watertight Merged Geometry for 3D Export
     const solidMergedGeometry = this.generateMergedSculptureGeometry(bricks, opt.system, unitSize);

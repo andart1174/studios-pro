@@ -146,8 +146,8 @@ const AREngine = (function () {
     const halfW = stageW / 2;
     const centerZ = -stageD / 2;
 
-    const wallMat = createMat(wallColor, 0.85, 0.1);
-    const floorMat = createMat(floorColor, 0.7, 0.2);
+    const wallMat = createMat(wallColor, 0.85, 0.1, { side: THREE.DoubleSide });
+    const floorMat = createMat(floorColor, 0.7, 0.2, { side: THREE.DoubleSide });
 
     // Back wall plane (z = -320)
     const backGeo = new THREE.PlaneGeometry(stageW, stageH);

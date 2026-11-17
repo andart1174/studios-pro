@@ -773,13 +773,34 @@ class ModelConverters {
   document.getElementById('bReset').addEventListener('click', function() { if(loadedModel) fitCam(loadedModel); });
   document.getElementById('bFit').addEventListener('click', function() { if(loadedModel) fitCam(loadedModel); });
 
-  // AR
+  // AR (Built-in <model-viewer> WebXR / QuickLook from embedded GLB)
   document.getElementById('bAR').addEventListener('click', function() {
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-      alert('iOS AR Quick Look:\\n\\n1. Download the .USDZ file from PolyMorph 3D Studio\\n2. Send via AirDrop or iCloud\\n3. Tap to open in native AR camera!');
-    } else {
-      window.open('https://modelviewer.dev/editor/', '_blank');
+    if (!GLB_B64 || GLB_B64.length < 24) {
+      alert('No binary GLB embedded in this HTML file.');
+      return;
     }
+    if (!window.__mvLoaded) {
+      var s = document.createElement('script');
+      s.type = 'module';
+      s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
+      document.head.appendChild(s);
+      window.__mvLoaded = true;
+    }
+    var bin = atob(GLB_B64), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'model/gltf-binary' }));
+    var ov = document.getElementById('ar-inline-overlay');
+    if (ov) ov.remove();
+    ov = document.createElement('div');
+    ov.id = 'ar-inline-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(11,15,25,0.96);display:flex;flex-direction:column;';
+    ov.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #1e293b;color:#f8fafc;font-size:13px;">' +
+      '<span>Mobile AR Preview (WebXR / SceneViewer / QuickLook)</span>' +
+      '<button id="ar-ov-close" style="background:#1e293b;color:#fff;border:1px solid #334155;border-radius:6px;padding:4px 10px;cursor:pointer;">✕ Close</button></div>' +
+      '<model-viewer src="' + blobUrl + '" ar ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate style="width:100%;flex:1;background:#0b0f19;">' +
+      '<button slot="ar-button" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:#06b6d4;color:#020617;border:none;border-radius:999px;padding:12px 24px;font-weight:700;cursor:pointer;">📱 Activate AR Camera</button></model-viewer>';
+    document.body.appendChild(ov);
+    document.getElementById('ar-ov-close').onclick = function() { URL.revokeObjectURL(blobUrl); ov.remove(); };
   });
 
   // Lighting presets
@@ -837,10 +858,21 @@ class ModelConverters {
       throw new Error("No 3D meshes found in scene to export as 3MF.");
     }
 
-    // Collect distinct colors
+    const escXml = (s) => String(s || 'model').replace(/[<>&'"]/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[ch]));
+
+    // Palette deduplication supporting both material colors and quantized per-triangle vertex colors
     const colorMap = new Map();
     const colorsList = [];
-    function getColorId(mesh) {
+    function registerColorHex(hex) {
+      const cleanHex = (hex || '#D4D8DF').toUpperCase();
+      if (!colorMap.has(cleanHex)) {
+        colorsList.push(cleanHex);
+        colorMap.set(cleanHex, colorsList.length - 1);
+      }
+      return colorMap.get(cleanHex);
+    }
+
+    function getMeshDefaultColorIdx(mesh) {
       let hex = '#D4D8DF';
       const mat = mesh.material;
       if (mat) {
@@ -849,40 +881,74 @@ class ModelConverters {
           hex = '#' + mColor.getHexString().toUpperCase();
         }
       }
-      if (!colorMap.has(hex)) {
-        colorsList.push(hex);
-        colorMap.set(hex, colorsList.length - 1);
-      }
-      return colorMap.get(hex);
+      return registerColorHex(hex);
     }
+
+    const toQuantizedHex = (r, g, b) => {
+      const q = (v) => Math.max(0, Math.min(255, Math.round((v * 255) / 24) * 24));
+      return '#' + [q(r), q(g), q(b)].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
+    };
 
     const objectsXml = [];
     const buildItemsXml = [];
 
     meshes.forEach((mesh, mIdx) => {
       const objId = mIdx + 1;
-      const colIdx = getColorId(mesh);
-      let geo = mesh.geometry;
-      if (geo.index) geo = geo.toNonIndexed();
+      const defaultColIdx = getMeshDefaultColorIdx(mesh);
+      const geo = mesh.geometry;
       const pos = geo.attributes.position;
       if (!pos || pos.count < 3) return;
+
+      const idxAttr = geo.index;
+      const colAttr = geo.attributes.color;
+      const triCount = idxAttr ? Math.floor(idxAttr.count / 3) : Math.floor(pos.count / 3);
+      if (triCount === 0) return;
 
       mesh.updateWorldMatrix(true, false);
       const worldMat = mesh.matrixWorld;
 
+      // Spatial vertex welding (reduces file size by ~65-75% and produces watertight shared indices)
+      const vertMap = new Map();
       const vertices = [];
       const triangles = [];
       const vTemp = new THREE.Vector3();
 
-      for (let i = 0; i < pos.count; i += 3) {
-        for (let k = 0; k < 3; k++) {
-          vTemp.set(pos.getX(i + k), pos.getY(i + k), pos.getZ(i + k)).applyMatrix4(worldMat);
-          vertices.push(`        <vertex x="${vTemp.x.toFixed(4)}" y="${vTemp.y.toFixed(4)}" z="${vTemp.z.toFixed(4)}" />`);
-        }
-        triangles.push(`        <triangle v1="${i}" v2="${i + 1}" v3="${i + 2}" pid="1" p1="${colIdx}" />`);
+      function addWeldedVertex(rawIdx) {
+        vTemp.set(pos.getX(rawIdx), pos.getY(rawIdx), pos.getZ(rawIdx)).applyMatrix4(worldMat);
+        const qx = Math.round(vTemp.x * 10000);
+        const qy = Math.round(vTemp.y * 10000);
+        const qz = Math.round(vTemp.z * 10000);
+        const key = `${qx},${qy},${qz}`;
+        if (vertMap.has(key)) return vertMap.get(key);
+        const newIdx = vertices.length;
+        vertMap.set(key, newIdx);
+        vertices.push(`        <vertex x="${(qx / 10000).toFixed(4)}" y="${(qy / 10000).toFixed(4)}" z="${(qz / 10000).toFixed(4)}" />`);
+        return newIdx;
       }
 
-      objectsXml.push(`    <object id="${objId}" name="${mesh.name || 'Part_' + objId}" type="model">
+      for (let t = 0; t < triCount; t++) {
+        const r0 = idxAttr ? idxAttr.getX(t * 3) : (t * 3);
+        const r1 = idxAttr ? idxAttr.getX(t * 3 + 1) : (t * 3 + 1);
+        const r2 = idxAttr ? idxAttr.getX(t * 3 + 2) : (t * 3 + 2);
+
+        const v1 = addWeldedVertex(r0);
+        const v2 = addWeldedVertex(r1);
+        const v3 = addWeldedVertex(r2);
+        if (v1 === v2 || v2 === v3 || v1 === v3) continue;
+
+        let triColIdx = defaultColIdx;
+        if (colAttr) {
+          const avgR = (colAttr.getX(r0) + colAttr.getX(r1) + colAttr.getX(r2)) / 3;
+          const avgG = (colAttr.getY(r0) + colAttr.getY(r1) + colAttr.getY(r2)) / 3;
+          const avgB = (colAttr.getZ(r0) + colAttr.getZ(r1) + colAttr.getZ(r2)) / 3;
+          triColIdx = registerColorHex(toQuantizedHex(avgR, avgG, avgB));
+        }
+        triangles.push(`        <triangle v1="${v1}" v2="${v2}" v3="${v3}" pid="1" p1="${triColIdx}" />`);
+      }
+
+      if (vertices.length < 3 || triangles.length === 0) return;
+
+      objectsXml.push(`    <object id="${objId}" name="${escXml(mesh.name || 'Part_' + objId)}" type="model">
       <mesh>
         <vertices>
 ${vertices.join('\n')}
@@ -898,9 +964,21 @@ ${triangles.join('\n')}
 
     const colorsXml = colorsList.map(c => `      <m:color color="${c}" />`).join('\n');
 
+    // Optional live plate thumbnail from viewport WebGL canvas
+    let thumbB64 = null;
+    try {
+      const canvas = document.getElementById('webgl-canvas');
+      if (canvas && typeof canvas.toDataURL === 'function') {
+        const dataUrl = canvas.toDataURL('image/png');
+        if (dataUrl && dataUrl.startsWith('data:image/png;base64,') && dataUrl.length > 200) {
+          thumbB64 = dataUrl.split(',')[1];
+        }
+      }
+    } catch (e) {}
+
     const modelXml = `<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">
-  <metadata name="Title">${name}</metadata>
+  <metadata name="Title">${escXml(name)}</metadata>
   <metadata name="Application">PolyMorph 3D Studio Pro</metadata>
   <resources>
     <m:colorgroup id="1">
@@ -917,11 +995,13 @@ ${buildItemsXml.join('\n')}
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" />
   <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml" />
+  <Default Extension="png" ContentType="image/png" />
+  <Default Extension="config" ContentType="text/plain" />
 </Types>`;
 
     const rels = `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" />
+  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" />${thumbB64 ? '\n  <Relationship Target="/Metadata/plate_1.png" Id="rel-thumb" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail" />' : ''}
 </Relationships>`;
 
     if (window.JSZip) {
@@ -929,6 +1009,14 @@ ${buildItemsXml.join('\n')}
       zip.file('[Content_Types].xml', contentTypes);
       zip.folder('_rels').file('.rels', rels);
       zip.folder('3D').file('3dmodel.model', modelXml);
+      const meta = zip.folder('Metadata');
+      meta.file('project_settings.config', JSON.stringify({
+        generator: 'PolyMorph 3D Studio Pro',
+        filament_colour: colorsList.slice(0, 16)
+      }, null, 2));
+      if (thumbB64) {
+        meta.file('plate_1.png', thumbB64, { base64: true });
+      }
       return await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml' });
     } else {
       return new Blob([modelXml], { type: 'application/xml' });

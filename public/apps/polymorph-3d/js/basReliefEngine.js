@@ -566,7 +566,7 @@
   function init() {
     wireSlider('relief-diam-slider', 'relief-diam-val');
     wireSlider('relief-thick-slider', 'relief-thick-val');
-    wireSlider('relief-depth-slider', 'relief-depth-val');
+    wireSlider('relief-depth-slider', 'basrelief-depth-val');
 
     var shpSel = el('relief-shape-select');
     if (shpSel) shpSel.addEventListener('change', generateBasRelief);

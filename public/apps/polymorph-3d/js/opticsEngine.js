@@ -164,8 +164,8 @@ class OpticsEngine {
     bar2.position.set(0, 38, 18);
     group.add(bar1, bar2);
 
-    group.rotation.x = -Math.PI / 6;
-    group.rotation.y = Math.PI / 4;
+    // Align 45 deg for immediate dual-angle circle/square legibility while flat on print bed
+    group.rotation.set(0, Math.PI / 4, 0);
     return group;
   }
 

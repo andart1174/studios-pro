@@ -515,7 +515,12 @@
         else if (currentIllusionType === 'tensegrity') model = buildTensegrity(p);
         else if (currentIllusionType === 'penrose') model = buildPenroseTriangle(p);
         else if (currentIllusionType === 'moire') model = buildMoireDiscs(p);
-        else model = buildSugiharaCylinder(p);
+        else if (currentIllusionType === 'sundial' && window.OpticsEngine && typeof window.OpticsEngine.createDigitalSundial === 'function') {
+          var sd = window.OpticsEngine.createDigitalSundial({ size: p.scale, latitude: 45, timeHours: 12.5 });
+          model = (sd && sd.group) ? sd.group : sd;
+        } else if (currentIllusionType === 'ambiguous_arch' && window.OpticsEngine && typeof window.OpticsEngine.createAmbiguousArch === 'function') {
+          model = window.OpticsEngine.createAmbiguousArch({ color: 0x00f0ff });
+        } else model = buildSugiharaCylinder(p);
 
         if (model) {
           pushModel(model, 'Illusion_' + currentIllusionType);

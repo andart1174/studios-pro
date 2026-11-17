@@ -694,12 +694,29 @@
     return 4;
   }
 
-  function loadTileImage(url) {
+  function loadTileImage(url, timeoutMs) {
     return new Promise(function(resolve, reject) {
+      var done = false;
       var img = new Image();
       img.crossOrigin = 'anonymous';
-      img.onload = function() { resolve(img); };
-      img.onerror = function(err) { reject(err); };
+      var timer = setTimeout(function() {
+        if (done) return;
+        done = true;
+        img.src = '';
+        reject(new Error('Tile fetch timeout'));
+      }, timeoutMs || 3500);
+      img.onload = function() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(img);
+      };
+      img.onerror = function(err) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(err || new Error('Tile load failed'));
+      };
       img.src = url;
     });
   }
@@ -909,6 +926,7 @@
     var texCtx = texCanvas.getContext('2d');
 
     var demPromises = [], texPromises = [];
+    var demSuccessCount = 0;
 
     for (var tx = minTileX; tx <= maxTileX; tx++) {
       for (var ty = minTileY; ty <= maxTileY; ty++) {
@@ -918,9 +936,10 @@
 
           var demUrl = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + zoom + '/' + tileX + '/' + tileY + '.png';
           demPromises.push(
-            loadTileImage(demUrl).then(function(img) {
+            loadTileImage(demUrl, 3500).then(function(img) {
               demCtx.drawImage(img, dx, dy);
-            }).catch(function(e) {
+              demSuccessCount++;
+            }).catch(function() {
               console.warn('DEM tile fetch fallback:', tileX, tileY);
             })
           );
@@ -928,18 +947,18 @@
           if (textureType === 'satellite' || !textureType) {
             var satUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + zoom + '/' + tileY + '/' + tileX;
             texPromises.push(
-              loadTileImage(satUrl).then(function(img) {
+              loadTileImage(satUrl, 3500).then(function(img) {
                 texCtx.drawImage(img, dx, dy);
-              }).catch(function(e) {
+              }).catch(function() {
                 console.warn('Satellite tile fetch fallback:', tileX, tileY);
               })
             );
           } else if (textureType === 'topo') {
             var topoUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/' + zoom + '/' + tileX + '/' + tileY + '.png';
             texPromises.push(
-              loadTileImage(topoUrl).then(function(img) {
+              loadTileImage(topoUrl, 3500).then(function(img) {
                 texCtx.drawImage(img, dx, dy);
-              }).catch(function(e) {
+              }).catch(function() {
                 console.warn('Topo tile fetch fallback:', tileX, tileY);
               })
             );
@@ -949,6 +968,9 @@
     }
 
     await Promise.all(demPromises);
+    if (demSuccessCount === 0) {
+      throw new Error('No external DEM elevation tiles reachable; activating procedural alpine fallback.');
+    }
     if (textureType === 'satellite' || textureType === 'topo' || !textureType) {
       await Promise.all(texPromises);
     }
@@ -1015,14 +1037,17 @@
     };
   }
 
-  function syntheticRealisticHeightmap(res, seed) {
+  function syntheticRealisticHeightmap(res, seed, latVal, lonVal) {
     var data = new Float32Array(res * res);
     var minE = Infinity, maxE = -Infinity;
     for (var y = 0; y < res; y++) {
       for (var x = 0; x < res; x++) {
-        var nx = x / res * 3, ny = y / res * 3;
-        var val = (Math.sin(nx * 3 + seed) + Math.cos(ny * 3 + seed)) * 0.5 + 0.5;
-        var elev = val * 400;
+        var nx = (x / res - 0.5) * 4.0, ny = (y / res - 0.5) * 4.0;
+        var dist = Math.hypot(nx, ny);
+        var ridge1 = 1.0 - Math.abs(Math.sin(nx * 2.1 + seed) * Math.cos(ny * 2.3 + seed * 0.7));
+        var ridge2 = 0.5 * (1.0 - Math.abs(Math.sin(nx * 4.8 - ny * 3.1 + seed)));
+        var peak = Math.max(0, 1.0 - dist * 0.48) * 1.45;
+        var elev = Math.max(20, (ridge1 * 0.55 + ridge2 * 0.35 + peak) * 1250);
         data[y * res + x] = elev;
         if (elev < minE) minE = elev;
         if (elev > maxE) maxE = elev;
@@ -1031,9 +1056,21 @@
     var texC = document.createElement('canvas');
     texC.width = texC.height = 1024;
     var ctx = texC.getContext('2d');
-    ctx.fillStyle = '#2d6a4f';
-    ctx.fillRect(0, 0, 1024, 1024);
-    return { elevations: data, minElev: minE, maxElev: maxE, textureCanvas: texC, lat: 45, lon: -73, areaKm: 20, countryKey: null, bounds: { minLat: 45.4, maxLat: 45.6, minLon: -73.7, maxLon: -73.4 } };
+    renderProceduralColormap(ctx, 1024, data, res, minE, maxE, 'elevation');
+    drawContourLines(ctx, data, res, minE, maxE, 1024);
+    var useLat = (typeof latVal === 'number' && !isNaN(latVal)) ? latVal : 45.8326;
+    var useLon = (typeof lonVal === 'number' && !isNaN(lonVal)) ? lonVal : 6.8652;
+    return {
+      elevations: data,
+      minElev: minE,
+      maxElev: maxE,
+      textureCanvas: texC,
+      lat: useLat,
+      lon: useLon,
+      areaKm: 20,
+      countryKey: null,
+      bounds: { minLat: useLat - 0.09, maxLat: useLat + 0.09, minLon: useLon - 0.12, maxLon: useLon + 0.12 }
+    };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -3367,8 +3404,13 @@
     var lon = (terrainLon !== null) ? terrainLon : (lonIn ? parseFloat(lonIn.value) : null);
 
     if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
-      showMsg('Please enter a location name or GPS coordinates first.', 'warning');
-      return;
+      lat = 45.8326;
+      lon = 6.8652;
+      terrainLat = lat;
+      terrainLon = lon;
+      terrainLocationLabel = terrainLocationLabel || 'Mont Blanc, Alps';
+      if (latIn) latIn.value = String(lat);
+      if (lonIn) lonIn.value = String(lon);
     }
 
     var areaKm = parseFloat((el('terrain-area-select') || {}).value || 20);
@@ -3402,9 +3444,9 @@
       currentElevData = elevData;
     } catch (e) {
       console.warn('Real terrain fetch failed, using fallback:', e);
-      showMsg((window.I18N && I18N.t) ? I18N.t('toastTerrainError') : 'Using synthetic heightmap.', 'warning');
+      showMsg((window.I18N && I18N.t) ? I18N.t('toastTerrainError') : 'Using offline procedural alpine relief.', 'info');
       var seed = Math.abs((lat * 73 + lon * 137)) % 1000;
-      elevData = syntheticRealisticHeightmap(res, seed);
+      elevData = syntheticRealisticHeightmap(res, seed, lat, lon);
       currentElevData = elevData;
     }
 
@@ -3661,7 +3703,7 @@
         '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n' +
         '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n' +
-        '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodelxml"/>\n' +
+        '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n' +
         '</Types>'
       );
 

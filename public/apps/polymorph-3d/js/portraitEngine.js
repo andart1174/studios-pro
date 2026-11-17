@@ -781,12 +781,107 @@
     return grp;
   }
 
+  function createDemoPortraitCanvas(preset) {
+    var c = document.createElement('canvas');
+    c.width = c.height = 256;
+    var ctx = c.getContext('2d');
+    // Dark studio backdrop so head elevation dominates depthmap cleanly
+    var bgGrad = ctx.createRadialGradient(128, 128, 30, 128, 128, 130);
+    bgGrad.addColorStop(0, preset === 'emperor' ? '#24221d' : '#181e29');
+    bgGrad.addColorStop(1, '#090b10');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 256, 256);
+
+    var skinTone = preset === 'emperor' ? [230, 200, 145] : (preset === 'modern' ? [235, 220, 210] : [248, 248, 250]);
+    var hi = 'rgb(' + skinTone.join(',') + ')';
+    var mid = 'rgb(' + skinTone.map(function (v) { return Math.round(v * 0.72); }).join(',') + ')';
+    var low = 'rgb(' + skinTone.map(function (v) { return Math.round(v * 0.42); }).join(',') + ')';
+
+    // Shoulders & neck pedestal
+    var shGrad = ctx.createLinearGradient(0, 175, 0, 252);
+    shGrad.addColorStop(0, mid);
+    shGrad.addColorStop(1, low);
+    ctx.fillStyle = shGrad;
+    ctx.beginPath();
+    ctx.ellipse(128, 232, 74, 42, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(108, 152, 40, 48);
+
+    // Cranial oval dome
+    var headGrad = ctx.createRadialGradient(124, 108, 10, 128, 114, 72);
+    headGrad.addColorStop(0, hi);
+    headGrad.addColorStop(0.65, mid);
+    headGrad.addColorStop(1, low);
+    ctx.fillStyle = headGrad;
+    ctx.beginPath();
+    ctx.ellipse(128, 112, 48, 62, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sculpted hair / laurel crown
+    ctx.fillStyle = low;
+    ctx.beginPath();
+    ctx.ellipse(128, 66, 46, 24, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    if (preset === 'emperor') {
+      ctx.strokeStyle = hi;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(128, 86, 48, Math.PI * 1.12, Math.PI * 1.88);
+      ctx.stroke();
+    }
+
+    // Facial landmarks: brow ridge, orbital sockets, nose bridge, cheekbones, lips
+    ctx.fillStyle = low;
+    ctx.beginPath();
+    ctx.ellipse(106, 104, 11, 6, -0.08, 0, Math.PI * 2);
+    ctx.ellipse(150, 104, 11, 6, 0.08, 0, Math.PI * 2);
+    ctx.fill();
+
+    var noseGrad = ctx.createLinearGradient(118, 96, 138, 132);
+    noseGrad.addColorStop(0, hi);
+    noseGrad.addColorStop(1, mid);
+    ctx.fillStyle = noseGrad;
+    ctx.beginPath();
+    ctx.moveTo(128, 94);
+    ctx.lineTo(136, 130);
+    ctx.lineTo(120, 130);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lips
+    ctx.fillStyle = mid;
+    ctx.beginPath();
+    ctx.ellipse(128, 146, 15, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = hi;
+    ctx.beginPath();
+    ctx.ellipse(128, 144, 11, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    return c;
+  }
+
+  function loadDemoPortrait(preset, autoRun) {
+    var c = createDemoPortraitCanvas(preset || 'classical');
+    var dataUrl = c.toDataURL('image/png');
+    var img = new Image();
+    img.onload = function () {
+      portraitImgEl = img;
+      var p = el('portrait-preview-img'), cont = el('portrait-preview-container'), dz = el('portrait-dropzone');
+      if (p) p.src = dataUrl;
+      if (cont) cont.style.display = 'block';
+      if (dz) dz.style.display = 'none';
+      if (autoRun) generatePortrait();
+    };
+    img.src = dataUrl;
+  }
+
   // =========================================================================
   // 5. MASTER GENERATE & EXPORT CONTROLLER
   // =========================================================================
   function generatePortrait() {
     if (!portraitImgEl) {
-      showMsg((window.I18N && I18N.t) ? I18N.t('toastPortraitNoImg') : 'Please upload a face photo first.', 'warning');
+      loadDemoPortrait('classical', true);
       return;
     }
     setLoading(true, 'Sculpting Ultra HD 3D Portrait...');
@@ -893,6 +988,12 @@
         if (dz) dz.style.display = 'flex';
       });
     }
+
+    document.querySelectorAll('.portrait-demo-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        loadDemoPortrait(btn.dataset.demo || 'classical', true);
+      });
+    });
 
     var ms = el('portrait-mode-select');
     if (ms) { ms.addEventListener('change', updateModeUI); updateModeUI(); }

@@ -481,17 +481,26 @@ class CADInspector {
             grid.set(key, {
               sumX: x, sumY: y, sumZ: z,
               count: 1,
-              r: color ? color.getX(i) : 0.8,
-              g: color ? color.getY(i) : 0.8,
-              b: color ? color.getZ(i) : 0.8,
-              u: uv ? uv.getX(i) : 0,
-              v: uv ? uv.getY(i) : 0
+              sumR: color ? color.getX(i) : 0.8,
+              sumG: color ? color.getY(i) : 0.8,
+              sumB: color ? color.getZ(i) : 0.8,
+              sumU: uv ? uv.getX(i) : 0,
+              sumV: uv ? uv.getY(i) : 0
             });
           } else {
             const cell = grid.get(key);
             cell.sumX += x;
             cell.sumY += y;
             cell.sumZ += z;
+            if (color) {
+              cell.sumR += color.getX(i);
+              cell.sumG += color.getY(i);
+              cell.sumB += color.getZ(i);
+            }
+            if (uv) {
+              cell.sumU += uv.getX(i);
+              cell.sumV += uv.getY(i);
+            }
             cell.count++;
           }
         }
@@ -521,17 +530,17 @@ class CADInspector {
 
           if (color) {
             newColors.push(
-              c0.r, c0.g, c0.b,
-              c1.r, c1.g, c1.b,
-              c2.r, c2.g, c2.b
+              c0.sumR / c0.count, c0.sumG / c0.count, c0.sumB / c0.count,
+              c1.sumR / c1.count, c1.sumG / c1.count, c1.sumB / c1.count,
+              c2.sumR / c2.count, c2.sumG / c2.count, c2.sumB / c2.count
             );
           }
 
           if (uv) {
             newUvs.push(
-              c0.u, c0.v,
-              c1.u, c1.v,
-              c2.u, c2.v
+              c0.sumU / c0.count, c0.sumV / c0.count,
+              c1.sumU / c1.count, c1.sumV / c1.count,
+              c2.sumU / c2.count, c2.sumV / c2.count
             );
           }
         }

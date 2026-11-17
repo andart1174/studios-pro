@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Set & Display Active 3D Model
   function setModel(object3D, filename = "model", isNewUpload = true) {
+    if (object3D && !(object3D.userData && object3D.userData.skipAutoGround) && typeof CADInspector !== 'undefined') {
+      CADInspector.autoGround(object3D);
+    }
     state.loadedModel = object3D;
     state.currentFileName = filename;
     if (object3D && object3D.userData && object3D.userData.sourceImage) {
@@ -86,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (isNewUpload) {
       state.originalModelBackup = object3D.clone(true);
+      window.__polymorphOriginalBackup = state.originalModelBackup;
     }
     viewer.setModel(object3D);
     updateMeshMetrics(object3D);
@@ -821,16 +825,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   safeOn('btn-quick-photo-ar-qr', 'click', () => {
+    if (typeof window.launchPolyMorphARViewer === 'function') {
+      window.launchPolyMorphARViewer(document.getElementById('btn-quick-photo-ar-qr'));
+      return;
+    }
     const qrBtn = document.getElementById('tool-ar-qr');
     if (qrBtn) qrBtn.click();
-  });
-
-  safeOn('btn-export-photo-ar-glb', 'click', () => {
-    exportCurrentModel('glb', 'Photo_AR_Model');
-  });
-
-  safeOn('btn-export-photo-ar-usdz', 'click', () => {
-    exportCurrentModel('usdz', 'Photo_AR_Model');
   });
 
   // ----------------------------------------------------
@@ -926,7 +926,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildDraw3DModel(reframe = true) {
-    if (!window.Draw3DEngine || !drawCanvas) return;
+    if (!window.Draw3DEngine) return;
+    if (!drawCanvas && typeof initDraw3DStudio === 'function') {
+      initDraw3DStudio();
+    }
+    if (!drawCanvas) return;
     stopDraw4DAnimation();
 
     const mode = document.getElementById('draw3d-mode-select')?.value || 'inflatable';
@@ -4827,6 +4831,10 @@ PRINT SETTINGS:
   });
 
   safeOn('tool-ar-qr', 'click', () => {
+    if (typeof window.launchPolyMorphARViewer === 'function') {
+      window.launchPolyMorphARViewer(document.getElementById('tool-ar-qr'));
+      return;
+    }
     const modal = document.getElementById('ar-qr-modal');
     const container = document.getElementById('qrcode-container');
     if (!modal || !container) return;
