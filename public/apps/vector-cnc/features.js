@@ -61,8 +61,8 @@ function initKeyboardShortcuts() {
             case 'r': case 'R':
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
-                    rotateTransformCanvas('canvasVec', 90);
-                    rotateTransformCanvas('canvasOrig', 90);
+                    if (window.App && App.applyTransform) App.applyTransform('rot90');
+                    else { rotateTransformCanvas('canvasVec', 90); rotateTransformCanvas('canvasOrig', 90); }
                 }
                 break;
             case 'Escape':
@@ -270,20 +270,20 @@ function initCanvasTransform() {
     }
 
     document.getElementById('btnRotLeft').addEventListener('click', () => {
-        rotateTransformCanvas('canvasVec', -90);
-        rotateTransformCanvas('canvasOrig', -90);
+        if (window.App && App.applyTransform) App.applyTransform('rot-90');
+        else { rotateTransformCanvas('canvasVec', -90); rotateTransformCanvas('canvasOrig', -90); }
     });
     document.getElementById('btnRotRight').addEventListener('click', () => {
-        rotateTransformCanvas('canvasVec', 90);
-        rotateTransformCanvas('canvasOrig', 90);
+        if (window.App && App.applyTransform) App.applyTransform('rot90');
+        else { rotateTransformCanvas('canvasVec', 90); rotateTransformCanvas('canvasOrig', 90); }
     });
     document.getElementById('btnFlipH').addEventListener('click', () => {
-        flipTransformCanvas('canvasVec', 'H');
-        flipTransformCanvas('canvasOrig', 'H');
+        if (window.App && App.applyTransform) App.applyTransform('flipH');
+        else { flipTransformCanvas('canvasVec', 'H'); flipTransformCanvas('canvasOrig', 'H'); }
     });
     document.getElementById('btnFlipV').addEventListener('click', () => {
-        flipTransformCanvas('canvasVec', 'V');
-        flipTransformCanvas('canvasOrig', 'V');
+        if (window.App && App.applyTransform) App.applyTransform('flipV');
+        else { flipTransformCanvas('canvasVec', 'V'); flipTransformCanvas('canvasOrig', 'V'); }
     });
 }
 
