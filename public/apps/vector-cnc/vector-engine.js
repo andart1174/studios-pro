@@ -1019,40 +1019,71 @@
     return d;
   }
 
-  function drawPathsOnCtx(ctx, pathArray, smooth) {
+  function drawPathsOnCtx(ctx, pathArray, smooth, fillColor = '#111111', strokeColor = '#111111', forceStroke = false) {
+    if (!ctx || !pathArray || !pathArray.length) return;
     const COS_CORNER = Math.cos((42 * Math.PI) / 180);
-    for (const path of pathArray) {
-      if (!path || path.length < 2) continue;
-      const n = path.length;
-      const isClosed = path.closed !== false && n >= 3;
-      ctx.moveTo(path[0][0], path[0][1]);
-      if (!smooth || n < 4) {
-        for (let i = 1; i < n; i++) ctx.lineTo(path[i][0], path[i][1]);
-      } else {
-        const isCorner = new Uint8Array(n);
-        for (let i = 0; i < n; i++) {
-          if (!isClosed && (i === 0 || i === n - 1)) { isCorner[i] = 1; continue; }
-          const pPrev = path[(i - 1 + n) % n], pCur = path[i], pNext = path[(i + 1) % n];
-          const v1x = pCur[0] - pPrev[0], v1y = pCur[1] - pPrev[1];
-          const v2x = pNext[0] - pCur[0], v2y = pNext[1] - pCur[1];
-          const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
-          if (l1 < 1e-4 || l2 < 1e-4 || ((v1x * v2x + v1y * v2y) / (l1 * l2)) < COS_CORNER) isCorner[i] = 1;
-        }
-        const segEnd = isClosed ? n : n - 1;
-        for (let i = 0; i < segEnd; i++) {
-          const i1 = i, i2 = (i + 1) % n;
-          const p1 = path[i1], p2 = path[i2];
-          if (isCorner[i1] && isCorner[i2]) {
-            ctx.lineTo(p2[0], p2[1]);
-          } else {
-            const p0 = path[(i1 - 1 + n) % n], p3 = path[(i2 + 1) % n];
-            const t1 = isCorner[i1] ? [0, 0] : [(p2[0] - p0[0]) * 0.18, (p2[1] - p0[1]) * 0.18];
-            const t2 = isCorner[i2] ? [0, 0] : [(p3[0] - p1[0]) * 0.18, (p3[1] - p1[1]) * 0.18];
-            ctx.bezierCurveTo(p1[0] + t1[0], p1[1] + t1[1], p2[0] - t2[0], p2[1] - t2[1], p2[0], p2[1]);
+
+    const traceBatch = (batch, closeLoops) => {
+      if (!batch.length) return;
+      ctx.beginPath();
+      for (const path of batch) {
+        if (!path || path.length < 2) continue;
+        const n = path.length;
+        ctx.moveTo(path[0][0], path[0][1]);
+        if (!smooth || n < 4) {
+          for (let i = 1; i < n; i++) ctx.lineTo(path[i][0], path[i][1]);
+        } else {
+          const isCorner = new Uint8Array(n);
+          for (let i = 0; i < n; i++) {
+            if (!closeLoops && (i === 0 || i === n - 1)) { isCorner[i] = 1; continue; }
+            const pPrev = path[(i - 1 + n) % n], pCur = path[i], pNext = path[(i + 1) % n];
+            const v1x = pCur[0] - pPrev[0], v1y = pCur[1] - pPrev[1];
+            const v2x = pNext[0] - pCur[0], v2y = pNext[1] - pCur[1];
+            const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
+            if (l1 < 1e-4 || l2 < 1e-4 || ((v1x * v2x + v1y * v2y) / (l1 * l2)) < COS_CORNER) isCorner[i] = 1;
+          }
+          const segEnd = closeLoops ? n : n - 1;
+          for (let i = 0; i < segEnd; i++) {
+            const i1 = i, i2 = (i + 1) % n;
+            const p1 = path[i1], p2 = path[i2];
+            if (isCorner[i1] && isCorner[i2]) {
+              ctx.lineTo(p2[0], p2[1]);
+            } else {
+              const p0 = path[(i1 - 1 + n) % n], p3 = path[(i2 + 1) % n];
+              const t1 = isCorner[i1] ? [0, 0] : [(p2[0] - p0[0]) * 0.18, (p2[1] - p0[1]) * 0.18];
+              const t2 = isCorner[i2] ? [0, 0] : [(p3[0] - p1[0]) * 0.18, (p3[1] - p1[1]) * 0.18];
+              ctx.bezierCurveTo(p1[0] + t1[0], p1[1] + t1[1], p2[0] - t2[0], p2[1] - t2[1], p2[0], p2[1]);
+            }
           }
         }
+        if (closeLoops) ctx.closePath();
       }
-      if (isClosed) ctx.closePath();
+    };
+
+    const closedBatch = forceStroke ? [] : pathArray.filter(p => p && p.length >= 3 && p.closed !== false);
+    const openBatch = forceStroke ? pathArray : pathArray.filter(p => p && (p.length < 3 || p.closed === false));
+
+    if (closedBatch.length) {
+      ctx.save();
+      traceBatch(closedBatch, true);
+      ctx.fillStyle = fillColor || '#111111';
+      ctx.fill('evenodd');
+      ctx.strokeStyle = strokeColor || fillColor || '#111111';
+      ctx.lineWidth = 0.6;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (openBatch.length) {
+      ctx.save();
+      traceBatch(openBatch, false);
+      ctx.strokeStyle = strokeColor || fillColor || '#111111';
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.restore();
     }
   }
 
