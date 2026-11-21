@@ -229,6 +229,7 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
     xb.push(`<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n`);
     xb.push(`  <metadata name="Application">Studios-Pro MultiColor 3MF Painter</metadata>\n`);
     xb.push(`  <metadata name="BambuStudio:3mfVersion">1</metadata>\n`);
+    xb.push(`  <metadata name="StudiosPro:UpAxis">Z</metadata>\n`);
     xb.push(`  <resources>\n`);
     xb.push(`    <basematerials id="1">\n`);
     for (const s of activeIndices) {
@@ -290,9 +291,19 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
 </config>
 `;
 
+    const mapSlicerType = (rawType) => {
+        const tStr = String(rawType || 'PLA').toUpperCase();
+        if (tStr.includes('PETG')) return 'PETG';
+        if (tStr.includes('ABS')) return 'ABS';
+        if (tStr.includes('ASA')) return 'ASA';
+        if (tStr.includes('TPU')) return 'TPU';
+        return 'PLA';
+    };
+
     const projectConfigJson = JSON.stringify({
         filament_colour: slots.map(s => (s.color || '#FFFFFF').toUpperCase()),
-        filament_type: slots.map(() => 'PLA'),
+        filament_type: slots.map(s => mapSlicerType(s.type)),
+        filament_settings_id: slots.map(s => s.type || 'Generic PLA'),
         filament_vendor: slots.map(() => 'Generic'),
         printer_model: 'Bambu Lab X1 Carbon'
     }, null, 2);
@@ -521,29 +532,71 @@ async function exportOBJ() {
 }
 
 // ==========================================
-// 5. WATERTIGHT CLOSED-SHELL SNAP-FIT PART SPLITTER
+// 5. #9 TRUE MECHANICAL SNAP-FIT PART SPLITTER (DOWEL PINS + TANGENT CLEARANCE + EXPLODED VIEW!)
 // ==========================================
+let explodedPreviewGroup = null;
+
+function appendCylinderPinToSolid(vertices, triangles, origin, dir, radius, length, slot, segs = 14) {
+    const N = new THREE.Vector3(dir[0], dir[1], dir[2]).normalize();
+    const up = Math.abs(N.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const T = new THREE.Vector3().crossVectors(up, N).normalize();
+    const B = new THREE.Vector3().crossVectors(N, T).normalize();
+
+    const baseCenterIdx = vertices.length;
+    vertices.push([origin[0], origin[1], origin[2]]);
+    const tipCenterIdx = vertices.length;
+    vertices.push([origin[0] + N.x * length, origin[1] + N.y * length, origin[2] + N.z * length]);
+
+    const baseRing = [];
+    const tipRing = [];
+    const tipR = radius * 0.88; // Slight chamfered lead-in tip for easy press-fit assembly!
+    for (let i = 0; i < segs; i++) {
+        const ang = (i / segs) * Math.PI * 2;
+        const ca = Math.cos(ang), sa = Math.sin(ang);
+        const rx = T.x * ca + B.x * sa;
+        const ry = T.y * ca + B.y * sa;
+        const rz = T.z * ca + B.z * sa;
+        baseRing.push(vertices.length);
+        vertices.push([origin[0] + rx * radius, origin[1] + ry * radius, origin[2] + rz * radius]);
+        tipRing.push(vertices.length);
+        vertices.push([
+            origin[0] + N.x * length + rx * tipR,
+            origin[1] + N.y * length + ry * tipR,
+            origin[2] + N.z * length + rz * tipR
+        ]);
+    }
+
+    for (let i = 0; i < segs; i++) {
+        const ni = (i + 1) % segs;
+        // Side wall (outward)
+        triangles.push({ v1: baseRing[i], v2: baseRing[ni], v3: tipRing[ni], slot });
+        triangles.push({ v1: baseRing[i], v2: tipRing[ni], v3: tipRing[i], slot });
+        // Tip cap (+N)
+        triangles.push({ v1: tipCenterIdx, v2: tipRing[i], v3: tipRing[ni], slot });
+        // Base cap (-N)
+        triangles.push({ v1: baseCenterIdx, v2: baseRing[ni], v3: baseRing[i], slot });
+    }
+}
 
 /**
  * Builds a guaranteed watertight closed 3D solid from a surface patch belonging to targetSlot
- * by generating an inward offset shell (wall thickness shellMm) + boundary skirt walls.
+ * with true IN-PLANE tangent seam clearance + optional mechanical alignment dowel pins!
  */
-function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm = 0.15) {
+function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm = 0.18, addPins = true) {
     const patchTris = welded.triangles.filter(t => t.slot === targetSlot);
     if (patchTris.length === 0) return null;
 
-    // If patch contains literally ALL triangles of a closed model, export original closed solid directly!
     if (patchTris.length === welded.triangles.length) {
         return {
             vertices: welded.vertices,
             triangles: patchTris,
             boundaryEdges: 0,
+            pinCount: 0,
             isClosedOriginal: true
         };
     }
 
     const vCount = welded.vertices.length;
-    // Compute area-weighted vertex normals across the whole model for smooth inward offset
     const vNormals = new Float64Array(vCount * 3);
     for (let i = 0; i < welded.triangles.length; i++) {
         const tr = welded.triangles[i];
@@ -568,7 +621,6 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
         vNormals[v * 3 + 2] = nz / len;
     }
 
-    // Clamp shell thickness cleanly to avoid inverting ultra-thin models
     const minExtent = Math.max(1.0, Math.min(
         welded.bounds.maxX - welded.bounds.minX,
         welded.bounds.maxY - welded.bounds.minY,
@@ -576,10 +628,10 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
     ));
     const safeShell = Math.max(0.4, Math.min(shellMm, minExtent * 0.28));
 
-    // Find directed boundary edges where reverse half-edge is NOT inside patchTris
+    // Find directed boundary edges & compute TRUE IN-PLANE inward tangent shrink per boundary vertex!
     const halfEdges = new Set();
     const boundaryEdges = [];
-    const boundaryVerts = new Set();
+    const boundaryInward = new Map(); // origV -> [tx, ty, tz]
 
     for (let i = 0; i < patchTris.length; i++) {
         const tr = patchTris[i];
@@ -589,30 +641,54 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
     }
     for (let i = 0; i < patchTris.length; i++) {
         const tr = patchTris[i];
+        const a = welded.vertices[tr.v1], b = welded.vertices[tr.v2], c = welded.vertices[tr.v3];
+        const fNx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+        const fNy = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+        const fNz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        const fLen = Math.hypot(fNx, fNy, fNz) || 1;
+        const fnx = fNx / fLen, fny = fNy / fLen, fnz = fNz / fLen;
+
         const pairs = [[tr.v1, tr.v2], [tr.v2, tr.v3], [tr.v3, tr.v1]];
         for (const [u, v] of pairs) {
             if (!halfEdges.has(`${v}_${u}`)) {
                 boundaryEdges.push([u, v]);
-                boundaryVerts.add(u);
-                boundaryVerts.add(v);
+                // Inward in-plane tangent = faceNormal x (v - u) (points INTO the patch!)
+                const pu = welded.vertices[u], pv = welded.vertices[v];
+                const ex = pv[0] - pu[0], ey = pv[1] - pu[1], ez = pv[2] - pu[2];
+                const eLen = Math.hypot(ex, ey, ez) || 1;
+                const edx = ex / eLen, edy = ey / eLen, edz = ez / eLen;
+                const ix = fny * edz - fnz * edy;
+                const iy = fnz * edx - fnx * edz;
+                const iz = fnx * edy - fny * edx;
+                for (const vid of [u, v]) {
+                    const acc = boundaryInward.get(vid) || [0, 0, 0];
+                    acc[0] += ix; acc[1] += iy; acc[2] += iz;
+                    boundaryInward.set(vid, acc);
+                }
             }
         }
     }
 
-    // Build compact vertex table: for every vertex used in patchTris, allocate [outerIdx, innerIdx]
     const outMap = new Map();
     const inMap = new Map();
     const outVertices = [];
+
+    const getShrinkVec = (origV) => {
+        const acc = boundaryInward.get(origV);
+        if (!acc || clearanceMm <= 0) return [0, 0, 0];
+        const l = Math.hypot(acc[0], acc[1], acc[2]);
+        if (l < 1e-6) return [0, 0, 0];
+        const s = clearanceMm * 0.5 / l;
+        return [acc[0] * s, acc[1] * s, acc[2] * s];
+    };
 
     const ensureOuter = (origV) => {
         let idx = outMap.get(origV);
         if (idx === undefined) {
             const p = welded.vertices[origV];
-            const nx = vNormals[origV * 3], ny = vNormals[origV * 3 + 1], nz = vNormals[origV * 3 + 2];
-            // Slight inward press on boundary seam for real-world snap-fit tolerance
-            const shrink = boundaryVerts.has(origV) ? clearanceMm * 0.5 : 0;
+            const sv = getShrinkVec(origV);
             idx = outVertices.length;
-            outVertices.push([p[0] - nx * shrink, p[1] - ny * shrink, p[2] - nz * shrink]);
+            outVertices.push([p[0] + sv[0], p[1] + sv[1], p[2] + sv[2]]);
             outMap.set(origV, idx);
         }
         return idx;
@@ -623,24 +699,31 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
         if (idx === undefined) {
             const p = welded.vertices[origV];
             const nx = vNormals[origV * 3], ny = vNormals[origV * 3 + 1], nz = vNormals[origV * 3 + 2];
+            const sv = getShrinkVec(origV);
             idx = outVertices.length;
-            outVertices.push([p[0] - nx * safeShell, p[1] - ny * safeShell, p[2] - nz * safeShell]);
+            outVertices.push([
+                p[0] + sv[0] - nx * safeShell,
+                p[1] + sv[1] - ny * safeShell,
+                p[2] + sv[2] - nz * safeShell
+            ]);
             inMap.set(origV, idx);
         }
         return idx;
     };
 
     const outTris = [];
-    // 1. Outer skin + 2. Reversed inner skin
+    let cx = 0, cy = 0, cz = 0;
     for (let i = 0; i < patchTris.length; i++) {
         const tr = patchTris[i];
         const oa = ensureOuter(tr.v1), ob = ensureOuter(tr.v2), oc = ensureOuter(tr.v3);
         const ia = ensureInner(tr.v1), ib = ensureInner(tr.v2), ic = ensureInner(tr.v3);
         outTris.push({ v1: oa, v2: ob, v3: oc, slot: targetSlot });
         outTris.push({ v1: ia, v2: ic, v3: ib, slot: targetSlot });
+        const pa = welded.vertices[tr.v1];
+        cx += pa[0]; cy += pa[1]; cz += pa[2];
     }
+    cx /= patchTris.length; cy /= patchTris.length; cz /= patchTris.length;
 
-    // 3. Watertight perimeter skirt stitching outer <-> inner along every boundary edge
     for (let i = 0; i < boundaryEdges.length; i++) {
         const [u, v] = boundaryEdges[i];
         const ou = ensureOuter(u), ov = ensureOuter(v);
@@ -649,18 +732,131 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
         outTris.push({ v1: ov, v2: iu, v3: iv, slot: targetSlot });
     }
 
+    // Generate REAL Mechanical Registration Dowel Pins on interior backing wall of secondary parts!
+    let pinCount = 0;
+    if (addPins && targetSlot > 0 && patchTris.length >= 4) {
+        const pinRadius = Math.max(0.7, Math.min(1.6, safeShell * 0.65) - clearanceMm * 0.5);
+        const pinLen = Math.max(1.6, Math.min(3.4, safeShell * 1.35));
+        const usedOrigins = [];
+        const step = Math.max(1, Math.floor(patchTris.length / 6));
+        for (let i = 0; i < patchTris.length && pinCount < 3; i += step) {
+            const tr = patchTris[i];
+            const vid = tr.v1;
+            if (boundaryInward.has(vid)) continue;
+            const p = welded.vertices[vid];
+            const nx = vNormals[vid * 3], ny = vNormals[vid * 3 + 1], nz = vNormals[vid * 3 + 2];
+            const orig = [p[0] - nx * (safeShell * 0.85), p[1] - ny * (safeShell * 0.85), p[2] - nz * (safeShell * 0.85)];
+            const tooClose = usedOrigins.some(o => Math.hypot(o[0] - orig[0], o[1] - orig[1], o[2] - orig[2]) < pinRadius * 4.5);
+            if (tooClose) continue;
+            usedOrigins.push(orig);
+            appendCylinderPinToSolid(outVertices, outTris, orig, [-nx, -ny, -nz], pinRadius, pinLen, targetSlot, 14);
+            pinCount++;
+        }
+    }
+
     return {
         vertices: outVertices,
         triangles: outTris,
         boundaryEdges: boundaryEdges.length,
+        pinCount,
+        centroid: [cx, cy, cz],
         isClosedOriginal: false
     };
+}
+
+function clearExplodedPreview() {
+    if (explodedPreviewGroup && scene) {
+        explodedPreviewGroup.traverse(c => {
+            if (c.geometry) c.geometry.dispose();
+            if (c.material) c.material.dispose();
+        });
+        scene.remove(explodedPreviewGroup);
+        explodedPreviewGroup = null;
+    }
+    if (currentMesh) currentMesh.visible = true;
+    const sl = document.getElementById('splitter-explode-slider');
+    if (sl) sl.value = 0;
+    const lbl = document.getElementById('val-splitter-explode');
+    if (lbl) lbl.textContent = '0%';
+}
+
+function previewExplodedSplit(ratioVal) {
+    const ratio = Math.max(0, Math.min(1, parseFloat(ratioVal) || 0));
+    const lbl = document.getElementById('val-splitter-explode');
+    if (lbl) lbl.textContent = `${Math.round(ratio * 100)}%`;
+
+    if (ratio <= 0.01) {
+        clearExplodedPreview();
+        return;
+    }
+    if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
+
+    if (!explodedPreviewGroup) {
+        const clearance = parseFloat(document.getElementById('splitter-tolerance')?.value || '0.18');
+        const shellMm = parseFloat(document.getElementById('splitter-shell-thickness')?.value || '2.0');
+        const addPins = document.getElementById('splitter-include-pins')?.checked !== false;
+        // Keep viewport Y-up for live exploded preview (convertYUpToZUp = false!)
+        const welded = weldGeometryAndColors(currentMesh.geometry, triangleColors, false);
+        const usedSet = new Set(welded.triangles.map(t => t.slot));
+
+        const modelCenter = new THREE.Vector3(
+            (welded.bounds.minX + welded.bounds.maxX) * 0.5,
+            (welded.bounds.minY + welded.bounds.maxY) * 0.5,
+            (welded.bounds.minZ + welded.bounds.maxZ) * 0.5
+        );
+        const maxDim = Math.max(
+            welded.bounds.maxX - welded.bounds.minX,
+            welded.bounds.maxY - welded.bounds.minY,
+            welded.bounds.maxZ - welded.bounds.minZ,
+            15
+        );
+
+        explodedPreviewGroup = new THREE.Group();
+        for (const s of usedSet) {
+            const solid = buildClosedSolidForSlot(welded, s, shellMm, clearance, addPins);
+            if (!solid || solid.triangles.length === 0) continue;
+            const posArr = new Float32Array(solid.triangles.length * 9);
+            for (let i = 0; i < solid.triangles.length; i++) {
+                const tr = solid.triangles[i];
+                const a = solid.vertices[tr.v1], b = solid.vertices[tr.v2], c = solid.vertices[tr.v3];
+                const k = i * 9;
+                posArr[k] = a[0]; posArr[k + 1] = a[1]; posArr[k + 2] = a[2];
+                posArr[k + 3] = b[0]; posArr[k + 4] = b[1]; posArr[k + 5] = b[2];
+                posArr[k + 6] = c[0]; posArr[k + 7] = c[1]; posArr[k + 8] = c[2];
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+            g.computeVertexNormals();
+            const mat = new THREE.MeshStandardMaterial({
+                color: filamentSlots[s]?.color || '#ffffff',
+                roughness: 0.45,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+            const m = new THREE.Mesh(g, mat);
+            const cVec = solid.centroid ? new THREE.Vector3(solid.centroid[0], solid.centroid[1], solid.centroid[2]) : modelCenter.clone();
+            const dir = cVec.sub(modelCenter);
+            if (dir.lengthSq() < 0.01) dir.set(Math.cos(s * 2.1), 0.3, Math.sin(s * 2.1));
+            dir.normalize();
+            m.userData = { explodeDir: dir, explodeDist: maxDim * 0.55 };
+            explodedPreviewGroup.add(m);
+        }
+        scene.add(explodedPreviewGroup);
+        currentMesh.visible = false;
+    }
+
+    explodedPreviewGroup.children.forEach(m => {
+        const d = m.userData.explodeDir;
+        const dist = m.userData.explodeDist * ratio;
+        m.position.set(d.x * dist, d.y * dist, d.z * dist);
+    });
 }
 
 function openSplitterModal() {
     const modal = document.getElementById('splitter-modal');
     const summaryEl = document.getElementById('splitter-parts-preview');
     if (!modal) return;
+    clearExplodedPreview();
 
     if (currentMesh && triangleColors && summaryEl) {
         const counts = new Int32Array(filamentSlots.length);
@@ -678,34 +874,40 @@ function openSplitterModal() {
 }
 
 function closeSplitterModal() {
+    clearExplodedPreview();
     const modal = document.getElementById('splitter-modal');
     if (modal) modal.classList.remove('open');
 }
 
 async function executeSplitterExport() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
-    const clearance = parseFloat(document.getElementById('splitter-tolerance')?.value || '0.15');
+    const clearance = parseFloat(document.getElementById('splitter-tolerance')?.value || '0.18');
     const shellMm = parseFloat(document.getElementById('splitter-shell-thickness')?.value || '2.0');
+    const addPins = document.getElementById('splitter-include-pins')?.checked !== false;
 
-    showToast(t('splittingParts', 'Generating watertight closed solid parts...'));
+    showToast(t('splittingParts', 'Generating watertight closed solid parts with alignment pins...'));
     const welded = weldGeometryAndColors(currentMesh.geometry, triangleColors, true);
     const usedSet = new Set(welded.triangles.map(t => t.slot));
     const zip = new JSZip();
     let exportedCount = 0;
+    let totalPins = 0;
 
     for (const s of usedSet) {
-        const solid = buildClosedSolidForSlot(welded, s, shellMm, clearance);
+        const solid = buildClosedSolidForSlot(welded, s, shellMm, clearance, addPins);
         if (!solid || solid.triangles.length === 0) continue;
         const safeName = (filamentSlots[s]?.name || `Part_${s + 1}`).replace(/[^\w\-]/g, '_');
         const stlBlob = createBinarySTL(solid.triangles, solid.vertices);
         zip.file(`SolidKit_${s + 1}_${safeName}.stl`, stlBlob);
         exportedCount++;
+        totalPins += solid.pinCount || 0;
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
-    downloadBlob(zipBlob, 'StudiosPro_Watertight_Kit.zip');
+    downloadBlob(zipBlob, 'StudiosPro_Watertight_SnapFit_Kit.zip');
     closeSplitterModal();
-    showToast(`Exported ${exportedCount} watertight solid STL parts!`);
+    showToast(currentLang === 'fr'
+        ? `${exportedCount} pièces STL étanches exportées (${totalPins} pions d'alignement) !`
+        : `Exported ${exportedCount} watertight solid STL parts (${totalPins} alignment pins)!`);
 }
 
 // ==========================================

@@ -47,14 +47,18 @@ async function saveProjectToIndexedDB(silent = false) {
     try {
         const db = await openPainterDB();
         const payload = {
-            version: 2,
+            version: 3,
             savedAt: Date.now(),
+            hasUserEdits: true,
             modelTitle: currentModelTitle,
             positions: new Float32Array(posAttr.array),
             triangleColors: new Uint8Array(triangleColors),
             filamentSlots: filamentSlots.map(s => ({
+                id: s.id,
                 color: s.color,
+                hex: s.color,
                 name: s.name,
+                type: s.type || 'PLA Basic',
                 visible: s.visible !== false
             })),
             activeSlotIndex: typeof activeSlotIndex === 'number' ? activeSlotIndex : 0,
@@ -104,13 +108,14 @@ async function checkSavedProjectBanner() {
         });
         db.close();
 
-        if (!saved || !saved.positions || !saved.triangleColors) return;
-        // Only offer restore banner if the session actually has multi-color work painted
+        if (!saved || !saved.positions || !saved.triangleColors || saved.triangleColors.length === 0) return;
+        // Only offer restore banner if the session had actual user edits (not untouched default demo!)
+        if (saved.version >= 3 && !saved.hasUserEdits) return;
         let nonZero = 0;
         for (let i = 0; i < saved.triangleColors.length; i++) {
             if (saved.triangleColors[i] !== 0) { nonZero++; break; }
         }
-        if (nonZero === 0 && saved.triangleColors.length === 0) return;
+        if (nonZero === 0) return;
 
         const banner = document.getElementById('recovery-banner');
         const msgEl = document.getElementById('recovery-banner-text');
@@ -376,23 +381,18 @@ function initStudiosProBridge() {
         }
     });
 
-    // Safe copy/cut guard: NEVER interfere with editable inputs, textareas, or selects
+    // Safe copy/cut guard: NEVER interfere with editable inputs, textareas, selects, or normal canvas shortcuts
     ['copy', 'cut'].forEach((evt) => {
         document.addEventListener(evt, (e) => {
             const rawTgt = e && e.target;
             const tgt = (rawTgt && rawTgt.nodeType === 3) ? rawTgt.parentElement : rawTgt;
             const tag = tgt && tgt.tagName ? tgt.tagName.toUpperCase() : '';
             if (
-                tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+                tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'CANVAS' ||
                 (tgt && tgt.isContentEditable) ||
                 (tgt && tgt.closest && tgt.closest('input, textarea, select, [contenteditable="true"]'))
             ) {
                 return;
-            }
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed) {
-                e.preventDefault();
-                e.stopPropagation();
-                window.triggerStudiosProPaywall(null, true);
             }
         });
     });

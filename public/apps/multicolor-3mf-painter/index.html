@@ -102,6 +102,27 @@
         <div id="color-by-numbers-bar"></div>
         <div id="cbn-overlay-container" class="cbn-overlay-container"></div>
 
+        <!-- Live 3D Stamp Ghost Preview HUD -->
+        <div id="stamp-live-hud" class="stamp-live-hud">
+            <i data-lucide="crosshair" style="width:15px;height:15px;color:#38bdf8;"></i>
+            <span id="stamp-live-hud-text">Click on model to place</span>
+            <button class="btn-secondary" style="padding:2px 8px;font-size:0.7rem;" onclick="adjustActiveStampTransform(-15, 1)">↺ -15°</button>
+            <button class="btn-secondary" style="padding:2px 8px;font-size:0.7rem;" onclick="adjustActiveStampTransform(15, 1)">↻ +15°</button>
+            <button class="btn-secondary" style="padding:2px 8px;font-size:0.7rem;" onclick="adjustActiveStampTransform(0, 0.88)">−</button>
+            <button class="btn-secondary" style="padding:2px 8px;font-size:0.7rem;" onclick="adjustActiveStampTransform(0, 1.12)">+</button>
+            <button class="btn-secondary" style="padding:2px 8px;font-size:0.7rem;color:#f87171;" onclick="cancelStampingMode(false)">Esc</button>
+        </div>
+
+        <!-- Laser-Sharp Masking Tape Action Bar -->
+        <div id="tape-action-bar" class="tape-action-bar">
+            <i data-lucide="scissors" style="width:14px;height:14px;color:#38bdf8;"></i>
+            <span id="tape-points-count">0 pts</span>
+            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;" onclick="executeTapeCutPaint('stripe')">Paint Stripe</button>
+            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;background:linear-gradient(135deg,#059669,#10b981);color:#fff;" onclick="executeTapeCutPaint('loop')">Fill Inside Loop</button>
+            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;" onclick="undoLastTapePoint()">Undo Pt</button>
+            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;color:#f87171;" onclick="clearTapePreview()">Clear</button>
+        </div>
+
         <!-- Left Floating Tool Palette -->
         <div class="toolbar-left">
             <button id="tool-view" class="tool-btn" onclick="selectTool('view')" data-tooltip="Rotate / Orbit View (V)" data-i18n-tooltip="tooltipView">
@@ -113,11 +134,17 @@
             <button id="tool-line" class="tool-btn" onclick="selectTool('line')" data-tooltip="Straight Line Stripe Tool (L)" data-i18n-tooltip="tooltipLine">
                 <i data-lucide="slash" style="width:18px;height:18px;"></i>
             </button>
+            <button id="tool-tape" class="tool-btn" onclick="selectTool('tape')" data-tooltip="Masking Tape Laser Cut-Paint (X)" data-i18n-tooltip="tooltipTape">
+                <i data-lucide="ruler" style="width:18px;height:18px;"></i>
+            </button>
             <button id="tool-bucket" class="tool-btn" onclick="selectTool('bucket')" data-tooltip="Smart Surface Fill (F)" data-i18n-tooltip="tooltipBucket">
                 <i data-lucide="paint-bucket" style="width:18px;height:18px;"></i>
             </button>
             <button id="tool-wand" class="tool-btn" onclick="selectTool('wand')" data-tooltip="Magic Smart Wand (W)" data-i18n-tooltip="tooltipWand">
                 <i data-lucide="wand-2" style="width:18px;height:18px;"></i>
+            </button>
+            <button id="tool-shell" class="tool-btn" onclick="selectTool('shell')" data-tooltip="Smart Part / Shell Clicker (G)" data-i18n-tooltip="tooltipShell">
+                <i data-lucide="boxes" style="width:18px;height:18px;"></i>
             </button>
             <button id="tool-dropper" class="tool-btn" onclick="selectTool('dropper')" data-tooltip="Color Eyedropper (I)" data-i18n-tooltip="tooltipDropper">
                 <i data-lucide="pipette" style="width:18px;height:18px;"></i>
@@ -133,6 +160,9 @@
             </button>
             <button id="tool-stencil" class="tool-btn" onclick="openStencilModal()" data-tooltip="3D Stencils & Logos (S)" data-i18n-tooltip="tooltipStencil">
                 <i data-lucide="stamp" style="width:18px;height:18px;"></i>
+            </button>
+            <button id="tool-qr" class="tool-btn" onclick="openQRBatchModal('qr')" data-tooltip="3D QR Code & Batch Name Stamper (Q)" data-i18n-tooltip="tooltipQR">
+                <i data-lucide="qr-code" style="width:18px;height:18px;"></i>
             </button>
             <button class="tool-btn" onclick="openReliefModal()" data-tooltip="Relief & Portrait Auto-Color (R)" data-i18n-tooltip="tooltipRelief">
                 <i data-lucide="layers" style="width:18px;height:18px;"></i>
@@ -172,11 +202,15 @@
                 <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
                 <span id="hud-backface">Front-Only: <strong>ON</strong></span>
             </button>
+            <button id="btn-edgelock-toggle" class="hud-btn" onclick="toggleEdgeLock()">
+                <i data-lucide="magnet" style="width:14px;height:14px;"></i>
+                <span id="hud-edgelock">Edge-Lock: <strong>OFF</strong></span>
+            </button>
             <button id="btn-adaptive-toggle" class="hud-btn active" onclick="toggleAdaptiveBrush()">
                 <i data-lucide="zap" style="width:14px;height:14px;"></i>
                 <span id="hud-adaptive">Adaptive Brush: <strong>ON</strong></span>
             </button>
-            <button class="hud-btn" onclick="autoOrientZUpToYUp()">
+            <button class="hud-btn" onclick="layModelFlatOnBed()">
                 <i data-lucide="arrow-up-circle" style="width:14px;height:14px;"></i>
                 <span data-i18n="hudOrientUp">Lay Flat / Z-Up</span>
             </button>
@@ -237,6 +271,7 @@
             </div>
 
             <div id="filament-grid" class="filament-grid"></div>
+            <div id="filament-usage-summary"></div>
 
             <div class="slot-actions-bar">
                 <button class="btn-secondary" style="flex:1;" onclick="openSwapModal()">
@@ -302,18 +337,25 @@
                     <strong id="val-angle" style="color:#38bdf8;">38°</strong>
                 </div>
                 <input id="slider-angle" class="control-slider" type="range" min="5" max="120" step="1" value="38" oninput="document.getElementById('val-angle').textContent = this.value + '°'">
+                <div style="margin-top:7px;">
+                    <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:3px;" data-i18n="labelFillMode">Fill Behavior:</div>
+                    <select id="select-fill-mode" class="select-box" onchange="setFillBehaviorMode(this.value)">
+                        <option value="crease" data-i18n="optFillCrease">Crease-Bounded (Full Curved Parts)</option>
+                        <option value="planar" data-i18n="optFillPlanar">Planar Only (Flat Faces)</option>
+                    </select>
+                </div>
                 <label style="display:flex;align-items:center;gap:7px;font-size:0.75rem;color:#cbd5e1;margin-top:8px;cursor:pointer;">
                     <input type="checkbox" id="check-connected-fill" checked>
                     <span data-i18n="checkConnectedFill">Contiguous connected surface only (no bleed)</span>
                 </label>
             </div>
 
-            <!-- Procedural Pattern Brush Texture Controls -->
+            <!-- Procedural Pattern Brush Texture Controls (FIXED: passes this.value + Tactile 3D Relief!) -->
             <div class="control-group">
                 <div class="control-label">
                     <span data-i18n="labelBrushTexture">Brush Texture Pattern:</span>
                 </div>
-                <select id="select-brush-texture" class="select-box" onchange="updateBrushTexture()">
+                <select id="select-brush-texture" class="select-box" onchange="updateBrushTexture(this.value)">
                     <option value="none" data-i18n="texSolid">🟢 Solid Paint (Standard)</option>
                     <optgroup label="❤️ Romantic &amp; Nature" data-i18n-label="grpRomanticNature">
                         <option value="hearts" data-i18n="texHearts">❤️ Sweet Hearts Pattern</option>
@@ -364,7 +406,7 @@
                         <span data-i18n="labelTextureScale">Texture Scale:</span>
                         <strong id="val-texture-scale" style="color:#38bdf8;">14 mm</strong>
                     </div>
-                    <input id="slider-texture-scale" class="control-slider" type="range" min="3" max="45" step="1" value="14" oninput="updateBrushTextureScale()">
+                    <input id="slider-texture-scale" class="control-slider" type="range" min="3" max="45" step="1" value="14" oninput="updateBrushTextureScale(this.value)">
                     <div style="display:flex;gap:4px;margin:6px 0;">
                         <button class="quick-rad-btn" onclick="setPatternScalePreset(8)" data-i18n="btnPatternScaleSmall">Small</button>
                         <button class="quick-rad-btn" onclick="setPatternScalePreset(16)" data-i18n="btnPatternScaleMed">Med</button>
@@ -376,19 +418,31 @@
                         <span data-i18n="labelTextureAngle">Pattern Angle:</span>
                         <strong id="val-texture-angle" style="color:#38bdf8;">0°</strong>
                     </div>
-                    <input id="slider-texture-angle" class="control-slider" type="range" min="0" max="360" step="5" value="0" oninput="updateBrushTextureAngle()">
+                    <input id="slider-texture-angle" class="control-slider" type="range" min="0" max="360" step="5" value="0" oninput="updateBrushTextureAngle(this.value)">
+
+                    <div class="control-label" style="margin-top:8px;">
+                        <span data-i18n="labelTactileRelief">3D Tactile Relief (mm):</span>
+                        <strong id="val-pattern-relief" style="color:#38bdf8;">0 mm (Flat)</strong>
+                    </div>
+                    <input id="slider-pattern-relief" class="control-slider" type="range" min="-0.6" max="0.8" step="0.1" value="0" oninput="updatePatternRelief(this.value)">
 
                     <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
                         <canvas id="canvas-pattern-preview" width="54" height="54" style="border-radius:8px;border:1px solid var(--border-panel);background:#0f172a;flex-shrink:0;"></canvas>
                         <div style="flex:1;min-width:0;">
                             <div id="lbl-pattern-preview-name" style="font-size:0.74rem;font-weight:700;color:#fff;margin-bottom:4px;">Pattern</div>
-                            <button id="btn-pattern-invert" class="btn-secondary" style="width:100%;" onclick="togglePatternInvert()" data-i18n="btnInvertPattern">Invert ⇄</button>
+                            <div style="display:flex;gap:4px;">
+                                <button id="btn-pattern-invert" class="btn-secondary" style="flex:1;" onclick="togglePatternInvert()" data-i18n="btnInvertPattern">Invert ⇄</button>
+                                <button class="btn-secondary" onclick="resetPatternSettings()" title="Reset">↺</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="display:flex;gap:6px;margin-top:8px;">
-                        <button class="btn-secondary" style="flex:1;" onclick="applyTexturePatternToModel(false)" data-i18n="btnApplyPatternAll">Apply All</button>
-                        <button class="btn-secondary" style="flex:1;" onclick="applyTexturePatternToModel(true)" data-i18n="btnApplyPatternColor">Active Slot</button>
+                    <div style="margin-top:8px;">
+                        <select id="pattern-target-slot" class="select-box" style="margin-bottom:6px;padding:5px 8px;font-size:0.74rem;"></select>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn-secondary" style="flex:1;" onclick="applyTexturePatternToModel('all')" data-i18n="btnApplyPatternAll">Apply All</button>
+                            <button class="btn-secondary" style="flex:1;" onclick="applyTexturePatternToModel('mask')" data-i18n="btnApplyPatternColor">Target Slot</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -399,7 +453,7 @@
                     <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
                     <span data-i18n="btnSubdivideMesh">Subdivide Mesh</span>
                 </button>
-                <button class="btn-secondary" onclick="optimizeMeshForSlicer()" title="Merge redundant triangles for smoother slicing">Simplify</button>
+                <button class="btn-secondary" onclick="simplifyCurrentMeshUI()" title="Merge redundant triangles for smoother slicing">Simplify</button>
             </div>
         </section>
 
@@ -449,6 +503,17 @@
                 <button class="btn-secondary" style="flex:1;" onclick="saveProjectToIndexedDB(false)">Save Session</button>
                 <button class="btn-secondary" onclick="clearSavedProject()" title="Clear saved browser recovery">Clear</button>
             </div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+                <button class="btn-secondary" style="flex:1;" onclick="exportEditableProjectFile()">
+                    <i data-lucide="save" style="width:13px;height:13px;"></i>
+                    <span data-i18n="btnSaveProjectFile">Save Project (.sp3mf)</span>
+                </button>
+                <label class="btn-secondary" style="cursor:pointer;">
+                    <i data-lucide="folder-open" style="width:13px;height:13px;"></i>
+                    <span data-i18n="btnLoadProjectFile">Load Project</span>
+                    <input type="file" accept=".sp3mf,.zip" style="display:none;" onchange="importEditableProjectFile(event)">
+                </label>
+            </div>
         </section>
 
         <!-- 4. Smart & Magic Multi-Color Tools -->
@@ -487,6 +552,10 @@
             <button class="btn-action" onclick="openStencilModal()">
                 <i data-lucide="stamp" style="width:15px;height:15px;"></i>
                 <span data-i18n="btnStencilStamp">3D Stencils &amp; Logos Stamper</span>
+            </button>
+            <button class="btn-action emerald-style" onclick="openQRBatchModal('qr')">
+                <i data-lucide="qr-code" style="width:15px;height:15px;"></i>
+                <span data-i18n="btnQRBatch">3D QR Code &amp; Batch Name Generator</span>
             </button>
             <button class="btn-action" onclick="openSplitterModal()">
                 <i data-lucide="scissors" style="width:15px;height:15px;"></i>
@@ -722,7 +791,13 @@
             <button class="btn-secondary" style="margin-left:auto;" onclick="applyAIRandomStyle()" data-i18n="btnAISurprise">🎲 Surprise Me!</button>
         </div>
 
-        <div style="font-size:0.78rem;color:#cbd5e1;margin-bottom:8px;" data-i18n="aiStylesGridTitle">Curated Master Themes (1-Click Color):</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:0.78rem;color:#cbd5e1;" data-i18n="aiStylesGridTitle">Curated Master Themes (1-Click Color):</span>
+            <label style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#94a3b8;cursor:pointer;">
+                <input type="checkbox" id="ai-respect-slot-count">
+                <span data-i18n="labelRespectSlots">Lock to my current AMS slot count</span>
+            </label>
+        </div>
         <div id="ai-themes-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:240px;overflow-y:auto;"></div>
 
         <div style="display:flex;gap:8px;margin-top:14px;">
@@ -757,6 +832,11 @@
         <div id="purge-orient-note" style="font-size:0.78rem;color:#bae6fd;margin-bottom:12px;"></div>
 
         <div style="display:flex;flex-direction:column;gap:7px;">
+            <button class="btn-action cavity-style" style="margin:0;" onclick="scanExpensiveAMSSpeckles()">
+                <i data-lucide="crosshair" style="width:14px;height:14px;"></i>
+                <span data-i18n="btnSwapKillerScan">Scan Expensive AMS Speckles</span>
+            </button>
+            <div id="swap-killer-results" style="max-height:175px;overflow-y:auto;"></div>
             <button class="btn-action" style="margin:0;" onclick="executePurgeOptimization('merge-minor')" data-i18n="btnExecutePurgeOpt">Clean Micro-Islands (-20% to -40% Waste)</button>
             <button class="btn-action emerald-style" style="margin:0;" onclick="snapToCleanZBands()" data-i18n="btnSnapZBands">Snap to Clean Z-Bands</button>
             <button class="btn-action magic-style" style="margin:0;" onclick="applyBestMinPurgeOrientation()" data-i18n="btnBestOrient">Find Min-Purge Orientation</button>
@@ -785,15 +865,18 @@
         <div class="modal-title" data-i18n="btnAutoHeight">Height-Based Layer Color</div>
         <div class="control-group">
             <div class="control-label">Bottom Layer Color:</div>
-            <select id="height-bottom-slot" class="select-box"></select>
+            <select id="height-bottom-slot" class="select-box" onchange="previewHeightGradient()"></select>
         </div>
         <div class="control-group">
             <div class="control-label">Top Layer Color:</div>
-            <select id="height-top-slot" class="select-box"></select>
+            <select id="height-top-slot" class="select-box" onchange="previewHeightGradient()"></select>
         </div>
         <div class="control-group">
-            <div class="control-label">Split Height Ratio:</div>
-            <input id="height-split-ratio" class="control-slider" type="range" min="0.05" max="0.95" step="0.05" value="0.5">
+            <div class="control-label">
+                <span>Split Height Ratio:</span>
+                <strong id="val-height-split" style="color:#38bdf8;">50%</strong>
+            </div>
+            <input id="height-split-ratio" class="control-slider" type="range" min="0.05" max="0.95" step="0.02" value="0.5" oninput="previewHeightGradient()">
         </div>
         <div style="display:flex;gap:8px;">
             <button class="modal-close" style="margin:0;flex:1;" onclick="closeHeightColorModal()" data-i18n="btnCancel">Cancel</button>
@@ -807,6 +890,15 @@
     <div class="modal-card">
         <div class="modal-title" data-i18n="modalReliefTitle">Relief &amp; Portrait Emboss Auto-Color</div>
         <div class="modal-desc" data-i18n="modalReliefDesc">Ideal for keychains, lithophanes, and embossed medals. Adjust slider to instantly separate flat base plate from raised portrait artwork.</div>
+        <div class="control-group">
+            <div class="control-label">Relief Axis:</div>
+            <select id="relief-axis-select" class="select-box" onchange="onReliefAxisChange(this.value)">
+                <option value="auto">Auto (Thinnest Axis)</option>
+                <option value="y">Vertical (Y — Bottom to Top)</option>
+                <option value="z">Front / Back (Z)</option>
+                <option value="x">Left / Right (X)</option>
+            </select>
+        </div>
         <div class="control-group">
             <div class="control-label">
                 <span data-i18n="labelReliefThreshold">Relief Slice Height:</span>
@@ -880,6 +972,7 @@
                 <select id="decal-project-axis" class="select-box">
                     <option value="front">Front (+Z)</option>
                     <option value="top">Top (+Y)</option>
+                    <option value="side">Side (+X)</option>
                     <option value="camera">Current Camera View</option>
                 </select>
             </div>
@@ -902,6 +995,10 @@
                 <input type="checkbox" id="decal-front-only" checked>
                 <span data-i18n="checkDecalFrontOnly">Front-facing surface only (no bleed to back)</span>
             </label>
+            <label style="display:flex;align-items:center;gap:7px;font-size:0.76rem;color:#cbd5e1;margin-top:5px;cursor:pointer;">
+                <input type="checkbox" id="decal-auto-subdivide" checked>
+                <span>Auto-refine low-poly mesh for crisp photo detail</span>
+            </label>
         </div>
 
         <div style="display:flex;gap:8px;">
@@ -911,14 +1008,17 @@
     </div>
 </div>
 
-<!-- 3D Text & Name Stamper Modal -->
+<!-- 3D Text & Name Stamper Modal (FIXED: compact swatches, Flush Inlay, Wrap modes, Depth/Rotation/Size readouts!) -->
 <div id="text-stamp-modal" class="modal-overlay">
     <div class="modal-card">
         <div class="modal-title" data-i18n="modalTextTitle">3D Text &amp; Name Stamper</div>
-        <div class="modal-desc" data-i18n="modalTextDesc">Stamp personalized text, initials, or logos directly onto curved or flat 3D surfaces with embossing or engraving.</div>
+        <div class="modal-desc" data-i18n="modalTextDesc">Stamp personalized text, initials, or logos directly onto curved or flat 3D surfaces with embossing, flush PEI inlay, or engraving.</div>
 
         <div class="control-group">
-            <div class="control-label" data-i18n="labelTextContent">Text to Stamp:</div>
+            <div class="control-label">
+                <span data-i18n="labelTextContent">Text to Stamp:</span>
+                <span style="font-size:0.68rem;color:#64748b;">Use | for multi-line</span>
+            </div>
             <input id="text-stamp-input" class="text-input-box" type="text" value="STUDIOS PRO">
         </div>
 
@@ -936,28 +1036,59 @@
                 <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelTextMode">Stamping Mode:</div>
                 <select id="text-stamp-mode" class="select-box">
                     <option value="emboss" data-i18n="optTextEmboss">Emboss (+1.2mm Raised)</option>
+                    <option value="inlay" data-i18n="optTextInlay">Flush Inlay (0mm Flat, First-Layer PEI)</option>
                     <option value="engrave" data-i18n="optTextEngrave">Engrave (-1.2mm Carved)</option>
                     <option value="surface" data-i18n="optTextSurface">Surface Paint Only</option>
                 </select>
             </div>
         </div>
 
-        <div class="control-group">
-            <div class="control-label" data-i18n="labelTextSize">Text Size:</div>
-            <input id="slider-text-size" class="control-slider" type="range" min="4" max="40" step="1" value="14">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+                <div class="control-label">
+                    <span data-i18n="labelTextSize">Text Size:</span>
+                    <strong id="val-text-size" style="color:#38bdf8;">8 mm</strong>
+                </div>
+                <input id="slider-text-size" class="control-slider" type="range" min="2" max="40" step="0.5" value="8" oninput="this.dataset.userTouched='1'; document.getElementById('val-text-size').textContent = this.value + ' mm'">
+            </div>
+            <div>
+                <div class="control-label">
+                    <span>Depth (mm):</span>
+                    <strong id="val-text-depth" style="color:#38bdf8;">1.2 mm</strong>
+                </div>
+                <input id="slider-text-depth" class="control-slider" type="range" min="0.4" max="3.0" step="0.2" value="1.2" oninput="document.getElementById('val-text-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Surface Wrap:</div>
+                <select id="text-stamp-wrap" class="select-box">
+                    <option value="conformal">Conformal Curved (Safe Clip)</option>
+                    <option value="flat">Flat Planar (Badges / Tags)</option>
+                    <option value="cylindrical">Cylindrical 360° Wrap (Mugs / Tubes)</option>
+                </select>
+            </div>
+            <div>
+                <div class="control-label">
+                    <span>Rotation:</span>
+                    <strong id="val-text-rotation" style="color:#38bdf8;">0°</strong>
+                </div>
+                <input id="slider-text-rotation" class="control-slider" type="range" min="-180" max="180" step="5" value="0" oninput="document.getElementById('val-text-rotation').textContent = this.value + '°'">
+            </div>
         </div>
 
         <div class="control-group">
             <div class="control-label" data-i18n="labelTextColor">Text Color &amp; Filament:</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <span id="text-color-preview" style="width:24px;height:24px;border-radius:6px;border:1px solid #fff;"></span>
-                <input id="text-custom-color" type="color" value="#38bdf8" oninput="onTextColorCustomPick(this.value)">
-                <select id="text-color-slot" class="select-box" onchange="onTextColorSlotChange(this.value)"></select>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <input id="text-custom-color" type="color" value="#ad002b" style="width:32px;height:30px;border:none;background:none;cursor:pointer;flex-shrink:0;" oninput="onTextColorCustomPick(this.value)">
+                <select id="text-color-slot" class="select-box" style="flex:1;" onchange="onTextColorSlotChange(this.value)"></select>
+                <button type="button" class="btn-secondary" style="white-space:nowrap;" onclick="addTextColorAsSlot()" data-i18n="btnAddAsSlot">+ Add as AMS Slot</button>
             </div>
-            <div id="text-palette-swatches" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+            <div id="text-palette-swatches" class="stamp-swatch-grid"></div>
         </div>
 
-        <div style="font-size:0.74rem;color:#93c5fd;margin-bottom:10px;" data-i18n="textStampInstructions">Click 'Stamp onto Surface' then click anywhere on your 3D model to place the text.</div>
+        <div style="font-size:0.74rem;color:#93c5fd;margin-bottom:10px;" data-i18n="textStampInstructions">Click 'Stamp onto Surface' then hover for live 3D preview &amp; click anywhere on your 3D model to place!</div>
         <div style="display:flex;gap:8px;">
             <button class="modal-close" style="margin:0;flex:1;" onclick="closeTextModal()" data-i18n="btnCancel">Cancel</button>
             <button class="btn-primary" style="flex:1;" onclick="startTextStampingMode()" data-i18n="btnApplyText">Stamp onto Surface</button>
@@ -965,11 +1096,11 @@
     </div>
 </div>
 
-<!-- 3D Stencils & Logos Stamper Modal -->
+<!-- 3D Stencils, Custom PNG & Multi-Color SVG Logo Stamper Modal (FIXED Foto 3!) -->
 <div id="stencil-modal" class="modal-overlay">
-    <div class="modal-card" style="width:560px;">
-        <div class="modal-title" data-i18n="modalStencilTitle">3D Stencil &amp; Logo Stamper</div>
-        <div class="modal-desc" data-i18n="modalStencilDesc">Stamp badges, gaming logos, icons, or your own custom SVG/PNG directly onto your 3D model with embossing or engraving.</div>
+    <div class="modal-card" style="width:570px;">
+        <div class="modal-title" data-i18n="modalStencilTitle">3D Stencil &amp; Multi-Color SVG Stamper</div>
+        <div class="modal-desc" data-i18n="modalStencilDesc">Stamp badges, gaming logos, icons, or upload your own PNG or Multi-Color SVG logo directly onto your 3D model!</div>
 
         <div class="demo-filter-bar">
             <button class="demo-filter-btn active" onclick="filterStencilCategory('gaming', this)" data-i18n="tabGaming">Gaming &amp; Badges</button>
@@ -980,34 +1111,81 @@
 
         <div id="stencil-glyph-grid" class="stencil-glyph-grid"></div>
 
-        <label class="btn-secondary" style="width:100%;margin-bottom:10px;cursor:pointer;">
+        <label class="btn-secondary" style="width:100%;margin-bottom:8px;cursor:pointer;">
             <i data-lucide="upload" style="width:14px;height:14px;"></i>
-            <span data-i18n="labelCustomUpload">Or Upload Custom SVG / PNG Logo:</span>
+            <span data-i18n="labelCustomUpload">Or Upload Custom SVG (Single/Multi-Color) / PNG Logo:</span>
             <input type="file" accept="image/*,.svg" style="display:none;" onchange="handleCustomStencilUpload(event)">
         </label>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <!-- Smart Custom Upload Live Preview + Threshold / Invert / Multi-Color SVG Controls -->
+        <div id="stencil-custom-preview-wrap" style="display:none;align-items:center;gap:10px;padding:8px;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border-panel);border-radius:8px;">
+            <canvas id="stencil-custom-preview-canvas" width="58" height="58" style="border-radius:6px;background:#0f172a;border:1px solid rgba(255,255,255,0.15);flex-shrink:0;"></canvas>
+            <div style="flex:1;min-width:0;">
+                <div id="stencil-custom-info" style="font-size:0.74rem;color:#e2e8f0;margin-bottom:4px;"></div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:0.68rem;color:#94a3b8;">Threshold:</span>
+                    <input id="slider-stencil-threshold" class="control-slider" type="range" min="30" max="230" value="128" style="flex:1;" oninput="renderCustomStencilPreview()">
+                    <label style="font-size:0.7rem;color:#cbd5e1;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" id="check-stencil-invert" onchange="renderCustomStencilPreview()"> Invert
+                    </label>
+                </div>
+                <label style="font-size:0.69rem;color:#93c5fd;display:flex;align-items:center;gap:5px;margin-top:4px;cursor:pointer;">
+                    <input type="checkbox" id="check-svg-autoadd-slots" checked> Auto-add Multi-Color SVG fills to AMS slots
+                </label>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
             <div>
                 <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelTextMode">Stamping Mode:</div>
                 <select id="stencil-stamp-mode" class="select-box">
                     <option value="emboss" data-i18n="optTextEmboss">Emboss (+1.2mm Raised)</option>
+                    <option value="inlay" data-i18n="optTextInlay">Flush Inlay (0mm Flat, First-Layer PEI)</option>
                     <option value="engrave" data-i18n="optTextEngrave">Engrave (-1.2mm Carved)</option>
                     <option value="surface" data-i18n="optTextSurface">Surface Paint Only</option>
                 </select>
             </div>
             <div>
-                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Stamp Size (mm):</div>
-                <input id="slider-stencil-size" class="control-slider" type="range" min="5" max="45" step="1" value="16">
+                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Surface Wrap:</div>
+                <select id="stencil-stamp-wrap" class="select-box">
+                    <option value="conformal">Conformal Curved (Safe Clip)</option>
+                    <option value="flat">Flat Planar</option>
+                    <option value="cylindrical">Cylindrical 360° Wrap</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+                <div class="control-label">
+                    <span>Size:</span>
+                    <strong id="val-stencil-size" style="color:#38bdf8;">12 mm</strong>
+                </div>
+                <input id="slider-stencil-size" class="control-slider" type="range" min="4" max="45" step="1" value="12" oninput="document.getElementById('val-stencil-size').textContent = this.value + ' mm'">
+            </div>
+            <div>
+                <div class="control-label">
+                    <span>Depth:</span>
+                    <strong id="val-stencil-depth" style="color:#38bdf8;">1.2 mm</strong>
+                </div>
+                <input id="slider-stencil-depth" class="control-slider" type="range" min="0.4" max="3.0" step="0.2" value="1.2" oninput="document.getElementById('val-stencil-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
+            </div>
+            <div>
+                <div class="control-label">
+                    <span>Angle:</span>
+                    <strong id="val-stencil-rotation" style="color:#38bdf8;">0°</strong>
+                </div>
+                <input id="slider-stencil-rotation" class="control-slider" type="range" min="-180" max="180" step="5" value="0" oninput="document.getElementById('val-stencil-rotation').textContent = this.value + '°'">
             </div>
         </div>
 
         <div class="control-group">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <span id="stencil-color-preview" style="width:24px;height:24px;border-radius:6px;border:1px solid #fff;"></span>
-                <input id="stencil-custom-color" type="color" value="#f59e0b" oninput="onStencilColorCustomPick(this.value)">
-                <select id="stencil-color-slot" class="select-box" onchange="onStencilColorSlotChange(this.value)"></select>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <input id="stencil-custom-color" type="color" value="#ad002b" style="width:32px;height:30px;border:none;background:none;cursor:pointer;flex-shrink:0;" oninput="onStencilColorCustomPick(this.value)">
+                <select id="stencil-color-slot" class="select-box" style="flex:1;" onchange="onStencilColorSlotChange(this.value)"></select>
+                <button type="button" class="btn-secondary" style="white-space:nowrap;" onclick="addStencilColorAsSlot()" data-i18n="btnAddAsSlot">+ Add as AMS Slot</button>
             </div>
-            <div id="stencil-palette-swatches" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+            <div id="stencil-palette-swatches" class="stamp-swatch-grid"></div>
         </div>
 
         <div style="display:flex;gap:8px;">
@@ -1017,17 +1195,153 @@
     </div>
 </div>
 
-<!-- Watertight Closed-Shell Part Splitter Modal -->
+<!-- 3D QR Code & Batch Name Generator Modal (#8!) -->
+<div id="qr-batch-modal" class="modal-overlay">
+    <div class="modal-card" style="width:560px;">
+        <div class="modal-title">
+            <i data-lucide="qr-code" style="color:#10b981;"></i>
+            <span data-i18n="modalQRTitle">3D QR Code, Maker Mark &amp; Batch Names</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalQRDesc">Stamp a scannable 2-color QR code directly onto your print, or batch-generate personalized .3mf files from a list of names!</div>
+
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <button id="btn-tab-qr" class="btn-secondary active" style="flex:1;" onclick="switchQRBatchTab('qr')">📱 3D QR Code Stamper</button>
+            <button id="btn-tab-batch" class="btn-secondary" style="flex:1;" onclick="switchQRBatchTab('batch')">🏷️ Batch Names (.3MF ZIP)</button>
+        </div>
+
+        <!-- TAB 1: 3D QR CODE -->
+        <div id="panel-tab-qr">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+                <canvas id="qr-modal-preview" width="96" height="96" style="border-radius:8px;border:1px solid var(--border-panel);background:#fff;flex-shrink:0;"></canvas>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">URL / Wi-Fi / Maker Handle / Text:</div>
+                    <input id="qr-content-input" class="text-input-box" type="text" value="https://studios-pro.com" oninput="updateQRModalPreview()">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:0.74rem;color:#cbd5e1;margin-top:8px;cursor:pointer;">
+                        <input type="checkbox" id="qr-include-backplate" checked onchange="updateQRModalPreview()">
+                        <span>Include high-contrast Quiet-Zone backing plate</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">QR Modules Color (Dark):</div>
+                    <select id="qr-fg-slot" class="select-box" onchange="updateQRModalPreview()"></select>
+                </div>
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Backplate Color (Light):</div>
+                    <select id="qr-bg-slot" class="select-box" onchange="updateQRModalPreview()"></select>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Mode:</div>
+                    <select id="qr-stamp-mode" class="select-box">
+                        <option value="inlay">Flush Inlay (PEI)</option>
+                        <option value="emboss">Emboss Raised</option>
+                        <option value="surface">Surface Paint</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="control-label">
+                        <span>Size:</span>
+                        <strong id="val-qr-size" style="color:#38bdf8;">20 mm</strong>
+                    </div>
+                    <input id="slider-qr-size" class="control-slider" type="range" min="10" max="60" step="1" value="20" oninput="document.getElementById('val-qr-size').textContent = this.value + ' mm'">
+                </div>
+                <div>
+                    <div class="control-label">
+                        <span>Depth:</span>
+                        <strong id="val-qr-depth" style="color:#38bdf8;">0.8 mm</strong>
+                    </div>
+                    <input id="slider-qr-depth" class="control-slider" type="range" min="0.4" max="2.4" step="0.2" value="0.8" oninput="document.getElementById('val-qr-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;">
+                <button class="modal-close" style="margin:0;flex:1;" onclick="closeQRBatchModal()" data-i18n="btnCancel">Cancel</button>
+                <button class="btn-primary" style="flex:1;" onclick="startQRStampingMode()">Place QR Code on Model</button>
+            </div>
+        </div>
+
+        <!-- TAB 2: BATCH PERSONALIZED NAMES GENERATOR -->
+        <div id="panel-tab-batch" style="display:none;">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Names / Editions List (1 per line or comma-separated, max 50):</span>
+                </div>
+                <textarea id="batch-names-input" class="text-input-box" rows="4" style="resize:vertical;font-family:Inter,monospace;">ALEX
+MARIA
+DAVID
+SOPHIE</textarea>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Font Style:</div>
+                    <select id="batch-stamp-font" class="select-box">
+                        <option value="Outfit, Inter, sans-serif">Modern Bold (Outfit)</option>
+                        <option value="Impact, sans-serif">Heavy Display (Impact)</option>
+                        <option value="Georgia, serif">Classic Serif</option>
+                        <option value="monospace">Tech Monospace</option>
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Mode:</div>
+                    <select id="batch-stamp-mode" class="select-box">
+                        <option value="emboss">Emboss Raised</option>
+                        <option value="inlay">Flush Inlay (PEI)</option>
+                        <option value="surface">Surface Paint</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Filament:</div>
+                    <select id="batch-color-slot" class="select-box"></select>
+                </div>
+                <div>
+                    <div class="control-label">
+                        <span>Size:</span>
+                        <strong id="val-batch-size" style="color:#38bdf8;">7 mm</strong>
+                    </div>
+                    <input id="slider-batch-size" class="control-slider" type="range" min="3" max="30" step="0.5" value="7" oninput="document.getElementById('val-batch-size').textContent = this.value + ' mm'">
+                </div>
+                <div>
+                    <div class="control-label">
+                        <span>Depth:</span>
+                        <strong id="val-batch-depth" style="color:#38bdf8;">1.0 mm</strong>
+                    </div>
+                    <input id="slider-batch-depth" class="control-slider" type="range" min="0.4" max="2.4" step="0.2" value="1.0" oninput="document.getElementById('val-batch-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
+                </div>
+            </div>
+
+            <div id="batch-anchor-status" style="font-size:0.75rem;color:#93c5fd;margin-bottom:10px;">
+                Step 1: Click 'Place Anchor on Model' and click where the name should sit.
+            </div>
+
+            <div style="display:flex;gap:8px;">
+                <button class="btn-secondary" style="flex:1;" onclick="startBatchAnchorPlacement()">1. Place Anchor on Model</button>
+                <button id="btn-generate-batch-zip" class="btn-primary" style="flex:1;" disabled onclick="executeBatchName3MFExport()">2. Generate Batch .3MF ZIP</button>
+            </div>
+            <button class="modal-close" onclick="closeQRBatchModal()" data-i18n="btnClose">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Watertight Closed-Shell Part Splitter Modal (#9: Real Dowel Pins + Exploded View!) -->
 <div id="splitter-modal" class="modal-overlay">
     <div class="modal-card">
         <div class="modal-title" data-i18n="modalSplitterTitle">Single-Extruder Part Splitter (Watertight Solids)</div>
-        <div class="modal-desc" data-i18n="modalSplitterDesc">Extracts each color into a watertight printable solid with alignment dowel pins/clearance for single-extruder printers!</div>
+        <div class="modal-desc" data-i18n="modalSplitterDesc">Extracts each color into a watertight printable solid with real alignment dowel pins, tangent seam clearance &amp; exploded preview!</div>
 
         <div id="splitter-parts-preview" style="margin-bottom:12px;"></div>
 
         <div class="control-group">
             <div class="control-label" data-i18n="labelTolerance">Joint Tolerance / Clearance:</div>
-            <select id="splitter-tolerance" class="select-box">
+            <select id="splitter-tolerance" class="select-box" onchange="clearExplodedPreview()">
                 <option value="0.10" data-i18n="toleranceTight">0.10 mm (Tight)</option>
                 <option value="0.18" selected data-i18n="toleranceStandard">0.18 mm (Recommended)</option>
                 <option value="0.28" data-i18n="toleranceLoose">0.28 mm (Easy)</option>
@@ -1035,8 +1349,24 @@
         </div>
 
         <div class="control-group">
-            <div class="control-label">Solid Shell Wall Thickness (mm):</div>
-            <input id="splitter-shell-thickness" class="control-slider" type="range" min="0.8" max="5" step="0.2" value="2.0">
+            <div class="control-label">
+                <span>Solid Shell Wall Thickness (mm):</span>
+                <strong id="val-splitter-shell" style="color:#38bdf8;">2.0 mm</strong>
+            </div>
+            <input id="splitter-shell-thickness" class="control-slider" type="range" min="0.8" max="5" step="0.2" value="2.0" oninput="document.getElementById('val-splitter-shell').textContent = parseFloat(this.value).toFixed(1) + ' mm'; clearExplodedPreview();">
+        </div>
+
+        <label style="display:flex;align-items:center;gap:7px;font-size:0.78rem;color:#cbd5e1;margin-bottom:12px;cursor:pointer;">
+            <input type="checkbox" id="splitter-include-pins" checked onchange="clearExplodedPreview()">
+            <span data-i18n="labelDowelPins">Generate Mechanical Alignment Dowel Pins (chamfered press-fit)</span>
+        </label>
+
+        <div class="control-group" style="padding:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);border-radius:10px;">
+            <div class="control-label">
+                <span data-i18n="labelExplodedPreview">Exploded Assembly Preview:</span>
+                <strong id="val-splitter-explode" style="color:#38bdf8;">0%</strong>
+            </div>
+            <input id="splitter-explode-slider" class="control-slider" type="range" min="0" max="1" step="0.05" value="0" oninput="previewExplodedSplit(this.value)">
         </div>
 
         <div style="display:flex;gap:8px;">
@@ -1075,9 +1405,14 @@
         <div class="modal-title" data-i18n="shareModalTitle">Share Your 3D Creation</div>
         <div class="modal-desc" data-i18n="shareModalSub">Show your multi-color 3D model to fellow makers &amp; 3D printing enthusiasts!</div>
 
-        <button class="btn-primary" style="width:100%;margin-bottom:12px;" onclick="downloadShareSnapshot()">
+        <button class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="downloadShareSnapshot()">
             <i data-lucide="camera" style="width:16px;height:16px;"></i>
             <span data-i18n="btnDownloadSnapshot">Save Photo (PNG)</span>
+        </button>
+
+        <button class="btn-action magic-style" style="width:100%;margin-bottom:12px;" onclick="exportTurntableVideo()">
+            <i data-lucide="video" style="width:16px;height:16px;"></i>
+            <span data-i18n="btnTurntableVideo">Export 360° Turntable Video (WebM)</span>
         </button>
 
         <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelDirectLink">Direct Studio Link:</div>
@@ -1134,6 +1469,7 @@
 <script src="js/mesh-engine.js"></script>
 <script src="js/painting-tools.js"></script>
 <script src="js/stamping.js"></script>
+<script src="js/pro-tools.js"></script>
 <script src="js/ai-painter.js"></script>
 <script src="js/slicer-sim.js"></script>
 <script src="js/export-3mf.js"></script>

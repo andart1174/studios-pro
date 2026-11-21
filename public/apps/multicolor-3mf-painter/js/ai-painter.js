@@ -255,11 +255,10 @@ function segmentMeshRegions() {
     const posAttr = geom.attributes.position;
     if (!posAttr) return null;
 
-    if (!meshTopology || meshTopology.triCount !== Math.floor(posAttr.count / 3)) {
-        if (typeof buildMeshTopology === 'function') buildMeshTopology(geom);
-    }
-
     const triCount = Math.floor(posAttr.count / 3);
+    if (!meshTopology || meshTopology.faceCount !== triCount) {
+        if (typeof buildMeshTopology === 'function') meshTopology = buildMeshTopology(geom);
+    }
     const bbox = geom.boundingBox || (geom.computeBoundingBox(), geom.boundingBox);
     const size = new THREE.Vector3();
     bbox.getSize(size);
@@ -303,7 +302,7 @@ function segmentMeshRegions() {
         triCentroids[i3 + 2] = (pA.z + pB.z + pC.z) / 3;
     }
 
-    const adj = meshTopology ? meshTopology.adj : null;
+    const adj = meshTopology ? (meshTopology.faceNeighbors || meshTopology.adj) : null;
     if (adj) {
         for (let t = 0; t < triCount; t++) {
             const nx = triNormals[t * 3], ny = triNormals[t * 3 + 1], nz = triNormals[t * 3 + 2];
@@ -583,10 +582,11 @@ function applyAIPaletteAndPaint(theme, styleMode) {
     }
     if (!theme || !Array.isArray(theme.colors) || theme.colors.length === 0) return;
 
-    saveHistory();
-
-    // Update filamentSlots cleanly while preserving slot count up to theme length (min 4)
-    const targetCount = Math.min(16, Math.max(filamentSlots.length, theme.colors.length, 4));
+    const respectCurrentSlots = !!document.getElementById('ai-respect-slot-count')?.checked;
+    // Update filamentSlots cleanly while optionally locking to user's existing AMS slot count
+    const targetCount = respectCurrentSlots
+        ? Math.max(2, filamentSlots.length)
+        : Math.min(16, Math.max(filamentSlots.length, theme.colors.length, 4));
     while (filamentSlots.length < targetCount) {
         const src = theme.colors[filamentSlots.length % theme.colors.length];
         filamentSlots.push({
@@ -714,7 +714,7 @@ function applyAIPaletteAndPaint(theme, styleMode) {
     }
 
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
-    if (typeof updateStats === 'function') updateStats();
+    if (typeof commitHistory === 'function') commitHistory(false);
 
     const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
     showToast(isFr

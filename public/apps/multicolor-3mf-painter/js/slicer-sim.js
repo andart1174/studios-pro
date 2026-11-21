@@ -237,10 +237,43 @@ function updateStats() {
     if (elDims) elDims.textContent = `${size.x.toFixed(1)}×${size.y.toFixed(1)}×${size.z.toFixed(1)} mm`;
 
     const elSwaps = document.getElementById('stat-swaps');
-    if (elSwaps) {
-        const analysis = analyzePrintForAxis(0, 1, 0, 0.2);
-        if (analysis) {
+    const analysis = analyzePrintForAxis(0, 1, 0, 0.2);
+    if (analysis) {
+        if (elSwaps) {
             elSwaps.textContent = `${analysis.totalSwaps} swaps (~${analysis.purgeGrams}g)`;
+        }
+        // #5 Populate per-slot Grams, Cost & % Area stats!
+        if (typeof slotUsageStats !== 'undefined') {
+            const totalA = Math.max(1e-4, analysis.totalArea || 1);
+            slotUsageStats = filamentSlots.map((_, s) => {
+                const areaFrac = (analysis.slotArea[s] || 0) / totalA;
+                const grams = +(analysis.partGrams * areaFrac).toFixed(1);
+                const costUsd = +((grams / 1000) * 24).toFixed(2);
+                const pct = Math.round(areaFrac * 100);
+                return { grams, costUsd, pct, tris: analysis.slotTris[s] || 0 };
+            });
+            if (typeof renderSlotUsageBar === 'function') renderSlotUsageBar();
+            // Update slot usage pills in-place without rebuilding entire grid DOM
+            const cards = document.querySelectorAll('#filament-grid .filament-slot');
+            cards.forEach((card, idx) => {
+                const u = slotUsageStats[idx];
+                let pill = card.querySelector('.slot-usage-pill');
+                if (u && u.tris > 0) {
+                    const txt = `${u.grams.toFixed(1)}g (${u.pct}%)`;
+                    if (pill) {
+                        pill.textContent = txt;
+                    } else {
+                        const dark = typeof isColorDark === 'function' ? isColorDark(filamentSlots[idx].color) : true;
+                        pill = document.createElement('span');
+                        pill.className = 'slot-usage-pill';
+                        pill.style.cssText = `color:${dark ? 'rgba(255,255,255,0.88)' : 'rgba(15,23,42,0.85)'};background:${dark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)'};`;
+                        pill.textContent = txt;
+                        card.appendChild(pill);
+                    }
+                } else if (pill) {
+                    pill.remove();
+                }
+            });
         }
     }
 
@@ -270,35 +303,35 @@ function adaptBrushToModel(modelSizeVec) {
 
 function scaleModel(factor) {
     if (!currentMesh || !currentMesh.geometry || !factor || factor <= 0) return;
-    saveHistory();
     const geom = currentMesh.geometry;
     geom.scale(factor, factor, factor);
-    geom.computeBoundingBox();
-    const minY = geom.boundingBox.min.y;
-    const center = new THREE.Vector3();
-    geom.boundingBox.getCenter(center);
-    geom.translate(-center.x, -minY, -center.z);
-    geom.computeBoundingBox();
+    if (typeof alignGeometryToBed === 'function') alignGeometryToBed(geom);
+    else geom.computeBoundingBox();
+    geom.computeVertexNormals();
+    if (geom.disposeBoundsTree) geom.disposeBoundsTree();
     if (typeof geom.computeBoundsTree === 'function') geom.computeBoundsTree();
-    if (typeof buildMeshTopology === 'function') buildMeshTopology(geom);
+    if (typeof buildMeshTopology === 'function') meshTopology = buildMeshTopology(geom);
     if (typeof SpatialGrid === 'function') spatialGrid = new SpatialGrid(geom, 32);
+    if (typeof precomputeGeometryMetrics === 'function') precomputeGeometryMetrics(geom);
+    if (typeof currentGeoGen !== 'undefined') currentGeoGen++;
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
 
     const size = new THREE.Vector3();
     geom.boundingBox.getSize(size);
     adaptBrushToModel(size);
     updateStats();
+    if (typeof commitHistory === 'function') commitHistory(true);
     if (typeof resetCamera === 'function') resetCamera();
-    showToast(t('modelScaled', `Model scaled (${size.x.toFixed(1)}×${size.y.toFixed(1)}×${size.z.toFixed(1)} mm)`));
+    showToast(`${t('modelScaled', 'Model scaled!')} (${size.x.toFixed(1)}×${size.y.toFixed(1)}×${size.z.toFixed(1)} mm)`);
 }
 
 function colorAll(slotIndex) {
     if (!currentMesh || !triangleColors) return;
     const idx = typeof slotIndex === 'number' ? slotIndex : activeSlotIndex;
-    saveHistory();
     triangleColors.fill(idx);
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
-    updateStats();
-    showToast(t('filledAll', `Filled entire model with Slot ${idx + 1}`));
+    if (typeof commitHistory === 'function') commitHistory(false);
+    showToast(`${t('filledAll', 'Filled entire model!')} (Slot #${idx + 1})`);
 }
 
 function resetAllColors() {
@@ -433,23 +466,22 @@ function applyBestMinPurgeOrientation() {
         return;
     }
 
-    saveHistory();
     const geom = currentMesh.geometry;
     if (best.rx !== 0) geom.rotateX(best.rx);
     if (best.rz !== 0) geom.rotateZ(best.rz);
-    if (typeof layModelFlatOnBed === 'function') {
-        geom.computeBoundingBox();
-        const center = new THREE.Vector3();
-        geom.boundingBox.getCenter(center);
-        geom.translate(-center.x, -geom.boundingBox.min.y, -center.z);
-    }
+    if (typeof alignGeometryToBed === 'function') alignGeometryToBed(geom);
     geom.computeVertexNormals();
     geom.computeBoundingBox();
+    if (geom.disposeBoundsTree) geom.disposeBoundsTree();
     if (typeof geom.computeBoundsTree === 'function') geom.computeBoundsTree();
-    if (typeof buildMeshTopology === 'function') buildMeshTopology(geom);
+    if (typeof buildMeshTopology === 'function') meshTopology = buildMeshTopology(geom);
     if (typeof SpatialGrid === 'function') spatialGrid = new SpatialGrid(geom, 32);
+    if (typeof precomputeGeometryMetrics === 'function') precomputeGeometryMetrics(geom);
+    if (typeof currentGeoGen !== 'undefined') currentGeoGen++;
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
 
     updateStats();
+    if (typeof commitHistory === 'function') commitHistory(true);
     refreshPurgeOptimizerReport();
     if (typeof resetCamera === 'function') resetCamera();
     showToast(`Min-Purge Orientation: ${best.name} (${best.res.totalSwaps} swaps)`);
@@ -466,7 +498,6 @@ function executePurgeOptimization(mode = 'merge-minor') {
     if (!pos) return;
     const triCount = Math.floor(pos.count / 3);
 
-    saveHistory();
     let changed = 0;
 
     if (mode === 'snap-bands') {
@@ -515,14 +546,14 @@ function executePurgeOptimization(mode = 'merge-minor') {
             }
         }
     } else {
-        // Merge isolated single-triangle confetti speckles into dominant neighbor slot
-        if (!meshTopology || meshTopology.triCount !== triCount) {
-            if (typeof buildMeshTopology === 'function') buildMeshTopology(geom);
+        // FIXED: Uses real meshTopology.faceNeighbors & faceCount!
+        if (!meshTopology || meshTopology.faceCount !== triCount) {
+            if (typeof buildMeshTopology === 'function') meshTopology = buildMeshTopology(geom);
         }
-        const adj = meshTopology ? meshTopology.adj : null;
+        const adj = meshTopology ? (meshTopology.faceNeighbors || meshTopology.adj) : null;
         if (adj) {
             const nextColors = new Uint8Array(triangleColors);
-            for (let pass = 0; pass < 2; pass++) {
+            for (let pass = 0; pass < 3; pass++) {
                 for (let t = 0; t < triCount; t++) {
                     const nbrs = adj[t];
                     if (!nbrs || nbrs.length < 2) continue;
@@ -534,12 +565,12 @@ function executePurgeOptimization(mode = 'merge-minor') {
                         if (nc === cur) sameCount++;
                         voteMap.set(nc, (voteMap.get(nc) || 0) + 1);
                     }
-                    if (sameCount === 0) {
+                    if (sameCount <= 1 && nbrs.length >= 2) {
                         let bestC = cur, bestN = -1;
                         voteMap.forEach((cnt, col) => {
-                            if (cnt > bestN) { bestN = cnt; bestC = col; }
+                            if (col !== cur && cnt > bestN) { bestN = cnt; bestC = col; }
                         });
-                        if (bestC !== cur) {
+                        if (bestC !== cur && bestN >= 2) {
                             nextColors[t] = bestC;
                             changed++;
                         }
@@ -551,7 +582,7 @@ function executePurgeOptimization(mode = 'merge-minor') {
     }
 
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
-    updateStats();
+    if (changed > 0 && typeof commitHistory === 'function') commitHistory(false);
     refreshPurgeOptimizerReport();
 
     const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
@@ -559,6 +590,188 @@ function executePurgeOptimization(mode = 'merge-minor') {
         ? `Purge optimisée : ${changed} faces nettoyées`
         : `Purge optimized: ${changed} faces aligned`
     );
+}
+
+// ==========================================
+// 💸 #4 "AMS SWAP KILLER" — EXPENSIVE SPECKLE INSPECTOR & 1-CLICK FIXER
+// ==========================================
+let lastExpensiveSpeckles = [];
+
+function scanExpensiveAMSSpeckles() {
+    const outEl = document.getElementById('swap-killer-results');
+    if (!currentMesh || !currentMesh.geometry || !triangleColors) return [];
+    const geom = currentMesh.geometry;
+    const pos = geom.attributes.position;
+    const triCount = Math.floor(pos.count / 3);
+    if (!meshTopology || meshTopology.faceCount !== triCount) {
+        meshTopology = buildMeshTopology(geom);
+    }
+    const adj = meshTopology.faceNeighbors;
+    const fcent = meshTopology.faceCenters;
+
+    geom.computeBoundingBox();
+    const minY = geom.boundingBox.min.y;
+    const spanY = Math.max(0.2, geom.boundingBox.max.y - minY);
+    const layerH = parseFloat(document.getElementById('purge-layer-height')?.value || '0.2') || 0.2;
+    const layerCount = Math.max(1, Math.min(2500, Math.ceil(spanY / layerH)));
+    const actualLH = spanY / layerCount;
+
+    // Count how many faces of each slot occupy each layer
+    const layerSlotFaceCount = Array.from({ length: filamentSlots.length }, () => new Int32Array(layerCount));
+    const triL0 = new Int32Array(triCount);
+    const triL1 = new Int32Array(triCount);
+
+    for (let t = 0; t < triCount; t++) {
+        const i3 = t * 3;
+        const y0 = pos.getY(i3), y1 = pos.getY(i3 + 1), y2 = pos.getY(i3 + 2);
+        const l0 = Math.max(0, Math.min(layerCount - 1, Math.floor((Math.min(y0, y1, y2) - minY) / actualLH)));
+        const l1 = Math.max(0, Math.min(layerCount - 1, Math.floor((Math.max(y0, y1, y2) - minY - 1e-5) / actualLH)));
+        triL0[t] = l0; triL1[t] = l1;
+        const s = triangleColors[t] || 0;
+        for (let l = l0; l <= l1; l++) layerSlotFaceCount[s][l]++;
+    }
+
+    // Extract connected same-color patches
+    const visited = new Uint8Array(triCount);
+    const q = new Int32Array(triCount);
+    const maxPatchTris = Math.max(12, Math.min(240, Math.floor(triCount * 0.06)));
+    const patches = [];
+
+    for (let start = 0; start < triCount; start++) {
+        if (visited[start]) continue;
+        const slot = triangleColors[start];
+        let head = 0, tail = 0;
+        q[tail++] = start;
+        visited[start] = 1;
+        const tris = [];
+        const borderVotes = new Map();
+        let cx = 0, cy = 0, cz = 0;
+
+        while (head < tail) {
+            const f = q[head++];
+            tris.push(f);
+            cx += fcent[f * 3]; cy += fcent[f * 3 + 1]; cz += fcent[f * 3 + 2];
+            const nbs = adj[f];
+            for (let k = 0; k < nbs.length; k++) {
+                const nb = nbs[k];
+                const nbSlot = triangleColors[nb];
+                if (nbSlot === slot) {
+                    if (!visited[nb]) { visited[nb] = 1; q[tail++] = nb; }
+                } else {
+                    borderVotes.set(nbSlot, (borderVotes.get(nbSlot) || 0) + 1);
+                }
+            }
+        }
+
+        if (tris.length > maxPatchTris || borderVotes.size === 0) continue;
+
+        let domSlot = slot, bestV = -1;
+        borderVotes.forEach((cnt, s) => { if (cnt > bestV) { bestV = cnt; domSlot = s; } });
+        if (domSlot === slot) continue;
+
+        // Compute how many layers ONLY had `slot` because of THIS tiny patch!
+        const patchLayerCounts = new Map();
+        for (let i = 0; i < tris.length; i++) {
+            const t = tris[i];
+            for (let l = triL0[t]; l <= triL1[t]; l++) {
+                patchLayerCounts.set(l, (patchLayerCounts.get(l) || 0) + 1);
+            }
+        }
+        let swapsSaved = 0;
+        patchLayerCounts.forEach((cnt, l) => {
+            if (layerSlotFaceCount[slot][l] <= cnt) swapsSaved++;
+        });
+
+        if (swapsSaved > 0 || tris.length <= 8) {
+            const estSwaps = Math.max(1, swapsSaved);
+            patches.push({
+                tris,
+                slot,
+                domSlot,
+                swapsSaved: estSwaps,
+                wasteGrams: +(estSwaps * getSwapFlushGrams(slot, domSlot)).toFixed(1),
+                center: new THREE.Vector3(cx / tris.length, cy / tris.length, cz / tris.length)
+            });
+        }
+    }
+
+    patches.sort((a, b) => b.swapsSaved - a.swapsSaved || a.tris.length - b.tris.length);
+    lastExpensiveSpeckles = patches.slice(0, 8);
+
+    if (outEl) {
+        const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
+        if (lastExpensiveSpeckles.length === 0) {
+            outEl.innerHTML = `<div style="font-size:0.75rem;color:#34d399;padding:8px;background:rgba(16,185,129,0.1);border-radius:8px;">${isFr ? '✅ Aucune micro-tache coûteuse détectée ! Votre peinture est super propre.' : '✅ Zero expensive stray speckles detected! Your paint job is super clean.'}</div>`;
+        } else {
+            outEl.innerHTML = lastExpensiveSpeckles.map((p, idx) => {
+                const sName = filamentSlots[p.slot]?.name || `Slot #${p.slot + 1}`;
+                const dName = filamentSlots[p.domSlot]?.name || `Slot #${p.domSlot + 1}`;
+                const sCol = filamentSlots[p.slot]?.color || '#fff';
+                return `
+                    <div class="speckle-card">
+                        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:${sCol};flex-shrink:0;border:1px solid #fff;"></span>
+                            <span style="font-size:0.73rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <b>${p.tris.length} tris</b> (${sName} ➔ ${dName}) • <b style="color:#fbbf24;">-${p.swapsSaved} swaps (~${p.wasteGrams}g)</b>
+                            </span>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;">
+                            <button class="btn-secondary" style="padding:2px 6px;font-size:0.68rem;" onclick="focusOnSpecklePatch(${idx})">👁</button>
+                            <button class="btn-primary" style="padding:2px 8px;font-size:0.68rem;" onclick="fixSingleSpecklePatch(${idx})">Fix</button>
+                        </div>
+                    </div>
+                `;
+            }).join('') + `
+                <button class="btn-action emerald-style" style="margin-top:6px;margin-bottom:0;" onclick="fixAllExpensiveSpeckles()">
+                    ⚡ ${t('btnSwapKillerFixAll', 'Fix All Expensive Speckles')} (${lastExpensiveSpeckles.length})
+                </button>
+            `;
+        }
+    }
+    return lastExpensiveSpeckles;
+}
+
+function focusOnSpecklePatch(idx) {
+    const p = lastExpensiveSpeckles[idx];
+    if (!p || !camera || !controls) return;
+    closePurgeOptimizerModal();
+    controls.target.copy(p.center);
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    if (dir.lengthSq() < 0.01) dir.set(0.5, 0.4, 0.8).normalize();
+    camera.position.copy(p.center).addScaledVector(dir, 24);
+    controls.update();
+    showToast(currentLang === 'fr'
+        ? `Micro-zone localisée (${p.tris.length} tris, -${p.swapsSaved} changements AMS)`
+        : `Located expensive speckle (${p.tris.length} tris, -${p.swapsSaved} AMS swaps)`);
+}
+
+function fixSingleSpecklePatch(idx) {
+    const p = lastExpensiveSpeckles[idx];
+    if (!p || !triangleColors) return;
+    for (let i = 0; i < p.tris.length; i++) triangleColors[p.tris[i]] = p.domSlot;
+    updateMeshVisualColors();
+    commitHistory(false);
+    refreshPurgeOptimizerReport();
+    scanExpensiveAMSSpeckles();
+    showToast(currentLang === 'fr' ? `Micro-zone corrigée (-${p.swapsSaved} purges) !` : `Speckle fixed (-${p.swapsSaved} swaps saved)!`);
+}
+
+function fixAllExpensiveSpeckles() {
+    if (!lastExpensiveSpeckles.length || !triangleColors) return;
+    let totalTris = 0;
+    lastExpensiveSpeckles.forEach(p => {
+        for (let i = 0; i < p.tris.length; i++) {
+            triangleColors[p.tris[i]] = p.domSlot;
+            totalTris++;
+        }
+    });
+    updateMeshVisualColors();
+    commitHistory(false);
+    refreshPurgeOptimizerReport();
+    scanExpensiveAMSSpeckles();
+    showToast(currentLang === 'fr'
+        ? `⚡ ${totalTris} triangles parasites nettoyés !`
+        : `⚡ Cleaned ${totalTris} expensive speckle triangles!`);
 }
 
 // ==========================================
@@ -636,7 +849,7 @@ function setLayerSliceRatio(val) {
 
     updateLayerScrubberBounds();
     currentMesh.material.clippingPlanes = enableClip ? [layerSlicePlane] : null;
-    currentMesh.material.side = enableClip ? THREE.DoubleSide : THREE.FrontSide;
+    currentMesh.material.side = THREE.DoubleSide;
     currentMesh.material.needsUpdate = true;
 }
 
@@ -647,23 +860,52 @@ function layerScrubberReset() {
     if (slider) slider.value = 1;
     if (currentMesh && currentMesh.material) {
         currentMesh.material.clippingPlanes = null;
-        currentMesh.material.side = THREE.FrontSide;
+        currentMesh.material.side = THREE.DoubleSide;
         currentMesh.material.needsUpdate = true;
     }
     updateLayerScrubberBounds();
 }
 
 // ==========================================
-// COLOR BY NUMBERS 3D OVERLAY
+// COLOR BY NUMBERS 3D OVERLAY (CACHED ISLANDS, ZERO 60FPS DOM THRASHING!)
 // ==========================================
+let cbnDirty = true;
+let cbnCachedMarkers = []; // [{ slot, pos: Vector3, el: HTMLElement }]
+let lastCbnCamKey = '';
+
+function markCbnDirty() {
+    cbnDirty = true;
+    if (isColorByNumbersActive) renderColorByNumbersBar();
+}
+
+function renderColorByNumbersBar() {
+    const bar = document.getElementById('color-by-numbers-bar');
+    if (!bar) return;
+    if (!isColorByNumbersActive) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    bar.innerHTML = filamentSlots.map((slot, s) => `
+        <button class="cbn-pill ${s === activeSlotIndex ? 'active' : ''}" onclick="selectSlot(${s}); renderColorByNumbersBar();">
+            <span class="cbn-num">#${s + 1}</span>
+            <span class="cbn-dot" style="background:${slot.color};"></span>
+            <span>${slot.name}</span>
+        </button>
+    `).join('');
+}
 
 function clearColorByNumbers() {
     if (cbnLabelsGroup && scene) {
         scene.remove(cbnLabelsGroup);
         cbnLabelsGroup = null;
     }
+    cbnCachedMarkers = [];
+    lastCbnCamKey = '';
     const container = document.getElementById('cbn-overlay-container');
     if (container) container.innerHTML = '';
+    const bar = document.getElementById('color-by-numbers-bar');
+    if (bar) bar.style.display = 'none';
 }
 
 function toggleColorByNumbers() {
@@ -675,74 +917,167 @@ function toggleColorByNumbers() {
         clearColorByNumbers();
         return;
     }
+    cbnDirty = true;
+    renderColorByNumbersBar();
     updateColorByNumbersOverlay();
     showToast(t('cbnActive', 'Color-by-Numbers guide enabled'));
 }
 
-function updateColorByNumbersOverlay() {
+function rebuildCbnMarkers() {
     const container = document.getElementById('cbn-overlay-container');
-    if (!container || !isColorByNumbersActive || !currentMesh || !camera || !renderer) return;
-
+    if (!container || !currentMesh || !triangleColors) return;
+    container.innerHTML = '';
+    cbnCachedMarkers = [];
     const geom = currentMesh.geometry;
-    const pos = geom.attributes.position;
-    if (!pos) return;
-    const triCount = Math.floor(pos.count / 3);
-
-    // Accumulate centroid per used slot
-    const sumX = new Float64Array(filamentSlots.length);
-    const sumY = new Float64Array(filamentSlots.length);
-    const sumZ = new Float64Array(filamentSlots.length);
-    const counts = new Int32Array(filamentSlots.length);
-
-    for (let t = 0; t < triCount; t++) {
-        const s = triangleColors[t] || 0;
-        const i3 = t * 3;
-        sumX[s] += (pos.getX(i3) + pos.getX(i3 + 1) + pos.getX(i3 + 2)) / 3;
-        sumY[s] += (pos.getY(i3) + pos.getY(i3 + 1) + pos.getY(i3 + 2)) / 3;
-        sumZ[s] += (pos.getZ(i3) + pos.getZ(i3 + 1) + pos.getZ(i3 + 2)) / 3;
-        counts[s]++;
+    const triCount = triangleColors.length;
+    if (!meshTopology || meshTopology.faceCount !== triCount) {
+        meshTopology = buildMeshTopology(geom);
     }
+
+    // Place marker at the largest connected island of each used slot (never floating in empty space!)
+    const visited = new Uint8Array(triCount);
+    const q = new Int32Array(triCount);
+    const bestIslandPerSlot = new Map();
+    const adj = meshTopology.faceNeighbors;
+    const fc = meshTopology.faceCenters;
+
+    for (let f = 0; f < triCount; f++) {
+        if (visited[f]) continue;
+        const slot = triangleColors[f];
+        let head = 0, tail = 0;
+        q[tail++] = f;
+        visited[f] = 1;
+        let sx = 0, sy = 0, sz = 0, cnt = 0;
+        while (head < tail) {
+            const cur = q[head++];
+            sx += fc[cur * 3]; sy += fc[cur * 3 + 1]; sz += fc[cur * 3 + 2]; cnt++;
+            const nbs = adj[cur];
+            for (let k = 0; k < nbs.length; k++) {
+                const nb = nbs[k];
+                if (!visited[nb] && triangleColors[nb] === slot) {
+                    visited[nb] = 1;
+                    q[tail++] = nb;
+                }
+            }
+        }
+        const prev = bestIslandPerSlot.get(slot);
+        if (!prev || cnt > prev.cnt) {
+            bestIslandPerSlot.set(slot, { cnt, pos: new THREE.Vector3(sx / cnt, sy / cnt, sz / cnt) });
+        }
+    }
+
+    bestIslandPerSlot.forEach((info, s) => {
+        const slotObj = filamentSlots[s];
+        if (!slotObj) return;
+        const el = document.createElement('div');
+        el.className = 'cbn-num';
+        el.style.borderColor = slotObj.color;
+        el.textContent = String(s + 1);
+        el.title = `#${s + 1} ${slotObj.name}`;
+        el.onclick = () => { selectSlot(s); renderColorByNumbersBar(); };
+        container.appendChild(el);
+        cbnCachedMarkers.push({ slot: s, pos: info.pos, el });
+    });
+
+    cbnDirty = false;
+    lastCbnCamKey = '';
+}
+
+function updateColorByNumbersOverlay() {
+    if (!isColorByNumbersActive || !currentMesh || !camera || !renderer) return;
+    if (cbnDirty) rebuildCbnMarkers();
+    if (cbnCachedMarkers.length === 0) return;
+
+    const m = camera.matrixWorldInverse.elements;
+    const camKey = `${m[0].toFixed(3)},${m[5].toFixed(3)},${m[12].toFixed(2)},${m[13].toFixed(2)},${m[14].toFixed(2)}`;
+    if (camKey === lastCbnCamKey) return;
+    lastCbnCamKey = camKey;
 
     const rect = renderer.domElement.getBoundingClientRect();
-    let html = '';
     const v = new THREE.Vector3();
-    for (let s = 0; s < filamentSlots.length; s++) {
-        if (counts[s] === 0) continue;
-        v.set(sumX[s] / counts[s], sumY[s] / counts[s], sumZ[s] / counts[s]);
-        v.applyMatrix4(currentMesh.matrixWorld);
-        v.project(camera);
-        if (v.z > 1) continue;
+    for (let i = 0; i < cbnCachedMarkers.length; i++) {
+        const mk = cbnCachedMarkers[i];
+        v.copy(mk.pos).applyMatrix4(currentMesh.matrixWorld).project(camera);
+        if (v.z > 1) {
+            mk.el.style.display = 'none';
+            continue;
+        }
         const x = (v.x * 0.5 + 0.5) * rect.width;
         const y = (-v.y * 0.5 + 0.5) * rect.height;
-        const col = filamentSlots[s].color;
-        html += `<div class="cbn-num" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;border-color:${col};" onclick="selectSlot(${s})">${s + 1}</div>`;
+        mk.el.style.display = 'flex';
+        mk.el.style.left = `${x.toFixed(1)}px`;
+        mk.el.style.top = `${y.toFixed(1)}px`;
     }
-    container.innerHTML = html;
 }
 
 // ==========================================
-// HEIGHT GRADIENT AUTO-COLOR MODAL
+// HEIGHT GRADIENT AUTO-COLOR MODAL (WITH POPULATED DROPDOWNS & LIVE PREVIEW!)
 // ==========================================
+let heightPreviewRaf = null;
 
 function openHeightColorModal() {
     const modal = document.getElementById('height-color-modal');
     if (!modal) return;
+    if (!currentMesh) { showToast(t('aiNoModel', 'Load a 3D model first.')); return; }
     if (typeof populateSlotDropdowns === 'function') populateSlotDropdowns();
     modal.classList.add('open');
+    previewHeightGradient();
 }
 
 function closeHeightColorModal() {
+    if (heightPreviewRaf) cancelAnimationFrame(heightPreviewRaf);
     const modal = document.getElementById('height-color-modal');
     if (modal) modal.classList.remove('open');
+    if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+}
+
+function previewHeightGradient() {
+    if (!currentMesh || !currentMesh.geometry) return;
+    const ratio = parseFloat(document.getElementById('height-split-ratio')?.value || '0.5');
+    const geom = currentMesh.geometry;
+    geom.computeBoundingBox();
+    const minY = geom.boundingBox.min.y;
+    const spanY = Math.max(1e-4, geom.boundingBox.max.y - minY);
+    const lbl = document.getElementById('val-height-split');
+    if (lbl) lbl.textContent = `${Math.round(ratio * 100)}% (${(spanY * ratio).toFixed(1)} mm)`;
+
+    if (heightPreviewRaf) cancelAnimationFrame(heightPreviewRaf);
+    heightPreviewRaf = requestAnimationFrame(() => {
+        const bottomRaw = parseInt(document.getElementById('height-bottom-slot')?.value, 10);
+        const topRaw = parseInt(document.getElementById('height-top-slot')?.value, 10);
+        const bottomSlot = isNaN(bottomRaw) ? 0 : bottomRaw;
+        const topSlot = isNaN(topRaw) ? Math.min(1, filamentSlots.length - 1) : topRaw;
+        const rgbBot = slotRgbFloats[bottomSlot] || slotRgbFloats[0];
+        const rgbTop = slotRgbFloats[topSlot] || slotRgbFloats[0];
+
+        const pos = geom.attributes.position;
+        const colorAttr = geom.attributes.color;
+        if (!pos || !colorAttr) return;
+        const colArr = colorAttr.array;
+        const triCount = Math.floor(pos.count / 3);
+
+        for (let t = 0; t < triCount; t++) {
+            const i3 = t * 3;
+            const cy = (pos.getY(i3) + pos.getY(i3 + 1) + pos.getY(i3 + 2)) / 3;
+            const rel = (cy - minY) / spanY;
+            const rgb = rel >= ratio ? rgbTop : rgbBot;
+            const base = t * 9;
+            colArr[base] = rgb[0]; colArr[base + 1] = rgb[1]; colArr[base + 2] = rgb[2];
+            colArr[base + 3] = rgb[0]; colArr[base + 4] = rgb[1]; colArr[base + 5] = rgb[2];
+            colArr[base + 6] = rgb[0]; colArr[base + 7] = rgb[1]; colArr[base + 8] = rgb[2];
+        }
+        colorAttr.needsUpdate = true;
+    });
 }
 
 function applyHeightGradient() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
-    const bottomSlot = parseInt(document.getElementById('height-bottom-slot')?.value || '0', 10);
-    const topSlot = parseInt(document.getElementById('height-top-slot')?.value || '1', 10);
+    const bottomRaw = parseInt(document.getElementById('height-bottom-slot')?.value, 10);
+    const topRaw = parseInt(document.getElementById('height-top-slot')?.value, 10);
+    const bottomSlot = isNaN(bottomRaw) ? 0 : bottomRaw;
+    const topSlot = isNaN(topRaw) ? Math.min(1, filamentSlots.length - 1) : topRaw;
     const ratio = parseFloat(document.getElementById('height-split-ratio')?.value || '0.5');
 
-    saveHistory();
     const geom = currentMesh.geometry;
     geom.computeBoundingBox();
     const minY = geom.boundingBox.min.y;
@@ -757,14 +1092,16 @@ function applyHeightGradient() {
         triangleColors[t] = rel >= ratio ? topSlot : bottomSlot;
     }
 
+    if (heightPreviewRaf) cancelAnimationFrame(heightPreviewRaf);
+    const modal = document.getElementById('height-color-modal');
+    if (modal) modal.classList.remove('open');
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
-    updateStats();
-    closeHeightColorModal();
+    if (typeof commitHistory === 'function') commitHistory(false);
     showToast(t('heightApplied', 'Height layer split applied!'));
 }
 
 // ==========================================
-// LOADED SPOOLS FILTER
+// LOADED SPOOLS FILTER (TRUE PERCEPTUAL CIELAB MATCHING!)
 // ==========================================
 
 function openLoadedSpoolsModal() {
@@ -800,34 +1137,25 @@ function applyLoadedSpoolsRemap() {
     loadedSpoolsIndices = new Set(allowed);
 
     if (currentMesh && triangleColors) {
-        saveHistory();
         const remap = new Int32Array(filamentSlots.length);
         for (let s = 0; s < filamentSlots.length; s++) {
             if (loadedSpoolsIndices.has(s)) {
                 remap[s] = s;
+            } else if (typeof findClosestSlotPerceptual === 'function' && slotRgbFloats[s]) {
+                // FIXED: Actually uses perceptual CIELAB matching among allowed spools!
+                const rgb = slotRgbFloats[s];
+                remap[s] = findClosestSlotPerceptual(rgb[0], rgb[1], rgb[2], allowed);
             } else {
-                const rgb = new THREE.Color(filamentSlots[s].color);
-                if (typeof findClosestSlotPerceptual === 'function') {
-                    // Find closest among allowed spools only
-                    let best = allowed[0], bestDist = Infinity;
-                    for (const a of allowed) {
-                        const ca = new THREE.Color(filamentSlots[a].color);
-                        const d = (rgb.r - ca.r) ** 2 + (rgb.g - ca.g) ** 2 + (rgb.b - ca.b) ** 2;
-                        if (d < bestDist) { bestDist = d; best = a; }
-                    }
-                    remap[s] = best;
-                } else {
-                    remap[s] = allowed[0];
-                }
+                remap[s] = allowed[0];
             }
         }
         for (let t = 0; t < triangleColors.length; t++) {
             triangleColors[t] = remap[triangleColors[t]] ?? allowed[0];
         }
         if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
-        updateStats();
+        if (typeof commitHistory === 'function') commitHistory(false);
     }
 
     closeLoadedSpoolsModal();
-    showToast(`Remapped colors to ${allowed.length} loaded AMS spools`);
+    showToast(translations[currentLang]?.toastSpoolsRemapped || `Remapped colors to ${allowed.length} loaded AMS spools`);
 }

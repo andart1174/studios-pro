@@ -222,6 +222,11 @@ function updateHUDLabels() {
         hudBack.innerHTML = `${t('hudBackface', 'Front-Only: ')}<strong>${isBackfaceProtected ? 'ON' : 'OFF'}</strong>`;
     }
 
+    const hudEdge = document.getElementById('hud-edgelock');
+    if (hudEdge && typeof isEdgeLockEnabled !== 'undefined') {
+        hudEdge.innerHTML = `${t('hudEdgeLock', 'Edge-Lock: ')}<strong>${isEdgeLockEnabled ? 'ON' : 'OFF'}</strong>`;
+    }
+
     const hudAdaptive = document.getElementById('hud-adaptive');
     if (hudAdaptive && typeof isAdaptiveBrushEnabled !== 'undefined') {
         hudAdaptive.innerHTML = `${t('hudAutoSplit', 'Adaptive Brush: ')}<strong>${isAdaptiveBrushEnabled ? 'ON' : 'OFF'}</strong>`;
@@ -290,14 +295,83 @@ function setupDragAndDrop() {
 // KEYBOARD SHORTCUTS
 // ==========================================
 
+function closeAllModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.classList.remove('open');
+        if (m.style.display === 'flex') m.style.display = 'none';
+    });
+    if (typeof clearExplodedPreview === 'function') clearExplodedPreview();
+    if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+}
+
 function onKeyDown(e) {
     const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) {
-        if (e.key === 'Escape') e.target.blur();
+        if (e.key === 'Escape') {
+            e.target.blur();
+            closeAllModals();
+        }
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        // 1. Cancel any active stamping mode (Text, Stencil, QR, Batch)
+        if ((typeof isTextStampingMode !== 'undefined' && isTextStampingMode) ||
+            (typeof isStencilStampingMode !== 'undefined' && isStencilStampingMode) ||
+            (typeof isQRStampingMode !== 'undefined' && isQRStampingMode) ||
+            (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode)) {
+            if (typeof cancelStampingMode === 'function') cancelStampingMode(false);
+            return;
+        }
+        // 2. Cancel Line start or Tape polyline
+        if (typeof lineStartPoint !== 'undefined' && lineStartPoint) {
+            lineStartPoint = null;
+            lineStartNormal = null;
+            lineStartNdc = null;
+            if (typeof linePreviewLine !== 'undefined' && linePreviewLine) linePreviewLine.visible = false;
+            showToast(currentLang === 'fr' ? "Tracé de ligne annulé." : "Line start cancelled.");
+            return;
+        }
+        if (typeof tapePoints !== 'undefined' && tapePoints.length > 0) {
+            if (typeof clearTapePreview === 'function') clearTapePreview();
+            showToast(currentLang === 'fr' ? "Ruban de masquage effacé." : "Masking tape cleared.");
+            return;
+        }
+        // 3. Close any open modal
+        closeAllModals();
         return;
     }
 
     const key = e.key.toLowerCase();
+
+    // Live 3D Stamp Ghost Preview shortcuts (Q/E rotate, +/- scale!)
+    const inStampMode = (typeof isTextStampingMode !== 'undefined' && isTextStampingMode) ||
+        (typeof isStencilStampingMode !== 'undefined' && isStencilStampingMode) ||
+        (typeof isQRStampingMode !== 'undefined' && isQRStampingMode) ||
+        (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode);
+
+    if (inStampMode && typeof adjustActiveStampTransform === 'function') {
+        if (key === 'q') { e.preventDefault(); adjustActiveStampTransform(-15, 1); return; }
+        if (key === 'e') { e.preventDefault(); adjustActiveStampTransform(15, 1); return; }
+        if (key === '+' || key === '=' || key === ']') { e.preventDefault(); adjustActiveStampTransform(0, 1.12); return; }
+        if (key === '-' || key === '_' || key === '[') { e.preventDefault(); adjustActiveStampTransform(0, 0.88); return; }
+    }
+
+    // Masking Tape keyboard shortcuts
+    if (typeof activeTool !== 'undefined' && activeTool === 'tape' && typeof tapePoints !== 'undefined' && tapePoints.length > 0) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (typeof executeTapeCutPaint === 'function') executeTapeCutPaint(tapePoints.length >= 3 ? 'loop' : 'stripe');
+            return;
+        }
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            if (typeof undoLastTapePoint === 'function') undoLastTapePoint();
+            return;
+        }
+    }
+
     if ((e.ctrlKey || e.metaKey) && key === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -319,9 +393,12 @@ function onKeyDown(e) {
         case 'l': selectTool('line'); break;
         case 'f': selectTool('bucket'); break;
         case 'w': selectTool('wand'); break;
+        case 'g': selectTool('shell'); break;
+        case 'x': selectTool('tape'); break;
         case 'i': selectTool('dropper'); break;
         case 'e': selectTool('eraser'); break;
         case 't': if (typeof openTextModal === 'function') openTextModal(); break;
+        case 'q': if (typeof openQRBatchModal === 'function') openQRBatchModal('qr'); break;
         case 'r': if (typeof openReliefModal === 'function') openReliefModal(); break;
         case 'c': if (typeof openCavityModal === 'function') openCavityModal(); break;
         case 'm': if (typeof oneClickMedallionMaster === 'function') oneClickMedallionMaster(); break;
@@ -335,12 +412,20 @@ function onKeyDown(e) {
             break;
         case '[': {
             const sl = document.getElementById('slider-brush-size');
-            if (sl) setBrushRadius(Math.max(parseFloat(sl.min) || 0.2, parseFloat(sl.value) - 1));
+            if (sl) {
+                const cur = parseFloat(sl.value) || 2;
+                const next = Math.max(parseFloat(sl.min) || 0.2, +(cur * 0.82).toFixed(2));
+                setBrushRadius(next);
+            }
             break;
         }
         case ']': {
             const sl = document.getElementById('slider-brush-size');
-            if (sl) setBrushRadius(Math.min(parseFloat(sl.max) || 50, parseFloat(sl.value) + 1));
+            if (sl) {
+                const cur = parseFloat(sl.value) || 2;
+                const next = Math.min(parseFloat(sl.max) || 50, +(cur * 1.22).toFixed(2));
+                setBrushRadius(next);
+            }
             break;
         }
     }
@@ -431,7 +516,8 @@ function updateMobileFilamentBar() {
 // ==========================================
 
 function filterDemoCategory(cat, btn) {
-    document.querySelectorAll('.demo-filter-btn').forEach(b => b.classList.remove('active'));
+    // Scoped strictly to demo filter bar so Stencil modal category tabs are never affected!
+    document.querySelectorAll('.panel-right .demo-filter-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
     document.querySelectorAll('.demo-card').forEach(card => {
         const cardCat = card.dataset.cat || 'all';
@@ -499,9 +585,9 @@ function combineGeometries(geoms) {
 function loadDemoModel(name) {
     const P = [];
     const B = (w, h, d) => new THREE.BoxGeometry(w, h, d, 2, 2, 2);
-    const S = (r, ws = 24, hs = 18) => new THREE.SphereGeometry(r, ws, hs);
+    const S = (r, ws = 24, hs = 18, ...rest) => new THREE.SphereGeometry(r, ws, hs, ...rest);
     const C = (rt, rb, h, seg = 24) => new THREE.CylinderGeometry(rt, rb, h, seg, 1);
-    const T = (r, tube, rs = 14, ts = 32) => new THREE.TorusGeometry(r, tube, rs, ts);
+    const T = (r, tube, rs = 14, ts = 32, ...rest) => new THREE.TorusGeometry(r, tube, rs, ts, ...rest);
     const Co = (r, h, seg = 24) => new THREE.ConeGeometry(r, h, seg);
 
     switch (name) {
@@ -869,6 +955,30 @@ function loadDemoModel(name) {
     if (typeof updateStats === 'function') updateStats();
 }
 
+// Floating portal tooltip for left toolbar so overflow-y:auto NEVER clips tooltips!
+function initToolbarFloatingTooltips() {
+    let tip = document.getElementById('floating-tool-tooltip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'floating-tool-tooltip';
+        tip.className = 'floating-tool-tooltip';
+        document.body.appendChild(tip);
+    }
+    document.querySelectorAll('.toolbar-left .tool-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            const text = btn.getAttribute('data-tooltip');
+            if (!text) return;
+            const r = btn.getBoundingClientRect();
+            tip.textContent = text;
+            tip.style.left = `${r.right + 10}px`;
+            tip.style.top = `${r.top + r.height * 0.5}px`;
+            tip.classList.add('visible');
+        });
+        btn.addEventListener('mouseleave', () => tip.classList.remove('visible'));
+        btn.addEventListener('click', () => tip.classList.remove('visible'));
+    });
+}
+
 // ==========================================
 // BOOTSTRAP ON DOMCONTENTLOADED
 // ==========================================
@@ -876,23 +986,15 @@ function loadDemoModel(name) {
 document.addEventListener('DOMContentLoaded', () => {
     init3D();
     setupDragAndDrop();
+    initToolbarFloatingTooltips();
 
     if (typeof renderFilamentGrid === 'function') renderFilamentGrid();
     if (typeof refreshSlotRgbFloats === 'function') refreshSlotRgbFloats();
+    if (typeof setupSpectrumInteractions === 'function') setupSpectrumInteractions();
     if (typeof initTextPalette === 'function') initTextPalette();
     if (typeof initStencilPalette === 'function') initStencilPalette();
     if (typeof drawPatternPreview === 'function') drawPatternPreview();
     if (typeof initStudiosProBridge === 'function') initStudiosProBridge();
-
-    // Hook saveHistory so every painting / sculpt action schedules IndexedDB auto-save
-    if (typeof saveHistory === 'function') {
-        const origSaveHistory = saveHistory;
-        saveHistory = function (...args) {
-            const res = origSaveHistory.apply(this, args);
-            if (typeof markProjectDirty === 'function') markProjectDirty();
-            return res;
-        };
-    }
 
     // Apply saved or URL-specified language
     const params = new URLSearchParams(window.location.search);

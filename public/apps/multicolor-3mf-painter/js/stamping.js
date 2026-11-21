@@ -1,6 +1,6 @@
 // ==========================================
-// ✍️ 3D TEXT & STENCIL STAMPER (CONFORMAL, WATERTIGHT, VISIBLE CARVED ENGRAVING)
-// + RELIEF, CAVITY & DITHERED PHOTO DECAL PROJECTION
+// ✍️ 3D TEXT, STENCIL, MULTI-COLOR SVG, FLUSH INLAY, RELIEF, CAVITY & PHOTO DECAL ENGINE
+// Watertight outward-normal extrusion, conformal/cylindrical wrap, live 3D ghost preview!
 // ==========================================
 const stampingColorPalette = [
     { name: "Pure White", hex: "#FFFFFF" },
@@ -22,15 +22,26 @@ const stampingColorPalette = [
 ];
 
 let isTextStampingMode = false;
-let pendingTextConfig = { text: 'STUDIO 3D', mode: 'emboss', slot: 1, size: 14, font: 'impact' };
-let selectedTextColorHex = "#FFFFFF";
+let pendingTextConfig = {
+    text: 'STUDIOS PRO', mode: 'emboss', slot: 1, size: 8, depth: 1.2,
+    rotation: 0, wrap: 'conformal', font: 'Outfit, Inter, sans-serif', letterSpacing: 0
+};
+let selectedTextColorHex = "#AD002B";
 
 let isStencilStampingMode = false;
-let pendingStencilConfig = { mode: 'emboss', slot: 1, size: 16 };
+let pendingStencilConfig = {
+    mode: 'emboss', slot: 1, size: 12, depth: 1.2, rotation: 0, wrap: 'conformal',
+    invertMask: false, threshold: 128, multiColorSvg: false
+};
 let activeStencilCategory = 'gaming';
 let activeStencilGlyphId = 'star';
-let activeStencilData = null;
-let selectedStencilColorHex = "#FFFFFF";
+let activeStencilData = null; // { type: 'glyph'|'custom'|'multisvg', ... }
+let selectedStencilColorHex = "#AD002B";
+
+// Live 3D Hover Ghost Preview state
+let stampGhostMesh = null;
+let stampGhostTex = null;
+let stampGhostActiveKind = null; // 'text' | 'stencil' | 'qr' | 'batch'
 
 const stencilGlyphs = {
     gaming: [
@@ -54,7 +65,8 @@ const stencilGlyphs = {
     nature: [
         { id: 'flame', name: 'Flame', pathD: 'M12 2c-.5 2.5-3.5 4.5-3.5 8 0 2.5 1.5 4.5 3.5 4.5 1.5 0 2.5-1 2.5-2.5 0 3-2 6-5.5 6-3.5 0-6.5-2.8-6.5-6.5 0-4.5 4.5-8 7-9.5 0 0 2.5 3.5 2.5 5.5 0 1-.5 1.8-1 2.5 2-1 4.5-3.5 4.5-6 0-3-2.5-5.5-3.5-6.5z', svg: '<path d="M12 2c-.5 2.5-3.5 4.5-3.5 8 0 2.5 1.5 4.5 3.5 4.5 1.5 0 2.5-1 2.5-2.5 0 3-2 6-5.5 6-3.5 0-6.5-2.8-6.5-6.5 0-4.5 4.5-8 7-9.5 0 0 2.5 3.5 2.5 5.5 0 1-.5 1.8-1 2.5 2-1 4.5-3.5 4.5-6 0-3-2.5-5.5-3.5-6.5z" fill="currentColor"/>' },
         { id: 'paw', name: 'Paw', pathD: 'M12 11c-3 0-5.5 2-5.5 5 0 2 2 4 5.5 4s5.5-2 5.5-4c0-3-2.5-5-5.5-5zm-5-3a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm10 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm-5-3a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm-8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm16 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', svg: '<path d="M12 11c-3 0-5.5 2-5.5 5 0 2 2 4 5.5 4s5.5-2 5.5-4c0-3-2.5-5-5.5-5zm-5-3a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm10 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm-5-3a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm-8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm16 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor"/>' },
-        { id: 'leaf', name: 'Leaf', pathD: 'M17 3H7c-1.1 0-2 .9-2 2v14l7-3 7 3V5c0-1.1-.9-2-2-2zm0 13l-5-2.18L7 16V5h10v11z', svg: '<path d="M17 3H7c-1.1 0-2 .9-2 2v14l7-3 7 3V5c0-1.1-.9-2-2-2zm0 13l-5-2.18L7 16V5h10v11z" fill="currentColor"/>' },
+        // FIXED: genuine stylized Leaf vector (previously was a Bookmark icon!)
+        { id: 'leaf', name: 'Leaf', pathD: 'M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z', svg: '<path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" fill="currentColor"/>' },
         { id: 'tree', name: 'Pine Tree', pathD: 'M12 2l5 7h-3l5 7H5l5-7H7l5-7zm-1.5 14h3v6h-3z', svg: '<path d="M12 2l5 7h-3l5 7H5l5-7H7l5-7zm-1.5 14h3v6h-3z" fill="currentColor"/>' },
         { id: 'bat', name: 'Bat', pathD: 'M12 7c-2-3-7-4-10-1 1 3 3 5 5 5-2 2-3 5-2 7 3-1 5-3 7-5 2 2 4 4 7 5 1-2 0-5-2-7 2 0 4-2 5-5-3-3-8-2-10 1z', svg: '<path d="M12 7c-2-3-7-4-10-1 1 3 3 5 5 5-2 2-3 5-2 7 3-1 5-3 7-5 2 2 4 4 7 5 1-2 0-5-2-7 2 0 4-2 5-5-3-3-8-2-10 1z" fill="currentColor"/>' },
         { id: 'wings', name: 'Wings', pathD: 'M12 12C9 5 3 4 1 5c1 5 6 9 11 9zm0 0c3-7 9-8 11-7-1 5-6 9-11 9z', svg: '<path d="M12 12C9 5 3 4 1 5c1 5 6 9 11 9zm0 0c3-7 9-8 11-7-1 5-6 9-11 9z" fill="currentColor"/>' }
@@ -69,12 +81,120 @@ const stencilGlyphs = {
     ]
 };
 
-// Shared watertight conformal stamp generator (FIXED wTR1 typo, added back-cap, curved surface projection, and visible carved engraving!)
-function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot, rgb, hit, successToast) {
-    saveHistory(true);
+// ==========================================
+// 👻 LIVE 3D INTERACTIVE STAMP GHOST PREVIEW
+// ==========================================
+function clearStampGhost() {
+    if (stampGhostMesh && scene) {
+        scene.remove(stampGhostMesh);
+        if (stampGhostMesh.geometry) stampGhostMesh.geometry.dispose();
+        if (stampGhostMesh.material) stampGhostMesh.material.dispose();
+        stampGhostMesh = null;
+    }
+    if (stampGhostTex) {
+        stampGhostTex.dispose();
+        stampGhostTex = null;
+    }
+    stampGhostActiveKind = null;
+    const hud = document.getElementById('stamp-live-hud');
+    if (hud) hud.style.display = 'none';
+}
 
-    const hitLocalPoint = currentMesh.worldToLocal(hit.point.clone());
-    const N = (hit.face ? hit.face.normal.clone() : new THREE.Vector3(0, 1, 0)).normalize();
+function cancelStampingMode(silent = false) {
+    const wasActive = isTextStampingMode || isStencilStampingMode ||
+        (typeof isQRStampingMode !== 'undefined' && isQRStampingMode) ||
+        (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode);
+    isTextStampingMode = false;
+    isStencilStampingMode = false;
+    if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
+    if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
+    clearStampGhost();
+    if (typeof selectTool === 'function') selectTool(activeTool);
+    if (wasActive && !silent && typeof showToast === 'function') {
+        showToast(currentLang === 'fr' ? "Mode tampon annulé." : "Stamping mode cancelled.");
+    }
+}
+
+function buildStampGhostFromCanvas(canvas, physW, physH, kind) {
+    clearStampGhost();
+    if (!scene || !canvas) return;
+    stampGhostActiveKind = kind;
+    stampGhostTex = new THREE.CanvasTexture(canvas);
+    stampGhostTex.needsUpdate = true;
+    const geom = new THREE.PlaneGeometry(physW, physH);
+    const mat = new THREE.MeshBasicMaterial({
+        map: stampGhostTex,
+        transparent: true,
+        opacity: 0.82,
+        side: THREE.DoubleSide,
+        depthTest: false
+    });
+    stampGhostMesh = new THREE.Mesh(geom, mat);
+    stampGhostMesh.visible = false;
+    stampGhostMesh.renderOrder = 999;
+    stampGhostMesh.userData = { physW, physH };
+    scene.add(stampGhostMesh);
+
+    const hud = document.getElementById('stamp-live-hud');
+    if (hud) hud.style.display = 'flex';
+    updateStampHudLabel();
+}
+
+function updateStampHudLabel() {
+    const el = document.getElementById('stamp-live-hud-text');
+    if (!el) return;
+    let sz = 10, rot = 0;
+    if (isTextStampingMode) { sz = pendingTextConfig.size; rot = pendingTextConfig.rotation || 0; }
+    else if (isStencilStampingMode) { sz = pendingStencilConfig.size; rot = pendingStencilConfig.rotation || 0; }
+    else if (typeof isQRStampingMode !== 'undefined' && isQRStampingMode && typeof pendingQRConfig !== 'undefined') { sz = pendingQRConfig.size; rot = pendingQRConfig.rotation || 0; }
+    else if (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode && typeof pendingBatchConfig !== 'undefined') { sz = pendingBatchConfig.size; rot = pendingBatchConfig.rotation || 0; }
+
+    el.textContent = currentLang === 'fr'
+        ? `Cliquez sur le modèle • ${sz.toFixed(1)}mm | ${rot}° • Q/E: Pivoter • +/-: Taille • Échap: Annuler`
+        : `Click on model to place • ${sz.toFixed(1)}mm | ${rot}° • Q/E: Rotate • +/-: Scale • Esc: Cancel`;
+}
+
+function adjustActiveStampTransform(deltaRotDeg, scaleMult) {
+    if (isTextStampingMode) {
+        pendingTextConfig.rotation = ((pendingTextConfig.rotation || 0) + deltaRotDeg + 360) % 360;
+        if (pendingTextConfig.rotation > 180) pendingTextConfig.rotation -= 360;
+        pendingTextConfig.size = Math.max(2, Math.min(60, +(pendingTextConfig.size * scaleMult).toFixed(1)));
+        const rendered = renderTextToBitmapCanvas(pendingTextConfig);
+        buildStampGhostFromCanvas(rendered.previewCanvas, rendered.physW, rendered.physH, 'text');
+    } else if (isStencilStampingMode) {
+        pendingStencilConfig.rotation = ((pendingStencilConfig.rotation || 0) + deltaRotDeg + 360) % 360;
+        if (pendingStencilConfig.rotation > 180) pendingStencilConfig.rotation -= 360;
+        pendingStencilConfig.size = Math.max(3, Math.min(60, +(pendingStencilConfig.size * scaleMult).toFixed(1)));
+        if (stampGhostMesh) {
+            const ratio = stampGhostMesh.userData.physW / Math.max(0.1, stampGhostMesh.userData.physH);
+            const nH = pendingStencilConfig.size;
+            const nW = nH * ratio;
+            stampGhostMesh.geometry.dispose();
+            stampGhostMesh.geometry = new THREE.PlaneGeometry(nW, nH);
+            stampGhostMesh.userData = { physW: nW, physH: nH };
+        }
+        updateStampHudLabel();
+    } else if (typeof isQRStampingMode !== 'undefined' && isQRStampingMode && typeof pendingQRConfig !== 'undefined') {
+        pendingQRConfig.rotation = ((pendingQRConfig.rotation || 0) + deltaRotDeg + 360) % 360;
+        if (pendingQRConfig.rotation > 180) pendingQRConfig.rotation -= 360;
+        pendingQRConfig.size = Math.max(8, Math.min(80, +(pendingQRConfig.size * scaleMult).toFixed(1)));
+        if (stampGhostMesh) {
+            stampGhostMesh.geometry.dispose();
+            stampGhostMesh.geometry = new THREE.PlaneGeometry(pendingQRConfig.size, pendingQRConfig.size);
+            stampGhostMesh.userData = { physW: pendingQRConfig.size, physH: pendingQRConfig.size };
+        }
+        updateStampHudLabel();
+    } else if (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode && typeof pendingBatchConfig !== 'undefined') {
+        pendingBatchConfig.rotation = ((pendingBatchConfig.rotation || 0) + deltaRotDeg + 360) % 360;
+        if (pendingBatchConfig.rotation > 180) pendingBatchConfig.rotation -= 360;
+        pendingBatchConfig.size = Math.max(2, Math.min(50, +(pendingBatchConfig.size * scaleMult).toFixed(1)));
+        const rendered = renderTextToBitmapCanvas({ ...pendingBatchConfig, text: pendingBatchConfig.sampleName || 'SAMPLE' });
+        buildStampGhostFromCanvas(rendered.previewCanvas, rendered.physW, rendered.physH, 'batch');
+    }
+}
+
+function computeStampBasis(hit, rotationDeg = 0) {
+    const N = (hit.face ? hit.face.normal.clone() : new THREE.Vector3(0, 0, 1)).normalize();
     const invMat = new THREE.Matrix4().copy(currentMesh.matrixWorld).invert();
     const camRightLocal = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).transformDirection(invMat);
 
@@ -84,89 +204,152 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
         T = new THREE.Vector3().crossVectors(camUpLocal, N);
     }
     T.normalize();
-    const B = new THREE.Vector3().crossVectors(N, T).normalize();
+    let B = new THREE.Vector3().crossVectors(N, T).normalize();
 
-    const isSolid = (px, py) => {
-        if (px < 0 || px >= W || py < 0 || py >= H) return false;
-        const idx = (py * W + px) * 4;
-        const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2], a = imgData[idx + 3];
-        if (a < 50) return false;
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        return lum > 105 || (a > 120 && lum > 45);
-    };
+    // Apply user rotation around surface normal N
+    if (rotationDeg) {
+        const rad = (rotationDeg * Math.PI) / 180;
+        const cosA = Math.cos(rad), sinA = Math.sin(rad);
+        const rT = T.clone().multiplyScalar(cosA).addScaledVector(B, sinA).normalize();
+        const rB = B.clone().multiplyScalar(cosA).addScaledVector(T, -sinA).normalize();
+        T = rT;
+        B = rB;
+    }
+    return { T, B, N };
+}
 
-    // Case 1: 'paint' or 'engrave' mode -> Paint / Carve actual mesh triangles directly (watertight & visible!)
-    if (mode === 'paint' || mode === 'engrave') {
-        const stampRad = Math.hypot(physW * 0.5, physH * 0.5) * 1.1;
-        // Refine local faces first so letters/icons look sharp even on coarse CAD faces!
+function updateStampGhostAtHit(hit) {
+    if (!stampGhostMesh || !currentMesh) return;
+    if (!hit || !hit.face) {
+        stampGhostMesh.visible = false;
+        return;
+    }
+    let rotDeg = 0;
+    if (isTextStampingMode) rotDeg = pendingTextConfig.rotation || 0;
+    else if (isStencilStampingMode) rotDeg = pendingStencilConfig.rotation || 0;
+    else if (typeof isQRStampingMode !== 'undefined' && isQRStampingMode && typeof pendingQRConfig !== 'undefined') rotDeg = pendingQRConfig.rotation || 0;
+    else if (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode && typeof pendingBatchConfig !== 'undefined') rotDeg = pendingBatchConfig.rotation || 0;
+
+    const { T, B, N } = computeStampBasis(hit, rotDeg);
+    const basisMat = new THREE.Matrix4().makeBasis(T, B, N);
+    stampGhostMesh.quaternion.setFromRotationMatrix(basisMat);
+    stampGhostMesh.position.copy(hit.point).addScaledVector(N, 0.35);
+    stampGhostMesh.visible = true;
+}
+
+// ==========================================
+// 🧱 CORE WATERTIGHT STAMP ENGINE (EMBOSS / FLUSH INLAY / SURFACE PAINT / ENGRAVE)
+// FIXED: Outward normals on ALL 4 side walls, cliff-safe conformal projection,
+// cylindrical 360° wrap, matched watertight per-pixel quads (zero T-junctions!),
+// Rivara high-res surface paint, wall-safe welded engrave!
+// ==========================================
+function applyBinaryMaskStampToSurface(maskBits, W, H, physW, physH, opts, hit, successToast) {
+    const mode = opts.mode || 'emboss'; // 'emboss' | 'inlay' | 'surface' | 'paint' | 'engrave'
+    const targetSlot = opts.slot !== undefined ? opts.slot : activeSlotIndex;
+    const rgb = slotRgbFloats[targetSlot] || opts.rgb || [0.97, 0.98, 0.99];
+    const depthMm = Math.max(0.2, Math.min(4.0, parseFloat(opts.depth) || 1.2));
+    const rotationDeg = parseFloat(opts.rotation) || 0;
+    const wrapMode = opts.wrap || 'conformal'; // 'flat' | 'conformal' | 'cylindrical'
+    const skipHistoryCommit = !!opts.skipHistoryCommit;
+    const suppressToast = !!opts.suppressToast;
+
+    const hitLocalPoint = currentMesh.worldToLocal(hit.point.clone());
+    const { T, B, N } = computeStampBasis(hit, rotationDeg);
+    const isSolid = (px, py) => (px >= 0 && px < W && py >= 0 && py < H) && maskBits[py * W + px] === 1;
+
+    // ---------------------------------------------------------
+    // MODE A: 'surface' / 'paint' / 'engrave' -> Rivara Local Refinement + Paint / Welded Carve
+    // ---------------------------------------------------------
+    if (mode === 'surface' || mode === 'paint' || mode === 'engrave') {
+        const stampRad = Math.hypot(physW * 0.5, physH * 0.5) * 1.12;
         if (spatialGrid) {
-            for (let pass = 0; pass < 3; pass++) {
+            const targetEdge = Math.max(0.24, Math.min(physW, physH) * 0.045, 0.32);
+            const maxESq = targetEdge * targetEdge;
+            for (let pass = 0; pass < 4; pass++) {
                 const curPos = currentMesh.geometry.attributes.position.array;
+                const faceCount = (curPos.length / 9) | 0;
+                if (faceCount > 240000) break;
                 const toSplit = new Set();
-                const maxE = Math.max(0.45, Math.min(physW, physH) * 0.09);
-                const maxESq = maxE * maxE;
                 spatialGrid.querySphere(hitLocalPoint.x, hitLocalPoint.y, hitLocalPoint.z, stampRad, (f) => {
+                    const f3 = f * 3;
+                    if (meshTopology && meshTopology.faceNormals) {
+                        const dot = meshTopology.faceNormals[f3] * N.x + meshTopology.faceNormals[f3 + 1] * N.y + meshTopology.faceNormals[f3 + 2] * N.z;
+                        if (dot < 0.25) return;
+                    }
                     const p = f * 9;
                     const e0 = (curPos[p + 3] - curPos[p]) ** 2 + (curPos[p + 4] - curPos[p + 1]) ** 2 + (curPos[p + 5] - curPos[p + 2]) ** 2;
                     const e1 = (curPos[p + 6] - curPos[p + 3]) ** 2 + (curPos[p + 7] - curPos[p + 4]) ** 2 + (curPos[p + 8] - curPos[p + 5]) ** 2;
                     const e2 = (curPos[p] - curPos[p + 6]) ** 2 + (curPos[p + 1] - curPos[p + 7]) ** 2 + (curPos[p + 2] - curPos[p + 8]) ** 2;
                     if (e0 > maxESq || e1 > maxESq || e2 > maxESq) toSplit.add(f);
                 });
-                if (toSplit.size === 0 || !subdivideFacesLocal(toSplit, 1)) break;
+                if (toSplit.size === 0 || !subdivideFacesLocal(toSplit, 1, true)) break;
             }
         }
 
         const geom = currentMesh.geometry;
         const posAttr = geom.attributes.position;
         const pos = posAttr.array;
-        const normArr = geom.attributes.normal ? geom.attributes.normal.array : null;
-        const colorAttr = geom.attributes.color;
-        const colArr = colorAttr.array;
-        const paintedVertKeys = new Set();
+        const faceCount = (posAttr.count / 3) | 0;
+        if (!meshTopology || meshTopology.faceCount !== faceCount) {
+            meshTopology = buildMeshTopology(geom);
+        }
+
+        const fn = meshTopology.faceNormals;
+        const engravedVids = new Set();
         let paintedFaces = 0;
 
-        spatialGrid.querySphere(hitLocalPoint.x, hitLocalPoint.y, hitLocalPoint.z, stampRad, (f) => {
-            if (normArr) {
-                const nIdx = f * 9;
-                const dot = normArr[nIdx] * N.x + normArr[nIdx + 1] * N.y + normArr[nIdx + 2] * N.z;
-                if (dot < 0.25) return;
-            }
-            const f3 = f * 3;
-            const cx = spatialGrid.faceCenters[f3] - hitLocalPoint.x;
-            const cy = spatialGrid.faceCenters[f3 + 1] - hitLocalPoint.y;
-            const cz = spatialGrid.faceCenters[f3 + 2] - hitLocalPoint.z;
-            const lx = cx * T.x + cy * T.y + cz * T.z;
-            const ly = cx * B.x + cy * B.y + cz * B.z;
+        const evalPointInMask = (vx, vy, vz) => {
+            const dx = vx - hitLocalPoint.x;
+            const dy = vy - hitLocalPoint.y;
+            const dz = vz - hitLocalPoint.z;
+            // Reject faces far in front or behind the hit surface (prevents bleeding onto arms/legs!)
+            const depthOff = Math.abs(dx * N.x + dy * N.y + dz * N.z);
+            if (depthOff > Math.max(physW, physH) * 0.45 + 3.0) return false;
+            const lx = dx * T.x + dy * T.y + dz * T.z;
+            const ly = dx * B.x + dy * B.y + dz * B.z;
             const px = Math.floor((lx / physW + 0.5) * W);
             const py = Math.floor((0.5 - ly / physH) * H);
+            return isSolid(px, py);
+        };
 
-            if (isSolid(px, py)) {
+        spatialGrid.querySphere(hitLocalPoint.x, hitLocalPoint.y, hitLocalPoint.z, stampRad, (f) => {
+            const f3 = f * 3;
+            const dot = fn[f3] * N.x + fn[f3 + 1] * N.y + fn[f3 + 2] * N.z;
+            if (dot < 0.25) return;
+
+            const p = f * 9;
+            const cx = spatialGrid.faceCenters[f3], cy = spatialGrid.faceCenters[f3 + 1], cz = spatialGrid.faceCenters[f3 + 2];
+            // 4-point supersampled hit test for clean sharp boundaries
+            const votes = (evalPointInMask(cx, cy, cz) ? 2 : 0)
+                + (evalPointInMask(pos[p], pos[p + 1], pos[p + 2]) ? 1 : 0)
+                + (evalPointInMask(pos[p + 3], pos[p + 4], pos[p + 5]) ? 1 : 0)
+                + (evalPointInMask(pos[p + 6], pos[p + 7], pos[p + 8]) ? 1 : 0);
+
+            if (votes >= 2) {
                 triangleColors[f] = targetSlot;
-                const base = f * 9;
-                colArr[base]     = rgb[0]; colArr[base + 1] = rgb[1]; colArr[base + 2] = rgb[2];
-                colArr[base + 3] = rgb[0]; colArr[base + 4] = rgb[1]; colArr[base + 5] = rgb[2];
-                colArr[base + 6] = rgb[0]; colArr[base + 7] = rgb[1]; colArr[base + 8] = rgb[2];
                 paintedFaces++;
-
-                if (mode === 'engrave') {
-                    for (let k = 0; k < 3; k++) {
-                        const vi = base + k * 3;
-                        const vk = `${Math.round(pos[vi] * 1000)}_${Math.round(pos[vi + 1] * 1000)}_${Math.round(pos[vi + 2] * 1000)}`;
-                        paintedVertKeys.add(vk);
-                    }
+                if (mode === 'engrave' && meshTopology.vertIds) {
+                    engravedVids.add(meshTopology.vertIds[f * 3]);
+                    engravedVids.add(meshTopology.vertIds[f * 3 + 1]);
+                    engravedVids.add(meshTopology.vertIds[f * 3 + 2]);
                 }
             }
         });
 
-        if (mode === 'engrave' && paintedVertKeys.size > 0) {
-            const totalVerts = (pos.length / 3) | 0;
-            for (let v = 0; v < totalVerts; v++) {
-                const vi = v * 3;
-                const vk = `${Math.round(pos[vi] * 1000)}_${Math.round(pos[vi + 1] * 1000)}_${Math.round(pos[vi + 2] * 1000)}`;
-                if (paintedVertKeys.has(vk)) {
-                    pos[vi]     -= N.x * 0.9;
-                    pos[vi + 1] -= N.y * 0.9;
-                    pos[vi + 2] -= N.z * 0.9;
+        // Watertight welded vertex engraving with safe thickness cap (never punctures thin walls!)
+        if (mode === 'engrave' && engravedVids.size > 0 && meshTopology.weldedVertIndices) {
+            geom.computeBoundingBox();
+            const bSize = new THREE.Vector3();
+            geom.boundingBox.getSize(bSize);
+            const safeDepth = Math.min(depthMm, Math.max(0.35, Math.min(bSize.x, bSize.y, bSize.z) * 0.22));
+            for (const vid of engravedVids) {
+                const copies = meshTopology.weldedVertIndices[vid];
+                const dx = -N.x * safeDepth;
+                const dy = -N.y * safeDepth;
+                const dz = -N.z * safeDepth;
+                for (let c = 0; c < copies.length; c++) {
+                    const vi = copies[c] * 3;
+                    pos[vi] += dx; pos[vi + 1] += dy; pos[vi + 2] += dz;
                 }
             }
             posAttr.needsUpdate = true;
@@ -175,55 +358,156 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
             if (geom.computeBoundsTree) geom.computeBoundsTree();
             spatialGrid = new SpatialGrid(geom, 32);
             meshTopology = buildMeshTopology(geom);
+            currentGeoGen++;
         }
+
+        precomputeGeometryMetrics(geom);
 
         if (paintedFaces === 0) {
-            showToast(currentLang === 'fr' ? "Zone trop petite pour imprimer ce motif." : "Area too small to stamp motif.");
-            return;
+            if (!suppressToast) showToast(currentLang === 'fr' ? "Zone trop petite ou hors surface pour imprimer ce motif." : "Area too small or off-surface to stamp motif.");
+            return false;
         }
-        colorAttr.needsUpdate = true;
-        if (typeof updateStats === 'function') updateStats();
-        saveHistory(true);
-        showToast(successToast);
-        return;
+        updateMeshVisualColors();
+        if (!skipHistoryCommit) commitHistory(true);
+        if (!suppressToast && successToast) showToast(successToast);
+        return true;
     }
 
-    // Case 2: 'emboss' mode (+1.2mm raised, conformal to curved surfaces, closed bottom cap & fixed wTR1!)
-    const extrudeZ = 1.2;
-    const baseEmbedZ = -0.15; // Slight overlap into base solid for clean manifold union
+    // ---------------------------------------------------------
+    // MODE B: 'emboss' (+depthMm raised) OR 'inlay' (#1 Flush 0mm PEI Inlay!)
+    // GUARANTEED OUTWARD NORMALS ON ALL 6 SIDES + CLIFF-CLIPPED CONFORMAL WRAP!
+    // ---------------------------------------------------------
+    const isInlay = (mode === 'inlay');
+    const extrudeZ = isInlay ? 0.04 : depthMm;      // Flush at 0.04mm for PEI bed first-layer inlay!
+    const baseEmbedZ = isInlay ? -Math.min(0.8, Math.max(0.4, depthMm * 0.5)) : -0.18;
 
-    // Sample surface height offsets across grid via raycast so text/stencils wrap smoothly on curved parts
-    const surfOffsets = new Float32Array((W + 1) * (H + 1));
-    const localRay = new THREE.Raycaster();
-    localRay.firstHitOnly = true;
-    const tmpOrigin = new THREE.Vector3();
-    const rayDirWorld = N.clone().negate().transformDirection(currentMesh.matrixWorld).normalize();
-    const probeDist = Math.max(physW, physH) * 0.35 + 4;
+    // 1. Sample surface depth grid safely (flat / conformal / cylindrical)
+    const gridN = (W + 1) * (H + 1);
+    const surfOffsets = new Float32Array(gridN);
+    const validCorner = new Uint8Array(gridN);
+    validCorner.fill(1);
 
-    for (let gy = 0; gy <= H; gy++) {
-        for (let gx = 0; gx <= W; gx++) {
-            const lx = (gx / W - 0.5) * physW;
-            const ly = (0.5 - gy / H) * physH;
-            tmpOrigin.copy(hitLocalPoint).addScaledVector(T, lx).addScaledVector(B, ly).addScaledVector(N, probeDist);
-            const worldOrig = tmpOrigin.clone().applyMatrix4(currentMesh.matrixWorld);
-            localRay.set(worldOrig, rayDirWorld);
-            const hits = localRay.intersectObject(currentMesh);
-            if (hits.length > 0) {
-                const hitLocal = currentMesh.worldToLocal(hits[0].point.clone());
-                const relZ = hitLocal.sub(hitLocalPoint).dot(N);
-                surfOffsets[gy * (W + 1) + gx] = Math.abs(relZ) < probeDist ? relZ : 0;
-            } else {
-                surfOffsets[gy * (W + 1) + gx] = 0;
+    // For cylindrical wrap (#6), estimate cylinder center & radius around model Y axis
+    let cylCenterX = 0, cylCenterZ = 0, cylRadius = 15, cylAngle0 = 0;
+    if (wrapMode === 'cylindrical') {
+        currentMesh.geometry.computeBoundingBox();
+        const box = currentMesh.geometry.boundingBox;
+        cylCenterX = (box.min.x + box.max.x) * 0.5;
+        cylCenterZ = (box.min.z + box.max.z) * 0.5;
+        const rx = hitLocalPoint.x - cylCenterX;
+        const rz = hitLocalPoint.z - cylCenterZ;
+        cylRadius = Math.max(4.0, Math.hypot(rx, rz));
+        cylAngle0 = Math.atan2(rx, rz);
+    }
+
+    if (wrapMode === 'conformal') {
+        const localRay = new THREE.Raycaster();
+        localRay.firstHitOnly = true;
+        const tmpOrigin = new THREE.Vector3();
+        const rayDirWorld = N.clone().negate().transformDirection(currentMesh.matrixWorld).normalize();
+        const probeDist = Math.max(physW, physH) * 0.35 + 4.0;
+        const maxJumpFromHit = Math.max(1.8, Math.min(physW, physH) * 0.25);
+
+        for (let gy = 0; gy <= H; gy++) {
+            for (let gx = 0; gx <= W; gx++) {
+                const idx = gy * (W + 1) + gx;
+                const lx = (gx / W - 0.5) * physW;
+                const ly = (0.5 - gy / H) * physH;
+                tmpOrigin.copy(hitLocalPoint).addScaledVector(T, lx).addScaledVector(B, ly).addScaledVector(N, probeDist);
+                const worldOrig = tmpOrigin.clone().applyMatrix4(currentMesh.matrixWorld);
+                localRay.set(worldOrig, rayDirWorld);
+                const hits = localRay.intersectObject(currentMesh);
+                if (hits.length > 0) {
+                    const hLoc = currentMesh.worldToLocal(hits[0].point.clone());
+                    const relZ = hLoc.sub(hitLocalPoint).dot(N);
+                    // Also check hit normal aligns roughly with N so we don't snap onto perpendicular side walls/arms!
+                    const hNorm = hits[0].face ? hits[0].face.normal : N;
+                    const nDot = hNorm.x * N.x + hNorm.y * N.y + hNorm.z * N.z;
+                    if (Math.abs(relZ) <= maxJumpFromHit && nDot >= 0.35) {
+                        surfOffsets[idx] = relZ;
+                        validCorner[idx] = 1;
+                    } else {
+                        surfOffsets[idx] = 0;
+                        validCorner[idx] = 0;
+                    }
+                } else {
+                    surfOffsets[idx] = 0;
+                    validCorner[idx] = 0;
+                }
             }
         }
+
+        // Smooth valid surfOffsets gently (3x3 average over valid neighbors only) to eliminate micro-jags
+        const smoothed = new Float32Array(surfOffsets);
+        for (let gy = 1; gy < H; gy++) {
+            for (let gx = 1; gx < W; gx++) {
+                const idx = gy * (W + 1) + gx;
+                if (!validCorner[idx]) continue;
+                let sum = surfOffsets[idx] * 2, wt = 2;
+                const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                for (let d = 0; d < 4; d++) {
+                    const ni = (gy + dirs[d][1]) * (W + 1) + (gx + dirs[d][0]);
+                    if (validCorner[ni] && Math.abs(surfOffsets[ni] - surfOffsets[idx]) < 0.7) {
+                        sum += surfOffsets[ni];
+                        wt += 1;
+                    }
+                }
+                smoothed[idx] = sum / wt;
+            }
+        }
+        surfOffsets.set(smoothed);
     }
+
+    // Build effective clipped solid mask (rejects pixels hanging over empty space or huge step cliffs!)
+    const maxCellSlope = 1.15;
+    const effSolid = new Uint8Array(W * H);
+    let anyValidSolid = false;
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            if (!isSolid(x, y)) continue;
+            if (wrapMode === 'conformal') {
+                const c00 = y * (W + 1) + x;
+                const c10 = c00 + 1;
+                const c01 = c00 + (W + 1);
+                const c11 = c01 + 1;
+                if (!validCorner[c00] || !validCorner[c10] || !validCorner[c01] || !validCorner[c11]) continue;
+                const zMin = Math.min(surfOffsets[c00], surfOffsets[c10], surfOffsets[c01], surfOffsets[c11]);
+                const zMax = Math.max(surfOffsets[c00], surfOffsets[c10], surfOffsets[c01], surfOffsets[c11]);
+                if (zMax - zMin > maxCellSlope) continue;
+            }
+            effSolid[y * W + x] = 1;
+            anyValidSolid = true;
+        }
+    }
+
+    // Fallback: if strict conformal clipped everything (e.g., text wider than narrow surface), use flat plane safely!
+    const useFlatFallback = (wrapMode === 'conformal' && !anyValidSolid);
+    if (useFlatFallback) {
+        surfOffsets.fill(0);
+        for (let i = 0; i < W * H; i++) effSolid[i] = maskBits[i];
+    }
+    const isEffSolid = (px, py) => (px >= 0 && px < W && py >= 0 && py < H) && effSolid[py * W + px] === 1;
 
     const getLocal3D = (px, py, pz) => {
         const cx = Math.max(0, Math.min(W, px));
         const cy = Math.max(0, Math.min(H, py));
-        const surfZ = surfOffsets[cy * (W + 1) + cx];
         const lx = (px / W - 0.5) * physW;
         const ly = (0.5 - py / H) * physH;
+
+        if (wrapMode === 'cylindrical') {
+            const rotRad = (rotationDeg * Math.PI) / 180;
+            const rx = lx * Math.cos(rotRad) - ly * Math.sin(rotRad);
+            const ry = lx * Math.sin(rotRad) + ly * Math.cos(rotRad);
+            const theta = cylAngle0 + (rx / cylRadius);
+            const r = cylRadius + pz;
+            return new THREE.Vector3(
+                cylCenterX + Math.sin(theta) * r,
+                hitLocalPoint.y + ry,
+                cylCenterZ + Math.cos(theta) * r
+            );
+        }
+
+        const surfZ = (wrapMode === 'flat' || useFlatFallback) ? 0 : surfOffsets[cy * (W + 1) + cx];
         return new THREE.Vector3()
             .copy(hitLocalPoint)
             .addScaledVector(T, lx)
@@ -231,6 +515,15 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
             .addScaledVector(N, surfZ + pz);
     };
 
+    // Emit watertight per-cell matched quads with 100% VERIFIED OUTWARD NORMALS!
+    // Right-handed basis (T = right, B = up, N = outward):
+    //   p(x+1, y) - p(x, y) = +T ; p(x, y+1) - p(x, y) = -B ; p(..., ext) - p(..., base) = +N
+    //   Top Cap (+N):    BL -> BR -> TR -> TL   : (+T) x (+B) = +N ✓
+    //   Bottom Cap (-N): TL -> TR -> BR -> BL   : (+T) x (-B) = -N ✓
+    //   Top Wall (+B):   p(x,y,ext) -> p(x+1,y,ext) -> p(x+1,y,base) -> p(x,y,base) : (+T) x (-N) = +B ✓
+    //   Bot Wall (-B):   p(x+1,y+1,ext) -> p(x,y+1,ext) -> p(x,y+1,base) -> p(x+1,y+1,base) : (-T) x (-N) = -B ✓
+    //   Left Wall (-T):  p(x,y+1,ext) -> p(x,y,ext) -> p(x,y,base) -> p(x,y+1,base) : (+B) x (-N) = -T ✓
+    //   Right Wall (+T): p(x+1,y,ext) -> p(x+1,y+1,ext) -> p(x+1,y+1,base) -> p(x+1,y,base) : (-B) x (-N) = +T ✓
     const newPositions = [];
     const addQuad = (p0, p1, p2, p3) => {
         newPositions.push(
@@ -240,79 +533,64 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
     };
 
     for (let y = 0; y < H; y++) {
-        let inSpan = false;
-        let startX = 0;
-        for (let x = 0; x <= W; x++) {
-            const solid = isSolid(x, y);
-            if (solid && !inSpan) {
-                inSpan = true;
-                startX = x;
-            } else if (!solid && inSpan) {
-                inSpan = false;
-                const endX = x;
+        for (let x = 0; x < W; x++) {
+            if (!isEffSolid(x, y)) continue;
 
-                // Top cap (+extrudeZ)
-                const TL_top = getLocal3D(startX, y, extrudeZ);
-                const TR_top = getLocal3D(endX, y, extrudeZ);
-                const BR_top = getLocal3D(endX, y + 1, extrudeZ);
-                const BL_top = getLocal3D(startX, y + 1, extrudeZ);
-                addQuad(BL_top, BR_top, TR_top, TL_top);
+            const TL_t = getLocal3D(x,     y,     extrudeZ);
+            const TR_t = getLocal3D(x + 1, y,     extrudeZ);
+            const BR_t = getLocal3D(x + 1, y + 1, extrudeZ);
+            const BL_t = getLocal3D(x,     y + 1, extrudeZ);
+            addQuad(BL_t, BR_t, TR_t, TL_t); // Outward +N
 
-                // Bottom cap (closed watertight back at baseEmbedZ!)
-                const TL_bot = getLocal3D(startX, y, baseEmbedZ);
-                const TR_bot = getLocal3D(endX, y, baseEmbedZ);
-                const BR_bot = getLocal3D(endX, y + 1, baseEmbedZ);
-                const BL_bot = getLocal3D(startX, y + 1, baseEmbedZ);
-                addQuad(TL_bot, TR_bot, BR_bot, BL_bot);
+            const TL_b = getLocal3D(x,     y,     baseEmbedZ);
+            const TR_b = getLocal3D(x + 1, y,     baseEmbedZ);
+            const BR_b = getLocal3D(x + 1, y + 1, baseEmbedZ);
+            const BL_b = getLocal3D(x,     y + 1, baseEmbedZ);
+            addQuad(TL_b, TR_b, BR_b, BL_b); // Outward -N
 
-                // Side walls per pixel segment where boundary opens
-                for (let sx = startX; sx < endX; sx++) {
-                    if (!isSolid(sx, y - 1)) {
-                        addQuad(getLocal3D(sx, y, baseEmbedZ), getLocal3D(sx + 1, y, baseEmbedZ), getLocal3D(sx + 1, y, extrudeZ), getLocal3D(sx, y, extrudeZ));
-                    }
-                    if (!isSolid(sx, y + 1)) {
-                        addQuad(getLocal3D(sx + 1, y + 1, baseEmbedZ), getLocal3D(sx, y + 1, baseEmbedZ), getLocal3D(sx, y + 1, extrudeZ), getLocal3D(sx + 1, y + 1, extrudeZ));
-                    }
-                }
-                if (!isSolid(startX - 1, y)) {
-                    addQuad(getLocal3D(startX, y + 1, baseEmbedZ), getLocal3D(startX, y, baseEmbedZ), getLocal3D(startX, y, extrudeZ), getLocal3D(startX, y + 1, extrudeZ));
-                }
-                // FIXED: wTR1 uses (endX, y, extrudeZ), previously (endX, y + 1, extrudeZ)!
-                if (!isSolid(endX, y)) {
-                    addQuad(getLocal3D(endX, y, baseEmbedZ), getLocal3D(endX, y + 1, baseEmbedZ), getLocal3D(endX, y + 1, extrudeZ), getLocal3D(endX, y, extrudeZ));
-                }
-            }
+            // Top boundary wall (+B outward!)
+            if (!isEffSolid(x, y - 1)) addQuad(TL_t, TR_t, TR_b, TL_b);
+            // Bottom boundary wall (-B outward!)
+            if (!isEffSolid(x, y + 1)) addQuad(BR_t, BL_t, BL_b, BR_b);
+            // Left boundary wall (-T outward!)
+            if (!isEffSolid(x - 1, y)) addQuad(BL_t, TL_t, TL_b, BL_b);
+            // Right boundary wall (+T outward!)
+            if (!isEffSolid(x + 1, y)) addQuad(TR_t, BR_t, BR_b, TR_b);
         }
     }
 
     const addedCoords = newPositions.length;
     const addedTris = (addedCoords / 9) | 0;
     if (addedTris === 0) {
-        showToast(currentLang === 'fr' ? "Aucun pixel généré." : "No pixels generated.");
-        return;
+        if (!suppressToast) showToast(currentLang === 'fr' ? "Aucun pixel valide sur la surface (réduisez la taille ou passez en mode Plat)." : "No valid pixels on surface (reduce size or switch to Flat wrap).");
+        return false;
+    }
+
+    // If Flush Inlay mode, also paint underlying faces inside mask so there's zero coplanar color flicker
+    if (isInlay && spatialGrid) {
+        const stampRad = Math.hypot(physW * 0.5, physH * 0.5) * 1.05;
+        spatialGrid.querySphere(hitLocalPoint.x, hitLocalPoint.y, hitLocalPoint.z, stampRad, (f) => {
+            const f3 = f * 3;
+            const dx = spatialGrid.faceCenters[f3] - hitLocalPoint.x;
+            const dy = spatialGrid.faceCenters[f3 + 1] - hitLocalPoint.y;
+            const dz = spatialGrid.faceCenters[f3 + 2] - hitLocalPoint.z;
+            if (Math.abs(dx * N.x + dy * N.y + dz * N.z) > 1.2) return;
+            const lx = dx * T.x + dy * T.y + dz * T.z;
+            const ly = dx * B.x + dy * B.y + dz * B.z;
+            const px = Math.floor((lx / physW + 0.5) * W);
+            const py = Math.floor((0.5 - ly / physH) * H);
+            if (isEffSolid(px, py)) triangleColors[f] = targetSlot;
+        });
     }
 
     const geom = currentMesh.geometry;
-    const posAttr = geom.attributes.position;
-    const colorAttr = geom.attributes.color;
-    const oldPosArr = posAttr.array;
-    const oldColorArr = colorAttr.array;
+    const oldPosArr = geom.attributes.position.array;
     const oldFaceCount = (oldPosArr.length / 9) | 0;
     const newFaceCount = oldFaceCount + addedTris;
 
     const combinedPositions = new Float32Array(newFaceCount * 9);
     combinedPositions.set(oldPosArr, 0);
     for (let i = 0; i < addedCoords; i++) combinedPositions[oldPosArr.length + i] = newPositions[i];
-
-    const combinedColors = new Float32Array(newFaceCount * 9);
-    combinedColors.set(oldColorArr, 0);
-    const colorStart = oldColorArr.length;
-    for (let i = 0; i < addedTris; i++) {
-        const base = colorStart + i * 9;
-        combinedColors[base]     = rgb[0]; combinedColors[base + 1] = rgb[1]; combinedColors[base + 2] = rgb[2];
-        combinedColors[base + 3] = rgb[0]; combinedColors[base + 4] = rgb[1]; combinedColors[base + 5] = rgb[2];
-        combinedColors[base + 6] = rgb[0]; combinedColors[base + 7] = rgb[1]; combinedColors[base + 8] = rgb[2];
-    }
 
     const newTriangleColors = new Uint8Array(newFaceCount);
     newTriangleColors.set(triangleColors, 0);
@@ -321,7 +599,6 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
     triangleColors = newTriangleColors;
     const newGeom = new THREE.BufferGeometry();
     newGeom.setAttribute('position', new THREE.BufferAttribute(combinedPositions, 3));
-    newGeom.setAttribute('color', new THREE.BufferAttribute(combinedColors, 3));
     newGeom.computeVertexNormals();
     newGeom.computeBoundingBox();
     if (newGeom.computeBoundsTree) newGeom.computeBoundsTree();
@@ -329,18 +606,111 @@ function applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot
     if (geom.disposeBoundsTree) geom.disposeBoundsTree();
     geom.dispose();
     currentMesh.geometry = newGeom;
+    currentGeoGen++;
 
     spatialGrid = new SpatialGrid(newGeom, 32);
     meshTopology = buildMeshTopology(newGeom);
     precomputeGeometryMetrics(newGeom);
-    if (typeof updateStats === 'function') updateStats();
-    saveHistory(true);
-    showToast(successToast);
+    updateMeshVisualColors();
+    if (!skipHistoryCommit) commitHistory(true);
+    if (!suppressToast && successToast) showToast(successToast);
+    return true;
 }
 
 // ==========================================
-// ✍️ 3D TEXT STAMPER UI & HANDLERS
+// ✍️ 3D TEXT STAMPER UI, FONT ENGINE & HANDLERS
 // ==========================================
+function renderTextToBitmapCanvas(cfg) {
+    const rawText = (cfg.text || '').trim() || '3D';
+    // Allow multi-line text using real newlines OR '|' separator
+    const lines = rawText.split(/\r?\n|\|/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) lines.push('3D');
+
+    const sizeMm = Math.max(2, parseFloat(cfg.size) || 8);
+    const fontCSS = cfg.font || 'Outfit, Inter, sans-serif';
+    const letterSpacing = parseFloat(cfg.letterSpacing) || 0;
+    const colorHex = cfg.hex || '#38BDF8';
+
+    // Resolution balanced for crisp edges without excessive triangles
+    const lineH = Math.max(26, Math.min(44, Math.round(sizeMm * 3.4)));
+    const fontPx = Math.round(lineH * 0.78);
+    const lineGap = Math.round(lineH * 0.22);
+
+    const measureCanvas = document.createElement('canvas');
+    const mCtx = measureCanvas.getContext('2d');
+    mCtx.font = `900 ${fontPx}px ${fontCSS}`;
+
+    const measureLine = (str) => {
+        if (!letterSpacing) return mCtx.measureText(str).width;
+        let w = 0;
+        for (let i = 0; i < str.length; i++) {
+            w += mCtx.measureText(str[i]).width + (i < str.length - 1 ? letterSpacing * (fontPx / 12) : 0);
+        }
+        return w;
+    };
+
+    let maxLineW = 12;
+    lines.forEach(l => { maxLineW = Math.max(maxLineW, Math.ceil(measureLine(l))); });
+
+    const padX = Math.round(lineH * 0.16);
+    const padY = Math.round(lineH * 0.12);
+    const W = Math.max(12, Math.min(220, maxLineW + padX * 2));
+    const H = Math.max(16, lines.length * lineH + (lines.length - 1) * lineGap + padY * 2);
+
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = W;
+    maskCanvas.height = H;
+    const ctx = maskCanvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = `900 ${fontPx}px ${fontCSS}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'middle';
+
+    const drawTextOnCtx = (targetCtx, fillStyle) => {
+        targetCtx.font = `900 ${fontPx}px ${fontCSS}`;
+        targetCtx.fillStyle = fillStyle;
+        targetCtx.textBaseline = 'middle';
+        lines.forEach((line, li) => {
+            const cy = padY + li * (lineH + lineGap) + lineH * 0.5;
+            if (!letterSpacing) {
+                targetCtx.textAlign = 'center';
+                targetCtx.fillText(line, W / 2, cy);
+            } else {
+                targetCtx.textAlign = 'left';
+                const totalW = measureLine(line);
+                let cx = (W - totalW) * 0.5;
+                for (let i = 0; i < line.length; i++) {
+                    targetCtx.fillText(line[i], cx, cy);
+                    cx += targetCtx.measureText(line[i]).width + letterSpacing * (fontPx / 12);
+                }
+            }
+        });
+    };
+
+    drawTextOnCtx(ctx, '#ffffff');
+    const rgba = ctx.getImageData(0, 0, W, H).data;
+    const maskBits = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+        maskBits[i] = rgba[i * 4 + 3] > 110 ? 1 : 0;
+    }
+
+    // Build crisp translucent preview canvas for 3D Ghost!
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = W * 2;
+    previewCanvas.height = H * 2;
+    const pCtx = previewCanvas.getContext('2d');
+    pCtx.scale(2, 2);
+    pCtx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+    pCtx.lineWidth = 1;
+    pCtx.strokeRect(0.5, 0.5, W - 1, H - 1);
+    drawTextOnCtx(pCtx, colorHex);
+
+    const physH = sizeMm * lines.length + (lines.length - 1) * sizeMm * 0.22;
+    const physW = (W / H) * physH;
+
+    return { maskBits, W, H, physW, physH, previewCanvas };
+}
+
 function initTextPalette() {
     const container = document.getElementById('text-palette-swatches');
     if (!container) return;
@@ -348,31 +718,27 @@ function initTextPalette() {
     stampingColorPalette.forEach(swatch => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'text-swatch-item';
+        btn.className = 'stamp-swatch-btn text-swatch-item';
         btn.dataset.hex = swatch.hex.toLowerCase();
         btn.title = swatch.name;
-        btn.style.cssText = `background:${swatch.hex};width:100%;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;outline:none;transition:transform 0.15s, box-shadow 0.15s;`;
-        btn.onclick = () => selectTextColorHex(swatch.hex);
+        btn.style.background = swatch.hex;
+        btn.onclick = () => selectTextColorHex(swatch.hex, true);
         container.appendChild(btn);
     });
     const slotSelect = document.getElementById('text-color-slot');
-    const slotIdx = slotSelect ? (parseInt(slotSelect.value, 10) || 0) : 0;
-    const initColor = (filamentSlots[slotIdx] && filamentSlots[slotIdx].color) ? filamentSlots[slotIdx].color : "#ffffff";
+    const slotIdx = slotSelect ? (parseInt(slotSelect.value, 10) || 0) : activeSlotIndex;
+    const initColor = (filamentSlots[slotIdx] && filamentSlots[slotIdx].color) ? filamentSlots[slotIdx].color : "#FFFFFF";
     selectTextColorHex(initColor, false);
 }
 
 function selectTextColorHex(hex, autoSyncSlot = true) {
     selectedTextColorHex = normalizeHex(hex, '#FFFFFF');
-    const prev = document.getElementById('text-color-preview');
-    if (prev) prev.style.background = selectedTextColorHex;
     const picker = document.getElementById('text-custom-color');
     if (picker) picker.value = selectedTextColorHex.toLowerCase();
 
     document.querySelectorAll('#text-palette-swatches .text-swatch-item').forEach(btn => {
         const match = btn.dataset.hex === selectedTextColorHex.toLowerCase();
-        btn.style.borderColor = match ? '#38bdf8' : 'rgba(255,255,255,0.25)';
-        btn.style.boxShadow = match ? '0 0 6px #38bdf8' : 'none';
-        btn.style.transform = match ? 'scale(1.12)' : 'scale(1)';
+        btn.classList.toggle('active', match);
     });
 
     if (autoSyncSlot) {
@@ -383,15 +749,36 @@ function selectTextColorHex(hex, autoSyncSlot = true) {
     }
 }
 
+function addTextColorAsSlot() {
+    const idx = addColorAsNewSlot(selectedTextColorHex);
+    populateSlotDropdowns();
+    const sel = document.getElementById('text-color-slot');
+    if (sel) sel.value = idx;
+}
+
 function onTextColorCustomPick(hex) { selectTextColorHex(hex, true); }
 function onTextColorSlotChange(val) {
-    const idx = parseInt(val, 10) || 0;
-    if (filamentSlots[idx]) selectTextColorHex(filamentSlots[idx].color, false);
+    const idx = parseInt(val, 10);
+    if (!isNaN(idx) && filamentSlots[idx]) selectTextColorHex(filamentSlots[idx].color, false);
 }
 
 function openTextModal() {
     if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle 3D !" : "Please load a 3D model first!"); return; }
+    cancelStampingMode(true);
     populateSlotDropdowns();
+
+    // Auto-recommend a sensible initial text size for current model dimensions
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    const sz = box.getSize(new THREE.Vector3());
+    const minFace = Math.max(10, Math.min(sz.x, sz.y));
+    const recSize = Math.max(3, Math.min(20, Math.round(minFace * 0.25)));
+    const sl = document.getElementById('slider-text-size');
+    if (sl && !sl.dataset.userTouched) {
+        sl.value = recSize;
+        const lbl = document.getElementById('val-text-size');
+        if (lbl) lbl.textContent = `${recSize} mm`;
+    }
+
     initTextPalette();
     document.getElementById('text-stamp-modal').style.display = 'flex';
     refreshIcons();
@@ -402,19 +789,29 @@ function closeTextModal() {
 }
 
 function startTextStampingMode() {
-    const txt = (document.getElementById('text-stamp-input').value || '').trim() || '3D';
-    const mode = document.getElementById('text-stamp-mode').value;
-    const slot = parseInt(document.getElementById('text-color-slot').value, 10) || 0;
-    const size = parseFloat(document.getElementById('slider-text-size').value) || 14;
-    const font = document.getElementById('text-stamp-font')?.value || 'impact';
+    const txt = (document.getElementById('text-stamp-input')?.value || '').trim() || '3D';
+    const mode = document.getElementById('text-stamp-mode')?.value || 'emboss';
+    const slotRaw = parseInt(document.getElementById('text-color-slot')?.value, 10);
+    const slot = isNaN(slotRaw) ? activeSlotIndex : slotRaw;
+    const size = parseFloat(document.getElementById('slider-text-size')?.value) || 8;
+    const depth = parseFloat(document.getElementById('slider-text-depth')?.value) || 1.2;
+    const rotation = parseFloat(document.getElementById('slider-text-rotation')?.value) || 0;
+    const wrap = document.getElementById('text-stamp-wrap')?.value || 'conformal';
+    const font = document.getElementById('text-stamp-font')?.value || 'Outfit, Inter, sans-serif';
     const hex = filamentSlots[slot] ? filamentSlots[slot].color : selectedTextColorHex;
     const rgbObj = hexToRgb(hex);
 
-    pendingTextConfig = { text: txt, mode, slot, size, font, hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255] };
+    pendingTextConfig = { text: txt, mode, slot, size, depth, rotation, wrap, font, hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255] };
     closeTextModal();
 
     isStencilStampingMode = false;
+    if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
+    if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
     isTextStampingMode = true;
+
+    const rendered = renderTextToBitmapCanvas(pendingTextConfig);
+    buildStampGhostFromCanvas(rendered.previewCanvas, rendered.physW, rendered.physH, 'text');
+
     controls.enabled = true;
     if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
     if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
@@ -424,49 +821,19 @@ function startTextStampingMode() {
 
 function applyTextStampAtHit(hit) {
     isTextStampingMode = false;
+    clearStampGhost();
     selectTool(activeTool);
     if (!hit || !currentMesh || !triangleColors) return;
 
-    const text = (pendingTextConfig.text || '').trim() || '3D';
-    const sizeMm = Math.max(4, pendingTextConfig.size || 14);
-    const mode = pendingTextConfig.mode || 'emboss';
-    const targetSlot = pendingTextConfig.slot !== undefined ? pendingTextConfig.slot : activeSlotIndex;
-    const rgb = slotRgbFloats[targetSlot] || pendingTextConfig.rgb || [0.97, 0.98, 0.99];
-
-    const H = Math.max(36, Math.min(72, Math.round(sizeMm * 3.2)));
-    const offCanvas = document.createElement('canvas');
-    const ctx = offCanvas.getContext('2d');
-    const fontPx = Math.round(H * 0.78);
-    const fontFam = pendingTextConfig.font || 'impact';
-    let fontCSS = `Impact, "Arial Black", sans-serif`;
-    if (fontFam === 'sans-serif') fontCSS = `"Segoe UI", -apple-system, Arial, sans-serif`;
-    else if (fontFam === 'serif') fontCSS = `Georgia, "Times New Roman", serif`;
-    else if (fontFam === 'monospace') fontCSS = `"Consolas", "Courier New", monospace`;
-
-    ctx.font = `900 ${fontPx}px ${fontCSS}`;
-    const textW = Math.ceil(ctx.measureText(text).width);
-    const padX = Math.round(H * 0.15);
-    const W = Math.max(8, textW + padX * 2);
-    offCanvas.width = W;
-    offCanvas.height = H;
-
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, W, H);
-    ctx.font = `900 ${fontPx}px ${fontCSS}`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, W / 2, H / 2);
-
-    const imgData = ctx.getImageData(0, 0, W, H).data;
-    const physH = sizeMm;
-    const physW = (W / H) * physH;
-
-    applyBitmapStampToSurface(imgData, W, H, physW, physH, mode, targetSlot, rgb, hit, translations[currentLang].toastTextStamped);
+    const rendered = renderTextToBitmapCanvas(pendingTextConfig);
+    applyBinaryMaskStampToSurface(
+        rendered.maskBits, rendered.W, rendered.H, rendered.physW, rendered.physH,
+        pendingTextConfig, hit, translations[currentLang].toastTextStamped
+    );
 }
 
 // ==========================================
-// 🔖 3D VECTOR STENCIL & LOGO STAMPER
+// 🔖 3D VECTOR STENCIL, CUSTOM PNG & #7 MULTI-COLOR SVG LOGO STAMPER
 // ==========================================
 function filterStencilCategory(cat, btn) {
     activeStencilCategory = cat;
@@ -483,21 +850,120 @@ function renderStencilGlyphGrid(cat) {
     list.forEach(g => {
         const isSel = (activeStencilGlyphId === g.id);
         const el = document.createElement('div');
-        el.style.cssText = `cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;border-radius:6px;background:${isSel ? 'rgba(244,114,182,0.22)' : 'rgba(255,255,255,0.05)'};border:1px solid ${isSel ? '#f472b6' : 'rgba(255,255,255,0.1)'};transition:all 0.15s ease;`;
+        el.style.cssText = `cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;border-radius:6px;background:${isSel ? 'rgba(56,189,248,0.22)' : 'rgba(255,255,255,0.05)'};border:1px solid ${isSel ? '#38bdf8' : 'rgba(255,255,255,0.1)'};transition:all 0.15s ease;`;
         el.title = g.name;
-        el.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" style="pointer-events:none;color:${isSel ? '#f472b6' : '#cbd5e1'};">${g.svg}</svg><span style="font-size:9px;margin-top:4px;color:${isSel ? '#f472b6' : 'var(--text-sub)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55px;">${g.name}</span>`;
+        el.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" style="pointer-events:none;color:${isSel ? '#38bdf8' : '#cbd5e1'};">${g.svg}</svg><span style="font-size:9px;margin-top:4px;color:${isSel ? '#38bdf8' : 'var(--text-sub)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58px;">${g.name}</span>`;
         el.onclick = () => {
             activeStencilGlyphId = g.id;
             activeStencilData = { type: 'glyph', glyph: g };
+            const prevWrap = document.getElementById('stencil-custom-preview-wrap');
+            if (prevWrap) prevWrap.style.display = 'none';
             renderStencilGlyphGrid(cat);
         };
         grid.appendChild(el);
     });
 }
 
+// Parse CSS color string to normalized #RRGGBB
+function parseCssColorToHex(raw) {
+    if (!raw || raw === 'none' || raw === 'transparent') return null;
+    const s = raw.trim();
+    if (s.startsWith('#')) return normalizeHex(s, null);
+    const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (m) return rgbToHex(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
+    // Resolve named SVG colors cleanly using offscreen canvas
+    const tmp = document.createElement('canvas').getContext('2d');
+    tmp.fillStyle = '#010203';
+    tmp.fillStyle = s;
+    const resolved = tmp.fillStyle;
+    if (resolved && resolved.startsWith('#')) return normalizeHex(resolved, null);
+    return null;
+}
+
+// #7 Multi-Color SVG Parser: splits SVG shapes by unique fill color!
+function parseMultiColorSvgText(svgText, filename) {
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgText, 'image/svg+xml');
+        const svgEl = doc.querySelector('svg');
+        if (!svgEl) return null;
+
+        const shapes = svgEl.querySelectorAll('path, polygon, polyline, rect, circle, ellipse');
+        const colorGroups = new Map(); // hex -> [clonedElement]
+        shapes.forEach(el => {
+            let fill = el.getAttribute('fill');
+            if (!fill && el.getAttribute('style')) {
+                const sm = el.getAttribute('style').match(/fill\s*:\s*([^;]+)/i);
+                if (sm) fill = sm[1];
+            }
+            if (!fill && el.parentElement) fill = el.parentElement.getAttribute('fill');
+            if (!fill) fill = '#000000';
+            if (fill.trim().toLowerCase() === 'none' || fill.trim().toLowerCase() === 'transparent') return;
+            const hex = parseCssColorToHex(fill);
+            if (!hex) return;
+            if (!colorGroups.has(hex)) colorGroups.set(hex, []);
+            colorGroups.get(hex).push(el);
+        });
+
+        if (colorGroups.size < 2) return null; // Single-color SVG -> handle normally
+
+        const vb = svgEl.getAttribute('viewBox') || `0 0 ${parseFloat(svgEl.getAttribute('width')) || 100} ${parseFloat(svgEl.getAttribute('height')) || 100}`;
+        const parts = vb.trim().split(/[\s,]+/).map(Number);
+        const vbW = parts[2] || 100, vbH = parts[3] || 100;
+        const layers = [];
+        for (const [hex, els] of colorGroups.entries()) {
+            const inner = els.map(el => {
+                const clone = el.cloneNode(true);
+                clone.setAttribute('fill', '#FFFFFF');
+                clone.removeAttribute('stroke');
+                return new XMLSerializer().serializeToString(clone);
+            }).join('');
+            const layerSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${inner}</svg>`;
+            layers.push({ hex, svgString: layerSvg });
+        }
+        return { type: 'multisvg', name: filename, layers, aspect: vbW / Math.max(1, vbH), rawSvg: svgText };
+    } catch (_) {
+        return null;
+    }
+}
+
 function handleCustomStencilUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
+    const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml';
+
+    if (isSvg) {
+        const textReader = new FileReader();
+        textReader.onload = (ev) => {
+            const svgText = ev.target.result;
+            const multi = parseMultiColorSvgText(svgText, file.name);
+            if (multi && multi.layers.length >= 2) {
+                activeStencilData = multi;
+                activeStencilGlyphId = 'custom';
+                renderCustomStencilPreview();
+                showToast(currentLang === 'fr'
+                    ? `Logo SVG Multi-Couleur détecté (${multi.layers.length} couleurs AMS) !`
+                    : `Multi-Color SVG detected (${multi.layers.length} AMS color layers)!`);
+                return;
+            }
+            // Fallback single-color SVG -> load as Image
+            const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                activeStencilData = { type: 'custom', img, name: file.name };
+                activeStencilGlyphId = 'custom';
+                renderCustomStencilPreview();
+                showToast(currentLang === 'fr' ? `Logo SVG chargé : ${file.name}` : `Custom SVG loaded: ${file.name}`);
+            };
+            img.src = url;
+        };
+        textReader.readAsText(file);
+        e.target.value = '';
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = (evt) => {
         const img = new Image();
@@ -508,12 +974,107 @@ function handleCustomStencilUpload(e) {
                 el.style.background = 'rgba(255,255,255,0.05)';
                 el.style.borderColor = 'rgba(255,255,255,0.1)';
             });
+            renderCustomStencilPreview();
             showToast(currentLang === 'fr' ? `Logo chargé : ${file.name}` : `Custom logo loaded: ${file.name}`);
         };
         img.src = evt.target.result;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
+}
+
+// Smart binary mask extractor for custom PNG / JPG / SVG (FIXED: works for black transparent PNGs AND white-bg logos!)
+function extractCustomImageMask(img, targetS, threshold = 128, invertMask = false) {
+    const aspect = (img.naturalWidth || img.width || 1) / Math.max(1, (img.naturalHeight || img.height || 1));
+    const W = aspect >= 1 ? targetS : Math.max(12, Math.round(targetS * aspect));
+    const H = aspect >= 1 ? Math.max(12, Math.round(targetS / aspect)) : targetS;
+
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, W, H); // Keep transparent background so Alpha logos work!
+    ctx.drawImage(img, 0, 0, W, H);
+    const data = ctx.getImageData(0, 0, W, H).data;
+
+    // Detect whether image has meaningful transparency
+    let transparentCount = 0;
+    for (let i = 0; i < W * H; i++) {
+        if (data[i * 4 + 3] < 80) transparentCount++;
+    }
+    const hasAlpha = transparentCount > (W * H * 0.05);
+
+    // If opaque image, inspect 4 corners to auto-detect light vs dark background!
+    let bgIsLight = false;
+    if (!hasAlpha) {
+        const corners = [0, W - 1, (H - 1) * W, W * H - 1];
+        let lumSum = 0;
+        corners.forEach(idx => {
+            const p = idx * 4;
+            lumSum += 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+        });
+        bgIsLight = (lumSum / 4) > 140;
+    }
+
+    const maskBits = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+        const p = i * 4;
+        let solid = false;
+        if (hasAlpha) {
+            solid = data[p + 3] >= 80;
+        } else {
+            const lum = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+            solid = bgIsLight ? (lum < threshold) : (lum >= threshold);
+        }
+        if (invertMask) solid = !solid;
+        maskBits[i] = solid ? 1 : 0;
+    }
+    return { maskBits, W, H, aspect };
+}
+
+function renderCustomStencilPreview() {
+    const wrap = document.getElementById('stencil-custom-preview-wrap');
+    const canvas = document.getElementById('stencil-custom-preview-canvas');
+    const info = document.getElementById('stencil-custom-info');
+    if (!wrap || !canvas || !activeStencilData) return;
+
+    if (activeStencilData.type === 'multisvg') {
+        wrap.style.display = 'flex';
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const blob = new Blob([activeStencilData.rawSvg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, 2, 2, canvas.width - 4, canvas.height - 4);
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+        if (info) {
+            const dots = activeStencilData.layers.map(l => `<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${l.hex};border:1px solid #fff;margin-right:3px;"></span>`).join('');
+            info.innerHTML = `<strong style="color:#38bdf8;">Multi-Color SVG (${activeStencilData.layers.length} colors)</strong><div style="margin-top:4px;">${dots}</div>`;
+        }
+        return;
+    }
+
+    if (activeStencilData.type === 'custom' && activeStencilData.img) {
+        wrap.style.display = 'flex';
+        const thr = parseInt(document.getElementById('slider-stencil-threshold')?.value || '128', 10);
+        const inv = !!document.getElementById('check-stencil-invert')?.checked;
+        const { maskBits, W, H } = extractCustomImageMask(activeStencilData.img, 52, thr, inv);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const scale = Math.min((canvas.width - 6) / W, (canvas.height - 6) / H);
+        const ox = (canvas.width - W * scale) * 0.5;
+        const oy = (canvas.height - H * scale) * 0.5;
+        ctx.fillStyle = selectedStencilColorHex || '#38bdf8';
+        for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+                if (maskBits[y * W + x]) ctx.fillRect(ox + x * scale, oy + y * scale, Math.ceil(scale), Math.ceil(scale));
+            }
+        }
+        if (info) info.textContent = `${activeStencilData.name} (${W}×${H})`;
+    }
 }
 
 function initStencilPalette() {
@@ -523,31 +1084,27 @@ function initStencilPalette() {
     stampingColorPalette.forEach(swatch => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'stencil-swatch-item';
+        btn.className = 'stamp-swatch-btn stencil-swatch-item';
         btn.dataset.hex = swatch.hex.toLowerCase();
         btn.title = swatch.name;
-        btn.style.cssText = `background:${swatch.hex};width:100%;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;outline:none;transition:transform 0.15s, box-shadow 0.15s;`;
-        btn.onclick = () => selectStencilColorHex(swatch.hex);
+        btn.style.background = swatch.hex;
+        btn.onclick = () => { selectStencilColorHex(swatch.hex, true); renderCustomStencilPreview(); };
         container.appendChild(btn);
     });
     const slotSelect = document.getElementById('stencil-color-slot');
-    const slotIdx = slotSelect ? (parseInt(slotSelect.value, 10) || 0) : 0;
-    const initColor = (filamentSlots[slotIdx] && filamentSlots[slotIdx].color) ? filamentSlots[slotIdx].color : "#ffffff";
+    const slotIdx = slotSelect ? (parseInt(slotSelect.value, 10) || 0) : activeSlotIndex;
+    const initColor = (filamentSlots[slotIdx] && filamentSlots[slotIdx].color) ? filamentSlots[slotIdx].color : "#FFFFFF";
     selectStencilColorHex(initColor, false);
 }
 
 function selectStencilColorHex(hex, autoSyncSlot = true) {
     selectedStencilColorHex = normalizeHex(hex, '#FFFFFF');
-    const prev = document.getElementById('stencil-color-preview');
-    if (prev) prev.style.background = selectedStencilColorHex;
     const picker = document.getElementById('stencil-custom-color');
     if (picker) picker.value = selectedStencilColorHex.toLowerCase();
 
     document.querySelectorAll('#stencil-palette-swatches .stencil-swatch-item').forEach(btn => {
         const match = btn.dataset.hex === selectedStencilColorHex.toLowerCase();
-        btn.style.borderColor = match ? '#f472b6' : 'rgba(255,255,255,0.25)';
-        btn.style.boxShadow = match ? '0 0 6px #f472b6' : 'none';
-        btn.style.transform = match ? 'scale(1.12)' : 'scale(1)';
+        btn.classList.toggle('active', match);
     });
 
     if (autoSyncSlot) {
@@ -558,17 +1115,28 @@ function selectStencilColorHex(hex, autoSyncSlot = true) {
     }
 }
 
-function onStencilColorCustomPick(hex) { selectStencilColorHex(hex, true); }
+function addStencilColorAsSlot() {
+    const idx = addColorAsNewSlot(selectedStencilColorHex);
+    populateSlotDropdowns();
+    const sel = document.getElementById('stencil-color-slot');
+    if (sel) sel.value = idx;
+}
+
+function onStencilColorCustomPick(hex) { selectStencilColorHex(hex, true); renderCustomStencilPreview(); }
 function onStencilColorSlotChange(val) {
-    const idx = parseInt(val, 10) || 0;
-    if (filamentSlots[idx]) selectStencilColorHex(filamentSlots[idx].color, false);
+    const idx = parseInt(val, 10);
+    if (!isNaN(idx) && filamentSlots[idx]) { selectStencilColorHex(filamentSlots[idx].color, false); renderCustomStencilPreview(); }
 }
 
 function openStencilModal() {
     if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle 3D !" : "Please load a 3D model first!"); return; }
+    cancelStampingMode(true);
     populateSlotDropdowns();
     initStencilPalette();
     renderStencilGlyphGrid(activeStencilCategory || 'gaming');
+    if (activeStencilData && (activeStencilData.type === 'custom' || activeStencilData.type === 'multisvg')) {
+        renderCustomStencilPreview();
+    }
     document.getElementById('stencil-modal').style.display = 'flex';
     refreshIcons();
 }
@@ -577,18 +1145,119 @@ function closeStencilModal() {
     document.getElementById('stencil-modal').style.display = 'none';
 }
 
+function renderActiveStencilToCanvas(S, colorHex) {
+    const c = document.createElement('canvas');
+    if (activeStencilData && activeStencilData.type === 'custom' && activeStencilData.img) {
+        const thr = pendingStencilConfig.threshold || 128;
+        const inv = !!pendingStencilConfig.invertMask;
+        const { maskBits, W, H, aspect } = extractCustomImageMask(activeStencilData.img, S, thr, inv);
+        c.width = W * 2; c.height = H * 2;
+        const pCtx = c.getContext('2d');
+        pCtx.scale(2, 2);
+        pCtx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        pCtx.strokeRect(0.5, 0.5, W - 1, H - 1);
+        pCtx.fillStyle = colorHex;
+        for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+                if (maskBits[y * W + x]) pCtx.fillRect(x, y, 1, 1);
+            }
+        }
+        return { maskBits, W, H, aspect, previewCanvas: c };
+    }
+
+    let glyph = null;
+    for (const cat in stencilGlyphs) {
+        const found = stencilGlyphs[cat].find(g => g.id === activeStencilGlyphId);
+        if (found) { glyph = found; break; }
+    }
+    if (!glyph) glyph = stencilGlyphs.gaming[0];
+
+    const mCanvas = document.createElement('canvas');
+    mCanvas.width = S; mCanvas.height = S;
+    const ctx = mCanvas.getContext('2d');
+    ctx.clearRect(0, 0, S, S);
+    if (glyph.pathD && typeof Path2D !== 'undefined') {
+        const p = new Path2D(glyph.pathD);
+        ctx.save();
+        ctx.translate(4, 4);
+        ctx.scale((S - 8) / 24, (S - 8) / 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill(p);
+        ctx.restore();
+    }
+    const rgba = ctx.getImageData(0, 0, S, S).data;
+    const maskBits = new Uint8Array(S * S);
+    for (let i = 0; i < S * S; i++) maskBits[i] = rgba[i * 4 + 3] > 90 ? 1 : 0;
+
+    c.width = S * 2; c.height = S * 2;
+    const pCtx = c.getContext('2d');
+    pCtx.scale(2, 2);
+    pCtx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+    pCtx.strokeRect(0.5, 0.5, S - 1, S - 1);
+    if (glyph.pathD && typeof Path2D !== 'undefined') {
+        const p = new Path2D(glyph.pathD);
+        pCtx.save();
+        pCtx.translate(4, 4);
+        pCtx.scale((S - 8) / 24, (S - 8) / 24);
+        pCtx.fillStyle = colorHex;
+        pCtx.fill(p);
+        pCtx.restore();
+    }
+    return { maskBits, W: S, H: S, aspect: 1, previewCanvas: c };
+}
+
 function startStencilStampingMode() {
-    const mode = document.getElementById('stencil-stamp-mode').value;
-    const slot = parseInt(document.getElementById('stencil-color-slot').value, 10) || 0;
-    const size = parseFloat(document.getElementById('slider-stencil-size').value) || 16;
+    const mode = document.getElementById('stencil-stamp-mode')?.value || 'emboss';
+    const slotRaw = parseInt(document.getElementById('stencil-color-slot')?.value, 10);
+    const slot = isNaN(slotRaw) ? activeSlotIndex : slotRaw;
+    const size = parseFloat(document.getElementById('slider-stencil-size')?.value) || 12;
+    const depth = parseFloat(document.getElementById('slider-stencil-depth')?.value) || 1.2;
+    const rotation = parseFloat(document.getElementById('slider-stencil-rotation')?.value) || 0;
+    const wrap = document.getElementById('stencil-stamp-wrap')?.value || 'conformal';
+    const threshold = parseInt(document.getElementById('slider-stencil-threshold')?.value || '128', 10);
+    const invertMask = !!document.getElementById('check-stencil-invert')?.checked;
+    const autoAddSvgSlots = !!document.getElementById('check-svg-autoadd-slots')?.checked;
     const hex = filamentSlots[slot] ? filamentSlots[slot].color : selectedStencilColorHex;
     const rgbObj = hexToRgb(hex);
 
-    pendingStencilConfig = { mode, slot, size, hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255] };
+    pendingStencilConfig = {
+        mode, slot, size, depth, rotation, wrap, threshold, invertMask, autoAddSvgSlots,
+        hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255]
+    };
     closeStencilModal();
 
     isTextStampingMode = false;
+    if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
+    if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
     isStencilStampingMode = true;
+
+    if (activeStencilData && activeStencilData.type === 'multisvg') {
+        const previewC = document.createElement('canvas');
+        previewC.width = 128; previewC.height = 128;
+        const pCtx = previewC.getContext('2d');
+        pCtx.strokeStyle = '#38bdf8';
+        pCtx.lineWidth = 2;
+        pCtx.strokeRect(2, 2, 124, 124);
+        const blob = new Blob([activeStencilData.rawSvg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            pCtx.drawImage(img, 4, 4, 120, 120);
+            URL.revokeObjectURL(url);
+            if (isStencilStampingMode) {
+                const physH = size;
+                const physW = size * (activeStencilData.aspect || 1);
+                buildStampGhostFromCanvas(previewC, physW, physH, 'stencil');
+            }
+        };
+        img.src = url;
+    } else {
+        const rendered = renderActiveStencilToCanvas(64, hex);
+        const physH = size;
+        const physW = size * rendered.aspect;
+        buildStampGhostFromCanvas(rendered.previewCanvas, physW, physH, 'stencil');
+    }
+
     controls.enabled = true;
     if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
     if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
@@ -596,88 +1265,130 @@ function startStencilStampingMode() {
     showToast(translations[currentLang].toastStencilReady);
 }
 
+async function applyMultiColorSvgStampAtHit(hit) {
+    const data = activeStencilData;
+    const S = 64;
+    const aspect = data.aspect || 1;
+    const W = aspect >= 1 ? S : Math.max(12, Math.round(S * aspect));
+    const H = aspect >= 1 ? Math.max(12, Math.round(S / aspect)) : S;
+    const physH = Math.max(4, pendingStencilConfig.size || 14);
+    const physW = physH * aspect;
+
+    let stampedLayers = 0;
+    for (let li = 0; li < data.layers.length; li++) {
+        const layer = data.layers[li];
+        let targetSlot = 0;
+        if (pendingStencilConfig.autoAddSvgSlots) {
+            targetSlot = addColorAsNewSlot(layer.hex, `SVG #${li + 1}`);
+        } else {
+            const c = hexToRgb(layer.hex);
+            targetSlot = findClosestSlotPerceptual(c.r / 255, c.g / 255, c.b / 255);
+        }
+
+        const maskBits = await new Promise((resolve) => {
+            const blob = new Blob([layer.svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const c = document.createElement('canvas');
+                c.width = W; c.height = H;
+                const ctx = c.getContext('2d');
+                ctx.clearRect(0, 0, W, H);
+                ctx.drawImage(img, 2, 2, W - 4, H - 4);
+                const rgba = ctx.getImageData(0, 0, W, H).data;
+                const bits = new Uint8Array(W * H);
+                for (let i = 0; i < W * H; i++) bits[i] = rgba[i * 4 + 3] > 90 ? 1 : 0;
+                resolve(bits);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+            img.src = url;
+        });
+
+        if (!maskBits) continue;
+        // Slightly stagger depth by 0.01mm per layer in emboss so layers never Z-fight
+        const ok = applyBinaryMaskStampToSurface(maskBits, W, H, physW, physH, {
+            ...pendingStencilConfig,
+            slot: targetSlot,
+            depth: (pendingStencilConfig.depth || 1.2) + li * 0.02,
+            skipHistoryCommit: true,
+            suppressToast: true
+        }, hit, null);
+        if (ok) stampedLayers++;
+    }
+
+    if (stampedLayers > 0) {
+        commitHistory(true);
+        showToast(currentLang === 'fr'
+            ? `Logo SVG Multi-Couleur estampé (${stampedLayers} couches AMS) !`
+            : `Multi-Color SVG stamped (${stampedLayers} AMS color layers)!`);
+    } else {
+        showToast(currentLang === 'fr' ? "Aucune couche SVG valide." : "No valid SVG layers generated.");
+    }
+}
+
 function applyStencilStampAtHit(hit) {
     isStencilStampingMode = false;
+    clearStampGhost();
     selectTool(activeTool);
     if (!hit || !currentMesh || !triangleColors) return;
 
-    const sizeMm = Math.max(6, pendingStencilConfig.size || 16);
-    const mode = pendingStencilConfig.mode || 'emboss';
-    const targetSlot = pendingStencilConfig.slot !== undefined ? pendingStencilConfig.slot : activeSlotIndex;
-    const rgb = slotRgbFloats[targetSlot] || pendingStencilConfig.rgb || [0.97, 0.98, 0.99];
-
-    const S = 72;
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = S;
-    offCanvas.height = S;
-    const ctx = offCanvas.getContext('2d');
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, S, S);
-
-    if (activeStencilData && activeStencilData.type === 'custom' && activeStencilData.img) {
-        const pad = 6;
-        ctx.drawImage(activeStencilData.img, pad, pad, S - pad * 2, S - pad * 2);
-        const imgData = ctx.getImageData(0, 0, S, S).data;
-        applyBitmapStampToSurface(imgData, S, S, sizeMm, sizeMm, mode, targetSlot, rgb, hit, translations[currentLang].toastStencilStamped);
-    } else {
-        let glyph = null;
-        for (const cat in stencilGlyphs) {
-            const found = stencilGlyphs[cat].find(g => g.id === activeStencilGlyphId);
-            if (found) { glyph = found; break; }
-        }
-        if (!glyph) glyph = stencilGlyphs.gaming[0];
-
-        if (glyph.pathD && typeof Path2D !== 'undefined') {
-            const p = new Path2D(glyph.pathD);
-            ctx.save();
-            ctx.translate(6, 6);
-            ctx.scale((S - 12) / 24, (S - 12) / 24);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill(p);
-            ctx.restore();
-            const imgData = ctx.getImageData(0, 0, S, S).data;
-            applyBitmapStampToSurface(imgData, S, S, sizeMm, sizeMm, mode, targetSlot, rgb, hit, translations[currentLang].toastStencilStamped);
-        } else {
-            const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${S}" height="${S}">${glyph.svg}</svg>`;
-            const img = new Image();
-            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            img.onload = () => {
-                ctx.drawImage(img, 4, 4, S - 8, S - 8);
-                URL.revokeObjectURL(url);
-                const imgData = ctx.getImageData(0, 0, S, S).data;
-                applyBitmapStampToSurface(imgData, S, S, sizeMm, sizeMm, mode, targetSlot, rgb, hit, translations[currentLang].toastStencilStamped);
-            };
-            img.src = url;
-        }
+    if (activeStencilData && activeStencilData.type === 'multisvg') {
+        applyMultiColorSvgStampAtHit(hit);
+        return;
     }
+
+    const sizeMm = Math.max(4, pendingStencilConfig.size || 12);
+    const rendered = renderActiveStencilToCanvas(64, pendingStencilConfig.hex || '#38bdf8');
+    const physH = sizeMm;
+    const physW = sizeMm * rendered.aspect;
+
+    applyBinaryMaskStampToSurface(
+        rendered.maskBits, rendered.W, rendered.H, physW, physH,
+        pendingStencilConfig, hit, translations[currentLang].toastStencilStamped
+    );
 }
 
 // ==========================================
 // 🪄 RELIEF, CAVITY & 1-CLICK MEDALLION MASTER
+// FIXED: Slot #1 (index 0) now works! Added Axis selector (Auto/X/Y/Z)!
 // ==========================================
 let reliefDepthAxis = 'z';
 let reliefMinVal = 0, reliefMaxVal = 1, reliefSpan = 1;
 let reliefPreviewRaf = null;
 let cavityPreviewRaf = null;
 
-function openReliefModal() {
-    if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle !" : "Please load a 3D model first!"); return; }
+function updateReliefAxisBounds(axisChoice) {
+    if (!currentMesh) return;
     const geom = currentMesh.geometry;
     geom.computeBoundingBox();
     const box = geom.boundingBox;
     const size = new THREE.Vector3();
     box.getSize(size);
 
-    reliefDepthAxis = 'z';
-    let minDim = size.z;
-    if (size.y < minDim) { reliefDepthAxis = 'y'; minDim = size.y; }
-    if (size.x < minDim) { reliefDepthAxis = 'x'; minDim = size.x; }
-
+    if (!axisChoice || axisChoice === 'auto') {
+        reliefDepthAxis = 'z';
+        let minDim = size.z;
+        if (size.y < minDim) { reliefDepthAxis = 'y'; minDim = size.y; }
+        if (size.x < minDim) { reliefDepthAxis = 'x'; minDim = size.x; }
+    } else {
+        reliefDepthAxis = axisChoice;
+    }
     reliefMinVal = box.min[reliefDepthAxis];
     reliefMaxVal = box.max[reliefDepthAxis];
     reliefSpan = Math.max(0.001, reliefMaxVal - reliefMinVal);
+}
 
+function onReliefAxisChange(val) {
+    updateReliefAxisBounds(val);
+    previewReliefThreshold();
+}
+
+function openReliefModal() {
+    if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle !" : "Please load a 3D model first!"); return; }
+    const axisSel = document.getElementById('relief-axis-select');
+    if (axisSel) axisSel.value = 'auto';
+    updateReliefAxisBounds('auto');
     document.getElementById('slider-relief-depth').value = 50;
     populateSlotDropdowns();
     previewReliefThreshold(50);
@@ -721,11 +1432,18 @@ function invertReliefSlots() {
     previewReliefThreshold();
 }
 
+function parseSlotSelectSafe(elId, fallback) {
+    const el = document.getElementById(elId);
+    if (!el) return fallback;
+    const n = parseInt(el.value, 10);
+    return isNaN(n) ? fallback : n;
+}
+
 function previewReliefThreshold(pct) {
     if (pct === undefined) pct = parseFloat(document.getElementById('slider-relief-depth').value);
     const threshold = reliefMinVal + reliefSpan * (pct / 100);
     const mmFromBase = (reliefSpan * (pct / 100)).toFixed(2);
-    document.getElementById('relief-val-readout').innerText = `${mmFromBase} mm (${pct}%)`;
+    document.getElementById('relief-val-readout').innerText = `${mmFromBase} mm (${pct}% • ${reliefDepthAxis.toUpperCase()})`;
 
     if (reliefPreviewRaf) cancelAnimationFrame(reliefPreviewRaf);
     reliefPreviewRaf = requestAnimationFrame(() => {
@@ -738,8 +1456,9 @@ function previewReliefThreshold(pct) {
         const faceCount = (posAttr.count / 3) | 0;
         const getter = reliefDepthAxis === 'x' ? 'getX' : (reliefDepthAxis === 'y' ? 'getY' : 'getZ');
 
-        const baseSlot = parseInt(document.getElementById('relief-base-slot').value, 10) || 0;
-        const embossSlot = parseInt(document.getElementById('relief-emboss-slot').value, 10) || 1;
+        // FIXED: Slot #1 (index 0) is now selectable without falling back to 1!
+        const baseSlot = parseSlotSelectSafe('relief-base-slot', 0);
+        const embossSlot = parseSlotSelectSafe('relief-emboss-slot', 1);
         const rgbBase = slotRgbFloats[baseSlot] || slotRgbFloats[0];
         const rgbEmboss = slotRgbFloats[embossSlot] || slotRgbFloats[0];
 
@@ -757,7 +1476,6 @@ function previewReliefThreshold(pct) {
 }
 
 function applyReliefColoring() {
-    saveHistory();
     const pct = parseFloat(document.getElementById('slider-relief-depth').value);
     const threshold = reliefMinVal + reliefSpan * (pct / 100);
     const geom = currentMesh.geometry;
@@ -765,8 +1483,8 @@ function applyReliefColoring() {
     const faceCount = (posAttr.count / 3) | 0;
     const getter = reliefDepthAxis === 'x' ? 'getX' : (reliefDepthAxis === 'y' ? 'getY' : 'getZ');
 
-    const baseSlot = parseInt(document.getElementById('relief-base-slot').value, 10) || 0;
-    const embossSlot = parseInt(document.getElementById('relief-emboss-slot').value, 10) || 1;
+    const baseSlot = parseSlotSelectSafe('relief-base-slot', 0);
+    const embossSlot = parseSlotSelectSafe('relief-emboss-slot', 1);
 
     for (let f = 0; f < faceCount; f++) {
         const idx = f * 3;
@@ -777,6 +1495,7 @@ function applyReliefColoring() {
     if (reliefPreviewRaf) cancelAnimationFrame(reliefPreviewRaf);
     document.getElementById('relief-modal').style.display = 'none';
     updateMeshVisualColors();
+    commitHistory(false);
     showToast(translations[currentLang].toastReliefApplied);
 }
 
@@ -807,9 +1526,9 @@ function previewCavityLines(pct) {
 
         const colArr = colorAttr.array;
         const faceCount = curvatureScores.length;
-        const targetSlot = parseInt(document.getElementById('cavity-slot-select').value, 10) || 2;
+        // FIXED: Slot #1 (index 0) works cleanly now!
+        const targetSlot = parseSlotSelectSafe('cavity-slot-select', Math.min(2, filamentSlots.length - 1));
         const rgbCavity = slotRgbFloats[targetSlot] || slotRgbFloats[0];
-        // Sensitivity 5..95 -> threshold 0.65..0.05 on true concave curvatureScores
         const threshold = Math.max(0.03, (100 - pct) * 0.0068);
 
         for (let f = 0; f < faceCount; f++) {
@@ -826,10 +1545,9 @@ function previewCavityLines(pct) {
 
 function applyCavityColoring() {
     if (!currentMesh || !curvatureScores) return;
-    saveHistory();
     const pct = parseFloat(document.getElementById('slider-cavity-depth').value);
     const faceCount = curvatureScores.length;
-    const targetSlot = parseInt(document.getElementById('cavity-slot-select').value, 10) || 2;
+    const targetSlot = parseSlotSelectSafe('cavity-slot-select', Math.min(2, filamentSlots.length - 1));
     const threshold = Math.max(0.03, (100 - pct) * 0.0068);
 
     for (let f = 0; f < faceCount; f++) {
@@ -839,12 +1557,12 @@ function applyCavityColoring() {
     if (cavityPreviewRaf) cancelAnimationFrame(cavityPreviewRaf);
     document.getElementById('cavity-modal').style.display = 'none';
     updateMeshVisualColors();
+    commitHistory(false);
     showToast(translations[currentLang].toastCavityApplied);
 }
 
 function oneClickMedallionMaster() {
     if (!currentMesh || !triangleColors) { showToast("Please load a 3D model first!"); return; }
-    saveHistory();
 
     const geom = currentMesh.geometry;
     geom.computeBoundingBox();
@@ -892,11 +1610,13 @@ function oneClickMedallionMaster() {
     }
 
     updateMeshVisualColors();
+    commitHistory(false);
     showToast(translations[currentLang].toastMasterApplied);
 }
 
 // ==========================================
-// 🖼️ PHOTO DECAL PROJECTION (FIT ASPECT + FRONT-ONLY + BAYER DITHERING!)
+// 🖼️ PHOTO DECAL PROJECTION
+// FIXED: Camera view projection, Bayer dithering ('bayer'), real Fill & Crop, optional auto-subdivide!
 // ==========================================
 let loadedDecalImage = null;
 
@@ -929,7 +1649,21 @@ function handleDecalImageUpload(e) {
 
 function applyDecalProjection() {
     if (!currentMesh || !loadedDecalImage) return;
-    saveHistory();
+
+    // Auto-subdivide low-poly models once or twice if user enabled crisp photo detail
+    let didGeoChange = false;
+    const autoSub = document.getElementById('decal-auto-subdivide')?.checked !== false;
+    if (autoSub) {
+        for (let pass = 0; pass < 2; pass++) {
+            const fc = triangleColors.length;
+            if (fc >= 18000) break;
+            const allF = new Set();
+            for (let f = 0; f < fc; f++) allF.add(f);
+            if (subdivideFacesLocal(allF, 1, true)) didGeoChange = true;
+            else break;
+        }
+        if (didGeoChange) precomputeGeometryMetrics(currentMesh.geometry);
+    }
 
     const canvas = document.createElement('canvas');
     const w = loadedDecalImage.width;
@@ -940,7 +1674,7 @@ function applyDecalProjection() {
     ctx.drawImage(loadedDecalImage, 0, 0);
     const imgData = ctx.getImageData(0, 0, w, h).data;
 
-    const axisMode = document.getElementById('decal-project-axis').value;
+    const axisMode = document.getElementById('decal-project-axis')?.value || 'front';
     const scaleMode = document.getElementById('decal-scale-mode')?.value || 'fit';
     const ditherMode = document.getElementById('decal-dither-mode')?.value || 'direct';
     const frontOnly = document.getElementById('decal-front-only')?.checked !== false;
@@ -954,18 +1688,37 @@ function applyDecalProjection() {
         meshTopology = buildMeshTopology(geom);
     }
 
-    let uAxis = 'x', vAxis = 'y', viewDir = new THREE.Vector3(0, 0, 1);
-    if (axisMode === 'top') { uAxis = 'x'; vAxis = 'z'; viewDir.set(0, 1, 0); }
-    else if (axisMode === 'side') { uAxis = 'z'; vAxis = 'y'; viewDir.set(1, 0, 0); }
+    // Build projection basis (uVec, vVec, viewDir) supporting front, top, side, AND real 'camera' view!
+    let uVec = new THREE.Vector3(1, 0, 0);
+    let vVec = new THREE.Vector3(0, 1, 0);
+    let viewDir = new THREE.Vector3(0, 0, 1);
 
-    const uMin = box.min[uAxis], uSpan = (box.max[uAxis] - uMin) || 1;
-    const vMin = box.min[vAxis], vSpan = (box.max[vAxis] - vMin) || 1;
-    const uGetter = uAxis === 'x' ? 'getX' : (uAxis === 'y' ? 'getY' : 'getZ');
-    const vGetter = vAxis === 'x' ? 'getX' : (vAxis === 'y' ? 'getY' : 'getZ');
+    if (axisMode === 'top') {
+        uVec.set(1, 0, 0); vVec.set(0, 0, -1); viewDir.set(0, 1, 0);
+    } else if (axisMode === 'side') {
+        uVec.set(0, 0, -1); vVec.set(0, 1, 0); viewDir.set(1, 0, 0);
+    } else if (axisMode === 'camera' && camera) {
+        const invMat = new THREE.Matrix4().copy(currentMesh.matrixWorld).invert();
+        uVec.set(1, 0, 0).applyQuaternion(camera.quaternion).transformDirection(invMat).normalize();
+        vVec.set(0, 1, 0).applyQuaternion(camera.quaternion).transformDirection(invMat).normalize();
+        viewDir.set(0, 0, 1).applyQuaternion(camera.quaternion).transformDirection(invMat).normalize();
+    }
 
-    // Aspect ratio adjustment for 'fit' mode!
+    // Compute projected U/V extents across mesh
+    let uMin = Infinity, uMax = -Infinity, vMin = Infinity, vMax = -Infinity;
+    const tmpP = new THREE.Vector3();
+    for (let i = 0; i < posAttr.count; i++) {
+        tmpP.fromBufferAttribute(posAttr, i);
+        const u = tmpP.dot(uVec), v = tmpP.dot(vVec);
+        if (u < uMin) uMin = u; if (u > uMax) uMax = u;
+        if (v < vMin) vMin = v; if (v > vMax) vMax = v;
+    }
+    const uSpan = Math.max(0.001, uMax - uMin);
+    const vSpan = Math.max(0.001, vMax - vMin);
+
+    // Aspect ratio adjustment for BOTH 'fit' (letterbox) AND 'fill' (aspect-preserving crop)!
     const imgAspect = w / Math.max(1, h);
-    const boxAspect = uSpan / Math.max(0.001, vSpan);
+    const boxAspect = uSpan / vSpan;
     let uScale = 1, vScale = 1, uOffset = 0, vOffset = 0;
     if (scaleMode === 'fit') {
         if (boxAspect > imgAspect) {
@@ -975,36 +1728,40 @@ function applyDecalProjection() {
             vScale = imgAspect / boxAspect;
             vOffset = (1 - vScale) * 0.5;
         }
+    } else if (scaleMode === 'fill') {
+        if (boxAspect > imgAspect) {
+            vScale = imgAspect / boxAspect;
+            vOffset = (1 - vScale) * 0.5;
+        } else {
+            uScale = boxAspect / imgAspect;
+            uOffset = (1 - uScale) * 0.5;
+        }
     }
 
-    // 4x4 Bayer ordered dithering matrix normalized to [-0.5, 0.5]
     const bayer4 = [
         [ 0 / 16 - 0.5,  8 / 16 - 0.5,  2 / 16 - 0.5, 10 / 16 - 0.5],
         [12 / 16 - 0.5,  4 / 16 - 0.5, 14 / 16 - 0.5,  6 / 16 - 0.5],
         [ 3 / 16 - 0.5, 11 / 16 - 0.5,  1 / 16 - 0.5,  9 / 16 - 0.5],
         [15 / 16 - 0.5,  7 / 16 - 0.5, 13 / 16 - 0.5,  5 / 16 - 0.5]
     ];
+    const useDither = (ditherMode === 'bayer' || ditherMode === 'dither');
 
     for (let f = 0; f < faceCount; f++) {
-        // Front-only guard: skip back-facing surfaces!
+        const f3 = f * 3;
         if (frontOnly && meshTopology) {
-            const f3 = f * 3;
             const dot = meshTopology.faceNormals[f3] * viewDir.x
                       + meshTopology.faceNormals[f3 + 1] * viewDir.y
                       + meshTopology.faceNormals[f3 + 2] * viewDir.z;
             if (dot <= 0.1) continue;
         }
 
-        const idx = f * 3;
-        const uAvg = (posAttr[uGetter](idx) + posAttr[uGetter](idx + 1) + posAttr[uGetter](idx + 2)) * 0.3333333;
-        const vAvg = (posAttr[vGetter](idx) + posAttr[vGetter](idx + 1) + posAttr[vGetter](idx + 2)) * 0.3333333;
-
-        const rawU = (uAvg - uMin) / uSpan;
-        const rawV = (axisMode === 'top') ? ((vAvg - vMin) / vSpan) : (1 - (vAvg - vMin) / vSpan);
+        const cx = meshTopology.faceCenters[f3], cy = meshTopology.faceCenters[f3 + 1], cz = meshTopology.faceCenters[f3 + 2];
+        const rawU = ((cx * uVec.x + cy * uVec.y + cz * uVec.z) - uMin) / uSpan;
+        const rawV = 1 - ((cx * vVec.x + cy * vVec.y + cz * vVec.z) - vMin) / vSpan;
 
         const uNorm = rawU * uScale + uOffset;
         const vNorm = rawV * vScale + vOffset;
-        if (scaleMode === 'fit' && (uNorm < 0 || uNorm > 1 || vNorm < 0 || vNorm > 1)) continue;
+        if (uNorm < 0 || uNorm > 1 || vNorm < 0 || vNorm > 1) continue;
 
         const px = Math.min(w - 1, Math.max(0, (uNorm * w) | 0));
         const py = Math.min(h - 1, Math.max(0, (vNorm * h) | 0));
@@ -1015,8 +1772,8 @@ function applyDecalProjection() {
         let g = imgData[pIdx + 1] / 255;
         let b = imgData[pIdx + 2] / 255;
 
-        if (ditherMode === 'dither') {
-            const ditherAmt = bayer4[py & 3][px & 3] * 0.18;
+        if (useDither) {
+            const ditherAmt = bayer4[py & 3][px & 3] * 0.22;
             r = Math.max(0, Math.min(1, r + ditherAmt));
             g = Math.max(0, Math.min(1, g + ditherAmt));
             b = Math.max(0, Math.min(1, b + ditherAmt));
@@ -1026,6 +1783,7 @@ function applyDecalProjection() {
     }
 
     updateMeshVisualColors();
+    commitHistory(didGeoChange);
     closeDecalModal();
     showToast(translations[currentLang].toastDecalApplied);
 }

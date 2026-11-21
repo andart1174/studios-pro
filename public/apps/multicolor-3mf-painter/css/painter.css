@@ -454,25 +454,30 @@ header {
     box-shadow: 0 0 14px var(--primary-glow);
 }
 
+/* Floating portal tooltip (never clipped by .toolbar-left overflow-y:auto!) */
 .tool-btn::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 50px;
-    background: #0f172a;
-    color: #fff;
-    padding: 4px 9px;
-    border-radius: 6px;
-    font-size: 0.74rem;
-    white-space: nowrap;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
-    z-index: 120;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    display: none !important;
 }
 
-.tool-btn:hover::after {
+.floating-tool-tooltip {
+    position: fixed;
+    transform: translateY(-50%);
+    background: #0f172a;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease;
+    z-index: 99999;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+.floating-tool-tooltip.visible {
     opacity: 1;
 }
 
@@ -1608,6 +1613,131 @@ header {
 .stencil-glyph-btn.active, .stencil-glyph-btn:hover {
     border-color: var(--primary);
     background: rgba(56, 189, 248, 0.14);
+}
+
+.filament-slot.solo-active {
+    border-color: #38bdf8;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+}
+
+.filament-slot.solo-dimmed {
+    opacity: 0.38;
+    filter: grayscale(0.5);
+}
+
+.slot-solo-badge {
+    position: absolute;
+    top: 4px;
+    right: 22px;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 4px;
+    padding: 2px;
+    color: #cbd5e1;
+    opacity: 0.72;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slot-solo-badge:hover, .slot-solo-badge.active {
+    opacity: 1;
+    background: #0284c7;
+    color: #fff;
+}
+
+.slot-usage-pill {
+    font-size: 0.54rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+    font-family: 'Inter', monospace;
+}
+
+.usage-bar-track {
+    display: flex;
+    height: 6px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 6px 0 3px 0;
+    gap: 1px;
+}
+
+.usage-bar-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--text-sub);
+    font-family: 'Inter', monospace;
+    margin-bottom: 4px;
+}
+
+/* Compact 8-Column Swatch Grid in Text & Stencil Modals (FIXED Foto 1 & Foto 3!) */
+.stamp-swatch-grid {
+    display: grid !important;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    margin-top: 4px;
+}
+
+.stamp-swatch-btn {
+    width: 100%;
+    height: 22px;
+    border-radius: 5px;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.stamp-swatch-btn:hover {
+    transform: scale(1.1);
+    border-color: #fff;
+}
+
+.stamp-swatch-btn.active {
+    border-color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.85);
+    transform: scale(1.12);
+    z-index: 2;
+}
+
+/* Floating Live Stamp Ghost HUD & Masking Tape Bar */
+.stamp-live-hud, .tape-action-bar {
+    position: absolute;
+    bottom: 66px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 18, 34, 0.96);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.55);
+    color: #f8fafc;
+    padding: 7px 14px;
+    border-radius: 99px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 55;
+    font-size: 0.76rem;
+    font-weight: 600;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+    white-space: nowrap;
+}
+
+/* AMS Swap Killer Speckle Cards */
+.speckle-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 9px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 8px;
+    margin-bottom: 5px;
 }
 
 /* Mobile Responsive Engine (<= 900px) */

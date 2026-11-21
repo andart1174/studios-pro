@@ -10,10 +10,24 @@ let spatialGrid = null;
 
 let colorHistory = [];
 let historyIndex = -1;
-const MAX_HISTORY_STATES = 25;
+let currentGeoGen = 0;
+const MAX_HISTORY_STATES = 30;
 
 // Print Up-Axis convention in 3D view ('y' is vertical up in Three.js)
 let printUpAxis = 'y';
+
+// Align geometry horizontally centered on X/Z and sitting flush on print bed Y = 0
+function alignGeometryToBed(geometry) {
+    if (!geometry || !geometry.attributes || !geometry.attributes.position) return;
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    if (!box) return;
+    const cx = (box.min.x + box.max.x) * 0.5;
+    const cz = (box.min.z + box.max.z) * 0.5;
+    const minY = box.min.y;
+    geometry.translate(-cx, -minY, -cz);
+    geometry.computeBoundingBox();
+}
 
 if (typeof MeshBVHLib !== 'undefined') {
     THREE.BufferGeometry.prototype.computeBoundsTree = MeshBVHLib.computeBoundsTree;
@@ -208,6 +222,22 @@ function buildMeshTopology(geometry) {
     const faceNeighbors = new Array(faceCount);
     for (let f = 0; f < faceCount; f++) faceNeighbors[f] = [];
 
+    // Welded vertex data for watertight sculpting & smooth vertex normals
+    const weldedVertNormals = new Float32Array(nextVid * 3);
+    const weldedVertPositions = new Float32Array(nextVid * 3);
+    const weldedVertIndices = new Array(nextVid);
+    for (let v = 0; v < nextVid; v++) weldedVertIndices[v] = [];
+
+    for (let i = 0; i < totalVerts; i++) {
+        const vid = vertIds[i];
+        if (weldedVertIndices[vid].length === 0) {
+            weldedVertPositions[vid * 3]     = posArr[i * 3];
+            weldedVertPositions[vid * 3 + 1] = posArr[i * 3 + 1];
+            weldedVertPositions[vid * 3 + 2] = posArr[i * 3 + 2];
+        }
+        weldedVertIndices[vid].push(i);
+    }
+
     const edgeMap = new Map();
 
     for (let f = 0; f < faceCount; f++) {
@@ -235,6 +265,11 @@ function buildMeshTopology(geometry) {
         const v1 = vertIds[vb + 1];
         const v2 = vertIds[vb + 2];
 
+        // Area-weighted normal accumulation per welded vertex
+        weldedVertNormals[v0 * 3] += nx; weldedVertNormals[v0 * 3 + 1] += ny; weldedVertNormals[v0 * 3 + 2] += nz;
+        weldedVertNormals[v1 * 3] += nx; weldedVertNormals[v1 * 3 + 1] += ny; weldedVertNormals[v1 * 3 + 2] += nz;
+        weldedVertNormals[v2 * 3] += nx; weldedVertNormals[v2 * 3 + 1] += ny; weldedVertNormals[v2 * 3 + 2] += nz;
+
         const edges = [
             v0 < v1 ? `${v0}_${v1}` : `${v1}_${v0}`,
             v1 < v2 ? `${v1}_${v2}` : `${v2}_${v1}`,
@@ -257,7 +292,56 @@ function buildMeshTopology(geometry) {
         }
     }
 
-    return { faceNeighbors, faceNormals, faceCenters, faceCount, vertIds, uniqueVertCount: nextVid };
+    for (let v = 0; v < nextVid; v++) {
+        const v3 = v * 3;
+        const nLen = Math.hypot(weldedVertNormals[v3], weldedVertNormals[v3 + 1], weldedVertNormals[v3 + 2]) || 1;
+        weldedVertNormals[v3]     /= nLen;
+        weldedVertNormals[v3 + 1] /= nLen;
+        weldedVertNormals[v3 + 2] /= nLen;
+    }
+
+    // Connected topological shells / components (for 1-Click Component Clicker)
+    const shellOfFace = new Int32Array(faceCount);
+    shellOfFace.fill(-1);
+    const shells = [];
+    const bfsQ = new Int32Array(faceCount);
+    for (let f = 0; f < faceCount; f++) {
+        if (shellOfFace[f] !== -1) continue;
+        const sid = shells.length;
+        const list = [];
+        let head = 0, tail = 0;
+        bfsQ[tail++] = f;
+        shellOfFace[f] = sid;
+        while (head < tail) {
+            const cur = bfsQ[head++];
+            list.push(cur);
+            const nbs = faceNeighbors[cur];
+            for (let k = 0; k < nbs.length; k++) {
+                const nb = nbs[k];
+                if (shellOfFace[nb] === -1) {
+                    shellOfFace[nb] = sid;
+                    bfsQ[tail++] = nb;
+                }
+            }
+        }
+        shells.push(list);
+    }
+
+    return {
+        faceNeighbors,
+        adj: faceNeighbors,       // Safe alias for callers
+        faceNormals,
+        faceCenters,
+        faceCount,
+        triCount: faceCount,      // Safe alias for callers
+        vertIds,
+        uniqueVertCount: nextVid,
+        weldedVertNormals,
+        weldedVertPositions,
+        weldedVertIndices,
+        shellOfFace,
+        shells
+    };
 }
 
 // TRUE Dihedral Concavity & Engraved Groove Detection (uses meshTopology!)
@@ -308,9 +392,9 @@ function precomputeGeometryMetrics(geometry) {
 }
 
 // ==========================================
-// ⚡ SMART ADAPTIVE LOCAL SUBDIVISION (CRACK-FREE 1-TO-4 / 1-TO-2 EDGE SPLIT)
+// ⚡ RIVARA LONGEST-EDGE BISECTION LOCAL SUBDIVISION (CRACK-FREE, ZERO SLIVERS!)
 // ==========================================
-function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
+function subdivideFacesLocal(targetFaceSet, maxIterations = 1, skipCurvature = false) {
     if (!currentMesh || !triangleColors || !targetFaceSet || targetFaceSet.size === 0) return false;
     const geom = currentMesh.geometry;
     const posAttr = geom.attributes.position;
@@ -325,13 +409,72 @@ function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
         return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
     };
 
+    // Build edge-to-face adjacency & compute longest edge per face for Rivara closure
+    const faceEdges = new Array(faceCount);
+    const faceLongestIdx = new Uint8Array(faceCount);
+    const edgeToFaces = new Map();
+
+    for (let f = 0; f < faceCount; f++) {
+        const p = f * 9;
+        const x0 = pos[p],     y0 = pos[p + 1], z0 = pos[p + 2];
+        const x1 = pos[p + 3], y1 = pos[p + 4], z1 = pos[p + 5];
+        const x2 = pos[p + 6], y2 = pos[p + 7], z2 = pos[p + 8];
+        const e0 = edgeKey(x0, y0, z0, x1, y1, z1);
+        const e1 = edgeKey(x1, y1, z1, x2, y2, z2);
+        const e2 = edgeKey(x2, y2, z2, x0, y0, z0);
+        faceEdges[f] = [e0, e1, e2];
+
+        const l0 = (x1 - x0) ** 2 + (y1 - y0) ** 2 + (z1 - z0) ** 2;
+        const l1 = (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2;
+        const l2 = (x0 - x2) ** 2 + (y0 - y2) ** 2 + (z0 - z2) ** 2;
+        faceLongestIdx[f] = (l0 >= l1 && l0 >= l2) ? 0 : (l1 >= l2 ? 1 : 2);
+
+        for (let k = 0; k < 3; k++) {
+            const ek = faceEdges[f][k];
+            let arr = edgeToFaces.get(ek);
+            if (!arr) { arr = [f]; edgeToFaces.set(ek, arr); }
+            else arr.push(f);
+        }
+    }
+
+    // Mark longest edge of every target face (and all edges > 75% of longest for balanced split)
     const splitEdges = new Set();
+    const queue = [];
     for (const f of targetFaceSet) {
         if (f < 0 || f >= faceCount) continue;
         const p = f * 9;
-        splitEdges.add(edgeKey(pos[p], pos[p + 1], pos[p + 2], pos[p + 3], pos[p + 4], pos[p + 5]));
-        splitEdges.add(edgeKey(pos[p + 3], pos[p + 4], pos[p + 5], pos[p + 6], pos[p + 7], pos[p + 8]));
-        splitEdges.add(edgeKey(pos[p + 6], pos[p + 7], pos[p + 8], pos[p], pos[p + 1], pos[p + 2]));
+        const l0 = (pos[p + 3] - pos[p]) ** 2 + (pos[p + 4] - pos[p + 1]) ** 2 + (pos[p + 5] - pos[p + 2]) ** 2;
+        const l1 = (pos[p + 6] - pos[p + 3]) ** 2 + (pos[p + 7] - pos[p + 4]) ** 2 + (pos[p + 8] - pos[p + 5]) ** 2;
+        const l2 = (pos[p] - pos[p + 6]) ** 2 + (pos[p + 1] - pos[p + 7]) ** 2 + (pos[p + 2] - pos[p + 8]) ** 2;
+        const maxL = Math.max(l0, l1, l2);
+        const lens = [l0, l1, l2];
+        for (let k = 0; k < 3; k++) {
+            if (k === faceLongestIdx[f] || lens[k] >= maxL * 0.55) {
+                const ek = faceEdges[f][k];
+                if (!splitEdges.has(ek)) {
+                    splitEdges.add(ek);
+                    queue.push(ek);
+                }
+            }
+        }
+    }
+
+    // Rivara closure: if a triangle has a marked non-longest edge, mark its longest edge too
+    // Guarantees minimum angle stays bounded (zero skinny needle slivers!)
+    let qHead = 0;
+    const maxPropagate = Math.min(queue.length * 6 + 400, 12000);
+    while (qHead < queue.length && qHead < maxPropagate) {
+        const ek = queue[qHead++];
+        const adjFaces = edgeToFaces.get(ek);
+        if (!adjFaces) continue;
+        for (let i = 0; i < adjFaces.length; i++) {
+            const nf = adjFaces[i];
+            const longEk = faceEdges[nf][faceLongestIdx[nf]];
+            if (!splitEdges.has(longEk)) {
+                splitEdges.add(longEk);
+                queue.push(longEk);
+            }
+        }
     }
 
     const outPos = [];
@@ -349,11 +492,11 @@ function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
         const x2 = pos[p + 6], y2 = pos[p + 7], z2 = pos[p + 8];
         const col = triangleColors[f];
 
-        const s01 = splitEdges.has(edgeKey(x0, y0, z0, x1, y1, z1));
-        const s12 = splitEdges.has(edgeKey(x1, y1, z1, x2, y2, z2));
-        const s20 = splitEdges.has(edgeKey(x2, y2, z2, x0, y0, z0));
-
+        const s01 = splitEdges.has(faceEdges[f][0]);
+        const s12 = splitEdges.has(faceEdges[f][1]);
+        const s20 = splitEdges.has(faceEdges[f][2]);
         const splitCount = (s01 ? 1 : 0) + (s12 ? 1 : 0) + (s20 ? 1 : 0);
+
         if (splitCount === 0) {
             pushTri(x0, y0, z0, x1, y1, z1, x2, y2, z2, col);
         } else if (splitCount === 3) {
@@ -365,7 +508,7 @@ function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
             pushTri(m20x, m20y, m20z, m12x, m12y, m12z, x2, y2, z2, col);
             pushTri(m01x, m01y, m01z, m12x, m12y, m12z, m20x, m20y, m20z, col);
         } else if (splitCount === 1) {
-            // Crack-free T-junction elimination: 1-to-2 split
+            // Crack-free bisection
             if (s01) {
                 const mx = (x0 + x1) * 0.5, my = (y0 + y1) * 0.5, mz = (z0 + z1) * 0.5;
                 pushTri(x0, y0, z0, mx, my, mz, x2, y2, z2, col);
@@ -380,18 +523,30 @@ function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
                 pushTri(mx, my, mz, x0, y0, z0, x1, y1, z1, col);
             }
         } else {
-            // 2 edges split -> 1-to-3 split (crack-free!)
-            // Rotate so the unsplit edge is (b -> c), split edges are (a -> b) and (c -> a)
-            let ax, ay, az, bx, by, bz, cx, cy, cz;
-            if (!s12) { ax = x0; ay = y0; az = z0; bx = x1; by = y1; bz = z1; cx = x2; cy = y2; cz = z2; }
-            else if (!s20) { ax = x1; ay = y1; az = z1; bx = x2; by = y2; bz = z2; cx = x0; cy = y0; cz = z0; }
-            else { ax = x2; ay = y2; az = z2; bx = x0; by = y0; bz = z0; cx = x1; cy = y1; cz = z1; }
-
-            const mabx = (ax + bx) * 0.5, maby = (ay + by) * 0.5, mabz = (az + bz) * 0.5;
-            const mcax = (cx + ax) * 0.5, mcay = (cy + ay) * 0.5, mcaz = (cz + az) * 0.5;
-            pushTri(ax, ay, az, mabx, maby, mabz, mcax, mcay, mcaz, col);
-            pushTri(mabx, maby, mabz, bx, by, bz, cx, cy, cz, col);
-            pushTri(mabx, maby, mabz, cx, cy, cz, mcax, mcay, mcaz, col);
+            // 2 edges split: bisect the LONGER of the two marked edges first, then split the child with the other marked edge
+            // This avoids creating narrow sliver triangles!
+            const verts = [[x0, y0, z0], [x1, y1, z1], [x2, y2, z2]];
+            const flags = [s01, s12, s20];
+            // Rotate so the UNSPLIT edge is edge 1 (v1 -> v2), split edges are edge 0 (v0->v1) and edge 2 (v2->v0)
+            let r = 0;
+            if (!flags[1]) r = 0;
+            else if (!flags[2]) r = 1;
+            else r = 2;
+            const A = verts[r], B = verts[(r + 1) % 3], C = verts[(r + 2) % 3];
+            const mab = [(A[0] + B[0]) * 0.5, (A[1] + B[1]) * 0.5, (A[2] + B[2]) * 0.5];
+            const mca = [(C[0] + A[0]) * 0.5, (C[1] + A[1]) * 0.5, (C[2] + A[2]) * 0.5];
+            const lenAB = (B[0] - A[0]) ** 2 + (B[1] - A[1]) ** 2 + (B[2] - A[2]) ** 2;
+            const lenCA = (A[0] - C[0]) ** 2 + (A[1] - C[1]) ** 2 + (A[2] - C[2]) ** 2;
+            pushTri(A[0], A[1], A[2], mab[0], mab[1], mab[2], mca[0], mca[1], mca[2], col);
+            if (lenAB >= lenCA) {
+                // Connect mab -> C (shorter diagonal!)
+                pushTri(mab[0], mab[1], mab[2], B[0], B[1], B[2], C[0], C[1], C[2], col);
+                pushTri(mab[0], mab[1], mab[2], C[0], C[1], C[2], mca[0], mca[1], mca[2], col);
+            } else {
+                // Connect mca -> B (shorter diagonal!)
+                pushTri(mab[0], mab[1], mab[2], B[0], B[1], B[2], mca[0], mca[1], mca[2], col);
+                pushTri(B[0], B[1], B[2], C[0], C[1], C[2], mca[0], mca[1], mca[2], col);
+            }
         }
     }
 
@@ -405,15 +560,140 @@ function subdivideFacesLocal(targetFaceSet, maxIterations = 1) {
     geom.dispose();
     currentMesh.geometry = newGeom;
     triangleColors = new Uint8Array(outColors);
+    currentGeoGen++;
+
+    spatialGrid = new SpatialGrid(newGeom, 32);
+    meshTopology = buildMeshTopology(newGeom);
+    if (!skipCurvature) precomputeGeometryMetrics(newGeom);
+    updateMeshVisualColors();
+    return true;
+}
+
+// ==========================================
+// ✂️ EXACT MATHEMATICAL PLANE / TAPE EDGE SPLITTER (LASER-SHARP CUT-PAINT!)
+// ==========================================
+function splitMeshAlongPlane(planePoint, planeNormal, scopeRadius = Infinity, scopeCenter = null) {
+    if (!currentMesh || !triangleColors) return false;
+    const geom = currentMesh.geometry;
+    const posAttr = geom.attributes.position;
+    if (!posAttr) return false;
+    const pos = posAttr.array;
+    const faceCount = (pos.length / 9) | 0;
+    if (faceCount > 550000) return false;
+
+    const px = planePoint.x, py = planePoint.y, pz = planePoint.z;
+    const nx = planeNormal.x, ny = planeNormal.y, nz = planeNormal.z;
+    const rSq = isFinite(scopeRadius) ? scopeRadius * scopeRadius : Infinity;
+    const scx = scopeCenter ? scopeCenter.x : px;
+    const scy = scopeCenter ? scopeCenter.y : py;
+    const scz = scopeCenter ? scopeCenter.z : pz;
+    const EPS = 1e-4;
+
+    const signedDist = (x, y, z) => (x - px) * nx + (y - py) * ny + (z - pz) * nz;
+    const edgeKey = (ax, ay, az, bx, by, bz) => {
+        const ka = `${Math.round(ax * 10000)},${Math.round(ay * 10000)},${Math.round(az * 10000)}`;
+        const kb = `${Math.round(bx * 10000)},${Math.round(by * 10000)},${Math.round(bz * 10000)}`;
+        return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+    };
+
+    // Pass 1: find all edges strictly crossed by the plane inside scopeRadius
+    const edgeCutPoint = new Map();
+    for (let f = 0; f < faceCount; f++) {
+        const b = f * 9;
+        const v = [
+            [pos[b], pos[b + 1], pos[b + 2]],
+            [pos[b + 3], pos[b + 4], pos[b + 5]],
+            [pos[b + 6], pos[b + 7], pos[b + 8]]
+        ];
+        if (isFinite(rSq)) {
+            const cx = (v[0][0] + v[1][0] + v[2][0]) / 3;
+            const cy = (v[0][1] + v[1][1] + v[2][1]) / 3;
+            const cz = (v[0][2] + v[1][2] + v[2][2]) / 3;
+            if ((cx - scx) ** 2 + (cy - scy) ** 2 + (cz - scz) ** 2 > rSq) continue;
+        }
+        const d = [
+            signedDist(v[0][0], v[0][1], v[0][2]),
+            signedDist(v[1][0], v[1][1], v[1][2]),
+            signedDist(v[2][0], v[2][1], v[2][2])
+        ];
+        const pairs = [[0, 1], [1, 2], [2, 0]];
+        for (let e = 0; e < 3; e++) {
+            const [i, j] = pairs[e];
+            if ((d[i] > EPS && d[j] < -EPS) || (d[i] < -EPS && d[j] > EPS)) {
+                const ek = edgeKey(v[i][0], v[i][1], v[i][2], v[j][0], v[j][1], v[j][2]);
+                if (!edgeCutPoint.has(ek)) {
+                    const t = d[i] / (d[i] - d[j]);
+                    edgeCutPoint.set(ek, [
+                        v[i][0] + (v[j][0] - v[i][0]) * t,
+                        v[i][1] + (v[j][1] - v[i][1]) * t,
+                        v[i][2] + (v[j][2] - v[i][2]) * t
+                    ]);
+                }
+            }
+        }
+    }
+
+    if (edgeCutPoint.size === 0) return false;
+
+    // Pass 2: split EVERY triangle sharing any cut edge (100% crack-free!)
+    const outPos = [];
+    const outColors = [];
+    const pushTri = (a, b, c, col) => {
+        outPos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+        outColors.push(col);
+    };
+
+    for (let f = 0; f < faceCount; f++) {
+        const b = f * 9;
+        const v0 = [pos[b], pos[b + 1], pos[b + 2]];
+        const v1 = [pos[b + 3], pos[b + 4], pos[b + 5]];
+        const v2 = [pos[b + 6], pos[b + 7], pos[b + 8]];
+        const col = triangleColors[f];
+
+        const c01 = edgeCutPoint.get(edgeKey(v0[0], v0[1], v0[2], v1[0], v1[1], v1[2]));
+        const c12 = edgeCutPoint.get(edgeKey(v1[0], v1[1], v1[2], v2[0], v2[1], v2[2]));
+        const c20 = edgeCutPoint.get(edgeKey(v2[0], v2[1], v2[2], v0[0], v0[1], v0[2]));
+        const cnt = (c01 ? 1 : 0) + (c12 ? 1 : 0) + (c20 ? 1 : 0);
+
+        if (cnt === 0) {
+            pushTri(v0, v1, v2, col);
+        } else if (cnt === 1) {
+            if (c01) { pushTri(v0, c01, v2, col); pushTri(c01, v1, v2, col); }
+            else if (c12) { pushTri(v1, c12, v0, col); pushTri(c12, v2, v0, col); }
+            else { pushTri(v2, c20, v1, col); pushTri(c20, v0, v1, col); }
+        } else if (cnt === 2) {
+            // Standard 1-vs-2 triangle plane clip -> 1 triangle on lone side, 2 on pair side
+            let A, B, C, pAB, pCA;
+            if (!c12) { A = v0; B = v1; C = v2; pAB = c01; pCA = c20; }
+            else if (!c20) { A = v1; B = v2; C = v0; pAB = c12; pCA = c01; }
+            else { A = v2; B = v0; C = v1; pAB = c20; pCA = c12; }
+            pushTri(A, pAB, pCA, col);
+            pushTri(pAB, B, C, col);
+            pushTri(pAB, C, pCA, col);
+        } else {
+            pushTri(v0, c01, c20, col);
+            pushTri(c01, v1, c12, col);
+            pushTri(c20, c12, v2, col);
+            pushTri(c01, c12, c20, col);
+        }
+    }
+
+    const newGeom = new THREE.BufferGeometry();
+    newGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(outPos), 3));
+    newGeom.computeVertexNormals();
+    newGeom.computeBoundingBox();
+    if (newGeom.computeBoundsTree) newGeom.computeBoundsTree();
+
+    if (geom.disposeBoundsTree) geom.disposeBoundsTree();
+    geom.dispose();
+    currentMesh.geometry = newGeom;
+    triangleColors = new Uint8Array(outColors);
+    currentGeoGen++;
 
     spatialGrid = new SpatialGrid(newGeom, 32);
     meshTopology = buildMeshTopology(newGeom);
     precomputeGeometryMetrics(newGeom);
     updateMeshVisualColors();
-
-    if (maxIterations > 1) {
-        // Optional further pass handled by caller if needed
-    }
     return true;
 }
 
@@ -432,8 +712,6 @@ function subdivideCurrentMesh() {
         showToast(currentLang === 'fr' ? "Le maillage a déjà une très haute densité !" : "Mesh already has very high polygon density!");
         return;
     }
-
-    saveHistory(true);
 
     const newPos = new Float32Array(faceCount * 4 * 9);
     const newColors = new Uint8Array(faceCount * 4);
@@ -482,20 +760,21 @@ function subdivideCurrentMesh() {
     geom.dispose();
     currentMesh.geometry = newGeom;
     triangleColors = newColors;
+    currentGeoGen++;
 
     spatialGrid = new SpatialGrid(newGeom, 32);
     meshTopology = buildMeshTopology(newGeom);
     precomputeGeometryMetrics(newGeom);
     updateMeshVisualColors();
-    // Save post-subdivide snapshot so Undo/Redo works in 1 click!
-    saveHistory(true);
+    // Commit single post-subdivide snapshot so Undo/Redo works in 1 click!
+    commitHistory(true);
 
     const tmpl = translations[currentLang].toastMeshSubdivided || "Mesh subdivided: {count} triangles!";
     showToast(tmpl.replace('{count}', newColors.length.toLocaleString()));
 }
 
 // ==========================================
-// 🔄 BUFFER COLOR UPDATE & UNIFIED HISTORY (INCLUDES PALETTE!)
+// 🔄 BUFFER COLOR UPDATE & UNIFIED POST-ACTION HISTORY (UNDO + REDO 100% EXACT!)
 // ==========================================
 function updateMeshVisualColors() {
     if (!currentMesh || !triangleColors) return;
@@ -510,10 +789,16 @@ function updateMeshVisualColors() {
 
     const faceCount = (vertCount / 3) | 0;
     const colArr = colorAttr.array;
+    const hasSolo = (typeof soloSlotIndex === 'number' && soloSlotIndex >= 0);
 
     for (let f = 0; f < faceCount; f++) {
         const s = triangleColors[f] || 0;
-        const rgb = slotRgbFloats[s] || slotRgbFloats[0] || [0.95, 0.95, 0.95];
+        let rgb;
+        if (hasSolo && s !== soloSlotIndex) {
+            rgb = [0.16, 0.20, 0.27]; // Dim non-solo faces for instant color inspection
+        } else {
+            rgb = slotRgbFloats[s] || slotRgbFloats[0] || [0.95, 0.95, 0.95];
+        }
         const base = f * 9;
         colArr[base]     = rgb[0]; colArr[base + 1] = rgb[1]; colArr[base + 2] = rgb[2];
         colArr[base + 3] = rgb[0]; colArr[base + 4] = rgb[1]; colArr[base + 5] = rgb[2];
@@ -521,10 +806,11 @@ function updateMeshVisualColors() {
     }
 
     colorAttr.needsUpdate = true;
+    if (typeof markCbnDirty === 'function') markCbnDirty();
     if (typeof updateStats === 'function') updateStats();
 }
 
-function saveHistory(savePositions = false) {
+function commitHistory(savePositions = false, isInitialLoad = false) {
     if (!triangleColors || !currentMesh) return;
     if (historyIndex < colorHistory.length - 1) {
         colorHistory = colorHistory.slice(0, historyIndex + 1);
@@ -533,72 +819,99 @@ function saveHistory(savePositions = false) {
     const entry = {
         colors: new Uint8Array(triangleColors),
         slots: filamentSlots.map(s => ({ ...s })),
-        positions: savePositions ? new Float32Array(geom.attributes.position.array) : null
+        positions: savePositions ? new Float32Array(geom.attributes.position.array) : null,
+        geoGen: currentGeoGen
     };
     colorHistory.push(entry);
-    if (colorHistory.length > MAX_HISTORY_STATES) colorHistory.shift();
+    if (colorHistory.length > MAX_HISTORY_STATES) {
+        // Ensure oldest retained entry keeps a valid geometry snapshot
+        const shifted = colorHistory.shift();
+        if (colorHistory.length > 0 && !colorHistory[0].positions && shifted.positions) {
+            colorHistory[0].positions = shifted.positions;
+        }
+    }
     historyIndex = colorHistory.length - 1;
+    if (!isInitialLoad && typeof markProjectDirty === 'function') {
+        markProjectDirty();
+    }
 }
 
-function restoreHistoryEntry(entry) {
+// Backward-compatible alias
+function saveHistory(savePositions = false) {
+    commitHistory(savePositions, false);
+}
+
+function restoreHistoryEntry(entry, targetIdx) {
     if (!entry || !currentMesh) return;
 
-    // Restore filament palette alongside triangle slot indices!
     if (entry.slots && entry.slots.length >= 2) {
         filamentSlots = entry.slots.map(s => ({ ...s }));
         if (activeSlotIndex >= filamentSlots.length) activeSlotIndex = 0;
+        if (typeof soloSlotIndex === 'number' && soloSlotIndex >= filamentSlots.length) soloSlotIndex = -1;
         refreshSlotRgbFloats();
         renderFilamentGrid();
     }
 
     const geom = currentMesh.geometry;
     const neededVerts = entry.colors.length * 3;
-    const needsGeoRestore = entry.positions || geom.attributes.position.count !== neededVerts;
+    const needsGeoRestore = (entry.geoGen !== currentGeoGen) || (geom.attributes.position.count !== neededVerts);
 
-    if (entry.positions) {
-        if (geom.disposeBoundsTree) geom.disposeBoundsTree();
-        geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(entry.positions), 3));
-        geom.computeVertexNormals();
-        geom.computeBoundingBox();
-        if (geom.computeBoundsTree) geom.computeBoundsTree();
-        spatialGrid = new SpatialGrid(geom, 32);
-        meshTopology = buildMeshTopology(geom);
-        precomputeGeometryMetrics(geom);
-    } else if (needsGeoRestore) {
-        for (let i = historyIndex; i >= 0; i--) {
-            if (colorHistory[i].positions && colorHistory[i].positions.length === entry.colors.length * 9) {
-                if (geom.disposeBoundsTree) geom.disposeBoundsTree();
-                geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(colorHistory[i].positions), 3));
-                geom.computeVertexNormals();
-                geom.computeBoundingBox();
-                if (geom.computeBoundsTree) geom.computeBoundsTree();
-                spatialGrid = new SpatialGrid(geom, 32);
-                meshTopology = buildMeshTopology(geom);
-                precomputeGeometryMetrics(geom);
-                break;
+    if (needsGeoRestore) {
+        let posSrc = entry.positions;
+        if (!posSrc) {
+            const idx = typeof targetIdx === 'number' ? targetIdx : historyIndex;
+            for (let i = idx; i >= 0; i--) {
+                if (colorHistory[i].positions && colorHistory[i].geoGen === entry.geoGen) {
+                    posSrc = colorHistory[i].positions;
+                    break;
+                }
             }
+            if (!posSrc) {
+                for (let i = idx; i >= 0; i--) {
+                    if (colorHistory[i].positions && colorHistory[i].positions.length === entry.colors.length * 9) {
+                        posSrc = colorHistory[i].positions;
+                        break;
+                    }
+                }
+            }
+        }
+        if (posSrc) {
+            if (geom.disposeBoundsTree) geom.disposeBoundsTree();
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posSrc), 3));
+            geom.computeVertexNormals();
+            geom.computeBoundingBox();
+            if (geom.computeBoundsTree) geom.computeBoundsTree();
+            spatialGrid = new SpatialGrid(geom, 32);
+            meshTopology = buildMeshTopology(geom);
+            precomputeGeometryMetrics(geom);
+            currentGeoGen = entry.geoGen;
         }
     }
 
     const faceCount = (geom.attributes.position.count / 3) | 0;
     triangleColors = new Uint8Array(faceCount);
     triangleColors.set(entry.colors.subarray(0, faceCount));
+    if (typeof sculptAccumByVid !== 'undefined' && sculptAccumByVid) sculptAccumByVid.clear();
     updateMeshVisualColors();
 }
 
 function undoColor() {
     if (historyIndex > 0) {
         historyIndex--;
-        restoreHistoryEntry(colorHistory[historyIndex]);
+        restoreHistoryEntry(colorHistory[historyIndex], historyIndex);
         showToast(currentLang === 'fr' ? "Annulation appliquée" : "Undo applied");
+    } else {
+        showToast(currentLang === 'fr' ? "Rien à annuler" : "Nothing to undo");
     }
 }
 
 function redoColor() {
     if (historyIndex < colorHistory.length - 1) {
         historyIndex++;
-        restoreHistoryEntry(colorHistory[historyIndex]);
+        restoreHistoryEntry(colorHistory[historyIndex], historyIndex);
         showToast(currentLang === 'fr' ? "Rétablissement appliqué" : "Redo applied");
+    } else {
+        showToast(currentLang === 'fr' ? "Rien à rétablir" : "Nothing to redo");
     }
 }
 
@@ -701,11 +1014,56 @@ function vertexClusterSimplify(positions, targetTriangles = 180000, inColors = n
 
 // FIXED: Previously dropped triangles without welding vertices (created Swiss-cheese holes!).
 function optimizeMeshForSlicer(posArray, activeColors, targetTriangles = 600000) {
+    // Allow direct UI button invocation with no args safely!
+    if (!posArray || !activeColors) {
+        return simplifyCurrentMeshUI();
+    }
     const origTriCount = activeColors.length;
     if (origTriCount <= targetTriangles) {
         return { positions: posArray, colors: activeColors, triCount: origTriCount };
     }
     return vertexClusterSimplify(posArray, targetTriangles, activeColors, true);
+}
+
+function simplifyCurrentMeshUI() {
+    if (!currentMesh || !triangleColors) {
+        showToast(currentLang === 'fr' ? "Veuillez charger un modèle d'abord." : "Please load a 3D model first.");
+        return;
+    }
+    const geom = currentMesh.geometry;
+    const posArr = geom.attributes.position.array;
+    const origTris = triangleColors.length;
+    if (origTris <= 1500) {
+        showToast(currentLang === 'fr' ? "Le maillage est déjà très léger (" + origTris + " tris)." : "Mesh is already ultra-light (" + origTris + " tris).");
+        return;
+    }
+    const target = Math.max(1200, Math.min(140000, Math.round(origTris * 0.6)));
+    const opt = vertexClusterSimplify(posArr, target, triangleColors, true);
+    if (!opt.wasOptimized || opt.triCount === 0 || opt.triCount >= origTris) {
+        showToast(currentLang === 'fr' ? "Le maillage est déjà optimisé." : "Mesh is already optimized.");
+        return;
+    }
+
+    const newGeom = new THREE.BufferGeometry();
+    newGeom.setAttribute('position', new THREE.BufferAttribute(opt.positions, 3));
+    newGeom.computeVertexNormals();
+    newGeom.computeBoundingBox();
+    if (newGeom.computeBoundsTree) newGeom.computeBoundsTree();
+
+    if (geom.disposeBoundsTree) geom.disposeBoundsTree();
+    geom.dispose();
+    currentMesh.geometry = newGeom;
+    triangleColors = opt.colors || new Uint8Array(opt.triCount);
+    currentGeoGen++;
+
+    spatialGrid = new SpatialGrid(newGeom, 32);
+    meshTopology = buildMeshTopology(newGeom);
+    precomputeGeometryMetrics(newGeom);
+    updateMeshVisualColors();
+    commitHistory(true);
+    showToast(currentLang === 'fr'
+        ? `Maillage simplifié : ${origTris.toLocaleString()} ➔ ${opt.triCount.toLocaleString()} triangles !`
+        : `Mesh simplified: ${origTris.toLocaleString()} ➔ ${opt.triCount.toLocaleString()} triangles!`);
 }
 
 function simplifyGeometryIfNeeded(geom, inColors = null) {
@@ -735,21 +1093,22 @@ function simplifyGeometryIfNeeded(geom, inColors = null) {
 // ==========================================
 function rotateModel90(axis) {
     if (!currentMesh || !triangleColors) return;
-    saveHistory(true);
     const geom = currentMesh.geometry;
     if (axis === 'x') geom.rotateX(-Math.PI / 2);
     else if (axis === 'y') geom.rotateY(Math.PI / 2);
     else if (axis === 'z') geom.rotateZ(Math.PI / 2);
     geom.computeVertexNormals();
-    geom.center();
+    alignGeometryToBed(geom);
     if (geom.disposeBoundsTree) geom.disposeBoundsTree();
     if (geom.computeBoundsTree) geom.computeBoundsTree();
+    currentGeoGen++;
     spatialGrid = new SpatialGrid(geom, 32);
     meshTopology = buildMeshTopology(geom);
     precomputeGeometryMetrics(geom);
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
     if (typeof updateStats === 'function') updateStats();
     if (typeof resetCamera === 'function') resetCamera();
-    saveHistory(true);
+    commitHistory(true);
 }
 
 function autoOrientZUpToYUp() {
@@ -794,23 +1153,25 @@ function layModelFlatOnBed() {
     }
 
     if (bestD === 0) {
-        showToast(currentLang === 'fr' ? "Le modèle est déjà posé sur sa plus grande face." : "Model is already resting on its largest flat face.");
+        alignGeometryToBed(geom);
+        showToast(currentLang === 'fr' ? "Le modèle est déjà posé à plat sur le plateau." : "Model is already resting flat on build bed.");
         return;
     }
 
-    saveHistory(true);
     const q = new THREE.Quaternion().setFromUnitVectors(dirs[bestD], new THREE.Vector3(0, -1, 0));
     geom.applyQuaternion(q);
     geom.computeVertexNormals();
-    geom.center();
+    alignGeometryToBed(geom);
     if (geom.disposeBoundsTree) geom.disposeBoundsTree();
     if (geom.computeBoundsTree) geom.computeBoundsTree();
+    currentGeoGen++;
     spatialGrid = new SpatialGrid(geom, 32);
     meshTopology = buildMeshTopology(geom);
     precomputeGeometryMetrics(geom);
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
     if (typeof updateStats === 'function') updateStats();
     if (typeof resetCamera === 'function') resetCamera();
-    saveHistory(true);
+    commitHistory(true);
     showToast(currentLang === 'fr' ? "Modèle posé à plat sur le plateau !" : "Model laid flat on build bed!");
 }
 
@@ -898,8 +1259,12 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
         currentMesh.material.dispose();
     }
 
+    if (typeof clearExplodedPreview === 'function') clearExplodedPreview();
+    if (typeof soloSlotIndex !== 'undefined') soloSlotIndex = -1;
+    if (typeof sculptAccumByVid !== 'undefined' && sculptAccumByVid) sculptAccumByVid.clear();
+
     geometry.computeVertexNormals();
-    geometry.center();
+    alignGeometryToBed(geometry);
 
     const faceCount = (geometry.attributes.position.count / 3) | 0;
     triangleColors = new Uint8Array(faceCount);
@@ -911,6 +1276,7 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
     }
     colorHistory = [];
     historyIndex = -1;
+    currentGeoGen++;
 
     if (geometry.computeBoundsTree) geometry.computeBoundsTree();
     spatialGrid = new SpatialGrid(geometry, 32);
@@ -933,13 +1299,14 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
     scene.add(currentMesh);
 
     if (typeof layerScrubberReset === 'function') layerScrubberReset();
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
     refreshSlotRgbFloats();
     updateMeshVisualColors();
     if (typeof resetCamera === 'function') resetCamera();
     const box = new THREE.Box3().setFromObject(currentMesh);
     const size = box.getSize(new THREE.Vector3());
     if (typeof adaptBrushToModel === 'function') adaptBrushToModel(size);
-    saveHistory(true);
+    commitHistory(true, true); // Initial load state (does NOT mark session dirty!)
 
     if (!suppressToast) {
         if (optInfo) {
@@ -1298,6 +1665,9 @@ async function parse3MFWithJSZip(arrayBuffer) {
 
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(combinedPositions, 3));
+    // Standard 3MF uses Z-up (CAD / Bambu Studio / OrcaSlicer) -> convert cleanly to Three.js Y-up!
+    // (x, y, z)_CAD -> (x, z, -y)_ThreeJS, exact inverse of export-3mf.js weldGeometryAndColors!
+    geom.rotateX(-Math.PI / 2);
     return { geom, colors: combinedColors };
 }
 
