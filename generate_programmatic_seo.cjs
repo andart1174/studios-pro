@@ -590,12 +590,12 @@ const nicheTools = [
     ref: 'coaster',
     titleEn: 'Free 3D QR Code & Wi-Fi Coaster Generator (3MF/STL) | Studios-Pro',
     titleFr: 'Générateur de Sous-Verres QR Code & Wi-Fi 3D Gratuit (3MF/STL) | Studios-Pro',
-    descEn: 'Generate custom 3D coasters and stands with scannable Wi-Fi, menus, and payment QR codes. Export multi-color 3MF, individual STLs, and laser DXF files.',
-    descFr: 'Générez des sous-verres 3D avec QR codes scannables pour Wi-Fi, menus et paiement. Exportez en 3MF multi-couleurs, STL individuels et DXF laser.',
+    descEn: 'Generate custom 3D coasters, desk stands, table tents, fridge magnets, and shape-matched caddy racks with verified scannable Wi-Fi, Airbnb, SEPA, and menu QR codes. Export universal 3MF, Binary STLs, and true vector DXF/SVG.',
+    descFr: 'Générez des sous-verres 3D, supports bureau, chevalets, magnets et range-verres avec QR codes vérifiés pour Wi-Fi, Airbnb, SEPA et menus. Exportez en 3MF universel, STL binaires et DXF/SVG vectoriels.',
     h1En: 'Free 3D Scannable QR Code & Wi-Fi Coaster Generator',
     h1Fr: 'Générateur de Sous-Verres & Supports QR Code & Wi-Fi 3D Gratuit',
-    featureEn: 'Dual-sided reversible coaster mode, automated restaurant table number batch generator (.ZIP), 4K photorealistic showcase mockup studio, and AMS multi-color 3MF export.',
-    featureFr: 'Sous-verres réversibles double-face, générateur automatique de séries de tables de restaurant (.ZIP), studio de mockups photo 4K et export 3MF multi-couleurs AMS.',
+    featureEn: '14 QR presets (Wi-Fi, Airbnb 2-in-1, SEPA, Menu, Review, vCard), real jsQR optical verification, White Quiet-Zone ISO backplate, zero-overlap Flush/Face-Down PEI & carved Debossed CAD, 10 shapes, sealed NFC & magnet pockets, CSV Batch Pro with 256×256 plate packing, 6-min calibration swatch, and 4K Showcase Studio.',
+    featureFr: '14 préréglages QR (Wi-Fi, Airbnb 2-en-1, SEPA, Menu, Avis, vCard), vérification optique jsQR réelle, plaque blanche Quiet-Zone ISO, CAO Flush/Face-Down PEI zéro chevauchement et cavités gravées, 10 formes, puce NFC scellée & aimants, Lots Pro CSV sur plateaux 256×256, échantillon calibration 6 min et Studio Photo 4K.',
     ogImage: 'https://studios-pro.com/og_3d_qr_coaster.jpg'
   },
   {

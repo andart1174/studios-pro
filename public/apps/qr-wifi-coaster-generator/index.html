@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Scannable QR &amp; Wi-Fi Coaster Generator — 3D Print &amp; Laser CAD | Studios-Pro</title>
-    <meta name="description" content="Parametric 3D printable &amp; laser-cut scannable QR code coasters, desk stands, and ergonomic caddy racks for Wi-Fi, Instagram, menus, and reviews. Dual-color 3MF, Binary STL and Multi-Layer DXF/SVG.">
+    <meta name="description" content="Parametric 3D printable &amp; laser-cut scannable QR code coasters, desk stands, table tents, fridge magnets, and shape-matched caddy racks. Universal 3MF, Binary STL and True Vector DXF/SVG.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Fredoka:wght@600;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/coaster.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -16,20 +16,24 @@
     <script src="../ar-viewer/ar-bridge.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
 <header>
-    <button id="back-btn" class="back-to-studios" title="Back to Studios">
-        <i data-lucide="arrow-left" style="width:15px;height:15px;"></i>
-        <span>Studios</span>
-    </button>
+    <div class="header-left">
+        <button id="back-btn" class="back-to-studios" title="Back to Studios">
+            <i data-lucide="arrow-left" style="width:15px;height:15px;"></i>
+            <span>Studios</span>
+        </button>
 
-    <div class="brand">
-        <span class="brand-badge">Wi-Fi &amp; Social</span>
-        <div class="brand-title">3D Coaster &amp; Stand Studio</div>
-        <span class="brand-sub" data-i18n="headerSubtitle">Scannable 3D Print &amp; Laser CAD Generator</span>
+        <div class="brand">
+            <span class="brand-badge">QR &amp; Wi-Fi</span>
+            <div class="brand-title">3D Coaster Studio</div>
+            <span class="brand-sub" data-i18n="headerSubtitle">Scannable 3D Print &amp; Laser CAD Generator</span>
+        </div>
     </div>
 
     <div class="header-actions">
@@ -38,125 +42,122 @@
             <button class="lang-btn" id="btn-lang-fr" onclick="setLang('fr')">FR</button>
         </div>
 
+        <div class="history-btns">
+            <button class="btn-top btn-icon-only" id="btn-undo" onclick="undoCoaster()" title="Undo (Ctrl+Z)" disabled>
+                <i data-lucide="undo-2" style="width:14px;height:14px;"></i>
+            </button>
+            <button class="btn-top btn-icon-only" id="btn-redo" onclick="redoCoaster()" title="Redo (Ctrl+Y)" disabled>
+                <i data-lucide="redo-2" style="width:14px;height:14px;"></i>
+            </button>
+            <button class="btn-top btn-icon-only" onclick="openProjectModal()" title="Save / Load Project (.json)">
+                <i data-lucide="folder-open" style="width:14px;height:14px;"></i>
+            </button>
+        </div>
+
         <button class="btn-top btn-studio" onclick="openPhotoStudioModal()" title="Showcase Studio">
             <i data-lucide="camera" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnPhotoStudio">Showcase Studio</span>
+            <span class="hide-on-compact" data-i18n="btnPhotoStudio">Showcase Studio</span>
         </button>
 
-        <button class="btn-top btn-batch" onclick="openBatchModal()" title="Batch Restaurant Tables">
-            <i data-lucide="utensils" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnBatchTables">Batch Tables</span>
+        <button class="btn-top btn-batch" onclick="openBatchModal()" title="Batch Pro">
+            <i data-lucide="layers-3" style="width:15px;height:15px;"></i>
+            <span class="hide-on-compact" data-i18n="btnBatchTables">Batch Pro</span>
         </button>
 
-        <button class="btn-top" onclick="resetCamera()" title="Reset 3D View">
+        <button class="btn-top btn-icon-compact" onclick="resetCamera()" title="Reset 3D View">
             <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnResetCam">Reset View</span>
+            <span class="hide-on-compact" data-i18n="btnResetCam">Reset View</span>
         </button>
 
         <button class="btn-top" id="btn-preview-ar" data-bypassed="true" onclick="openARPreview()" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;border-color:transparent;" title="View Coaster in AR">
             <i data-lucide="smartphone" style="width:15px;height:15px;"></i>
-            <span>AR View</span>
+            <span>AR</span>
         </button>
 
         <button class="btn-top btn-export-main" onclick="openExportModal()">
             <i data-lucide="download" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnExport">Export Coaster (3MF / STL)</span>
+            <span data-i18n="btnExport">Export (3MF / STL)</span>
         </button>
 
-        <button class="btn-top btn-share-main" onclick="openShareDesignModal()">
+        <button class="btn-top btn-share-main" onclick="openShareDesignModal()" title="Share Coaster">
             <i data-lucide="share-2" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnShareDesign">Share Coaster</span>
+            <span class="hide-on-compact" data-i18n="btnShareDesign">Share</span>
         </button>
     </div>
 </header>
 
 <div class="workspace">
     <aside class="panel-left">
-        <!-- 1. Content & Social Presets -->
+        <!-- 1. Content & 14 Smart Presets -->
         <section class="panel-section">
             <div class="section-title">
                 <i data-lucide="qr-code" style="width:16px;height:16px;color:var(--primary);"></i>
-                <span data-i18n="sectionQRTarget">1. Content &amp; Social Presets</span>
+                <span data-i18n="sectionQRTarget">1. Content &amp; Smart Presets</span>
             </div>
 
             <div class="presets-grid">
-                <button class="preset-btn active" id="preset-wifi" onclick="selectPreset('wifi')">
-                    <i data-lucide="wifi" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetWifi">Wi-Fi Guest</span>
-                </button>
-                <button class="preset-btn" id="preset-instagram" onclick="selectPreset('instagram')">
-                    <i data-lucide="camera" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetInstagram">Instagram</span>
-                </button>
-                <button class="preset-btn" id="preset-menu" onclick="selectPreset('menu')">
-                    <i data-lucide="utensils" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetMenu">Cafe Menu</span>
-                </button>
-                <button class="preset-btn" id="preset-review" onclick="selectPreset('review')">
-                    <i data-lucide="star" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetReview">Review 5★</span>
-                </button>
-                <button class="preset-btn" id="preset-spotify" onclick="selectPreset('spotify')">
-                    <i data-lucide="music" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetSpotify">Spotify</span>
-                </button>
-                <button class="preset-btn" id="preset-payment" onclick="selectPreset('payment')">
-                    <i data-lucide="credit-card" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetPayment">Tip / Pay</span>
-                </button>
-                <button class="preset-btn" id="preset-whatsapp" onclick="selectPreset('whatsapp')">
-                    <i data-lucide="message-circle" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetWhatsApp">WhatsApp</span>
-                </button>
-                <button class="preset-btn" id="preset-vcard" onclick="selectPreset('vcard')">
-                    <i data-lucide="user-check" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetVCard">vCard</span>
-                </button>
-                <button class="preset-btn" id="preset-url" onclick="selectPreset('url')">
-                    <i data-lucide="link" style="width:15px;height:15px;"></i>
-                    <span data-i18n="presetUrl">Custom Link</span>
-                </button>
+                <button class="preset-btn active" id="preset-wifi" onclick="selectPreset('wifi')"><i data-lucide="wifi" style="width:14px;height:14px;"></i><span data-i18n="presetWifi">Wi-Fi Guest</span></button>
+                <button class="preset-btn preset-featured" id="preset-airbnb" onclick="selectPreset('airbnb')"><i data-lucide="home" style="width:14px;height:14px;"></i><span data-i18n="presetAirbnb">Airbnb 2-in-1</span></button>
+                <button class="preset-btn" id="preset-menu" onclick="selectPreset('menu')"><i data-lucide="utensils" style="width:14px;height:14px;"></i><span data-i18n="presetMenu">Cafe Menu</span></button>
+                <button class="preset-btn" id="preset-review" onclick="selectPreset('review')"><i data-lucide="star" style="width:14px;height:14px;"></i><span data-i18n="presetReview">Review 5★</span></button>
+                <button class="preset-btn" id="preset-instagram" onclick="selectPreset('instagram')"><i data-lucide="camera" style="width:14px;height:14px;"></i><span data-i18n="presetInstagram">Instagram</span></button>
+                <button class="preset-btn" id="preset-tiktok" onclick="selectPreset('tiktok')"><i data-lucide="clapperboard" style="width:14px;height:14px;"></i><span data-i18n="presetTiktok">TikTok / Bio</span></button>
+                <button class="preset-btn" id="preset-whatsapp" onclick="selectPreset('whatsapp')"><i data-lucide="message-circle" style="width:14px;height:14px;"></i><span data-i18n="presetWhatsApp">WhatsApp</span></button>
+                <button class="preset-btn" id="preset-payment" onclick="selectPreset('payment')"><i data-lucide="credit-card" style="width:14px;height:14px;"></i><span data-i18n="presetPayment">Tip / Pay</span></button>
+                <button class="preset-btn" id="preset-sepa" onclick="selectPreset('sepa')"><i data-lucide="landmark" style="width:14px;height:14px;"></i><span data-i18n="presetSepa">SEPA / IBAN</span></button>
+                <button class="preset-btn" id="preset-spotify" onclick="selectPreset('spotify')"><i data-lucide="music" style="width:14px;height:14px;"></i><span data-i18n="presetSpotify">Spotify</span></button>
+                <button class="preset-btn" id="preset-vcard" onclick="selectPreset('vcard')"><i data-lucide="user-check" style="width:14px;height:14px;"></i><span data-i18n="presetVCard">vCard</span></button>
+                <button class="preset-btn" id="preset-maps" onclick="selectPreset('maps')"><i data-lucide="map-pin" style="width:14px;height:14px;"></i><span data-i18n="presetMaps">Google Maps</span></button>
+                <button class="preset-btn" id="preset-event" onclick="selectPreset('event')"><i data-lucide="calendar" style="width:14px;height:14px;"></i><span data-i18n="presetEvent">Calendar</span></button>
+                <button class="preset-btn" id="preset-url" onclick="selectPreset('url')"><i data-lucide="link" style="width:14px;height:14px;"></i><span data-i18n="presetUrl">Custom Link</span></button>
             </div>
 
             <div id="dynamic-form"></div>
 
-            <div class="input-group" style="margin-top:8px;">
+            <div class="input-group" style="margin-top:8px;margin-bottom:0;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                     <label class="input-label" style="margin-bottom:0;" data-i18n="labelECC">QR Error Redundancy:</label>
                     <span style="font-size:0.7rem;color:var(--primary);font-weight:700;" id="val-ecc">High 'H' (30% Logo Safe)</span>
                 </div>
                 <select class="text-input" id="select-ecc" onchange="updateQRECC(this.value)" style="cursor:pointer;">
-                    <option value="H" selected>Level H (30% — Best for Center Logo)</option>
-                    <option value="Q">Level Q (25% — High Reliability)</option>
-                    <option value="M">Level M (15% — Standard)</option>
-                    <option value="L">Level L (7% — Compact Modules)</option>
+                    <option value="H" data-i18n="optEccH" selected>Level H (30% — Best for Center Logo)</option>
+                    <option value="Q" data-i18n="optEccQ">Level Q (25% — High Reliability)</option>
+                    <option value="M" data-i18n="optEccM">Level M (15% — Standard)</option>
+                    <option value="L" data-i18n="optEccL">Level L (7% — Compact Modules)</option>
                 </select>
             </div>
         </section>
 
-        <!-- 2. Physical Print Style & Dual-Sided & Face-Down PEI -->
+        <!-- 2. Physical Print Style, White Quiet Zone, QR Geometry & Dual-Sided -->
         <section class="panel-section">
             <div class="section-title">
                 <i data-lucide="layers" style="width:16px;height:16px;color:var(--primary);"></i>
-                <span data-i18n="sectionPrintStyle">2. Physical Print Style (Glass Stability)</span>
+                <span data-i18n="sectionPrintStyle">2. Physical Print Style &amp; QR Geometry</span>
             </div>
 
             <div class="style-grid">
                 <button class="style-btn active" id="style-flush" onclick="setPrintStyle('flush')">
-                    <i data-lucide="align-justify" style="width:16px;height:16px;"></i>
+                    <i data-lucide="align-justify" style="width:15px;height:15px;"></i>
                     <span data-i18n="styleFlush">✨ Flush Inlay</span>
                     <span style="font-size:9px;color:var(--text-sub);font-weight:400;" data-i18n="descFlush">Zero-Overlap Flat</span>
                 </button>
                 <button class="style-btn" id="style-embossed" onclick="setPrintStyle('embossed')">
-                    <i data-lucide="chevrons-up" style="width:16px;height:16px;"></i>
+                    <i data-lucide="chevrons-up" style="width:15px;height:15px;"></i>
                     <span data-i18n="styleEmbossed">凸 3D Relief</span>
                     <span style="font-size:9px;color:var(--text-sub);font-weight:400;" data-i18n="descEmbossed">Tactile Raised</span>
                 </button>
                 <button class="style-btn" id="style-debossed" onclick="setPrintStyle('debossed')">
-                    <i data-lucide="chevrons-down" style="width:16px;height:16px;"></i>
-                    <span data-i18n="styleDebossed">凹 Engraved Cavity</span>
-                    <span style="font-size:9px;color:var(--text-sub);font-weight:400;" data-i18n="descDebossed">Carved Resin Pocket</span>
+                    <i data-lucide="chevrons-down" style="width:15px;height:15px;"></i>
+                    <span data-i18n="styleDebossed">凹 Carved Pocket</span>
+                    <span style="font-size:9px;color:var(--text-sub);font-weight:400;" data-i18n="descDebossed">Real Resin Cavity</span>
                 </button>
+            </div>
+
+            <div id="wrap-deboss-hollow" style="display:none;margin-bottom:8px;padding:7px 9px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);border-radius:8px;">
+                <label class="checkbox-label" style="color:#fde68a;">
+                    <input type="checkbox" id="chk-deboss-hollow" onchange="toggleDebossHollow(this.checked)">
+                    <span data-i18n="optDebossHollow">Empty Carved Cavity (for Resin Pour / Paint — no bottom fill)</span>
+                </label>
             </div>
 
             <div class="facedown-box">
@@ -167,26 +168,39 @@
                     </label>
                     <span style="font-size:9px;background:rgba(16,185,129,0.22);color:#34d399;padding:2px 6px;border-radius:4px;font-weight:800;">BAMBU AMS</span>
                 </div>
-                <div style="margin-top:5px;font-size:0.7rem;color:var(--text-sub);line-height:1.35;" data-i18n="faceDownHint">
-                    Automatically flushes QR + text cleanly at Z=0..0.6mm and flips upside-down on export for a mirror-smooth Bambu PEI top surface!
+                <div style="margin-top:4px;font-size:0.69rem;color:var(--text-sub);line-height:1.35;" data-i18n="faceDownHint">
+                    Zero-overlap flat inlay at Z=0..0.6mm, flipped face-down on export for a mirror-smooth Bambu PEI surface!
+                </div>
+            </div>
+
+            <div class="quietzone-box">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <label class="checkbox-label" style="font-weight:600;color:#f8fafc;">
+                        <input type="checkbox" id="chk-white-quiet-zone" onchange="toggleWhiteQuietZone(this.checked)" checked>
+                        <span data-i18n="optWhiteQuietZone">White Quiet-Zone Backplate (ISO 100% Scan)</span>
+                    </label>
+                    <span style="font-size:9px;background:rgba(248,250,252,0.16);color:#f8fafc;padding:2px 6px;border-radius:4px;font-weight:800;">ISO 18004</span>
+                </div>
+                <div style="margin-top:4px;font-size:0.69rem;color:var(--text-sub);line-height:1.35;" data-i18n="quietZoneHint">
+                    Adds a high-contrast light plate behind dark QR modules on dark coasters — fixes inverted QR scanning in low light!
                 </div>
             </div>
 
             <div style="margin-top:10px;">
-                <div style="font-size:0.75rem;color:var(--text-sub);margin-bottom:5px;font-weight:500;" data-i18n="labelQRStyle">QR Pixel Module Geometry:</div>
+                <div style="font-size:0.74rem;color:var(--text-sub);margin-bottom:4px;font-weight:500;" data-i18n="labelQRStyle">QR Pixel Module Geometry:</div>
                 <div class="segmented-control">
-                    <button type="button" class="segment-btn active" id="qr-style-square" onclick="setQRStyle('square')">
-                        <i data-lucide="square" style="width:13px;height:13px;"></i>
-                        <span data-i18n="qrStyleSquare">Square</span>
-                    </button>
-                    <button type="button" class="segment-btn" id="qr-style-dots" onclick="setQRStyle('dots')">
-                        <i data-lucide="circle" style="width:13px;height:13px;"></i>
-                        <span data-i18n="qrStyleDots">Round Dots</span>
-                    </button>
-                    <button type="button" class="segment-btn" id="qr-style-connected" onclick="setQRStyle('connected')">
-                        <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
-                        <span data-i18n="qrStyleConnected">Connected</span>
-                    </button>
+                    <button type="button" class="segment-btn active" id="qr-style-square" onclick="setQRStyle('square')"><i data-lucide="square" style="width:12px;height:12px;"></i><span data-i18n="qrStyleSquare">Classic Square</span></button>
+                    <button type="button" class="segment-btn" id="qr-style-dots" onclick="setQRStyle('dots')"><i data-lucide="circle" style="width:12px;height:12px;"></i><span data-i18n="qrStyleDots">Round Dots</span></button>
+                    <button type="button" class="segment-btn" id="qr-style-connected" onclick="setQRStyle('connected')"><i data-lucide="sparkles" style="width:12px;height:12px;"></i><span data-i18n="qrStyleConnected">Connected Fluid</span></button>
+                </div>
+            </div>
+
+            <div style="margin-top:8px;">
+                <div style="font-size:0.74rem;color:var(--text-sub);margin-bottom:4px;font-weight:500;" data-i18n="labelFinderStyle">QR Corner Finder Eyes:</div>
+                <div class="segmented-control">
+                    <button type="button" class="segment-btn active" id="qr-finder-square" onclick="setQRFinderStyle('square')"><span data-i18n="finderSquare">Square</span></button>
+                    <button type="button" class="segment-btn" id="qr-finder-rounded" onclick="setQRFinderStyle('rounded')"><span data-i18n="finderRounded">Rounded</span></button>
+                    <button type="button" class="segment-btn" id="qr-finder-circle" onclick="setQRFinderStyle('circle')"><span data-i18n="finderCircle">Circular</span></button>
                 </div>
             </div>
 
@@ -201,20 +215,16 @@
                 <div id="dual-sided-controls" style="display:none;margin-top:8px;">
                     <div style="display:flex;gap:6px;align-items:center;">
                         <div class="segmented-control" style="flex:1;">
-                            <button type="button" class="segment-btn active" id="btn-side-a" onclick="switchSide('A')">
-                                <span data-i18n="tabSideA">Side A (Front)</span>
-                            </button>
-                            <button type="button" class="segment-btn" id="btn-side-b" onclick="switchSide('B')">
-                                <span data-i18n="tabSideB">Side B (Back)</span>
-                            </button>
+                            <button type="button" class="segment-btn active" id="btn-side-a" onclick="switchSide('A')"><span data-i18n="tabSideA">Side A (Front)</span></button>
+                            <button type="button" class="segment-btn" id="btn-side-b" onclick="switchSide('B')"><span data-i18n="tabSideB">Side B (Back)</span></button>
                         </div>
                         <button type="button" class="btn-mini" onclick="flipCoaster180()" style="padding:6px 9px;">
                             <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
                             <span data-i18n="btnFlip3D">Flip</span>
                         </button>
                     </div>
-                    <div style="margin-top:6px;font-size:0.7rem;color:var(--text-sub);line-height:1.35;" data-i18n="dualSidedHint">
-                        Side A &amp; Side B store completely independent QR presets, passwords, URLs, labels &amp; badges.
+                    <div style="margin-top:5px;font-size:0.69rem;color:var(--text-sub);line-height:1.35;" data-i18n="dualSidedHint">
+                        Side A (Top) &amp; Side B (Bottom) store independent presets, texts, fonts, badges &amp; ECC.
                     </div>
                 </div>
             </div>
@@ -228,29 +238,49 @@
             </div>
 
             <div class="badges-scroll">
-                <button class="badge-btn active" id="badge-none" onclick="setBadge('none')"><i data-lucide="square" style="width:14px;height:14px;"></i><span data-i18n="badgeNone">Pure QR</span></button>
-                <button class="badge-btn" id="badge-wifi" onclick="setBadge('wifi')"><i data-lucide="wifi" style="width:14px;height:14px;"></i><span>Wi-Fi</span></button>
+                <button class="badge-btn" id="badge-none" onclick="setBadge('none')"><i data-lucide="square" style="width:14px;height:14px;"></i><span data-i18n="badgeNone">Pure QR</span></button>
+                <button class="badge-btn active" id="badge-wifi" onclick="setBadge('wifi')"><i data-lucide="wifi" style="width:14px;height:14px;"></i><span>Wi-Fi</span></button>
+                <button class="badge-btn" id="badge-home" onclick="setBadge('home')"><i data-lucide="home" style="width:14px;height:14px;"></i><span data-i18n="badgeHome">Airbnb</span></button>
                 <button class="badge-btn" id="badge-coffee" onclick="setBadge('coffee')"><i data-lucide="coffee" style="width:14px;height:14px;"></i><span data-i18n="badgeCoffee">Coffee</span></button>
                 <button class="badge-btn" id="badge-beer" onclick="setBadge('beer')"><i data-lucide="beer" style="width:14px;height:14px;"></i><span data-i18n="badgeBeer">Beer</span></button>
+                <button class="badge-btn" id="badge-menu" onclick="setBadge('menu')"><i data-lucide="utensils" style="width:14px;height:14px;"></i><span>Menu</span></button>
                 <button class="badge-btn" id="badge-instagram" onclick="setBadge('instagram')"><i data-lucide="camera" style="width:14px;height:14px;"></i><span>Insta</span></button>
+                <button class="badge-btn" id="badge-whatsapp" onclick="setBadge('whatsapp')"><i data-lucide="message-circle" style="width:14px;height:14px;"></i><span>Chat</span></button>
                 <button class="badge-btn" id="badge-spotify" onclick="setBadge('spotify')"><i data-lucide="music" style="width:14px;height:14px;"></i><span>Music</span></button>
                 <button class="badge-btn" id="badge-star" onclick="setBadge('star')"><i data-lucide="star" style="width:14px;height:14px;"></i><span>Star 5★</span></button>
                 <button class="badge-btn" id="badge-heart" onclick="setBadge('heart')"><i data-lucide="heart" style="width:14px;height:14px;"></i><span>Heart</span></button>
-                <button class="badge-btn" id="badge-menu" onclick="setBadge('menu')"><i data-lucide="utensils" style="width:14px;height:14px;"></i><span>Menu</span></button>
                 <label class="badge-btn" for="badge-upload-input" id="badge-custom" style="cursor:pointer;">
                     <i data-lucide="upload" style="width:14px;height:14px;"></i>
                     <span data-i18n="badgeCustom">Custom</span>
-                    <input type="file" id="badge-upload-input" accept="image/png,image/svg+xml,image/jpeg" style="display:none;" onchange="handleCustomBadgeUpload(event)">
+                    <input type="file" id="badge-upload-input" accept="image/png,image/svg+xml,image/jpeg,image/webp" style="display:none;" onchange="handleCustomBadgeUpload(event)">
+                </label>
+            </div>
+
+            <div id="badge-scale-controls" style="margin-top:8px;">
+                <div class="slider-group" style="margin-bottom:6px;">
+                    <div class="slider-header"><span data-i18n="lblBadgeScale">Center Badge Size:</span><span id="label-badge-scale">100%</span></div>
+                    <input type="range" class="range-slider" min="0.7" max="1.15" step="0.05" value="1.0" id="slider-badge-scale" oninput="setBadgeScale(this.value)">
+                </div>
+            </div>
+
+            <div id="custom-logo-controls" style="display:none;margin-top:6px;padding:8px 10px;background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.25);border-radius:8px;">
+                <div class="slider-group" style="margin-bottom:6px;">
+                    <div class="slider-header"><span data-i18n="lblCustomThreshold">Logo Contrast Threshold:</span><span id="label-logo-threshold">150</span></div>
+                    <input type="range" class="range-slider" min="40" max="220" step="5" value="150" id="slider-logo-threshold" oninput="onCustomLogoParamChange()">
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-logo-invert" onchange="onCustomLogoParamChange()">
+                    <span data-i18n="optInvertCustomLogo">Invert Logo Foreground / Background</span>
                 </label>
             </div>
         </section>
 
-        <!-- 4. 3D Personalized Typography -->
+        <!-- 4. True Vector 3D Typography -->
         <section class="panel-section">
             <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <i data-lucide="type" style="width:16px;height:16px;color:var(--primary);"></i>
-                    <span data-i18n="sectionCustomText">4. 3D Solid Typography</span>
+                    <span data-i18n="sectionCustomText">4. True Vector 3D Typography</span>
                 </div>
                 <button type="button" class="btn-mini" onclick="swapTextPositions()">
                     <i data-lucide="arrow-up-down" style="width:13px;height:13px;"></i>
@@ -260,123 +290,150 @@
 
             <div class="input-group">
                 <label class="input-label" data-i18n="labelTopText">Header Text (Top Arc/Line):</label>
-                <input type="text" class="text-input" id="input-top-text" value="FREE WI-FI" oninput="rebuild3DModel()">
+                <input type="text" class="text-input" id="input-top-text" value="FREE WI-FI" oninput="onTopOrBottomTextInput(false)">
             </div>
             <div class="input-group">
                 <label class="input-label" data-i18n="labelBottomText">Footer Subtitle (Human-Readable Info):</label>
-                <input type="text" class="text-input" id="input-bottom-text" value="PASS: Welcome2026!" oninput="rebuild3DModel()">
+                <input type="text" class="text-input" id="input-bottom-text" value="PASS: Welcome2026!" oninput="onTopOrBottomTextInput(true)">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" data-i18n="labelVectorFont">Vector 3D Font Family:</label>
+                <select class="text-input" id="select-vector-font" onchange="setVectorFont(this.value)" style="cursor:pointer;">
+                    <option value="outfit" data-i18n="fontOutfit" selected>Outfit Bold (Modern Sans)</option>
+                    <option value="cinzel" data-i18n="fontCinzel">Cinzel Bold (Luxury Serif)</option>
+                    <option value="playfair" data-i18n="fontPlayfair">Playfair Bold (Bistro Editorial)</option>
+                    <option value="mono" data-i18n="fontMono">JetBrains Mono (Tech)</option>
+                    <option value="fredoka" data-i18n="fontFredoka">Fredoka Bold (Rounded)</option>
+                </select>
             </div>
 
             <div class="slider-group">
                 <div class="slider-header"><span data-i18n="dimTextSize">Text Font Size:</span><span id="label-text-size">8.0 mm</span></div>
-                <input type="range" class="range-slider" min="4.0" max="14.0" step="0.5" value="8.0" id="slider-text-size" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="4.0" max="13.0" step="0.5" value="8.0" id="slider-text-size" oninput="scheduleRebuild3D(50)">
             </div>
             <div class="slider-group">
                 <div class="slider-header"><span data-i18n="dimTopOffset">Top Header Distance (Y):</span><span id="label-top-offset">38 mm</span></div>
-                <input type="range" class="range-slider" min="15" max="55" step="1" value="38" id="slider-top-offset" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="28" max="46" step="1" value="38" id="slider-top-offset" oninput="scheduleRebuild3D(50)">
             </div>
             <div class="slider-group">
                 <div class="slider-header"><span data-i18n="dimBottomOffset">Bottom Footer Distance (Y):</span><span id="label-bottom-offset">38 mm</span></div>
-                <input type="range" class="range-slider" min="15" max="55" step="1" value="38" id="slider-bottom-offset" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="28" max="46" step="1" value="38" id="slider-bottom-offset" oninput="scheduleRebuild3D(50)">
             </div>
 
             <div class="segmented-control">
-                <button type="button" class="segment-btn active" id="text-layout-straight" onclick="setTextLayout('straight')">
-                    <i data-lucide="minus" style="width:14px;height:14px;"></i>
-                    <span data-i18n="textStraight">Straight Text</span>
-                </button>
-                <button type="button" class="segment-btn" id="text-layout-curved" onclick="setTextLayout('curved')">
-                    <i data-lucide="circle-dashed" style="width:14px;height:14px;"></i>
-                    <span data-i18n="textCurved">Curved Arc</span>
-                </button>
+                <button type="button" class="segment-btn active" id="text-layout-straight" onclick="setTextLayout('straight')"><i data-lucide="minus" style="width:14px;height:14px;"></i><span data-i18n="textStraight">Straight Text</span></button>
+                <button type="button" class="segment-btn" id="text-layout-curved" onclick="setTextLayout('curved')"><i data-lucide="circle-dashed" style="width:14px;height:14px;"></i><span data-i18n="textCurved">Curved Arc</span></button>
             </div>
         </section>
 
-        <!-- 5. Coaster Shape & Matching Caddy Holder -->
+        <!-- 5. 10 Shapes, Stands & Shape-Matched Caddy -->
         <section class="panel-section">
             <div class="section-title">
                 <i data-lucide="shapes" style="width:16px;height:16px;color:var(--primary);"></i>
-                <span data-i18n="sectionShape">5. Coaster Shape &amp; Stand</span>
+                <span data-i18n="sectionShape">5. Coaster Shape, Stand &amp; Holder</span>
             </div>
 
             <div class="shape-grid">
-                <div class="shape-btn active" id="shape-circle" onclick="setShape('circle')"><i data-lucide="circle" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeCircle">Circle</span></div>
-                <div class="shape-btn" id="shape-squircle" onclick="setShape('squircle')"><i data-lucide="square" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeSquircle">Rounded</span></div>
-                <div class="shape-btn" id="shape-hexagon" onclick="setShape('hexagon')"><i data-lucide="hexagon" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeHexagon">Hexagon</span></div>
-                <div class="shape-btn" id="shape-octagon" onclick="setShape('octagon')"><i data-lucide="octagon" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeOctagon">Octagon</span></div>
-                <div class="shape-btn" id="shape-shield" onclick="setShape('shield')"><i data-lucide="shield" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeShield">Shield</span></div>
-                <div class="shape-btn" id="shape-keychain" onclick="setShape('keychain')"><i data-lucide="tag" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeKeychain">Key Tag</span></div>
-                <div class="shape-btn" id="shape-stand" onclick="setShape('stand')"><i data-lucide="monitor" style="width:18px;height:18px;"></i><span class="shape-name" data-i18n="shapeStand">Desk Stand</span></div>
-                <div class="shape-btn" id="shape-caddy" onclick="setShape('caddy')"><i data-lucide="archive" style="width:18px;height:18px;color:#fbbf24;"></i><span class="shape-name" style="color:#fbbf24;" data-i18n="shapeCaddy">Coaster Holder</span></div>
+                <div class="shape-btn active" id="shape-circle" onclick="setShape('circle')"><i data-lucide="circle" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeCircle">Circle</span></div>
+                <div class="shape-btn" id="shape-squircle" onclick="setShape('squircle')"><i data-lucide="square" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeSquircle">Rounded</span></div>
+                <div class="shape-btn" id="shape-hexagon" onclick="setShape('hexagon')"><i data-lucide="hexagon" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeHexagon">Hexagon</span></div>
+                <div class="shape-btn" id="shape-octagon" onclick="setShape('octagon')"><i data-lucide="octagon" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeOctagon">Octagon</span></div>
+                <div class="shape-btn" id="shape-shield" onclick="setShape('shield')"><i data-lucide="shield" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeShield">Shield</span></div>
+                <div class="shape-btn" id="shape-keychain" onclick="setShape('keychain')"><i data-lucide="tag" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeKeychain">Key Tag</span></div>
+                <div class="shape-btn" id="shape-stand" onclick="setShape('stand')"><i data-lucide="monitor" style="width:17px;height:17px;"></i><span class="shape-name" data-i18n="shapeStand">Desk Stand</span></div>
+                <div class="shape-btn" id="shape-tent" onclick="setShape('tent')"><i data-lucide="tent" style="width:17px;height:17px;color:#34d399;"></i><span class="shape-name" style="color:#34d399;" data-i18n="shapeTent">Table Tent</span></div>
+                <div class="shape-btn" id="shape-magnet" onclick="setShape('magnet')"><i data-lucide="magnet" style="width:17px;height:17px;color:#c084fc;"></i><span class="shape-name" style="color:#c084fc;" data-i18n="shapeMagnet">Fridge Sign</span></div>
+                <div class="shape-btn" id="shape-caddy" onclick="setShape('caddy')"><i data-lucide="archive" style="width:17px;height:17px;color:#fbbf24;"></i><span class="shape-name" style="color:#fbbf24;" data-i18n="shapeCaddy">Coaster Rack</span></div>
             </div>
 
             <div id="wrap-shield-invert" style="display:none;margin-top:8px;">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="chk-invert-shield" onchange="rebuild3DModel()">
+                    <input type="checkbox" id="chk-invert-shield" onchange="scheduleRebuild3D(20)">
                     <span data-i18n="optInvertShield">Invert Shield (Pointed Tip at Top)</span>
                 </label>
             </div>
 
             <div id="wrap-stand-angle" style="display:none;margin-top:8px;">
                 <div class="slider-header"><span data-i18n="labelStandAngle">Stand Viewing Angle:</span><span id="label-stand-angle">65°</span></div>
-                <input type="range" class="range-slider" min="50" max="80" step="5" value="65" id="slider-stand-angle" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="50" max="80" step="5" value="65" id="slider-stand-angle" oninput="scheduleRebuild3D(35)">
             </div>
 
             <div id="wrap-caddy-slots" style="display:none;margin-top:8px;">
                 <div class="slider-header"><span data-i18n="labelCaddySlots">Coaster Stack Capacity:</span><span id="label-caddy-slots">6</span></div>
-                <input type="range" class="range-slider" min="4" max="12" step="2" value="6" id="slider-caddy-slots" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="4" max="12" step="2" value="6" id="slider-caddy-slots" oninput="scheduleRebuild3D(35)">
+            </div>
+
+            <div id="wrap-caddy-brand" style="display:none;margin-top:8px;">
+                <label class="input-label" data-i18n="labelCaddyBrand">Caddy Front Brand Label (Optional):</label>
+                <input type="text" class="text-input" id="input-caddy-brand" placeholder="e.g. WI-FI / LE BISTRO" oninput="scheduleRebuild3D(60)">
             </div>
         </section>
 
-        <!-- 6. CAD Dimensions -->
+        <!-- 6. CAD Dimensions & Hardware -->
         <section class="panel-section">
             <div class="section-title">
                 <i data-lucide="sliders" style="width:16px;height:16px;color:var(--primary);"></i>
-                <span data-i18n="sectionDimensions">6. CAD Dimensions (mm)</span>
+                <span data-i18n="sectionDimensions">6. CAD Dimensions &amp; Hardware (mm)</span>
             </div>
 
             <div class="slider-group">
                 <div class="slider-header"><span data-i18n="dimSize">Coaster Diameter / Width:</span><span id="label-dim-size">100 mm</span></div>
-                <input type="range" class="range-slider" min="70" max="140" value="100" id="slider-size" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="70" max="140" value="100" id="slider-size" oninput="scheduleRebuild3D(45)">
             </div>
             <div class="slider-group">
                 <div class="slider-header"><span data-i18n="dimBaseThick">Base Plate Thickness:</span><span id="label-dim-base">3.2 mm</span></div>
-                <input type="range" class="range-slider" min="1.6" max="6.0" step="0.2" value="3.2" id="slider-base-thick" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="2.0" max="6.0" step="0.2" value="3.2" id="slider-base-thick" oninput="scheduleRebuild3D(45)">
             </div>
             <div class="slider-group" id="group-slider-relief">
                 <div class="slider-header"><span data-i18n="dimReliefHeight">QR Relief / Cavity Depth:</span><span id="label-dim-relief">1.2 mm</span></div>
-                <input type="range" class="range-slider" min="0.4" max="3.0" step="0.2" value="1.2" id="slider-relief-height" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="0.4" max="3.0" step="0.2" value="1.2" id="slider-relief-height" oninput="scheduleRebuild3D(45)">
             </div>
             <div class="slider-group" id="group-slider-lip">
                 <div class="slider-header"><span data-i18n="dimLipHeight">Raised Drip Lip (Condensation Rim):</span><span id="label-dim-lip">1.6 mm</span></div>
-                <input type="range" class="range-slider" min="0" max="4.0" step="0.2" value="1.6" id="slider-lip-height" oninput="rebuild3DModel()">
+                <input type="range" class="range-slider" min="0" max="4.0" step="0.2" value="1.6" id="slider-lip-height" oninput="scheduleRebuild3D(45)">
             </div>
 
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;gap:8px;">
+            <div id="group-hardware-pockets" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;gap:8px;">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="chk-rubber-feet" onchange="rebuild3DModel()" checked>
-                    <span data-i18n="optRubberFeet">Anti-Slip Bumper Feet Pockets (4x Ø8mm)</span>
+                    <input type="checkbox" id="chk-rubber-feet" onchange="scheduleRebuild3D(25)" checked>
+                    <span data-i18n="optRubberFeet">Anti-Slip Bumper Feet Pockets (4x Ø8×0.6mm)</span>
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" id="chk-nfc-pocket" onchange="rebuild3DModel()">
+                    <input type="checkbox" id="chk-magnet-pockets" onchange="scheduleRebuild3D(25)">
+                    <span data-i18n="optMagnetPockets">Neodymium Magnet Pockets (4x Ø8×2.2mm)</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-nfc-pocket" onchange="syncIncompatibleControlsUI(); scheduleRebuild3D(25)">
                     <span data-i18n="optNfcPocket">Smart NFC Tag Cavity (Ø25mm)</span>
+                </label>
+                <div id="wrap-nfc-mode" style="display:none;padding-left:22px;">
+                    <select class="text-input" id="select-nfc-mode" onchange="setNfcMode(this.value)" style="font-size:0.75rem;padding:5px 8px;cursor:pointer;">
+                        <option value="open" data-i18n="nfcOpen">Open Bottom Pocket</option>
+                        <option value="sealed" data-i18n="nfcSealed">Sealed Internal (M600 Pause)</option>
+                    </select>
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-drain-grooves" onchange="scheduleRebuild3D(25)">
+                    <span data-i18n="optDrainGrooves">Anti-Stick Condensation Micro-Grooves</span>
                 </label>
             </div>
         </section>
 
-        <!-- 7. Filament Palette & Contrast Checker -->
+        <!-- 7. Filament Palette & Optical Audit -->
         <section class="panel-section" style="border-bottom:none;">
             <div class="section-title">
                 <i data-lucide="palette" style="width:16px;height:16px;color:var(--primary);"></i>
-                <span data-i18n="sectionFilaments">7. Filament Palette &amp; Printability</span>
+                <span data-i18n="sectionFilaments">7. Filament Palette &amp; Optical Audit</span>
             </div>
 
             <div class="palette-pills">
-                <div class="palette-pill" onclick="applyColorPreset('#111827', '#f8fafc', '#38bdf8')"><div class="mini-dot" style="background:#111827;"></div><div class="mini-dot" style="background:#f8fafc;"></div><span>Classic</span></div>
-                <div class="palette-pill" onclick="applyColorPreset('#2d1a12', '#fef3c7', '#d97706')"><div class="mini-dot" style="background:#2d1a12;"></div><div class="mini-dot" style="background:#fef3c7;"></div><span>Coffee</span></div>
-                <div class="palette-pill" onclick="applyColorPreset('#0f172a', '#d4af37', '#f8fafc')"><div class="mini-dot" style="background:#0f172a;"></div><div class="mini-dot" style="background:#d4af37;"></div><span>Gold Silk</span></div>
-                <div class="palette-pill" onclick="applyColorPreset('#143522', '#f1f5f9', '#4ade80')"><div class="mini-dot" style="background:#143522;"></div><div class="mini-dot" style="background:#f1f5f9;"></div><span>Forest</span></div>
-                <div class="palette-pill" onclick="applyColorPreset('#090d16', '#06b6d4', '#ec4899')"><div class="mini-dot" style="background:#090d16;"></div><div class="mini-dot" style="background:#06b6d4;"></div><span>Cyber</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#111827', '#111827', '#38bdf8', '#ffffff')"><div class="mini-dot" style="background:#111827;"></div><div class="mini-dot" style="background:#ffffff;"></div><span data-i18n="palDarkPro">Dark + White QR</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#f8fafc', '#111827', '#0284c7', false)"><div class="mini-dot" style="background:#f8fafc;"></div><div class="mini-dot" style="background:#111827;"></div><span data-i18n="palClassic">Classic Light</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#2d1a12', '#2d1a12', '#d97706', '#fef3c7')"><div class="mini-dot" style="background:#2d1a12;"></div><div class="mini-dot" style="background:#fef3c7;"></div><span data-i18n="palCoffee">Coffee</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#0f172a', '#0f172a', '#d4af37', '#f8fafc')"><div class="mini-dot" style="background:#0f172a;"></div><div class="mini-dot" style="background:#d4af37;"></div><span data-i18n="palGold">Gold Silk</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#143522', '#143522', '#4ade80', '#f1f5f9')"><div class="mini-dot" style="background:#143522;"></div><div class="mini-dot" style="background:#4ade80;"></div><span data-i18n="palForest">Forest</span></div>
+                <div class="palette-pill" onclick="applyColorPreset('#090d16', '#06b6d4', '#ec4899', false)"><div class="mini-dot" style="background:#090d16;"></div><div class="mini-dot" style="background:#06b6d4;"></div><span data-i18n="palCyber">Cyber</span></div>
             </div>
 
             <div class="color-row">
@@ -386,21 +443,29 @@
                     <div class="color-swatch" id="swatch-base" style="background:#111827;"></div>
                 </div>
                 <div class="color-card" onclick="document.getElementById('picker-qr-color').click()">
-                    <div class="color-label-wrap"><span class="color-card-title" data-i18n="colQR">QR Code</span><span class="color-card-val" id="val-qr-color">#f8fafc</span></div>
-                    <input type="color" id="picker-qr-color" value="#f8fafc" style="display:none;" onchange="updateColors()">
-                    <div class="color-swatch" id="swatch-qr" style="background:#f8fafc;"></div>
+                    <div class="color-label-wrap"><span class="color-card-title" data-i18n="colQR">QR Code</span><span class="color-card-val" id="val-qr-color">#111827</span></div>
+                    <input type="color" id="picker-qr-color" value="#111827" style="display:none;" onchange="updateColors()">
+                    <div class="color-swatch" id="swatch-qr" style="background:#111827;"></div>
                 </div>
                 <div class="color-card" onclick="document.getElementById('picker-accent-color').click()">
-                    <div class="color-label-wrap"><span class="color-card-title" data-i18n="colAccent">Text / Logo</span><span class="color-card-val" id="val-accent-color">#38bdf8</span></div>
+                    <div class="color-label-wrap"><span class="color-card-title" data-i18n="colAccent">Text / Logo</span><span class="color-card-val" id="val-accent-color">#38BDF8</span></div>
                     <input type="color" id="picker-accent-color" value="#38bdf8" style="display:none;" onchange="updateColors()">
                     <div class="color-swatch" id="swatch-accent" style="background:#38bdf8;"></div>
+                </div>
+                <div class="color-card" id="card-quiet-color" onclick="document.getElementById('picker-quiet-color').click()">
+                    <div class="color-label-wrap"><span class="color-card-title" data-i18n="colQuiet">Quiet Zone</span><span class="color-card-val" id="val-quiet-color">#FFFFFF</span></div>
+                    <input type="color" id="picker-quiet-color" value="#ffffff" style="display:none;" onchange="updateColors()">
+                    <div class="color-swatch" id="swatch-quiet" style="background:#ffffff;"></div>
                 </div>
             </div>
 
             <div class="contrast-badge contrast-good" id="badge-contrast">
-                <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
-                <span id="text-contrast">Ratio 17.5:1 — 100% Scannable</span>
+                <i data-lucide="check-circle" style="width:14px;height:14px;flex-shrink:0;"></i>
+                <span id="text-contrast">Ratio 17.5:1 — 100% Instant Scan</span>
             </div>
+            <button type="button" id="btn-fix-polarity" class="btn-mini" onclick="fixInvertedPolarityWithQuietZone()" style="display:none;width:100%;justify-content:center;padding:6px;margin-top:4px;border-color:#10b981;color:#34d399;">
+                ✨ <span data-i18n="btnFixPolarity">Enable White Quiet Zone</span>
+            </button>
         </section>
     </aside>
 
@@ -408,27 +473,45 @@
     <div id="viewport-container">
         <canvas id="viewport-canvas"></canvas>
 
+        <!-- Live Optical Scan Test + jsQR Verifier Widget -->
         <div class="scan-preview-widget">
-            <div class="scan-widget-header">
-                <i data-lucide="smartphone" style="width:14px;height:14px;"></i>
-                <span data-i18n="widgetScanTest">Live Scan Test</span>
+            <div class="scan-widget-header" style="width:100%;justify-content:space-between;">
+                <span style="display:flex;align-items:center;gap:5px;">
+                    <i data-lucide="scan-line" style="width:13px;height:13px;"></i>
+                    <span data-i18n="widgetScanTest">Live Optical Scan Test</span>
+                </span>
+                <button type="button" id="btn-toggle-scan-colors" class="btn-mini" onclick="togglePreviewColorMode()" style="font-size:0.62rem;padding:2px 6px;" data-i18n="btnToggleRealColors">Real Colors</button>
             </div>
             <div id="qr-preview-canvas"></div>
+            <div id="scan-verify-pill" class="scan-nozzle-pill contrast-good">✓ Optical Scan OK</div>
             <div id="scan-nozzle-pill" class="scan-nozzle-pill contrast-good">0.4mm Nozzle OK</div>
             <div class="scan-instructions" data-i18n="widgetScanDesc">
-                Point your phone camera here to verify instant Wi-Fi/URL scan!
+                Real jsQR optical decoder + phone camera test!
+            </div>
+        </div>
+
+        <!-- Layer Slice Inspector (60 FPS WebGL Clipping Plane) -->
+        <div class="slice-inspector-widget">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+                <span style="font-size:0.68rem;font-weight:700;color:var(--primary);text-transform:uppercase;" data-i18n="sliceTitle">Layer Slice Inspector</span>
+                <span id="label-layer-slice" style="font-size:0.68rem;color:#fff;font-family:'Inter',monospace;">Full</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <input type="range" class="range-slider" id="slider-layer-slice" min="0.2" max="5.0" step="0.2" value="5.0" oninput="onLayerSliceInput(this.value)">
+                <button type="button" class="btn-mini" onclick="resetLayerSlice()" title="Reset Slice" style="padding:3px 6px;font-size:0.65rem;">100%</button>
             </div>
         </div>
 
         <div class="viewport-hud">
-            <span id="stat-triangles">Triangles: 0</span>
-            <span id="stat-dims">100 × 100 × 4.8 mm</span>
-            <span id="stat-swaps">Filament Swap: at 3.2 mm (Layer 16)</span>
+            <span id="stat-dims">100.0 × 100.0 × 3.2 mm</span>
+            <span id="stat-filament">~18.5g PLA • ~36 min</span>
+            <span id="stat-swaps">AMS Multi-Color</span>
+            <span id="stat-triangles">Tris: 0</span>
         </div>
     </div>
 </div>
 
-<!-- SHOWCASE MOCKUP MODAL -->
+<!-- SHOWCASE MOCKUP MODAL (V2) -->
 <div class="modal-overlay" id="photo-studio-modal" onclick="if(event.target === this) closePhotoStudioModal()">
     <div class="modal-studio-card">
         <div style="padding:14px 20px;border-bottom:1px solid var(--border-panel);display:flex;justify-content:space-between;align-items:center;">
@@ -436,7 +519,7 @@
                 <i data-lucide="camera" style="color:var(--primary);width:20px;height:20px;"></i>
                 <div>
                     <div style="font-size:1.05rem;font-weight:700;color:#fff;" data-i18n="studioTitle">Photo Showcase &amp; Commercial Mockup Studio</div>
-                    <div style="font-size:0.73rem;color:var(--text-sub);" data-i18n="studioDesc">Generate Ultra-HD 4K photorealistic product mockups.</div>
+                    <div style="font-size:0.73rem;color:var(--text-sub);" data-i18n="studioDesc">Generate Ultra-HD 4K mockups, Etsy listings, and side-by-side Front/Back product photos.</div>
                 </div>
             </div>
             <button type="button" class="btn-mini" onclick="closePhotoStudioModal()" style="padding:6px 12px;">✕ <span data-i18n="btnCancel">Cancel</span></button>
@@ -446,7 +529,7 @@
             <div class="studio-viewport">
                 <canvas id="studio-mockup-canvas" width="1920" height="1080"></canvas>
                 <div style="position:absolute;bottom:14px;left:20px;display:flex;gap:8px;">
-                    <span style="font-size:0.7rem;color:var(--text-sub);background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:6px;" id="studio-dim-badge">1920 x 1080 px</span>
+                    <span style="font-size:0.7rem;color:var(--text-sub);background:rgba(0,0,0,0.72);padding:4px 8px;border-radius:6px;" id="studio-dim-badge">1920 × 1080 px</span>
                 </div>
             </div>
 
@@ -458,7 +541,7 @@
                         <div class="scene-pill" id="scene-bistro" onclick="setStudioScene('bistro')"><span data-i18n="sceneBistro">🍷 Bistro Oak Table</span></div>
                         <div class="scene-pill" id="scene-marble" onclick="setStudioScene('marble')"><span data-i18n="sceneMarble">🍸 Black Granite Bar</span></div>
                         <div class="scene-pill" id="scene-desk" onclick="setStudioScene('desk')"><span data-i18n="sceneDesk">💼 Executive Desk</span></div>
-                        <div class="scene-pill" id="scene-specsheet" onclick="setStudioScene('specsheet')" style="grid-column:span 2;"><span data-i18n="sceneSpecSheet">📐 Product Spec Sheet Catalog</span></div>
+                        <div class="scene-pill" id="scene-specsheet" onclick="setStudioScene('specsheet')" style="grid-column:span 2;"><span data-i18n="sceneSpecSheet">📐 CAD Spec Sheet</span></div>
                     </div>
                 </div>
 
@@ -468,6 +551,12 @@
                         <div class="scene-pill active" id="angle-topdown" onclick="setStudioAngle('topdown')"><span data-i18n="angleTopDown">🖼️ Top-Down (Flat)</span></div>
                         <div class="scene-pill" id="angle-perspective" onclick="setStudioAngle('perspective')"><span data-i18n="anglePerspective">📐 3D Perspective</span></div>
                     </div>
+                    <div id="studio-both-sides-wrap" style="display:none;margin-top:8px;">
+                        <label class="checkbox-label" style="color:#6ee7b7;font-weight:600;">
+                            <input type="checkbox" id="chk-studio-both-sides" onchange="toggleStudioBothSides(this.checked)">
+                            <span data-i18n="optStudioBothSides">Show Front + Back Side-by-Side (Dual-Sided)</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="studio-section" id="studio-frame-controls">
@@ -475,23 +564,23 @@
                     <div class="input-group" style="margin-bottom:8px;">
                         <label class="input-label" data-i18n="lblFrameType">Frame Material:</label>
                         <select class="text-input" id="studio-frame-type" onchange="renderStudioMockup()">
-                            <option value="oak">Warm Oak Wood</option>
-                            <option value="walnut">Dark Walnut</option>
-                            <option value="gold">Brushed Brass / Gold</option>
-                            <option value="black">Matte Black Gallery</option>
-                            <option value="acrylic">Floating Acrylic Glass</option>
+                            <option value="oak" data-i18n="frameOak">Warm Oak Wood</option>
+                            <option value="walnut" data-i18n="frameWalnut">Dark Walnut</option>
+                            <option value="gold" data-i18n="frameGold">Brushed Brass / Gold</option>
+                            <option value="black" data-i18n="frameBlack">Matte Black Gallery</option>
+                            <option value="acrylic" data-i18n="frameAcrylic">Floating Acrylic Glass</option>
                         </select>
                     </div>
                     <div class="input-group" style="margin-bottom:8px;">
                         <label class="input-label" data-i18n="lblMatColor">Mat Board Background:</label>
                         <div style="display:flex;align-items:center;gap:8px;">
                             <div class="color-preset-dots" style="flex:1;">
-                                <div class="color-dot-choice active" style="background:#f8f6f0;" onclick="setStudioMatColor('#f8f6f0')"></div>
-                                <div class="color-dot-choice" style="background:#1e2430;" onclick="setStudioMatColor('#1e2430')"></div>
-                                <div class="color-dot-choice" style="background:#0f172a;" onclick="setStudioMatColor('#0f172a')"></div>
-                                <div class="color-dot-choice" style="background:#ece7df;" onclick="setStudioMatColor('#ece7df')"></div>
+                                <div class="color-dot-choice active" data-color="#f8f6f0" style="background:#f8f6f0;" onclick="setStudioMatColor('#f8f6f0', this)"></div>
+                                <div class="color-dot-choice" data-color="#1e2430" style="background:#1e2430;" onclick="setStudioMatColor('#1e2430', this)"></div>
+                                <div class="color-dot-choice" data-color="#0f172a" style="background:#0f172a;" onclick="setStudioMatColor('#0f172a', this)"></div>
+                                <div class="color-dot-choice" data-color="#ece7df" style="background:#ece7df;" onclick="setStudioMatColor('#ece7df', this)"></div>
                             </div>
-                            <input type="color" id="studio-mat-color" value="#f8f6f0" onchange="renderStudioMockup()" style="width:32px;height:24px;border:none;background:transparent;">
+                            <input type="color" id="studio-mat-color" value="#f8f6f0" onchange="setStudioMatColor(this.value)" style="width:32px;height:24px;border:none;background:transparent;">
                         </div>
                     </div>
                     <div class="slider-group" style="margin-bottom:0;">
@@ -502,24 +591,42 @@
 
                 <div class="studio-section">
                     <div class="studio-section-title"><i data-lucide="type" style="width:14px;height:14px;"></i><span data-i18n="tabBranding">Brand Plaque &amp; Text</span></div>
-                    <div class="input-group"><label class="input-label" data-i18n="lblBrandTitle">Brand Name:</label><input type="text" class="text-input" id="studio-brand-title" value="LE PETIT BISTRO" oninput="renderStudioMockup()"></div>
-                    <div class="input-group"><label class="input-label" data-i18n="lblBrandSub">Slogan:</label><input type="text" class="text-input" id="studio-brand-sub" value="SCAN FOR MENU &amp; INSTANT WI-FI" oninput="renderStudioMockup()"></div>
-                    <div class="input-group"><label class="input-label" data-i18n="lblPlaqueStyle">Plaque Finish:</label><select class="text-input" id="studio-plaque-style" onchange="renderStudioMockup()"><option value="brass">Engraved Brass Plaque</option><option value="silver">Brushed Chrome Plate</option><option value="emboss">Debossed Mat Letterpress</option><option value="minimal">Minimalist Clean</option></select></div>
-                    <div class="input-group" style="margin-bottom:0;"><label class="input-label" data-i18n="lblFontFamily">Typography:</label><select class="text-input" id="studio-font-family" onchange="renderStudioMockup()"><option value="luxury">Luxury Serif</option><option value="modern">Modern Sans</option><option value="mono">Artisanal Monospace</option></select></div>
+                    <div class="input-group"><label class="input-label" data-i18n="lblBrandTitle">Restaurant / Brand Name:</label><input type="text" class="text-input" id="studio-brand-title" value="LE PETIT BISTRO" oninput="renderStudioMockup()"></div>
+                    <div class="input-group"><label class="input-label" data-i18n="lblBrandSub">Marketing Slogan / CTA:</label><input type="text" class="text-input" id="studio-brand-sub" value="SCAN FOR MENU &amp; INSTANT WI-FI" oninput="renderStudioMockup()"></div>
+                    <div class="input-group">
+                        <label class="input-label" data-i18n="lblPlaqueStyle">Plaque Finish:</label>
+                        <select class="text-input" id="studio-plaque-style" onchange="renderStudioMockup()">
+                            <option value="brass" data-i18n="plaqueBrass">Engraved Brass Plaque</option>
+                            <option value="silver" data-i18n="plaqueSilver">Brushed Chrome Plate</option>
+                            <option value="emboss" data-i18n="plaqueEmboss">Debossed Mat Letterpress</option>
+                            <option value="minimal" data-i18n="plaqueMinimal">Minimalist Clean</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label class="input-label" data-i18n="lblFontFamily">Typography Style:</label>
+                        <select class="text-input" id="studio-font-family" onchange="renderStudioMockup()">
+                            <option value="luxury" data-i18n="studioFontLuxury">Luxury Serif (Cinzel)</option>
+                            <option value="modern" data-i18n="studioFontModern">Modern Sans (Outfit)</option>
+                            <option value="mono" data-i18n="studioFontMono">Artisanal Monospace</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="studio-section" style="margin-top:auto;">
                     <div class="input-group" style="margin-bottom:10px;">
-                        <label class="input-label" data-i18n="lblResolution">Export Image Resolution:</label>
+                        <label class="input-label" data-i18n="lblResolution">Export Format &amp; Resolution:</label>
                         <select class="text-input" id="studio-resolution-select" onchange="updateStudioResolution()">
-                            <option value="4k">4K Ultra-HD (3840 x 2160)</option>
-                            <option value="square">Instagram Square (3000 x 3000)</option>
-                            <option value="fhd" selected>Full HD (1920 x 1080)</option>
+                            <option value="fhd" data-i18n="resFhd" selected>Full HD 16:9 (1920 × 1080)</option>
+                            <option value="4k" data-i18n="res4k">4K Ultra-HD 16:9 (3840 × 2160)</option>
+                            <option value="square" data-i18n="resSquare">Instagram Square 1:1 (3000 × 3000)</option>
+                            <option value="etsy" data-i18n="resEtsy">Etsy Listing 4:3 (2400 × 1800)</option>
+                            <option value="story" data-i18n="resStory">Story / Reels 9:16 (1080 × 1920)</option>
+                            <option value="pinterest" data-i18n="resPinterest">Pinterest Pin 2:3 (1600 × 2400)</option>
                         </select>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <button type="button" class="btn-secondary" onclick="copyStudioPhotoToClipboard()" data-i18n="btnCopyClipboard">📋 Copy Image to Clipboard</button>
-                        <button type="button" class="btn-primary" onclick="downloadStudioPhoto()" data-i18n="btnDownloadPhoto">💾 Download Ultra-HD Photo (PNG)</button>
+                        <button type="button" class="btn-primary" onclick="downloadStudioPhoto()" data-i18n="btnDownloadPhoto">💾 Download Showcase Photo (PNG)</button>
                     </div>
                 </div>
             </div>
@@ -527,52 +634,94 @@
     </div>
 </div>
 
-<!-- RESTAURANT BATCH TABLES MODAL -->
+<!-- BATCH PRO MODAL (RANGE + CSV + 3MF / 256x256 PLATES / STL / LASER SHEET) -->
 <div class="modal-overlay" id="batch-tables-modal" onclick="if(event.target === this) closeBatchModal()">
-    <div class="modal-card" style="width:660px;">
+    <div class="modal-card" style="width:680px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div class="modal-title" style="margin-bottom:0;"><i data-lucide="utensils" style="color:#10b981;"></i><span data-i18n="batchModalTitle">Restaurant Table Number Batch Generator</span></div>
+            <div class="modal-title" style="margin-bottom:0;"><i data-lucide="layers-3" style="color:#10b981;"></i><span data-i18n="batchModalTitle">Restaurant, Hotel &amp; Airbnb Batch Generator PRO</span></div>
             <button type="button" onclick="closeBatchModal()" style="background:rgba(255,255,255,0.08);border:none;color:var(--text-sub);border-radius:6px;width:28px;height:28px;cursor:pointer;">✕</button>
         </div>
-        <p class="modal-desc" data-i18n="batchModalDesc">Automatically generate a full set of custom coasters for an entire restaurant or cafe without freezing.</p>
+        <p class="modal-desc" data-i18n="batchModalDesc">Generate sequential table numbers OR import custom CSV rows into 3MF plates, STLs or nested Laser sheets.</p>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div class="input-group">
-                <label class="input-label" data-i18n="lblTableRange">Table Range:</label>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="number" class="text-input" id="batch-start-num" min="1" max="99" value="1" style="width:70px;" oninput="updateBatchPreview()">
-                    <span>→</span>
-                    <input type="number" class="text-input" id="batch-end-num" min="1" max="99" value="20" style="width:70px;" oninput="updateBatchPreview()">
-                    <span style="font-size:0.75rem;color:#34d399;font-weight:700;" id="batch-total-count">20 Coasters</span>
+        <div class="segmented-control" style="margin-bottom:12px;">
+            <button type="button" class="segment-btn active" id="batch-tab-range" onclick="setBatchMode('range')" data-i18n="batchTabRange">Sequential Range</button>
+            <button type="button" class="segment-btn" id="batch-tab-csv" onclick="setBatchMode('csv')" data-i18n="batchTabCsv">CSV / Custom List</button>
+        </div>
+
+        <div id="batch-range-fields">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="lblTableRange">Table / Room Range:</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="number" class="text-input" id="batch-start-num" min="1" max="999" value="1" style="width:72px;" oninput="updateBatchPreview()">
+                        <span>→</span>
+                        <input type="number" class="text-input" id="batch-end-num" min="1" max="999" value="12" style="width:72px;" oninput="updateBatchPreview()">
+                        <span style="font-size:0.75rem;color:#34d399;font-weight:700;" id="batch-total-count">12 Item(s)</span>
+                    </div>
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="lblTablePrefix">File &amp; Label Prefix:</label>
+                    <input type="text" class="text-input" id="batch-table-prefix" value="Table_{pad}" oninput="updateBatchPreview()">
                 </div>
             </div>
+
             <div class="input-group">
-                <label class="input-label" data-i18n="lblTablePrefix">Table Label Format:</label>
-                <input type="text" class="text-input" id="batch-table-prefix" value="TABLE {n}" oninput="updateBatchPreview()">
+                <label class="input-label" data-i18n="lblUrlTemplate">URL Template ({n} = Number, {pad} = 01):</label>
+                <input type="text" class="text-input" id="batch-url-template" value="https://mybistro.com/order?table={n}" oninput="updateBatchPreview()">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+                <div class="input-group" style="margin-bottom:0;"><label class="input-label" data-i18n="lblHeaderTemplate">Header Text Template:</label><input type="text" class="text-input" id="batch-header-template" value="SCAN TO ORDER" oninput="updateBatchPreview()"></div>
+                <div class="input-group" style="margin-bottom:0;"><label class="input-label" data-i18n="lblFooterTemplate">Footer Text Template:</label><input type="text" class="text-input" id="batch-footer-template" value="TABLE {n}" oninput="updateBatchPreview()"></div>
             </div>
         </div>
 
-        <div class="input-group">
-            <label class="input-label" data-i18n="lblUrlTemplate">Ordering URL Template ({n} = Table Number):</label>
-            <input type="text" class="text-input" id="batch-url-template" value="https://mybistro.com/order?table={n}" oninput="updateBatchPreview()">
+        <div id="batch-csv-fields" style="display:none;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <label class="input-label" style="margin-bottom:0;" data-i18n="lblCsvInput">Paste CSV rows (Name, URL, Header, Footer) or upload .csv:</label>
+                <label class="btn-mini" style="cursor:pointer;">
+                    📂 <span data-i18n="btnUploadCsv">Upload .CSV File</span>
+                    <input type="file" id="batch-csv-upload" accept=".csv,.txt" style="display:none;" onchange="handleBatchCsvUpload(event)">
+                </label>
+            </div>
+            <textarea class="text-input" id="batch-csv-textarea" rows="5" oninput="updateBatchPreview()" style="font-family:'Space Mono',monospace;font-size:0.74rem;resize:vertical;">Room_101, https://myhotel.com/r/101, WELCOME SUITE 101, ROOM SERVICE
+Room_102, https://myhotel.com/r/102, WELCOME SUITE 102, ROOM SERVICE
+Room_103, https://myhotel.com/r/103, WELCOME SUITE 103, ROOM SERVICE
+VIP_Terrace, https://myhotel.com/terrace, VIP TERRACE MENU, SCAN TO ORDER</textarea>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div class="input-group"><label class="input-label" data-i18n="lblHeaderTemplate">Header Text Template:</label><input type="text" class="text-input" id="batch-header-template" value="SCAN TO ORDER" oninput="updateBatchPreview()"></div>
-            <div class="input-group"><label class="input-label" data-i18n="lblFooterTemplate">Footer Text Template:</label><input type="text" class="text-input" id="batch-footer-template" value="TABLE {n}" oninput="updateBatchPreview()"></div>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px;">
+            <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label" data-i18n="lblBatchFormat">Batch Output Format:</label>
+                <select class="text-input" id="batch-export-format" style="cursor:pointer;">
+                    <option value="3mf" data-i18n="batchFmt3mf" selected>Individual Multi-Color .3MF Files (.ZIP)</option>
+                    <option value="plates" data-i18n="batchFmtPlates">Auto-Packed 256×256 Build Plates (.3MF ZIP)</option>
+                    <option value="stl" data-i18n="batchFmtStl">Individual Binary .STL Folders (.ZIP)</option>
+                    <option value="laser" data-i18n="batchFmtLaser">Nested Laser Sheet 400×400mm (.SVG + .DXF ZIP)</option>
+                </select>
+            </div>
+            <label class="checkbox-label" style="color:#6ee7b7;">
+                <input type="checkbox" id="chk-batch-keep-sideb">
+                <span data-i18n="optBatchKeepSideB">Dual-Sided Batch: Keep Side B shared (e.g. Wi-Fi) on all items</span>
+            </label>
         </div>
 
-        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-panel);border-radius:8px;padding:10px 14px;margin-bottom:14px;">
-            <div class="slider-header"><span data-i18n="lblPreviewTable">Preview Table:</span><span style="color:var(--primary);font-weight:700;" id="batch-preview-label">Table 01</span></div>
-            <input type="range" class="range-slider" min="1" max="20" value="1" id="batch-preview-slider" oninput="onBatchSliderChange(this.value)">
-            <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text-sub);margin-top:4px;">
-                <span>Table 1</span><span id="batch-url-sample">URL: https://mybistro.com/order?table=1</span><span id="batch-max-slider-lbl">Table 20</span>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-panel);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;gap:14px;align-items:center;">
+            <canvas id="batch-mini-qr" width="68" height="68" style="background:#fff;padding:4px;border-radius:6px;flex-shrink:0;"></canvas>
+            <div style="flex:1;min-width:0;">
+                <div class="slider-header"><span data-i18n="lblPreviewTable">Live Preview Item:</span><span style="color:var(--primary);font-weight:700;" id="batch-preview-label">Table_01</span></div>
+                <input type="range" class="range-slider" min="1" max="12" value="1" id="batch-preview-slider" oninput="onBatchSliderChange(this.value, true)">
+                <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text-sub);margin-top:4px;gap:8px;">
+                    <span id="batch-min-slider-lbl">Table_01</span>
+                    <span id="batch-url-sample" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">QR: https://mybistro.com/order?table=1</span>
+                    <span id="batch-max-slider-lbl">Table_12</span>
+                </div>
             </div>
         </div>
 
         <div style="display:flex;gap:10px;">
             <button type="button" class="modal-close" onclick="closeBatchModal()" style="margin:0;flex:1;" data-i18n="btnCancel">Cancel</button>
-            <button type="button" class="btn-primary" onclick="generateTableBatchZIP()" id="btn-batch-export" style="flex:2;background:linear-gradient(135deg,#059669,#10b981);" data-i18n="btnGenerateBatch">📦 Generate All Tables (.ZIP)</button>
+            <button type="button" class="btn-primary" onclick="generateTableBatchZIP()" id="btn-batch-export" style="flex:2;background:linear-gradient(135deg,#059669,#10b981);" data-i18n="btnGenerateBatch">📦 Generate Batch Archive (.ZIP)</button>
         </div>
 
         <div id="batch-progress-bar" style="display:none;margin-top:10px;background:#1e293b;border-radius:6px;height:8px;overflow:hidden;">
@@ -585,39 +734,71 @@
 <div class="modal-overlay" id="export-modal" onclick="if(event.target === this) closeExportModal()">
     <div class="modal-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div class="modal-title" style="margin-bottom:0;"><i data-lucide="package-check" style="color:#10b981;"></i><span data-i18n="modalExportTitle">Export 3D Coaster &amp; Stand</span></div>
+            <div class="modal-title" style="margin-bottom:0;"><i data-lucide="package-check" style="color:#10b981;"></i><span data-i18n="modalExportTitle">Export 3D Coaster, Stand &amp; Laser CAD</span></div>
             <button type="button" onclick="closeExportModal()" style="background:rgba(255,255,255,0.08);border:none;color:var(--text-sub);border-radius:6px;width:28px;height:28px;cursor:pointer;">✕</button>
         </div>
-        <p class="modal-desc" data-i18n="modalExportDesc">Choose your fabrication format. Multi-Color 3MF opens cleanly in Bambu Studio, OrcaSlicer, and PrusaSlicer.</p>
+        <p class="modal-desc" data-i18n="modalExportDesc">Zero-overlap watertight CAD files. Universal 3MF loads filament colors natively in Bambu Studio, OrcaSlicer &amp; PrusaSlicer.</p>
 
         <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-panel);border-radius:8px;padding:10px 14px;margin-bottom:12px;">
-            <div style="font-size:0.75rem;font-weight:700;color:#38bdf8;margin-bottom:8px;" data-i18n="amsSlotGuide">Bambu AMS Filament Slots Mapping:</div>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:0.74rem;">
-                <div><span id="ams-slot-1-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;"></span> <strong>Slot 1:</strong> <span data-i18n="amsSlotBase">Base</span> (<span id="ams-slot-1-hex">#111827</span>)</div>
-                <div><span id="ams-slot-2-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;"></span> <strong>Slot 2:</strong> <span data-i18n="amsSlotQR">QR Code</span> (<span id="ams-slot-2-hex">#F8FAFC</span>)</div>
-                <div><span id="ams-slot-3-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;"></span> <strong>Slot 3:</strong> <span data-i18n="amsSlotText">Text</span> (<span id="ams-slot-3-hex">#38BDF8</span>)</div>
+            <div style="font-size:0.75rem;font-weight:700;color:#38bdf8;margin-bottom:8px;" data-i18n="amsSlotGuide">Multi-Color AMS / MMU Filament Mapping:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:0.73rem;">
+                <div><span id="ams-slot-1-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;border:1px solid rgba(255,255,255,0.3);"></span> <strong>Slot 1:</strong> <span data-i18n="amsSlotBase">Base</span> (<span id="ams-slot-1-hex">#111827</span>)</div>
+                <div id="ams-slot-4-wrap"><span id="ams-slot-4-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;border:1px solid rgba(255,255,255,0.3);"></span> <strong>Quiet Zone:</strong> (<span id="ams-slot-4-hex">#FFFFFF</span>)</div>
+                <div><span id="ams-slot-2-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;border:1px solid rgba(255,255,255,0.3);"></span> <strong>QR:</strong> (<span id="ams-slot-2-hex">#111827</span>)</div>
+                <div><span id="ams-slot-3-dot" style="width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle;border:1px solid rgba(255,255,255,0.3);"></span> <strong><span data-i18n="amsSlotText">Text / Badge</span>:</strong> (<span id="ams-slot-3-hex">#38BDF8</span>)</div>
             </div>
-            <div style="font-size:0.68rem;color:var(--text-sub);margin-top:6px;font-style:italic;" data-i18n="amsTipNote">💡 Project colors auto-load in Bambu Studio / OrcaSlicer.</div>
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-top:6px;font-style:italic;" data-i18n="amsTipNote">💡 Includes Bambu/Orca project_settings + PrusaSlicer Slic3r_PE_model.config.</div>
         </div>
 
         <div class="export-option recommended" onclick="export3MF()">
-            <div><div class="export-opt-title" data-i18n="opt3MFTitle">📦 Bambu Studio / OrcaSlicer 3MF (Recommended)</div><div class="export-opt-desc" data-i18n="opt3MFDesc">Watertight welded assembly with filament_colour AMS mapping</div></div>
+            <div><div class="export-opt-title" data-i18n="opt3MFTitle">📦 Universal Multi-Color 3MF (Recommended)</div><div class="export-opt-desc" data-i18n="opt3MFDesc">Bambu Studio, OrcaSlicer &amp; PrusaSlicer — zero-overlap watertight assembly</div></div>
             <i data-lucide="chevron-right" style="color:var(--primary);"></i>
         </div>
         <div class="export-option" onclick="exportSeparateSTLs()">
-            <div><div class="export-opt-title" data-i18n="optSTLsTitle">🗂️ Separate Binary STLs Archive (.ZIP)</div><div class="export-opt-desc" data-i18n="optSTLsDesc">Ultra-fast binary STLs (real carved cavities for resin / M600)</div></div>
+            <div><div class="export-opt-title" data-i18n="optSTLsTitle">🗂️ Separate Binary STLs Archive (.ZIP)</div><div class="export-opt-desc" data-i18n="optSTLsDesc">Real carved pockets for resin/paint + exact M600 &amp; Sealed NFC pause README</div></div>
             <i data-lucide="chevron-right" style="color:var(--primary);"></i>
         </div>
         <div class="export-option" onclick="exportCaddyFullSet3MF()">
-            <div><div class="export-opt-title" data-i18n="optCaddySetTitle">📚 Complete Caddy Set + 4 Coasters (.3MF)</div><div class="export-opt-desc" data-i18n="optCaddySetDesc">Exports 1 floored ergonomic Rack + 4 coasters arranged on plate</div></div>
+            <div><div class="export-opt-title" data-i18n="optCaddySetTitle">📚 Shape-Matched Caddy + Coasters Plate (.3MF)</div><div class="export-opt-desc" data-i18n="optCaddySetDesc">Independent objects auto-packed cleanly for 256×256 build plates</div></div>
             <i data-lucide="chevron-right" style="color:#fbbf24;"></i>
         </div>
         <div class="export-option" onclick="exportLaserBlueprint()">
-            <div><div class="export-opt-title" data-i18n="optDXFTitle">📐 Multi-Layer Laser Pack (.DXF + .SVG ZIP)</div><div class="export-opt-desc" data-i18n="optDXFDesc">Real-newline CAD vectors for all shapes, keyhole, text &amp; badges</div></div>
+            <div><div class="export-opt-title" data-i18n="optDXFTitle">📐 Multi-Layer Laser Pack (.DXF + .SVG ZIP)</div><div class="export-opt-desc" data-i18n="optDXFDesc">True mm vectors ($INSUNITS), curved text, badges, keychain lug &amp; Dual-Sided A+B</div></div>
             <i data-lucide="chevron-right" style="color:var(--primary);"></i>
+        </div>
+        <div class="export-option" onclick="exportCalibrationSwatch()">
+            <div><div class="export-opt-title" data-i18n="optSwatchTitle">🧪 6-Min Calibration Test Swatch (.3MF + .STL)</div><div class="export-opt-desc" data-i18n="optSwatchDesc">36×36mm mini print using your exact QR pixel width &amp; colors to test nozzle/contrast</div></div>
+            <i data-lucide="chevron-right" style="color:#c084fc;"></i>
         </div>
 
         <button class="modal-close" onclick="closeExportModal()" data-i18n="btnCancel">Cancel</button>
+    </div>
+</div>
+
+<!-- PROJECT SAVE / LOAD MODAL -->
+<div class="modal-overlay" id="project-modal" onclick="if(event.target === this) closeProjectModal()">
+    <div class="modal-card" style="width:460px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="modal-title" style="margin-bottom:0;"><i data-lucide="folder-open" style="color:var(--primary);"></i><span data-i18n="projectModalTitle">Project Save / Load &amp; History</span></div>
+            <button type="button" onclick="closeProjectModal()" style="background:rgba(255,255,255,0.08);border:none;color:var(--text-sub);border-radius:6px;width:28px;height:28px;cursor:pointer;">✕</button>
+        </div>
+        <p class="modal-desc" data-i18n="projectModalDesc">Auto-save is active in your browser. Export a .coaster.json project file to back up or share templates.</p>
+
+        <label class="checkbox-label" style="margin-bottom:14px;">
+            <input type="checkbox" id="chk-include-wifi-pass">
+            <span data-i18n="optIncludeWifiPass">Include Wi-Fi password in exported JSON</span>
+        </label>
+
+        <div style="display:flex;flex-direction:column;gap:9px;">
+            <button type="button" class="btn-primary" onclick="exportProjectJson()" data-i18n="btnExportProject">💾 Download Project (.coaster.json)</button>
+            <label class="btn-secondary" style="cursor:pointer;text-align:center;">
+                <span data-i18n="btnImportProject">📂 Load Project (.json)</span>
+                <input type="file" id="project-upload-input" accept=".json,.coaster.json" style="display:none;" onchange="handleProjectJsonUpload(event)">
+            </label>
+            <button type="button" class="btn-secondary" onclick="resetCoasterDefaults()" style="border-color:rgba(239,68,68,0.4);color:#fca5a5;" data-i18n="btnResetDefaults">♻️ Reset to Factory Defaults</button>
+        </div>
+
+        <button class="modal-close" onclick="closeProjectModal()" data-i18n="btnCancel">Cancel</button>
     </div>
 </div>
 
@@ -636,7 +817,7 @@
             <img id="share-snapshot-img" style="width:100%;max-height:220px;object-fit:contain;display:block;" alt="3D Coaster Preview">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(15,23,42,0.9);">
                 <span id="share-coaster-badge" style="font-size:11px;color:#94a3b8;">3D Scannable Coaster</span>
-                <button class="btn-secondary" onclick="downloadShareSnapshot()" style="padding:4px 10px;font-size:11px;" data-i18n="btnDownloadSnapshot">Save Photo (PNG)</button>
+                <button class="btn-secondary" onclick="downloadShareSnapshot()" style="padding:4px 10px;font-size:11px;" data-i18n="btnDownloadSnapshot">Save Free Photo (PNG)</button>
             </div>
         </div>
 
@@ -692,7 +873,7 @@
 
 <!-- Mobile Bottom Switcher -->
 <div class="mobile-view-bar" id="mobile-view-bar">
-    <button type="button" class="mobile-tab-btn active" id="tab-btn-panel" onclick="setMobileView('panel')"><span id="txt-tab-panel">Settings &amp; Social</span></button>
+    <button type="button" class="mobile-tab-btn active" id="tab-btn-panel" onclick="setMobileView('panel')"><span id="txt-tab-panel">Settings &amp; QR</span></button>
     <button type="button" class="mobile-tab-btn" id="tab-btn-canvas" onclick="setMobileView('canvas')"><span id="txt-tab-canvas">3D Coaster View</span></button>
 </div>
 
@@ -702,8 +883,9 @@
     <span id="toast-text">Ready</span>
 </div>
 
-<!-- Synchronous Modular Engine Scripts -->
+<!-- Modular Engine Scripts -->
 <script src="js/i18n.js"></script>
+<script src="js/vector-text.js"></script>
 <script src="js/qr-engine.js"></script>
 <script src="js/geometry-cad.js"></script>
 <script src="js/export-cad.js"></script>
