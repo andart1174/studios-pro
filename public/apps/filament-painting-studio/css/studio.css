@@ -26,6 +26,11 @@
     -webkit-user-select: none;
 }
 
+input, textarea, select, [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
 body {
     background-color: var(--bg-base);
     color: var(--text-main);
@@ -926,6 +931,7 @@ select option,
     cursor: crosshair;
     display: block;
     margin: auto;
+    touch-action: none;
     transition: width 0.15s ease, height 0.15s ease;
 }
 .editor-floating-toolbar {
@@ -1390,7 +1396,288 @@ select option,
     background: linear-gradient(135deg, #1d4ed8, #2563eb);
     transform: translateY(-1px);
 }
-    
+
+/* ═══════════════════════════════════════════════════════════════
+   ⚡ STUDIO V2 — WORKSPACE MODE SWITCHER, ACCORDIONS & NEW MODALS
+   ═══════════════════════════════════════════════════════════════ */
+header {
+    gap: 10px;
+    overflow: hidden;
+}
+.brand {
+    min-width: 0;
+    flex-shrink: 1;
+}
+.brand > div {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+.brand-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.brand-sub {
+    white-space: nowrap;
+}
+.header-actions {
+    flex-shrink: 0;
+    gap: 6px;
+}
+.header-actions .btn-top {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-top-icon {
+    padding: 6px 8px !important;
+}
+
+/* Workspace Quick HueForge vs Pro CAD Switcher */
+.workspace-mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
+    border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+    padding: 8px 12px;
+    gap: 6px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 35;
+}
+.ws-mode-btn {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.ws-mode-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+}
+.ws-mode-btn.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(16, 185, 129, 0.22));
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(56, 189, 248, 0.25);
+}
+
+/* Quick HueForge Mode hides Pro CAD / 2D Sculpt clutter cleanly */
+body.workspace-quick .pro-only-block {
+    display: none !important;
+}
+body.workspace-quick .quick-step-badge {
+    display: inline-flex !important;
+}
+.quick-step-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    margin-left: 4px;
+}
+
+/* Collapsible Accordion Sections */
+.accordion-section .section-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+.accordion-section.collapsed .section-header-bar {
+    margin-bottom: 0;
+}
+.accordion-section .section-header-bar .section-title {
+    margin-bottom: 0;
+    flex: 1;
+}
+.accordion-chevron {
+    color: var(--text-sub);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+}
+.accordion-section.collapsed .accordion-chevron {
+    transform: rotate(-90deg);
+}
+.accordion-section.collapsed .section-body {
+    display: none !important;
+}
+
+/* Source Preview Mini Bar + Smart Crop Card */
+.source-preview-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+}
+#source-thumb-preview {
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #020617;
+    flex-shrink: 0;
+}
+.crop-preset-box {
+    background: rgba(56, 189, 248, 0.05);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    border-radius: 8px;
+    padding: 8px 9px;
+    margin-bottom: 8px;
+}
+
+/* Compact Raking Light Pill in Bottom HUD */
+.raking-hud-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: 0.68rem;
+    color: #fde68a;
+}
+.raking-hud-pill input[type="range"] {
+    width: 46px;
+    margin: 0;
+}
+
+/* My Spool Rack Modal Grid */
+.spool-rack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+    max-height: 310px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+@media (max-width: 600px) {
+    .spool-rack-grid { grid-template-columns: 1fr; }
+}
+.spool-rack-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    padding: 7px 9px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.spool-rack-item:hover {
+    border-color: var(--primary);
+    background: rgba(56, 189, 248, 0.08);
+}
+.spool-rack-item.owned {
+    border-color: rgba(251, 191, 36, 0.65);
+    background: rgba(245, 158, 11, 0.12);
+}
+.spool-rack-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+/* 4K Studio Gallery Mockup Scene Cards */
+.mockup-scene-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.mockup-scene-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-panel);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.mockup-scene-card:hover {
+    border-color: var(--primary);
+    background: rgba(56, 189, 248, 0.1);
+    transform: translateY(-2px);
+}
+.badge-free-pill {
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    letter-spacing: 0.4px;
+}
+
+/* Camera TD Calibration Canvas */
+#cam-td-canvas {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    cursor: crosshair;
+    background: #090d16;
+    display: block;
+}
+
+/* Responsive Laptop Header (ZERO Overflow on 1280px–1536px!) */
+@media (max-width: 1540px) {
+    header { padding: 0 12px; }
+    .brand-sub { display: none; }
+    .brand-title { font-size: 1.02rem; }
+    .back-to-studios { margin-right: 4px; padding: 6px 10px; }
+    .header-actions .btn-top { padding: 6px 8px; font-size: 0.74rem; gap: 4px; }
+}
+@media (max-width: 1260px) {
+    .brand-badge { display: none; }
+    .header-actions .btn-collapse-label span[data-i18n] { display: none; }
+    .panel-left { width: 410px; }
+}
+@media (max-width: 1060px) {
+    .brand-title { max-width: 150px; }
+    .ws-mode-btn span[data-i18n] { font-size: 0.68rem; }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    📱 COMPREHENSIVE MOBILE RESPONSIVE ENGINE (<= 900px)
    Strictly isolated to mobile screens: desktop is 100% untouched.
@@ -1400,23 +1687,28 @@ select option,
 @media (max-width: 900px) {
     header {
         height: 52px;
-        padding: 0 10px;
+        padding: 0 8px;
+        gap: 5px;
     }
     #back-btn {
-        padding: 5px 8px;
+        padding: 5px 7px;
         font-size: 0.72rem;
-        gap: 4px;
+        gap: 3px;
+        margin-right: 0;
+    }
+    #back-btn span[data-i18n] {
+        display: none;
     }
     .brand {
-        gap: 6px;
+        gap: 5px;
     }
     .brand-badge {
-        font-size: 0.62rem;
-        padding: 2px 6px;
+        display: none;
     }
     .brand-title {
-        font-size: 0.95rem;
+        font-size: 0.86rem;
         white-space: nowrap;
+        max-width: 115px;
     }
     .brand-sub {
         display: none !important;
@@ -1428,26 +1720,26 @@ select option,
         padding: 2px;
     }
     .lang-btn {
-        padding: 3px 6px;
-        font-size: 0.7rem;
+        padding: 3px 5px;
+        font-size: 0.68rem;
     }
-    .btn-top {
-        padding: 5px 8px;
+    .header-actions .btn-top {
+        padding: 5px 7px;
         font-size: 0.72rem;
     }
-    /* Hide non-essential button texts on mobile */
-    button[onclick="downloadModelOnlyPNG('auto')"] span[data-i18n],
-    button[onclick="downloadRecipeCardPNG()"] span[data-i18n],
-    button[onclick="openSlicerModal()"] span[data-i18n],
-    .btn-share-main span[data-i18n] {
+    /* Hide secondary header button text on mobile */
+    .header-actions .btn-top:not(.btn-export-main) span[data-i18n] {
         display: none !important;
     }
     .btn-export-main {
-        padding: 6px 10px;
-        font-size: 0.76rem;
+        padding: 6px 9px !important;
+        font-size: 0.74rem !important;
     }
     .btn-export-main span {
         display: inline !important;
+    }
+    .raking-hud-pill {
+        display: none !important;
     }
 
     .workspace {

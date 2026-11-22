@@ -445,7 +445,71 @@ const translations = {
         toastProjectError: "Invalid .spfp project file!",
         toastARLaunched: "Launching AR Wall Preview...",
         toastARStandalone: "GLB ready! Embed in Studios-Pro host to launch camera AR directly.",
-        toastTdWedgeExported: "TD Calibration Step-Wedge STL downloaded!"
+        toastTdWedgeExported: "TD Calibration Step-Wedge STL downloaded!",
+        wsModeQuick: "Quick HueForge",
+        wsModePro: "Pro CAD & 2D Studio",
+        btnSpoolRack: "Spool Rack",
+        btnStudioMockups: "4K Mockups",
+        btnDeltaEHeatmap: "ΔE2000",
+        labelActivePhoto: "Active Source Photo",
+        labelAspectCrop: "📐 Smart Crop & Print-Bed Preset",
+        optCropAuto: "✨ Auto (Original Photo Ratio)",
+        optCrop11: "⬛ 1:1 Square Frame (140 × 140 mm)",
+        optCrop45: "🖼️ 4:5 Portrait Gallery (140 × 175 mm)",
+        optCrop34: "📷 3:4 Classic Photo (135 × 180 mm)",
+        optCrop169: "🎬 16:9 Panoramic Wall (200 × 112 mm)",
+        optCropA5: "📄 ISO A5 Plaque (148 × 210 mm)",
+        optCropA4: "📄 ISO A4 Large Frame (210 × 297 mm)",
+        optCropA1Mini: "🖨️ Bambu A1 Mini Max Bed (172 × 172 mm)",
+        optCropX1C: "🖨️ Bambu X1C / P1S Max Bed (240 × 240 mm)",
+        optCropPolaroid: "📸 Polaroid Frame Card (110 × 132 mm)",
+        labelCropZoom: "Zoom",
+        labelCropPanX: "Pan X",
+        labelCropPanY: "Pan Y",
+        optModeCMYW: "🌈 CMYW 4-Spool Color Lithophane (Backlit LED)",
+        optModelKM: "🔬 Kubelka-Munk TD (Pro)",
+        optModelBL: "🧪 Beer-Lambert Linear TD",
+        optModelCubic: "📐 Cubic TD Ramp",
+        labelOwnSpoolsOnly: "⭐ Use My Spools Only",
+        btnOpenRackMini: "🧰 Rack",
+        btnCameraTD: "📸 Camera TD",
+        labelLightShort: "Light",
+        modalRackTitle: "My Spool Rack — Owned Filament Inventory",
+        modalRackDesc: "Star the filaments sitting on your shelf. Enable <strong>Use My Spools Only</strong> and click <strong>Auto-Solve Stack</strong> to automatically match photos using ONLY the spools you already own!",
+        optAllBrands: "All Brands (256)",
+        labelRackOwnedOnly: "Owned Only",
+        labelAddCustomSpool: "+ Add Custom Spool to My Rack:",
+        btnImportHFP: "Import .hfp / JSON / CSV",
+        btnBackupRack: "Backup Rack (.json)",
+        modalCamTDTitle: "Camera TD Auto-Calibrator (Free)",
+        modalCamTDDesc: "Measure the true physical Transmission Distance (TD) of ANY filament spool using your smartphone camera — no $50 TD-1 hardware needed!",
+        btnCamStep1: "1. Download 15-Step Wedge STL",
+        btnCamStep2: "2. Upload Backlit Wedge Photo",
+        camTDHint: "Upload a photo of your printed 15-step wedge held against a white screen or paper, then click step 1 (0.20mm) and step 15 (3.00mm).",
+        btnSaveCalibrated: "Save to Rack",
+        modalMockupTitle: "4K Studio Gallery Mockups & Print Cards",
+        modalMockupDesc: "Generate photorealistic 4K marketing mockups for Etsy, MakerWorld, Printables, or social media — rendered directly from your exact 3D model!",
+        sceneWallTitle: "🖼️ Modern Wall Gallery",
+        sceneWallSub: "Framed artwork on warm gallery wall with spotlight & drop shadow",
+        sceneDeskTitle: "🪵 Wooden Desk Studio",
+        sceneDeskSub: "Warm studio desk presentation with ambient key lighting",
+        sceneLedTitle: "💡 Glowing LED Lightbox",
+        sceneLedSub: "Dark-room backlit glow showcase for Lithophanes & CMYW art",
+        sceneEtsyTitle: "🛍️ Etsy / MakerWorld Card",
+        sceneEtsySub: "Listing card with 3D render, filament color swatches, size & print specs",
+        labelSlicerProfile: "Target Slicer Profile",
+        optSlicerBambu: "Bambu Studio / Orca (AMS)",
+        optSlicerAmsLite: "Bambu A1 / AMS Lite",
+        optSlicerPrusa: "PrusaSlicer / MMU3",
+        optSlicerM600: "Single-Extruder (M600 Pause)",
+        optSlicerCura: "UltiMaker Cura (M0 Pause)",
+        optConnDovetail: "🧩 Dovetail",
+        optConnMagnets: "🧲 Magnets",
+        optConnNone: "Flat Edge",
+        exportHTML3DTitle: "Interactive 3D Client Proof (.HTML)",
+        exportHTML3DSub: "Zero-dependency rotatable WebGL viewer file to send to Etsy / commission clients",
+        exportMockupShortcutTitle: "4K Studio Gallery Mockups & Print Recipe Cards",
+        exportMockupShortcutSub: "Wall Gallery, Wooden Desk, LED Lightbox, Etsy Card & Transparent 3D PNG"
     },
     fr: {
         appTitle: "Studio Peinture Filament & Layer-Swap",
@@ -890,7 +954,71 @@ const translations = {
         toastProjectError: "Fichier projet .spfp invalide !",
         toastARLaunched: "Lancement de l'aperçu mural AR...",
         toastARStandalone: "Modèle .GLB généré ! Ouvrez via l'hôte Studios-Pro pour la caméra AR.",
-        toastTdWedgeExported: "Cale de calibration TD (.STL) téléchargée !"
+        toastTdWedgeExported: "Cale de calibration TD (.STL) téléchargée !",
+        wsModeQuick: "Quick HueForge",
+        wsModePro: "Pro CAD & Studio 2D",
+        btnSpoolRack: "Mes Bobines",
+        btnStudioMockups: "Mockups 4K",
+        btnDeltaEHeatmap: "ΔE2000",
+        labelActivePhoto: "Photo Source Active",
+        labelAspectCrop: "📐 Recadrage & Format Plateau 3D",
+        optCropAuto: "✨ Auto (Ratio Original Photo)",
+        optCrop11: "⬛ Carré 1:1 (140 × 140 mm)",
+        optCrop45: "🖼️ Galerie Portrait 4:5 (140 × 175 mm)",
+        optCrop34: "📷 Photo Classique 3:4 (135 × 180 mm)",
+        optCrop169: "🎬 Panoramique 16:9 (200 × 112 mm)",
+        optCropA5: "📄 Plaque ISO A5 (148 × 210 mm)",
+        optCropA4: "📄 Grand Cadre ISO A4 (210 × 297 mm)",
+        optCropA1Mini: "🖨️ Plateau Max Bambu A1 Mini (172 × 172 mm)",
+        optCropX1C: "🖨️ Plateau Max Bambu X1C / P1S (240 × 240 mm)",
+        optCropPolaroid: "📸 Carte Cadre Polaroid (110 × 132 mm)",
+        labelCropZoom: "Zoom",
+        labelCropPanX: "Décal. X",
+        labelCropPanY: "Décal. Y",
+        optModeCMYW: "🌈 Lithophanie Couleur CMYW 4 Bobines (LED)",
+        optModelKM: "🔬 Kubelka-Munk TD (Pro)",
+        optModelBL: "🧪 Beer-Lambert Linéaire TD",
+        optModelCubic: "📐 Rampe TD Cubique",
+        labelOwnSpoolsOnly: "⭐ Mes Bobines Uniquement",
+        btnOpenRackMini: "🧰 Rack",
+        btnCameraTD: "📸 Caméra TD",
+        labelLightShort: "Lumière",
+        modalRackTitle: "Mon Rack de Bobines — Inventaire Personnel",
+        modalRackDesc: "Marquez d'une étoile les bobines sur votre étagère. Activez <strong>Mes Bobines Uniquement</strong> puis cliquez sur <strong>Auto-Optimiser</strong> pour imprimer avec VOS propres bobines !",
+        optAllBrands: "Toutes Marques (256)",
+        labelRackOwnedOnly: "Possédées Seules",
+        labelAddCustomSpool: "+ Ajouter une Bobine Personnalisée :",
+        btnImportHFP: "Importer .hfp / JSON / CSV",
+        btnBackupRack: "Sauvegarder Rack (.json)",
+        modalCamTDTitle: "Auto-Calibrateur Caméra TD (Gratuit)",
+        modalCamTDDesc: "Mesurez la Distance de Transmission (TD) physique de N'IMPORTE QUELLE bobine avec votre smartphone — sans boîtier TD-1 à 50 $ !",
+        btnCamStep1: "1. Télécharger Cale 15 Paliers STL",
+        btnCamStep2: "2. Importer Photo Rétroéclairée",
+        camTDHint: "Importez une photo de votre cale 15 paliers posée sur un écran/feuille blanche, puis cliquez le palier 1 (0,20 mm) et le palier 15 (3,00 mm).",
+        btnSaveCalibrated: "Enregistrer",
+        modalMockupTitle: "Mockups Galerie Studio 4K & Fiches Recettes",
+        modalMockupDesc: "Générez des visuels marketing 4K photoréalistes pour Etsy, MakerWorld, Printables ou réseaux sociaux — rendus directement depuis votre modèle 3D !",
+        sceneWallTitle: "🖼️ Galerie Murale Moderne",
+        sceneWallSub: "Œuvre encadrée sur mur galerie avec éclairage spot et ombre portée",
+        sceneDeskTitle: "🪵 Bureau Bois Studio",
+        sceneDeskSub: "Présentation sur bureau bois chaleureux avec lumière d'atelier",
+        sceneLedTitle: "💡 Caisson Lumineux LED",
+        sceneLedSub: "Mise en scène sombre rétroéclairée pour Lithophanies & CMYW",
+        sceneEtsyTitle: "🛍️ Fiche Produit Etsy / MakerWorld",
+        sceneEtsySub: "Carte vitrine avec rendu 3D, nuancier filaments, dimensions & specs",
+        labelSlicerProfile: "Profil Slicer Cible",
+        optSlicerBambu: "Bambu Studio / Orca (AMS)",
+        optSlicerAmsLite: "Bambu A1 / AMS Lite",
+        optSlicerPrusa: "PrusaSlicer / MMU3",
+        optSlicerM600: "Mono-Extrudeur (Pause M600)",
+        optSlicerCura: "UltiMaker Cura (Pause M0)",
+        optConnDovetail: "🧩 Queue d'Ar.",
+        optConnMagnets: "🧲 Aimants",
+        optConnNone: "Bord Plat",
+        exportHTML3DTitle: "Aperçu 3D Interactif Client (.HTML)",
+        exportHTML3DSub: "Visionneuse WebGL autonome orientable à envoyer aux clients Etsy / sur-mesure",
+        exportMockupShortcutTitle: "Mockups Studio 4K & Fiches Recettes",
+        exportMockupShortcutSub: "Galerie Murale, Bureau Bois, Caisson LED, Carte Etsy & PNG 3D Transparent"
     }
 };
 
@@ -898,13 +1026,15 @@ let currentLang = 'en';
 
 function setLang(lang) {
     currentLang = lang;
-    document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
-    document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
+    const btnEn = document.getElementById('btn-lang-en');
+    const btnFr = document.getElementById('btn-lang-fr');
+    if (btnEn) btnEn.classList.toggle('active', lang === 'en');
+    if (btnFr) btnFr.classList.toggle('active', lang === 'fr');
     const txtPanel = document.getElementById('txt-tab-panel');
     const txtCanvas = document.getElementById('txt-tab-canvas');
-    if (txtPanel) txtPanel.innerText = (currentLang === 'fr') ? 'Source & Filaments' : 'Source & Filaments';
+    if (txtPanel) txtPanel.innerText = 'Source & Filaments';
     if (txtCanvas) txtCanvas.innerText = (currentLang === 'fr') ? 'Vue Bas-Relief 3D' : '3D Relief View';
-    
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key]) {
@@ -913,15 +1043,19 @@ function setLang(lang) {
     });
 
     const txtOpt = document.getElementById('txt-optical-model');
-    if (txtOpt) {
-        txtOpt.innerText = config.opticalModel === 'beer_lambert' 
-            ? (currentLang === 'fr' ? 'Beer-Lambert TD' : 'Beer-Lambert TD')
-            : (currentLang === 'fr' ? 'Rampe Cubique' : 'Cubic Ramp');
+    if (txtOpt && typeof config !== 'undefined') {
+        if (config.opticalModel === 'kubelka_munk') {
+            txtOpt.innerText = 'Kubelka-Munk TD';
+        } else if (config.opticalModel === 'beer_lambert') {
+            txtOpt.innerText = 'Beer-Lambert TD';
+        } else {
+            txtOpt.innerText = (currentLang === 'fr') ? 'Rampe Cubique' : 'Cubic Ramp';
+        }
     }
 
-    renderFilamentStackUI();
-    renderAIPalettesUI();
-    updateSlicerTable();
-    updateHUD();
+    if (typeof renderFilamentStackUI === 'function') renderFilamentStackUI();
+    if (typeof renderAIPalettesUI === 'function') renderAIPalettesUI();
+    if (typeof updateSlicerTable === 'function') updateSlicerTable();
+    if (typeof updateHUD === 'function') updateHUD();
 }
 

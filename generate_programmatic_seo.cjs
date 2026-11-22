@@ -334,12 +334,13 @@ const converters = [
     ref: 'filament-painting-studio',
     titleEn: 'Convert Photo to Multi-Color 3MF Filament Painting Online | Studios-Pro',
     titleFr: 'Convertir Photo en Filament Painting 3MF Multi-Couleur en Ligne | Studios-Pro',
-    descEn: 'Convert 2D JPG/PNG photographs into multi-color filament painting reliefs and ready-to-print 3MF files with automated layer-swap slicing heights.',
-    descFr: 'Convertissez des photos 2D JPG/PNG en tableaux de filaments 3D et fichiers 3MF prêts à imprimer avec instructions de changement de couleur par couche.',
+    descEn: 'Convert 2D JPG/PNG photographs into multi-color filament painting reliefs and native Bambu Studio / OrcaSlicer auto-swap 3MF files with Kubelka-Munk TD physics and Camera TD calibration.',
+    descFr: 'Convertissez des photos 2D JPG/PNG en tableaux de filaments 3D et fichiers 3MF natifs Bambu Studio / OrcaSlicer avec changements de couche automatiques, physique TD Kubelka-Munk et calibration Caméra TD.',
     h1En: 'Convert Photo to Multi-Color Filament Painting 3MF Online',
     h1Fr: 'Convertir une Photo en Filament Painting 3MF Multi-Couleur en Ligne',
-    featureEn: 'Instant 2D-to-3D layer transmission analysis, automated color palette mapping, precise layer height calculation, and direct Bambu Lab / OrcaSlicer 3MF export.',
-    featureFr: 'Analyse instantanée de transmission par couche, cartographie de palette de couleurs, calcul précis des hauteurs et export 3MF direct Bambu Lab / OrcaSlicer.'
+    featureEn: 'Linear-RGB Kubelka-Munk TD blending, 250+ commercial spools + My Spool Rack (.hfp import), Camera TD auto-calibrator, ΔE2000 heatmap, CMYW color lithophanes, and native Bambu/Orca auto-swap 3MF export.',
+    featureFr: 'Mélange optique Kubelka-Munk TD en RVB linéaire, 250+ bobines + Mon Rack (.hfp), auto-calibrateur Caméra TD, carte ΔE2000, lithophanies couleur CMYW et export 3MF auto-swap Bambu/Orca.',
+    ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg'
   }
 ];
 
@@ -603,12 +604,12 @@ const nicheTools = [
     ref: 'filament-painting-studio',
     titleEn: 'Free Online Filament Painting & Layer-Swap Studio | Studios-Pro',
     titleFr: 'Studio Gratuit de Filament Painting & Changement de Couche en Ligne | Studios-Pro',
-    descEn: 'Turn any photograph into a stunning multi-color 3D filament painting. Calculate layer swap heights, optical transmission (TD), and export 3MF for Bambu Lab, Prusa, Creality.',
-    descFr: 'Transformez vos photos en superbes peintures de filaments 3D. Calculez les hauteurs de changement de couche, TD optique et exportez en 3MF pour Bambu Lab, Prusa, Creality.',
+    descEn: 'Turn any photograph into a photorealistic multi-color 3D filament painting or CMYW color lithophane. Kubelka-Munk TD physics, Camera TD auto-calibrator, 250+ spools, interlocking murals, and native Bambu/Orca 3MF export.',
+    descFr: 'Transformez vos photos en peintures de filaments 3D photoréalistes ou lithophanies couleur CMYW. Physique TD Kubelka-Munk, Caméra TD, 250+ bobines, fresques à queue d\'aronde et export 3MF Bambu/Orca.',
     h1En: 'Free Online Filament Painting & Layer-Swap 3D Studio',
     h1Fr: 'Studio de Peinture de Filaments & Changement de Couche 3D Gratuit',
-    featureEn: 'Optical transmission distance (TD) modeling, auto-palette color extraction, interactive layer slicing visualizer, G-code swap script generator, and native Bambu AMS 3MF export.',
-    featureFr: 'Modélisation de transmission optique (TD), extraction de palette automatique, visualiseur de tranchage par couches, script G-code et export 3MF natif Bambu AMS.',
+    featureEn: 'Kubelka-Munk TD optical engine, Smartphone Camera TD Auto-Calibrator, My Spool Rack (250+ Bambu/Polymaker/Sunlu/eSUN/Prusament spools + .hfp import), ΔE2000 heatmap, CMYW color lithophanes, interlocking dovetail murals, 4K studio mockups, standalone 3D HTML client proof, and native auto-swap 3MF.',
+    featureFr: 'Moteur optique Kubelka-Munk TD, Auto-Calibrateur Caméra TD, Mon Rack (250+ bobines Bambu/Polymaker/Sunlu/eSUN/Prusament + import .hfp), carte ΔE2000, lithophanies CMYW, fresques murales emboîtables, mockups 4K, aperçu HTML 3D autonome et 3MF auto-swap natif.',
     ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg'
   },
   {
@@ -796,20 +797,21 @@ const comparisons = [
     ref: 'filament-painting-studio',
     titleEn: 'Best Free Online Alternative to HueForge | Filament Painting Studio | Studios-Pro',
     titleFr: 'Meilleure Alternative Gratuite en Ligne à HueForge | Filament Painting Studio | Studios-Pro',
-    descEn: 'Looking for a free online alternative to HueForge? Studios-Pro lets you convert photos into multi-color filament painting models and Bambu Lab AMS 3MF files directly in your web browser with zero installation.',
-    descFr: 'Vous cherchez une alternative gratuite en ligne à HueForge ? Studios-Pro transforme vos photos en tableaux 3D de filaments multi-couleurs et fichiers 3MF pour Bambu Lab AMS directement dans le navigateur.',
+    descEn: 'Looking for a browser-based alternative to HueForge? Studios-Pro combines Kubelka-Munk TD physics, Smartphone Camera TD Calibration, My Spool Rack (.hfp import), CMYW color lithophanes, and native Bambu/Orca auto-swap 3MF export.',
+    descFr: 'Vous cherchez une alternative en ligne à HueForge ? Studios-Pro combine physique TD Kubelka-Munk, Caméra TD smartphone, Mon Rack (.hfp), lithophanies CMYW et export 3MF auto-swap Bambu/Orca.',
     h1En: 'Best Free Online Alternative to HueForge',
     h1Fr: 'Meilleure Alternative Gratuite en Ligne à HueForge',
-    leadEn: 'Create breathtaking multi-color filament painting reliefs from photographs with optical transmission simulation (TD), automatic palette extraction, layer swap heights, and direct Bambu AMS 3MF export.',
-    leadFr: 'Créez de superbes tableaux 3D en filaments de couleur à partir de photos avec simulation de transmission optique (TD), palette automatique, hauteurs de changement de couche et export 3MF Bambu AMS.',
+    leadEn: 'Create photorealistic multi-color filament paintings & CMYW color lithophanes right in your browser with Linear-RGB Kubelka-Munk TD optics, free Camera TD Auto-Calibration, 250+ spools + .hfp import, ΔE2000 fidelity heatmap, interlocking wall murals, 4K Etsy mockups, and native Bambu/Orca auto-swap 3MF export.',
+    leadFr: 'Créez des peintures de filaments multi-couleurs photoréalistes et lithophanies CMYW dans votre navigateur avec optique Kubelka-Munk TD, calibration Caméra TD gratuite, 250+ bobines + import .hfp, carte ΔE2000, fresques emboîtables, mockups 4K et export 3MF auto-swap Bambu/Orca.',
+    ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg',
     table: [
-      { featureEn: 'Software License Cost', featureFr: 'Coût de la licence logicielle', us: 'Free / $0 Online', competitor: '$18 - $30+ USD (Paid License)' },
-      { featureEn: 'Installation Required', featureFr: 'Installation requise', us: 'No (100% In-Browser)', competitor: 'Yes (Desktop App Download)' },
-      { featureEn: 'Cross-Platform (Windows, Mac, iPad, Chromebook)', featureFr: 'Multiplateforme (Windows, Mac, iPad, Chromebook)', us: 'Full Support (Any Modern Browser)', competitor: 'Limited to Windows / Mac Desktop' },
-      { featureEn: 'Bambu Lab AMS Multi-Color 3MF Export', featureFr: 'Export 3MF Multi-Couleur Bambu Lab AMS', us: 'Direct Instant 3MF Download', competitor: 'Supported' },
-      { featureEn: 'Real-Time Optical Transmission Simulation (TD)', featureFr: 'Simulation de transmission optique (TD) en direct', us: 'Integrated Beer-Lambert Engine', competitor: 'Supported' },
-      { featureEn: 'Layer-by-Layer Slicing Animation & Guide', featureFr: 'Animation de tranchage couche par couche & Guide', us: 'Interactive 3D Slicer Visualizer', competitor: 'Manual Slider View' },
-      { featureEn: 'Interactive Standalone HTML Export', featureFr: 'Export HTML interactif autonome', us: 'Included (Shareable 3D Web File)', competitor: 'No' }
+      { featureEn: 'Zero Installation (Windows, Mac, iPad, Chromebook)', featureFr: 'Zéro installation (Windows, Mac, iPad, Chromebook)', us: '100% In-Browser WebGL + Web Workers', competitor: 'Desktop App Download Required' },
+      { featureEn: 'Smartphone Camera TD Auto-Calibrator', featureFr: 'Auto-Calibrateur Caméra TD Smartphone', us: 'Included Free (Zero $50 TD-1 Hardware)', competitor: 'Requires External TD-1 Hardware / Manual' },
+      { featureEn: 'My Spool Rack + "Print With What I Own" Solver', featureFr: 'Mon Rack de Bobines + Solveur ΔE2000 Personnel', us: '250+ Spools + .hfp / CSV / JSON Import', competitor: 'Owned Library Only (No Web Sync)' },
+      { featureEn: 'Native Bambu Studio / OrcaSlicer Auto-Swap 3MF', featureFr: 'Export 3MF Auto-Swap Bambu Studio / OrcaSlicer', us: 'Embedded AMS/M600 G-code + DEFLATE 3MF', competitor: 'STL + Manual Swap Instructions' },
+      { featureEn: 'Real-Time Optical Engine & ΔE2000 Fidelity Heatmap', featureFr: 'Moteur Optique & Carte de Fidélité ΔE2000', us: 'Linear-RGB Kubelka-Munk + Click Gamut Advisor', competitor: 'Optical Preview Only' },
+      { featureEn: 'CMYW 4-Spool Color Lithophanes & Curved Lamps', featureFr: 'Lithophanies Couleur CMYW & Lampes Courbées', us: 'Built-In Backlit LED Shader + 360° Lamps', competitor: 'Flat Paintings Only' },
+      { featureEn: '4K Studio Gallery Mockups & Standalone 3D HTML Proof', featureFr: 'Mockups Galerie 4K & Aperçu 3D HTML Autonome', us: 'Included (Wall/Desk/LED/Etsy + WebGL HTML)', competitor: 'No' }
     ]
   },
   {

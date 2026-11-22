@@ -2,6 +2,17 @@
     if (typeof window.lucide === 'undefined') {
         window.lucide = { createIcons: function() {} };
     }
+
+    // Safe HTML escaper to prevent DOM XSS across all dynamic panels (filament names, URL params, etc.)
+    window.safeEscapeHtml = function(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
     const _crcTable = (function() {
         const t = new Uint32Array(256);
         for (let n = 0; n < 256; n++) {
@@ -11,14 +22,17 @@
         }
         return t;
     })();
+
     function _crc32(bytes) {
         let c = 0xFFFFFFFF;
         for (let i = 0; i < bytes.length; i++) c = _crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
         return (c ^ 0xFFFFFFFF) >>> 0;
     }
+
     function _toBytes(data, opts) {
         if (data instanceof Uint8Array) return data;
         if (data instanceof ArrayBuffer) return new Uint8Array(data);
+        if (typeof Blob !== 'undefined' && data instanceof Blob) return data;
         if (typeof data === 'string') {
             if (opts && opts.base64) {
                 const bin = atob(data);
@@ -30,6 +44,24 @@
         }
         return new Uint8Array(0);
     }
+
+    async function _deflateRawBytes(bytes) {
+        if (typeof CompressionStream === 'undefined' || !bytes || bytes.length < 64) {
+            return { method: 0, payload: bytes };
+        }
+        try {
+            const cs = new CompressionStream('deflate-raw');
+            const writer = cs.writable.getWriter();
+            writer.write(bytes);
+            writer.close();
+            const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+            if (compressed.length < bytes.length) {
+                return { method: 8, payload: compressed };
+            }
+        } catch (_) {}
+        return { method: 0, payload: bytes };
+    }
+
     class MinimalStoreZip {
         constructor(prefix = '', root = null) {
             this._prefix = prefix;
@@ -42,31 +74,41 @@
         }
         file(name, data, opts) {
             const fullPath = `${this._prefix}${String(name || '')}`;
-            const bytes = _toBytes(data, opts);
-            this._root._entries.push({ pathBytes: new TextEncoder().encode(fullPath), bytes, crc: _crc32(bytes) });
+            const raw = _toBytes(data, opts);
+            this._root._entries.push({ pathBytes: new TextEncoder().encode(fullPath), raw });
             return this;
         }
         async generateAsync(options) {
             const entries = this._root._entries || [];
+            const wantDeflate = !!(options && String(options.compression || '').toUpperCase() === 'DEFLATE');
             const localParts = [];
             const centralParts = [];
             let offset = 0;
+
             for (let i = 0; i < entries.length; i++) {
                 const e = entries[i];
+                let bytes = e.raw;
+                if (typeof Blob !== 'undefined' && bytes instanceof Blob) {
+                    bytes = new Uint8Array(await bytes.arrayBuffer());
+                }
+                const crc = _crc32(bytes);
+                const uncompressedLen = bytes.length;
+                const { method, payload } = wantDeflate ? await _deflateRawBytes(bytes) : { method: 0, payload: bytes };
+                const compressedLen = payload.length;
                 const nLen = e.pathBytes.length;
-                const dLen = e.bytes.length;
+
                 const lh = new Uint8Array(30 + nLen);
                 const lv = new DataView(lh.buffer);
                 lv.setUint32(0, 0x04034B50, true);
                 lv.setUint16(4, 20, true);
                 lv.setUint16(6, 0x0800, true);
-                lv.setUint16(8, 0, true);
-                lv.setUint32(14, e.crc, true);
-                lv.setUint32(18, dLen, true);
-                lv.setUint32(22, dLen, true);
+                lv.setUint16(8, method, true);
+                lv.setUint32(14, crc, true);
+                lv.setUint32(18, compressedLen, true);
+                lv.setUint32(22, uncompressedLen, true);
                 lv.setUint16(26, nLen, true);
                 lh.set(e.pathBytes, 30);
-                localParts.push(lh, e.bytes);
+                localParts.push(lh, payload);
 
                 const ch = new Uint8Array(46 + nLen);
                 const cv = new DataView(ch.buffer);
@@ -74,17 +116,18 @@
                 cv.setUint16(4, 20, true);
                 cv.setUint16(6, 20, true);
                 cv.setUint16(8, 0x0800, true);
-                cv.setUint16(10, 0, true);
-                cv.setUint32(16, e.crc, true);
-                cv.setUint32(20, dLen, true);
-                cv.setUint32(24, dLen, true);
+                cv.setUint16(10, method, true);
+                cv.setUint32(16, crc, true);
+                cv.setUint32(20, compressedLen, true);
+                cv.setUint32(24, uncompressedLen, true);
                 cv.setUint16(28, nLen, true);
                 cv.setUint32(42, offset, true);
                 ch.set(e.pathBytes, 46);
                 centralParts.push(ch);
 
-                offset += lh.length + dLen;
+                offset += lh.length + compressedLen;
             }
+
             let cSize = 0;
             for (let i = 0; i < centralParts.length; i++) cSize += centralParts[i].length;
             const eocd = new Uint8Array(22);
@@ -106,5 +149,6 @@
             return new Blob(allParts, { type: 'application/zip' });
         }
     }
+
     window.MinimalStoreZip = MinimalStoreZip;
 })();

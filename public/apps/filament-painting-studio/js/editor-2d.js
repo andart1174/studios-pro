@@ -1,7 +1,7 @@
 // ==========================================
 // 🎨 2D STUDIO & SMART HEALING ERASER ENGINE
 // ==========================================
-let editorZoom = 1.0;
+// editorZoom is declared in js/catalog-td.js
 
 function updateEditorCanvasDisplaySize() {
     if (!editorCanvas || !processedCanvas.width || !processedCanvas.height) return;
@@ -50,144 +50,134 @@ window.addEventListener('resize', () => {
     if (centerViewMode === '2d') updateEditorCanvasDisplaySize();
 });
 
-// Renders 2D Canvas matching the 3D Viewport photorealistic colors + Symmetry & Z-Chisel Overlays
+// Renders 2D Canvas matching the 3D Viewport photorealistic colors + Symmetry, Cutout Alpha & Z-Chisel Overlays
+let _last2DDisplayW = 0, _last2DDisplayH = 0, _last2DDisplayZoom = 0;
+
 function render2DEditorPreview() {
     if (!editorCanvas || !editorCtx || !colorDataBuffer || !processedCanvas.width) return;
     const width = processedCanvas.width;
     const height = processedCanvas.height;
 
+    let sizeChanged = false;
     if (editorCanvas.width !== width || editorCanvas.height !== height) {
         editorCanvas.width = width;
         editorCanvas.height = height;
+        sizeChanged = true;
     }
 
     const imgData = editorCtx.createImageData(width, height);
     const data = imgData.data;
-    const showZMap = (activeEditorTool === 'chisel') && !!document.getElementById('chk-show-zmap')?.checked;
+    const showZMap = (activeEditorTool === 'chisel' || activeEditorTool === 'fx') && (activeEditorTool === 'fx' || !!document.getElementById('chk-show-zmap')?.checked);
 
-    if (studioMode === 'draw' || isDrawingTemplateActive) {
-        data.set(colorDataBuffer);
-        if (showZMap && customZDeltaBuffer) {
-            for (let pIdx = 0; pIdx < customZDeltaBuffer.length; pIdx++) {
-                const zd = customZDeltaBuffer[pIdx];
-                if (Math.abs(zd) > 0.01) {
-                    const i = pIdx * 4;
-                    const alpha = Math.min(0.65, Math.abs(zd) * 0.9);
-                    if (zd > 0) {
-                        data[i] = Math.round(data[i] * (1 - alpha) + 52 * alpha);
-                        data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 211 * alpha);
-                        data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 153 * alpha);
-                    } else {
-                        data[i] = Math.round(data[i] * (1 - alpha) + 251 * alpha);
-                        data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 146 * alpha);
-                        data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 60 * alpha);
-                    }
-                }
-            }
+    const snapFactor = ((config.boundarySharpness !== undefined ? config.boundarySharpness : config.colorSnap) || 80) / 100.0;
+    const tdBlendStrength = (config.tdOpticalBlend !== undefined ? config.tdOpticalBlend : 65) / 100.0;
+    const ditherPct = config.opticalDithering !== undefined ? config.opticalDithering : 20;
+    const baseZ = typeof getEffectiveRearBaseZ === 'function' ? getEffectiveRearBaseZ() : (config.baseThickness || 0.60);
+    const maxReliefZ = Math.max(baseZ + 0.4, config.maxRelief || 2.4);
+    const parsedFilaments = filaments.map(f => ({
+        rgb: hexToRgb(f.color),
+        color: f.color,
+        startPct: f.startPct,
+        td: f.td || 3.0
+    }));
+    const sortedTD = prepareSortedFilamentsForTD(filaments);
+    const baseRgbCache = parsedFilaments[0] ? parsedFilaments[0].rgb : [17, 24, 39];
+    const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
+
+    let hasSolidPixels = false;
+    for (let pIdx = 0; pIdx < width * height; pIdx++) {
+        if (!isPixelCutoutVoid(pIdx % width, (pIdx / width) | 0, width, height, cachedBgRgb, baseRgbCache)) {
+            hasSolidPixels = true;
+            break;
         }
-    } else {
-        const snapFactor = config.colorSnap / 100.0;
-        const tdBlendStrength = (config.tdOpticalBlend !== undefined ? config.tdOpticalBlend : 65) / 100.0;
-        const ditherPct = config.opticalDithering !== undefined ? config.opticalDithering : 20;
-        const baseZ = config.baseThickness;
-        const maxReliefZ = config.maxRelief;
-        const parsedFilaments = filaments.map(f => ({
-            rgb: hexToRgb(f.color),
-            color: f.color,
-            startPct: f.startPct,
-            td: f.td || 3.0
-        }));
+    }
 
-        const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
-        let hasSolidPixels = false;
-        for (let pIdx = 0; pIdx < width * height; pIdx++) {
-            if (!isPixelCutoutVoid(pIdx % width, (pIdx / width) | 0, width, height, cachedBgRgb)) {
-                hasSolidPixels = true;
-                break;
-            }
+    const isDrawOrTemplate = (studioMode === 'draw' || isDrawingTemplateActive);
+    const kelvinHex = (typeof KELVIN_HEX_MAP !== 'undefined' ? KELVIN_HEX_MAP[config.lightboxKelvin || 4000] : 0xfff4e0) || 0xfff4e0;
+
+    for (let i = 0; i < colorDataBuffer.length; i += 4) {
+        const pIdx = i >> 2;
+        const colIdx = pIdx % width;
+        const rowIdx = (pIdx / width) | 0;
+
+        // Show dark studio alpha-checkerboard in BOTH Photo AND Draw/Template modes for voids/cutouts/shapes!
+        if (hasSolidPixels && isPixelCutoutVoid(colIdx, rowIdx, width, height, cachedBgRgb, baseRgbCache)) {
+            const checker = (((colIdx >> 3) + (rowIdx >> 3)) & 1) === 0;
+            data[i] = checker ? 13 : 21;
+            data[i + 1] = checker ? 18 : 29;
+            data[i + 2] = checker ? 28 : 44;
+            data[i + 3] = 255;
+            continue;
         }
 
-        for (let i = 0; i < colorDataBuffer.length; i += 4) {
-            const pIdx = i / 4;
-            const colIdx = pIdx % width;
-            const rowIdx = Math.floor(pIdx / width);
+        const userFilSlot = (filamentSlotBuffer && filamentSlotBuffer[pIdx] !== 255 && filamentSlotBuffer[pIdx] < parsedFilaments.length) ? filamentSlotBuffer[pIdx] : null;
 
-            // Show sleek dark studio alpha-checkerboard for removed canvas & physical through-holes
-            if (hasSolidPixels && isPixelCutoutVoid(colIdx, rowIdx, width, height, cachedBgRgb)) {
-                const checker = (((colIdx >> 3) + (rowIdx >> 3)) & 1) === 0;
-                data[i] = checker ? 13 : 21;
-                data[i + 1] = checker ? 18 : 29;
-                data[i + 2] = checker ? 28 : 44;
-                data[i + 3] = 255;
-                continue;
-            }
+        if (userFilSlot !== null) {
+            // Live remap from active filaments[userFilSlot] so changing spool color ALWAYS updates 2D Draw/Template view!
+            const filRgb = parsedFilaments[userFilSlot].rgb;
+            data[i] = filRgb[0];
+            data[i + 1] = filRgb[1];
+            data[i + 2] = filRgb[2];
+            data[i + 3] = 255;
+        } else if (isDrawOrTemplate) {
+            data[i] = colorDataBuffer[i];
+            data[i + 1] = colorDataBuffer[i + 1];
+            data[i + 2] = colorDataBuffer[i + 2];
+            data[i + 3] = 255;
+        } else {
+            const r = colorDataBuffer[i];
+            const g = colorDataBuffer[i + 1];
+            const b = colorDataBuffer[i + 2];
+            const lum = heightDataBuffer ? heightDataBuffer[pIdx] : ((0.299 * r + 0.587 * g + 0.114 * b) / 255.0);
+            const zDelta = customZDeltaBuffer ? customZDeltaBuffer[pIdx] : 0;
 
-            const userFilSlot = (filamentSlotBuffer && filamentSlotBuffer[pIdx] !== 255 && filamentSlotBuffer[pIdx] < parsedFilaments.length) ? filamentSlotBuffer[pIdx] : null;
-
-            if (userFilSlot !== null) {
-                const filRgb = parsedFilaments[userFilSlot].rgb;
-                data[i] = filRgb[0];
-                data[i + 1] = filRgb[1];
-                data[i + 2] = filRgb[2];
-                data[i + 3] = 255;
+            if (config.colorMode === 'luminance') {
+                const gVal = Math.round(lum * 255);
+                data[i] = gVal; data[i + 1] = gVal; data[i + 2] = gVal; data[i + 3] = 255;
+            } else if (config.colorMode === 'cmyw') {
+                const thick = baseZ + (1.0 - Math.pow(lum, 0.72)) * (maxReliefZ - baseZ) + zDelta;
+                const [cr2, cg2, cb2] = computeCMYWBacklitColor(r, g, b, Math.max(0.2, thick), maxReliefZ, kelvinHex);
+                data[i] = cr2; data[i + 1] = cg2; data[i + 2] = cb2; data[i + 3] = 255;
+            } else if (config.colorMode === 'stratified') {
+                const zVal = Math.max(baseZ, Math.min(maxReliefZ, baseZ + lum * (maxReliefZ - baseZ) + zDelta));
+                const [tdR, tdG, tdB] = computeBeerLambertTDColor(lum, zVal, baseZ, maxReliefZ, sortedTD, tdBlendStrength, true);
+                data[i] = tdR; data[i + 1] = tdG; data[i + 2] = tdB; data[i + 3] = 255;
             } else {
-                const r = colorDataBuffer[i];
-                const g = colorDataBuffer[i + 1];
-                const b = colorDataBuffer[i + 2];
-                const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
+                const bestFilIdx = findClosestFilamentWithDither(r, g, b, colIdx, rowIdx, parsedFilaments, ditherPct);
+                const filRgb = parsedFilaments[bestFilIdx].rgb;
+                let outR = r + (filRgb[0] - r) * snapFactor;
+                let outG = g + (filRgb[1] - g) * snapFactor;
+                let outB = b + (filRgb[2] - b) * snapFactor;
 
-                if (config.colorMode === 'stratified') {
-                    const zVal = baseZ + lum * (maxReliefZ - baseZ);
-                    const [tdR, tdG, tdB] = computeBeerLambertTDColor(
-                        lum, zVal, baseZ, maxReliefZ, parsedFilaments, tdBlendStrength, colIdx, rowIdx, ditherPct
-                    );
-                    data[i] = tdR;
-                    data[i + 1] = tdG;
-                    data[i + 2] = tdB;
-                    data[i + 3] = 255;
-                } else {
-                    const bestFilIdx = findClosestFilamentWithDither(r, g, b, colIdx, rowIdx, parsedFilaments, ditherPct);
-                    const filRgb = parsedFilaments[bestFilIdx].rgb;
-
-                    let outR = Math.round(r * (1 - snapFactor) + filRgb[0] * snapFactor);
-                    let outG = Math.round(g * (1 - snapFactor) + filRgb[1] * snapFactor);
-                    let outB = Math.round(b * (1 - snapFactor) + filRgb[2] * snapFactor);
-
-                    if (tdBlendStrength > 0.02 && bestFilIdx > 0) {
-                        const dz = Math.max(0.06, lum * (maxReliefZ - baseZ));
-                        const tdMm = Math.max(0.4, parsedFilaments[bestFilIdx].td || 3.0);
-                        const transmission = Math.exp(-3.1 * (dz / (tdMm * 0.55)));
-                        const baseInfluence = Math.min(0.40, transmission * tdBlendStrength * 0.42);
-                        const baseRgb = parsedFilaments[0].rgb;
-                        outR = Math.round(outR * (1 - baseInfluence) + baseRgb[0] * baseInfluence);
-                        outG = Math.round(outG * (1 - baseInfluence) + baseRgb[1] * baseInfluence);
-                        outB = Math.round(outB * (1 - baseInfluence) + baseRgb[2] * baseInfluence);
-                    }
-
-                    if (config.preserveEyes && (r > 190 && g > 150 && b < 80)) {
-                        outR = 234; outG = 179; outB = 8;
-                    }
-
-                    data[i] = Math.max(0, Math.min(255, outR));
-                    data[i + 1] = Math.max(0, Math.min(255, outG));
-                    data[i + 2] = Math.max(0, Math.min(255, outB));
-                    data[i + 3] = 255;
+                if (!config.removeCanvasBg && tdBlendStrength > 0.05 && bestFilIdx > 0) {
+                    const dz = Math.max(0.04, lum * (maxReliefZ - baseZ));
+                    const tdMm = Math.max(0.25, parsedFilaments[bestFilIdx].td || 3.0);
+                    const transmission = Math.exp(-3.45 * dz / tdMm);
+                    const baseInfluence = Math.min(0.36, transmission * tdBlendStrength * 0.40);
+                    outR = outR * (1 - baseInfluence) + baseRgbCache[0] * baseInfluence;
+                    outG = outG * (1 - baseInfluence) + baseRgbCache[1] * baseInfluence;
+                    outB = outB * (1 - baseInfluence) + baseRgbCache[2] * baseInfluence;
                 }
-            }
 
-            if (showZMap && customZDeltaBuffer) {
-                const zd = customZDeltaBuffer[pIdx];
-                if (Math.abs(zd) > 0.01) {
-                    const alpha = Math.min(0.65, Math.abs(zd) * 0.9);
-                    if (zd > 0) {
-                        data[i] = Math.round(data[i] * (1 - alpha) + 52 * alpha);
-                        data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 211 * alpha);
-                        data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 153 * alpha);
-                    } else {
-                        data[i] = Math.round(data[i] * (1 - alpha) + 251 * alpha);
-                        data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 146 * alpha);
-                        data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 60 * alpha);
-                    }
+                data[i] = Math.max(0, Math.min(255, Math.round(outR)));
+                data[i + 1] = Math.max(0, Math.min(255, Math.round(outG)));
+                data[i + 2] = Math.max(0, Math.min(255, Math.round(outB)));
+                data[i + 3] = 255;
+            }
+        }
+
+        if (showZMap && customZDeltaBuffer) {
+            const zd = customZDeltaBuffer[pIdx];
+            if (Math.abs(zd) > 0.01) {
+                const alpha = Math.min(0.65, Math.abs(zd) * 0.9);
+                if (zd > 0) {
+                    data[i] = Math.round(data[i] * (1 - alpha) + 52 * alpha);
+                    data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 211 * alpha);
+                    data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 153 * alpha);
+                } else {
+                    data[i] = Math.round(data[i] * (1 - alpha) + 251 * alpha);
+                    data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + 146 * alpha);
+                    data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + 60 * alpha);
                 }
             }
         }
@@ -195,7 +185,7 @@ function render2DEditorPreview() {
 
     editorCtx.putImageData(imgData, 0, 0);
 
-    // Draw visual symmetry axes if Symmetry / Mandala / Kaleidoscope mode is active
+    // Draw visual symmetry axes matching applyWithSymmetry() geometry 100%!
     if (editorSymmetryMode !== 'none') {
         editorCtx.save();
         editorCtx.strokeStyle = 'rgba(56, 189, 248, 0.50)';
@@ -208,8 +198,10 @@ function render2DEditorPreview() {
         const radialMap = { hex6: 6, mandala: 8, rosette12: 12, sun16: 16, lotus24: 24, rot4: 4 };
         if (radialMap[editorSymmetryMode]) {
             const spokes = radialMap[editorSymmetryMode];
+            // Offset hex6 by +30deg (pi/6) so guides align with Y-axis mirror folds!
+            const phaseOffset = (editorSymmetryMode === 'hex6') ? (Math.PI / 6) : 0;
             for (let k = 0; k < spokes; k++) {
-                const ang = (k * Math.PI * 2) / spokes;
+                const ang = phaseOffset + (k * Math.PI * 2) / spokes;
                 editorCtx.beginPath();
                 editorCtx.moveTo(cx, cy);
                 editorCtx.lineTo(cx + Math.cos(ang) * m, cy + Math.sin(ang) * m);
@@ -229,8 +221,8 @@ function render2DEditorPreview() {
                 editorCtx.beginPath(); editorCtx.moveTo(0, cy); editorCtx.lineTo(width, cy); editorCtx.stroke();
             }
             if (editorSymmetryMode === 'diag') {
+                // Single main diagonal matching (dx,dy) -> (dy,dx) reflection!
                 editorCtx.beginPath(); editorCtx.moveTo(cx - m, cy - m); editorCtx.lineTo(cx + m, cy + m); editorCtx.stroke();
-                editorCtx.beginPath(); editorCtx.moveTo(cx + m, cy - m); editorCtx.lineTo(cx - m, cy + m); editorCtx.stroke();
             }
         }
         editorCtx.restore();
@@ -266,7 +258,13 @@ function render2DEditorPreview() {
         editorCtx.restore();
     }
 
-    updateEditorCanvasDisplaySize();
+    // Only recompute CSS display box when dimensions or zoom actually changed (eliminates layout thrashing!)
+    if (sizeChanged || _last2DDisplayW !== config.width || _last2DDisplayH !== config.height || _last2DDisplayZoom !== editorZoom) {
+        _last2DDisplayW = config.width;
+        _last2DDisplayH = config.height;
+        _last2DDisplayZoom = editorZoom;
+        updateEditorCanvasDisplaySize();
+    }
 }
 
 function syncBufferToEditorCanvas() {
@@ -428,6 +426,7 @@ function syncProcessedCanvasFromBuffer() {
 
 function switchStudioMode(mode) {
     commitLiveToolIfNeeded();
+    const prevMode = studioMode;
     studioMode = mode;
     const btnPhoto = document.getElementById('btn-studio-photo');
     const btnDraw = document.getElementById('btn-studio-draw');
@@ -439,6 +438,10 @@ function switchStudioMode(mode) {
     const sec1Title = document.getElementById('txt-title-sec1');
 
     if (mode === 'draw') {
+        // Non-destructively back up Photo Mode buffers BEFORE opening blank Draw canvas!
+        if (prevMode === 'photo' && !isDrawingTemplateActive && colorDataBuffer) {
+            savedPhotoStateBackup = captureCurrentCanvasBackup(false);
+        }
         if (btnPhoto) btnPhoto.classList.remove('active');
         if (btnDraw) btnDraw.classList.add('active');
         if (subPhoto) subPhoto.style.display = 'none';
@@ -448,7 +451,6 @@ function switchStudioMode(mode) {
         if (subOrient) subOrient.style.display = 'none';
         if (sec1Title) sec1Title.innerText = currentLang === 'fr' ? '1. Modèles CAD & Toile Vierge' : '1. CAD Templates & Clean Screen';
 
-        // Open a 100% Clean Blank Canvas by default when switching to Draw mode!
         openCleanBlankCanvas();
     } else {
         if (btnPhoto) btnPhoto.classList.add('active');
@@ -461,8 +463,15 @@ function switchStudioMode(mode) {
         if (sec1Title) sec1Title.innerText = translations[currentLang].titleSourceImage;
 
         isDrawingTemplateActive = false;
-        if (!colorDataBuffer && sourceImage) {
-            processSourceImage();
+        config.removeCanvasBg = false;
+        syncRemoveCanvasUI();
+
+        // Restore the user's photo cleanly instead of stranding them on the blank black canvas!
+        if (savedPhotoStateBackup && restoreCanvasFromBackup(savedPhotoStateBackup)) {
+            syncProcessedCanvasFromBuffer();
+            if (typeof rebuildBgExteriorVoidMask === 'function') rebuildBgExteriorVoidMask(processedCanvas.width, processedCanvas.height);
+        } else if (sourceImage) {
+            processSourceImage(false, true);
         }
         setCenterViewMode('3d');
     }
@@ -502,6 +511,7 @@ function setCenterViewMode(mode) {
 
         if (colorDataBuffer && processedCanvas.width) {
             syncProcessedCanvasFromBuffer();
+            if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
             generate3DReliefMesh();
         }
     }
@@ -542,25 +552,25 @@ function populateOutlineSlotDropdowns() {
     ['select-text-outline-slot', 'select-stamp-outline-slot', 'select-shape-outline-slot'].forEach(selId => {
         const sel = document.getElementById(selId);
         if (!sel) return;
-        const curVal = sel.value;
+        const curNum = parseInt(sel.value, 10);
         const noneLabel = translations[currentLang]?.optOutlineNone || 'None';
         let html = `<option value="-1">${noneLabel}</option>`;
         filaments.forEach((f, idx) => {
-            html += `<option value="${idx}">Slot ${idx + 1}: ${f.name.split(' ')[0]} (${f.color.toUpperCase()})</option>`;
+            html += `<option value="${idx}">Slot ${idx + 1}: ${window.safeEscapeHtml(f.name.split(' ')[0])} (${f.color.toUpperCase()})</option>`;
         });
         sel.innerHTML = html;
-        sel.value = curVal !== undefined && curVal !== '' ? curVal : '-1';
+        sel.value = (!isNaN(curNum) && curNum >= -1 && curNum < filaments.length) ? String(curNum) : '-1';
     });
 
     const rimSel = document.getElementById('select-brush-rim-slot');
     if (rimSel) {
-        const curRim = rimSel.value || '0';
+        const curRim = parseInt(rimSel.value, 10);
         let html = '';
         filaments.forEach((f, idx) => {
-            html += `<option value="${idx}">Slot ${idx + 1}: ${f.name.split(' ')[0]} (${f.color.toUpperCase()})</option>`;
+            html += `<option value="${idx}">Slot ${idx + 1}: ${window.safeEscapeHtml(f.name.split(' ')[0])} (${f.color.toUpperCase()})</option>`;
         });
         rimSel.innerHTML = html;
-        rimSel.value = curRim < filaments.length ? curRim : '0';
+        rimSel.value = (!isNaN(curRim) && curRim >= 0 && curRim < filaments.length) ? String(curRim) : '0';
     }
 }
 
@@ -634,8 +644,11 @@ function setEditorTool(tool) {
             activeFilamentSlot = filaments.length - 1;
             updateFilamentSwatchesUI();
         }
-        pushHistoryState();
-        preLiveToolBackup = captureCurrentCanvasBackup();
+        // Prevent double-clicking Text button from baking a duplicate into preLiveToolBackup!
+        if (!editorTextState.hasLivePreview) {
+            pushHistoryState();
+            preLiveToolBackup = captureCurrentCanvasBackup();
+        }
         if (editorTextState.posX === null || editorTextState.posY === null) {
             editorTextState.posX = Math.round((processedCanvas.width || 360) / 2);
             editorTextState.posY = Math.round((processedCanvas.height || 360) / 2);
@@ -650,8 +663,10 @@ function setEditorTool(tool) {
             activeFilamentSlot = filaments.length - 1;
             updateFilamentSwatchesUI();
         }
-        pushHistoryState();
-        preLiveToolBackup = captureCurrentCanvasBackup();
+        if (!editorStampState.hasLivePreview) {
+            pushHistoryState();
+            preLiveToolBackup = captureCurrentCanvasBackup();
+        }
         if (editorStampState.posX === null || editorStampState.posY === null) {
             editorStampState.posX = Math.round((processedCanvas.width || 360) / 2);
             editorStampState.posY = Math.round((processedCanvas.height || 360) / 2);
@@ -662,8 +677,10 @@ function setEditorTool(tool) {
             activeFilamentSlot = filaments.length - 1;
             updateFilamentSwatchesUI();
         }
-        pushHistoryState();
-        preLiveToolBackup = captureCurrentCanvasBackup();
+        if (!editorPatternState.hasLivePreview) {
+            pushHistoryState();
+            preLiveToolBackup = captureCurrentCanvasBackup();
+        }
         if (editorPatternState.posX === null || editorPatternState.posY === null) {
             editorPatternState.posX = Math.round((processedCanvas.width || 360) / 2);
             editorPatternState.posY = Math.round((processedCanvas.height || 360) / 2);
@@ -749,22 +766,12 @@ function init2DEditor() {
         editorCanvas = document.getElementById('interactive-editor-canvas');
         if (!editorCanvas) return;
         editorCtx = editorCanvas.getContext('2d');
+        editorCanvas.style.touchAction = 'none';
 
         editorCanvas.addEventListener('pointerdown', handleEditorPointerDown);
         window.addEventListener('pointermove', handleEditorPointerMove);
         window.addEventListener('pointerup', handleEditorPointerUp);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-                e.preventDefault();
-                if (e.shiftKey) redo();
-                else undo();
-            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-                e.preventDefault();
-                redo();
-            }
-        });
+        window.addEventListener('pointercancel', handleEditorPointerUp);
     }
 
     if (processedCanvas.width > 0) {
@@ -774,9 +781,22 @@ function init2DEditor() {
     }
 }
 
+// Global Undo/Redo shortcuts work in BOTH 3D and 2D views immediately on boot!
+window.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+    }
+});
+
 function applyHistorySnapshot(state, toastMsg) {
-    if (!state) return;
-    restoreCanvasFromBackup(state);
+    if (!state) return false;
+    if (!restoreCanvasFromBackup(state)) return false;
     if (state.preLiveLayer) {
         preLiveToolBackup = state.preLiveLayer;
     } else {
@@ -789,6 +809,7 @@ function applyHistorySnapshot(state, toastMsg) {
     render2DEditorPreview();
     requestMeshUpdate();
     showToast(toastMsg);
+    return true;
 }
 
 function pushHistoryState() {
@@ -805,22 +826,27 @@ function pushHistoryState() {
 function undo() {
     if (historyStack.length === 0) return;
     const cur = captureCurrentCanvasBackup(true);
-    if (cur) redoStack.push(cur);
     const prev = historyStack.pop();
     historyIndex = historyStack.length - 1;
-    applyHistorySnapshot(prev, translations[currentLang].toastUndo);
+    if (applyHistorySnapshot(prev, translations[currentLang].toastUndo)) {
+        if (cur) {
+            redoStack.push(cur);
+            if (redoStack.length > MAX_HISTORY) redoStack.shift();
+        }
+    }
 }
 
 function redo() {
     if (redoStack.length === 0) return;
     const cur = captureCurrentCanvasBackup(true);
-    if (cur) {
-        historyStack.push(cur);
-        if (historyStack.length > MAX_HISTORY) historyStack.shift();
-    }
     const next = redoStack.pop();
-    historyIndex = historyStack.length - 1;
-    applyHistorySnapshot(next, translations[currentLang].toastRedo);
+    if (applyHistorySnapshot(next, translations[currentLang].toastRedo)) {
+        if (cur) {
+            historyStack.push(cur);
+            if (historyStack.length > MAX_HISTORY) historyStack.shift();
+        }
+        historyIndex = historyStack.length - 1;
+    }
 }
 
 // ==========================================
@@ -862,8 +888,17 @@ function applyWithSymmetry(x0, y0, x1, y1, drawFn) {
     if (editorSymmetryMode === 'tile') {
         const hw = Math.round(w / 2);
         const hh = Math.round(h / 2);
+        const dx = x1 - x0;
+        const dy = y1 - y0;
         [[hw, 0], [0, hh], [hw, hh]].forEach(([ox, oy]) => {
-            drawFn((Math.round(x0) + ox) % w, (Math.round(y0) + oy) % h, (Math.round(x1) + ox) % w, (Math.round(y1) + oy) % h);
+            const tx0 = ((Math.round(x0) + ox) % w + w) % w;
+            const ty0 = ((Math.round(y0) + oy) % h + h) % h;
+            const tx1 = Math.round(tx0 + dx);
+            const ty1 = Math.round(ty0 + dy);
+            // Only draw continuous segment if it does not wrap across seam (eliminates streaking!)
+            if (tx1 >= 0 && tx1 < w && ty1 >= 0 && ty1 < h) {
+                drawFn(tx0, ty0, tx1, ty1);
+            }
         });
         return;
     }
@@ -896,7 +931,7 @@ function applyWithSymmetry(x0, y0, x1, y1, drawFn) {
 }
 
 // ==========================================
-// 🧹 AUTO-CLEAN STRAY PAINT SPECKS (DESPECKLE)
+// 🧹 AUTO-CLEAN STRAY PAINT SPECKS (QUANTIZED FOR REAL PHOTOS & CAD!)
 // ==========================================
 function applyDespeckleToBuffer(radius = 2, threshold = 0.65) {
     if (!colorDataBuffer || !processedCanvas.width || !processedCanvas.height) return;
@@ -905,17 +940,25 @@ function applyDespeckleToBuffer(radius = 2, threshold = 0.65) {
     const height = processedCanvas.height;
     const result = new Uint8ClampedArray(colorDataBuffer);
     const slotResult = filamentSlotBuffer ? new Uint8Array(filamentSlotBuffer) : null;
+    const parsedFils = filaments.map(f => ({ rgb: hexToRgb(f.color) }));
+
+    // Quantize RGB into 5-bit perceptual buckets (or explicit filament slots) so real continuous photos NEVER shift by 2px!
+    const bucketKey = (pIdx) => {
+        if (filamentSlotBuffer && filamentSlotBuffer[pIdx] < parsedFils.length) {
+            return 1000000 + filamentSlotBuffer[pIdx];
+        }
+        const i = pIdx * 4;
+        return ((colorDataBuffer[i] >> 4) << 8) | ((colorDataBuffer[i + 1] >> 4) << 4) | (colorDataBuffer[i + 2] >> 4);
+    };
 
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const pIdx = y * width + x;
             const idx = pIdx * 4;
-            const r = colorDataBuffer[idx];
-            const g = colorDataBuffer[idx + 1];
-            const b = colorDataBuffer[idx + 2];
-            const curKey = (r << 16) | (g << 8) | b;
+            const curKey = bucketKey(pIdx);
 
             const counts = new Map();
+            const sumR = new Map(), sumG = new Map(), sumB = new Map();
             const slotCounts = new Map();
             let maxCount = 0;
             let dominantKey = curKey;
@@ -930,9 +973,12 @@ function applyDespeckleToBuffer(radius = 2, threshold = 0.65) {
                     validNeighbors++;
                     const nPIdx = ny * width + nx;
                     const nIdx = nPIdx * 4;
-                    const nKey = (colorDataBuffer[nIdx] << 16) | (colorDataBuffer[nIdx + 1] << 8) | colorDataBuffer[nIdx + 2];
+                    const nKey = bucketKey(nPIdx);
                     const c = (counts.get(nKey) || 0) + 1;
                     counts.set(nKey, c);
+                    sumR.set(nKey, (sumR.get(nKey) || 0) + colorDataBuffer[nIdx]);
+                    sumG.set(nKey, (sumG.get(nKey) || 0) + colorDataBuffer[nIdx + 1]);
+                    sumB.set(nKey, (sumB.get(nKey) || 0) + colorDataBuffer[nIdx + 2]);
                     if (filamentSlotBuffer) {
                         const ns = filamentSlotBuffer[nPIdx];
                         slotCounts.set(ns, (slotCounts.get(ns) || 0) + 1);
@@ -945,10 +991,11 @@ function applyDespeckleToBuffer(radius = 2, threshold = 0.65) {
             }
 
             const currentCount = counts.get(curKey) || 0;
-            if (dominantKey !== curKey && (currentCount <= validNeighbors * 0.20 || maxCount >= validNeighbors * threshold)) {
-                result[idx] = (dominantKey >> 16) & 255;
-                result[idx + 1] = (dominantKey >> 8) & 255;
-                result[idx + 2] = dominantKey & 255;
+            if (dominantKey !== curKey && maxCount >= 3 && (currentCount <= validNeighbors * 0.18 || maxCount >= validNeighbors * threshold)) {
+                const dc = counts.get(dominantKey) || 1;
+                result[idx] = Math.round((sumR.get(dominantKey) || 0) / dc);
+                result[idx + 1] = Math.round((sumG.get(dominantKey) || 0) / dc);
+                result[idx + 2] = Math.round((sumB.get(dominantKey) || 0) / dc);
                 markUserEditedPixel(pIdx);
                 if (slotResult && slotCounts.size > 0) {
                     let maxSc = 0, domSlot = 255;
@@ -976,7 +1023,7 @@ function autoCleanStrayPaint() {
 }
 
 // ==========================================
-// ✨ SMART HEALING ERASER (SURROUNDING IN-PAINT)
+// ✨ SMART HEALING ERASER (QUANTIZED RING CLUSTER IN-PAINT + BRESENHAM STROKE)
 // ==========================================
 function smartHealSingle(cx, cy, radius) {
     if (!colorDataBuffer || !processedCanvas.width) return;
@@ -985,6 +1032,7 @@ function smartHealSingle(cx, cy, radius) {
     const height = processedCanvas.height;
 
     const counts = new Map();
+    const sumR = new Map(), sumG = new Map(), sumB = new Map();
     const slotCounts = new Map();
     const rOuter = radius + 3;
     const rInner = radius;
@@ -999,8 +1047,12 @@ function smartHealSingle(cx, cy, radius) {
             if (distSq >= rInner * rInner && distSq <= rOuter * rOuter) {
                 const pIdx = ny * width + nx;
                 const idx = pIdx * 4;
-                const key = (colorDataBuffer[idx] << 16) | (colorDataBuffer[idx + 1] << 8) | colorDataBuffer[idx + 2];
+                const r = colorDataBuffer[idx], g = colorDataBuffer[idx + 1], b = colorDataBuffer[idx + 2];
+                const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
                 counts.set(key, (counts.get(key) || 0) + 1);
+                sumR.set(key, (sumR.get(key) || 0) + r);
+                sumG.set(key, (sumG.get(key) || 0) + g);
+                sumB.set(key, (sumB.get(key) || 0) + b);
                 if (filamentSlotBuffer) {
                     const s = filamentSlotBuffer[pIdx];
                     slotCounts.set(s, (slotCounts.get(s) || 0) + 1);
@@ -1030,9 +1082,9 @@ function smartHealSingle(cx, cy, radius) {
         }
     }
 
-    const domR = (dominantKey >> 16) & 255;
-    const domG = (dominantKey >> 8) & 255;
-    const domB = dominantKey & 255;
+    const domR = Math.round((sumR.get(dominantKey) || 0) / maxCount);
+    const domG = Math.round((sumG.get(dominantKey) || 0) / maxCount);
+    const domB = Math.round((sumB.get(dominantKey) || 0) / maxCount);
 
     for (let dy = -radius; dy <= radius; dy++) {
         const ny = cy + dy;
@@ -1048,27 +1100,31 @@ function smartHealSingle(cx, cy, radius) {
     }
 }
 
-function smartHeal(cx, cy, radius) {
-    applyWithSymmetry(cx, cy, cx, cy, (sx, sy) => smartHealSingle(sx, sy, radius));
+function smartHeal(x0, y0, radius, x1 = x0, y1 = y0) {
+    applyWithSymmetry(x0, y0, x1, y1, (sx0, sy0, sx1, sy1) => {
+        const dist = Math.hypot(sx1 - sx0, sy1 - sy0);
+        const step = Math.max(1, Math.floor(radius * 0.6));
+        const steps = Math.max(1, Math.ceil(dist / step));
+        for (let s = 0; s <= steps; s++) {
+            const t = steps === 0 ? 0 : (s / steps);
+            smartHealSingle(Math.round(sx0 + (sx1 - sx0) * t), Math.round(sy0 + (sy1 - sy0) * t), radius);
+        }
+    });
 }
 
 // ==========================================
 // 🖌️ 6-MODE FILAMENT BRUSH STUDIO, AUTO-INK 3D OUTLINER, ORNATE FRAME & Z-CHISEL
 // ==========================================
 let rainbowStrokeCounter = 0;
+let pearlStepCounter = 0;
 
-function paintBrushStrokeSingle(x0, y0, x1, y1, radius, filIdx) {
+function paintBrushStrokeSingle(x0, y0, x1, y1, radius, filIdx, activeFilOverride = null) {
     if (!colorDataBuffer || !processedCanvas.width) return;
     isCanvasUserEdited = true;
     const width = processedCanvas.width;
     const height = processedCanvas.height;
-    let activeFilIdx = filIdx;
+    let activeFilIdx = (activeFilOverride !== null) ? activeFilOverride : filIdx;
     const brushMode = (activeEditorTool === 'brush') ? (document.getElementById('select-brush-mode')?.value || 'solid') : 'solid';
-    if (brushMode === 'rainbow' && filaments.length > 1) {
-        rainbowStrokeCounter++;
-        const nonBaseCount = Math.max(1, filaments.length - 1);
-        activeFilIdx = 1 + (Math.floor(rainbowStrokeCounter / 6) % nonBaseCount);
-    }
     const fil = filaments[activeFilIdx] || filaments[0];
     const [r, g, b] = hexToRgb(fil.color);
 
@@ -1086,12 +1142,12 @@ function paintBrushStrokeSingle(x0, y0, x1, y1, radius, filIdx) {
     let err = dx - dy;
     let curX = x0, curY = y0;
     const rSqMax = Math.max(1, radius * radius);
-    let stepCount = 0;
-    const pearlSpacing = Math.max(3, Math.round(radius * 1.45));
+    const pearlSpacing = Math.max(4, Math.round(radius * 2.1));
+    let localPearlCounter = pearlStepCounter;
 
     while (true) {
-        stepCount++;
-        const isPearlCenter = (brushMode !== 'pearls') || ((stepCount % pearlSpacing) === 1);
+        localPearlCounter++;
+        const isPearlCenter = (brushMode !== 'pearls') || ((localPearlCounter % pearlSpacing) === 1);
         if (isPearlCenter) {
             for (let dy2 = -radius; dy2 <= radius; dy2++) {
                 const py = curY + dy2;
@@ -1154,9 +1210,17 @@ function paintBrushStrokeSingle(x0, y0, x1, y1, radius, filIdx) {
 }
 
 function paintBrushStroke(x0, y0, x1, y1, radius, filIdx) {
+    const brushMode = (activeEditorTool === 'brush') ? (document.getElementById('select-brush-mode')?.value || 'solid') : 'solid';
+    let sharedFilIdx = filIdx;
+    if (brushMode === 'rainbow' && filaments.length > 1) {
+        rainbowStrokeCounter++;
+        const nonBaseCount = Math.max(1, filaments.length - 1);
+        sharedFilIdx = 1 + (Math.floor(rainbowStrokeCounter / 5) % nonBaseCount);
+    }
     applyWithSymmetry(x0, y0, x1, y1, (sx0, sy0, sx1, sy1) => {
-        paintBrushStrokeSingle(sx0, sy0, sx1, sy1, radius, filIdx);
+        paintBrushStrokeSingle(sx0, sy0, sx1, sy1, radius, filIdx, sharedFilIdx);
     });
+    pearlStepCounter += Math.max(1, Math.round(Math.hypot(x1 - x0, y1 - y0)));
 }
 
 // ==========================================
@@ -1245,14 +1309,23 @@ function invertModelStencil() {
     const plateSlot = (activeFilamentSlot > 0) ? activeFilamentSlot : Math.min(2, filaments.length - 1);
     const [pR, pG, pB] = hexToRgb((filaments[plateSlot] || filaments[0]).color);
     const [bR, bG, bB] = hexToRgb((filaments[0] || { color: '#09090b' }).color);
+    const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
+    const isPhoto = !(studioMode === 'draw' || isDrawingTemplateActive);
 
     for (let pIdx = 0; pIdx < width * height; pIdx++) {
-        const wasHole = (cutoutMaskBuffer[pIdx] === 1) || (filamentSlotBuffer[pIdx] === 0);
+        let wasHole = (cutoutMaskBuffer[pIdx] === 1) || (filamentSlotBuffer[pIdx] === 0);
+        if (!wasHole && isPhoto) {
+            // In Photo Mode, treat exterior background or dark pixels (<22% lum) as background to invert cleanly!
+            if (bgExteriorVoidMask && bgExteriorVoidMask[pIdx] === 1) wasHole = true;
+            else {
+                const i4 = pIdx * 4;
+                const dBg = colorDistSq(colorDataBuffer[i4], colorDataBuffer[i4 + 1], colorDataBuffer[i4 + 2], cachedBgRgb[0], cachedBgRgb[1], cachedBgRgb[2]);
+                if (dBg < 2400) wasHole = true;
+            }
+        }
         if (wasHole) {
-            // Former background/hole becomes solid plate
             writeEditedPixel(pIdx, pR, pG, pB, plateSlot, undefined, 0);
         } else {
-            // Former drawn strokes become open-air stencil cutouts!
             writeEditedPixel(pIdx, bR, bG, bB, 0, undefined, 1);
         }
     }
@@ -1267,10 +1340,64 @@ function invertModelStencil() {
 function restoreAllCutoutHoles() {
     if (!processedCanvas.width) return;
     pushHistoryState();
-    if (cutoutMaskBuffer) cutoutMaskBuffer.fill(0);
+    const width = processedCanvas.width, height = processedCanvas.height;
+    const fillSlot = Math.min(filaments.length - 1, Math.max(1, activeFilamentSlot || 1));
+    const [fR, fG, fB] = hexToRgb((filaments[fillSlot] || filaments[0]).color);
+    if (cutoutMaskBuffer) {
+        for (let pIdx = 0; pIdx < width * height; pIdx++) {
+            if (cutoutMaskBuffer[pIdx] === 1) {
+                cutoutMaskBuffer[pIdx] = 0;
+                // Also restore Slot 0 drilled pixels so CAD templates & removeCanvasBg genuinely refill the holes!
+                if (filamentSlotBuffer && filamentSlotBuffer[pIdx] === 0) {
+                    writeEditedPixel(pIdx, fR, fG, fB, fillSlot, 0, 0);
+                }
+            }
+        }
+    }
+    syncProcessedCanvasFromBuffer();
     render2DEditorPreview();
     requestMeshUpdate();
     showToast(translations[currentLang].toastCutoutsRestored);
+}
+
+// Helper: reliably identifies subject/model pixels in BOTH Draw/CAD Mode AND default Photo Mode!
+function buildReliefFxForegroundMask(width, height, cachedBgRgb) {
+    const N = width * height;
+    const fgMask = new Uint8Array(N);
+    const baseRgbCache = hexToRgb((filaments[0] || { color: '#111827' }).color);
+    const isPhoto = !(studioMode === 'draw' || isDrawingTemplateActive);
+
+    let bgCount = 0;
+    for (let pIdx = 0; pIdx < N; pIdx++) {
+        const c = pIdx % width;
+        const r = (pIdx / width) | 0;
+        let isBg = isPixelCutoutVoid(c, r, width, height, cachedBgRgb, baseRgbCache) || (filamentSlotBuffer && filamentSlotBuffer[pIdx] === 0);
+        if (!isBg && isPhoto) {
+            if (bgExteriorVoidMask && bgExteriorVoidMask[pIdx] === 1) {
+                isBg = true;
+            } else {
+                const i4 = pIdx * 4;
+                const dBg = colorDistSq(colorDataBuffer[i4], colorDataBuffer[i4 + 1], colorDataBuffer[i4 + 2], cachedBgRgb[0], cachedBgRgb[1], cachedBgRgb[2]);
+                const lum = heightDataBuffer ? heightDataBuffer[pIdx] : ((0.299 * colorDataBuffer[i4] + 0.587 * colorDataBuffer[i4 + 1] + 0.114 * colorDataBuffer[i4 + 2]) / 255);
+                if (dBg < 2600 || lum < 0.16) isBg = true;
+            }
+        }
+        if (isBg) bgCount++;
+        else fgMask[pIdx] = 1;
+    }
+
+    // Fallback: if entire canvas is solid (no dark border), treat outer 4px frame as boundary so Dome Inflate & Aura ALWAYS produce visible 3D relief!
+    if (bgCount < N * 0.02) {
+        const margin = Math.max(4, Math.round(Math.min(width, height) * 0.04));
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (x < margin || x >= width - margin || y < margin || y >= height - margin) {
+                    fgMask[y * width + x] = 0;
+                }
+            }
+        }
+    }
+    return fgMask;
 }
 
 // ==========================================
@@ -1289,14 +1416,12 @@ function apply3DBevelInflateToModel() {
     }
 
     const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
+    const fgMask = buildReliefFxForegroundMask(width, height, cachedBgRgb);
     const dist = new Float32Array(N);
     const INF = 9999.0;
 
     for (let pIdx = 0; pIdx < N; pIdx++) {
-        const c = pIdx % width;
-        const r = (pIdx / width) | 0;
-        const isBgOrVoid = isPixelCutoutVoid(c, r, width, height, cachedBgRgb) || (filamentSlotBuffer && filamentSlotBuffer[pIdx] === 0);
-        dist[pIdx] = isBgOrVoid ? 0.0 : INF;
+        dist[pIdx] = fgMask[pIdx] ? INF : 0.0;
     }
 
     // Forward Chamfer pass
@@ -1324,11 +1449,10 @@ function apply3DBevelInflateToModel() {
         }
     }
 
-    const bevelSpan = Math.min(maxDist, Math.max(8.0, Math.min(width, height) * 0.085));
+    const bevelSpan = Math.min(maxDist, Math.max(8.0, Math.min(width, height) * 0.09));
     for (let pIdx = 0; pIdx < N; pIdx++) {
         if (dist[pIdx] > 0 && dist[pIdx] < INF) {
             const t = Math.min(1.0, dist[pIdx] / bevelSpan);
-            // Smooth spherical cushion profile: sqrt(1 - (1-t)^2)
             const domeProfile = Math.sqrt(Math.max(0.0, 1.0 - (1.0 - t) * (1.0 - t)));
             customZDeltaBuffer[pIdx] = Math.min(0.64, customZDeltaBuffer[pIdx] + domeProfile * 0.56);
             markUserEditedPixel(pIdx);
@@ -1356,14 +1480,12 @@ function applyMultiColorConcentricAura() {
     }
 
     const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
+    const fgMask = buildReliefFxForegroundMask(width, height, cachedBgRgb);
     const dist = new Float32Array(N);
     const INF = 9999.0;
 
     for (let pIdx = 0; pIdx < N; pIdx++) {
-        const c = pIdx % width;
-        const r = (pIdx / width) | 0;
-        const isModel = !isPixelCutoutVoid(c, r, width, height, cachedBgRgb) && (!filamentSlotBuffer || filamentSlotBuffer[pIdx] > 0);
-        dist[pIdx] = isModel ? 0.0 : INF;
+        dist[pIdx] = fgMask[pIdx] ? 0.0 : INF;
     }
 
     for (let y = 1; y < height - 1; y++) {
@@ -1406,7 +1528,7 @@ function applyMultiColorConcentricAura() {
     showToast(translations[currentLang].toastMultiColorAuraApplied);
 }
 
-// 3. 🪨 Emboss Physical 3D Surface Micro-Texture (Carbon Fiber, Diamond Knurl, Hammered Metal, Topographic Waves, Hex Dimples)
+// 3. 🪨 Emboss Physical 3D Surface Micro-Texture
 function apply3DSurfaceMicroTexture() {
     if (!colorDataBuffer || !processedCanvas.width) return;
     pushHistoryState();
@@ -1421,16 +1543,14 @@ function apply3DSurfaceMicroTexture() {
     const texType = document.getElementById('select-fx-texture')?.value || 'carbon';
     const targetZone = document.getElementById('select-fx-target')?.value || 'model';
     const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, width, height);
+    const fgMask = buildReliefFxForegroundMask(width, height, cachedBgRgb);
 
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const pIdx = y * width + x;
             if (cutoutMaskBuffer && cutoutMaskBuffer[pIdx] === 1) continue;
 
-            const isModel = (filamentSlotBuffer && filamentSlotBuffer[pIdx] !== 255)
-                ? (filamentSlotBuffer[pIdx] > 0)
-                : !isPixelCutoutVoid(x, y, width, height, cachedBgRgb);
-
+            const isModel = fgMask[pIdx] === 1;
             if (targetZone === 'model' && !isModel) continue;
             if ((targetZone === 'base' || targetZone === 'bg') && isModel) continue;
 
@@ -1634,14 +1754,17 @@ function paintZChiselStrokeSingle(x0, y0, x1, y1, radius) {
                     const pIdx = py * width + px;
                     const falloff = 1.0 - (dSq / (rSqMax + 1)) * 0.45;
                     if (mode === 'reset') {
-                        customZDeltaBuffer[pIdx] *= 0.25;
-                        if (Math.abs(customZDeltaBuffer[pIdx]) < 0.02) customZDeltaBuffer[pIdx] = 0;
+                        customZDeltaBuffer[pIdx] *= 0.80;
+                        if (Math.abs(customZDeltaBuffer[pIdx]) < 0.015) customZDeltaBuffer[pIdx] = 0;
                         markUserEditedPixel(pIdx);
                     } else if (mode === 'raise') {
-                        customZDeltaBuffer[pIdx] = Math.min(maxStep, Math.max(customZDeltaBuffer[pIdx], maxStep * falloff));
+                        // Never flatten an already-higher Z peak down to maxStep!
+                        const targetZ = Math.min(0.64, maxStep * falloff);
+                        customZDeltaBuffer[pIdx] = Math.max(customZDeltaBuffer[pIdx], targetZ);
                         markUserEditedPixel(pIdx);
                     } else if (mode === 'carve') {
-                        customZDeltaBuffer[pIdx] = Math.max(-maxStep, Math.min(customZDeltaBuffer[pIdx], -maxStep * falloff));
+                        const targetZ = Math.max(-0.64, -maxStep * falloff);
+                        customZDeltaBuffer[pIdx] = Math.min(customZDeltaBuffer[pIdx], targetZ);
                         markUserEditedPixel(pIdx);
                     }
                 }
@@ -1665,42 +1788,48 @@ function floodFillBuffer(startX, startY, filIdx, tolerance = 35) {
     isCanvasUserEdited = true;
     const width = processedCanvas.width;
     const height = processedCanvas.height;
+    const sx = Math.max(0, Math.min(width - 1, Math.round(startX)));
+    const sy = Math.max(0, Math.min(height - 1, Math.round(startY)));
     const fil = filaments[filIdx] || filaments[0];
     const [fillR, fillG, fillB] = hexToRgb(fil.color);
 
-    const startIdx = (startY * width + startX) * 4;
+    const startP = sy * width + sx;
+    const startIdx = startP * 4;
     const targetR = colorDataBuffer[startIdx];
     const targetG = colorDataBuffer[startIdx + 1];
     const targetB = colorDataBuffer[startIdx + 2];
+    const startWasVoid = cutoutMaskBuffer && cutoutMaskBuffer[startP] === 1;
+    const startSlot = filamentSlotBuffer ? filamentSlotBuffer[startP] : 255;
 
-    if (Math.abs(targetR - fillR) < 5 && Math.abs(targetG - fillG) < 5 && Math.abs(targetB - fillB) < 5) return;
+    if (!startWasVoid && startSlot === filIdx && Math.abs(targetR - fillR) < 5 && Math.abs(targetG - fillG) < 5 && Math.abs(targetB - fillB) < 5) return;
 
-    function match(idx) {
+    const tolSq = tolerance * tolerance;
+    function match(pIdx) {
+        const idx = pIdx * 4;
         const dr = colorDataBuffer[idx] - targetR;
         const dg = colorDataBuffer[idx + 1] - targetG;
         const db = colorDataBuffer[idx + 2] - targetB;
-        return (dr * dr + dg * dg + db * db) <= (tolerance * tolerance);
+        return (dr * dr + dg * dg + db * db) <= tolSq;
     }
 
+    // Flat Int32Array queue + mark visited ON PUSH (4x less memory, zero duplicate pops!)
     const visited = new Uint8Array(width * height);
-    const queue = [[startX, startY]];
+    const queue = new Int32Array(width * height);
+    let qHead = 0, qTail = 0;
+    visited[startP] = 1;
+    queue[qTail++] = startP;
 
-    while (queue.length > 0) {
-        const [cx, cy] = queue.pop();
-        if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
-        const pIdx = cy * width + cx;
-        if (visited[pIdx]) continue;
-
-        const bIdx = pIdx * 4;
-        if (!match(bIdx)) continue;
-
-        visited[pIdx] = 1;
+    while (qHead < qTail) {
+        const pIdx = queue[qHead++];
+        if (!match(pIdx)) continue;
         writeEditedPixel(pIdx, fillR, fillG, fillB, filIdx, undefined, 0);
 
-        queue.push([cx + 1, cy]);
-        queue.push([cx - 1, cy]);
-        queue.push([cx, cy + 1]);
-        queue.push([cx, cy - 1]);
+        const cx = pIdx % width;
+        const cy = (pIdx - cx) / width;
+        if (cx + 1 < width) { const n = pIdx + 1; if (!visited[n]) { visited[n] = 1; queue[qTail++] = n; } }
+        if (cx > 0) { const n = pIdx - 1; if (!visited[n]) { visited[n] = 1; queue[qTail++] = n; } }
+        if (cy + 1 < height) { const n = pIdx + width; if (!visited[n]) { visited[n] = 1; queue[qTail++] = n; } }
+        if (cy > 0) { const n = pIdx - width; if (!visited[n]) { visited[n] = 1; queue[qTail++] = n; } }
     }
 }
 
@@ -1714,6 +1843,7 @@ function smartRecolorZone(startX, startY, filIdx, tolerance = 38, isGlobal = fal
     const sx = Math.max(0, Math.min(width - 1, Math.round(startX)));
     const sy = Math.max(0, Math.min(height - 1, Math.round(startY)));
 
+    const parsedFils = filaments.map(f => ({ rgb: hexToRgb(f.color) }));
     const fil = filaments[filIdx] || filaments[0];
     const [fillR, fillG, fillB] = hexToRgb(fil.color);
 
@@ -1723,7 +1853,7 @@ function smartRecolorZone(startX, startY, filIdx, tolerance = 38, isGlobal = fal
     const targetG = colorDataBuffer[startIdx + 1];
     const targetB = colorDataBuffer[startIdx + 2];
     const targetLum = Math.max(0.05, (0.2126 * targetR + 0.7152 * targetG + 0.0722 * targetB) / 255.0);
-    const targetFilIdx = findClosestFilamentIndex(targetR, targetG, targetB);
+    const targetFilIdx = findClosestFilamentIndex(targetR, targetG, targetB, parsedFils);
 
     const tolSq = Math.max(12, tolerance) * Math.max(12, tolerance) * 3.2;
 
@@ -1734,7 +1864,7 @@ function smartRecolorZone(startX, startY, filIdx, tolerance = 38, isGlobal = fal
         const b = colorDataBuffer[idx + 2];
         const dist = colorDistSq(r, g, b, targetR, targetG, targetB);
         if (dist <= tolSq) return true;
-        if (tolerance >= 55 && findClosestFilamentIndex(r, g, b) === targetFilIdx) return true;
+        if (tolerance >= 55 && findClosestFilamentIndex(r, g, b, parsedFils) === targetFilIdx) return true;
         return false;
     }
 
@@ -1744,7 +1874,8 @@ function smartRecolorZone(startX, startY, filIdx, tolerance = 38, isGlobal = fal
         const origG = colorDataBuffer[idx + 1];
         const origB = colorDataBuffer[idx + 2];
         const origLum = (0.2126 * origR + 0.7152 * origG + 0.0722 * origB) / 255.0;
-        const shadeRatio = Math.max(0.76, Math.min(1.22, 0.85 + (origLum - targetLum) * 0.45));
+        // Fixed base multiplier 1.0 (was 0.85, which darkened colors by 15% on every click!)
+        const shadeRatio = Math.max(0.80, Math.min(1.22, 1.0 + (origLum - targetLum) * 0.40));
 
         writeEditedPixel(
             pIdx,
@@ -1896,8 +2027,16 @@ function traceCADShapePath(ctx, shapeType, cx, cy, rx, ry, cornerRad, ptsCount, 
         }
         ctx.closePath();
     } else if (shapeType === 'crescent') {
-        ctx.arc(cx, cy, Math.max(sx, sy), -Math.PI * 0.72, Math.PI * 0.72, false);
-        ctx.arc(cx + Math.max(sx, sy) * 0.45, cy, Math.max(sx, sy) * 0.82, Math.PI * 0.62, -Math.PI * 0.62, true);
+        // Exact analytically intersecting outer & inner arcs -> razor-sharp crescent tips (no flat chords!)
+        const R = Math.max(4, Math.min(sx, sy));
+        const d = R * 0.44;
+        const rIn = R * 0.84;
+        const cosA = Math.max(-0.98, Math.min(0.98, (R * R + d * d - rIn * rIn) / (2 * R * d)));
+        const aOuter = Math.acos(cosA);
+        const cosB = Math.max(-0.98, Math.min(0.98, (rIn * rIn + d * d - R * R) / (2 * rIn * d)));
+        const aInner = Math.PI - Math.acos(cosB);
+        ctx.arc(cx, cy, R, aOuter, Math.PI * 2 - aOuter, false);
+        ctx.arc(cx + d, cy, rIn, -aInner, aInner, true);
         ctx.closePath();
     } else if (shapeType === 'cross') {
         const armX = sx * 0.36, armY = sy * 0.36;
@@ -1915,20 +2054,21 @@ function traceCADShapePath(ctx, shapeType, cx, cy, rx, ry, cornerRad, ptsCount, 
         ctx.lineTo(cx - armX, cy - armY);
         ctx.closePath();
     } else if (shapeType === 'arrow') {
+        // Scales cleanly by sx/sy so stepped_pyramid & double_outline shrink proportionally!
         const ang = Math.atan2(y1 - y0, x1 - x0);
-        const len = Math.max(8, Math.hypot(x1 - x0, y1 - y0));
-        const headL = Math.min(len * 0.45, Math.max(14, editorBrushRadius * 5.5));
-        const shaftW = Math.max(3, editorBrushRadius * 1.6);
+        const len = Math.max(8, Math.hypot(sx * 2, sy * 2));
+        const headL = len * 0.38;
+        const shaftW = Math.max(2.5, len * 0.14);
         ctx.save();
-        ctx.translate(x0, y0);
+        ctx.translate(cx, cy);
         ctx.rotate(ang);
-        ctx.moveTo(0, -shaftW);
-        ctx.lineTo(len - headL, -shaftW);
-        ctx.lineTo(len - headL, -shaftW * 2.4);
-        ctx.lineTo(len, 0);
-        ctx.lineTo(len - headL, shaftW * 2.4);
-        ctx.lineTo(len - headL, shaftW);
-        ctx.lineTo(0, shaftW);
+        ctx.moveTo(-len * 0.5, -shaftW);
+        ctx.lineTo(len * 0.5 - headL, -shaftW);
+        ctx.lineTo(len * 0.5 - headL, -shaftW * 2.2);
+        ctx.lineTo(len * 0.5, 0);
+        ctx.lineTo(len * 0.5 - headL, shaftW * 2.2);
+        ctx.lineTo(len * 0.5 - headL, shaftW);
+        ctx.lineTo(-len * 0.5, shaftW);
         ctx.closePath();
         ctx.restore();
     } else if (shapeType === 'spiral') {
@@ -1999,9 +2139,11 @@ function drawShapeSingle(shapeType, x0, y0, x1, y1, filIdx) {
     // 🏛️ 3D Stepped Pyramid Mode (Multi-Layer Filament + Stepped Physical Z Relief!)
     if (fillMode === 'stepped_pyramid' && !isStrokeOnlyType) {
         const steps = 4;
+        const nonZeroCount = Math.max(1, filaments.length - 1);
         for (let s = 0; s < steps; s++) {
             const scaleF = 1.0 - (s * 0.21);
-            const stepSlot = (filIdx + s) % Math.max(1, filaments.length);
+            // Never wrap stepped_pyramid into Slot 0 (base/void)!
+            const stepSlot = filaments.length > 1 ? (1 + ((Math.max(1, filIdx) - 1 + s) % nonZeroCount)) : 0;
             const [sr, sg, sb] = hexToRgb((filaments[stepSlot] || filaments[0]).color);
             const stepZ = (zMode === 'engrave') ? (-0.18 * (s + 1)) : (0.18 * (s + 1));
 
@@ -2137,20 +2279,22 @@ function updateLivePatternPreview() {
     ctx.lineCap = 'round';
 
     if (patType === 'spirograph') {
-        // Hypotrochoid & Epitrochoid Mathematical Spirograph Rosette
+        // Hypotrochoid Spirograph Rosette: closes cleanly in t in [0, 2*PI] with high smooth resolution for ALL lobe counts!
+        const L = Math.max(3, lobes);
         const R = maxRad;
-        const r = R / Math.max(3, lobes);
-        const d = r * (lobes * 0.35 + 1.2);
+        const r = R / L;
+        const d = r * (L * 0.35 + 1.2);
         const scaleNorm = maxRad / Math.max(1, (R - r) + d);
         ctx.beginPath();
-        const steps = 1200;
+        const steps = Math.max(720, L * 48);
         for (let i = 0; i <= steps; i++) {
-            const t = (i / steps) * Math.PI * 2 * Math.max(3, lobes);
-            const x = cx + ((R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t)) * scaleNorm;
-            const y = cy + ((R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t)) * scaleNorm;
+            const t = (i / steps) * Math.PI * 2;
+            const x = cx + ((R - r) * Math.cos(t) + d * Math.cos((L - 1) * t)) * scaleNorm;
+            const y = cy + ((R - r) * Math.sin(t) - d * Math.sin((L - 1) * t)) * scaleNorm;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         }
+        ctx.closePath();
         ctx.stroke();
     } else if (patType === 'flower_of_life') {
         // Sacred Geometry Intersecting Circles Lattice
@@ -2199,7 +2343,7 @@ function updateLivePatternPreview() {
         for (let rIdx = 1; rIdx <= rings; rIdx++) {
             const rr = (rIdx / rings) * maxRad;
             ctx.beginPath();
-            for (let k = 0; k <= spokes; k++) {
+            for (let k = 0; k < spokes; k++) {
                 const a0 = (k * Math.PI * 2) / spokes;
                 const a1 = ((k + 1) * Math.PI * 2) / spokes;
                 const midA = (a0 + a1) * 0.5;
@@ -2252,18 +2396,19 @@ function updateLivePatternPreview() {
             ctx.stroke();
         }
     } else if (patType === 'celtic_frame') {
-        const pad = Math.max(8, Math.round((1.0 - scalePct * 0.9) * Math.min(width, height) * 0.35));
-        const fw = width - pad * 2;
-        const fh = height - pad * 2;
-        ctx.strokeRect(pad, pad, fw, fh);
-        ctx.strokeRect(pad + lineThick * 3, pad + lineThick * 3, fw - lineThick * 6, fh - lineThick * 6);
+        const fw = Math.max(32, maxRad * 2);
+        const fh = Math.max(32, maxRad * 2 * (height / Math.max(1, width)));
+        const x0f = cx - fw * 0.5;
+        const y0f = cy - fh * 0.5;
+        ctx.strokeRect(x0f, y0f, fw, fh);
+        ctx.strokeRect(x0f + lineThick * 3, y0f + lineThick * 3, fw - lineThick * 6, fh - lineThick * 6);
         const studs = Math.max(4, lobes);
         for (let i = 0; i <= studs; i++) {
             const t = i / studs;
-            ctx.beginPath(); ctx.arc(pad + t * fw, pad + lineThick * 1.5, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(pad + t * fw, height - pad - lineThick * 1.5, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(pad + lineThick * 1.5, pad + t * fh, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(width - pad - lineThick * 1.5, pad + t * fh, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x0f + t * fw, y0f + lineThick * 1.5, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x0f + t * fw, y0f + fh - lineThick * 1.5, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x0f + lineThick * 1.5, y0f + t * fh, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x0f + fw - lineThick * 1.5, y0f + t * fh, lineThick * 1.3, 0, Math.PI * 2); ctx.fill();
         }
     }
 
@@ -2430,24 +2575,27 @@ function renderTextOntoBuffers(cx, cy) {
                 else ctx.fillText(line, 0, ly);
             });
         } else {
-            // Curved Circular Arc Text
-            const chars = Array.from(text);
-            const totalAngle = (arcVal / 100.0) * Math.PI * 0.85;
+            // Curved Circular Arc Text — FIXED negative arc reads Left-to-Right (never backwards!)
+            const cleanLine = text.replace(/\n+/g, ' ');
+            const chars = Array.from(cleanLine);
+            const absTotalAngle = (Math.abs(arcVal) / 100.0) * Math.PI * 0.85;
             const charMetrics = chars.map(ch => Math.max(size * 0.32, ctx.measureText(ch).width));
             const totalWidth = charMetrics.reduce((a, b) => a + b, 0);
-            const radius = Math.max(size * 0.9, totalWidth / Math.max(0.15, Math.abs(totalAngle)));
+            const radius = Math.max(size * 0.9, totalWidth / Math.max(0.15, absTotalAngle));
             const sign = arcVal >= 0 ? 1 : -1;
 
-            let curAngle = -totalAngle / 2;
+            let curAngle = -absTotalAngle / 2;
             for (let i = 0; i < chars.length; i++) {
-                const chAngle = (charMetrics[i] / Math.max(1, totalWidth)) * totalAngle;
+                const chAngle = (charMetrics[i] / Math.max(1, totalWidth)) * absTotalAngle;
                 const midAngle = curAngle + chAngle / 2;
                 ctx.save();
                 if (sign > 0) {
+                    // Upper rainbow arch (convex up): sweeps left -> right cleanly
                     ctx.translate(0, radius);
                     ctx.rotate(midAngle);
                     ctx.translate(0, -radius);
                 } else {
+                    // Lower smile arch (concave up): sweeps left -> right cleanly!
                     ctx.translate(0, -radius);
                     ctx.rotate(-midAngle);
                     ctx.translate(0, radius);
@@ -2513,6 +2661,7 @@ function cancelActiveTextStamp() {
     editorTextState.hasLivePreview = false;
     editorStampState.hasLivePreview = false;
     editorPatternState.hasLivePreview = false;
+    syncProcessedCanvasFromBuffer();
     render2DEditorPreview();
     requestMeshUpdate();
 }
@@ -2548,6 +2697,7 @@ function selectVectorStamp(type) {
 function handleCustomLogoStampUpload(event) {
     const file = event.target?.files?.[0];
     if (!file) return;
+    if (event.target) event.target.value = '';
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
@@ -2559,6 +2709,19 @@ function handleCustomLogoStampUpload(event) {
             cvs.height = Math.max(1, Math.round(img.height * scale));
             const c = cvs.getContext('2d');
             c.drawImage(img, 0, 0, cvs.width, cvs.height);
+            // Smart background removal for opaque JPEG / white-background logos so they never turn into solid squares!
+            const id = c.getImageData(0, 0, cvs.width, cvs.height);
+            const px = id.data;
+            let hasTransparent = false;
+            for (let i = 3; i < px.length; i += 4) { if (px[i] < 200) { hasTransparent = true; break; } }
+            if (!hasTransparent) {
+                const bgR = px[0], bgG = px[1], bgB = px[2];
+                for (let i = 0; i < px.length; i += 4) {
+                    const d = Math.abs(px[i] - bgR) + Math.abs(px[i + 1] - bgG) + Math.abs(px[i + 2] - bgB);
+                    if (d < 55) px[i + 3] = 0;
+                }
+                c.putImageData(id, 0, 0);
+            }
             customLogoStampCanvas = cvs;
             activeVectorStamp = 'custom_logo';
             ALL_VECTOR_STAMPS.forEach(t => {
@@ -2981,7 +3144,7 @@ function generateISOQRCodeMatrix(text) {
     }
 
     function writeFormatBits(targetGrid, maskPattern) {
-        // Level L = 01
+        // Level L = 01; ISO/IEC 18004 places MSB (bit 14) at (8,0) -> LSB (bit 0) at (0,8)!
         const data = (0b01 << 3) | maskPattern;
         let rem = data << 10;
         for (let i = 14; i >= 10; i--) {
@@ -2989,12 +3152,14 @@ function generateISOQRCodeMatrix(text) {
         }
         const formatBits = ((data << 10) | rem) ^ 0x5412;
 
-        for (let i = 0; i <= 5; i++) targetGrid[8][i] = (formatBits >>> i) & 1;
-        targetGrid[8][7] = (formatBits >>> 6) & 1;
+        // Top-left primary format strip (MSB bit 14 -> LSB bit 0)
+        for (let i = 0; i <= 5; i++) targetGrid[8][i] = (formatBits >>> (14 - i)) & 1;
+        targetGrid[8][7] = (formatBits >>> 8) & 1;
         targetGrid[8][8] = (formatBits >>> 7) & 1;
-        targetGrid[7][8] = (formatBits >>> 8) & 1;
-        for (let i = 9; i < 15; i++) targetGrid[14 - i][8] = (formatBits >>> i) & 1;
+        targetGrid[7][8] = (formatBits >>> 6) & 1;
+        for (let i = 0; i <= 5; i++) targetGrid[5 - i][8] = (formatBits >>> (5 - i)) & 1;
 
+        // Second format strip (bottom-left vertical MSB 14..8 + top-right horizontal 7..0)
         for (let i = 0; i < 8; i++) targetGrid[8][M - 1 - i] = (formatBits >>> i) & 1;
         for (let i = 8; i < 15; i++) targetGrid[M - 15 + i][8] = (formatBits >>> i) & 1;
         targetGrid[M - 8][8] = 1;
@@ -3104,7 +3269,7 @@ function applyActiveQRStampToBuffers() {
             if (qrBit === null) continue;
             const pIdx = y * width + x;
             const idx = pIdx * 4;
-            if (qrBit === 1) {
+            if (qrBit === true || qrBit === 1) {
                 colorDataBuffer[idx] = dR;
                 colorDataBuffer[idx + 1] = dG;
                 colorDataBuffer[idx + 2] = dB;
@@ -3135,8 +3300,14 @@ function onQRModeChange() {
     const pWifi = document.getElementById('qr-panel-wifi');
     const pVcard = document.getElementById('qr-panel-vcard');
     if (pUrl) pUrl.style.display = mode === 'url' ? 'block' : 'none';
-    if (pWifi) pWifi.style.display = mode === 'wifi' ? 'flex' : 'none';
-    if (pVcard) pVcard.style.display = mode === 'vcard' ? 'flex' : 'none';
+    if (pWifi) {
+        pWifi.style.display = mode === 'wifi' ? 'flex' : 'none';
+        pWifi.style.flexDirection = 'column';
+    }
+    if (pVcard) {
+        pVcard.style.display = mode === 'vcard' ? 'flex' : 'none';
+        pVcard.style.flexDirection = 'column';
+    }
 }
 
 function escapeQRField(str) {
@@ -3228,6 +3399,7 @@ function stamp3DQRCode() {
         matrix,
         M,
         quietModules,
+        quietZone: quietModules,
         totalModules,
         u0,
         v0,
@@ -3235,7 +3407,11 @@ function stamp3DQRCode() {
         v1: v0 + spanV
     };
 
+    const clearBtn = document.getElementById('btn-clear-qr');
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
+
     applyActiveQRStampToBuffers();
+    if (activeSoundwave) applyActiveSoundwaveToBuffers();
     render2DEditorPreview();
     generate3DReliefMesh();
     showToast(translations[currentLang].toastQRStamped);
@@ -3245,6 +3421,8 @@ function clear3DQRCode() {
     if (!activeQRStamp && !preQRBackup) return;
     pushHistoryState();
     activeQRStamp = null;
+    const clearBtn = document.getElementById('btn-clear-qr');
+    if (clearBtn) clearBtn.style.display = 'none';
     if (preQRBackup &&
         preQRBackup.width === processedCanvas.width &&
         preQRBackup.height === processedCanvas.height) {
@@ -3252,6 +3430,7 @@ function clear3DQRCode() {
         if (preQRBackup.slots && filamentSlotBuffer) {
             filamentSlotBuffer = new Uint8Array(preQRBackup.slots);
         }
+        if (activeSoundwave) applyActiveSoundwaveToBuffers();
         const pCtx = processedCanvas.getContext('2d');
         const outImg = pCtx.createImageData(processedCanvas.width, processedCanvas.height);
         outImg.data.set(colorDataBuffer);
@@ -3289,7 +3468,7 @@ function generatePresetSoundwaveBars(presetName, numBars = 56) {
             }
             bars[i] = Math.max(0.08, Math.min(1.0, amp));
         }
-    } else if (presetName === 'love') {
+    } else if (presetName === 'voice' || presetName === 'love') {
         // "I Love You" — 3 distinct vocal syllables ("I" - "LOVE" - "YOU")
         for (let i = 0; i < numBars; i++) {
             const u = i / Math.max(1, numBars - 1);
@@ -3314,10 +3493,12 @@ function generatePresetSoundwaveBars(presetName, numBars = 56) {
 async function handleAudioFileUpload(event) {
     const file = event.target?.files?.[0];
     if (!file) return;
+    if (event.target) event.target.value = '';
+    let audioCtx = null;
     try {
         const arrayBuf = await file.arrayBuffer();
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioCtx();
+        audioCtx = new AudioCtx();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
         const rawData = audioBuffer.getChannelData(0);
         const numBars = 56;
@@ -3341,7 +3522,6 @@ async function handleAudioFileUpload(event) {
         }
 
         customAudioBars = extracted.map(v => Math.max(0.08, Math.min(1.0, Math.pow(v / maxPeak, 0.82))));
-        await audioCtx.close();
 
         const presetSel = document.getElementById('select-soundwave-preset');
         if (presetSel) {
@@ -3349,38 +3529,44 @@ async function handleAudioFileUpload(event) {
             if (!customOpt) {
                 customOpt = document.createElement('option');
                 customOpt.value = 'custom';
-                customOpt.innerText = currentLang === 'fr' ? `🎵 Audio : ${file.name.slice(0, 18)}` : `🎵 Audio: ${file.name.slice(0, 18)}`;
                 presetSel.appendChild(customOpt);
-            } else {
-                customOpt.innerText = currentLang === 'fr' ? `🎵 Audio : ${file.name.slice(0, 18)}` : `🎵 Audio: ${file.name.slice(0, 18)}`;
             }
+            customOpt.innerText = currentLang === 'fr' ? `🎵 Audio : ${file.name.slice(0, 18)}` : `🎵 Audio: ${file.name.slice(0, 18)}`;
             presetSel.value = 'custom';
         }
 
         stamp3DSoundwave();
     } catch (err) {
-        console.warn('Audio decode fallback:', err);
-        stamp3DSoundwave();
+        console.warn('Audio decode failed:', err);
+        showToast(currentLang === 'fr' ? '⚠️ Fichier audio illisible (utilisez MP3 ou WAV).' : '⚠️ Could not decode audio file (use MP3 or WAV).');
+    } finally {
+        if (audioCtx && audioCtx.state !== 'closed') {
+            try { await audioCtx.close(); } catch (_) {}
+        }
     }
 }
 
 async function recordMicrophoneSoundwave() {
+    if (_isRecordingMic) return;
+    _isRecordingMic = true;
     const btn = document.getElementById('btn-record-mic');
     const txtSpan = document.getElementById('txt-record-mic');
     const origLabel = txtSpan ? txtSpan.innerText : 'Record Voice (4s)';
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        // Fallback if browser blocks microphone in non-HTTPS local file context
+        _isRecordingMic = false;
         const presetSel = document.getElementById('select-soundwave-preset');
-        if (presetSel) presetSel.value = 'love';
+        if (presetSel) presetSel.value = 'voice';
         stamp3DSoundwave();
         return;
     }
 
+    let stream = null;
+    let audioCtx = null;
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioCtx();
+        audioCtx = new AudioCtx();
         const source = audioCtx.createMediaStreamSource(stream);
         const analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
@@ -3415,11 +3601,6 @@ async function recordMicrophoneSoundwave() {
             }, intervalMs);
         });
 
-        stream.getTracks().forEach(t => t.stop());
-        await audioCtx.close();
-        if (btn) btn.style.borderColor = 'rgba(244,63,94,0.45)';
-        if (txtSpan) txtSpan.innerText = origLabel;
-
         const numBars = 56;
         const maxVal = Math.max(0.05, ...recordedSamples);
         const bars = [];
@@ -3445,11 +3626,15 @@ async function recordMicrophoneSoundwave() {
         stamp3DSoundwave();
     } catch (err) {
         console.warn('Microphone access unavailable, using vocal preset:', err);
+        const presetSel = document.getElementById('select-soundwave-preset');
+        if (presetSel) presetSel.value = 'voice';
+        stamp3DSoundwave();
+    } finally {
+        _isRecordingMic = false;
+        if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (_) {} }
+        if (audioCtx && audioCtx.state !== 'closed') { try { await audioCtx.close(); } catch (_) {} }
         if (btn) btn.style.borderColor = 'rgba(244,63,94,0.45)';
         if (txtSpan) txtSpan.innerText = origLabel;
-        const presetSel = document.getElementById('select-soundwave-preset');
-        if (presetSel) presetSel.value = 'love';
-        stamp3DSoundwave();
     }
 }
 
@@ -3476,15 +3661,13 @@ function applyActiveSoundwaveToBuffers() {
             if (waveBit === null) continue;
             const pIdx = y * width + x;
             const idx = pIdx * 4;
-            if (waveBit === 1) {
-                // Raised acoustic bar -> Top brightest filament
+            if (waveBit === true || waveBit === 1) {
                 colorDataBuffer[idx] = lR;
                 colorDataBuffer[idx + 1] = lG;
                 colorDataBuffer[idx + 2] = lB;
                 colorDataBuffer[idx + 3] = 255;
                 if (filamentSlotBuffer) filamentSlotBuffer[pIdx] = lightSlot;
             } else {
-                // Recessed acoustic badge plate -> Base darkest filament
                 colorDataBuffer[idx] = dR;
                 colorDataBuffer[idx + 1] = dG;
                 colorDataBuffer[idx + 2] = dB;
@@ -3550,6 +3733,7 @@ function stamp3DSoundwave() {
 
     activeSoundwave = {
         preset,
+        style: (preset === 'heartbeat') ? 'heartbeat' : 'bars', // Activates continuous ECG Heartbeat trace!
         posMode,
         bars,
         u0,
@@ -4334,7 +4518,7 @@ function revertToOriginalPhoto() {
         config.removeCanvasBg = false;
         syncRemoveCanvasUI();
 
-        processSourceImage({ resetUserLayers: true });
+        processSourceImage(false, true);
         if (centerViewMode === '2d') {
             render2DEditorPreview();
         } else {
@@ -4353,11 +4537,12 @@ function applyCanvasTo3D() {
 }
 
 // ==========================================
-// 🖱️ 2D EDITOR POINTER & MOUSE EVENTS
+// 🖱️ 2D EDITOR POINTER & MOUSE EVENTS (TOUCH-SAFE & GUARDED)
 // ==========================================
 function getCanvasCoords(e) {
-    if (!editorCanvas) return { x: 0, y: 0 };
+    if (!editorCanvas || !editorCanvas.width || !editorCanvas.height) return { x: 0, y: 0 };
     const rect = editorCanvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
     const scaleX = editorCanvas.width / rect.width;
     const scaleY = editorCanvas.height / rect.height;
     const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
@@ -4369,6 +4554,8 @@ function getCanvasCoords(e) {
 
 function handleEditorPointerDown(e) {
     if (!colorDataBuffer) return;
+    if (e.button !== undefined && e.button !== 0) return; // Ignore right/middle click!
+    if (activeEditorTool === 'fx') return; // FX subbar uses action buttons, not canvas clicks!
     isEditorInteracting = true;
     const coords = getCanvasCoords(e);
     editorStartX = coords.x;
@@ -4399,7 +4586,7 @@ function handleEditorPointerDown(e) {
     pushHistoryState();
 
     if (activeEditorTool === 'heal') {
-        smartHeal(coords.x, coords.y, editorBrushRadius);
+        smartHeal(coords.x, coords.y, editorBrushRadius, coords.x, coords.y);
         render2DEditorPreview();
     } else if (activeEditorTool === 'brush') {
         paintBrushStroke(coords.x, coords.y, coords.x, coords.y, editorBrushRadius, activeFilamentSlot);
@@ -4427,32 +4614,37 @@ function handleEditorPointerDown(e) {
 
 function handleEditorPointerMove(e) {
     const cursorCircle = document.getElementById('editor-cursor-circle');
-    if (centerViewMode === '2d' && cursorCircle && editorCanvas) {
+    if (centerViewMode === '2d' && cursorCircle && editorCanvas && editorCanvas.width > 0) {
         const rect = editorCanvas.getBoundingClientRect();
-        const displayScale = rect.width / editorCanvas.width;
-        const screenR = Math.max(6, Math.round(editorBrushRadius * displayScale));
+        const insideCanvas = (rect.width > 0 && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom);
+        if (insideCanvas) {
+            const displayScale = rect.width / editorCanvas.width;
+            const screenR = Math.max(6, Math.round(editorBrushRadius * displayScale));
 
-        cursorCircle.style.display = 'block';
-        cursorCircle.style.left = `${e.clientX}px`;
-        cursorCircle.style.top = `${e.clientY}px`;
-        cursorCircle.style.width = `${screenR * 2}px`;
-        cursorCircle.style.height = `${screenR * 2}px`;
+            cursorCircle.style.display = 'block';
+            cursorCircle.style.left = `${e.clientX}px`;
+            cursorCircle.style.top = `${e.clientY}px`;
+            cursorCircle.style.width = `${screenR * 2}px`;
+            cursorCircle.style.height = `${screenR * 2}px`;
 
-        if (activeEditorTool === 'heal') {
-            cursorCircle.style.borderColor = '#c084fc';
-            cursorCircle.style.background = 'rgba(192,132,252,0.15)';
-        } else if (activeEditorTool === 'chisel') {
-            cursorCircle.style.borderColor = '#34d399';
-            cursorCircle.style.background = 'rgba(52,211,153,0.16)';
-        } else if (activeEditorTool === 'cutout') {
-            cursorCircle.style.borderColor = '#f43f5e';
-            cursorCircle.style.background = 'rgba(244,63,94,0.22)';
-        } else if (activeEditorTool === 'text' || activeEditorTool === 'stamp' || activeEditorTool === 'pattern') {
-            cursorCircle.style.borderColor = '#fbbf24';
-            cursorCircle.style.background = 'rgba(251,191,36,0.12)';
+            if (activeEditorTool === 'heal') {
+                cursorCircle.style.borderColor = '#c084fc';
+                cursorCircle.style.background = 'rgba(192,132,252,0.15)';
+            } else if (activeEditorTool === 'chisel') {
+                cursorCircle.style.borderColor = '#34d399';
+                cursorCircle.style.background = 'rgba(52,211,153,0.16)';
+            } else if (activeEditorTool === 'cutout') {
+                cursorCircle.style.borderColor = '#f43f5e';
+                cursorCircle.style.background = 'rgba(244,63,94,0.22)';
+            } else if (activeEditorTool === 'text' || activeEditorTool === 'stamp' || activeEditorTool === 'pattern') {
+                cursorCircle.style.borderColor = '#fbbf24';
+                cursorCircle.style.background = 'rgba(251,191,36,0.12)';
+            } else {
+                cursorCircle.style.borderColor = '#38bdf8';
+                cursorCircle.style.background = 'rgba(56,189,248,0.12)';
+            }
         } else {
-            cursorCircle.style.borderColor = '#38bdf8';
-            cursorCircle.style.background = 'rgba(56,189,248,0.12)';
+            cursorCircle.style.display = 'none';
         }
     } else if (cursorCircle) {
         cursorCircle.style.display = 'none';
@@ -4474,7 +4666,7 @@ function handleEditorPointerMove(e) {
         editorPatternState.posY = coords.y;
         updateLivePatternPreview();
     } else if (activeEditorTool === 'heal') {
-        smartHeal(coords.x, coords.y, editorBrushRadius);
+        smartHeal(editorLastX, editorLastY, editorBrushRadius, coords.x, coords.y);
         render2DEditorPreview();
     } else if (activeEditorTool === 'brush') {
         paintBrushStroke(editorLastX, editorLastY, coords.x, coords.y, editorBrushRadius, activeFilamentSlot);
@@ -4513,7 +4705,9 @@ function handleEditorPointerUp(e) {
     }
 
     syncProcessedCanvasFromBuffer();
-    requestMeshUpdate();
+    if (activeEditorTool !== 'fill' && activeEditorTool !== 'recolor') {
+        requestMeshUpdate();
+    }
 }
 
 
@@ -4562,7 +4756,7 @@ function applySharedUrlParams() {
         if (z !== null) { config.maxRelief = z; applied = true; }
         if (base !== null) { config.baseThickness = Math.min(base, config.maxRelief - 0.2); applied = true; }
         const elZ = document.getElementById('input-max-z'); if (elZ) elZ.value = config.maxRelief;
-        const elBase = document.getElementById('select-base-thickness'); if (elBase) elBase.value = String(config.baseThickness);
+        const elBase = document.getElementById('select-base-thickness'); if (elBase) elBase.value = Number(config.baseThickness || 0.60).toFixed(2);
         const topo = params.get('topo');
         if (topo) { config.topography = topo; const el = document.getElementById('select-topography'); if (el) el.value = topo; applied = true; }
         const shape = params.get('shape');
@@ -4601,22 +4795,25 @@ window.addEventListener('DOMContentLoaded', () => {
 
     try { init3D(); } catch (e) { console.warn('3D init degraded:', e); }
     setLang(currentLang);
+    setupDropzone();
     const hasShared = applySharedUrlParams();
-    generateAIPalettesFromImage();
-    renderFilamentStackUI();
+    setWorkspaceMode(config.workspaceMode || 'quick', true);
 
     ['tiger', 'cyberpunk', 'cat', 'mountain', 'mona'].forEach(type => {
         const cvs = document.getElementById(`sample-cvs-${type}`);
         if (cvs) drawSampleGraphic(cvs, type);
     });
 
-    // Load the default high-detail dual tiger sample (keeping shared palette/dims if specified in URL)
+    // Load default dual-tiger sample cleanly once (preserving shared URL palette/dims if present)
     const savedFils = hasShared ? filaments.map(f => ({ ...f })) : null;
     loadSample('tiger');
     if (hasShared && savedFils) {
-        filaments = savedFils;
-        renderFilamentStackUI();
-        generate3DReliefMesh();
+        setTimeout(() => {
+            filaments = savedFils;
+            renderFilamentStackUI();
+            if (typeof updateFilamentSwatchesUI === 'function') updateFilamentSwatchesUI();
+            requestMeshUpdate(true);
+        }, 80);
     }
 
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
@@ -4625,4 +4822,294 @@ window.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeAllModals();
     });
 });
+
+// ==========================================
+// 🎛️ WORKSPACE MODE SWITCHER (QUICK HUEFORGE VS PRO CAD) & ACCORDIONS
+// ==========================================
+function setWorkspaceMode(mode, silent = false) {
+    config.workspaceMode = (mode === 'pro') ? 'pro' : 'quick';
+    document.body.classList.toggle('workspace-quick', config.workspaceMode === 'quick');
+    document.body.classList.toggle('workspace-pro', config.workspaceMode === 'pro');
+    const bQ = document.getElementById('btn-ws-quick');
+    const bP = document.getElementById('btn-ws-pro');
+    if (bQ) bQ.classList.toggle('active', config.workspaceMode === 'quick');
+    if (bP) bP.classList.toggle('active', config.workspaceMode === 'pro');
+    if (!silent) {
+        showToast(config.workspaceMode === 'quick'
+            ? (currentLang === 'fr' ? '⚡ Mode Quick HueForge (4 étapes simples)' : '⚡ Quick HueForge Mode (Clean 4-step workflow)')
+            : (currentLang === 'fr' ? '🛠️ Mode Pro CAD & 2D Studio activé' : '🛠️ Pro CAD & 2D Studio Mode enabled'));
+    }
+}
+
+function toggleAccordionSection(sectionId) {
+    const sec = document.getElementById(sectionId);
+    if (!sec) return;
+    sec.classList.toggle('collapsed');
+}
+
+// ==========================================
+// 📸 CAMERA TD AUTO-CALIBRATOR ("SNAP & MEASURE TD" — ZERO $50 HARDWARE!)
+// ==========================================
+let _camTDImg = null;
+let _camTDPoints = [];
+let _camTDLastResult = null;
+
+function openCameraTDModal() {
+    const modal = document.getElementById('camera-td-modal');
+    if (modal) modal.style.display = 'flex';
+    _camTDPoints = [];
+    _camTDLastResult = null;
+    renderCameraTDCanvas();
+}
+
+function handleCameraTDPhotoUpload(event) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+    if (event.target) event.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            _camTDImg = img;
+            _camTDPoints = [];
+            _camTDLastResult = null;
+            renderCameraTDCanvas();
+            const resEl = document.getElementById('cam-td-result-box');
+            if (resEl) {
+                resEl.innerHTML = currentLang === 'fr'
+                    ? '👉 Cliquez le <strong>centre de la marche la plus fine (0.20mm)</strong>, puis le <strong>centre de la marche la plus épaisse (3.00mm)</strong>.'
+                    : '👉 Click the <strong>center of the thinnest step (0.20mm)</strong>, then the <strong>center of the thickest step (3.00mm)</strong>.';
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderCameraTDCanvas() {
+    const cvs = document.getElementById('cam-td-canvas');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    ctx.fillStyle = '#090d16';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+    if (!_camTDImg) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 13px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentLang === 'fr' ? '1. Imprimez la Cale TD • 2. Posez sur écran/feuille blanche • 3. Importez la photo ici' : '1. Print Calibration Wedge • 2. Hold over white screen/paper • 3. Upload photo here', cvs.width / 2, cvs.height / 2);
+        return;
+    }
+
+    const scale = Math.min(cvs.width / _camTDImg.width, cvs.height / _camTDImg.height);
+    const dw = _camTDImg.width * scale;
+    const dh = _camTDImg.height * scale;
+    const dx = (cvs.width - dw) * 0.5;
+    const dy = (cvs.height - dh) * 0.5;
+    ctx.drawImage(_camTDImg, dx, dy, dw, dh);
+
+    if (_camTDPoints.length >= 1) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.fillStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        _camTDPoints.forEach((p, idx) => {
+            ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = '700 11px sans-serif';
+            ctx.fillText(idx === 0 ? '0.2mm' : '3.0mm', p.x + 10, p.y - 6);
+            ctx.fillStyle = '#38bdf8';
+        });
+    }
+    if (_camTDPoints.length === 2) {
+        const p0 = _camTDPoints[0], p1 = _camTDPoints[1];
+        ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        for (let s = 0; s < 15; s++) {
+            const t = s / 14;
+            const sx = p0.x + (p1.x - p0.x) * t;
+            const sy = p0.y + (p1.y - p0.y) * t;
+            ctx.strokeStyle = '#10b981';
+            ctx.strokeRect(sx - 3, sy - 3, 6, 6);
+        }
+    }
+}
+
+function onCameraTDCanvasClick(e) {
+    if (!_camTDImg) return;
+    const cvs = document.getElementById('cam-td-canvas');
+    if (!cvs) return;
+    const rect = cvs.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const x = ((e.clientX - rect.left) / rect.width) * cvs.width;
+    const y = ((e.clientY - rect.top) / rect.height) * cvs.height;
+
+    if (_camTDPoints.length >= 2) _camTDPoints = [];
+    _camTDPoints.push({ x, y });
+    renderCameraTDCanvas();
+    if (_camTDPoints.length === 2) runCameraTDFit();
+}
+
+function runCameraTDFit() {
+    const cvs = document.getElementById('cam-td-canvas');
+    if (!cvs || !_camTDImg || _camTDPoints.length < 2) return;
+    const tmp = document.createElement('canvas');
+    tmp.width = cvs.width; tmp.height = cvs.height;
+    const ctx = tmp.getContext('2d');
+    const scale = Math.min(tmp.width / _camTDImg.width, tmp.height / _camTDImg.height);
+    const dw = _camTDImg.width * scale, dh = _camTDImg.height * scale;
+    ctx.drawImage(_camTDImg, (tmp.width - dw) * 0.5, (tmp.height - dh) * 0.5, dw, dh);
+    const id = ctx.getImageData(0, 0, tmp.width, tmp.height).data;
+
+    const p0 = _camTDPoints[0], p1 = _camTDPoints[1];
+    const lums = [];
+    const thicknesses = [];
+    let thickR = 0, thickG = 0, thickB = 0;
+
+    for (let s = 0; s < 15; s++) {
+        const t = s / 14;
+        const cx = Math.round(p0.x + (p1.x - p0.x) * t);
+        const cy = Math.round(p0.y + (p1.y - p0.y) * t);
+        let sumLin = 0, rS = 0, gS = 0, bS = 0, cnt = 0;
+        for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+                const xx = Math.max(0, Math.min(tmp.width - 1, cx + dx));
+                const yy = Math.max(0, Math.min(tmp.height - 1, cy + dy));
+                const idx = (yy * tmp.width + xx) * 4;
+                const r = id[idx], g = id[idx + 1], b = id[idx + 2];
+                sumLin += 0.2126 * SRGB_TO_LIN_LUT[r] + 0.7152 * SRGB_TO_LIN_LUT[g] + 0.0722 * SRGB_TO_LIN_LUT[b];
+                rS += r; gS += g; bS += b; cnt++;
+            }
+        }
+        lums.push(sumLin / Math.max(1, cnt));
+        thicknesses.push(0.20 * (s + 1));
+        if (s === 14) {
+            thickR = Math.round(rS / cnt);
+            thickG = Math.round(gS / cnt);
+            thickB = Math.round(bS / cnt);
+        }
+    }
+
+    const fit = computeCameraTDFromSamples(lums, thicknesses);
+    const detectedHex = rgbToHex(thickR, thickG, thickB);
+    _camTDLastResult = { ...fit, hex: detectedHex };
+
+    const hexInput = document.getElementById('cam-td-spool-hex');
+    if (hexInput) hexInput.value = detectedHex;
+    const resEl = document.getElementById('cam-td-result-box');
+    if (resEl) {
+        const conf = Math.round((fit.r2 || 0) * 100);
+        resEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div><strong style="color:#10b981;font-size:1.1rem;">TD = ${fit.td.toFixed(1)} mm</strong>
+            <span style="font-size:0.75rem;color:#94a3b8;margin-left:8px;">(Fit R²: ${conf}%)</span></div>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;"><span style="width:14px;height:14px;border-radius:4px;background:${detectedHex};border:1px solid #fff;display:inline-block;"></span>${detectedHex.toUpperCase()}</span>
+        </div>`;
+    }
+}
+
+function saveCalibratedSpoolToRack() {
+    if (!_camTDLastResult) {
+        showToast(currentLang === 'fr' ? 'Cliquez d’abord les 2 extrémités de la cale sur la photo.' : 'Click both ends of the printed wedge on the photo first.');
+        return;
+    }
+    const brand = document.getElementById('cam-td-spool-brand')?.value.trim() || 'My Spool';
+    const name = document.getElementById('cam-td-spool-name')?.value.trim() || `Calibrated TD ${_camTDLastResult.td}mm`;
+    const hex = document.getElementById('cam-td-spool-hex')?.value || _camTDLastResult.hex;
+    const entry = addCustomSpoolToRack({ brand, name, hex, td: _camTDLastResult.td, markOwned: true });
+    renderFilamentStackUI();
+    showToast(`✅ ${entry.name} (TD ${entry.td}mm) ${currentLang === 'fr' ? 'ajoutée à Mon Rack !' : 'saved to My Spool Rack!'}`);
+    closeAllModals();
+}
+
+// ==========================================
+// 🧰 MY SPOOL RACK MODAL (OWNED INVENTORY + .HFP / CSV / JSON IMPORT)
+// ==========================================
+function openSpoolRackModal() {
+    const modal = document.getElementById('spool-rack-modal');
+    if (modal) modal.style.display = 'flex';
+    renderSpoolRackList();
+}
+
+function renderSpoolRackList() {
+    const listEl = document.getElementById('spool-rack-list');
+    const countEl = document.getElementById('spool-rack-count');
+    if (!listEl) return;
+    const q = (document.getElementById('spool-rack-search')?.value || '').trim().toLowerCase();
+    const brandFilter = document.getElementById('spool-rack-brand-filter')?.value || 'all';
+    const onlyOwned = !!document.getElementById('chk-rack-only-owned')?.checked;
+
+    const all = getAllAvailableSpools();
+    const ownedCount = getOwnedSpools().length;
+    if (countEl) countEl.innerText = `${ownedCount} / ${all.length}`;
+
+    const filtered = all.filter(s => {
+        if (onlyOwned && !isSpoolOwned(s.id)) return false;
+        if (brandFilter !== 'all' && s.brand !== brandFilter) return false;
+        if (q && !(s.name.toLowerCase().includes(q) || s.brand.toLowerCase().includes(q) || (s.color || s.hex).toLowerCase().includes(q))) return false;
+        return true;
+    });
+
+    listEl.innerHTML = filtered.slice(0, 120).map(s => {
+        const owned = isSpoolOwned(s.id);
+        const safeId = window.safeEscapeHtml(s.id);
+        const safeColor = /^#[0-9a-f]{6}$/i.test(s.color || s.hex) ? (s.color || s.hex) : '#38bdf8';
+        return `<div class="spool-rack-item ${owned ? 'owned' : ''}" onclick="onToggleRackSpool('${safeId}')">
+            <span class="spool-rack-dot" style="background:${safeColor};"></span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${window.safeEscapeHtml(s.name)}</div>
+                <div style="font-size:0.68rem;color:#94a3b8;">${window.safeEscapeHtml(s.brand)} • ${safeColor.toUpperCase()} • TD ${s.td}mm</div>
+            </div>
+            <span style="font-size:0.95rem;">${owned ? '⭐' : '☆'}</span>
+        </div>`;
+    }).join('') || `<div style="padding:18px;text-align:center;color:#94a3b8;font-size:0.8rem;">No spools match filter.</div>`;
+}
+
+function onToggleRackSpool(id) {
+    toggleOwnedSpool(id);
+    renderSpoolRackList();
+    renderFilamentStackUI();
+}
+
+function addManualCustomSpool() {
+    const brand = document.getElementById('rack-add-brand')?.value.trim() || 'Custom';
+    const name = document.getElementById('rack-add-name')?.value.trim();
+    const hex = document.getElementById('rack-add-hex')?.value || '#38bdf8';
+    const td = parseFloat(document.getElementById('rack-add-td')?.value) || 2.5;
+    if (!name) {
+        showToast(currentLang === 'fr' ? 'Entrez un nom de bobine.' : 'Enter a spool name.');
+        return;
+    }
+    addCustomSpoolToRack({ brand, name, hex, td, markOwned: true });
+    const nameEl = document.getElementById('rack-add-name');
+    if (nameEl) nameEl.value = '';
+    renderSpoolRackList();
+    renderFilamentStackUI();
+    showToast(`⭐ ${brand} ${name} (TD ${td}mm) added!`);
+}
+
+function handleSpoolRackImportFile(event) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+    if (event.target) event.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const res = importSpoolRackFromText(e.target.result);
+            renderSpoolRackList();
+            renderFilamentStackUI();
+            showToast(`📥 Imported ${res.imported} spool(s) (.hfp / JSON / CSV)!`);
+        } catch (err) {
+            showToast('⚠️ Invalid spool file (.hfp / .json / .csv)');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function downloadSpoolRackBackup() {
+    const json = exportSpoolRackJSON();
+    downloadFileDirect(new Blob([json], { type: 'application/json' }), `StudiosPro_My_Spool_Rack_${Date.now()}.json`);
+    showToast('💾 My Spool Rack exported!');
+}
+
+function toggleOwnSpoolsOnly(checked) {
+    config.ownSpoolsOnly = !!checked;
+}
 

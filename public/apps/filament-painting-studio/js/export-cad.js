@@ -1,13 +1,18 @@
 // ==========================================
-// 📦 EXPORT ENGINE: 3MF, STL & SPLIT LAYERS
+// 📦 EXPORT ENGINE: BAMBU/ORCA/PRUSA 3MF, STL, SPLIT SLABS, MURAL DOVETAIL & HTML 3D
 // ==========================================
+let _isExportRunning = false;
+let _toastHideTimer = null;
+
 function openExportModal() {
     closeAllModals();
-    document.getElementById('export-modal').style.display = 'flex';
+    if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
+    const modal = document.getElementById('export-modal');
+    if (modal) modal.style.display = 'flex';
 }
 
 function closeAllModals() {
-    ['export-modal', 'slicer-modal', 'share-modal'].forEach(id => {
+    ['export-modal', 'slicer-modal', 'share-modal', 'camera-td-modal', 'spool-rack-modal', 'mockup-modal'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -22,91 +27,187 @@ function setExportQuality(q) {
 }
 
 async function executeExport(format) {
+    if (_isExportRunning) return false;
+    _isExportRunning = true;
     const pBox = document.getElementById('export-progress-box');
     const pBar = document.getElementById('export-progress-bar');
     const pText = document.getElementById('export-status-text');
 
-    config.exportQuantize = document.getElementById('chk-export-quantize').checked;
-    config.exportIncludeFrame = document.getElementById('chk-export-frame').checked;
-    const chkAdaptive = document.getElementById('chk-export-adaptive');
-    config.adaptiveMesh = chkAdaptive ? chkAdaptive.checked : true;
+    try {
+        if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
+        const chkQ = document.getElementById('chk-export-quantize');
+        const chkF = document.getElementById('chk-export-frame');
+        const chkA = document.getElementById('chk-export-adaptive');
+        const profSel = document.getElementById('select-slicer-profile');
+        const murConnSel = document.getElementById('select-mural-connector');
+        if (chkQ) config.exportQuantize = chkQ.checked;
+        if (chkF) config.exportIncludeFrame = chkF.checked;
+        if (chkA) config.adaptiveMesh = chkA.checked;
+        if (profSel) config.slicerProfile = profSel.value;
+        if (murConnSel) config.muralConnector = murConnSel.value;
 
-    pBox.style.display = 'block';
-    pBar.style.width = '25%';
-    pText.innerText = currentLang === 'fr' ? "Échantillonnage Chromatique Haute-Définition..." : "High-Definition Chromatic Resampling...";
-    await new Promise(r => setTimeout(r, 60));
-
-    const options = {
-        quality: config.exportQuality,
-        quantize: config.exportQuantize,
-        includeFrame: config.exportIncludeFrame,
-        adaptiveMesh: config.adaptiveMesh
-    };
-
-    if (format === 'stl') {
-        pBar.style.width = '65%';
-        pText.innerText = currentLang === 'fr' ? "Génération du STL binaire étanche (Worker)..." : "Building watertight binary STL (Worker)...";
+        if (pBox) pBox.style.display = 'block';
+        if (pBar) pBar.style.width = '22%';
+        if (pText) pText.innerText = currentLang === 'fr' ? 'Échantillonnage CAD Haute-Définition...' : 'High-Definition CAD Resampling...';
         await new Promise(r => setTimeout(r, 40));
 
-        const blob = await generateBinarySTLAsync(options);
-        downloadFileDirect(blob, `StudiosPro_Filament_Painting_${Date.now()}.stl`);
-    } else if (format === '3mf') {
-        pBar.style.width = '60%';
-        pText.innerText = currentLang === 'fr' ? "Configuration des slots AMS & vignette 3MF..." : "Configuring Bambu AMS slots & 3MF thumbnail...";
-        await new Promise(r => setTimeout(r, 80));
+        const options = {
+            quality: config.exportQuality,
+            quantize: config.exportQuantize,
+            includeFrame: config.exportIncludeFrame,
+            adaptiveMesh: config.adaptiveMesh,
+            slicerProfile: config.slicerProfile || 'bambu_ams',
+            muralConnector: config.muralConnector || 'dovetail'
+        };
 
-        const blob = await generate3MFPackage(options);
-        downloadFileDirect(blob, `StudiosPro_Filament_Painting_${Date.now()}.3mf`);
-    } else if (format === 'stl_split') {
-        pBar.style.width = '60%';
-        pText.innerText = currentLang === 'fr' ? "Découpe des couches individuelles..." : "Slicing layer-by-layer STLs...";
-        await new Promise(r => setTimeout(r, 80));
+        if (format === 'stl') {
+            if (pBar) pBar.style.width = '62%';
+            if (pText) pText.innerText = currentLang === 'fr' ? 'Génération du STL binaire étanche (Worker)...' : 'Building watertight binary STL (Worker)...';
+            await new Promise(r => setTimeout(r, 30));
+            const blob = await generateBinarySTLAsync(options);
+            if (!blob || blob.size < 84) throw new Error('Empty STL geometry');
+            downloadFileDirect(blob, `StudiosPro_Filament_Painting_${Date.now()}.stl`);
+        } else if (format === '3mf') {
+            if (pBar) pBar.style.width = '60%';
+            if (pText) pText.innerText = currentLang === 'fr' ? 'Injection Bambu/Orca AMS + Auto-Swap G-Code + DEFLATE...' : 'Injecting Bambu/Orca AMS + Auto-Swap G-Code + DEFLATE...';
+            await new Promise(r => setTimeout(r, 50));
+            const blob = await generate3MFPackage(options);
+            if (!blob || blob.size < 64) throw new Error('Empty 3MF package');
+            downloadFileDirect(blob, `StudiosPro_Filament_Painting_${Date.now()}.3mf`);
+        } else if (format === 'stl_split') {
+            if (pBar) pBar.style.width = '60%';
+            if (pText) pText.innerText = currentLang === 'fr' ? 'Découpe des solides étanches par filament...' : 'Slicing watertight per-filament STLs...';
+            await new Promise(r => setTimeout(r, 50));
+            const blob = await generateSplitLayerSTLsZip(options);
+            if (!blob || blob.size < 64) throw new Error('Empty Split ZIP');
+            downloadFileDirect(blob, `StudiosPro_Split_Layers_${Date.now()}.zip`);
+        } else if (format === 'mural_zip') {
+            const gridN = parseInt(document.getElementById('select-mural-grid')?.value, 10) || 2;
+            if (pBar) pBar.style.width = '55%';
+            if (pText) pText.innerText = currentLang === 'fr' ? `Création Mural ${gridN}×${gridN} (.3MF + connecteurs)...` : `Building ${gridN}×${gridN} Multi-Color .3MF Wall Mural...`;
+            await new Promise(r => setTimeout(r, 50));
+            const blob = await generateWallMuralZip({ ...options, gridN });
+            if (!blob || blob.size < 64) throw new Error('Empty Mural ZIP');
+            downloadFileDirect(blob, `StudiosPro_Wall_Mural_${gridN}x${gridN}_3MF_${Date.now()}.zip`);
+        } else if (format === 'html_3d') {
+            if (pBar) pBar.style.width = '65%';
+            if (pText) pText.innerText = currentLang === 'fr' ? 'Compilation de la visionneuse 3D HTML autonome...' : 'Packaging standalone interactive 3D HTML showcase...';
+            await new Promise(r => setTimeout(r, 40));
+            const ok = await downloadStandaloneHTML3D();
+            if (!ok) throw new Error('HTML 3D export failed');
+        } else {
+            return false;
+        }
 
-        const blob = await generateSplitLayerSTLsZip(options);
-        downloadFileDirect(blob, `StudiosPro_Split_Layers_${Date.now()}.zip`);
-    } else if (format === 'mural_zip') {
-        const gridN = parseInt(document.getElementById('select-mural-grid')?.value) || 2;
-        pBar.style.width = '55%';
-        pText.innerText = currentLang === 'fr' ? `Découpe du Poster Mural ${gridN}×${gridN} (${gridN*gridN} tuiles .3MF multi-couleurs)...` : `Building ${gridN}×${gridN} Multi-Color .3MF Wall Mural (${gridN*gridN} tiles)...`;
-        await new Promise(r => setTimeout(r, 80));
+        if (pBar) pBar.style.width = '100%';
+        if (pText) pText.innerText = currentLang === 'fr' ? 'Exportation terminée !' : 'Export Complete!';
+        await new Promise(r => setTimeout(r, 260));
 
-        const blob = await generateWallMuralZip({ ...options, gridN });
-        downloadFileDirect(blob, `StudiosPro_Wall_Mural_${gridN}x${gridN}_3MF_${Date.now()}.zip`);
+        closeAllModals();
+        showToast(format === 'mural_zip' ? (translations[currentLang]?.toastMuralExported || 'Wall Mural ZIP exported!') : (translations[currentLang]?.toastExportSuccess || 'Export complete!'));
+        return true;
+    } catch (err) {
+        console.error('Export failed:', err);
+        showToast(currentLang === 'fr' ? '⚠️ Erreur lors de l’exportation.' : '⚠️ Export error occurred.');
+        return false;
+    } finally {
+        _isExportRunning = false;
+        if (pBox) pBox.style.display = 'none';
     }
-
-    pBar.style.width = '100%';
-    pText.innerText = currentLang === 'fr' ? "Exportation terminée !" : "Export Complete!";
-    await new Promise(r => setTimeout(r, 350));
-
-    closeAllModals();
-    pBox.style.display = 'none';
-    showToast(format === 'mural_zip' ? translations[currentLang].toastMuralExported : translations[currentLang].toastExportSuccess);
 }
 
 // ==========================================
-// 🧱 ULTRA-HD WATERTIGHT SOLID GENERATOR (WITH TRUE COLOR MATCHING!)
+// 🧱 UNIFIED ULTRA-HD WATERTIGHT SOLID GENERATOR (100% PARITY WITH 3D PREVIEW + Z-UP!)
 // ==========================================
+function buildInterlockingMuralConnectors(w, h, baseZ, tileCrop, connectorType) {
+    if (!tileCrop || !connectorType || connectorType === 'none') return [];
+    const { rowTile, colTile, gridN } = tileCrop;
+    const tris = [];
+    const hw = w * 0.5, hh = h * 0.5;
+    const tabZ = Math.min(Math.max(0.48, baseZ * 0.85), 1.6);
+
+    if (connectorType === 'dovetail') {
+        // Add male dovetail alignment tabs on Right (East) & Bottom (South) interior edges
+        const tabNeckW = 4.6, tabHeadW = 7.4, tabDepth = 4.2;
+        if (colTile < gridN - 1) {
+            // East edge (+X) tabs at y = ±h*0.26
+            [-h * 0.26, h * 0.26].forEach(ty => {
+                const pts = [
+                    [hw - 0.5, ty - tabNeckW * 0.5],
+                    [hw + tabDepth, ty - tabHeadW * 0.5],
+                    [hw + tabDepth, ty + tabHeadW * 0.5],
+                    [hw - 0.5, ty + tabNeckW * 0.5]
+                ];
+                const inner = [[hw - 0.5, ty - 0.1], [hw + 0.1, ty - 0.1], [hw + 0.1, ty + 0.1], [hw - 0.5, ty + 0.1]];
+                // Emit solid trapezoidal dovetail prism [Z=0..tabZ]
+                const v = [
+                    [pts[0][0], pts[0][1], 0], [pts[1][0], pts[1][1], 0], [pts[2][0], pts[2][1], 0], [pts[3][0], pts[3][1], 0],
+                    [pts[0][0], pts[0][1], tabZ], [pts[1][0], pts[1][1], tabZ], [pts[2][0], pts[2][1], tabZ], [pts[3][0], pts[3][1], tabZ]
+                ];
+                const fIdx = [0,2,1, 0,3,2, 4,5,6, 4,6,7, 0,1,5, 0,5,4, 2,3,7, 2,7,6, 0,4,7, 0,7,3, 1,2,6, 1,6,5];
+                for (let fi = 0; fi < fIdx.length; fi += 3) tris.push([v[fIdx[fi]], v[fIdx[fi+1]], v[fIdx[fi+2]]]);
+            });
+        }
+        if (rowTile < gridN - 1) {
+            // South edge (-Y) tabs at x = ±w*0.26
+            [-w * 0.26, w * 0.26].forEach(tx => {
+                const pts = [
+                    [tx - tabNeckW * 0.5, -hh + 0.5],
+                    [tx + tabNeckW * 0.5, -hh + 0.5],
+                    [tx + tabHeadW * 0.5, -hh - tabDepth],
+                    [tx - tabHeadW * 0.5, -hh - tabDepth]
+                ];
+                const v = [
+                    [pts[0][0], pts[0][1], 0], [pts[1][0], pts[1][1], 0], [pts[2][0], pts[2][1], 0], [pts[3][0], pts[3][1], 0],
+                    [pts[0][0], pts[0][1], tabZ], [pts[1][0], pts[1][1], tabZ], [pts[2][0], pts[2][1], tabZ], [pts[3][0], pts[3][1], tabZ]
+                ];
+                const fIdx = [0,2,1, 0,3,2, 4,5,6, 4,6,7, 0,1,5, 0,5,4, 2,3,7, 2,7,6, 0,4,7, 0,7,3, 1,2,6, 1,6,5];
+                for (let fi = 0; fi < fIdx.length; fi += 3) tris.push([v[fIdx[fi]], v[fIdx[fi+1]], v[fIdx[fi+2]]]);
+            });
+        }
+    } else if (connectorType === 'magnets') {
+        // Rear magnetic alignment flange ears with 6.2mm magnet rings along shared interior edges
+        const addEar = (ex, ey) => {
+            const inPts = [], outPts = [];
+            for (let s = 0; s < 20; s++) {
+                const a = (s / 20) * Math.PI * 2;
+                inPts.push([ex + Math.cos(a) * 3.15, ey + Math.sin(a) * 3.15]);
+                outPts.push([ex + Math.cos(a) * 5.2, ey + Math.sin(a) * 5.2]);
+            }
+            tris.push(...buildClosedAnnularPrismTris(inPts, outPts, 0, Math.max(1.2, tabZ)));
+        };
+        if (colTile < gridN - 1) addEar(hw + 1.5, 0);
+        if (rowTile < gridN - 1) addEar(0, -hh - 1.5);
+    }
+    return tris;
+}
+
 function buildWatertightReliefData(options = {}) {
     if (!sourceImage && (!processedCanvas.width || !processedCanvas.height)) return null;
 
-    let targetCols = Math.max(220, config.engineResolution || 360);
-    if (options.quality === 'hd') targetCols = Math.max(360, targetCols);
-    if (options.quality === 'ultra') targetCols = Math.max(480, targetCols);
+    // Respect Export Quality pills properly (standard=220, hd=360, ultra=480)
+    let maxRes = options.quality === 'standard' ? 220 : (options.quality === 'ultra' ? 480 : 360);
     if (options.tileCrop) {
-        targetCols = options.quality === 'ultra' ? 260 : (options.quality === 'hd' ? 220 : 180);
+        maxRes = options.quality === 'ultra' ? 256 : (options.quality === 'hd' ? 208 : 168);
     }
-
     if (activeQRStamp && !options.tileCrop) {
-        targetCols = Math.max(targetCols, 280);
+        maxRes = Math.max(maxRes, 288);
     }
 
-    const isRotated90 = (config.rotation === 90 || config.rotation === 270);
-    const srcW = sourceImage ? (sourceImage.naturalWidth || sourceImage.width) : processedCanvas.width;
-    const srcH = sourceImage ? (sourceImage.naturalHeight || sourceImage.height) : processedCanvas.height;
-    const effectiveW = isRotated90 ? srcH : srcW;
-    const effectiveH = isRotated90 ? srcW : srcH;
-    const aspect = effectiveH / effectiveW;
-    const targetRows = Math.round(targetCols * aspect);
+    const gridDiv = options.tileCrop ? options.tileCrop.gridN : 1;
+    const w = Math.max(20, (config.width || 140) / gridDiv);
+    const h = Math.max(20, (config.height || 140) / gridDiv);
+    const plaqueAspect = h / w;
+
+    // Symmetric resolution clamping (prevents memory explosion on tall/portrait images!)
+    let targetCols, targetRows;
+    if (w >= h) {
+        targetCols = maxRes;
+        targetRows = Math.max(64, Math.min(maxRes, Math.round(maxRes * plaqueAspect)));
+    } else {
+        targetRows = maxRes;
+        targetCols = Math.max(64, Math.min(maxRes, Math.round(maxRes / plaqueAspect)));
+    }
 
     const expCanvas = document.createElement('canvas');
     expCanvas.width = targetCols;
@@ -125,58 +226,49 @@ function buildWatertightReliefData(options = {}) {
             ctx.drawImage(processedCanvas, 0, 0, targetCols, targetRows);
         }
     } else if (sourceImage) {
-        ctx.save();
-        ctx.translate(targetCols / 2, targetRows / 2);
-        if (config.rotation) ctx.rotate((config.rotation * Math.PI) / 180);
-        const sx = config.flipX ? -1 : 1;
-        const sy = config.flipY ? -1 : 1;
-        ctx.scale(sx, sy);
-        const drawW = isRotated90 ? targetRows : targetCols;
-        const drawH = isRotated90 ? targetCols : targetRows;
-        ctx.drawImage(sourceImage, -drawW / 2, -drawH / 2, drawW, drawH);
-        ctx.restore();
+        ctx.drawImage(sourceImage, 0, 0, targetCols, targetRows);
     }
 
-    if (config.smoothing > 0 && ctx.filter !== undefined && !options.tileCrop) {
-        ctx.filter = `blur(${config.smoothing * 0.4}px)`;
-        ctx.drawImage(expCanvas, 0, 0);
-        ctx.filter = 'none';
-    }
-
+    // REMOVED redundant double Gaussian blur so exports stay razor-sharp like the 3D preview!
     const imgData = ctx.getImageData(0, 0, targetCols, targetRows);
     const data = imgData.data;
 
     const cols = targetCols;
     const rows = targetRows;
-    const gridDiv = options.tileCrop ? options.tileCrop.gridN : 1;
-    const w = config.width / gridDiv;
-    const h = config.height / gridDiv;
-    const baseZ = config.baseThickness;
-    const maxReliefZ = config.maxRelief;
-    const layerH = config.layerHeight;
+    const baseZ = typeof getEffectiveRearBaseZ === 'function' ? getEffectiveRearBaseZ() : Math.max(0.20, config.baseThickness || 0.60);
+    const maxReliefZ = Math.max(baseZ + 0.4, config.maxRelief || 2.4);
+    const layerH = Math.max(0.04, config.layerHeight || 0.08);
     const N = cols * rows;
 
     const positions = new Float32Array(N * 2 * 3);
     const reliefHeights = new Float32Array(N);
+    const botHeights = new Float32Array(N);
 
     const parsedFilaments = filaments.map((f, idx) => {
+        const { startZ } = (typeof getSlotStartZAndLayer === 'function')
+            ? getSlotStartZAndLayer(idx)
+            : { startZ: idx === 0 ? 0 : (baseZ + f.startPct * (maxReliefZ - baseZ)) };
         return {
-            idx: idx,
+            idx,
             color: f.color,
             rgb: hexToRgb(f.color),
-            startPct: f.startPct,
+            startPct: idx === 0 ? 0 : f.startPct,
             td: f.td || 3.0,
-            startZ: baseZ + f.startPct * (maxReliefZ - baseZ)
+            startZ
         };
     });
-
+    const baseRgbCache = parsedFilaments[0] ? parsedFilaments[0].rgb : [17, 24, 39];
     const ditherPct = config.opticalDithering !== undefined ? config.opticalDithering : 20;
 
-    const [bgR, bgG, bgB] = (config.bgMode === 'flatten_bg' || (config.sculpturalDome && config.sculpturalDome > 0))
+    // Include removeCanvasBg & cameo_dome in background RGB computation (fixes die-cut export!)
+    const needBg = (config.bgMode === 'flatten_bg' || config.bgMode === 'cameo_dome' || (config.sculpturalDome && config.sculpturalDome > 0) || config.removeCanvasBg);
+    const cachedBgRgb = needBg
         ? computeBorderBackgroundRGB(colorDataBuffer || data, (colorDataBuffer && processedCanvas.width) ? processedCanvas.width : cols, (colorDataBuffer && processedCanvas.height) ? processedCanvas.height : rows)
         : [0, 0, 0];
 
-    // Color matching function for TRUE CHROMATIC ASSIGNMENT (supports both full plaque and multi-tile crops)
+    const globalColOff = options.tileCrop ? (options.tileCrop.colTile * (cols - 1)) : 0;
+    const globalRowOff = options.tileCrop ? (options.tileCrop.rowTile * (rows - 1)) : 0;
+
     function getBestFilamentIndex(r, g, b, zVal, vertIdx) {
         let vc = 0, vr = 0;
         if (vertIdx !== undefined) {
@@ -189,17 +281,16 @@ function buildWatertightReliefData(options = {}) {
                 ? (options.tileCrop.rowTile + (vr / Math.max(1, rows - 1))) / options.tileCrop.gridN
                 : (vr / Math.max(1, rows - 1));
             const vnx = gNormX * 2.0 - 1.0;
-            const vny = gNormY * 2.0 - 1.0;
-            if (isOutsideOutlineShape(vnx, vny, config.outlineShape)) {
-                return 0;
-            }
+            const vny = 1.0 - gNormY * 2.0;
+            if (isOutsideOutlineShape(vnx, vny, config.outlineShape)) return 0;
+
             const qrSample = sampleActiveQRStamp(gNormX, gNormY);
             if (qrSample !== null) {
                 return qrSample ? 0 : Math.max(0, parsedFilaments.length - 1);
             }
             const waveSample = sampleActiveSoundwave(gNormX, gNormY);
             if (waveSample !== null) {
-                return waveSample === 1 ? Math.max(0, parsedFilaments.length - 1) : 0;
+                return (waveSample === true || waveSample === 1) ? Math.max(0, parsedFilaments.length - 1) : 0;
             }
             if (filamentSlotBuffer && processedCanvas && processedCanvas.width > 0) {
                 const origC = Math.min(processedCanvas.width - 1, Math.round(gNormX * (processedCanvas.width - 1)));
@@ -211,33 +302,31 @@ function buildWatertightReliefData(options = {}) {
             }
         }
         if (config.colorMode === 'chromatic') {
-            if (config.preserveEyes && (r > 190 && g > 150 && b < 80) && parsedFilaments.length >= 2) {
-                const eyeIdx = parsedFilaments.findIndex(f => f.rgb[0] > 204 && f.rgb[1] > 153);
-                return eyeIdx !== -1 ? eyeIdx : (parsedFilaments.length - 2);
-            }
-            return findClosestFilamentWithDither(r, g, b, vc, vr, parsedFilaments, ditherPct);
+            // Global Bayer coordinates ensure seamless zero-step dithering across mural tile borders!
+            return findClosestFilamentWithDither(r, g, b, globalColOff + vc, globalRowOff + vr, parsedFilaments, ditherPct);
         } else {
-            // Height-based stratified layer assignment
             let fIdx = 0;
             for (let k = 1; k < parsedFilaments.length; k++) {
-                if (zVal >= parsedFilaments[k].startZ) fIdx = k;
+                if (zVal >= parsedFilaments[k].startZ - 1e-4) fIdx = k;
             }
             return fIdx;
         }
     }
 
-    const sharpness = config.detailSharpness * 0.12;
-    const activeTopo = options.tileCrop ? 'flat' : config.topography;
+    const sharpAmt = (config.detailSharpness || 0) * 0.032;
+    const activeTopo = options.tileCrop ? 'flat' : (config.topography || 'flat');
+    const reliefSpan = maxReliefZ - baseZ;
 
+    // Pass 1: Unified height computation (100% consistent with engine-3d.js!)
     for (let r = 0; r < rows; r++) {
-        const y = h / 2 - (r / (rows - 1)) * h;
+        const y = h * 0.5 - (r / Math.max(1, rows - 1)) * h;
         const gNormY = options.tileCrop
             ? (options.tileCrop.rowTile + (r / Math.max(1, rows - 1))) / options.tileCrop.gridN
             : (r / Math.max(1, rows - 1));
-        const ny = gNormY * 2.0 - 1.0;
+        const ny = 1.0 - gNormY * 2.0;
 
         for (let c = 0; c < cols; c++) {
-            const x = -w / 2 + (c / (cols - 1)) * w;
+            const x = -w * 0.5 + (c / Math.max(1, cols - 1)) * w;
             const gNormX = options.tileCrop
                 ? (options.tileCrop.colTile + (c / Math.max(1, cols - 1))) / options.tileCrop.gridN
                 : (c / Math.max(1, cols - 1));
@@ -246,33 +335,17 @@ function buildWatertightReliefData(options = {}) {
 
             const topIdx = r * cols + c;
             const imgIdx = topIdx * 4;
+            const red = data[imgIdx], green = data[imgIdx + 1], blue = data[imgIdx + 2];
 
-            const red = data[imgIdx];
-            const green = data[imgIdx + 1];
-            const blue = data[imgIdx + 2];
-
-            let lum = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255.0;
-
-            if (sharpness > 0 && c > 0 && c < cols - 1 && r > 0 && r < rows - 1) {
-                const up = ((r - 1) * cols + c) * 4;
-                const down = ((r + 1) * cols + c) * 4;
-                const left = (r * cols + (c - 1)) * 4;
-                const right = (r * cols + (c + 1)) * 4;
-                const avgN = (
-                    (0.2126 * data[up] + 0.7152 * data[up+1] + 0.0722 * data[up+2]) +
-                    (0.2126 * data[down] + 0.7152 * data[down+1] + 0.0722 * data[down+2]) +
-                    (0.2126 * data[left] + 0.7152 * data[left+1] + 0.0722 * data[left+2]) +
-                    (0.2126 * data[right] + 0.7152 * data[right+1] + 0.0722 * data[right+2])
-                ) / (4.0 * 255.0);
-                lum = Math.max(0.0, Math.min(1.0, lum + (lum - avgN) * sharpness));
-            }
-
+            let lum = (0.299 * red + 0.587 * green + 0.114 * blue) / 255.0;
             let userFilSlot = null;
             let userZDelta = 0;
+
             if (processedCanvas && processedCanvas.width > 0) {
                 const origC = Math.min(processedCanvas.width - 1, Math.round(gNormX * (processedCanvas.width - 1)));
                 const origR = Math.min(processedCanvas.height - 1, Math.round(gNormY * (processedCanvas.height - 1)));
                 const pIdx = origR * processedCanvas.width + origC;
+                if (heightDataBuffer && heightDataBuffer.length > pIdx) lum = heightDataBuffer[pIdx];
                 if (filamentSlotBuffer && filamentSlotBuffer[pIdx] !== 255 && filamentSlotBuffer[pIdx] < parsedFilaments.length) {
                     userFilSlot = filamentSlotBuffer[pIdx];
                 }
@@ -281,63 +354,110 @@ function buildWatertightReliefData(options = {}) {
                 }
             }
 
-            if (config.bgMode === 'vignette' && userFilSlot === null) {
-                const rSq = nx * nx + ny * ny;
-                lum *= Math.max(0.12, 1.0 - Math.pow(rSq, 1.1) * 0.68);
+            // Sharpen non-painted pixels (uses clamped neighbor indices so mural borders don't create seam steps!)
+            if (sharpAmt > 0.001 && userFilSlot === null) {
+                const rUp = Math.max(0, r - 1), rDn = Math.min(rows - 1, r + 1);
+                const cLt = Math.max(0, c - 1), cRt = Math.min(cols - 1, c + 1);
+                const lumAt = (rr, cc) => {
+                    const ii = (rr * cols + cc) * 4;
+                    return (0.299 * data[ii] + 0.587 * data[ii + 1] + 0.114 * data[ii + 2]) / 255.0;
+                };
+                const avgN = (lumAt(rUp, c) + lumAt(rDn, c) + lumAt(r, cLt) + lumAt(r, cRt)) * 0.25;
+                lum = Math.max(0, Math.min(1, lum + (lum - avgN) * sharpAmt * 3.5));
             }
 
-            let z = computeSculpturalBasReliefZ(lum, nx, ny, red, green, blue, bgR, bgG, bgB, baseZ, maxReliefZ);
+            if (config.bgMode === 'vignette' && userFilSlot === null) {
+                const rSq = nx * nx + ny * ny;
+                lum *= Math.max(0.08, 1.0 - rSq * 0.42);
+            } else if (config.bgMode === 'flatten_bg' && userFilSlot === null) {
+                const dBg = Math.sqrt(colorDistSq(red, green, blue, cachedBgRgb[0], cachedBgRgb[1], cachedBgRgb[2]));
+                if (dBg < 55) lum *= (dBg / 55) * 0.35;
+            } else if (config.bgMode === 'cameo_dome') {
+                lum = computeSculpturalBasReliefZ(lum, nx, ny, red, green, blue, cachedBgRgb, Math.max(45, config.sculpturalDome || 45));
+            }
 
-            let isFlattenedBg = false;
-            if (config.bgMode === 'flatten_bg' && userFilSlot === null) {
-                const distBg = Math.sqrt(colorDistSq(red, green, blue, bgR, bgG, bgB));
-                const radDist = Math.sqrt(nx * nx + ny * ny);
-                if (distBg < 95 && radDist > 0.36) {
-                    z = baseZ;
-                    isFlattenedBg = true;
-                }
+            if (config.sculpturalDome > 0 && config.bgMode !== 'cameo_dome') {
+                lum = computeSculpturalBasReliefZ(lum, nx, ny, red, green, blue, cachedBgRgb, config.sculpturalDome);
+            }
+
+            let z;
+            if (config.colorMode === 'cmyw') {
+                const ch = computeCMYWChannels(red, green, blue);
+                z = baseZ + (1.0 - Math.pow(ch.lum, 0.72)) * reliefSpan;
+            } else {
+                z = baseZ + lum * reliefSpan;
             }
 
             if (userFilSlot !== null && (config.colorMode === 'stratified' || isDrawingTemplateActive)) {
-                const filStartZ = baseZ + parsedFilaments[userFilSlot].startPct * (maxReliefZ - baseZ);
+                const filStartZ = baseZ + parsedFilaments[userFilSlot].startPct * reliefSpan;
                 z = Math.min(maxReliefZ, filStartZ + (userFilSlot > 0 ? 0.16 : 0.0));
-            } else if (!isFlattenedBg && config.subjectPop > 0 && red > green && red > blue) {
-                z = Math.min(maxReliefZ, z + (config.subjectPop / 100.0) * 0.35);
             }
-
             if (userZDelta !== 0) {
-                z = Math.max(Math.max(0.24, baseZ * 0.55), Math.min(maxReliefZ + 0.64, z + userZDelta));
-            }
-
-            if (options.quantize || (config.layerQuantizeStep && config.layerQuantizeStep > 0)) {
-                const qStep = (config.layerQuantizeStep && config.layerQuantizeStep > 0) ? config.layerQuantizeStep : layerH;
-                z = baseZ + Math.round((z - baseZ) / qStep) * qStep;
-                z = Math.max(baseZ, Math.min(maxReliefZ + 0.64, z));
-            }
-
-            const qrSample = sampleActiveQRStamp(gNormX, gNormY);
-            if (qrSample !== null && !outsideShape) {
-                z = qrSample ? maxReliefZ : Math.max(baseZ, maxReliefZ - Math.max(0.24, layerH * 3));
+                z += userZDelta;
             }
 
             const waveSample = sampleActiveSoundwave(gNormX, gNormY);
             if (waveSample !== null && !outsideShape) {
-                z = waveSample === 1 ? maxReliefZ : Math.max(baseZ, maxReliefZ - Math.max(0.24, layerH * 3));
+                z = (waveSample === true || waveSample === 1) ? maxReliefZ : Math.max(baseZ, maxReliefZ - Math.max(0.24, layerH * 3));
             }
 
-            if (outsideShape) {
-                z = baseZ * 0.55;
+            const qrSample = sampleActiveQRStamp(gNormX, gNormY);
+            if (qrSample !== null && !outsideShape) {
+                if (config.colorMode === 'stratified') {
+                    z = qrSample ? baseZ : maxReliefZ;
+                } else {
+                    z = qrSample ? maxReliefZ : Math.max(baseZ, maxReliefZ - Math.max(0.24, layerH * 3));
+                }
             }
 
+            // Slicer-phase aligned quantization preserving negative Z-Chisel engraving down to baseZ * 0.5!
+            const minZClamp = Math.max(0.24, baseZ * 0.5);
+            if (options.quantize || (config.layerQuantizeStep && config.layerQuantizeStep > 0)) {
+                const qStep = (config.layerQuantizeStep && config.layerQuantizeStep > 0) ? config.layerQuantizeStep : layerH;
+                z = quantizeHeightToSlicerLayer(z, qStep, minZClamp, maxReliefZ + 0.64);
+            } else {
+                z = Math.max(minZClamp, Math.min(maxReliefZ + 0.64, z));
+            }
+
+            if (outsideShape) z = baseZ * 0.55;
             reliefHeights[topIdx] = z;
+            botHeights[topIdx] = options.tileCrop ? 0.0 : computeRearCavityDepthMm(x, y, z, w, h, baseZ);
+        }
+    }
 
-            const [tx, ty, tz] = applyTopographyVertex(x, y, z, w, activeTopo);
+    // Pass 1.5: Anti-spike clamp (matching 3D viewport preview!)
+    if (config.bilateralEdgeLock) {
+        const tmpZ = new Float32Array(reliefHeights);
+        for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+                const idx = r * cols + c;
+                const zc = tmpZ[idx];
+                const nAvg = (tmpZ[idx - 1] + tmpZ[idx + 1] + tmpZ[idx - cols] + tmpZ[idx + cols]) * 0.25;
+                const maxDiff = Math.max(
+                    Math.abs(zc - tmpZ[idx - 1]), Math.abs(zc - tmpZ[idx + 1]),
+                    Math.abs(zc - tmpZ[idx - cols]), Math.abs(zc - tmpZ[idx + cols])
+                );
+                if (maxDiff > 0.72 && Math.abs(zc - nAvg) > 0.45) {
+                    reliefHeights[idx] = nAvg + (zc - nAvg) * 0.52;
+                }
+            }
+        }
+    }
+
+    // Pass 1.8: Write Z-UP Export Coordinates (arc / half_cyl / cylinder stand upright at Z = 0!)
+    for (let r = 0; r < rows; r++) {
+        const y = h * 0.5 - (r / Math.max(1, rows - 1)) * h;
+        for (let c = 0; c < cols; c++) {
+            const x = -w * 0.5 + (c / Math.max(1, cols - 1)) * w;
+            const topIdx = r * cols + c;
+            const z = reliefHeights[topIdx];
+            const botZ = botHeights[topIdx];
+            const [tx, ty, tz] = applyTopographyVertex(x, y, z, w, h, activeTopo, true);
             positions[topIdx * 3] = tx;
             positions[topIdx * 3 + 1] = ty;
             positions[topIdx * 3 + 2] = tz;
 
-            let botZ = options.tileCrop ? 0.0 : computeRearCavityDepthMm(x, y, z, w, h, baseZ);
-            const [bx, by, bz] = applyTopographyVertex(x, y, botZ, w, activeTopo);
+            const [bx, by, bz] = applyTopographyVertex(x, y, botZ, w, h, activeTopo, true);
             const botIdx = N + topIdx;
             positions[botIdx * 3] = bx;
             positions[botIdx * 3 + 1] = by;
@@ -352,7 +472,6 @@ function buildWatertightReliefData(options = {}) {
     const cellRows = rows - 1;
     const activeCells = new Uint8Array(cellCols * cellRows);
     let activeCellCount = 0;
-    const cachedBgRgb = [bgR, bgG, bgB];
     const procW = (processedCanvas && processedCanvas.width > 0) ? processedCanvas.width : cols;
     const procH = (processedCanvas && processedCanvas.height > 0) ? processedCanvas.height : rows;
 
@@ -366,7 +485,7 @@ function buildWatertightReliefData(options = {}) {
                 ? (options.tileCrop.colTile + ((c + 0.5) / Math.max(1, cellCols))) / options.tileCrop.gridN
                 : ((c + 0.5) / Math.max(1, cellCols));
             const origC = Math.min(procW - 1, Math.round(gCenterX * (procW - 1)));
-            if (!isPixelCutoutVoid(origC, origR, procW, procH, cachedBgRgb)) {
+            if (!isPixelCutoutVoid(origC, origR, procW, procH, cachedBgRgb, baseRgbCache)) {
                 activeCells[r * cellCols + c] = 1;
                 activeCellCount++;
             }
@@ -381,7 +500,6 @@ function buildWatertightReliefData(options = {}) {
     const cellFil1 = new Uint8Array(cellCols * cellRows);
     const cellFil2 = new Uint8Array(cellCols * cellRows);
 
-    // Pass A: Compute exact chromatic / depth filament assignment for every active cell
     for (let r = 0; r < cellRows; r++) {
         const rowOff = r * cellCols;
         const gCenterY = options.tileCrop
@@ -408,7 +526,7 @@ function buildWatertightReliefData(options = {}) {
                 filIdx1 = qrFil;
                 filIdx2 = qrFil;
             } else if (waveCell !== null) {
-                const waveFil = waveCell === 1 ? Math.max(0, parsedFilaments.length - 1) : 0;
+                const waveFil = (waveCell === true || waveCell === 1) ? Math.max(0, parsedFilaments.length - 1) : 0;
                 filIdx1 = waveFil;
                 filIdx2 = waveFil;
             } else {
@@ -671,10 +789,15 @@ function buildWatertightReliefData(options = {}) {
 
     const cad = buildFrameAndMountingTriangles(w, h, baseZ, maxReliefZ, {
         includeFrame: !!options.includeFrame,
+        includeMounting: !!options.includeFrame,
         tileCrop: options.tileCrop,
         previewMode: false
     });
     let frameTriangles = cad.combined;
+    if (options.tileCrop && options.muralConnector && options.muralConnector !== 'none') {
+        const connTris = buildInterlockingMuralConnectors(w, h, baseZ, options.tileCrop, options.muralConnector);
+        if (connTris.length > 0) frameTriangles = [...frameTriangles, ...connTris];
+    }
 
     return {
         positions,
@@ -683,7 +806,11 @@ function buildWatertightReliefData(options = {}) {
         vertCount: N * 2,
         triCount: totalTriangles,
         frameTriangles,
-        splitMeta: { activeCells, cellFil1, cellFil2, cellRows, cellCols, cols, N, isClosedCyl }
+        baseZ,
+        maxReliefZ,
+        reliefHeights,
+        botHeights,
+        splitMeta: { activeCells, cellFil1, cellFil2, cellRows, cellCols, cols, rows, N, isClosedCyl, w, h, activeTopo }
     };
 }
 
@@ -762,12 +889,6 @@ function packBinaryStlLocal(solidData) {
     return buffer;
 }
 
-function generateBinarySTL(options = {}) {
-    const solidData = buildWatertightReliefData(options);
-    if (!solidData) return new Blob();
-    return new Blob([packBinaryStlLocal(solidData)], { type: 'application/octet-stream' });
-}
-
 let _stlWorkerInstance = null;
 let _stlWorkerJobId = 0;
 async function generateBinarySTLAsync(options = {}) {
@@ -783,7 +904,8 @@ async function generateBinarySTLAsync(options = {}) {
 
     const { positions, indices, triCount, frameTriangles } = solidData;
     const frameCount = frameTriangles.length;
-    const frameFlat = new Float64Array(frameCount * 9);
+    // Float32Array (50% memory vs Float64Array) + Transferable zero-copy!
+    const frameFlat = new Float32Array(frameCount * 9);
     for (let i = 0; i < frameCount; i++) {
         const tri = frameTriangles[i];
         const k = i * 9;
@@ -801,17 +923,27 @@ async function generateBinarySTLAsync(options = {}) {
         };
         try {
             if (!_stlWorkerInstance) _stlWorkerInstance = new Worker('workers/stl-worker.js');
+            const workerRef = _stlWorkerInstance;
             const jobId = ++_stlWorkerJobId;
+
+            const cleanup = () => {
+                clearTimeout(timer);
+                try {
+                    workerRef.removeEventListener('message', onMsg);
+                    workerRef.removeEventListener('error', onErr);
+                } catch (_) {}
+            };
+
             const timer = setTimeout(() => {
-                _stlWorkerInstance = null;
+                cleanup();
+                try { workerRef.terminate(); } catch (_) {}
+                if (_stlWorkerInstance === workerRef) _stlWorkerInstance = null;
                 finishFallback();
             }, 25000);
 
             const onMsg = (e) => {
                 if (!e || !e.data || e.data.id !== jobId) return;
-                clearTimeout(timer);
-                _stlWorkerInstance.removeEventListener('message', onMsg);
-                _stlWorkerInstance.removeEventListener('error', onErr);
+                cleanup();
                 if (settled) return;
                 settled = true;
                 if (e.data.ok && e.data.buffer) {
@@ -821,28 +953,26 @@ async function generateBinarySTLAsync(options = {}) {
                 }
             };
             const onErr = () => {
-                clearTimeout(timer);
-                if (_stlWorkerInstance) {
-                    _stlWorkerInstance.removeEventListener('message', onMsg);
-                    _stlWorkerInstance.removeEventListener('error', onErr);
-                    try { _stlWorkerInstance.terminate(); } catch (_) {}
-                    _stlWorkerInstance = null;
-                }
+                cleanup();
+                try { workerRef.terminate(); } catch (_) {}
+                if (_stlWorkerInstance === workerRef) _stlWorkerInstance = null;
                 finishFallback();
             };
 
-            _stlWorkerInstance.addEventListener('message', onMsg);
-            _stlWorkerInstance.addEventListener('error', onErr);
-            _stlWorkerInstance.postMessage({
+            workerRef.addEventListener('message', onMsg);
+            workerRef.addEventListener('error', onErr);
+            const posCopy = new Float32Array(positions);
+            const idxCopy = new Uint32Array(indices);
+            workerRef.postMessage({
                 type: 'PACK_STL',
                 id: jobId,
-                headerStr: "Studios-Pro 3D Ultra-HD Watertight Filament Painting",
+                headerStr: 'Studios-Pro 3D Ultra-HD Watertight Filament Painting',
                 triCount,
                 frameCount,
-                positions,
-                indices,
+                positions: posCopy,
+                indices: idxCopy,
                 frameFlat
-            });
+            }, [posCopy.buffer, idxCopy.buffer, frameFlat.buffer]);
         } catch (_) {
             finishFallback();
         }
@@ -850,34 +980,102 @@ async function generateBinarySTLAsync(options = {}) {
 }
 
 // ==========================================
-// 🎁 3MF MULTI-COLOR PACKAGE WITH THUMBNAIL
+// 🎁 AUTHENTIC BAMBU STUDIO / ORCASLICER / PRUSASLICER MULTI-COLOR + AUTO-SWAP .3MF
 // ==========================================
+// Standard Bambu Studio / OrcaSlicer / PrusaSlicer 4-bit triangle paint_color hex codes:
+// Extruder 1 (base) -> omitted; Extruder 2 -> "8"; Extruder 3 -> "0C"; Extruder 4 -> "1C"; Extruder 5 -> "2C"; Extruder 6 -> "3C"
+const BAMBU_PAINT_COLOR_CODES = ['', '8', '0C', '1C', '2C', '3C', '4C', '5C'];
+
+function renderCompact3MFThumbnailBase64(maxPx = 512) {
+    try {
+        if (!renderer || !scene || !camera) return null;
+        renderer.render(scene, camera);
+        const src = renderer.domElement;
+        if (!src || !src.width || !src.height) return null;
+        const scale = Math.min(1, maxPx / Math.max(src.width, src.height));
+        const tw = Math.max(64, Math.round(src.width * scale));
+        const th = Math.max(64, Math.round(src.height * scale));
+        const thumbCvs = document.createElement('canvas');
+        thumbCvs.width = tw;
+        thumbCvs.height = th;
+        const tctx = thumbCvs.getContext('2d');
+        tctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, tw, th);
+        return thumbCvs.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+    } catch (_) {
+        return null;
+    }
+}
+
+function buildBambuCustomGcodePerLayerXML(slicerProfile) {
+    const isManualM600 = (slicerProfile === 'manual_m600' || slicerProfile === 'cura_pause');
+    const lines = ['<?xml version="1.0" encoding="utf-8"?>', '<custom_gcodes_per_print_z>'];
+
+    // Emit exact layer swap entries for Stratified / HueForge mode (or manual M600 profile)
+    if (config.colorMode === 'stratified' || isManualM600) {
+        for (let idx = 1; idx < filaments.length; idx++) {
+            const { startZ, startLayer } = getSlotStartZAndLayer(idx);
+            const fil = filaments[idx];
+            const hex = (fil.color || '#ffffff').slice(0, 7).toUpperCase();
+            if (isManualM600) {
+                lines.push(`  <plate id="1">`);
+                lines.push(`    <layer top_z="${startZ.toFixed(2)}" type="3" extruder="1" color="${hex}" extra="M600 ; Swap to Slot ${idx + 1}: ${window.safeEscapeHtml(fil.name)} (Layer ${startLayer})" gcode="M600"/>`);
+                lines.push(`  </plate>`);
+            } else {
+                // Bambu Studio / OrcaSlicer / PrusaSlicer native AMS automatic filament change (type="2", extruder=1-based)
+                const amsSlot = (slicerProfile === 'bambu_ams' || slicerProfile === 'bambu_ams_lite')
+                    ? ((idx % 4) + 1)
+                    : (idx + 1);
+                lines.push(`  <plate id="1">`);
+                lines.push(`    <layer top_z="${startZ.toFixed(2)}" type="2" extruder="${amsSlot}" color="${hex}" extra="Auto AMS Swap -> Slot ${idx + 1}: ${window.safeEscapeHtml(fil.name)} (Layer ${startLayer})" gcode=""/>`);
+                lines.push(`  </plate>`);
+            }
+        }
+    }
+
+    // Optional NFC cavity pause at Z = 0.60mm
+    if (config.nfcPocket && (!config.topography || config.topography === 'flat')) {
+        lines.push(`  <plate id="1">`);
+        lines.push(`    <layer top_z="0.60" type="1" extruder="1" color="" extra="PAUSE: Insert 25mm NFC Tag" gcode="M400 U1"/>`);
+        lines.push(`  </plate>`);
+    }
+
+    lines.push('</custom_gcodes_per_print_z>');
+    return lines.join('\n');
+}
+
 async function generate3MFPackage(options = {}) {
     const solidData = buildWatertightReliefData(options);
     if (!solidData) return new Blob();
 
     const { positions, indices, triangleFilamentIdx, vertCount, triCount, frameTriangles } = solidData;
     const zip = createArchiveZip();
+    const slicerProfile = options.slicerProfile || config.slicerProfile || 'bambu_ams';
+    const isChromaticPaint = (config.colorMode === 'chromatic');
 
     const objName = options.tileCrop
-        ? `Mural_Tile_Row${options.tileCrop.rowTile + 1}_Col${options.tileCrop.colTile + 1}`
+        ? `Mural_Tile_R${options.tileCrop.rowTile + 1}_C${options.tileCrop.colTile + 1}`
         : `Filament_Painting_Relief`;
 
-    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8"?>
+    const thumbB64 = renderCompact3MFThumbnailBase64(512);
+
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
   <Default Extension="config" ContentType="application/vnd.bambulab.bambustudio.config+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="png" ContentType="image/png"/>
 </Types>`);
 
-    zip.folder("_rels").file(".rels", `<?xml version="1.0" encoding="UTF-8"?>
+    const thumbRelLine = thumbB64
+        ? '\n  <Relationship Target="/Metadata/thumbnail.png" Id="rel1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>'
+        : '';
+    zip.folder('_rels').file('.rels', `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
-  <Relationship Target="/Metadata/thumbnail.png" Id="rel1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>
+  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>${thumbRelLine}
 </Relationships>`);
 
-    // Compact relief vertices so zero orphan vertices exist (e.g. die-cut voids / cylinder seam wrap)
+    // Compact relief vertices
     const vertRemap = new Int32Array(vertCount);
     vertRemap.fill(-1);
     const vertChunks = [];
@@ -900,90 +1098,149 @@ async function generate3MFPackage(options = {}) {
         const v2 = mapVert(indices[f * 3 + 1]);
         const v3 = mapVert(indices[f * 3 + 2]);
         const filIdx = triangleFilamentIdx[f];
-        triChunks[f] = `<triangle v1="${v1}" v2="${v2}" v3="${v3}" pid="1" p1="${filIdx}"/>\n`;
+        const paintCode = (isChromaticPaint && filIdx > 0 && BAMBU_PAINT_COLOR_CODES[filIdx]) ? BAMBU_PAINT_COLOR_CODES[filIdx] : '';
+        if (paintCode) {
+            triChunks[f] = `<triangle v1="${v1}" v2="${v2}" v3="${v3}" pid="1" p1="${filIdx}" paint_color="${paintCode}" slic3rpe:mmu_segmentation="${paintCode}"/>\n`;
+        } else {
+            triChunks[f] = `<triangle v1="${v1}" v2="${v2}" v3="${v3}" pid="1" p1="${filIdx}"/>\n`;
+        }
     }
 
     const colorChunks = ['<m:colorgroup id="1">\n'];
     filaments.forEach(fil => {
-        const hexColor = fil.color.slice(0, 7).toUpperCase();
+        const hexColor = (fil.color || '#ffffff').slice(0, 7).toUpperCase();
         colorChunks.push(`  <m:color color="${hexColor}" />\n`);
     });
     colorChunks.push('</m:colorgroup>');
 
+    // Weld Outer_Frame_Mounting vertices via spatial hash -> 100% WATERTIGHT MANIFOLD 3MF object!
     let frameObjectXML = '';
-    let buildItemsXML = '<item objectid="2"/>';
-
-    if (frameTriangles && frameTriangles.length > 0) {
+    const hasFrameObj = (frameTriangles && frameTriangles.length > 0);
+    if (hasFrameObj) {
+        const weldMap = new Map();
         const frameVertChunks = [];
         const frameTriChunks = [];
-        let vIdx = 0;
+        let fVertCount = 0;
+        const weldVert = (pt) => {
+            const xS = pt[0].toFixed(3), yS = pt[1].toFixed(3), zS = pt[2].toFixed(3);
+            const key = `${xS},${yS},${zS}`;
+            let idx = weldMap.get(key);
+            if (idx === undefined) {
+                idx = fVertCount++;
+                weldMap.set(key, idx);
+                frameVertChunks.push(`<vertex x="${xS}" y="${yS}" z="${zS}"/>\n`);
+            }
+            return idx;
+        };
         for (let fi = 0; fi < frameTriangles.length; fi++) {
             const tri = frameTriangles[fi];
-            frameVertChunks.push(`<vertex x="${tri[0][0].toFixed(3)}" y="${tri[0][1].toFixed(3)}" z="${tri[0][2].toFixed(3)}"/>\n`);
-            frameVertChunks.push(`<vertex x="${tri[1][0].toFixed(3)}" y="${tri[1][1].toFixed(3)}" z="${tri[1][2].toFixed(3)}"/>\n`);
-            frameVertChunks.push(`<vertex x="${tri[2][0].toFixed(3)}" y="${tri[2][1].toFixed(3)}" z="${tri[2][2].toFixed(3)}"/>\n`);
-            frameTriChunks.push(`<triangle v1="${vIdx}" v2="${vIdx+1}" v3="${vIdx+2}" pid="1" p1="0"/>\n`);
-            vIdx += 3;
+            const a = weldVert(tri[0]), b = weldVert(tri[1]), c = weldVert(tri[2]);
+            if (a !== b && b !== c && a !== c) {
+                frameTriChunks.push(`<triangle v1="${a}" v2="${b}" v3="${c}" pid="1" p1="0"/>\n`);
+            }
         }
-
         frameObjectXML = `
     <object id="3" name="Outer_Frame_Mounting" type="model">
       <mesh>
 <vertices>
-  ${frameVertChunks.join('')}
+${frameVertChunks.join('')}
 </vertices>
 <triangles>
-  ${frameTriChunks.join('')}
+${frameTriChunks.join('')}
 </triangles>
       </mesh>
     </object>`;
-        buildItemsXML += '\n    <item objectid="3"/>';
     }
 
+    // Wrap Relief (id=2) + Frame (id=3) inside unified Assembly (id=1) so Slicer Auto-Arrange NEVER separates them!
+    const assemblyXML = hasFrameObj ? `
+    <object id="1" name="${objName}_Assembly" type="model">
+      <components>
+        <component objectid="2"/>
+        <component objectid="3"/>
+      </components>
+    </object>` : '';
+    const buildItemsXML = hasFrameObj ? '<item objectid="1"/>' : '<item objectid="2"/>';
+
     const modelXML = `<?xml version="1.0" encoding="UTF-8"?>
-<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">
+<model unit="millimeter" xml:lang="en-US"
+  xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+  xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02"
+  xmlns:BambuStudio="http://schemas.bambulab.com/package/2021"
+  xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">
+  <metadata name="BambuStudio:3mfVersion">1</metadata>
   <metadata name="Title">StudiosPro_3D_Filament_Painting</metadata>
-  <metadata name="Application">Studios-Pro 3D CAD</metadata>
+  <metadata name="Application">Studios-Pro Filament Painting Studio</metadata>
   <resources>
     ${colorChunks.join('')}
     <object id="2" name="${objName}" type="model">
       <mesh>
 <vertices>
-  ${vertChunks.join('')}
+${vertChunks.join('')}
 </vertices>
 <triangles>
-  ${triChunks.join('')}
+${triChunks.join('')}
 </triangles>
       </mesh>
-    </object>${frameObjectXML}
+    </object>${frameObjectXML}${assemblyXML}
   </resources>
   <build>
     ${buildItemsXML}
   </build>
 </model>`;
 
-    zip.folder("3D").file("3dmodel.model", modelXML);
+    zip.folder('3D').file('3dmodel.model', modelXML);
+
+    // Bambu Studio / OrcaSlicer native project_settings.config (filament colors + 100% infill + exact layer heights!)
+    const projectSettingsObj = {
+        filament_colour: filaments.map(f => (f.color || '#ffffff').slice(0, 7).toUpperCase()),
+        filament_type: filaments.map(() => 'PLA'),
+        filament_vendor: filaments.map(f => (f.name || 'Studios-Pro').split(' ')[0]),
+        layer_height: String((config.layerHeight || 0.08).toFixed(2)),
+        initial_layer_print_height: String((config.firstLayerHeight || 0.20).toFixed(2)),
+        sparse_infill_density: '100%',
+        sparse_infill_pattern: 'rectilinear',
+        wall_loops: '1',
+        top_shell_layers: '0',
+        bottom_shell_layers: '1',
+        enable_prime_tower: isChromaticPaint ? '1' : '0'
+    };
+    const metaDir = zip.folder('Metadata');
+    metaDir.file('project_settings.config', JSON.stringify(projectSettingsObj, null, 2));
+
+    // Bambu Studio / OrcaSlicer / PrusaSlicer exact layer-swap G-code injection!
+    metaDir.file('custom_gcode_per_print_z.xml', buildBambuCustomGcodePerLayerXML(slicerProfile));
 
     const filamentMetadataLines = filaments.map((fil, idx) => {
-        const startH = (config.baseThickness + fil.startPct * (config.maxRelief - config.baseThickness)).toFixed(2);
-        const layerNum = typeof heightToLayerNumber === 'function' ? heightToLayerNumber(parseFloat(startH)) : Math.max(1, Math.round(parseFloat(startH) / config.layerHeight));
-        return `  <metadata key="studios_pro_slot_${idx + 1}" value="${fil.color.slice(0, 7).toUpperCase()} | ${startH}mm | L${layerNum}"/>`;
+        const { startZ, startLayer } = getSlotStartZAndLayer(idx);
+        return `    <metadata key="studios_pro_slot_${idx + 1}" value="${(fil.color || '#ffffff').slice(0, 7).toUpperCase()} | ${startZ.toFixed(2)}mm | L${startLayer} | TD ${(fil.td || 2.0).toFixed(1)}mm"/>`;
     }).join('\n');
+
+    const rootObjId = hasFrameObj ? '1' : '2';
+    const partsXML = hasFrameObj
+        ? `    <part id="2" subtype="normal_part"><metadata key="name" value="${objName}"/><metadata key="extruder" value="1"/></part>
+    <part id="3" subtype="normal_part"><metadata key="name" value="Outer_Frame_Mounting"/><metadata key="extruder" value="1"/></part>`
+        : `    <part id="2" subtype="normal_part"><metadata key="name" value="${objName}"/><metadata key="extruder" value="1"/></part>`;
 
     const modelSettingsConfig = `<?xml version="1.0" encoding="UTF-8"?>
 <config>
-  <object id="2">
+  <object id="${rootObjId}">
     <metadata key="name" value="${objName}"/>
     <metadata key="extruder" value="1"/>
 ${filamentMetadataLines}
+${partsXML}
   </object>
-  ${frameTriangles.length > 0 ? `<object id="3"><metadata key="name" value="Outer_Frame_Mounting"/><metadata key="extruder" value="1"/></object>` : ''}
   <plate>
     <metadata key="plater_id" value="1"/>
     <metadata key="plater_name" value="Plate 1"/>
+    <metadata key="thumbnail_file" value="Metadata/plate_1.png"/>
+    <model_instance>
+      <metadata key="object_id" value="${rootObjId}"/>
+      <metadata key="instance_id" value="0"/>
+    </model_instance>
   </plate>
 </config>`;
-    zip.folder("Metadata").file("model_settings.config", modelSettingsConfig);
+    metaDir.file('model_settings.config', modelSettingsConfig);
 
     const sliceInfoConfig = `<?xml version="1.0" encoding="UTF-8"?>
 <config>
@@ -993,135 +1250,205 @@ ${filamentMetadataLines}
   </header>
   <plate>
     <metadata key="index" value="1"/>
-    <metadata key="prediction" value="0"/>
-    <metadata key="weight" value="0"/>
   </plate>
 </config>`;
-    zip.folder("Metadata").file("slice_info.config", sliceInfoConfig);
+    metaDir.file('slice_info.config', sliceInfoConfig);
 
-    try {
-        if (renderer && scene && camera) {
-            renderer.render(scene, camera);
-            const dataUrl = renderer.domElement.toDataURL('image/png');
-            const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
-            zip.folder("Metadata").file("thumbnail.png", base64Data, { base64: true });
-        }
-    } catch (err) {
-        console.warn('Could not generate 3MF thumbnail:', err);
+    if (thumbB64) {
+        metaDir.file('thumbnail.png', thumbB64, { base64: true });
+        metaDir.file('plate_1.png', thumbB64, { base64: true });
     }
 
-    return await zip.generateAsync({ type: "blob" });
+    // DEFLATE level 6 compression -> 5x to 10x smaller .3mf files!
+    return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }
 
 // ==========================================
-// 🗂️ SPLIT LAYER STLS ZIP ARCHIVE (WATERTIGHT CLOSED SUB-SOLIDS PER FILAMENT)
+// 🗂️ SPLIT LAYER STLS ZIP ARCHIVE (HORIZONTAL Z-SLABS IN STRATIFIED + COLUMNS IN CHROMATIC + FRAME!)
 // ==========================================
+function buildHorizontalSlabStlBuffer(solidData, zLow, zHigh, extraTris, headerTitle) {
+    const { reliefHeights, botHeights, splitMeta } = solidData;
+    const { activeCells, cellRows, cellCols, cols, rows, isClosedCyl, w, h, activeTopo } = splitMeta;
+    const tris = [];
+    const pushQuad = (a, b, c, d) => { tris.push([a, b, c]); tris.push([a, c, d]); };
+    const ptAt = (r, c, z) => {
+        const x = -w * 0.5 + (c / Math.max(1, cols - 1)) * w;
+        const y = h * 0.5 - (r / Math.max(1, rows - 1)) * h;
+        return applyTopographyVertex(x, y, z, w, h, activeTopo, true);
+    };
+
+    const slabActive = new Uint8Array(cellRows * cellCols);
+    for (let r = 0; r < cellRows; r++) {
+        for (let c = 0; c < cellCols; c++) {
+            const ci = r * cellCols + c;
+            if (!activeCells[ci]) continue;
+            const tl = r * cols + c;
+            const tr = (isClosedCyl && c === cellCols - 1) ? (r * cols) : (tl + 1);
+            const bl = tl + cols;
+            const br = (isClosedCyl && c === cellCols - 1) ? ((r + 1) * cols) : (bl + 1);
+            const maxCellZ = Math.max(reliefHeights[tl], reliefHeights[tr], reliefHeights[bl], reliefHeights[br]);
+            if (maxCellZ > zLow + 0.005) slabActive[ci] = 1;
+        }
+    }
+
+    const clampTop = (vIdx) => Math.max(zLow, Math.min(zHigh, reliefHeights[vIdx]));
+    const clampBot = (vIdx) => Math.max(zLow, Math.min(zHigh, botHeights[vIdx]));
+
+    for (let r = 0; r < cellRows; r++) {
+        for (let c = 0; c < cellCols; c++) {
+            const ci = r * cellCols + c;
+            if (!slabActive[ci]) continue;
+            const cNext = (isClosedCyl && c === cellCols - 1) ? 0 : (c + 1);
+            const tl = r * cols + c, tr = r * cols + cNext, bl = (r + 1) * cols + c, br = (r + 1) * cols + cNext;
+
+            const tTL = ptAt(r, c, clampTop(tl)), tTR = ptAt(r, cNext, clampTop(tr));
+            const tBL = ptAt(r + 1, c, clampTop(bl)), tBR = ptAt(r + 1, cNext, clampTop(br));
+            const bTL = ptAt(r, c, clampBot(tl)), bTR = ptAt(r, cNext, clampBot(tr));
+            const bBL = ptAt(r + 1, c, clampBot(bl)), bBR = ptAt(r + 1, cNext, clampBot(br));
+
+            // Top CCW + Bottom CW
+            tris.push([tTL, tBL, tTR], [tTR, tBL, tBR]);
+            tris.push([bTL, bTR, bBL], [bTR, bBR, bBL]);
+
+            // Boundary side walls
+            if (r === 0 || !slabActive[(r - 1) * cellCols + c]) pushQuad(tTL, tTR, bTR, bTL);
+            if (r === cellRows - 1 || !slabActive[(r + 1) * cellCols + c]) pushQuad(tBL, bBL, bBR, tBR);
+            if (!isClosedCyl) {
+                if (c === 0 || !slabActive[r * cellCols + (c - 1)]) pushQuad(tTL, bTL, bBL, tBL);
+                if (c === cellCols - 1 || !slabActive[r * cellCols + (c + 1)]) pushQuad(tTR, tBR, bBR, bTR);
+            }
+        }
+    }
+
+    if (extraTris && extraTris.length) {
+        for (let i = 0; i < extraTris.length; i++) tris.push(extraTris[i]);
+    }
+    if (tris.length === 0) return null;
+
+    const buffer = new ArrayBuffer(84 + tris.length * 50);
+    const view = new DataView(buffer);
+    for (let i = 0; i < headerTitle.length && i < 80; i++) view.setUint8(i, headerTitle.charCodeAt(i) & 0x7F);
+    view.setUint32(80, tris.length, true);
+    let offset = 84;
+    for (let i = 0; i < tris.length; i++) {
+        const t = tris[i];
+        writeStlTriangleToDataView(view, offset, t[0][0], t[0][1], t[0][2], t[1][0], t[1][1], t[1][2], t[2][0], t[2][1], t[2][2]);
+        offset += 50;
+    }
+    return buffer;
+}
+
 async function generateSplitLayerSTLsZip(options = {}) {
     const zip = createArchiveZip();
     const solidData = buildWatertightReliefData({ ...options, preserveGridForSplit: true });
     if (!solidData) return new Blob();
 
-    const { positions, splitMeta } = solidData;
-    const { activeCells, cellFil1, cellFil2, cellRows, cellCols, cols, N, isClosedCyl } = splitMeta;
+    const { positions, frameTriangles, splitMeta, maxReliefZ } = solidData;
 
-    const perFilamentTris = Array.from({ length: filaments.length }, () => []);
-    const emitTri = (fIdx, a, b, c) => {
-        if (fIdx >= 0 && fIdx < perFilamentTris.length) {
-            perFilamentTris[fIdx].push(a, b, c);
+    if (config.colorMode === 'stratified') {
+        // TRUE HORIZONTAL Z-SLAB SLICING for Stratified / HueForge mode!
+        for (let idx = 0; idx < filaments.length; idx++) {
+            const fil = filaments[idx];
+            const zLow = (idx === 0) ? 0.0 : getSlotStartZAndLayer(idx).startZ;
+            const zHigh = (idx + 1 < filaments.length) ? getSlotStartZAndLayer(idx + 1).startZ : (maxReliefZ + 0.70);
+            const extra = (idx === 0 && options.includeFrame) ? frameTriangles : [];
+            const buf = buildHorizontalSlabStlBuffer(solidData, zLow, zHigh, extra, `Studios-Pro Z-Slab ${idx + 1} ${fil.name}`);
+            if (buf) {
+                const safeName = fil.name.replace(/[^a-zA-Z0-9]/g, '_');
+                zip.file(`Slot_${idx + 1}_${safeName}_(${zLow.toFixed(2)}-${Math.min(maxReliefZ, zHigh).toFixed(2)}mm).stl`, buf);
+            }
         }
-    };
-    const emitQuad = (fIdx, a, b, c, d) => {
-        emitTri(fIdx, a, b, c);
-        emitTri(fIdx, c, b, d);
-    };
+    } else {
+        const { activeCells, cellFil1, cellFil2, cellRows, cellCols, cols, N, isClosedCyl } = splitMeta;
+        const perFilamentTris = Array.from({ length: filaments.length }, () => []);
+        const emitTri = (fIdx, a, b, c) => {
+            if (fIdx >= 0 && fIdx < perFilamentTris.length) perFilamentTris[fIdx].push(a, b, c);
+        };
+        const emitQuad = (fIdx, a, b, c, d) => { emitTri(fIdx, a, b, c); emitTri(fIdx, c, b, d); };
 
-    for (let r = 0; r < cellRows; r++) {
-        const rowOff = r * cellCols;
-        for (let c = 0; c < cellCols; c++) {
-            const cellIdx = rowOff + c;
-            if (activeCells[cellIdx] === 0) continue;
+        for (let r = 0; r < cellRows; r++) {
+            const rowOff = r * cellCols;
+            for (let c = 0; c < cellCols; c++) {
+                const cellIdx = rowOff + c;
+                if (activeCells[cellIdx] === 0) continue;
+                const wrapEast = isClosedCyl && (c === cellCols - 1);
+                const tl = r * cols + c;
+                const tr = wrapEast ? (r * cols) : (tl + 1);
+                const bl = (r + 1) * cols + c;
+                const br = wrapEast ? ((r + 1) * cols) : (bl + 1);
+                const b_tl = N + tl, b_tr = N + tr, b_bl = N + bl, b_br = N + br;
+                const f1 = cellFil1[cellIdx], f2 = cellFil2[cellIdx];
 
-            const wrapEast = isClosedCyl && (c === cellCols - 1);
-            const tl = r * cols + c;
-            const tr = wrapEast ? (r * cols) : (tl + 1);
-            const bl = (r + 1) * cols + c;
-            const br = wrapEast ? ((r + 1) * cols) : (bl + 1);
-            const b_tl = N + tl, b_tr = N + tr, b_bl = N + bl, b_br = N + br;
+                emitTri(f1, tl, bl, tr);
+                emitTri(f1, b_tl, b_tr, b_bl);
+                const nFil = (r > 0 && activeCells[(r - 1) * cellCols + c] === 1) ? cellFil2[(r - 1) * cellCols + c] : 255;
+                if (nFil !== f1) { emitTri(f1, tl, tr, b_tl); emitTri(f1, tr, b_tr, b_tl); }
+                const wc = c > 0 ? c - 1 : (isClosedCyl ? cellCols - 1 : -1);
+                const wFil = (wc >= 0 && activeCells[rowOff + wc] === 1) ? cellFil2[rowOff + wc] : 255;
+                if (wFil !== f1) emitQuad(f1, tl, b_tl, bl, b_bl);
+                if (f2 !== f1) emitQuad(f1, bl, b_bl, tr, b_tr);
 
-            const f1 = cellFil1[cellIdx];
-            const f2 = cellFil2[cellIdx];
+                emitTri(f2, tr, bl, br);
+                emitTri(f2, b_tr, b_br, b_bl);
+                const sFil = (r < cellRows - 1 && activeCells[(r + 1) * cellCols + c] === 1) ? cellFil1[(r + 1) * cellCols + c] : 255;
+                if (sFil !== f2) emitQuad(f2, bl, b_bl, br, b_br);
+                const ec = c < cellCols - 1 ? c + 1 : (isClosedCyl ? 0 : -1);
+                const eFil = (ec >= 0 && activeCells[rowOff + ec] === 1) ? cellFil1[rowOff + ec] : 255;
+                if (eFil !== f2) emitQuad(f2, tr, br, b_tr, b_br);
+                if (f1 !== f2) emitQuad(f2, tr, b_tr, bl, b_bl);
+            }
+        }
 
-            // Half-Cell 0: (tl, bl, tr)
-            emitTri(f1, tl, bl, tr);
-            emitTri(f1, b_tl, b_tr, b_bl);
-            const nFil = (r > 0 && activeCells[(r - 1) * cellCols + c] === 1) ? cellFil2[(r - 1) * cellCols + c] : 255;
-            if (nFil !== f1) { emitTri(f1, tl, tr, b_tl); emitTri(f1, tr, b_tr, b_tl); }
-            const wc = c > 0 ? c - 1 : (isClosedCyl ? cellCols - 1 : -1);
-            const wFil = (wc >= 0 && activeCells[rowOff + wc] === 1) ? cellFil2[rowOff + wc] : 255;
-            if (wFil !== f1) emitQuad(f1, tl, b_tl, bl, b_bl);
-            if (f2 !== f1) emitQuad(f1, bl, b_bl, tr, b_tr);
+        for (let filIdx = 0; filIdx < filaments.length; filIdx++) {
+            const fil = filaments[filIdx];
+            const vertIdxList = perFilamentTris[filIdx];
+            const extraFrame = (filIdx === 0 && options.includeFrame) ? frameTriangles : [];
+            const triCountFil = Math.floor((vertIdxList ? vertIdxList.length : 0) / 3);
+            const totalFilTris = triCountFil + extraFrame.length;
+            if (totalFilTris === 0) continue;
 
-            // Half-Cell 1: (tr, bl, br)
-            emitTri(f2, tr, bl, br);
-            emitTri(f2, b_tr, b_br, b_bl);
-            const sFil = (r < cellRows - 1 && activeCells[(r + 1) * cellCols + c] === 1) ? cellFil1[(r + 1) * cellCols + c] : 255;
-            if (sFil !== f2) emitQuad(f2, bl, b_bl, br, b_br);
-            const ec = c < cellCols - 1 ? c + 1 : (isClosedCyl ? 0 : -1);
-            const eFil = (ec >= 0 && activeCells[rowOff + ec] === 1) ? cellFil1[rowOff + ec] : 255;
-            if (eFil !== f2) emitQuad(f2, tr, br, b_tr, b_br);
-            if (f1 !== f2) emitQuad(f2, tr, b_tr, bl, b_bl);
+            const buffer = new ArrayBuffer(84 + totalFilTris * 50);
+            const view = new DataView(buffer);
+            const headerStr = `Studios-Pro Slot ${filIdx + 1} - ${fil.name}`;
+            for (let i = 0; i < headerStr.length && i < 80; i++) view.setUint8(i, headerStr.charCodeAt(i) & 0x7F);
+            view.setUint32(80, totalFilTris, true);
+
+            let offset = 84;
+            for (let i = 0; i < triCountFil; i++) {
+                const iA = vertIdxList[i * 3] * 3, iB = vertIdxList[i * 3 + 1] * 3, iC = vertIdxList[i * 3 + 2] * 3;
+                writeStlTriangleToDataView(view, offset, positions[iA], positions[iA + 1], positions[iA + 2], positions[iB], positions[iB + 1], positions[iB + 2], positions[iC], positions[iC + 1], positions[iC + 2]);
+                offset += 50;
+            }
+            for (let i = 0; i < extraFrame.length; i++) {
+                const t = extraFrame[i];
+                writeStlTriangleToDataView(view, offset, t[0][0], t[0][1], t[0][2], t[1][0], t[1][1], t[1][2], t[2][0], t[2][1], t[2][2]);
+                offset += 50;
+            }
+            const safeName = fil.name.replace(/[^a-zA-Z0-9]/g, '_');
+            zip.file(`Slot_${filIdx + 1}_${safeName}.stl`, buffer);
         }
     }
 
-    for (let filIdx = 0; filIdx < filaments.length; filIdx++) {
-        const fil = filaments[filIdx];
-        const vertIdxList = perFilamentTris[filIdx];
-        if (!vertIdxList || vertIdxList.length === 0) continue;
-
-        const triCountFil = Math.floor(vertIdxList.length / 3);
-        const buffer = new ArrayBuffer(84 + triCountFil * 50);
-        const view = new DataView(buffer);
-
-        const headerStr = `Studios-Pro Layer ${filIdx+1} - ${fil.name}`;
-        for (let i = 0; i < headerStr.length && i < 80; i++) view.setUint8(i, headerStr.charCodeAt(i));
-        view.setUint32(80, triCountFil, true);
-
-        let offset = 84;
-        for (let i = 0; i < triCountFil; i++) {
-            const iA = vertIdxList[i * 3] * 3;
-            const iB = vertIdxList[i * 3 + 1] * 3;
-            const iC = vertIdxList[i * 3 + 2] * 3;
-            writeStlTriangleToDataView(
-                view, offset,
-                positions[iA], positions[iA + 1], positions[iA + 2],
-                positions[iB], positions[iB + 1], positions[iB + 2],
-                positions[iC], positions[iC + 1], positions[iC + 2]
-            );
-            offset += 50;
-        }
-
-        const safeName = fil.name.replace(/[^a-zA-Z0-9]/g, '_');
-        zip.file(`Slot_${filIdx+1}_${safeName}.stl`, buffer);
-    }
-
-    zip.file("README_Slicer_Settings.txt", generateSlicerScriptText());
-    return await zip.generateAsync({ type: "blob" });
+    zip.file('README_Slicer_Settings.txt', generateSlicerScriptText());
+    return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }
 
 // ==========================================
-// 🧩 MULTI-TILE XL WALL MURAL POSTER SPLITTER (MULTI-COLOR .3MF ZIP)
+// 🧩 MULTI-TILE XL WALL MURAL SPLITTER (INTERLOCKING DOVETAIL / MAGNETS + DEFLATE)
 // ==========================================
 async function generateWallMuralZip(options = {}) {
     const zip = createArchiveZip();
-    const gridN = options.gridN || 2;
+    const gridN = Math.max(2, Math.min(4, options.gridN || 2));
     const tileW = (config.width / gridN).toFixed(1);
     const tileH = (config.height / gridN).toFixed(1);
+    const connMode = options.muralConnector || config.muralConnector || 'dovetail';
 
     for (let r = 0; r < gridN; r++) {
         for (let c = 0; c < gridN; c++) {
             const tile3MFBlob = await generate3MFPackage({
                 ...options,
                 includeFrame: false,
+                muralConnector: connMode,
                 tileCrop: { rowTile: r, colTile: c, gridN }
             });
             const arrayBuf = await tile3MFBlob.arrayBuffer();
@@ -1132,22 +1459,23 @@ async function generateWallMuralZip(options = {}) {
     let guide = `============================================================\n`;
     guide += `STUDIOS-PRO XL MULTI-TILE WALL MURAL ASSEMBLY GUIDE (${gridN}x${gridN})\n`;
     guide += `============================================================\n`;
-    guide += `Format               : Multi-Color .3MF Packages (with AMS Filament Slots)\n`;
+    guide += `Format               : Compressed Bambu/Orca/Prusa Multi-Color .3MF Packages\n`;
+    guide += `Interlock Connector  : ${connMode.toUpperCase()} (Seamless Global Bayer Dithering)\n`;
     guide += `Total Wall Mural Size: ${config.width} mm x ${config.height} mm\n`;
     guide += `Individual Tile Size : ${tileW} mm x ${tileH} mm x ${config.maxRelief} mm\n`;
-    guide += `Total Tiles to Print : ${gridN * gridN} Multi-Color .3MF Tiles (Row 1..${gridN}, Col 1..${gridN})\n\n`;
+    guide += `Total Tiles to Print : ${gridN * gridN} Multi-Color .3MF Tiles\n\n`;
     guide += `WALL LAYOUT MATRIX (Top-to-Bottom, Left-to-Right):\n`;
     for (let r = 0; r < gridN; r++) {
         let rowStr = `  `;
         for (let c = 0; c < gridN; c++) {
-            rowStr += `[ Tile_Row${r + 1}_Col${c + 1}.3mf ]  `;
+            rowStr += `[ Tile_Row${r + 1}_Col${c + 1}_(${tileW}x${tileH}mm).3mf ]  `;
         }
         guide += rowStr + `\n`;
     }
     guide += `\n` + generateSlicerScriptText();
-    zip.file("README_Mural_Assembly_Guide.txt", guide);
+    zip.file('README_Mural_Assembly_Guide.txt', guide);
 
-    return await zip.generateAsync({ type: "blob" });
+    return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }
 
 function downloadFileDirect(blob, filename) {
@@ -1495,10 +1823,11 @@ function downloadRecipeCardPNG() {
             ctx.stroke();
 
             const stSlot = (metrics.perSlot && metrics.perSlot[idx]) || {};
-            const startZVal = stSlot.startZ !== undefined ? stSlot.startZ : (config.baseThickness + fil.startPct * (config.maxRelief - config.baseThickness));
+            const slotMeta = typeof getSlotStartZAndLayer === 'function' ? getSlotStartZAndLayer(idx) : { startZ: idx === 0 ? 0 : (config.baseThickness + fil.startPct * (config.maxRelief - config.baseThickness)), startLayer: idx === 0 ? 1 : heightToLayerNumber(config.baseThickness + fil.startPct * (config.maxRelief - config.baseThickness), true) };
+            const startZVal = stSlot.startZ !== undefined ? stSlot.startZ : slotMeta.startZ;
             const startZ = startZVal.toFixed(2);
-            const startLayer = stSlot.startLayer || heightToLayerNumber(startZVal);
-            const slotMass = stSlot.grams !== undefined ? ` • ~${stSlot.grams}g (${stSlot.meters.toFixed(2)}m)` : '';
+            const startLayer = stSlot.startLayer || slotMeta.startLayer;
+            const slotMass = stSlot.grams !== undefined ? ` • ~${stSlot.grams}g (${(stSlot.meters || 0).toFixed(2)}m)` : '';
             const midY = ry + (rowH - 8) / 2;
 
             // Slot badge
@@ -1514,13 +1843,13 @@ function downloadRecipeCardPNG() {
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            // Name + HEX + volumetric grams/meters
+            // Name + HEX + volumetric grams/meters (clipped safely before TD column!)
             ctx.fillStyle = '#f8fafc';
             ctx.font = 'bold 14px Inter, sans-serif';
-            ctx.fillText(`${fil.name}`, rightX + 124, midY - 6);
+            ctx.fillText(`${fil.name}`, rightX + 124, midY - 6, 294);
             ctx.fillStyle = '#94a3b8';
             ctx.font = '12px monospace';
-            ctx.fillText(`${fil.color.toUpperCase()} • ${fil.targetFeature || 'Relief Layer'}${slotMass}`, rightX + 124, midY + 11);
+            ctx.fillText(`${fil.color.toUpperCase()}${slotMass}`, rightX + 124, midY + 11, 294);
 
             // TD
             ctx.fillStyle = '#e2e8f0';
@@ -1530,7 +1859,7 @@ function downloadRecipeCardPNG() {
             // Start Layer
             ctx.fillStyle = '#a855f7';
             ctx.font = 'bold 14px Inter, sans-serif';
-            ctx.fillText(`${isFr ? 'Couche' : 'Layer'} #${startLayer}`, rightX + 540, midY);
+            ctx.fillText(idx === 0 ? (isFr ? 'Couche #1 (Début)' : 'Layer #1 (Start)') : `${isFr ? 'Couche' : 'Layer'} #${startLayer}`, rightX + 530, midY, 145);
 
             // Z Height
             ctx.fillStyle = '#10b981';
@@ -1549,37 +1878,39 @@ function downloadRecipeCardPNG() {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        const maxNoteW = footW - 168;
         ctx.fillStyle = '#38bdf8';
         ctx.font = 'bold 13px Inter, sans-serif';
-        ctx.fillText(isFr ? '📌 INSTRUCTIONS CRITIQUES BAMBU STUDIO / ORCASLICER / PRUSASLICER' : '📌 CRITICAL SLICER CHECKLIST (BAMBU STUDIO / ORCASLICER / PRUSA)', rightX + 52, footY + 28);
+        ctx.fillText(isFr ? '📌 INSTRUCTIONS BAMBU STUDIO / ORCASLICER / PRUSA' : '📌 CRITICAL SLICER CHECKLIST (BAMBU / ORCA / PRUSA)', rightX + 52, footY + 28, maxNoteW);
 
         ctx.fillStyle = '#cbd5e1';
         ctx.font = '13px Inter, sans-serif';
-        const amsPlan = (typeof computeFourSlotAmsPlan === 'function') ? computeFourSlotAmsPlan([]) : { active: false, swaps: [] };
-        const amsLine = (amsPlan.active && amsPlan.swaps.length > 0)
-            ? (isFr
-                ? `4. 4-Slots AMS (${filaments.length} coul.) : Réutilisez Baie A1→#${amsPlan.swaps[0].toSlot} (L#${amsPlan.swaps[0].windowStartLayer}-${amsPlan.swaps[0].windowEndLayer}).`
-                : `4. 4-Slot AMS (${filaments.length} colors): Reuse Bay A1→Slot #${amsPlan.swaps[0].toSlot} during Layer #${amsPlan.swaps[0].windowStartLayer}-${amsPlan.swaps[0].windowEndLayer}.`)
+        const amsPlan = (typeof computeFourSlotAmsPlan === 'function') ? computeFourSlotAmsPlan(metrics.perSlot || []) : { active: false, swaps: [] };
+        const amsSummary = (amsPlan.active && amsPlan.swaps.length > 0)
+            ? amsPlan.swaps.map(s => `A${s.amsBay}→#${s.toSlot}(L${s.windowStartLayer}-${s.windowEndLayer})`).join(', ')
+            : null;
+        const amsLine = amsSummary
+            ? (isFr ? `4. 4-Slots AMS (${filaments.length}c) : ${amsSummary}` : `4. 4-Slot AMS (${filaments.length}c): ${amsSummary}`)
             : null;
         const notes = isFr ? [
-            '1. Remplissage (Infill) : 100% Rectiligne obligatoire pour la transmission lumineuse TD.',
-            `2. Hauteur de couche : ${config.layerHeight.toFixed(2)} mm | Première couche : 0.20 mm | Parois : 1 à 2.`,
-            '3. Imprimante 1 couleur : Insérez une pause M600 aux hauteurs Z indiquées ci-dessus.',
-            amsLine || '4. Bambu Lab AMS : Importez le fichier .3MF (couleurs pré-assignées automatiquement).'
+            '1. Remplissage (Infill) : 100% Rectiligne obligatoire pour la transmission TD.',
+            `2. Couche : ${config.layerHeight.toFixed(2)} mm | 1ère couche : ${firstH} mm | Parois : 1.`,
+            '3. Mono-buse : Pause M600 aux couches Z ci-dessus (pré-injecté dans le .3MF).',
+            amsLine || '4. Bambu AMS / OrcaSlicer : Ouvrez le .3MF (slots & swaps pré-configurés).'
         ] : [
-            '1. Infill Density: 100% Rectilinear (Mandatory for accurate TD light transmission).',
-            `2. Layer Height: ${config.layerHeight.toFixed(2)} mm | First Layer: 0.20 mm | Wall Loops: 1 or 2.`,
-            '3. Single-Extruder Printers: Add M600 filament swap pauses at the Z heights listed above.',
-            amsLine || '4. Bambu Lab AMS / Multi-Color: Open the exported .3MF project (slots pre-mapped).'
+            '1. Infill Density: 100% Rectilinear (Mandatory for accurate TD transmission).',
+            `2. Layer Height: ${config.layerHeight.toFixed(2)} mm | First Layer: ${firstH} mm | Walls: 1.`,
+            '3. Single-Extruder: M600 pauses pre-injected into .3MF (or set at Z above).',
+            amsLine || '4. Bambu AMS / OrcaSlicer: Open the .3MF project (slots & swaps auto-loaded).'
         ];
         notes.forEach((line, lIdx) => {
-            ctx.fillText(line, rightX + 52, footY + 56 + lIdx * 24);
+            ctx.fillText(line, rightX + 52, footY + 56 + lIdx * 24, maxNoteW);
         });
 
         // Render scannable mini QR badge on the right side of the footer box
         const qrMatrix = (activeQRStamp && activeQRStamp.matrix)
             ? activeQRStamp.matrix
-            : generateRealQRCodeMatrix('https://studios-pro.com');
+            : (typeof generateRealQRCodeMatrix === 'function' ? generateRealQRCodeMatrix('https://studios-pro.com') : null);
         if (qrMatrix && qrMatrix.length > 0) {
             const N = qrMatrix.length;
             const qBoxSize = 124;
@@ -1642,14 +1973,20 @@ function downloadModelOnlyPNG(mode = 'auto') {
                 startPct: f.startPct,
                 td: f.td || 3.0
             }));
+            const sortedFilaments = (typeof prepareSortedFilamentsForTD === 'function')
+                ? prepareSortedFilamentsForTD(filaments)
+                : parsedFilaments.slice().sort((a, b) => a.startPct - b.startPct);
 
             const snapFactor = ((config.boundarySharpness !== undefined ? config.boundarySharpness : config.colorSnap) ?? 78) / 100.0;
             const ditherPct = config.opticalDithering || 0;
             const tdBlendStrength = (config.tdOpticalBlend !== undefined ? config.tdOpticalBlend : 65) / 100.0;
             const baseZ = config.baseThickness;
             const maxReliefZ = config.maxRelief;
+            const reliefSpan = Math.max(0.08, maxReliefZ - baseZ);
+            const hasHeightOffset = (typeof heightOffsetBuffer !== 'undefined' && heightOffsetBuffer && heightOffsetBuffer.length === srcW * srcH);
 
             const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, srcW, srcH);
+            const baseRgbCache = (parsedFilaments[0] && parsedFilaments[0].rgb) ? parsedFilaments[0].rgb : [20, 20, 24];
 
             for (let pIdx = 0; pIdx < srcW * srcH; pIdx++) {
                 const i = pIdx * 4;
@@ -1657,7 +1994,7 @@ function downloadModelOnlyPNG(mode = 'auto') {
                 const rowIdx = (pIdx / srcW) | 0;
 
                 // Respect Die-Cut Model-Only Mode, Drilled Through-Holes & Plaque Cutout Shapes -> 100% Transparent!
-                if (isPixelCutoutVoid(colIdx, rowIdx, srcW, srcH, cachedBgRgb)) {
+                if (isPixelCutoutVoid(colIdx, rowIdx, srcW, srcH, cachedBgRgb, baseRgbCache)) {
                     data[i] = 0;
                     data[i + 1] = 0;
                     data[i + 2] = 0;
@@ -1681,13 +2018,23 @@ function downloadModelOnlyPNG(mode = 'auto') {
                     data[i + 3] = 255;
                 } else {
                     const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
+                    const zDelta = hasHeightOffset ? heightOffsetBuffer[pIdx] : 0;
                     if (config.colorMode === 'luminance') {
                         const v = Math.round(lum * 255);
                         data[i] = v; data[i + 1] = v; data[i + 2] = v; data[i + 3] = 255;
+                    } else if (config.colorMode === 'cmyw' && typeof computeCMYWBacklitColor === 'function') {
+                        const kelvinHex = config.lightboxKelvin === 2700 ? 0xffd2a1 : (config.lightboxKelvin === 6500 ? 0xf0f8ff : 0xfff4e0);
+                        const [cR, cG, cB] = computeCMYWBacklitColor(r, g, b, Math.max(0.2, (1.0 - lum) * reliefSpan), maxReliefZ, kelvinHex);
+                        data[i] = cR; data[i + 1] = cG; data[i + 2] = cB; data[i + 3] = 255;
                     } else if (config.colorMode === 'stratified') {
-                        const zVal = baseZ + lum * (maxReliefZ - baseZ);
+                        let dLum = lum;
+                        if (ditherPct > 0) {
+                            const bayer = ((BAYER_4X4[(rowIdx & 3) * 4 + (colIdx & 3)] / 16.0) - 0.5) * (ditherPct / 100.0) * 0.14;
+                            dLum = Math.max(0, Math.min(1, lum + bayer));
+                        }
+                        const zVal = Math.max(baseZ, Math.min(maxReliefZ, baseZ + dLum * reliefSpan + zDelta));
                         const [tdR, tdG, tdB] = computeBeerLambertTDColor(
-                            lum, zVal, baseZ, maxReliefZ, parsedFilaments, tdBlendStrength, colIdx, rowIdx, ditherPct
+                            dLum, zVal, baseZ, maxReliefZ, sortedFilaments, tdBlendStrength, true
                         );
                         data[i] = tdR; data[i + 1] = tdG; data[i + 2] = tdB; data[i + 3] = 255;
                     } else {
@@ -1698,10 +2045,10 @@ function downloadModelOnlyPNG(mode = 'auto') {
                         let outB = Math.round(b * (1 - snapFactor) + filRgb[2] * snapFactor);
 
                         if (tdBlendStrength > 0.02 && bestFilIdx > 0) {
-                            const dz = Math.max(0.06, lum * (maxReliefZ - baseZ));
+                            const dz = Math.max(0.06, lum * reliefSpan);
                             const tdMm = Math.max(0.4, parsedFilaments[bestFilIdx].td || 3.0);
-                            const transmission = Math.exp(-3.1 * (dz / (tdMm * 0.55)));
-                            const baseInfluence = Math.min(0.40, transmission * tdBlendStrength * 0.42);
+                            const transmission = Math.exp(-4.605 * (dz / tdMm));
+                            const baseInfluence = Math.min(0.40, transmission * tdBlendStrength * 0.45);
                             const baseRgb = parsedFilaments[0].rgb;
                             outR = Math.round(outR * (1 - baseInfluence) + baseRgb[0] * baseInfluence);
                             outG = Math.round(outG * (1 - baseInfluence) + baseRgb[1] * baseInfluence);
@@ -1755,20 +2102,20 @@ function downloadModelOnlyPNG(mode = 'auto') {
                 }
             }, 'image/png');
         } else {
-            // Pure 3D Sculpted Model Render at Ultra-HD 4K Super-Sampled Resolution (Tightly Cropped to Model, Zero Recipe Card/UI)
+            // Pure 3D Sculpted Model Render at Ultra-HD 4K Transparent Resolution (HiDPI-Safe + Tight Auto-Crop!)
             const glCanvas = renderer.domElement;
-            const origW = glCanvas.width;
-            const origH = glCanvas.height;
+            const prevPixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : 1;
             const origClearAlpha = renderer.getClearAlpha ? renderer.getClearAlpha() : 1;
             const prevBackground = scene.background;
+            const prevAspect = camera.aspect;
 
-            // Temporarily render at 4K resolution with transparent background so only the 3D model is captured
             const renderW = 2400;
             const renderH = 2400;
-            const prevAspect = camera.aspect;
             camera.aspect = 1.0;
             camera.updateProjectionMatrix();
             scene.background = null;
+            // Temporarily force pixelRatio=1 so backing buffer is exact 2400x2400 (no 4800px OOM or Retina 25% clip!)
+            renderer.setPixelRatio(1);
             renderer.setSize(renderW, renderH, false);
             renderer.setClearColor(0x000000, 0);
             renderer.render(scene, camera);
@@ -1777,29 +2124,29 @@ function downloadModelOnlyPNG(mode = 'auto') {
             tempCanvas.width = renderW;
             tempCanvas.height = renderH;
             const tCtx = tempCanvas.getContext('2d');
-            tCtx.drawImage(glCanvas, 0, 0);
+            tCtx.clearRect(0, 0, renderW, renderH);
+            tCtx.drawImage(glCanvas, 0, 0, glCanvas.width, glCanvas.height, 0, 0, renderW, renderH);
 
-            // Restore viewport camera & renderer state immediately
+            // Restore viewport camera & renderer immediately
             scene.background = prevBackground;
             camera.aspect = prevAspect;
             camera.updateProjectionMatrix();
+            renderer.setPixelRatio(prevPixelRatio);
             const container = document.getElementById('viewport-container');
-            if (container) {
+            if (container && container.clientWidth > 0 && container.clientHeight > 0) {
                 renderer.setSize(container.clientWidth, container.clientHeight, false);
-            } else {
-                renderer.setSize(origW, origH, false);
             }
-            renderer.setClearColor(0x090d16, origClearAlpha);
+            renderer.setClearColor(isLightbox ? 0x020306 : 0x06090e, origClearAlpha);
             renderer.render(scene, camera);
 
-            // Auto-crop tightly around the non-transparent 3D model pixels
+            // Auto-crop tightly around non-transparent 3D model pixels (works thanks to alpha: true!)
             const pixels = tCtx.getImageData(0, 0, renderW, renderH).data;
             let minX = renderW, minY = renderH, maxX = 0, maxY = 0;
             let found = false;
             for (let y = 0; y < renderH; y += 2) {
                 for (let x = 0; x < renderW; x += 2) {
                     const a = pixels[(y * renderW + x) * 4 + 3];
-                    if (a > 10) {
+                    if (a > 12) {
                         if (x < minX) minX = x;
                         if (x > maxX) maxX = x;
                         if (y < minY) minY = y;
@@ -1830,33 +2177,42 @@ function downloadModelOnlyPNG(mode = 'auto') {
         }
     } catch (err) {
         console.error('Model-only PNG export error:', err);
+        return false;
     }
 }
 
 function copyShareLink() {
     const input = document.getElementById('share-input-url');
     if (!input) return;
-    navigator.clipboard.writeText(input.value).then(() => {
-        const btn = document.getElementById('txt-copy-share-link');
-        if (btn) {
-            btn.innerText = currentLang === 'fr' ? '✓ Copié !' : '✓ Copied!';
-            setTimeout(() => btn.innerText = translations[currentLang].btnCopyLink, 2000);
-        }
-        showToast(translations[currentLang].toastCopied);
-    });
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(input.value).then(() => {
+            const btn = document.getElementById('txt-copy-share-link');
+            if (btn) {
+                btn.innerText = currentLang === 'fr' ? '✓ Copié !' : '✓ Copied!';
+                setTimeout(() => btn.innerText = translations[currentLang].btnCopyLink, 2000);
+            }
+            showToast(translations[currentLang].toastCopied);
+        }).catch(() => {});
+    }
 }
 
 function openSlicerModal() {
     closeAllModals();
+    updateSlicerTable();
     document.getElementById('slicer-modal').style.display = 'flex';
 }
 
 function showToast(text) {
     const toast = document.getElementById('toast');
     if (!toast) return;
-    document.getElementById('toast-text').innerText = text;
+    const txtEl = document.getElementById('toast-text');
+    if (txtEl) txtEl.innerText = text;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3200);
+    if (_toastHideTimer) clearTimeout(_toastHideTimer);
+    _toastHideTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        _toastHideTimer = null;
+    }, 3400);
 }
 
 // ==========================================
@@ -1971,13 +2327,26 @@ function base64ToUint8Array(b64) {
 function serializeProjectToSPFP() {
     let sourceDataUrl = null;
     try {
-        if (sourceCanvas && sourceCanvas.width > 0) sourceDataUrl = sourceCanvas.toDataURL('image/png');
-        else if (processedCanvas && processedCanvas.width > 0) sourceDataUrl = processedCanvas.toDataURL('image/png');
+        // CRITICAL FIX: Always sync sourceCanvas from real sourceImage so we NEVER save a blank 300x150 canvas!
+        if (sourceImage && typeof syncSourceCanvasFromImage === 'function') {
+            syncSourceCanvasFromImage(sourceImage);
+            sourceDataUrl = sourceCanvas.toDataURL('image/png');
+        } else if (processedCanvas && processedCanvas.width > 0) {
+            sourceDataUrl = processedCanvas.toDataURL('image/png');
+        }
     } catch (_) {}
+
+    // Convert Uint8Array QR matrix rows to plain JS Arrays for clean JSON roundtrip!
+    const serializedQR = activeQRStamp
+        ? {
+            ...activeQRStamp,
+            matrix: Array.isArray(activeQRStamp.matrix) ? activeQRStamp.matrix.map(row => Array.from(row)) : null
+        }
+        : null;
 
     return JSON.stringify({
         app: 'studios-pro-filament-painting',
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
         config: { ...config },
         filaments: filaments.map(f => ({ ...f })),
@@ -1986,7 +2355,7 @@ function serializeProjectToSPFP() {
         isDrawingTemplateActive,
         isCanvasUserEdited,
         editorSymmetryMode,
-        activeQRStamp: activeQRStamp ? { ...activeQRStamp, matrix: activeQRStamp.matrix } : null,
+        activeQRStamp: serializedQR,
         activeSoundwave: activeSoundwave ? { ...activeSoundwave, bars: [...activeSoundwave.bars] } : null,
         customAudioBars: customAudioBars ? [...customAudioBars] : null,
         sourceImageDataUrl: sourceDataUrl,
@@ -2019,12 +2388,31 @@ async function loadProjectFromSPFPJson(jsonTextOrObj) {
     if (Array.isArray(data.filaments) && data.filaments.length >= 2) {
         filaments = data.filaments.map(f => ({ ...f }));
     }
-    if (typeof data.activeFilamentSlot === 'number') activeFilamentSlot = data.activeFilamentSlot;
+    if (typeof data.activeFilamentSlot === 'number') {
+        activeFilamentSlot = Math.max(0, Math.min(filaments.length - 1, data.activeFilamentSlot));
+    }
     if (data.studioMode) studioMode = data.studioMode;
     isDrawingTemplateActive = !!data.isDrawingTemplateActive;
     isCanvasUserEdited = !!data.isCanvasUserEdited;
     editorSymmetryMode = data.editorSymmetryMode || 'none';
-    activeQRStamp = data.activeQRStamp || null;
+
+    // Restore QR matrix safely into Uint8Array[] even from v1 object-serialized rows!
+    if (data.activeQRStamp && Array.isArray(data.activeQRStamp.matrix)) {
+        const restoredMat = data.activeQRStamp.matrix.map(row => {
+            if (Array.isArray(row)) return new Uint8Array(row);
+            if (row && typeof row === 'object') {
+                const keys = Object.keys(row).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+                const u8 = new Uint8Array(keys.length);
+                keys.forEach((k, i) => { u8[i] = row[k] ? 1 : 0; });
+                return u8;
+            }
+            return new Uint8Array(0);
+        });
+        activeQRStamp = { ...data.activeQRStamp, matrix: restoredMat };
+    } else {
+        activeQRStamp = null;
+    }
+
     activeSoundwave = data.activeSoundwave || null;
     customAudioBars = data.customAudioBars || null;
 
@@ -2033,12 +2421,11 @@ async function loadProjectFromSPFPJson(jsonTextOrObj) {
             const img = new Image();
             img.onload = () => {
                 sourceImage = img;
-                if (sourceCanvas) {
-                    sourceCanvas.width = img.width || 160;
-                    sourceCanvas.height = img.height || 160;
-                    const sctx = sourceCanvas.getContext('2d');
-                    if (sctx && typeof sctx.drawImage === 'function') sctx.drawImage(img, 0, 0);
-                }
+                if (typeof syncSourceCanvasFromImage === 'function') syncSourceCanvasFromImage(img);
+                const thumb = document.getElementById('source-thumb-preview');
+                if (thumb) thumb.src = data.sourceImageDataUrl;
+                const bar = document.getElementById('source-preview-bar');
+                if (bar) bar.style.display = 'flex';
                 resolve();
             };
             img.onerror = () => resolve();
@@ -2052,41 +2439,70 @@ async function loadProjectFromSPFPJson(jsonTextOrObj) {
     if (bw > 0 && bh > 0 && processedCanvas) {
         processedCanvas.width = bw;
         processedCanvas.height = bh;
+        bufferWidth = bw;
+        bufferHeight = bh;
+        const pxCount = bw * bh;
+
         const cU8 = base64ToUint8Array(bufs.colorDataB64);
         const fU8 = base64ToUint8Array(bufs.filamentSlotB64);
         const zU8 = base64ToUint8Array(bufs.customZDeltaB64);
         const cutU8 = base64ToUint8Array(bufs.cutoutMaskB64);
         const uU8 = base64ToUint8Array(bufs.userEditMaskB64);
 
-        if (cU8) colorDataBuffer = new Uint8ClampedArray(cU8.buffer, cU8.byteOffset, cU8.byteLength);
-        if (fU8) filamentSlotBuffer = new Uint8Array(fU8.buffer, fU8.byteOffset, fU8.byteLength);
-        if (zU8) {
+        colorDataBuffer = (cU8 && cU8.byteLength === pxCount * 4)
+            ? new Uint8ClampedArray(cU8.buffer, cU8.byteOffset, cU8.byteLength)
+            : new Uint8ClampedArray(pxCount * 4);
+        heightDataBuffer = new Float32Array(pxCount);
+        for (let p = 0; p < pxCount; p++) {
+            const i4 = p * 4;
+            heightDataBuffer[p] = (0.299 * colorDataBuffer[i4] + 0.587 * colorDataBuffer[i4 + 1] + 0.114 * colorDataBuffer[i4 + 2]) / 255.0;
+        }
+        filamentSlotBuffer = (fU8 && fU8.byteLength === pxCount)
+            ? new Uint8Array(fU8.buffer, fU8.byteOffset, fU8.byteLength)
+            : (new Uint8Array(pxCount)).fill(255);
+        if (zU8 && zU8.byteLength === pxCount * 4) {
             const copyAb = zU8.buffer.slice(zU8.byteOffset, zU8.byteOffset + zU8.byteLength);
             customZDeltaBuffer = new Float32Array(copyAb);
+        } else {
+            customZDeltaBuffer = new Float32Array(pxCount);
         }
-        if (cutU8) cutoutMaskBuffer = new Uint8Array(cutU8.buffer, cutU8.byteOffset, cutU8.byteLength);
-        if (uU8) userEditMaskBuffer = new Uint8Array(uU8.buffer, uU8.byteOffset, uU8.byteLength);
+        cutoutMaskBuffer = (cutU8 && cutU8.byteLength === pxCount)
+            ? new Uint8Array(cutU8.buffer, cutU8.byteOffset, cutU8.byteLength)
+            : new Uint8Array(pxCount);
+        userEditMaskBuffer = (uU8 && uU8.byteLength === pxCount)
+            ? new Uint8Array(uU8.buffer, uU8.byteOffset, uU8.byteLength)
+            : new Uint8Array(pxCount);
+
         lastProcessedMeta = {
-            sourceRef: sourceImage,
-            rotation: config.rotation,
+            w: bw,
+            h: bh,
+            rot: config.rotation || 0,
             flipX: config.flipX,
-            flipY: config.flipY,
-            cols: bw,
-            rows: bh
+            flipY: config.flipY
         };
         if (typeof syncProcessedCanvasFromBuffer === 'function') syncProcessedCanvasFromBuffer();
+        if (typeof rebuildBgExteriorVoidMask === 'function') rebuildBgExteriorVoidMask(bw, bh);
     } else if (sourceImage) {
-        processSourceImage({ skipHistory: true });
+        processSourceImage(false, true);
     }
+
+    // Update Photo/Draw sidebar visibility WITHOUT calling openCleanBlankCanvas() (which wiped loaded Draw projects!)
+    const btnPhoto = document.getElementById('btn-studio-photo');
+    const btnDraw = document.getElementById('btn-studio-draw');
+    const subPhoto = document.getElementById('subpanel-photo-src');
+    const subDrawTpl = document.getElementById('subpanel-draw-tpl');
+    if (btnPhoto) btnPhoto.classList.toggle('active', studioMode === 'photo');
+    if (btnDraw) btnDraw.classList.toggle('active', studioMode === 'draw');
+    if (subPhoto) subPhoto.style.display = studioMode === 'photo' ? 'block' : 'none';
+    if (subDrawTpl) subDrawTpl.style.display = studioMode === 'draw' ? 'block' : 'none';
 
     if (typeof syncAllControlsFromConfig === 'function') syncAllControlsFromConfig();
     if (typeof resetEditHistory === 'function') resetEditHistory();
     renderFilamentStackUI();
-    updateFilamentSwatchesUI();
+    if (typeof updateFilamentSwatchesUI === 'function') updateFilamentSwatchesUI();
     generate3DReliefMesh();
     updateSlicerTable();
     if (centerViewMode === '2d') render2DEditorPreview();
-    if (typeof switchStudioMode === 'function') switchStudioMode(studioMode);
     showToast(translations[currentLang].toastProjectLoaded);
     return true;
 }
@@ -2217,12 +2633,21 @@ function buildDownsampledReliefForAR(g, maxGridVerts = 28000) {
 }
 
 function generateWallARGlbBuffer() {
-    if (!reliefMesh || !reliefMesh.geometry) {
+    // Temporarily suppress false-color diagnostic inspectors so AR shows real filament colors!
+    const hadDiag = isOverhangWarning || isZebraExposure || isNozzleInspectMode || isDeltaEHeatmap;
+    const prevO = isOverhangWarning, prevZ = isZebraExposure, prevN = isNozzleInspectMode, prevD = isDeltaEHeatmap;
+    if (hadDiag) {
+        isOverhangWarning = false; isZebraExposure = false; isNozzleInspectMode = false; isDeltaEHeatmap = false;
+        generate3DReliefMesh();
+    } else if (!reliefMesh || !reliefMesh.geometry) {
         generate3DReliefMesh();
     }
-    const SCALE_M = 0.001; // 140mm -> 0.14m true scale in AR
 
+    const SCALE_M = 0.001; // 140mm -> 0.14m true scale in AR
     const meshesToPack = [];
+    const baseRgb0 = hexToRgb((filaments[0] && filaments[0].color) ? filaments[0].color : '#111827');
+    const baseLinear0 = [SRGB_TO_LIN_LUT[baseRgb0[0]], SRGB_TO_LIN_LUT[baseRgb0[1]], SRGB_TO_LIN_LUT[baseRgb0[2]]];
+
     if (reliefMesh && reliefMesh.geometry) {
         const g = reliefMesh.geometry;
         const compactAR = buildDownsampledReliefForAR(g, 28000);
@@ -2238,17 +2663,24 @@ function generateWallARGlbBuffer() {
             });
         }
     }
-    if (frameMesh && frameMesh.geometry && config.frameStyle !== 'none') {
+    // Include outer frame / hanging eyelet (exclude detached side easel stand on wall AR!)
+    if (frameMesh && frameMesh.geometry && (config.frameStyle !== 'none' || config.mounting === 'hole')) {
         const fg = frameMesh.geometry;
         if (fg.attributes && fg.attributes.position && fg.attributes.position.count > 0) {
             meshesToPack.push({
                 pos: fg.attributes.position.array,
                 norm: fg.attributes.normal ? fg.attributes.normal.array : null,
-                col: fg.attributes.color ? fg.attributes.color.array : null,
+                col: null,
                 idx: fg.index ? fg.index.array : null,
-                defaultColor: [0.12, 0.16, 0.23]
+                defaultColor: [baseRgb0[0] / 255, baseRgb0[1] / 255, baseRgb0[2] / 255]
             });
         }
+    }
+
+    // Restore diagnostic state if it was temporarily disabled
+    if (hadDiag) {
+        isOverhangWarning = prevO; isZebraExposure = prevZ; isNozzleInspectMode = prevN; isDeltaEHeatmap = prevD;
+        generate3DReliefMesh();
     }
 
     if (meshesToPack.length === 0) return null;
@@ -2264,7 +2696,6 @@ function generateWallARGlbBuffer() {
     const useUint16 = (totalVerts <= 65535);
     const outPos = new Float32Array(totalVerts * 3);
     const outNorm = new Float32Array(totalVerts * 3);
-    // Use normalized VEC4 UNSIGNED_BYTE colors (4 bytes/vert vs 12 bytes Float32 -> 67% smaller + exact 4-byte glTF alignment!)
     const outCol = new Uint8Array(totalVerts * 4);
     const outIdx = useUint16 ? new Uint16Array(totalIndices) : new Uint32Array(totalIndices);
 
@@ -2292,12 +2723,18 @@ function generateWallARGlbBuffer() {
             } else {
                 outNorm[d3] = 0; outNorm[d3 + 1] = 0; outNorm[d3 + 2] = 1;
             }
-            const rF = m.col ? m.col[p] : m.defaultColor[0];
-            const gF = m.col ? m.col[p + 1] : m.defaultColor[1];
-            const bF = m.col ? m.col[p + 2] : m.defaultColor[2];
-            outCol[d4] = Math.max(0, Math.min(255, Math.round(rF * 255)));
-            outCol[d4 + 1] = Math.max(0, Math.min(255, Math.round(gF * 255)));
-            outCol[d4 + 2] = Math.max(0, Math.min(255, Math.round(bF * 255)));
+
+            // CRITICAL FIX: glTF 2.0 COLOR_0 MUST be LINEAR RGB (convert Three.js r128 sRGB -> Linear!)
+            const rSrgb = m.col ? m.col[p] : m.defaultColor[0];
+            const gSrgb = m.col ? m.col[p + 1] : m.defaultColor[1];
+            const bSrgb = m.col ? m.col[p + 2] : m.defaultColor[2];
+            const rLin = SRGB_TO_LIN_LUT[Math.max(0, Math.min(255, Math.round(rSrgb * 255)))];
+            const gLin = SRGB_TO_LIN_LUT[Math.max(0, Math.min(255, Math.round(gSrgb * 255)))];
+            const bLin = SRGB_TO_LIN_LUT[Math.max(0, Math.min(255, Math.round(bSrgb * 255)))];
+
+            outCol[d4] = Math.max(0, Math.min(255, Math.round(rLin * 255)));
+            outCol[d4 + 1] = Math.max(0, Math.min(255, Math.round(gLin * 255)));
+            outCol[d4 + 2] = Math.max(0, Math.min(255, Math.round(bLin * 255)));
             outCol[d4 + 3] = 255;
         }
         if (m.idx) {
@@ -2323,7 +2760,7 @@ function generateWallARGlbBuffer() {
         nodes: [{ mesh: 0, name: 'FilamentPaintingAR' }],
         materials: [{
             name: 'FilamentPLA',
-            pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.05, roughnessFactor: 0.42 },
+            pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.05, roughnessFactor: 0.44 },
             doubleSided: true
         }],
         meshes: [{
@@ -2358,21 +2795,18 @@ function generateWallARGlbBuffer() {
     const dv = new DataView(glbBuf);
     const outU8 = new Uint8Array(glbBuf);
 
-    // Header
-    dv.setUint32(0, 0x46546C67, true); // 'glTF'
+    dv.setUint32(0, 0x46546C67, true);
     dv.setUint32(4, 2, true);
     dv.setUint32(8, totalGlbLen, true);
 
-    // JSON Chunk
     dv.setUint32(12, jsonChunkLen, true);
-    dv.setUint32(16, 0x4E4F534A, true); // 'JSON'
+    dv.setUint32(16, 0x4E4F534A, true);
     outU8.set(jsonBytes, 20);
     for (let i = 0; i < jsonPad; i++) outU8[20 + jsonBytes.length + i] = 0x20;
 
-    // BIN Chunk
     const binHeaderOff = 20 + jsonChunkLen;
     dv.setUint32(binHeaderOff, binLen, true);
-    dv.setUint32(binHeaderOff + 4, 0x004E4942, true); // 'BIN\0'
+    dv.setUint32(binHeaderOff + 4, 0x004E4942, true);
     let binOff = binHeaderOff + 8;
     outU8.set(new Uint8Array(outPos.buffer), binOff); binOff += posByteLen;
     outU8.set(new Uint8Array(outNorm.buffer), binOff); binOff += normByteLen;
@@ -2383,44 +2817,477 @@ function generateWallARGlbBuffer() {
 }
 
 function openWallARPreview() {
+    if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
     const glbBuffer = generateWallARGlbBuffer();
-    if (!glbBuffer) return null;
+    if (!glbBuffer) {
+        showToast(currentLang === 'fr' ? '⚠️ Moteur 3D indisponible pour la prévisualisation AR.' : '⚠️ 3D engine unavailable for AR preview.');
+        return null;
+    }
 
-    const dimsMm = {
-        x: Math.round((config.width || 140) * 10) / 10,
-        y: Math.round((config.height || 140) * 10) / 10,
-        z: Math.round((config.maxRelief || 2.4) * 10) / 10
-    };
+    const isFlat = (!config.topography || config.topography === 'flat');
+    const borderW = (isFlat && config.frameStyle !== 'none') ? (config.frameStyle === 'thin' ? 2.5 : (config.frameStyle === 'deep' ? 8.0 : 5.0)) : 0;
+    const dimsMm = isFlat
+        ? {
+            x: Math.round(((config.width || 140) + borderW * 2) * 10) / 10,
+            y: Math.round(((config.height || 140) + borderW * 2) * 10) / 10,
+            z: Math.round((Math.max(getEffectiveRearBaseZ() + 0.4, config.maxRelief || 2.4) + (config.frameStyle === 'deep' ? 3 : 0)) * 10) / 10
+        }
+        : {
+            x: Math.round(((config.width || 140) / Math.PI) * 10) / 10,
+            y: Math.round((config.height || 140) * 10) / 10,
+            z: Math.round(((config.width || 140) / Math.PI) * 10) / 10
+        };
 
-    const transferId = 'fp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
-    const arPayload = {
-        type: 'OPEN_AR_VIEWER',
-        payload: {
-            transferId: transferId,
+    const arPlacement = isFlat ? 'wall' : 'floor';
+
+    // Route strictly through official StudiosProAR external contract (handles BOTH iframe & standalone cleanly!)
+    if (typeof window !== 'undefined' && window.StudiosProAR && typeof window.StudiosProAR.sendModel === 'function') {
+        window.StudiosProAR.sendModel({
             modelData: glbBuffer,
             extension: 'glb',
             isBinary: true,
             name: 'StudiosPro_Filament_Painting.glb',
-            placement: 'wall',
+            placement: arPlacement,
             autoScale: 'fixed',
             dimensionsMm: dimsMm,
             sourceStudio: 'filament-painting-studio'
-        }
-    };
-
-    const inIframe = (typeof window !== 'undefined' && window.parent && window.parent !== window);
-    if (typeof window !== 'undefined' && typeof window.studiosProPostToHost === 'function') {
-        window.studiosProPostToHost(arPayload);
-    } else if (inIframe) {
-        try { window.parent.postMessage(arPayload, '*'); } catch (_) {}
+        });
+        showToast(translations[currentLang]?.toastARLaunched || 'AR Preview launched!');
+        return glbBuffer;
     }
 
+    // Fallback if ar-bridge.js wasn't loaded
+    const inIframe = (typeof window !== 'undefined' && window.parent && window.parent !== window);
     if (inIframe) {
-        showToast(translations[currentLang].toastARLaunched);
+        const arPayload = {
+            type: 'OPEN_AR_VIEWER',
+            payload: {
+                transferId: 'fp_' + Date.now().toString(36),
+                modelData: glbBuffer,
+                extension: 'glb',
+                isBinary: true,
+                name: 'StudiosPro_Filament_Painting.glb',
+                placement: arPlacement,
+                autoScale: 'fixed',
+                dimensionsMm: dimsMm,
+                sourceStudio: 'filament-painting-studio'
+            }
+        };
+        try { window.parent.postMessage(arPayload, '*'); } catch (_) {}
+        showToast(translations[currentLang]?.toastARLaunched || 'AR Preview launched!');
     } else {
         downloadFileDirect(new Blob([glbBuffer], { type: 'model/gltf-binary' }), `StudiosPro_Filament_Painting_${Date.now()}.glb`);
-        showToast(translations[currentLang].toastARStandalone);
+        showToast(translations[currentLang]?.toastARStandalone || 'GLB downloaded!');
     }
     return glbBuffer;
+}
+
+// ==========================================
+// 🖼️ 4K STUDIO GALLERY MOCKUP RENDERER (WALL / DESK EASEL / LED LIGHTBOX / ETSY 4:5 CARD)
+// ==========================================
+function openMockupModal() {
+    closeAllModals();
+    if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
+    const m = document.getElementById('mockup-modal');
+    if (m) m.style.display = 'flex';
+}
+
+function captureTransparent3DArtworkCanvas(sizePx = 1800) {
+    if (!renderer || !scene || !camera) return null;
+    const glCanvas = renderer.domElement;
+    const prevPixelRatio = renderer.getPixelRatio ? renderer.getPixelRatio() : 1;
+    const prevClearAlpha = renderer.getClearAlpha ? renderer.getClearAlpha() : 1;
+    const prevBg = scene.background;
+    const prevAspect = camera.aspect;
+
+    camera.aspect = 1.0;
+    camera.updateProjectionMatrix();
+    scene.background = null;
+    renderer.setPixelRatio(1);
+    renderer.setSize(sizePx, sizePx, false);
+    renderer.setClearColor(0x000000, 0);
+    renderer.render(scene, camera);
+
+    const tmp = document.createElement('canvas');
+    tmp.width = sizePx; tmp.height = sizePx;
+    const tCtx = tmp.getContext('2d');
+    tCtx.drawImage(glCanvas, 0, 0, glCanvas.width, glCanvas.height, 0, 0, sizePx, sizePx);
+
+    // Restore viewport cleanly
+    scene.background = prevBg;
+    camera.aspect = prevAspect;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(prevPixelRatio);
+    const cont = document.getElementById('viewport-container');
+    if (cont && cont.clientWidth > 0 && cont.clientHeight > 0) renderer.setSize(cont.clientWidth, cont.clientHeight, false);
+    renderer.setClearColor(isLightbox ? 0x020306 : 0x06090e, prevClearAlpha);
+    renderer.render(scene, camera);
+
+    // Auto-crop around visible pixels
+    const px = tCtx.getImageData(0, 0, sizePx, sizePx).data;
+    let minX = sizePx, minY = sizePx, maxX = 0, maxY = 0, found = false;
+    for (let y = 0; y < sizePx; y += 3) {
+        for (let x = 0; x < sizePx; x += 3) {
+            if (px[(y * sizePx + x) * 4 + 3] > 14) {
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
+                found = true;
+            }
+        }
+    }
+    if (!found) return tmp;
+    const pad = 20;
+    const cx = Math.max(0, minX - pad), cy = Math.max(0, minY - pad);
+    const cw = Math.min(sizePx - cx, (maxX - minX) + pad * 2);
+    const ch = Math.min(sizePx - cy, (maxY - minY) + pad * 2);
+    const cropped = document.createElement('canvas');
+    cropped.width = cw; cropped.height = ch;
+    cropped.getContext('2d').drawImage(tmp, cx, cy, cw, ch, 0, 0, cw, ch);
+    return cropped;
+}
+
+function downloadStudioMockupPNG(sceneType = 'wall_gallery') {
+    try {
+        const hero = captureTransparent3DArtworkCanvas(1800) || processedCanvas;
+        if (!hero || !hero.width) return false;
+
+        const isEtsy = (sceneType === 'etsy_card');
+        const W = isEtsy ? 2000 : 2560;
+        const H = isEtsy ? 2500 : 1600;
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        const ctx = cvs.getContext('2d');
+        const isFr = currentLang === 'fr';
+        const metrics = computePrintMetrics();
+
+        if (sceneType === 'wall_gallery') {
+            // Modern Scandinavian Sunlit Gallery Wall
+            const wall = ctx.createLinearGradient(0, 0, W, H);
+            wall.addColorStop(0, '#f3f1ec');
+            wall.addColorStop(0.55, '#e7e2d9');
+            wall.addColorStop(1, '#d8d1c5');
+            ctx.fillStyle = wall;
+            ctx.fillRect(0, 0, W, H);
+
+            // Soft diagonal sunlight beam from top-left
+            const sun = ctx.createRadialGradient(W * 0.18, H * 0.12, 80, W * 0.35, H * 0.35, W * 0.85);
+            sun.addColorStop(0, 'rgba(255, 250, 238, 0.72)');
+            sun.addColorStop(1, 'rgba(255, 250, 238, 0.0)');
+            ctx.fillStyle = sun;
+            ctx.fillRect(0, 0, W, H);
+
+            // Subtle architectural dado rail & warm oak floor line
+            ctx.fillStyle = '#d4cab8';
+            ctx.fillRect(0, H * 0.86, W, 12);
+            ctx.fillStyle = '#c8baa2';
+            ctx.fillRect(0, H * 0.86 + 12, W, H * 0.14);
+
+            const maxH = H * 0.64, maxW = W * 0.56;
+            const sc = Math.min(maxW / hero.width, maxH / hero.height);
+            const dw = hero.width * sc, dh = hero.height * sc;
+            const dx = (W - dw) * 0.5, dy = (H * 0.84 - dh) * 0.48;
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(20, 18, 15, 0.42)';
+            ctx.shadowBlur = 65;
+            ctx.shadowOffsetX = 28;
+            ctx.shadowOffsetY = 38;
+            ctx.drawImage(hero, dx, dy, dw, dh);
+            ctx.restore();
+        } else if (sceneType === 'desk_easel') {
+            // Moody Warm Studio Desk + Wooden Easel
+            const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 100, W * 0.5, H * 0.45, W * 0.75);
+            bg.addColorStop(0, '#273142');
+            bg.addColorStop(1, '#0d131f');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, H);
+
+            const deskGrad = ctx.createLinearGradient(0, H * 0.72, 0, H);
+            deskGrad.addColorStop(0, '#6e472b');
+            deskGrad.addColorStop(0.18, '#53341d');
+            deskGrad.addColorStop(1, '#2d1a0d');
+            ctx.fillStyle = deskGrad;
+            ctx.fillRect(0, H * 0.72, W, H * 0.28);
+
+            const maxH = H * 0.62, maxW = W * 0.52;
+            const sc = Math.min(maxW / hero.width, maxH / hero.height);
+            const dw = hero.width * sc, dh = hero.height * sc;
+            const dx = (W - dw) * 0.5, dy = H * 0.76 - dh;
+
+            // Wooden easel back legs
+            ctx.fillStyle = '#8b5a2b';
+            ctx.beginPath(); ctx.moveTo(W * 0.5 - dw * 0.34, H * 0.80); ctx.lineTo(W * 0.5 - dw * 0.26, H * 0.80); ctx.lineTo(W * 0.5 - 16, dy - 35); ctx.lineTo(W * 0.5 - 38, dy - 35); ctx.closePath(); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(W * 0.5 + dw * 0.34, H * 0.80); ctx.lineTo(W * 0.5 + dw * 0.26, H * 0.80); ctx.lineTo(W * 0.5 + 16, dy - 35); ctx.lineTo(W * 0.5 + 38, dy - 35); ctx.closePath(); ctx.fill();
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
+            ctx.shadowBlur = 55;
+            ctx.shadowOffsetY = 26;
+            ctx.drawImage(hero, dx, dy, dw, dh);
+            ctx.restore();
+
+            // Front easel shelf lip
+            ctx.fillStyle = '#9c6634';
+            ctx.fillRect(dx - 24, dy + dh - 10, dw + 48, 22);
+        } else if (sceneType === 'led_lightbox') {
+            // Glowing Dark Gallery LED Lightbox Showcase
+            ctx.fillStyle = '#03060c';
+            ctx.fillRect(0, 0, W, H);
+            const maxH = H * 0.68, maxW = W * 0.58;
+            const sc = Math.min(maxW / hero.width, maxH / hero.height);
+            const dw = hero.width * sc, dh = hero.height * sc;
+            const dx = (W - dw) * 0.5, dy = (H - dh) * 0.48;
+
+            const halo = ctx.createRadialGradient(W * 0.5, H * 0.48, Math.min(dw, dh) * 0.15, W * 0.5, H * 0.48, Math.max(dw, dh) * 0.82);
+            const kHex = config.lightboxKelvin === 2700 ? 'rgba(255,196,120,0.42)' : (config.lightboxKelvin === 6500 ? 'rgba(180,225,255,0.38)' : 'rgba(255,244,218,0.40)');
+            halo.addColorStop(0, kHex);
+            halo.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = halo;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.save();
+            ctx.shadowColor = kHex;
+            ctx.shadowBlur = 90;
+            ctx.drawImage(hero, dx, dy, dw, dh);
+            ctx.restore();
+        } else {
+            // Etsy / MakerWorld 4:5 Listing Hero Card (2000 x 2500)
+            const bg = ctx.createLinearGradient(0, 0, W, H);
+            bg.addColorStop(0, '#090e1a');
+            bg.addColorStop(0.5, '#131d33');
+            bg.addColorStop(1, '#090d16');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, H);
+
+            // Top Banner
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '800 34px Outfit, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(isFr ? 'TABLEAU 3D MULTI-COULEURS • PRÊT À IMPRIMER' : '3D MULTI-COLOR FILAMENT PAINTING • PRINT READY', W * 0.5, 110);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '800 66px Outfit, sans-serif';
+            ctx.fillText(`${config.width} × ${config.height} mm  •  ${filaments.length} ${isFr ? 'Couleurs' : 'Colors'}`, W * 0.5, 195);
+
+            // Hero 3D Model
+            const maxH = 1520, maxW = 1660;
+            const sc = Math.min(maxW / hero.width, maxH / hero.height);
+            const dw = hero.width * sc, dh = hero.height * sc;
+            const dx = (W - dw) * 0.5, dy = 260 + (maxH - dh) * 0.5;
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
+            ctx.shadowBlur = 70;
+            ctx.shadowOffsetY = 30;
+            ctx.drawImage(hero, dx, dy, dw, dh);
+            ctx.restore();
+
+            // Filament Swatch Strip + Specs Footer
+            const footY = 1920;
+            drawRoundedRectPath(ctx, 110, footY, W - 220, 440, 32);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            const swGap = 24;
+            const swW = Math.min(280, Math.floor((W - 340 - swGap * (filaments.length - 1)) / filaments.length));
+            const totalSwW = swW * filaments.length + swGap * (filaments.length - 1);
+            let sx = (W - totalSwW) * 0.5;
+            filaments.forEach((f, idx) => {
+                const { startLayer } = getSlotStartZAndLayer(idx);
+                drawRoundedRectPath(ctx, sx, footY + 46, swW, 110, 18);
+                ctx.fillStyle = f.color;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '700 26px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`L#${startLayer} • TD ${f.td}mm`, sx + swW * 0.5, footY + 195, swW);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '600 22px Inter, sans-serif';
+                ctx.fillText(f.name.slice(0, 18), sx + swW * 0.5, footY + 230, swW);
+                sx += swW + swGap;
+            });
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '700 32px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${config.layerHeight.toFixed(2)}mm Layer • 100% Infill • ~${metrics.totalGrams}g • ${metrics.timeStr} • Bambu AMS / Prusa / M600`, W * 0.5, footY + 345);
+        }
+
+        // Subtle bottom-right signature watermark on gallery mockups
+        if (!isEtsy) {
+            ctx.fillStyle = sceneType === 'wall_gallery' ? 'rgba(15, 23, 42, 0.55)' : 'rgba(248, 250, 252, 0.65)';
+            ctx.font = '700 24px Outfit, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`Studios-Pro.com • ${config.width}×${config.height}mm • ${filaments.length} Filaments`, W - 48, H - 36);
+        }
+
+        cvs.toBlob(blob => {
+            if (blob) {
+                downloadFileDirect(blob, `StudiosPro_Mockup_${sceneType}_${Date.now()}.png`);
+                showToast(currentLang === 'fr' ? '🖼️ Mockup 4K Studio téléchargé !' : '🖼️ 4K Studio Mockup downloaded!');
+            }
+        }, 'image/png');
+        return true;
+    } catch (err) {
+        console.error('Mockup export error:', err);
+        return false;
+    }
+}
+
+// ==========================================
+// 🌐 STANDALONE INTERACTIVE 3D HTML EXPORT (100% OFFLINE SELF-CONTAINED SHOWCASE!)
+// ==========================================
+function buildStandaloneHTML3DString() {
+    if ((!reliefMesh || !reliefMesh.geometry) && typeof THREE !== 'undefined') generate3DReliefMesh();
+    const g = reliefMesh && reliefMesh.geometry ? reliefMesh.geometry : null;
+
+    let compact = null;
+    if (g) {
+        compact = buildDownsampledReliefForAR(g, 14000) || {
+            pos: g.attributes.position.array,
+            norm: g.attributes.normal ? g.attributes.normal.array : null,
+            col: g.attributes.color ? g.attributes.color.array : null,
+            idx: g.index ? g.index.array : null
+        };
+    } else {
+        // Headless / WebGL-fallback path: build directly from watertight CAD relief data!
+        const solid = buildWatertightReliefData({ resolution: 96, includeFrame: false, quantize: false, adaptive: false });
+        if (!solid || !solid.positions || !solid.indices) return null;
+        const vCount = solid.vertCount;
+        const col = new Float32Array(vCount * 3);
+        const pal = filaments.map(f => hexToRgb(f.color));
+        const baseRgb = pal[0] || [20, 24, 34];
+        for (let v = 0; v < vCount; v++) {
+            col[v * 3] = baseRgb[0] / 255;
+            col[v * 3 + 1] = baseRgb[1] / 255;
+            col[v * 3 + 2] = baseRgb[2] / 255;
+        }
+        for (let t = 0; t < solid.triCount; t++) {
+            const rgb = pal[solid.triangleFilamentIdx[t]] || baseRgb;
+            for (let k = 0; k < 3; k++) {
+                const vi = solid.indices[t * 3 + k];
+                col[vi * 3] = rgb[0] / 255;
+                col[vi * 3 + 1] = rgb[1] / 255;
+                col[vi * 3 + 2] = rgb[2] / 255;
+            }
+        }
+        compact = { pos: solid.positions, col, idx: solid.indices };
+    }
+
+    const posRounded = Array.from(compact.pos, v => Math.round(v * 100) / 100);
+    const colBytes = compact.col ? Array.from(compact.col, v => Math.max(0, Math.min(255, Math.round(v * 255)))) : [];
+    const idxArr = compact.idx ? Array.from(compact.idx) : [];
+    const metrics = computePrintMetrics();
+    const recipeRows = filaments.map((f, idx) => {
+        const { startZ, startLayer } = getSlotStartZAndLayer(idx);
+        return { slot: idx + 1, name: f.name, color: f.color, td: f.td, layer: startLayer, z: startZ };
+    });
+
+    const payloadJson = JSON.stringify({
+        width: config.width,
+        height: config.height,
+        maxRelief: config.maxRelief,
+        layerHeight: config.layerHeight,
+        totalLayers: metrics.totalLayers,
+        grams: metrics.totalGrams,
+        timeStr: metrics.timeStr,
+        recipe: recipeRows,
+        pos: posRounded,
+        col: colBytes,
+        idx: idxArr
+    }).replace(/<\/script>/gi, '<\\/script>');
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Studios-Pro 3D Filament Painting Interactive Showcase</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{background:#06090e;color:#f8fafc;height:100vh;display:flex;overflow:hidden}
+#stage{flex:1;position:relative;cursor:grab}
+#stage:active{cursor:grabbing}
+canvas{width:100%;height:100%;display:block}
+#panel{width:310px;background:#0f172a;border-left:1px solid rgba(255,255,255,.1);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.05rem;color:#38bdf8}
+.meta{font-size:.82rem;color:#94a3b8;line-height:1.5}
+.row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);padding:8px 10px;border-radius:8px;font-size:.8rem}
+.dot{width:18px;height:18px;border-radius:5px;border:1px solid rgba(255,255,255,.35);flex-shrink:0}
+.hint{position:absolute;bottom:14px;left:16px;background:rgba(15,23,42,.82);padding:7px 14px;border-radius:20px;font-size:.76rem;color:#cbd5e1;border:1px solid rgba(255,255,255,.1)}
+@media(max-width:760px){body{flex-direction:column}#panel{width:100%;height:38vh;border-left:none;border-top:1px solid rgba(255,255,255,.1)}}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="gl"></canvas><div class="hint">Drag to orbit • Scroll to zoom • 100% Offline WebGL Viewer</div></div>
+<aside id="panel">
+<h1>Studios-Pro 3D Showcase</h1>
+<div class="meta" id="meta"></div>
+<div id="recipe" style="display:flex;flex-direction:column;gap:8px;"></div>
+<a href="https://studios-pro.com/?ref=filament-painting-studio" target="_blank" style="margin-top:auto;text-align:center;background:#0284c7;color:#fff;padding:10px;border-radius:10px;text-decoration:none;font-weight:700;font-size:.85rem;">Create Yours Free on Studios-Pro</a>
+</aside>
+<script>
+const DATA=${payloadJson};
+document.getElementById('meta').innerHTML='<strong>'+DATA.width+' × '+DATA.height+' × '+DATA.maxRelief+' mm</strong><br>Layer: '+DATA.layerHeight+'mm • '+DATA.totalLayers+' layers • ~'+DATA.grams+'g ('+DATA.timeStr+')';
+const rec=document.getElementById('recipe');
+DATA.recipe.forEach(r=>{const d=document.createElement('div');d.className='row';d.innerHTML='<span class="dot" style="background:'+r.color+'"></span><div style="flex:1"><strong>#'+r.slot+' '+r.name+'</strong><br><span style="color:#94a3b8;font-size:.72rem">Layer #'+r.layer+' ('+r.z.toFixed(2)+'mm) • TD '+r.td+'mm</span></div>';rec.appendChild(d);});
+const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true});
+if(gl){
+  const vs='attribute vec3 p;attribute vec3 c;uniform mat4 mvp;varying vec3 vc;void main(){vc=c;gl_Position=mvp*vec4(p,1.0);}';
+  const fs='precision mediump float;varying vec3 vc;void main(){gl_FragColor=vec4(vc,1.0);}';
+  const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o;};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+  const pb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(DATA.pos),gl.STATIC_DRAW);
+  const pl=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(pl);gl.vertexAttribPointer(pl,3,gl.FLOAT,false,0,0);
+  const cb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,cb);gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(DATA.col),gl.STATIC_DRAW);
+  const cl=gl.getAttribLocation(pr,'c');gl.enableVertexAttribArray(cl);gl.vertexAttribPointer(cl,3,gl.UNSIGNED_BYTE,true,0,0);
+  const use32=DATA.pos.length/3>65535&&gl.getExtension('OES_element_index_uint');
+  const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,use32?new Uint32Array(DATA.idx):new Uint16Array(DATA.idx),gl.STATIC_DRAW);
+  const uMvp=gl.getUniformLocation(pr,'mvp');
+  let rotX=-0.35,rotY=0.35,dist=Math.max(DATA.width,DATA.height)*1.85,drag=false,lx=0,ly=0;
+  canvas.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;};
+  window.onpointerup=()=>{drag=false;};
+  window.onpointermove=e=>{if(!drag)return;rotY+=(e.clientX-lx)*0.008;rotX=Math.max(-1.4,Math.min(1.4,rotX+(e.clientY-ly)*0.008));lx=e.clientX;ly=e.clientY;};
+  canvas.onwheel=e=>{e.preventDefault();dist=Math.max(40,Math.min(900,dist*(e.deltaY>0?1.08:0.92)));};
+  const mul=(a,b)=>{const o=new Float32Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++)o[i*4+j]=a[j]*b[i*4]+a[4+j]*b[i*4+1]+a[8+j]*b[i*4+2]+a[12+j]*b[i*4+3];return o;};
+  const draw=()=>{
+    const r=canvas.getBoundingClientRect();const w=Math.max(1,r.width|0),h=Math.max(1,r.height|0);
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+    gl.viewport(0,0,w,h);gl.enable(gl.DEPTH_TEST);gl.clearColor(0.024,0.035,0.055,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const f=1/Math.tan(0.35),asp=w/h,n=1,fa=2000;
+    const P=new Float32Array([f/asp,0,0,0, 0,f,0,0, 0,0,(fa+n)/(n-fa),-1, 0,0,(2*fa*n)/(n-fa),0]);
+    const T=new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,-dist,1]);
+    const cx=Math.cos(rotX),sx=Math.sin(rotX),cy=Math.cos(rotY),sy=Math.sin(rotY);
+    const RX=new Float32Array([1,0,0,0, 0,cx,sx,0, 0,-sx,cx,0, 0,0,0,1]);
+    const RY=new Float32Array([cy,0,-sy,0, 0,1,0,0, sy,0,cy,0, 0,0,0,1]);
+    gl.uniformMatrix4fv(uMvp,false,mul(P,mul(T,mul(RX,RY))));
+    gl.drawElements(gl.TRIANGLES,DATA.idx.length,use32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0);
+    requestAnimationFrame(draw);
+  };
+  draw();
+}
+</script>
+</body>
+</html>`;
+}
+
+async function downloadStandaloneHTML3D() {
+    try {
+        if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
+        const htmlStr = buildStandaloneHTML3DString();
+        if (!htmlStr) return false;
+        const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8' });
+        downloadFileDirect(blob, `StudiosPro_Interactive_3D_Showcase_${Date.now()}.html`);
+        showToast(currentLang === 'fr' ? '🌐 Fichier 3D HTML interactif autonome téléchargé !' : '🌐 Standalone Interactive 3D HTML exported!');
+        return true;
+    } catch (err) {
+        console.error('Standalone HTML 3D export error:', err);
+        return false;
+    }
 }
 

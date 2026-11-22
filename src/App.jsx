@@ -3499,7 +3499,7 @@ const StudiosPro = () => {
         )}
         {isFilamentPaintingOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/filament-painting-studio/index.html" className="studio-iframe" title="Filament Painting & Layer-Swap Studio" />
+            <iframe src={`/apps/filament-painting-studio/index.html${window.location.search || ''}`} className="studio-iframe" title="Filament Painting & Layer-Swap Studio" />
           </motion.div>
         )}
       </AnimatePresence>
