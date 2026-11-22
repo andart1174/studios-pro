@@ -257,6 +257,10 @@ function onWindowResize() {
     camera.aspect = cw / ch;
     camera.updateProjectionMatrix();
     renderer.setSize(cw, ch, false);
+    if (isSplitCompareMode) {
+        renderSplitCompareSource();
+        updateSplitCompareUI(splitComparePercent);
+    }
 }
 
 function animate() {
@@ -303,26 +307,29 @@ function applyActivePBRFinishToMaterial(mat) {
 function clearDiagnosticModes(exceptMode = null) {
     if (exceptMode !== 'colormap') {
         isColorMapMode = false;
-        const b = document.getElementById('btn-colormap');
-        if (b) b.classList.remove('active');
+        ['btn-toggle-colormap', 'btn-colormap'].forEach(id => {
+            const b = document.getElementById(id); if (b) b.classList.remove('active');
+        });
     }
     if (exceptMode !== 'nozzle') {
         isNozzleInspectMode = false;
-        ['btn-nozzle-check', 'btn-nozzle-check-sec2', 'btn-top-nozzle-check'].forEach(id => {
+        ['btn-top-nozzle-inspect', 'btn-toggle-nozzle-inspect', 'btn-sec2-nozzle-inspect', 'btn-nozzle-check', 'btn-nozzle-check-sec2', 'btn-top-nozzle-check'].forEach(id => {
             const el = document.getElementById(id); if (el) el.classList.remove('active');
         });
     }
     if (exceptMode !== 'overhang') {
         isOverhangWarning = false;
         config.overhangWarning = false;
-        const b = document.getElementById('btn-overhang-warn');
-        if (b) b.classList.remove('active');
+        ['btn-sec2-overhang-inspect', 'btn-overhang-warn'].forEach(id => {
+            const b = document.getElementById(id); if (b) b.classList.remove('active');
+        });
     }
     if (exceptMode !== 'zebra') {
         isZebraExposure = false;
         config.zebraExposure = false;
-        const b = document.getElementById('btn-zebra-warn');
-        if (b) b.classList.remove('active');
+        ['btn-sec2-zebra-inspect', 'btn-zebra-warn'].forEach(id => {
+            const b = document.getElementById(id); if (b) b.classList.remove('active');
+        });
     }
     if (exceptMode !== 'deltae') {
         isDeltaEHeatmap = false;
@@ -366,8 +373,9 @@ function setLightboxKelvin(kelvin) {
 
 function toggleLightboxMode() {
     isLightbox = !isLightbox;
-    const btn = document.getElementById('btn-lightbox');
-    if (btn) btn.classList.toggle('active', isLightbox);
+    ['btn-toggle-lightbox', 'btn-lightbox'].forEach(id => {
+        const btn = document.getElementById(id); if (btn) btn.classList.toggle('active', isLightbox);
+    });
     const kBar = document.getElementById('lightbox-kelvin-bar');
     if (kBar) kBar.style.display = isLightbox ? 'flex' : 'none';
 
@@ -398,16 +406,18 @@ function toggleColorMapMode() {
     const next = !isColorMapMode;
     clearDiagnosticModes(next ? 'colormap' : null);
     isColorMapMode = next;
-    const btn = document.getElementById('btn-colormap');
-    if (btn) btn.classList.toggle('active', isColorMapMode);
+    ['btn-toggle-colormap', 'btn-colormap'].forEach(id => {
+        const btn = document.getElementById(id); if (btn) btn.classList.toggle('active', isColorMapMode);
+    });
     generate3DReliefMesh();
     showToast(isColorMapMode ? (translations[currentLang]?.toastColorMapOn || 'Color Map ON') : (translations[currentLang]?.toastColorMapOff || 'Color Map OFF'));
 }
 
 function toggle3DRecolorMode() {
     is3DRecolorMode = !is3DRecolorMode;
-    const btn = document.getElementById('btn-3d-recolor');
-    if (btn) btn.classList.toggle('active', is3DRecolorMode);
+    ['btn-toggle-3d-recolor', 'btn-3d-recolor'].forEach(id => {
+        const btn = document.getElementById(id); if (btn) btn.classList.toggle('active', is3DRecolorMode);
+    });
     const canvas = document.getElementById('viewport-canvas');
     if (canvas) canvas.style.cursor = is3DRecolorMode ? 'crosshair' : 'grab';
     showToast(is3DRecolorMode ? (translations[currentLang]?.toast3DRecolorOn || 'Click 3D model to recolor') : (translations[currentLang]?.toast3DRecolorOff || '3D Recolor OFF'));
@@ -417,7 +427,7 @@ function toggleNozzleInspector() {
     const next = !isNozzleInspectMode;
     clearDiagnosticModes(next ? 'nozzle' : null);
     isNozzleInspectMode = next;
-    ['btn-nozzle-check', 'btn-nozzle-check-sec2', 'btn-top-nozzle-check'].forEach(id => {
+    ['btn-top-nozzle-inspect', 'btn-toggle-nozzle-inspect', 'btn-sec2-nozzle-inspect', 'btn-nozzle-check', 'btn-nozzle-check-sec2', 'btn-top-nozzle-check'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('active', isNozzleInspectMode);
     });
@@ -430,8 +440,9 @@ function toggleOverhangWarning() {
     clearDiagnosticModes(next ? 'overhang' : null);
     isOverhangWarning = next;
     config.overhangWarning = next;
-    const btn = document.getElementById('btn-overhang-warn');
-    if (btn) btn.classList.toggle('active', isOverhangWarning);
+    ['btn-sec2-overhang-inspect', 'btn-overhang-warn'].forEach(id => {
+        const btn = document.getElementById(id); if (btn) btn.classList.toggle('active', isOverhangWarning);
+    });
     generate3DReliefMesh();
     showToast(isOverhangWarning
         ? (currentLang === 'fr' ? '⚠️ Preflight Imprimabilité actif (ponts, porte-à-faux & pics)' : '⚠️ Printability Preflight ON (bridges, overhangs & spires)')
@@ -443,8 +454,9 @@ function toggleZebraExposure() {
     clearDiagnosticModes(next ? 'zebra' : null);
     isZebraExposure = next;
     config.zebraExposure = next;
-    const btn = document.getElementById('btn-zebra-warn');
-    if (btn) btn.classList.toggle('active', isZebraExposure);
+    ['btn-sec2-zebra-inspect', 'btn-zebra-warn'].forEach(id => {
+        const btn = document.getElementById(id); if (btn) btn.classList.toggle('active', isZebraExposure);
+    });
     generate3DReliefMesh();
     showToast(isZebraExposure
         ? (currentLang === 'fr' ? '🦓 Zebra Relief actif (Magenta = plafond Z, Cyan = base écrasée)' : '🦓 Relief Zebra ON (Magenta = peak clip, Cyan = base crush)')
@@ -513,22 +525,23 @@ function diagnosePixelDeltaE(px, py) {
 
 function toggleSplitCompareMode() {
     isSplitCompareMode = !isSplitCompareMode;
-    ['btn-split-compare', 'btn-split-compare-sec2', 'btn-top-split-compare'].forEach(id => {
+    ['btn-top-split-compare', 'btn-toggle-split-compare', 'btn-sec2-split-compare', 'btn-split-compare', 'btn-split-compare-sec2'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('active', isSplitCompareMode);
     });
     const overlay = document.getElementById('split-compare-overlay');
-    const divider = document.getElementById('split-compare-divider');
-    if (overlay && divider) {
+    const divider = document.getElementById('split-divider-line') || document.getElementById('split-compare-divider');
+    if (overlay) {
+        overlay.classList.toggle('active', isSplitCompareMode);
         overlay.style.display = isSplitCompareMode ? 'block' : 'none';
-        divider.style.display = isSplitCompareMode ? 'flex' : 'none';
+        if (divider) divider.style.display = isSplitCompareMode ? 'block' : 'none';
         if (isSplitCompareMode) {
             renderSplitCompareSource();
             updateSplitCompareUI(splitComparePercent);
         }
     }
     showToast(isSplitCompareMode
-        ? (currentLang === 'fr' ? '🌗 Comparateur Avant/Après activé' : '🌗 Before / After Split Compare ON')
+        ? (currentLang === 'fr' ? '🌗 Comparateur Avant/Après activé (Glissez la barre centrale ↔)' : '🌗 Before / After Split Compare ON (Drag the center divider ↔)')
         : (currentLang === 'fr' ? 'Comparateur fermé' : 'Split Compare closed'));
 }
 
@@ -666,16 +679,23 @@ function syncQualityControlsUI() {
 
 function updateSplitCompareUI(pct) {
     splitComparePercent = Math.max(5, Math.min(95, pct));
+    const leftPane = document.getElementById('split-left-pane');
     const overlay = document.getElementById('split-compare-overlay');
-    const divider = document.getElementById('split-compare-divider');
-    if (overlay) overlay.style.clipPath = `inset(0 ${100 - splitComparePercent}% 0 0)`;
+    const divider = document.getElementById('split-divider-line') || document.getElementById('split-compare-divider');
+    if (leftPane) {
+        leftPane.style.clipPath = `inset(0 ${100 - splitComparePercent}% 0 0)`;
+        if (overlay) overlay.style.clipPath = 'none';
+    } else if (overlay) {
+        overlay.style.clipPath = `inset(0 ${100 - splitComparePercent}% 0 0)`;
+    }
     if (divider) divider.style.left = `${splitComparePercent}%`;
 }
 
 function renderSplitCompareSource() {
-    const cv = document.getElementById('split-compare-canvas');
+    const cv = document.getElementById('split-original-canvas') || document.getElementById('split-compare-canvas');
     const vp = document.getElementById('viewport-container');
-    if (!cv || !vp || !sourceImage) return;
+    const rawSrc = (sourceCanvas && sourceCanvas.width > 0) ? sourceCanvas : sourceImage;
+    if (!cv || !vp || !rawSrc) return;
     const cw = Math.max(1, vp.clientWidth);
     const ch = Math.max(1, vp.clientHeight);
     cv.width = cw;
@@ -692,8 +712,43 @@ function renderSplitCompareSource() {
     const dx = (cw - drawW) * 0.5;
     const dy = (ch - drawH) * 0.5;
 
-    ctx.drawImage(processedCanvas.width > 0 ? processedCanvas : sourceImage, dx, dy, drawW, drawH);
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+    // Build oriented + smart-cropped original source photo so left pane aligns 1:1 with the 3D plaque!
+    const isRot90 = ((config.rotation || 0) % 180 !== 0);
+    const imgNatW = rawSrc.naturalWidth || rawSrc.width || 1;
+    const imgNatH = rawSrc.naturalHeight || rawSrc.height || 1;
+    const srcW = isRot90 ? imgNatH : imgNatW;
+    const srcH = isRot90 ? imgNatW : imgNatH;
+
+    const oriented = document.createElement('canvas');
+    oriented.width = srcW;
+    oriented.height = srcH;
+    const octx = oriented.getContext('2d');
+    octx.save();
+    octx.translate(srcW / 2, srcH / 2);
+    if (config.flipX || config.flipY) octx.scale(config.flipX ? -1 : 1, config.flipY ? -1 : 1);
+    if (config.rotation) octx.rotate((config.rotation * Math.PI) / 180);
+    octx.drawImage(rawSrc, -imgNatW / 2, -imgNatH / 2, imgNatW, imgNatH);
+    octx.restore();
+
+    const dstRatio = drawW / Math.max(1, drawH);
+    const srcRatio = srcW / Math.max(1, srcH);
+    const zoom = Math.max(1.0, Math.min(3.0, config.cropZoom || 1.0));
+    let cropW = srcW, cropH = srcH;
+    if (srcRatio > dstRatio) cropW = srcH * dstRatio;
+    else cropH = srcW / dstRatio;
+    cropW /= zoom;
+    cropH /= zoom;
+    const maxPanX = Math.max(0, (srcW - cropW) * 0.5);
+    const maxPanY = Math.max(0, (srcH - cropH) * 0.5);
+    const sx = (srcW - cropW) * 0.5 + (config.cropPanX || 0) * maxPanX;
+    const sy = (srcH - cropH) * 0.5 + (config.cropPanY || 0) * maxPanY;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 28;
+    ctx.drawImage(oriented, sx, sy, cropW, cropH, dx, dy, drawW, drawH);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.65)';
     ctx.lineWidth = 2;
     ctx.strokeRect(dx, dy, drawW, drawH);
 }
@@ -2011,22 +2066,30 @@ function updateFrameOptions() {
 
 function updateHUD() {
     const m = computePrintMetrics();
+    const isFr = currentLang === 'fr';
+    const hDimensions = document.getElementById('hud-dimensions');
     const hDims = document.getElementById('hud-dims');
+    const hSwaps = document.getElementById('hud-swaps');
     const hLayers = document.getElementById('hud-layers');
     const hTime = document.getElementById('hud-time');
     const hWeight = document.getElementById('hud-weight');
     const hCost = document.getElementById('hud-cost');
     const effBase = getEffectiveRearBaseZ();
     const effMax = Math.max(effBase + 0.4, config.maxRelief);
+    if (hDimensions) hDimensions.innerText = `${isFr ? 'Taille' : 'Size'}: ${config.width} × ${config.height} × ${effMax.toFixed(1)} mm`;
     if (hDims) hDims.innerText = `${config.width} × ${config.height} × ${effMax.toFixed(1)} mm`;
+    if (hSwaps) hSwaps.innerText = `${isFr ? 'Filaments' : 'Filaments'}: ${filaments.length} ${isFr ? 'Couleurs' : 'Active Colors'} • ${m.totalLayers} ${isFr ? 'Couches' : 'Layers'}`;
     if (hLayers) hLayers.innerText = `${m.totalLayers} (${config.layerHeight}mm)`;
     if (hTime) {
         const hrs = Math.floor(m.estMinutes / 60);
         const mins = m.estMinutes % 60;
         hTime.innerText = hrs > 0 ? `~${hrs}h ${mins}m` : `~${mins}m`;
     }
-    if (hWeight) hWeight.innerText = `~${m.totalGrams}g (${m.totalMeters}m)`;
+    if (hWeight) hWeight.innerText = `~${m.totalGrams}g PLA (${m.totalMeters}m • ${m.timeStr})`;
     if (hCost) hCost.innerText = `$${m.estCost.toFixed(2)}`;
+
+    const totalLbl = document.getElementById('badge-total-layers');
+    if (totalLbl) totalLbl.innerText = `${m.totalLayers} ${isFr ? 'Couches' : 'Layers'}`;
 
     const slicerSlider = document.getElementById('slider-slicer-sim');
     if (slicerSlider) {
@@ -2034,6 +2097,8 @@ function updateHUD() {
         if (!isSlicerSimulationActive) {
             slicerSlider.value = m.totalLayers;
             currentSimLayer = m.totalLayers;
+            const badge = document.getElementById('badge-slicer-layer');
+            if (badge) badge.innerText = `${m.totalLayers} / ${m.totalLayers}`;
             const lbl = document.getElementById('val-slicer-sim');
             if (lbl) lbl.innerText = `L${m.totalLayers} / ${m.totalLayers}`;
         }
@@ -2059,6 +2124,8 @@ function updateSlicerSimulation(layerNum) {
             clipPlane.constant = isSlicerSimulationActive ? zMm : 10000;
         }
     }
+    const badge = document.getElementById('badge-slicer-layer');
+    if (badge) badge.innerText = `${l} / ${total}`;
     const lbl = document.getElementById('val-slicer-sim');
     if (lbl) lbl.innerText = `L${l} / ${total} (${zMm.toFixed(2)}mm)`;
     const slider = document.getElementById('slider-slicer-sim');
@@ -2217,7 +2284,7 @@ function generateAIPalettesFromImage() {
 }
 
 function renderAIPalettesUI() {
-    const grid = document.getElementById('ai-palettes-grid');
+    const grid = document.getElementById('ai-palette-container') || document.getElementById('ai-palettes-grid');
     if (!grid) return;
     grid.innerHTML = '';
     aiPalettesList.forEach((pal, idx) => {
@@ -2463,22 +2530,26 @@ function computeStackColorMatchMetrics(customFilaments = null) {
     const avgDeltaE = sumDE / count;
     lastDeltaEStats = {
         avgDeltaE,
-        maxDeltaE,
+        maxDeltaE: maxDE,
         matchScorePct: Math.max(0, Math.min(100, Math.round(100 - avgDeltaE * 2.15)))
     };
     return lastDeltaEStats;
 }
 
 function updateColorMatchBadge() {
-    const m = computeStackColorMatchMetrics();
-    const badges = [
-        document.getElementById('badge-color-match'),
-        document.getElementById('color-match-score-badge')
-    ].filter(Boolean);
-    badges.forEach(badge => {
-        badge.innerText = `${m.matchScorePct}% (ΔE ${m.avgDeltaE.toFixed(1)})`;
-        badge.style.color = m.matchScorePct >= 82 ? '#10b981' : (m.matchScorePct >= 65 ? '#facc15' : '#f97316');
-    });
+    try {
+        const m = computeStackColorMatchMetrics();
+        const badges = [
+            document.getElementById('badge-color-match'),
+            document.getElementById('color-match-score-badge')
+        ].filter(Boolean);
+        badges.forEach(badge => {
+            badge.innerText = `${m.matchScorePct}% (ΔE ${m.avgDeltaE.toFixed(1)})`;
+            badge.style.color = m.matchScorePct >= 82 ? '#10b981' : (m.matchScorePct >= 65 ? '#facc15' : '#f97316');
+        });
+    } catch (err) {
+        console.warn('Color match badge calculation skipped:', err);
+    }
 }
 
 function setOpticalModel(model) {

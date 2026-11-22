@@ -304,6 +304,7 @@ function loadUploadedFile(file) {
             processSourceImage(false, true);
             if (typeof generateAIPalettesFromImage === 'function') generateAIPalettesFromImage();
             if (typeof applyAIPalette === 'function') applyAIPalette(0);
+            requestMeshUpdate(true);
             if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
             if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
             showToast(translations[currentLang]?.toastImageLoaded || 'Image loaded & analyzed!');
@@ -1746,10 +1747,13 @@ function loadSample(type) {
                 { name: 'Pure White', color: '#ffffff', td: 5.0, startPct: 0.88 }
             ];
             if (typeof renderFilamentStackUI === 'function') renderFilamentStackUI();
-            requestMeshUpdate();
+            requestMeshUpdate(true);
         } else if (typeof applyAIPalette === 'function') {
             // FIXED: non-tiger samples immediately get their optimal extracted palette!
             applyAIPalette(0);
+            requestMeshUpdate(true);
+        } else {
+            requestMeshUpdate(true);
         }
 
         if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();

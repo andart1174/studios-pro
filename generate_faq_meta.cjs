@@ -288,10 +288,11 @@ files.forEach(f => {
   const pageTitle = titleMatch ? titleMatch[1].trim() : 'Studios-Pro | 3D Design & CAD Studio';
   const pageDesc = descMatch ? descMatch[1].trim() : 'Online 3D CAD design, procedural modeling, and CNC vector converter tools with Studios-Pro.';
   const pageSlug = f === 'index.html' ? 'blog/' : `blog/${f}`;
+  const ogImg = f.includes('filament-painting') ? 'og_filament_painting_studio.jpg' : 'og_banner.jpg';
 
   const uniqueOgTags = `    <meta property="og:title" content="${pageTitle.replace(/"/g, '&quot;')}">
     <meta property="og:description" content="${pageDesc.replace(/"/g, '&quot;')}">
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:image" content="https://studios-pro.com/${ogImg}">
     <meta property="og:url" content="https://studios-pro.com/${pageSlug}">
     <meta name="twitter:card" content="summary_large_image">`;
 
