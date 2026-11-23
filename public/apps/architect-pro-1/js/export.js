@@ -195,7 +195,7 @@ window.Exporter = {
 // Bind Export Buttons UI
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('doExportHTML')?.addEventListener('click', () => {
-        if (!window.isPremiumUser && !isPremiumUser) {
+        if (!window.isPremiumUser && !isPremiumUser && !window.isExportAllowed) {
             channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp1' } });
             return;
         }

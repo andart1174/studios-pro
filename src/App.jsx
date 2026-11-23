@@ -701,11 +701,13 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
 
       const userRef = doc(db, "users", googleUser.uid);
       const existingDoc = await getDoc(userRef);
+      const localFreeUsed = Math.max(0, parseInt(localStorage.getItem('freeExportsUsed'), 10) || 0);
       if (!existingDoc.exists()) {
         await setDoc(userRef, {
           email: googleUser.email,
           displayName: googleUser.displayName || '',
           isPremium: false,
+          freeExportsUsed: localFreeUsed,
           createdAt: new Date().toISOString()
         });
       }
@@ -740,10 +742,12 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
         // Initialize user profile in Firestore if it doesn't already exist to avoid overwriting premium status
         const userRef = doc(db, "users", userCredential.user.uid);
         const existingDoc = await getDoc(userRef);
+        const localFreeUsed = Math.max(0, parseInt(localStorage.getItem('freeExportsUsed'), 10) || 0);
         if (!existingDoc.exists()) {
           await setDoc(userRef, {
             email: userCredential.user.email,
             isPremium: false,
+            freeExportsUsed: localFreeUsed,
             createdAt: new Date().toISOString()
           });
         }
@@ -1552,34 +1556,56 @@ const StudiosPro = () => {
             }
           }
 
-          // Apply state variables
+          // Apply state variables & merge freeExportsUsed monotonically (never let 0 in a new browser reset cloud usage)
+          const localFree = Math.max(0, parseInt(localStorage.getItem('freeExportsUsed'), 10) || 0);
+          const cloudFree = typeof cloudFreeExportsUsed === 'number' ? Math.max(0, cloudFreeExportsUsed) : 0;
+          const mergedFreeUsed = Math.max(localFree, cloudFree);
+          userData.freeExportsUsed = mergedFreeUsed;
+
           setIsPremium(isUserPremium);
           setPremiumUntil(premiumUntilVal);
           setHasExportCredit(hasExportCreditVal);
-          if (cloudFreeExportsUsed !== undefined) {
-            setFreeExportsUsed(cloudFreeExportsUsed);
-            localStorage.setItem('freeExportsUsed', cloudFreeExportsUsed);
-          }
+          setFreeExportsUsed(mergedFreeUsed);
+          localStorage.setItem('freeExportsUsed', String(mergedFreeUsed));
 
-          // Check if there's a pending premium from localStorage (redirect happened while not logged in)
-          const pendingPremium = localStorage.getItem('pendingPremiumActivation');
-          if (pendingPremium) {
-            const thirtyDaysFromNow = new Date();
-            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-            const expirationString = thirtyDaysFromNow.toISOString();
-            
-            await setDoc(userDocRef, { 
-              isPremium: true, 
-              premiumUntil: expirationString,
-              lastPaymentDate: new Date().toISOString()
-            }, { merge: true });
-            
-            setIsPremium(true);
-            setPremiumUntil(expirationString);
-            localStorage.removeItem('pendingPremiumActivation');
+          // Always purge any legacy insecure boolean activation flag
+          localStorage.removeItem('pendingPremiumActivation');
+
+          // If a Stripe session was completed while logged out, verify it server-side against Stripe API before activating
+          const pendingSessionId = localStorage.getItem('pendingStripeSessionId');
+          if (pendingSessionId && pendingSessionId.startsWith('cs_') && userData.stripeSessionId !== pendingSessionId) {
+            localStorage.removeItem('pendingStripeSessionId');
+            try {
+              const verifyRes = await fetch('/api/verify-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: pendingSessionId })
+              });
+              const verifyData = await verifyRes.json().catch(() => ({}));
+              if (verifyRes.ok && verifyData.verified && verifyData.payment_status === 'paid' && verifyData.mode === 'subscription') {
+                const sessionCreatedMs = verifyData.created ? verifyData.created * 1000 : Date.now();
+                const expDate = new Date(sessionCreatedMs + 30 * 24 * 60 * 60 * 1000);
+                const expirationString = expDate.toISOString();
+
+                await setDoc(userDocRef, {
+                  isPremium: true,
+                  premiumUntil: expirationString,
+                  lastPaymentDate: new Date(sessionCreatedMs).toISOString(),
+                  stripeSessionId: pendingSessionId,
+                  freeExportsUsed: mergedFreeUsed
+                }, { merge: true });
+
+                setIsPremium(true);
+                setPremiumUntil(expirationString);
+              }
+            } catch (verifyErr) {
+              console.error('[Security] Pending Stripe session verification failed:', verifyErr);
+            }
           } else if (!userDoc.exists()) {
             // New user, sync local to cloud
             await setDoc(userDocRef, userData, { merge: true });
+          } else if (mergedFreeUsed > cloudFree) {
+            await setDoc(userDocRef, { freeExportsUsed: mergedFreeUsed }, { merge: true });
           }
 
           // Set user after resolving premium status
@@ -1597,10 +1623,10 @@ const StudiosPro = () => {
     return () => unsubscribe();
   }, []);
 
-  // Save free exports to localStorage and sync to Cloud when changed
+  // Save free exports to localStorage and sync to Cloud when changed (monotonic only)
   useEffect(() => {
-    localStorage.setItem('freeExportsUsed', freeExportsUsed);
-    if (user && db) {
+    localStorage.setItem('freeExportsUsed', String(freeExportsUsed));
+    if (user && db && freeExportsUsed > 0) {
       setDoc(doc(db, "users", user.uid), { freeExportsUsed }, { merge: true })
         .catch(err => console.error("Cloud sync error:", err));
     }
@@ -1623,7 +1649,6 @@ const StudiosPro = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success')) {
       const sessionId = params.get('session_id');
-      const type = params.get('type') || 'premium';
       const ref = params.get('ref');
 
       // Reject forged or invalid session IDs immediately
@@ -1644,42 +1669,29 @@ const StudiosPro = () => {
       })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
-        if (res.ok && data.verified && data.payment_status === 'paid') {
-          if (type === 'premium' || data.mode === 'subscription') {
-            const thirtyDaysFromNow = new Date();
-            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-            const expirationString = thirtyDaysFromNow.toISOString();
+        if (res.ok && data.verified && data.payment_status === 'paid' && data.mode === 'subscription') {
+          // Anchor expiration strictly to the Stripe session's creation timestamp (+30 days)
+          // so replaying the same session_id URL can never extend the subscription beyond its real 30-day window.
+          const sessionCreatedMs = data.created ? data.created * 1000 : Date.now();
+          const expDate = new Date(sessionCreatedMs + 30 * 24 * 60 * 60 * 1000);
+          const expirationString = expDate.toISOString();
 
-            setIsPremium(true);
-            setPremiumUntil(expirationString);
+          setIsPremium(true);
+          setPremiumUntil(expirationString);
 
-            if (user) {
-              setDoc(doc(db, "users", user.uid), { 
-                isPremium: true, 
-                premiumUntil: expirationString,
-                lastPaymentDate: new Date().toISOString(),
-                stripeSessionId: sessionId
-              }, { merge: true });
-            } else {
-              localStorage.setItem('pendingPremiumActivation', 'true');
-            }
-            alert(lang === 'fr' 
-              ? "Paiement réussi et vérifié ! Votre abonnement est actif pour 30 jours." 
-              : "Payment verified and successful! Your subscription is active for 30 days.");
-          } else if (type === 'single') {
-            setHasExportCredit(true);
-            if (user) {
-              setDoc(doc(db, "users", user.uid), { hasExportCredit: true, stripeSessionId: sessionId }, { merge: true });
-            }
-            alert(lang === 'fr' 
-              ? "Paiement réussi et vérifié ! Vous pouvez maintenant exporter votre modèle." 
-              : "Payment verified and successful! You can now export your model.");
+          if (user) {
+            setDoc(doc(db, "users", user.uid), { 
+              isPremium: true, 
+              premiumUntil: expirationString,
+              lastPaymentDate: new Date(sessionCreatedMs).toISOString(),
+              stripeSessionId: sessionId
+            }, { merge: true });
+          } else {
+            localStorage.setItem('pendingStripeSessionId', sessionId);
           }
-
-          // Notify other tabs that payment is confirmed
-          const channel = new BroadcastChannel('studios_pro_channel');
-          channel.postMessage({ type: 'PAYMENT_SUCCESS_INTERNAL', payload: { type } });
-          setTimeout(() => channel.close(), 1000);
+          alert(lang === 'fr' 
+            ? "Paiement réussi et vérifié ! Votre abonnement Pro est actif pour 30 jours." 
+            : "Payment verified and successful! Your Pro subscription is active for 30 days.");
 
           if (ref) openStudioByRef(ref);
         } else {
@@ -1756,7 +1768,7 @@ const StudiosPro = () => {
           // Use one free export credit (5 free exports allowed)
           setFreeExportsUsed(prev => {
             const newVal = prev + 1;
-            localStorage.setItem('freeExportsUsed', newVal);
+            localStorage.setItem('freeExportsUsed', String(newVal));
             return newVal;
           });
           channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: false } });
@@ -1784,9 +1796,9 @@ const StudiosPro = () => {
         });
       } else if (type === 'START_STRIPE_PAYMENT') {
         if (typeof payload === 'object') {
-          redirectToStripe(payload.type, payload.ref);
+          redirectToStripe('premium', payload.ref);
         } else {
-          redirectToStripe(payload);
+          redirectToStripe('premium');
         }
       } else if (type === 'EXPORT_COMPLETED') {
         if (creditRef.current && !premiumRef.current && !adminRef.current) {
@@ -1937,19 +1949,28 @@ const StudiosPro = () => {
           });
         }
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
-        let isPremSuccess = false;
-        if (payload.type === 'premium') {
-          setIsPremium(true);
-          isPremSuccess = true;
+        if (userRef.current && db) {
+          getDoc(doc(db, "users", userRef.current.uid))
+            .then((snap) => {
+              if (snap.exists()) {
+                const d = snap.data();
+                const isPremNow = d.isPremium === true || (d.premiumUntil && new Date(d.premiumUntil) > new Date());
+                if (isPremNow) {
+                  setIsPremium(true);
+                  setPremiumUntil(d.premiumUntil || null);
+                  channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: true } });
+                }
+              }
+            })
+            .catch(() => {});
         }
-        if (payload.type === 'single') setHasExportCredit(true);
-        channel.postMessage({ type: 'EXPORT_ALLOWED', payload: { isPremium: isPremSuccess } });
       }
     };
 
     channel.onmessage = (event) => handleMessage(event.data);
 
     const windowListener = (event) => {
+      if (event.origin && event.origin !== window.location.origin) return;
       if (event.data && typeof event.data === 'object' && event.data.type) {
         handleMessage(event.data);
       }

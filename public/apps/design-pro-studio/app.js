@@ -1501,7 +1501,7 @@ function setupExportPanel() {
   });
 
   document.getElementById('exp-html')?.addEventListener('click', () => {
-    if (!window.isPremiumUser && !isPremiumUser) {
+    if (!window.isPremiumUser && !isPremiumUser && !window.isExportAllowed) {
       channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'desp' } });
       return;
     }

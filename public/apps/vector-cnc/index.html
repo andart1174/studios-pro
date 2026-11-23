@@ -365,10 +365,24 @@
 
         if (isExportTrigger && !isPremiumUser && !window.isPremiumUser && Date.now() > singleExportExpiresAt) {
           if (target.classList && target.classList.contains('disabled')) return;
+          if (window.self === window.top) {
+            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+            if (used < 5) {
+              used++;
+              localStorage.setItem('freeExportsUsed', String(used));
+              isAllowed = true;
+              singleExportExpiresAt = Date.now() + 10000;
+              return;
+            }
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            pendingTarget = target;
+            if (localModal) localModal.style.display = 'flex';
+            return;
+          }
           e.stopImmediatePropagation();
           e.preventDefault();
           pendingTarget = target;
-          if (localModal) localModal.style.display = 'flex';
           try { channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'vcnc' } }); } catch (_) {}
         }
       }, true);
@@ -377,9 +391,21 @@
       HTMLAnchorElement.prototype.click = function () {
         if (this.download && this.href && (!this.dataset || !this.dataset.bypassed)) {
           if (!isPremiumUser && !window.isPremiumUser && Date.now() > singleExportExpiresAt) {
-            if (localModal) localModal.style.display = 'flex';
-            try { channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'vcnc' } }); } catch (_) {}
-            return;
+            if (window.self === window.top) {
+              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+              if (used < 5) {
+                used++;
+                localStorage.setItem('freeExportsUsed', String(used));
+                isAllowed = true;
+                singleExportExpiresAt = Date.now() + 10000;
+              } else {
+                if (localModal) localModal.style.display = 'flex';
+                return;
+              }
+            } else {
+              try { channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'vcnc' } }); } catch (_) {}
+              return;
+            }
           }
         }
         return originalAnchorClick.apply(this, arguments);
@@ -396,8 +422,8 @@
         <span data-fr>Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</span>
       </p>
       <div class="btn-group">
-        <button class="premium-btn" id="pay-premium-btn"><span data-en="Become Premium ($20)"
-            data-fr="Devenir Premium ($20)">Become Premium ($20)</span></button>
+        <button class="premium-btn" id="pay-premium-btn"><span data-en="Go Premium ($10/mo)"
+            data-fr="Devenir Premium (10$/mois)">Go Premium ($10/mo)</span></button>
       </div>
     </div>
   </div>

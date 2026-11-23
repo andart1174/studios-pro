@@ -5,12 +5,14 @@
 
 const webpush = require('web-push');
 
-const VAPID_PUBLIC_KEY  = 'BB4NZz68GILkyhZABHbtLoxzr9OtLK7kGArDbSLjONJc3uMPJUk3N5awDPGIU1QEGIY-a4zH27JDX_Q_qNdp0fQ';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'gt_fRAb9c6LYB0TXg4VlmhhqCpAfEUzzmneSwUz7Rb0';
+const VAPID_PUBLIC_KEY  = process.env.VAPID_PUBLIC_KEY || 'BB4NZz68GILkyhZABHbtLoxzr9OtLK7kGArDbSLjONJc3uMPJUk3N5awDPGIU1QEGIY-a4zH27JDX_Q_qNdp0fQ';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || null;
 const FCM_PROJECT_ID    = 'studios-pro';
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT || null;
 
-webpush.setVapidDetails('mailto:andart1174@gmail.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+if (VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails('mailto:andart1174@gmail.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -111,7 +113,7 @@ exports.handler = async (event) => {
     }
 
     // ── Method 2: Raw Web Push (VAPID) ───────────────────────────
-    if (subscription && subscription.endpoint) {
+    if (subscription && subscription.endpoint && VAPID_PRIVATE_KEY) {
       const notifPayload = JSON.stringify({
         title, body: bodyTxt, icon,
         badge: '/logo_studios_pro.png',

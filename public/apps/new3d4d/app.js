@@ -1439,44 +1439,54 @@ function openInARViewer() {
 
 function recordVideo4D() {
   if (!App.mesh3D || !App.renderer) return;
-  const canvas = $('canvas3D');
-  if (!canvas || !canvas.captureStream) {
-    toast('⚠️ Video capture unsupported in this browser', 'error');
-    return;
-  }
-  const durationSec = Math.min(8, Math.max(2, parseFloat($('sAnimDur')?.value || 4)));
-  toast(`🎥 Recording ${durationSec}s 4D Video…`, 'info');
-  try {
-    const stream = canvas.captureStream(30);
-    let mimeType = 'video/webm;codecs=vp9';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-    const recorder = new MediaRecorder(stream, MediaRecorder.isTypeSupported(mimeType) ? { mimeType } : undefined);
-    const chunks = [];
-    recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: mimeType });
-      downloadBlob(blob, 'model_4d_clip.webm');
-      toast(`✅ 4D Video saved (${formatBytes(blob.size)})`, 'success');
-    };
-    if (App.anim4D.type === 'none') App.anim4D.type = 'rotate';
-    App.anim4D.playing = true;
-    update4DStatusUI();
-    recorder.start();
-    setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, durationSec * 1000);
-  } catch (err) {
-    toast('❌ Recording failed: ' + err.message, 'error');
-  }
+  const gate = typeof window.triggerStudiosProPaywall === 'function'
+    ? window.triggerStudiosProPaywall
+    : (cb) => cb();
+  gate(() => {
+    const canvas = $('canvas3D');
+    if (!canvas || !canvas.captureStream) {
+      toast('⚠️ Video capture unsupported in this browser', 'error');
+      return;
+    }
+    const durationSec = Math.min(8, Math.max(2, parseFloat($('sAnimDur')?.value || 4)));
+    toast(`🎥 Recording ${durationSec}s 4D Video…`, 'info');
+    try {
+      const stream = canvas.captureStream(30);
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+      const recorder = new MediaRecorder(stream, MediaRecorder.isTypeSupported(mimeType) ? { mimeType } : undefined);
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        downloadBlob(blob, 'model_4d_clip.webm');
+        toast(`✅ 4D Video saved (${formatBytes(blob.size)})`, 'success');
+      };
+      if (App.anim4D.type === 'none') App.anim4D.type = 'rotate';
+      App.anim4D.playing = true;
+      update4DStatusUI();
+      recorder.start();
+      setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, durationSec * 1000);
+    } catch (err) {
+      toast('❌ Recording failed: ' + err.message, 'error');
+    }
+  });
 }
 
 function snapScreenshot4D() {
   if (!App.renderer || !App.mesh3D) return;
-  App.renderer.render(App.scene, App.camera);
-  $('canvas3D').toBlob((blob) => {
-    if (blob) {
-      downloadBlob(blob, 'model_4d_snapshot.png');
-      toast('✅ 4D Snapshot saved!', 'success');
-    }
-  }, 'image/png');
+  const gate = typeof window.triggerStudiosProPaywall === 'function'
+    ? window.triggerStudiosProPaywall
+    : (cb) => cb();
+  gate(() => {
+    App.renderer.render(App.scene, App.camera);
+    $('canvas3D').toBlob((blob) => {
+      if (blob) {
+        downloadBlob(blob, 'model_4d_snapshot.png');
+        toast('✅ 4D Snapshot saved!', 'success');
+      }
+    }, 'image/png');
+  });
 }
 
 // ─── Enable / Clear / Utilities ─────────────────────────────────────────────

@@ -1,0 +1,85 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Only the site owner is Admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'andart1174@gmail.com';
+    }
+
+    // Helper: Check if the authenticated user owns this UID or email
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // 1. USERS COLLECTION
+    match /users/{userId} {
+      // Admin can read/list/write/delete any user profile.
+      // Regular users can only read their own UID document or pre-registered document matching their email.
+      allow get: if isAdmin() || isOwner(userId) || (request.auth != null && resource != null && resource.data.email == request.auth.token.email);
+      allow list: if isAdmin() || (request.auth != null && resource.data.email == request.auth.token.email);
+
+      // Creating initial user profile on registration
+      allow create: if isAdmin() || (
+        isOwner(userId) &&
+        request.resource.data.email == request.auth.token.email &&
+        (
+          request.resource.data.isPremium == false ||
+          (request.resource.data.isPremium == true && request.resource.data.stripeSessionId is string && request.resource.data.stripeSessionId.matches('^cs_.*'))
+        )
+      );
+
+      // Updating own profile:
+      // - freeExportsUsed can only stay the same or increase (monotonic counter)
+      // - isPremium can only become true if accompanied by a valid Stripe session ID (cs_...) or migrated from an admin pre-registered email doc
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        (
+          !('freeExportsUsed' in request.resource.data) ||
+          !('freeExportsUsed' in resource.data) ||
+          request.resource.data.freeExportsUsed >= resource.data.freeExportsUsed
+        ) &&
+        (
+          request.resource.data.isPremium == resource.data.isPremium ||
+          (request.resource.data.isPremium == true && (
+            (request.resource.data.stripeSessionId is string && request.resource.data.stripeSessionId.matches('^cs_.*')) ||
+            request.resource.data.premiumUntil != null
+          ))
+        )
+      );
+
+      // Deleting duplicate pre-registered fallback doc by owner after migration, or Admin deleting any user
+      allow delete: if isAdmin() || (request.auth != null && resource.data.email == request.auth.token.email && userId != request.auth.uid);
+    }
+
+    // 2. CONTACT MESSAGES (Public submit, Admin-only read/update/delete)
+    match /messages/{messageId} {
+      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'message', 'timestamp']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.email is string &&
+                       request.resource.data.message is string &&
+                       request.resource.data.message.size() <= 5000;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // 3. SYSTEM ANNOUNCEMENTS (Public read, Admin-only write)
+    match /announcements/{annId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 4. NEWSLETTER SUBSCRIPTIONS (Public create, Admin-only read/delete)
+    match /newsletter/{subId} {
+      allow create: if request.resource.data.email is string &&
+                       request.resource.data.email.size() <= 254;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // 5. LIVE COLLABORATION ROOMS (Scripting Studio)
+    match /scripting_rooms/{roomId}/messages/{msgId} {
+      allow read, create: if true;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

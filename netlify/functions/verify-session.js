@@ -43,8 +43,23 @@ exports.handler = async (event) => {
     // Retrieve the verified checkout session directly from Stripe API
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session && session.payment_status === 'paid') {
-      console.log(`[Verify-Session] Successfully verified session: ${session.id} (mode: ${session.mode})`);
+    if (session && session.payment_status === 'paid' && session.mode === 'subscription') {
+      const nowSec = Math.floor(Date.now() / 1000);
+      const createdSec = session.created || nowSec;
+      // Reject replay of old checkout sessions (> 24 hours old)
+      if (nowSec - createdSec > 86400) {
+        console.warn(`[Verify-Session] Rejected expired session replay (${nowSec - createdSec}s old):`, session.id);
+        return {
+          statusCode: 400,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            verified: false,
+            error: 'Checkout session expired (older than 24 hours)'
+          })
+        };
+      }
+
+      console.log(`[Verify-Session] Successfully verified subscription session: ${session.id}`);
       return {
         statusCode: 200,
         headers: CORS_HEADERS,
@@ -52,6 +67,7 @@ exports.handler = async (event) => {
           verified: true,
           payment_status: session.payment_status,
           mode: session.mode,
+          created: createdSec,
           customer_email: session.customer_details ? session.customer_details.email : null,
           amount_total: session.amount_total
         })

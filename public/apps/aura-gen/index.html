@@ -264,8 +264,11 @@
 
       const channel = new BroadcastChannel('studios_pro_channel');
       let isAllowed = false;
+      let singleExportExpiresAt = 0;
       let pendingTarget = null;
+      let pendingAnchor = null;
       let isPremiumUser = false;
+      window.isExportAllowed = false;
 
       const backBtn = document.getElementById('back-btn');
       if (backBtn) {
@@ -297,13 +300,23 @@
       channel.onmessage = (e) => {
         if (e.data.type === 'EXPORT_ALLOWED') {
           isAllowed = true;
+          window.isExportAllowed = true;
+          singleExportExpiresAt = Date.now() + 8000;
           isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
           window.isPremiumUser = isPremiumUser;
           if (localModal) localModal.style.display = 'none';
           if (pendingTarget) {
-            pendingTarget.click();
+            const t = pendingTarget;
+            pendingTarget = null;
+            t.click();
+          } else if (pendingAnchor) {
+            const a = pendingAnchor;
+            pendingAnchor = null;
+            a.dataset.bypassed = 'true';
+            a.click();
+            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
           }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE') {
+        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
           isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
           window.isPremiumUser = isPremiumUser;
         } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
@@ -447,13 +460,26 @@
         if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
         if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
 
-        if (isExport && !isPremiumUser && !window.isPremiumUser) {
+        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
+          if (window.self === window.top) {
+            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+            if (used < 5) {
+              used++;
+              localStorage.setItem('freeExportsUsed', String(used));
+              isAllowed = true;
+              window.isExportAllowed = true;
+              singleExportExpiresAt = Date.now() + 8000;
+              return;
+            }
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            pendingTarget = target;
+            if (localModal) localModal.style.display = 'flex';
+            return;
+          }
           e.stopImmediatePropagation();
           e.preventDefault();
           pendingTarget = target;
-          if (localModal) {
-            localModal.style.display = 'flex';
-          }
           channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
         }
       }, true);
@@ -462,10 +488,29 @@
       const originalAnchorClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser) {
-            if (localModal) localModal.style.display = 'flex';
-            channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
-            return;
+          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
+            pendingAnchor = this;
+            if (window.self === window.top) {
+              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+              if (used < 5) {
+                used++;
+                localStorage.setItem('freeExportsUsed', String(used));
+                isAllowed = true;
+                window.isExportAllowed = true;
+                singleExportExpiresAt = Date.now() + 8000;
+              } else {
+                if (localModal) localModal.style.display = 'flex';
+                return;
+              }
+            } else {
+              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
+              return;
+            }
+          }
+          if (isAllowed) {
+            isAllowed = false;
+            window.isExportAllowed = false;
+            channel.postMessage({ type: 'EXPORT_COMPLETED' });
           }
           const fileUrl = this.href;
           const fileName = this.download;
@@ -488,10 +533,29 @@
       EventTarget.prototype.dispatchEvent = function(event) {
         if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
           if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser) {
-              if (localModal) localModal.style.display = 'flex';
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
-              return false;
+            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
+              pendingAnchor = this;
+              if (window.self === window.top) {
+                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+                if (used < 5) {
+                  used++;
+                  localStorage.setItem('freeExportsUsed', String(used));
+                  isAllowed = true;
+                  window.isExportAllowed = true;
+                  singleExportExpiresAt = Date.now() + 8000;
+                } else {
+                  if (localModal) localModal.style.display = 'flex';
+                  return false;
+                }
+              } else {
+                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
+                return false;
+              }
+            }
+            if (isAllowed) {
+              isAllowed = false;
+              window.isExportAllowed = false;
+              channel.postMessage({ type: 'EXPORT_COMPLETED' });
             }
             const fileUrl = this.href;
             const fileName = this.download;
@@ -629,7 +693,8 @@
               e.preventDefault();
               e.stopPropagation();
               
-              if (!isPremiumUser && !window.isPremiumUser) {
+              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
+                pendingTarget = htmlBtn;
                 channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'aurg' } });
                 return;
               }

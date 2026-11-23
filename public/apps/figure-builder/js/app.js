@@ -1594,7 +1594,7 @@ if(!window.location.hash) showToast('🌌 4D Figure Builder PRO ready ✨', 3500
 
 // HTML Export
 document.getElementById('btn-export-html')?.addEventListener('click', () => {
-    if (!window.isPremiumUser && !isPremiumUser) {
+    if (!window.isPremiumUser && !isPremiumUser && !window.isExportAllowed) {
         channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'figb' } });
         return;
     }

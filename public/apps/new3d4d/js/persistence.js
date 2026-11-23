@@ -134,16 +134,23 @@
     }
     const standalone = (window.self === window.top);
     pendingAction = actionCallback;
-    const modal = document.getElementById('local-payment-modal');
-    if (modal && standalone) {
-      modal.style.display = 'flex';
+    if (standalone) {
+      let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+      if (used < 5) {
+        used++;
+        localStorage.setItem('freeExportsUsed', String(used));
+        isAllowed = true;
+        const act = pendingAction;
+        pendingAction = null;
+        return runWithConsumption(act);
+      }
+      const modal = document.getElementById('local-payment-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
       return Promise.resolve();
     }
     postToHost({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: STUDIO_REF } });
-    // Fallback if host never answers within 350ms when standalone / offline preview
-    if (standalone) {
-      return runWithConsumption(actionCallback);
-    }
     return Promise.resolve();
   };
 
