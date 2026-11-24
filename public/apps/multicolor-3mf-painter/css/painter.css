@@ -9,8 +9,8 @@
     --accent: #a855f7;
     --accent-emerald: #10b981;
     --text-main: #f8fafc;
-    --text-sub: #94a3b8;
-    --text-dim: #64748b;
+    --text-sub: #cbd5e1;
+    --text-dim: #94a3b8;
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
@@ -36,8 +36,22 @@ body, html {
     overflow: hidden;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+}
+
+/* Clean dark scrollbars across panels & modals */
+.panel-right, .modal-card, .rack-grid {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) rgba(15, 23, 42, 0.4);
+}
+.panel-right::-webkit-scrollbar, .modal-card::-webkit-scrollbar, .rack-grid::-webkit-scrollbar {
+    width: 6px;
+}
+.panel-right::-webkit-scrollbar-thumb, .modal-card::-webkit-scrollbar-thumb, .rack-grid::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.32);
+    border-radius: 99px;
 }
 
 /* Top Header */
@@ -340,11 +354,11 @@ header {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-/* Z-Slice Layer Scrubber Widget (Right side of viewport) */
+/* Z-Slice Layer Scrubber Widget (Right side of viewport — cleared below nav buttons!) */
 .layer-scrubber-box {
     position: absolute;
     right: 14px;
-    top: 235px;
+    top: 256px;
     background: var(--bg-panel);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(56, 189, 248, 0.3);
@@ -355,7 +369,7 @@ header {
     align-items: center;
     gap: 6px;
     z-index: 18;
-    width: 56px;
+    width: 62px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
@@ -379,7 +393,7 @@ header {
     -webkit-appearance: slider-vertical;
     writing-mode: vertical-lr;
     direction: rtl;
-    width: 8px;
+    width: 24px;
     height: 132px;
     accent-color: var(--primary);
     cursor: pointer;
@@ -1347,11 +1361,13 @@ header {
     inset: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: rgba(2, 6, 23, 0.88);
     backdrop-filter: blur(14px);
     z-index: 100000;
     align-items: center;
     justify-content: center;
+    overflow-y: auto;
     font-family: 'Outfit', 'Inter', sans-serif;
     color: #ffffff;
     padding: 16px;
@@ -1740,11 +1756,233 @@ header {
     margin-bottom: 5px;
 }
 
+/* ========================================================================= */
+/* V3 PRO SUITE STYLES (TIMELAPSE, AUTO-ORIENT, FLUSH MATRIX, SPOOL RACK, COST) */
+/* ========================================================================= */
+.btn-timelapse-main {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(6, 182, 212, 0.25)) !important;
+    border-color: rgba(192, 132, 252, 0.55) !important;
+    color: #f5d0fe !important;
+    font-weight: 700 !important;
+}
+.btn-timelapse-main:hover {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+}
+
+.v3-subcard {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* Smart 26-Axis Orient Cards */
+.orient-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-panel);
+    border-radius: 10px;
+}
+.orient-card.best {
+    border-color: rgba(16, 185, 129, 0.6);
+    background: rgba(16, 185, 129, 0.1);
+}
+.orient-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #f8fafc;
+    margin-bottom: 4px;
+}
+.orient-rank {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+}
+.orient-score {
+    margin-left: auto;
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+}
+.orient-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.72rem;
+    color: var(--text-sub);
+}
+
+/* Interactive Flush Matrix Table */
+.flush-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+    font-family: 'Inter', monospace;
+}
+.flush-table th, .flush-table td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px;
+    text-align: center;
+}
+.flush-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    white-space: nowrap;
+}
+.fm-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    margin-right: 3px;
+    vertical-align: middle;
+}
+.flush-table td.fm-diag { color: #64748b; background: rgba(0, 0, 0, 0.25); }
+.flush-table td.fm-hot { background: rgba(239, 68, 68, 0.22); }
+.flush-table td.fm-med { background: rgba(245, 158, 11, 0.18); }
+.flush-table td.fm-low { background: rgba(16, 185, 129, 0.14); }
+.flush-table input {
+    width: 48px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    text-align: center;
+    font-size: 0.72rem;
+    font-family: 'Inter', monospace;
+    outline: none;
+}
+
+/* Shared My Spool Rack Grid */
+.rack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+    max-height: 290px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.rack-spool-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-panel);
+    border-radius: 9px;
+}
+.rack-spool-card.owned {
+    border-color: rgba(250, 204, 21, 0.55);
+    background: rgba(250, 204, 21, 0.08);
+}
+.rack-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+.rack-info { flex: 1; min-width: 0; }
+.rack-name {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rack-meta { font-size: 0.65rem; color: var(--text-dim); }
+.rack-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.rack-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--border-panel);
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+.rack-btn.active { color: #facc15; border-color: #facc15; background: rgba(250, 204, 21, 0.16); }
+.rack-btn.apply:hover { color: #020617; background: #38bdf8; border-color: #38bdf8; }
+
+/* Etsy / MakerWorld Cost Calculator */
+.cost-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.cost-kpi {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-panel);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.cost-kpi span { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; }
+.cost-kpi strong { font-size: 1.25rem; color: #f8fafc; }
+.cost-kpi small { font-size: 0.66rem; color: var(--text-sub); }
+.cost-kpi.highlight { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.1); }
+.cost-kpi.highlight strong { color: #38bdf8; }
+.cost-kpi.profit { border-color: rgba(16, 185, 129, 0.55); background: rgba(16, 185, 129, 0.12); }
+.cost-kpi.profit strong { color: #34d399; }
+.cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    border: 1px solid var(--border-panel);
+    font-size: 0.76rem;
+}
+.cost-breakdown > div {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-sub);
+}
+.cost-breakdown b { color: #f8fafc; font-family: 'Inter', monospace; }
+
+/* Responsive Desktop Breakpoints (Zero Header Overflow on 1280px–1536px Laptops!) */
+@media (max-width: 1520px) {
+    .brand-sub { display: none; }
+    header { padding: 0 12px; gap: 6px; }
+    .btn-top { padding: 6px 9px; font-size: 0.77rem; }
+}
+@media (max-width: 1260px) {
+    .brand-badge { display: none; }
+    .brand-title { font-size: 1.05rem; }
+    .header-actions { gap: 5px; }
+    .btn-top { padding: 6px 8px; font-size: 0.74rem; gap: 4px; }
+    .panel-right { width: 345px; }
+}
+
 /* Mobile Responsive Engine (<= 900px) */
 .mobile-view-bar { display: none; }
 .mobile-filament-bar { display: none; }
 
 @media (max-width: 900px) {
+    .btn-timelapse-main span[data-i18n] { display: none !important; }
+    .rack-grid { grid-template-columns: 1fr; }
+    .cost-kpi-grid { grid-template-columns: 1fr; }
     header {
         height: 52px;
         padding: 0 10px;

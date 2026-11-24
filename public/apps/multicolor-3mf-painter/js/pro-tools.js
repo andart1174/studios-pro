@@ -253,9 +253,9 @@ function generateQRMatrix(text) {
 function buildQRMaskAndPreview(cfg) {
     const qr = generateQRMatrix(cfg.text);
     const N = qr.size;
-    const quiet = 2; // 2-module quiet zone border for reliable scanning
+    const quiet = 4; // ISO/IEC 18004 standard 4-module quiet zone for instant mobile camera scan!
     const totalMods = N + quiet * 2;
-    const pxPerMod = 2;
+    const pxPerMod = 1; // Exact 1:1 module resolution + greedy rectangle meshing = ultra-light crisp CAD!
     const S = totalMods * pxPerMod;
 
     const fgMask = new Uint8Array(S * S);
@@ -265,12 +265,12 @@ function buildQRMaskAndPreview(cfg) {
     for (let r = 0; r < N; r++) {
         for (let c = 0; c < N; c++) {
             if (qr.matrix[r][c] === 1) {
-                for (let dy = 0; dy < pxPerMod; dy++) {
-                    for (let dx = 0; dx < pxPerMod; dx++) {
-                        const px = (c + quiet) * pxPerMod + dx;
-                        const py = (r + quiet) * pxPerMod + dy;
-                        fgMask[py * S + px] = 1;
-                    }
+                const px = (c + quiet) * pxPerMod;
+                const py = (r + quiet) * pxPerMod;
+                fgMask[py * S + px] = 1;
+                // In flush inlay mode, carve out foreground modules from backplate so ZERO coplanar overlap occurs!
+                if (cfg.mode === 'inlay') {
+                    bgMask[py * S + px] = 0;
                 }
             }
         }
@@ -280,10 +280,11 @@ function buildQRMaskAndPreview(cfg) {
     const bgHex = (filamentSlots[cfg.bgSlot] && filamentSlots[cfg.bgSlot].color) || '#FFFFFF';
 
     const previewCanvas = document.createElement('canvas');
-    previewCanvas.width = S * 2;
-    previewCanvas.height = S * 2;
+    const previewScale = Math.max(4, Math.floor(160 / S));
+    previewCanvas.width = S * previewScale;
+    previewCanvas.height = S * previewScale;
     const pCtx = previewCanvas.getContext('2d');
-    pCtx.scale(2, 2);
+    pCtx.scale(previewScale, previewScale);
     if (cfg.includeBackplate) {
         pCtx.fillStyle = bgHex;
         pCtx.fillRect(0, 0, S, S);
@@ -295,8 +296,8 @@ function buildQRMaskAndPreview(cfg) {
         }
     }
     pCtx.strokeStyle = '#38bdf8';
-    pCtx.lineWidth = 1;
-    pCtx.strokeRect(0.5, 0.5, S - 1, S - 1);
+    pCtx.lineWidth = 0.5;
+    pCtx.strokeRect(0.25, 0.25, S - 0.5, S - 0.5);
 
     return { fgMask, bgMask, S, previewCanvas, modules: N };
 }
@@ -376,34 +377,73 @@ function applyQRStampAtHit(hit) {
 
     const built = buildQRMaskAndPreview(pendingQRConfig);
     const sz = pendingQRConfig.size || 20;
+    const mode = pendingQRConfig.mode || 'inlay';
+    const reqDepth = Math.max(0.25, parseFloat(pendingQRConfig.depth) || 0.8);
 
-    // Optional quiet-zone backing plate first (slightly recessed behind FG modules so zero Z-fighting!)
-    if (pendingQRConfig.includeBackplate && pendingQRConfig.mode !== 'engrave') {
-        const bgDepth = pendingQRConfig.mode === 'inlay' ? 0.01 : Math.max(0.3, (pendingQRConfig.depth || 0.8) * 0.45);
-        applyBinaryMaskStampToSurface(built.bgMask, built.S, built.S, sz, sz, {
-            mode: pendingQRConfig.mode === 'surface' ? 'surface' : 'emboss',
-            slot: pendingQRConfig.bgSlot,
-            depth: bgDepth,
-            rotation: pendingQRConfig.rotation || 0,
-            wrap: pendingQRConfig.wrap || 'flat',
-            skipHistoryCommit: true,
-            suppressToast: true
-        }, hit, null);
+    // Optional quiet-zone backing plate first — properly stratified so Flush Inlay NEVER buries QR modules!
+    if (pendingQRConfig.includeBackplate && mode !== 'engrave') {
+        if (mode === 'inlay') {
+            // bgMask has fg modules carved out; both sit flush at PEI first-layer height without Z-fighting!
+            applyBinaryMaskStampToSurface(built.bgMask, built.S, built.S, sz, sz, {
+                mode: 'inlay',
+                slot: pendingQRConfig.bgSlot,
+                depth: reqDepth,
+                exactExtrudeZ: 0.04,
+                exactBaseZ: -Math.min(0.8, Math.max(0.45, reqDepth * 0.6)),
+                rotation: pendingQRConfig.rotation || 0,
+                wrap: pendingQRConfig.wrap || 'flat',
+                skipHistoryCommit: true,
+                suppressToast: true
+            }, hit, null);
+        } else if (mode === 'surface') {
+            applyBinaryMaskStampToSurface(built.bgMask, built.S, built.S, sz, sz, {
+                mode: 'surface',
+                slot: pendingQRConfig.bgSlot,
+                depth: reqDepth,
+                rotation: pendingQRConfig.rotation || 0,
+                wrap: pendingQRConfig.wrap || 'flat',
+                skipHistoryCommit: true,
+                suppressToast: true
+            }, hit, null);
+        } else {
+            const bgDepth = Math.max(0.35, reqDepth * 0.5);
+            applyBinaryMaskStampToSurface(built.bgMask, built.S, built.S, sz, sz, {
+                mode: 'emboss',
+                slot: pendingQRConfig.bgSlot,
+                depth: bgDepth,
+                exactExtrudeZ: bgDepth,
+                exactBaseZ: -0.18,
+                rotation: pendingQRConfig.rotation || 0,
+                wrap: pendingQRConfig.wrap || 'flat',
+                skipHistoryCommit: true,
+                suppressToast: true
+            }, hit, null);
+        }
     }
 
-    const ok = applyBinaryMaskStampToSurface(built.fgMask, built.S, built.S, sz, sz, {
-        mode: pendingQRConfig.mode,
+    const fgOpts = {
+        mode,
         slot: pendingQRConfig.fgSlot,
-        depth: pendingQRConfig.depth || 0.8,
+        depth: reqDepth,
         rotation: pendingQRConfig.rotation || 0,
         wrap: pendingQRConfig.wrap || 'flat',
         skipHistoryCommit: true,
         suppressToast: true
-    }, hit, null);
+    };
+    if (mode === 'inlay') {
+        fgOpts.exactExtrudeZ = 0.05; // Proud by 0.01mm over carved quiet-zone for crisp visual preview & scan!
+        fgOpts.exactBaseZ = -Math.min(0.8, Math.max(0.45, reqDepth * 0.6));
+    } else if (mode === 'emboss' && pendingQRConfig.includeBackplate) {
+        const bgDepth = Math.max(0.35, reqDepth * 0.5);
+        fgOpts.exactBaseZ = bgDepth - 0.14;
+        fgOpts.exactExtrudeZ = bgDepth + reqDepth;
+    }
+
+    const ok = applyBinaryMaskStampToSurface(built.fgMask, built.S, built.S, sz, sz, fgOpts, hit, null);
 
     if (ok) {
         commitHistory(true);
-        showToast(currentLang === 'fr' ? "QR Code 3D scannable estampé avec succès !" : "Scannable 3D QR Code stamped successfully!");
+        showToast(currentLang === 'fr' ? "QR Code 3D scannable (ISO 4-modules) estampé !" : "Scannable ISO 3D QR Code stamped successfully!");
     }
 }
 
@@ -477,16 +517,26 @@ function captureBatchAnchorAtHit(hit) {
     showToast(currentLang === 'fr' ? "Position ancrée ! Cliquez sur 'Générer le ZIP .3MF'." : "Anchor locked! Click 'Generate Batch .3MF ZIP'.");
 }
 
+let isBatchExporting = false;
+
 async function executeBatchName3MFExport() {
+    if (isBatchExporting) return;
     if (!currentMesh || !capturedBatchHit || !pendingBatchConfig.names.length) {
         showToast(currentLang === 'fr' ? "Placez d'abord la position d'ancrage sur le modèle !" : "Place the anchor position on the model first!");
         return;
     }
 
+    isBatchExporting = true;
+    const genBtn = document.getElementById('btn-generate-batch-zip');
+    if (genBtn) genBtn.disabled = true;
+
     const names = pendingBatchConfig.names;
     const basePos = new Float32Array(currentMesh.geometry.attributes.position.array);
     const baseColors = new Uint8Array(triangleColors);
+    const savedGeoGen = currentGeoGen;
+    const savedCamPos = camera.position.clone();
     const savedCamQuat = camera.quaternion.clone();
+    const savedTarget = controls ? controls.target.clone() : null;
 
     showToast(currentLang === 'fr'
         ? `Génération du lot de ${names.length} fichiers .3mf...`
@@ -508,7 +558,6 @@ async function executeBatchName3MFExport() {
     };
 
     try {
-        // Temporarily align camera quaternion to captured anchor orientation for identical text basis
         if (capturedBatchCamQuat) camera.quaternion.copy(capturedBatchCamQuat);
 
         for (let i = 0; i < names.length; i++) {
@@ -520,27 +569,35 @@ async function executeBatchName3MFExport() {
                 { ...pendingBatchConfig, skipHistoryCommit: true, suppressToast: true },
                 capturedBatchHit, null
             );
-            const blob = await buildBambu3MFBlob(currentMesh.geometry, triangleColors, filamentSlots);
+            const blob = await buildBambu3MFBlob(currentMesh.geometry, triangleColors, filamentSlots, { singleCopy: true });
             const safeName = label.replace(/[^\w\-]+/g, '_').slice(0, 32) || `Item_${i + 1}`;
             zip.file(`${String(i + 1).padStart(2, '0')}_${safeName}.3mf`, blob);
         }
 
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
         downloadBlob(zipBlob, `StudiosPro_Batch_${names.length}_Models.zip`);
         closeQRBatchModal();
         showToast(currentLang === 'fr'
             ? `✅ Lot de ${names.length} fichiers .3mf téléchargé !`
             : `✅ Batch ZIP with ${names.length} personalized .3mf files downloaded!`);
+    } catch (err) {
+        console.error('Batch export error:', err);
+        showToast(currentLang === 'fr' ? 'Erreur lors de la génération du lot.' : 'Batch export failed.');
     } finally {
+        camera.position.copy(savedCamPos);
         camera.quaternion.copy(savedCamQuat);
+        if (controls && savedTarget) { controls.target.copy(savedTarget); controls.update(); }
         restoreBase();
+        currentGeoGen = savedGeoGen;
         precomputeGeometryMetrics(currentMesh.geometry);
         updateMeshVisualColors();
+        if (genBtn) genBtn.disabled = false;
+        isBatchExporting = false;
     }
 }
 
 // ==========================================
-// 🎬 #12 360° TURNTABLE SHOWCASE VIDEO EXPORTER (WEBM)
+// 🎬 #12 360° TURNTABLE SHOWCASE VIDEO EXPORTER (WEBM, TIME-BASED, FREE)
 // ==========================================
 function exportTurntableVideo() {
     if (!renderer || !scene || !camera || !controls || !currentMesh) {
@@ -558,55 +615,77 @@ function exportTurntableVideo() {
 
     isRecordingTurntable = true;
     const prevRingVis = brushHelperRing ? brushHelperRing.visible : false;
+    const prevControlsEnabled = controls.enabled;
+    controls.enabled = false;
     if (brushHelperRing) brushHelperRing.visible = false;
     const prevCamPos = camera.position.clone();
     const target = controls.target.clone();
     const startOffset = prevCamPos.clone().sub(target);
 
-    const stream = renderer.domElement.captureStream(30);
-    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '');
-    const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    const chunks = [];
-    recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
-    recorder.onstop = () => {
-        isRecordingTurntable = false;
-        camera.position.copy(prevCamPos);
-        controls.target.copy(target);
-        controls.update();
-        if (brushHelperRing) brushHelperRing.visible = prevRingVis;
-        const blob = new Blob(chunks, { type: mime || 'video/webm' });
-        downloadBlob(blob, 'StudiosPro_360_Turntable.webm');
-        showToast(currentLang === 'fr' ? "🎬 Vidéo 360° Turntable exportée (.webm) !" : "🎬 360° Turntable Showcase video exported (.webm)!");
-    };
+    let stream = null;
+    try {
+        stream = renderer.domElement.captureStream(30);
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+            ? 'video/webm;codecs=vp9'
+            : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '');
+        const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        const chunks = [];
+        recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+        const cleanup = () => {
+            isRecordingTurntable = false;
+            controls.enabled = prevControlsEnabled;
+            camera.position.copy(prevCamPos);
+            controls.target.copy(target);
+            controls.update();
+            if (brushHelperRing) brushHelperRing.visible = prevRingVis;
+            if (stream) stream.getTracks().forEach(tr => tr.stop());
+        };
+        recorder.onerror = () => {
+            cleanup();
+            showToast(currentLang === 'fr' ? "Erreur d'enregistrement vidéo." : "Video recording failed.");
+        };
+        recorder.onstop = () => {
+            cleanup();
+            const blob = new Blob(chunks, { type: mime || 'video/webm' });
+            downloadBlob(blob, 'StudiosPro_360_Turntable.webm', true);
+            showToast(currentLang === 'fr' ? "🎬 Vidéo 360° Turntable exportée (.webm) !" : "🎬 360° Turntable Showcase video exported (.webm)!");
+        };
 
-    showToast(currentLang === 'fr' ? "🎬 Enregistrement 360° en cours (4s)..." : "🎬 Recording 360° Turntable (4s)...");
-    closeShareDesignModal();
-    recorder.start();
+        showToast(currentLang === 'fr' ? "🎬 Enregistrement 360° en cours (4s)..." : "🎬 Recording 360° Turntable (4s)...");
+        closeShareDesignModal();
+        recorder.start();
 
-    const totalFrames = 120;
-    let frame = 0;
-    const upAxis = new THREE.Vector3(0, 1, 0);
+        const durationMs = 4000;
+        const startTime = performance.now();
+        const upAxis = new THREE.Vector3(0, 1, 0);
 
-    function stepTurn() {
-        if (frame >= totalFrames) {
-            recorder.stop();
-            return;
+        function stepTurn(now) {
+            const elapsed = now - startTime;
+            if (elapsed >= durationMs) {
+                if (recorder.state !== 'inactive') recorder.stop();
+                return;
+            }
+            const progress = Math.min(1, elapsed / durationMs);
+            const angle = progress * Math.PI * 2;
+            const rotOffset = startOffset.clone().applyAxisAngle(upAxis, angle);
+            camera.position.copy(target).add(rotOffset);
+            camera.lookAt(target);
+            renderer.render(scene, camera);
+            requestAnimationFrame(stepTurn);
         }
-        const angle = (frame / totalFrames) * Math.PI * 2;
-        const rotOffset = startOffset.clone().applyAxisAngle(upAxis, angle);
-        camera.position.copy(target).add(rotOffset);
-        camera.lookAt(target);
-        renderer.render(scene, camera);
-        frame++;
         requestAnimationFrame(stepTurn);
+    } catch (err) {
+        console.error('Turntable record error:', err);
+        isRecordingTurntable = false;
+        controls.enabled = prevControlsEnabled;
+        if (brushHelperRing) brushHelperRing.visible = prevRingVis;
+        if (stream) stream.getTracks().forEach(tr => tr.stop());
+        showToast(currentLang === 'fr' ? "Impossible de démarrer l'enregistrement." : "Unable to start recording.");
     }
-    requestAnimationFrame(stepTurn);
 }
 
 // ==========================================
-// 💾 #12 SAVE / LOAD EDITABLE PROJECT FILE (.SP3MF)
+// 💾 #12 SAVE / LOAD EDITABLE PROJECT FILE (.SP3MF — 100% FREE!)
 // ==========================================
 async function exportEditableProjectFile() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) {
@@ -619,7 +698,7 @@ async function exportEditableProjectFile() {
         version: 3,
         savedAt: Date.now(),
         modelTitle: typeof currentModelTitle !== 'undefined' ? currentModelTitle : 'StudiosPro_Model',
-        filamentSlots: filamentSlots.map(s => ({ id: s.id, name: s.name, color: s.color, hex: s.color, type: s.type || 'PLA Basic' })),
+        filamentSlots: filamentSlots.map(s => ({ id: s.id, name: String(s.name || '').slice(0, 40), color: s.color, hex: s.color, type: s.type || 'PLA Basic', brand: s.brand || 'Generic' })),
         activeSlotIndex,
         cameraPos: camera ? [camera.position.x, camera.position.y, camera.position.z] : null,
         cameraTarget: controls ? [controls.target.x, controls.target.y, controls.target.z] : null
@@ -630,7 +709,7 @@ async function exportEditableProjectFile() {
     zip.file('colors.bin', new Uint8Array(triangleColors.buffer, triangleColors.byteOffset, triangleColors.byteLength));
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
     const safeTitle = String(meta.modelTitle || 'Project').replace(/[^\w\-]+/g, '_');
-    downloadBlob(blob, `${safeTitle}.sp3mf`);
+    downloadBlob(blob, `${safeTitle}.sp3mf`, true);
     showToast(currentLang === 'fr' ? "Projet éditable sauvegardé (.sp3mf) !" : "Editable project saved (.sp3mf)!");
 }
 
@@ -651,15 +730,26 @@ async function importEditableProjectFile(e) {
         const posBuf = await posEntry.async('arraybuffer');
         const colBuf = await colEntry.async('arraybuffer');
 
+        if (posBuf.byteLength === 0 || (posBuf.byteLength % 36) !== 0) {
+            showToast(currentLang === 'fr' ? "Géométrie .sp3mf corrompue." : "Corrupted .sp3mf geometry buffer.");
+            return;
+        }
+        const expectedTris = posBuf.byteLength / 36;
+        if (colBuf.byteLength !== expectedTris) {
+            showToast(currentLang === 'fr' ? "Données couleurs .sp3mf incohérentes." : "Mismatched .sp3mf color buffer.");
+            return;
+        }
+
         if (Array.isArray(meta.filamentSlots) && meta.filamentSlots.length >= 2) {
-            filamentSlots = meta.filamentSlots.map((s, idx) => ({
+            filamentSlots = meta.filamentSlots.slice(0, 16).map((s, idx) => ({
                 id: idx + 1,
-                name: s.name || `Slot #${idx + 1}`,
+                name: String(s.name || `Slot #${idx + 1}`).replace(/[<>]/g, '').slice(0, 40),
                 color: normalizeHex(s.color || s.hex),
                 hex: normalizeHex(s.color || s.hex),
-                type: s.type || 'PLA Basic'
+                type: String(s.type || 'PLA Basic').slice(0, 32),
+                brand: String(s.brand || 'Generic').slice(0, 32)
             }));
-            activeSlotIndex = Math.min(filamentSlots.length - 1, meta.activeSlotIndex || 0);
+            activeSlotIndex = Math.max(0, Math.min(filamentSlots.length - 1, parseInt(meta.activeSlotIndex, 10) || 0));
             refreshSlotRgbFloats();
             renderFilamentGrid();
         }
@@ -667,12 +757,17 @@ async function importEditableProjectFile(e) {
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posBuf), 3));
         const restoredColors = new Uint8Array(colBuf);
-        if (typeof currentModelTitle !== 'undefined') currentModelTitle = meta.modelTitle || file.name;
+        for (let i = 0; i < restoredColors.length; i++) {
+            if (restoredColors[i] >= filamentSlots.length) restoredColors[i] = 0;
+        }
+        if (typeof currentModelTitle !== 'undefined') currentModelTitle = String(meta.modelTitle || file.name).slice(0, 80);
         setLoadedGeometry(geom, restoredColors, null, true);
 
-        if (meta.cameraPos && camera && controls) {
+        if (Array.isArray(meta.cameraPos) && meta.cameraPos.length === 3 && camera && controls) {
             camera.position.set(meta.cameraPos[0], meta.cameraPos[1], meta.cameraPos[2]);
-            if (meta.cameraTarget) controls.target.set(meta.cameraTarget[0], meta.cameraTarget[1], meta.cameraTarget[2]);
+            if (Array.isArray(meta.cameraTarget) && meta.cameraTarget.length === 3) {
+                controls.target.set(meta.cameraTarget[0], meta.cameraTarget[1], meta.cameraTarget[2]);
+            }
             controls.update();
         }
         showToast(currentLang === 'fr' ? `Projet chargé : ${file.name}` : `Project loaded: ${file.name}`);
@@ -680,5 +775,5 @@ async function importEditableProjectFile(e) {
         console.error(err);
         showToast(currentLang === 'fr' ? "Erreur de lecture du projet .sp3mf." : "Failed to load .sp3mf project.");
     }
-    e.target.value = '';
+    if (e && e.target) e.target.value = '';
 }

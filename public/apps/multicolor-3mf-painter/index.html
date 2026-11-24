@@ -50,15 +50,20 @@
             <i data-lucide="redo-2" style="width:15px;height:15px;"></i>
         </button>
 
-        <label class="btn-top" style="cursor:pointer;" title="STL / 3MF / OBJ / GLB">
+        <label class="btn-top" style="cursor:pointer;" title="STL / 3MF / OBJ / GLB / SP3MF">
             <i data-lucide="upload" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnUpload">Upload 3D Model</span>
-            <input type="file" id="file-input" accept=".stl,.3mf,.obj,.glb,.gltf" style="display:none;">
+            <span data-i18n="btnUpload">Upload 3D</span>
+            <input type="file" id="file-input" accept=".stl,.3mf,.obj,.glb,.gltf,.sp3mf" style="display:none;">
         </label>
 
         <button class="btn-top btn-ai-paint-main" onclick="openAutoPaintAIModal()" data-i18n-tooltip="tooltipAutoPaintAI">
             <i data-lucide="sparkles" style="width:15px;height:15px;"></i>
             <span data-i18n="btnAutoPaintAI">AI Auto-Paint</span>
+        </button>
+
+        <button class="btn-top btn-timelapse-main" onclick="openTimelapseModal()" title="AMS Layer-Build Time-Lapse Video">
+            <i data-lucide="clapperboard" style="width:15px;height:15px;"></i>
+            <span data-i18n="btnTimelapseShort">Time-Lapse</span>
         </button>
 
         <button class="btn-top" onclick="openARPreview()" title="Open in AR Viewer">
@@ -68,12 +73,12 @@
 
         <button class="btn-top btn-share-main" onclick="openShareDesignModal()">
             <i data-lucide="share-2" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnShareDesign">Share Design</span>
+            <span data-i18n="btnShareDesign">Share</span>
         </button>
 
         <button class="btn-top btn-export-main" onclick="openExportModal()">
             <i data-lucide="download" style="width:15px;height:15px;"></i>
-            <span data-i18n="btnExport">Export 3MF (Multi-Color)</span>
+            <span data-i18n="btnExport">Export 3MF</span>
         </button>
     </div>
 </header>
@@ -94,8 +99,8 @@
         <div id="recovery-banner" class="recovery-banner">
             <i data-lucide="history" style="width:15px;height:15px;color:#38bdf8;"></i>
             <span id="recovery-banner-text">Saved session found</span>
-            <button class="btn-primary" style="padding:3px 10px;font-size:0.74rem;" onclick="restoreSavedProject()">Restore</button>
-            <button class="btn-secondary" style="padding:3px 8px;font-size:0.74rem;" onclick="dismissRecoveryBanner()">Dismiss</button>
+            <button class="btn-primary" style="padding:3px 10px;font-size:0.74rem;" onclick="restoreSavedProject()" data-i18n="btnRestore">Restore</button>
+            <button class="btn-secondary" style="padding:3px 8px;font-size:0.74rem;" onclick="dismissRecoveryBanner()" data-i18n="btnDismiss">Dismiss</button>
         </div>
 
         <!-- Color-by-Numbers Bar & Projected 3D Labels -->
@@ -117,10 +122,10 @@
         <div id="tape-action-bar" class="tape-action-bar">
             <i data-lucide="scissors" style="width:14px;height:14px;color:#38bdf8;"></i>
             <span id="tape-points-count">0 pts</span>
-            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;" onclick="executeTapeCutPaint('stripe')">Paint Stripe</button>
-            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;background:linear-gradient(135deg,#059669,#10b981);color:#fff;" onclick="executeTapeCutPaint('loop')">Fill Inside Loop</button>
-            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;" onclick="undoLastTapePoint()">Undo Pt</button>
-            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;color:#f87171;" onclick="clearTapePreview()">Clear</button>
+            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;" onclick="executeTapeCutPaint('stripe')" data-i18n="btnPaintStripe">Paint Stripe</button>
+            <button class="btn-primary" style="padding:3px 10px;font-size:0.72rem;background:linear-gradient(135deg,#059669,#10b981);color:#fff;" onclick="executeTapeCutPaint('loop')" data-i18n="btnFillLoop">Fill Inside Loop</button>
+            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;" onclick="undoLastTapePoint()" data-i18n="btnUndoPt">Undo Pt</button>
+            <button class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;color:#f87171;" onclick="clearTapePreview()" data-i18n="btnClear">Clear</button>
         </div>
 
         <!-- Left Floating Tool Palette -->
@@ -130,6 +135,9 @@
             </button>
             <button id="tool-brush" class="tool-btn active" onclick="selectTool('brush')" data-tooltip="Fluid Paint Brush (B)" data-i18n-tooltip="tooltipBrush">
                 <i data-lucide="paintbrush" style="width:18px;height:18px;"></i>
+            </button>
+            <button id="tool-airbrush" class="tool-btn" onclick="selectTool('airbrush')" data-tooltip="3D Airbrush Dither Paint (D)" data-i18n-tooltip="tooltipAirbrush">
+                <i data-lucide="wind" style="width:18px;height:18px;"></i>
             </button>
             <button id="tool-line" class="tool-btn" onclick="selectTool('line')" data-tooltip="Straight Line Stripe Tool (L)" data-i18n-tooltip="tooltipLine">
                 <i data-lucide="slash" style="width:18px;height:18px;"></i>
@@ -178,6 +186,9 @@
             </button>
             <button class="tool-btn" onclick="openSplitterModal()" data-tooltip="Snap-Fit Part Splitter (K)" data-i18n-tooltip="tooltipSplitter">
                 <i data-lucide="scissors" style="width:18px;height:18px;"></i>
+            </button>
+            <button class="tool-btn" onclick="openTimelapseModal()" data-tooltip="AMS Layer-Build Time-Lapse Video" data-i18n-tooltip="tooltipTimelapse">
+                <i data-lucide="clapperboard" style="width:18px;height:18px;"></i>
             </button>
             <button class="tool-btn" onclick="resetCamera()" data-tooltip="Reset View (Space)" data-i18n-tooltip="tooltipReset">
                 <i data-lucide="focus" style="width:18px;height:18px;"></i>
@@ -293,6 +304,22 @@
                 <button class="preset-chip" onclick="applyPresetPalette('cyberpunk')">Cyberpunk</button>
                 <button class="preset-chip" onclick="applyPresetPalette('earth')">Earth / Wood</button>
                 <button class="preset-chip" onclick="applyPresetPalette('pastel')">Kawaii Pastel</button>
+            </div>
+
+            <!-- #5 Shared My Spool Rack (256 Spools) + PBR Filament Finish -->
+            <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
+                <button class="btn-action emerald-style" style="margin:0;flex:1;padding:7px 10px;font-size:0.76rem;" onclick="openSpoolRackModal()">
+                    <i data-lucide="database" style="width:14px;height:14px;"></i>
+                    <span data-i18n="btnMySpoolRack">My Spool Rack (256)</span>
+                </button>
+                <select id="select-pbr-finish" class="select-box" style="width:auto;padding:6px 8px;font-size:0.73rem;" onchange="setActivePBRFinish(this.value)" title="PBR Filament Finish">
+                    <option value="auto" data-i18n="optPBRAuto">PBR: Auto</option>
+                    <option value="standard" data-i18n="optPBRStandard">PLA Basic</option>
+                    <option value="matte" data-i18n="optPBRMatte">PLA Matte</option>
+                    <option value="silk" data-i18n="optPBRSilk">PLA Silk</option>
+                    <option value="metallic" data-i18n="optPBRMetallic">Metallic</option>
+                    <option value="translucent" data-i18n="optPBRTranslucent">Translucent</option>
+                </select>
             </div>
         </section>
 
@@ -447,23 +474,84 @@
                 </div>
             </div>
 
+            <!-- #7 3D Spatial Airbrush Dither & Gradient Paint Panel -->
+            <div id="airbrush-dither-controls" class="v3-subcard" style="display:none;margin-bottom:12px;">
+                <div style="font-size:0.76rem;font-weight:700;color:#38bdf8;margin-bottom:8px;" data-i18n="airbrushTitle">🌈 3D Spatial Airbrush Dither (AMS Halftone)</div>
+                <div class="control-label">
+                    <span data-i18n="labelAirbrushDot">Dither Dot Pitch (Nozzle Safe):</span>
+                    <strong id="val-airbrush-dot" style="color:#38bdf8;">0.8 mm</strong>
+                </div>
+                <input class="control-slider" type="range" min="0.4" max="2.4" step="0.2" value="0.8" oninput="setAirbrushDotSize(this.value)">
+                <div class="control-label" style="margin-top:8px;">
+                    <span data-i18n="labelAirbrushSoftness">Feather Softness:</span>
+                    <strong id="val-airbrush-softness" style="color:#38bdf8;">72%</strong>
+                </div>
+                <input class="control-slider" type="range" min="20" max="100" step="4" value="72" oninput="setAirbrushSoftness(this.value)">
+                <div style="font-size:0.72rem;color:#94a3b8;margin:8px 0 4px;" data-i18n="labelAirbrushGrad">1-Click Whole-Model Spatial Gradient:</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:6px;">
+                    <select id="airbrush-grad-axis" class="select-box" style="padding:4px 6px;font-size:0.72rem;">
+                        <option value="y">Y (Height)</option>
+                        <option value="x">X (Width)</option>
+                        <option value="z">Z (Depth)</option>
+                        <option value="radial">Radial</option>
+                    </select>
+                    <select id="airbrush-grad-slot-a" class="select-box" style="padding:4px 6px;font-size:0.72rem;"></select>
+                    <select id="airbrush-grad-slot-b" class="select-box" style="padding:4px 6px;font-size:0.72rem;"></select>
+                </div>
+                <button class="btn-secondary" style="width:100%;" onclick="apply3DGradientDither(document.getElementById('airbrush-grad-axis').value, document.getElementById('airbrush-grad-slot-a').value, document.getElementById('airbrush-grad-slot-b').value, 0.15, 0.85, airbrushDotMm)" data-i18n="btnApplyAirbrushGrad">🌈 Apply 3D Dither Gradient</button>
+            </div>
+
             <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:6px;" data-i18n="labelMeshDetail">Mesh Precision &amp; Sharpness:</div>
             <div style="display:flex;gap:6px;">
                 <button class="btn-action" style="margin:0;flex:1;" onclick="subdivideCurrentMesh()">
                     <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
                     <span data-i18n="btnSubdivideMesh">Subdivide Mesh</span>
                 </button>
-                <button class="btn-secondary" onclick="simplifyCurrentMeshUI()" title="Merge redundant triangles for smoother slicing">Simplify</button>
+                <button class="btn-secondary" onclick="simplifyCurrentMeshUI()" data-i18n="btnSimplify" title="Merge redundant triangles for smoother slicing">Simplify</button>
             </div>
         </section>
 
-        <!-- 3. Model Orientation, Scale & AMS Optimizer -->
+        <!-- 3. Build Plate, Multi-Copy Waste Saver, Preflight & AMS Optimizer -->
         <section class="panel-section">
             <div class="section-header">
                 <span class="section-title">
                     <i data-lucide="maximize" style="width:15px;height:15px;color:#38bdf8;"></i>
-                    <span data-i18n="scaleTitle">Model Scale &amp; Bed Orientation</span>
+                    <span data-i18n="scaleTitle">Build Plate, Scale &amp; AMS Pro</span>
                 </span>
+            </div>
+
+            <!-- #4 Virtual Print Bed & Multi-Copy Plate Waste Saver -->
+            <div class="v3-subcard" style="margin-bottom:10px;">
+                <div class="control-label" style="margin-bottom:5px;">
+                    <span data-i18n="labelPrintBed">Virtual PEI Print Bed:</span>
+                    <button class="btn-secondary" style="padding:2px 8px;font-size:0.68rem;" onclick="fitModelToPrintBed()" data-i18n="btnFitBed">Fit Bed</button>
+                </div>
+                <select id="select-print-bed" class="select-box" style="margin-bottom:8px;padding:6px 8px;font-size:0.75rem;" onchange="setPrintBedPreset(this.value)">
+                    <option value="bambu_a1_mini">Bambu A1 Mini (180×180 mm)</option>
+                    <option value="bambu_x1c" selected>Bambu X1C / P1S / A1 (256×256 mm)</option>
+                    <option value="prusa_mk4">Prusa MK4 / Core One (250×210 mm)</option>
+                    <option value="creality_k1max">Creality K1 Max / K2 (300×300 mm)</option>
+                </select>
+                <div id="bed-overflow-badge" style="display:none;font-size:0.72rem;color:#fca5a5;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.45);border-radius:6px;padding:4px 8px;margin-bottom:8px;"></div>
+
+                <div class="control-label">
+                    <span data-i18n="labelMultiCopy">Plate Copies (AMS Waste Saver):</span>
+                    <strong id="val-multicopy-count" style="color:#34d399;">1×</strong>
+                </div>
+                <input id="slider-multicopy-count" class="control-slider" type="range" min="1" max="9" step="1" value="1" oninput="setMultiCopyCount(this.value)">
+                <div id="multicopy-savings-badge" style="font-size:0.72rem;color:#cbd5e1;margin-top:5px;"></div>
+            </div>
+
+            <!-- #6 3D Printability Preflight Inspector -->
+            <div class="v3-subcard" style="margin-bottom:10px;">
+                <div style="font-size:0.73rem;font-weight:700;color:#cbd5e1;margin-bottom:6px;" data-i18n="preflightTitle">🔬 3D Printability Preflight Inspector</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
+                    <button class="btn-secondary preflight-btn" data-mode="overhang" onclick="setPreflightMode('overhang')" style="padding:5px 4px;font-size:0.7rem;" data-i18n="btnPreflightOverhang">⚠️ Overhangs</button>
+                    <button class="btn-secondary preflight-btn" data-mode="speckle" onclick="setPreflightMode('speckle')" style="padding:5px 4px;font-size:0.7rem;" data-i18n="btnPreflightSpeckle">🔍 &lt;0.4mm</button>
+                    <button class="btn-secondary preflight-btn" data-mode="floating" onclick="setPreflightMode('floating')" style="padding:5px 4px;font-size:0.7rem;" data-i18n="btnPreflightFloating">🧩 Floating</button>
+                </div>
+                <div id="preflight-status-box" style="display:none;font-size:0.72rem;color:#e2e8f0;margin-top:6px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:6px;"></div>
+                <button id="btn-preflight-clean-speckles" class="btn-action emerald-style" style="display:none;margin-top:6px;margin-bottom:0;padding:6px;font-size:0.74rem;" onclick="autoCleanSubNozzleSpeckles()" data-i18n="btnCleanSubNozzle">✨ Auto-Clean Sub-Nozzle Dots</button>
             </div>
 
             <div style="display:flex;gap:5px;margin-bottom:8px;">
@@ -477,6 +565,27 @@
                 <button class="btn-secondary" onclick="scaleModel(0.5)">50%</button>
                 <button class="btn-secondary" onclick="scaleModel(1.5)">150%</button>
             </div>
+
+            <button class="btn-action magic-style" onclick="openTimelapseModal()">
+                <i data-lucide="clapperboard" style="width:15px;height:15px;"></i>
+                <span data-i18n="btnTimelapseFull">AMS Layer-Build Time-Lapse Video</span>
+            </button>
+            <button class="btn-action emerald-style" onclick="openSmartOrientModal()">
+                <i data-lucide="compass" style="width:15px;height:15px;"></i>
+                <span data-i18n="btnSmartOrient26">Smart 26-Axis Zero-Waste Auto-Orient</span>
+            </button>
+            <button class="btn-action" onclick="openFlushMatrixModal()">
+                <i data-lucide="grid" style="width:15px;height:15px;"></i>
+                <span data-i18n="btnFlushMatrix">AMS Flush Matrix (mm³) &amp; Order</span>
+            </button>
+            <button class="btn-action cavity-style" onclick="openCostCalculatorModal()">
+                <i data-lucide="calculator" style="width:15px;height:15px;"></i>
+                <span data-i18n="btnCostCalc">Etsy / MakerWorld Cost &amp; Profit Calc</span>
+            </button>
+            <button class="btn-action" onclick="openMockupModal()">
+                <i data-lucide="camera" style="width:15px;height:15px;"></i>
+                <span data-i18n="btn4KMockups">4K Studio Gallery Mockups</span>
+            </button>
 
             <button class="btn-action" onclick="openPurgeOptimizerModal()">
                 <i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i>
@@ -500,8 +609,8 @@
             </button>
 
             <div style="display:flex;gap:6px;margin-top:4px;">
-                <button class="btn-secondary" style="flex:1;" onclick="saveProjectToIndexedDB(false)">Save Session</button>
-                <button class="btn-secondary" onclick="clearSavedProject()" title="Clear saved browser recovery">Clear</button>
+                <button class="btn-secondary" style="flex:1;" onclick="saveProjectToIndexedDB(false)" data-i18n="btnSaveSession">Save Session</button>
+                <button class="btn-secondary" onclick="clearSavedProject()" data-i18n="btnClear" title="Clear saved browser recovery">Clear</button>
             </div>
             <div style="display:flex;gap:6px;margin-top:6px;">
                 <button class="btn-secondary" style="flex:1;" onclick="exportEditableProjectFile()">
@@ -698,6 +807,22 @@
             <i data-lucide="chevron-right"></i>
         </div>
 
+        <div class="export-option" onclick="exportStandaloneHTML3D()">
+            <div>
+                <div class="export-opt-title" data-i18n="optHTML3DTitle">🌐 Interactive 3D Client Proof (Offline .HTML)</div>
+                <div class="export-opt-desc" data-i18n="optHTML3DDesc">Self-contained rotatable 3D web viewer with filament list for clients (zero dependencies)</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+
+        <div class="export-option" onclick="closeExportModal(); openMockupModal();">
+            <div>
+                <div class="export-opt-title" data-i18n="opt4KMockupTitle">📸 4K Studio Gallery &amp; Etsy Mockups (3840×2160)</div>
+                <div class="export-opt-desc" data-i18n="opt4KMockupDesc">Ultra-HD product renders for Etsy, MakerWorld &amp; Printables listings</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+
         <button class="modal-close" onclick="closeExportModal()" data-i18n="btnCancel">Cancel</button>
     </div>
 </div>
@@ -783,11 +908,11 @@
         </div>
 
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-            <button class="ai-style-chip active" data-style="anatomy" onclick="selectAIStyleChip('anatomy')">Smart Anatomy</button>
-            <button class="ai-style-chip" data-style="cel" onclick="selectAIStyleChip('cel')">Cel-Shaded Ink</button>
-            <button class="ai-style-chip" data-style="gradient" onclick="selectAIStyleChip('gradient')">Z-Band Strata</button>
-            <button class="ai-style-chip" data-style="camouflage" onclick="selectAIStyleChip('camouflage')">Organic Camo</button>
-            <button class="ai-style-chip" data-style="duotone" onclick="selectAIStyleChip('duotone')">Duotone</button>
+            <button class="ai-style-chip active" data-style="anatomy" onclick="selectAIStyleChip('anatomy')" data-i18n="aiStyleAnatomy">Smart Anatomy</button>
+            <button class="ai-style-chip" data-style="cel" onclick="selectAIStyleChip('cel')" data-i18n="aiStyleCel">Cel-Shaded Ink</button>
+            <button class="ai-style-chip" data-style="gradient" onclick="selectAIStyleChip('gradient')" data-i18n="aiStyleGradient">Z-Band Strata</button>
+            <button class="ai-style-chip" data-style="camouflage" onclick="selectAIStyleChip('camouflage')" data-i18n="aiStyleCamo">Organic Camo</button>
+            <button class="ai-style-chip" data-style="duotone" onclick="selectAIStyleChip('duotone')" data-i18n="aiStyleDuotone">Duotone</button>
             <button class="btn-secondary" style="margin-left:auto;" onclick="applyAIRandomStyle()" data-i18n="btnAISurprise">🎲 Surprise Me!</button>
         </div>
 
@@ -818,12 +943,12 @@
         <div class="modal-desc" data-i18n="modalPurgeDesc">Analyze real 0.2mm layer transitions, Dark→Light flush risk, and optimize orientation or layer bands to save filament.</div>
 
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-            <label style="font-size:0.78rem;color:#94a3b8;">Layer Height:</label>
+            <label style="font-size:0.78rem;color:#94a3b8;" data-i18n="labelLayerHeight">Layer Height:</label>
             <select id="purge-layer-height" class="select-box" style="width:auto;" onchange="refreshPurgeOptimizerReport()">
-                <option value="0.12">0.12 mm (Fine)</option>
+                <option value="0.12">0.12 mm</option>
                 <option value="0.16">0.16 mm</option>
-                <option value="0.2" selected>0.20 mm (Standard)</option>
-                <option value="0.28">0.28 mm (Draft)</option>
+                <option value="0.2" selected>0.20 mm</option>
+                <option value="0.28">0.28 mm</option>
             </select>
         </div>
 
@@ -864,23 +989,23 @@
     <div class="modal-card">
         <div class="modal-title" data-i18n="btnAutoHeight">Height-Based Layer Color</div>
         <div class="control-group">
-            <div class="control-label">Bottom Layer Color:</div>
+            <div class="control-label" data-i18n="labelBottomColor">Bottom Layer Color:</div>
             <select id="height-bottom-slot" class="select-box" onchange="previewHeightGradient()"></select>
         </div>
         <div class="control-group">
-            <div class="control-label">Top Layer Color:</div>
+            <div class="control-label" data-i18n="labelTopColor">Top Layer Color:</div>
             <select id="height-top-slot" class="select-box" onchange="previewHeightGradient()"></select>
         </div>
         <div class="control-group">
             <div class="control-label">
-                <span>Split Height Ratio:</span>
+                <span data-i18n="labelSplitHeight">Split Height Ratio:</span>
                 <strong id="val-height-split" style="color:#38bdf8;">50%</strong>
             </div>
             <input id="height-split-ratio" class="control-slider" type="range" min="0.05" max="0.95" step="0.02" value="0.5" oninput="previewHeightGradient()">
         </div>
         <div style="display:flex;gap:8px;">
             <button class="modal-close" style="margin:0;flex:1;" onclick="closeHeightColorModal()" data-i18n="btnCancel">Cancel</button>
-            <button class="btn-primary" style="flex:1;" onclick="applyHeightGradient()">Apply Layer Split</button>
+            <button class="btn-primary" style="flex:1;" onclick="applyHeightGradient()" data-i18n="btnApplyHeight">Apply Layer Split</button>
         </div>
     </div>
 </div>
@@ -891,12 +1016,12 @@
         <div class="modal-title" data-i18n="modalReliefTitle">Relief &amp; Portrait Emboss Auto-Color</div>
         <div class="modal-desc" data-i18n="modalReliefDesc">Ideal for keychains, lithophanes, and embossed medals. Adjust slider to instantly separate flat base plate from raised portrait artwork.</div>
         <div class="control-group">
-            <div class="control-label">Relief Axis:</div>
+            <div class="control-label" data-i18n="labelReliefAxis">Relief Axis:</div>
             <select id="relief-axis-select" class="select-box" onchange="onReliefAxisChange(this.value)">
-                <option value="auto">Auto (Thinnest Axis)</option>
-                <option value="y">Vertical (Y — Bottom to Top)</option>
-                <option value="z">Front / Back (Z)</option>
-                <option value="x">Left / Right (X)</option>
+                <option value="auto" data-i18n="optAxisAuto">Auto (Thinnest Axis)</option>
+                <option value="y" data-i18n="optAxisY">Vertical (Y — Bottom to Top)</option>
+                <option value="z" data-i18n="optAxisZ">Front / Back (Z)</option>
+                <option value="x" data-i18n="optAxisX">Left / Right (X)</option>
             </select>
         </div>
         <div class="control-group">
@@ -970,17 +1095,17 @@
             <div>
                 <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelProjectAxis">Projection View:</div>
                 <select id="decal-project-axis" class="select-box">
-                    <option value="front">Front (+Z)</option>
-                    <option value="top">Top (+Y)</option>
-                    <option value="side">Side (+X)</option>
-                    <option value="camera">Current Camera View</option>
+                    <option value="front" data-i18n="optAxisFront">Front (+Z)</option>
+                    <option value="top" data-i18n="optAxisTop">Top (+Y)</option>
+                    <option value="side" data-i18n="optAxisSide">Side (+X)</option>
+                    <option value="camera" data-i18n="optAxisCamera">Current Camera View</option>
                 </select>
             </div>
             <div>
                 <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelDecalScale">Fitting:</div>
                 <select id="decal-scale-mode" class="select-box">
-                    <option value="fit">Fit Inside Bounds</option>
-                    <option value="fill">Fill &amp; Crop</option>
+                    <option value="fit" data-i18n="optDecalFit">Fit Inside Bounds</option>
+                    <option value="fill" data-i18n="optDecalFill">Fill &amp; Crop</option>
                 </select>
             </div>
         </div>
@@ -997,7 +1122,7 @@
             </label>
             <label style="display:flex;align-items:center;gap:7px;font-size:0.76rem;color:#cbd5e1;margin-top:5px;cursor:pointer;">
                 <input type="checkbox" id="decal-auto-subdivide" checked>
-                <span>Auto-refine low-poly mesh for crisp photo detail</span>
+                <span data-i18n="checkDecalAutoRefine">Auto-refine low-poly mesh for crisp photo detail</span>
             </label>
         </div>
 
@@ -1053,7 +1178,7 @@
             </div>
             <div>
                 <div class="control-label">
-                    <span>Depth (mm):</span>
+                    <span data-i18n="labelDepthMm">Depth (mm):</span>
                     <strong id="val-text-depth" style="color:#38bdf8;">1.2 mm</strong>
                 </div>
                 <input id="slider-text-depth" class="control-slider" type="range" min="0.4" max="3.0" step="0.2" value="1.2" oninput="document.getElementById('val-text-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
@@ -1062,16 +1187,16 @@
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
             <div>
-                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Surface Wrap:</div>
+                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelSurfaceWrap">Surface Wrap:</div>
                 <select id="text-stamp-wrap" class="select-box">
-                    <option value="conformal">Conformal Curved (Safe Clip)</option>
-                    <option value="flat">Flat Planar (Badges / Tags)</option>
-                    <option value="cylindrical">Cylindrical 360° Wrap (Mugs / Tubes)</option>
+                    <option value="conformal" data-i18n="optWrapConformal">Conformal Curved (Safe Clip)</option>
+                    <option value="flat" data-i18n="optWrapFlat">Flat Planar (Badges / Tags)</option>
+                    <option value="cylindrical" data-i18n="optWrapCylindrical">Cylindrical 360° Wrap (Mugs / Tubes)</option>
                 </select>
             </div>
             <div>
                 <div class="control-label">
-                    <span>Rotation:</span>
+                    <span data-i18n="labelRotation">Rotation:</span>
                     <strong id="val-text-rotation" style="color:#38bdf8;">0°</strong>
                 </div>
                 <input id="slider-text-rotation" class="control-slider" type="range" min="-180" max="180" step="5" value="0" oninput="document.getElementById('val-text-rotation').textContent = this.value + '°'">
@@ -1205,8 +1330,8 @@
         <div class="modal-desc" data-i18n="modalQRDesc">Stamp a scannable 2-color QR code directly onto your print, or batch-generate personalized .3mf files from a list of names!</div>
 
         <div style="display:flex;gap:6px;margin-bottom:12px;">
-            <button id="btn-tab-qr" class="btn-secondary active" style="flex:1;" onclick="switchQRBatchTab('qr')">📱 3D QR Code Stamper</button>
-            <button id="btn-tab-batch" class="btn-secondary" style="flex:1;" onclick="switchQRBatchTab('batch')">🏷️ Batch Names (.3MF ZIP)</button>
+            <button id="btn-tab-qr" class="btn-secondary active" style="flex:1;" onclick="switchQRBatchTab('qr')" data-i18n="tabQRStamper">📱 3D QR Code Stamper</button>
+            <button id="btn-tab-batch" class="btn-secondary" style="flex:1;" onclick="switchQRBatchTab('batch')" data-i18n="tabBatchNames">🏷️ Batch Names (.3MF ZIP)</button>
         </div>
 
         <!-- TAB 1: 3D QR CODE -->
@@ -1214,45 +1339,45 @@
             <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
                 <canvas id="qr-modal-preview" width="96" height="96" style="border-radius:8px;border:1px solid var(--border-panel);background:#fff;flex-shrink:0;"></canvas>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">URL / Wi-Fi / Maker Handle / Text:</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="lblQRContent">URL / Wi-Fi / Maker Handle / Text:</div>
                     <input id="qr-content-input" class="text-input-box" type="text" value="https://studios-pro.com" oninput="updateQRModalPreview()">
                     <label style="display:flex;align-items:center;gap:6px;font-size:0.74rem;color:#cbd5e1;margin-top:8px;cursor:pointer;">
                         <input type="checkbox" id="qr-include-backplate" checked onchange="updateQRModalPreview()">
-                        <span>Include high-contrast Quiet-Zone backing plate</span>
+                        <span data-i18n="lblQRBackplate">Include high-contrast Quiet-Zone backing plate</span>
                     </label>
                 </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">QR Modules Color (Dark):</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="lblQRFg">QR Modules Color (Dark):</div>
                     <select id="qr-fg-slot" class="select-box" onchange="updateQRModalPreview()"></select>
                 </div>
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Backplate Color (Light):</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="lblQRBg">Backplate Color (Light):</div>
                     <select id="qr-bg-slot" class="select-box" onchange="updateQRModalPreview()"></select>
                 </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Mode:</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelModeShort">Mode:</div>
                     <select id="qr-stamp-mode" class="select-box">
-                        <option value="inlay">Flush Inlay (PEI)</option>
-                        <option value="emboss">Emboss Raised</option>
-                        <option value="surface">Surface Paint</option>
+                        <option value="inlay" data-i18n="optQRInlay">Flush Inlay (PEI)</option>
+                        <option value="emboss" data-i18n="optQREmboss">Emboss Raised</option>
+                        <option value="surface" data-i18n="optQRSurface">Surface Paint</option>
                     </select>
                 </div>
                 <div>
                     <div class="control-label">
-                        <span>Size:</span>
+                        <span data-i18n="labelSizeShort">Size:</span>
                         <strong id="val-qr-size" style="color:#38bdf8;">20 mm</strong>
                     </div>
                     <input id="slider-qr-size" class="control-slider" type="range" min="10" max="60" step="1" value="20" oninput="document.getElementById('val-qr-size').textContent = this.value + ' mm'">
                 </div>
                 <div>
                     <div class="control-label">
-                        <span>Depth:</span>
+                        <span data-i18n="labelDepthShort">Depth:</span>
                         <strong id="val-qr-depth" style="color:#38bdf8;">0.8 mm</strong>
                     </div>
                     <input id="slider-qr-depth" class="control-slider" type="range" min="0.4" max="2.4" step="0.2" value="0.8" oninput="document.getElementById('val-qr-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
@@ -1261,7 +1386,7 @@
 
             <div style="display:flex;gap:8px;">
                 <button class="modal-close" style="margin:0;flex:1;" onclick="closeQRBatchModal()" data-i18n="btnCancel">Cancel</button>
-                <button class="btn-primary" style="flex:1;" onclick="startQRStampingMode()">Place QR Code on Model</button>
+                <button class="btn-primary" style="flex:1;" onclick="startQRStampingMode()" data-i18n="btnPlaceQR">Place QR Code on Model</button>
             </div>
         </div>
 
@@ -1269,7 +1394,7 @@
         <div id="panel-tab-batch" style="display:none;">
             <div class="control-group">
                 <div class="control-label">
-                    <span>Names / Editions List (1 per line or comma-separated, max 50):</span>
+                    <span data-i18n="lblBatchNames">Names / Editions List (1 per line or comma-separated, max 50):</span>
                 </div>
                 <textarea id="batch-names-input" class="text-input-box" rows="4" style="resize:vertical;font-family:Inter,monospace;">ALEX
 MARIA
@@ -1279,7 +1404,7 @@ SOPHIE</textarea>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Font Style:</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelTextFont">Font Style:</div>
                     <select id="batch-stamp-font" class="select-box">
                         <option value="Outfit, Inter, sans-serif">Modern Bold (Outfit)</option>
                         <option value="Impact, sans-serif">Heavy Display (Impact)</option>
@@ -1288,43 +1413,43 @@ SOPHIE</textarea>
                     </select>
                 </div>
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Mode:</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelModeShort">Mode:</div>
                     <select id="batch-stamp-mode" class="select-box">
-                        <option value="emboss">Emboss Raised</option>
-                        <option value="inlay">Flush Inlay (PEI)</option>
-                        <option value="surface">Surface Paint</option>
+                        <option value="emboss" data-i18n="optQREmboss">Emboss Raised</option>
+                        <option value="inlay" data-i18n="optQRInlay">Flush Inlay (PEI)</option>
+                        <option value="surface" data-i18n="optQRSurface">Surface Paint</option>
                     </select>
                 </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
                 <div>
-                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;">Filament:</div>
+                    <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:4px;" data-i18n="labelFilamentShort">Filament:</div>
                     <select id="batch-color-slot" class="select-box"></select>
                 </div>
                 <div>
                     <div class="control-label">
-                        <span>Size:</span>
+                        <span data-i18n="labelSizeShort">Size:</span>
                         <strong id="val-batch-size" style="color:#38bdf8;">7 mm</strong>
                     </div>
                     <input id="slider-batch-size" class="control-slider" type="range" min="3" max="30" step="0.5" value="7" oninput="document.getElementById('val-batch-size').textContent = this.value + ' mm'">
                 </div>
                 <div>
                     <div class="control-label">
-                        <span>Depth:</span>
+                        <span data-i18n="labelDepthShort">Depth:</span>
                         <strong id="val-batch-depth" style="color:#38bdf8;">1.0 mm</strong>
                     </div>
                     <input id="slider-batch-depth" class="control-slider" type="range" min="0.4" max="2.4" step="0.2" value="1.0" oninput="document.getElementById('val-batch-depth').textContent = parseFloat(this.value).toFixed(1) + ' mm'">
                 </div>
             </div>
 
-            <div id="batch-anchor-status" style="font-size:0.75rem;color:#93c5fd;margin-bottom:10px;">
+            <div id="batch-anchor-status" style="font-size:0.75rem;color:#93c5fd;margin-bottom:10px;" data-i18n="batchStep1Hint">
                 Step 1: Click 'Place Anchor on Model' and click where the name should sit.
             </div>
 
             <div style="display:flex;gap:8px;">
-                <button class="btn-secondary" style="flex:1;" onclick="startBatchAnchorPlacement()">1. Place Anchor on Model</button>
-                <button id="btn-generate-batch-zip" class="btn-primary" style="flex:1;" disabled onclick="executeBatchName3MFExport()">2. Generate Batch .3MF ZIP</button>
+                <button class="btn-secondary" style="flex:1;" onclick="startBatchAnchorPlacement()" data-i18n="btnPlaceBatchAnchor">1. Place Anchor on Model</button>
+                <button id="btn-generate-batch-zip" class="btn-primary" style="flex:1;" disabled onclick="executeBatchName3MFExport()" data-i18n="btnGenBatchZip">2. Generate Batch .3MF ZIP</button>
             </div>
             <button class="modal-close" onclick="closeQRBatchModal()" data-i18n="btnClose">Close</button>
         </div>
@@ -1350,7 +1475,7 @@ SOPHIE</textarea>
 
         <div class="control-group">
             <div class="control-label">
-                <span>Solid Shell Wall Thickness (mm):</span>
+                <span data-i18n="labelShellThickness">Solid Shell Wall Thickness (mm):</span>
                 <strong id="val-splitter-shell" style="color:#38bdf8;">2.0 mm</strong>
             </div>
             <input id="splitter-shell-thickness" class="control-slider" type="range" min="0.8" max="5" step="0.2" value="2.0" oninput="document.getElementById('val-splitter-shell').textContent = parseFloat(this.value).toFixed(1) + ' mm'; clearExplodedPreview();">
@@ -1405,12 +1530,17 @@ SOPHIE</textarea>
         <div class="modal-title" data-i18n="shareModalTitle">Share Your 3D Creation</div>
         <div class="modal-desc" data-i18n="shareModalSub">Show your multi-color 3D model to fellow makers &amp; 3D printing enthusiasts!</div>
 
+        <button class="btn-action magic-style" style="width:100%;margin-bottom:8px;" onclick="closeShareDesignModal(); openTimelapseModal();">
+            <i data-lucide="clapperboard" style="width:16px;height:16px;"></i>
+            <span data-i18n="btnTimelapseFull">AMS Layer-Build Time-Lapse Video (9:16 &amp; 1:1)</span>
+        </button>
+
         <button class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="downloadShareSnapshot()">
             <i data-lucide="camera" style="width:16px;height:16px;"></i>
             <span data-i18n="btnDownloadSnapshot">Save Photo (PNG)</span>
         </button>
 
-        <button class="btn-action magic-style" style="width:100%;margin-bottom:12px;" onclick="exportTurntableVideo()">
+        <button class="btn-action" style="width:100%;margin-bottom:12px;" onclick="exportTurntableVideo()">
             <i data-lucide="video" style="width:16px;height:16px;"></i>
             <span data-i18n="btnTurntableVideo">Export 360° Turntable Video (WebM)</span>
         </button>
@@ -1457,6 +1587,242 @@ SOPHIE</textarea>
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- V3 PRO MODALS (#1 TIMELAPSE, #2 SMART ORIENT, #3 FLUSH MATRIX, #5 SPOOL RACK, #8 COST CALC, #9 4K MOCKUPS) -->
+<!-- ========================================== -->
+
+<!-- #1 AMS Layer-Build & Filament-Arrangement Time-Lapse Video Modal -->
+<div id="timelapse-modal" class="modal-overlay">
+    <div class="modal-card" style="width:540px;">
+        <div class="modal-title">
+            <i data-lucide="clapperboard" style="color:#c084fc;"></i>
+            <span data-i18n="modalTimelapseTitle">AMS Layer-Build &amp; Filament Time-Lapse</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalTimelapseDesc">Generate a cinematic layer-by-layer build video showing your live AMS filament spools lighting up on every layer, vertical Z-timeline, swap counter &amp; 360° reveal!</div>
+
+        <div id="timelapse-preview-stats" style="font-size:0.78rem;color:#bae6fd;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.28);padding:10px 12px;border-radius:10px;margin-bottom:14px;"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <button class="export-option recommended" style="margin:0;flex-direction:column;align-items:flex-start;gap:4px;" onclick="recordAMSLayerBuildTimelapse('9:16')">
+                <div class="export-opt-title" data-i18n="btnTimelapse916">📱 9:16 Reels / TikTok</div>
+                <div class="export-opt-desc" data-i18n="descTimelapse916">720×1280 Vertical HD (.WEBM)</div>
+            </button>
+            <button class="export-option" style="margin:0;flex-direction:column;align-items:flex-start;gap:4px;" onclick="recordAMSLayerBuildTimelapse('1:1')">
+                <div class="export-opt-title" data-i18n="btnTimelapse11">🛍️ 1:1 Etsy / MakerWorld</div>
+                <div class="export-opt-desc" data-i18n="descTimelapse11">960×960 Square HD (.WEBM)</div>
+            </button>
+        </div>
+
+        <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:6px;">
+            <div id="timelapse-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#c084fc);transition:width 0.1s linear;"></div>
+        </div>
+        <div id="timelapse-status-text" style="font-size:0.74rem;color:#94a3b8;min-height:18px;margin-bottom:6px;"></div>
+        <div style="font-size:0.72rem;color:#64748b;" data-i18n="timelapseFreeNote">100% Free to export (subtle Studios-Pro badge on Free plan; clean watermark-free on Pro).</div>
+
+        <button class="modal-close" onclick="closeTimelapseModal()" data-i18n="btnClose">Close</button>
+    </div>
+</div>
+
+<!-- #2 Smart 26-Axis Zero-Waste Auto-Orient Modal -->
+<div id="smart-orient-modal" class="modal-overlay">
+    <div class="modal-card" style="width:580px;">
+        <div class="modal-title">
+            <i data-lucide="compass" style="color:#10b981;"></i>
+            <span data-i18n="modalSmartOrientTitle">Smart 26-Axis Zero-Waste Auto-Orient</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalSmartOrientDesc">Evaluates 26 3D orientations balancing AMS filament swaps, flush waste, overhang risk (&gt;50°) &amp; bed adhesion contact!</div>
+        <div id="smart-orient-summary" style="font-size:0.78rem;color:#e2e8f0;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:10px 12px;border-radius:10px;margin-bottom:12px;"></div>
+        <div id="smart-orient-results" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;"></div>
+        <button class="modal-close" onclick="closeSmartOrientModal()" data-i18n="btnClose">Close</button>
+    </div>
+</div>
+
+<!-- #3 Interactive AMS Flush Matrix Modal -->
+<div id="flush-matrix-modal" class="modal-overlay">
+    <div class="modal-card" style="width:620px;">
+        <div class="modal-title">
+            <i data-lucide="grid" style="color:#38bdf8;"></i>
+            <span data-i18n="modalFlushMatrixTitle">Interactive AMS Flush Matrix (mm³)</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalFlushMatrixDesc">Tune exact From ➔ To purge volumes in mm³. Directly exported into Bambu Studio &amp; OrcaSlicer Metadata/project_settings.config!</div>
+
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+            <div style="flex:1;min-width:170px;">
+                <div class="control-label">
+                    <span data-i18n="labelFlushMult">Flush Multiplier:</span>
+                    <strong id="val-flush-mult" style="color:#38bdf8;">1.00×</strong>
+                </div>
+                <input class="control-slider" type="range" min="0.5" max="1.3" step="0.05" value="1.0" oninput="setFlushMultiplier(this.value)">
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.76rem;color:#cbd5e1;cursor:pointer;">
+                <input type="checkbox" onchange="toggleFlushIntoInfill(this.checked)">
+                <span data-i18n="checkFlushInfill">Flush into Infill (-35% purge)</span>
+            </label>
+        </div>
+
+        <div id="flush-matrix-table-wrap" style="overflow-x:auto;margin-bottom:10px;"></div>
+        <div id="flush-matrix-summary" style="font-size:0.76rem;color:#34d399;margin-bottom:12px;"></div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-secondary" style="flex:1;" onclick="autoCalculateBambuFlushMatrix()" data-i18n="btnFlushAutoCalc">Auto-Calculate Bambu Defaults</button>
+            <button class="btn-primary" style="flex:1;" onclick="optimizeSlotOrderLightToDark()" data-i18n="btnSortLightDark">Sort Slots Light ➔ Dark</button>
+        </div>
+        <button class="modal-close" onclick="closeFlushMatrixModal()" data-i18n="btnClose">Close</button>
+    </div>
+</div>
+
+<!-- #5 Shared "My Spool Rack" (256 Commercial Spools) Modal -->
+<div id="spool-rack-modal" class="modal-overlay">
+    <div class="modal-card" style="width:660px;">
+        <div class="modal-title">
+            <i data-lucide="database" style="color:#10b981;"></i>
+            <span data-i18n="modalSpoolRackTitle">My Spool Rack (256 Verified Commercial Spools)</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalSpoolRackDesc">Shared across Studios-Pro apps! Star (★) spools you own, load any spool into your active AMS slot (+), or 1-click match your whole 3D model to your owned spools!</div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+            <input id="spool-rack-search" class="text-input-box" style="flex:1;min-width:150px;" type="text" placeholder="Search Bambu, Polymaker, Sunlu, eSUN..." oninput="renderSpoolRackList()">
+            <select id="spool-rack-brand-filter" class="select-box" style="width:auto;" onchange="renderSpoolRackList()">
+                <option value="all">All Brands</option>
+                <option value="Bambu Lab">Bambu Lab</option>
+                <option value="Bambu Matte">Bambu Matte</option>
+                <option value="Bambu Silk">Bambu Silk</option>
+                <option value="Bambu Metal">Bambu Metal</option>
+                <option value="Bambu PETG">Bambu PETG</option>
+                <option value="Polymaker">Polymaker</option>
+                <option value="Sunlu">Sunlu</option>
+                <option value="eSUN">eSUN</option>
+                <option value="Elegoo">Elegoo</option>
+                <option value="Overture">Overture</option>
+                <option value="Prusament">Prusament</option>
+                <option value="Hatchbox">Hatchbox</option>
+                <option value="Creality">Creality</option>
+                <option value="VoxelPLA">VoxelPLA</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#cbd5e1;cursor:pointer;white-space:nowrap;">
+                <input type="checkbox" id="spool-rack-owned-only" onchange="renderSpoolRackList()">
+                <span data-i18n="checkOwnedOnly">Owned ★ only</span>
+            </label>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+            <span id="spool-rack-owned-count" style="font-size:0.74rem;color:#38bdf8;font-weight:600;"></span>
+            <div style="display:flex;gap:6px;">
+                <button class="btn-primary" style="padding:5px 10px;font-size:0.74rem;" onclick="matchModelToOwnedSpools()" data-i18n="btnMatchOwnedSpools">🎯 Match Model to My Owned Spools</button>
+                <label class="btn-secondary" style="cursor:pointer;padding:5px 9px;font-size:0.72rem;">
+                    <span data-i18n="btnImportRack">Import .hfp / JSON</span>
+                    <input type="file" accept=".hfp,.json,.csv" style="display:none;" onchange="importSpoolRackFile(event)">
+                </label>
+                <button class="btn-secondary" style="padding:5px 9px;font-size:0.72rem;" onclick="exportMySpoolRackJSON()" data-i18n="btnBackupRack">Backup JSON</button>
+            </div>
+        </div>
+
+        <div id="spool-rack-grid" class="rack-grid"></div>
+
+        <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-panel);flex-wrap:wrap;">
+            <input id="rack-custom-hex" type="color" value="#38bdf8" style="width:34px;height:32px;border:none;background:none;cursor:pointer;">
+            <input id="rack-custom-brand" class="text-input-box" style="width:110px;" type="text" placeholder="Brand" value="Custom">
+            <input id="rack-custom-name" class="text-input-box" style="flex:1;min-width:120px;" type="text" placeholder="New spool name...">
+            <select id="rack-custom-type" class="select-box" style="width:auto;">
+                <option value="PLA Basic">PLA Basic</option>
+                <option value="PLA Matte">PLA Matte</option>
+                <option value="PLA Silk">PLA Silk</option>
+                <option value="PETG">PETG</option>
+            </select>
+            <button class="btn-secondary" onclick="addCustomRackSpoolUI()" data-i18n="btnAddCustomSpool">+ Add Spool</button>
+        </div>
+
+        <button class="modal-close" onclick="closeSpoolRackModal()" data-i18n="btnClose">Close</button>
+    </div>
+</div>
+
+<!-- #8 Etsy / MakerWorld Cost & Profit Calculator Modal -->
+<div id="cost-calc-modal" class="modal-overlay">
+    <div class="modal-card" style="width:560px;">
+        <div class="modal-title">
+            <i data-lucide="calculator" style="color:#fbbf24;"></i>
+            <span data-i18n="modalCostCalcTitle">Etsy / MakerWorld Cost &amp; Profit Calculator</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalCostCalcDesc">Real closed-volume filament mass + AMS purge + prime tower + power + platform fees (synced with Multi-Copy Plate count!).</div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblFilamentKg">Filament ($/kg):</div>
+                <input id="cost-filament-kg" class="text-input-box" type="number" step="1" value="24" oninput="updateCostCalculatorUI()">
+            </div>
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblElecKwh">Power ($/kWh):</div>
+                <input id="cost-elec-kwh" class="text-input-box" type="number" step="0.02" value="0.18" oninput="updateCostCalculatorUI()">
+            </div>
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblPrinterWatts">Printer Watts:</div>
+                <input id="cost-printer-watts" class="text-input-box" type="number" step="10" value="120" oninput="updateCostCalculatorUI()">
+            </div>
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblPackaging">Packaging ($):</div>
+                <input id="cost-packaging" class="text-input-box" type="number" step="0.5" value="2.00" oninput="updateCostCalculatorUI()">
+            </div>
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblEtsyFee">Platform Fee (%):</div>
+                <input id="cost-etsy-fee" class="text-input-box" type="number" step="1" value="12" oninput="updateCostCalculatorUI()">
+            </div>
+            <div>
+                <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:3px;" data-i18n="lblMarkup">Retail Markup (×):</div>
+                <input id="cost-markup" class="text-input-box" type="number" step="0.2" value="3.0" oninput="updateCostCalculatorUI()">
+            </div>
+        </div>
+
+        <div id="cost-calc-output"></div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn-primary" style="flex:1;" onclick="copyCostQuote()" data-i18n="btnCopyQuote">📋 Copy Client Quote</button>
+            <button class="modal-close" style="margin:0;width:auto;padding:9px 18px;" onclick="closeCostCalculatorModal()" data-i18n="btnClose">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- #9 4K Studio Gallery Mockups Modal -->
+<div id="mockup-4k-modal" class="modal-overlay">
+    <div class="modal-card" style="width:540px;">
+        <div class="modal-title">
+            <i data-lucide="camera" style="color:#38bdf8;"></i>
+            <span data-i18n="modalMockupTitle">4K Studio Gallery Mockups (3840×2160)</span>
+        </div>
+        <div class="modal-desc" data-i18n="modalMockupDesc">Export ultra-crisp 4K commercial renders of your current 3D view ready for Etsy, MakerWorld, Printables &amp; Instagram!</div>
+
+        <div class="export-option recommended" onclick="render4KStudioMockup('etsy')">
+            <div>
+                <div class="export-opt-title" data-i18n="mockupEtsyTitle">🛍️ Etsy / MakerWorld Listing Card (4K)</div>
+                <div class="export-opt-desc" data-i18n="mockupEtsyDesc">Hero 3D render + live AMS filament color chips, size &amp; print specs</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+        <div class="export-option" onclick="render4KStudioMockup('gallery')">
+            <div>
+                <div class="export-opt-title" data-i18n="mockupGalleryTitle">🏛️ Modern Dark Studio Gallery (4K)</div>
+                <div class="export-opt-desc" data-i18n="mockupGalleryDesc">Deep studio backdrop with soft floor pedestal shadow</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+        <div class="export-option" onclick="render4KStudioMockup('desk')">
+            <div>
+                <div class="export-opt-title" data-i18n="mockupDeskTitle">🪵 Warm Oak Creator Desk (4K)</div>
+                <div class="export-opt-desc" data-i18n="mockupDeskDesc">Bright daylight lifestyle aesthetic on warm wood surface</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+        <div class="export-option" onclick="render4KStudioMockup('spotlight')">
+            <div>
+                <div class="export-opt-title" data-i18n="mockupSpotTitle">✨ LED Collector Spotlight (4K)</div>
+                <div class="export-opt-desc" data-i18n="mockupSpotDesc">Dramatic cobalt &amp; neon collector display backdrop</div>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+
+        <button class="modal-close" onclick="closeMockupModal()" data-i18n="btnClose">Close</button>
+    </div>
+</div>
+
 <!-- Toast Notification -->
 <div id="toast-notification" class="toast">
     <i data-lucide="info" style="width:16px;height:16px;color:#38bdf8;flex-shrink:0;"></i>
@@ -1474,6 +1840,7 @@ SOPHIE</textarea>
 <script src="js/slicer-sim.js"></script>
 <script src="js/export-3mf.js"></script>
 <script src="js/persistence.js"></script>
+<script src="js/studio-v3-pro.js"></script>
 <script src="js/app.js"></script>
 
 </body>

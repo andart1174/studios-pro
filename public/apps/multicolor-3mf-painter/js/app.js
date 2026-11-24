@@ -75,8 +75,16 @@ function init3D() {
     dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
     dirLight1.position.set(60, 110, 80);
     dirLight1.castShadow = true;
-    dirLight1.shadow.mapSize.width = 1024;
-    dirLight1.shadow.mapSize.height = 1024;
+    dirLight1.shadow.mapSize.width = 2048;
+    dirLight1.shadow.mapSize.height = 2048;
+    dirLight1.shadow.camera.left = -80;
+    dirLight1.shadow.camera.right = 80;
+    dirLight1.shadow.camera.top = 80;
+    dirLight1.shadow.camera.bottom = -80;
+    dirLight1.shadow.camera.near = 1;
+    dirLight1.shadow.camera.far = 450;
+    dirLight1.shadow.bias = -0.0005;
+    dirLight1.shadow.normalBias = 0.04;
     scene.add(dirLight1);
 
     dirLight2 = new THREE.DirectionalLight(0x93c5fd, 0.42);
@@ -99,10 +107,12 @@ function init3D() {
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('keydown', onKeyDown);
 
-    // Bind Canvas Pointer Events for Painting & Controls
+    // Bind Canvas Pointer Events for Painting & Controls (+ pointercancel/blur safety!)
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('blur', onPointerUp);
     renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
     if (typeof initBrushHelper === 'function') initBrushHelper();
@@ -134,6 +144,14 @@ function animate() {
 function onWindowResize() {
     const container = document.getElementById('viewport-container');
     if (!container || !camera || !renderer) return;
+    const isMobile = window.innerWidth <= 900;
+    const bar = document.getElementById('mobile-filament-bar');
+    if (!isMobile) {
+        document.body.classList.remove('mobile-view-panel', 'mobile-view-canvas');
+        if (bar) bar.style.display = 'none';
+    } else if (bar) {
+        bar.style.display = document.body.classList.contains('mobile-view-panel') ? 'none' : 'flex';
+    }
     const w = container.clientWidth || window.innerWidth;
     const h = container.clientHeight || window.innerHeight;
     camera.aspect = w / h;
@@ -295,26 +313,39 @@ function setupDragAndDrop() {
 // KEYBOARD SHORTCUTS
 // ==========================================
 
+function isAnyModalOpen() {
+    const overlays = document.querySelectorAll('.modal-overlay');
+    for (let i = 0; i < overlays.length; i++) {
+        const m = overlays[i];
+        if (m.classList.contains('open') || m.style.display === 'flex' || m.style.display === 'block') return true;
+    }
+    const pay = document.getElementById('local-payment-modal');
+    if (pay && (pay.style.display === 'flex' || pay.style.display === 'block')) return true;
+    return false;
+}
+
 function closeAllModals() {
     document.querySelectorAll('.modal-overlay').forEach(m => {
         m.classList.remove('open');
-        if (m.style.display === 'flex') m.style.display = 'none';
+        if (m.style.display === 'flex' || m.style.display === 'block') m.style.display = 'none';
     });
+    const pay = document.getElementById('local-payment-modal');
+    if (pay) pay.style.display = 'none';
     if (typeof clearExplodedPreview === 'function') clearExplodedPreview();
-    if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+    const keepOverlay = (typeof isShowingPurgeHeatmap !== 'undefined' && isShowingPurgeHeatmap)
+        || (typeof activePreflightMode !== 'undefined' && activePreflightMode && activePreflightMode !== 'none');
+    if (!keepOverlay && typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
 }
 
 function onKeyDown(e) {
     const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) {
-        if (e.key === 'Escape') {
-            e.target.blur();
-            closeAllModals();
-        }
-        return;
-    }
+    const inputType = (tag === 'INPUT' && e.target.type) ? e.target.type.toLowerCase() : '';
+    const isTextField = (tag === 'TEXTAREA' || (e.target && e.target.isContentEditable) ||
+        (tag === 'INPUT' && !['range', 'checkbox', 'radio', 'button', 'color'].includes(inputType)));
+    const key = e.key.toLowerCase();
 
     if (e.key === 'Escape') {
+        if (isTextField && e.target) e.target.blur();
         e.preventDefault();
         // 1. Cancel any active stamping mode (Text, Stencil, QR, Batch)
         if ((typeof isTextStampingMode !== 'undefined' && isTextStampingMode) ||
@@ -343,7 +374,25 @@ function onKeyDown(e) {
         return;
     }
 
-    const key = e.key.toLowerCase();
+    // Allow Ctrl+Z / Ctrl+Y everywhere EXCEPT inside text input fields (works on sliders/checkboxes too!)
+    if (!isTextField && (e.ctrlKey || e.metaKey) && key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+            if (typeof redoColor === 'function') redoColor();
+        } else {
+            if (typeof undoColor === 'function') undoColor();
+        }
+        return;
+    }
+    if (!isTextField && (e.ctrlKey || e.metaKey) && key === 'y') {
+        e.preventDefault();
+        if (typeof redoColor === 'function') redoColor();
+        return;
+    }
+
+    // NEVER intercept Ctrl/Cmd/Alt browser shortcuts (Ctrl+C, Ctrl+S, Ctrl+R, Ctrl+P, Ctrl+A, etc.)
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTextField || tag === 'SELECT' || isAnyModalOpen()) return;
 
     // Live 3D Stamp Ghost Preview shortcuts (Q/E rotate, +/- scale!)
     const inStampMode = (typeof isTextStampingMode !== 'undefined' && isTextStampingMode) ||
@@ -372,24 +421,10 @@ function onKeyDown(e) {
         }
     }
 
-    if ((e.ctrlKey || e.metaKey) && key === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) {
-            if (typeof redoColor === 'function') redoColor();
-        } else {
-            if (typeof undoColor === 'function') undoColor();
-        }
-        return;
-    }
-    if ((e.ctrlKey || e.metaKey) && key === 'y') {
-        e.preventDefault();
-        if (typeof redoColor === 'function') redoColor();
-        return;
-    }
-
     switch (key) {
         case 'v': selectTool('view'); break;
         case 'b': selectTool('brush'); break;
+        case 'd': selectTool('airbrush'); break;
         case 'l': selectTool('line'); break;
         case 'f': selectTool('bucket'); break;
         case 'w': selectTool('wand'); break;
@@ -432,13 +467,15 @@ function onKeyDown(e) {
 }
 
 // ==========================================
-// SHARE DESIGN MODAL
+// SHARE DESIGN MODAL (CANONICAL URL + FREE WATERMARKED SNAPSHOT)
 // ==========================================
+
+const CANONICAL_STUDIO_SHARE_URL = 'https://studios-pro.com/?ref=multicolor-3mf-painter';
 
 function openShareDesignModal() {
     const modal = document.getElementById('share-design-modal');
     const urlInput = document.getElementById('share-link-input');
-    if (urlInput) urlInput.value = window.location.href;
+    if (urlInput) urlInput.value = CANONICAL_STUDIO_SHARE_URL;
     if (modal) modal.classList.add('open');
     if (typeof refreshIcons === 'function') refreshIcons();
 }
@@ -450,11 +487,42 @@ function closeShareDesignModal() {
 
 function downloadShareSnapshot() {
     if (!renderer || !scene || !camera) return;
+    const prevRing = brushHelperRing ? brushHelperRing.visible : false;
+    if (brushHelperRing) brushHelperRing.visible = false;
     renderer.render(scene, camera);
-    renderer.domElement.toBlob((blob) => {
+    if (brushHelperRing) brushHelperRing.visible = prevRing;
+
+    const src = renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    ctx.drawImage(src, 0, 0);
+
+    // Subtle Studios-Pro watermark on Free plan; clean export on Pro!
+    const isPro = (typeof window.isStudiosProPremium === 'function') && window.isStudiosProPremium();
+    if (!isPro) {
+        const pad = Math.round(Math.max(16, out.width * 0.018));
+        const fontSize = Math.round(Math.max(14, out.width * 0.016));
+        ctx.font = `700 ${fontSize}px Outfit, Inter, sans-serif`;
+        const text = 'STUDIOS-PRO.COM • MultiColor 3MF Painter';
+        const tw = ctx.measureText(text).width;
+        const bx = out.width - tw - pad * 2.2;
+        const by = out.height - fontSize - pad * 1.9;
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.72)';
+        ctx.fillRect(bx, by, tw + pad * 1.4, fontSize + pad * 0.9);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(bx, by, tw + pad * 1.4, fontSize + pad * 0.9);
+        ctx.fillStyle = '#e0f2fe';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, bx + pad * 0.7, by + (fontSize + pad * 0.9) * 0.52);
+    }
+
+    out.toBlob((blob) => {
         if (!blob) return;
         if (typeof downloadBlob === 'function') {
-            downloadBlob(blob, 'StudiosPro_MultiColor_Creation.png');
+            downloadBlob(blob, 'StudiosPro_MultiColor_Creation.png', true);
         }
         showToast(t('toastSnapshotSaved', 'HD Design photo saved!'));
     }, 'image/png');
@@ -462,11 +530,23 @@ function downloadShareSnapshot() {
 
 function copyShareLink() {
     const urlInput = document.getElementById('share-link-input');
-    const txt = urlInput ? urlInput.value : window.location.href;
+    const txt = (urlInput && urlInput.value) ? urlInput.value : CANONICAL_STUDIO_SHARE_URL;
+    const fallbackCopy = () => {
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showToast(t('toastLinkCopied', 'Link copied to clipboard!')); } catch (_) {}
+        document.body.removeChild(ta);
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(txt).then(() => {
             showToast(t('toastLinkCopied', 'Link copied to clipboard!'));
-        }).catch(() => {});
+        }).catch(fallbackCopy);
+    } else {
+        fallbackCopy();
     }
 }
 
@@ -475,7 +555,7 @@ function triggerNativeShare() {
         navigator.share({
             title: 'Studios-Pro MultiColor 3MF Painter',
             text: 'Check out my multi-color 3D printable design!',
-            url: window.location.href
+            url: CANONICAL_STUDIO_SHARE_URL
         }).catch(() => {});
     } else {
         copyShareLink();
@@ -503,10 +583,11 @@ function setMobileView(view) {
 function updateMobileFilamentBar() {
     const bar = document.getElementById('mobile-filament-bar');
     if (!bar || !Array.isArray(filamentSlots)) return;
+    const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     bar.innerHTML = filamentSlots.map((slot, i) => `
         <button class="mobile-color-chip ${i === activeSlotIndex ? 'active' : ''}"
-                style="background:${slot.color}"
-                title="${slot.name}"
+                style="background:${esc(slot.color)}"
+                title="${esc(slot.name)}"
                 onclick="selectSlot(${i})"></button>
     `).join('');
 }
@@ -593,15 +674,18 @@ function loadDemoModel(name) {
     switch (name) {
         case 'robot':
             P.push(makePart(B(16, 18, 12), 0, 17, 0, 0, 0, 0, 1, 1, 1, 0)); // torso
+            P.push(makePart(C(3.0, 3.4, 3.2, 16), 0, 26.8, 0, 0, 0, 0, 1, 1, 1, 2)); // solid neck joint (connects head!)
             P.push(makePart(B(11, 10, 10), 0, 32, 0, 0, 0, 0, 1, 1, 1, 1)); // head
             P.push(makePart(B(8, 3, 2.5), 0, 33, 5.2, 0, 0, 0, 1, 1, 1, 2)); // visor
             P.push(makePart(C(0.7, 0.7, 5, 12), 0, 39.5, 0, 0, 0, 0, 1, 1, 1, 3)); // antenna stem
             P.push(makePart(S(1.6, 16, 12), 0, 42.5, 0, 0, 0, 0, 1, 1, 1, 2)); // antenna ball
             P.push(makePart(B(8, 8, 2), 0, 18, 6.2, 0, 0, 0, 1, 1, 1, 1)); // chest plate
-            P.push(makePart(C(2.2, 2.2, 13, 16), -11, 17, 0, 0, 0, 0.12, 1, 1, 1, 3)); // left arm
-            P.push(makePart(C(2.2, 2.2, 13, 16), 11, 17, 0, 0, 0, -0.12, 1, 1, 1, 3)); // right arm
-            P.push(makePart(B(4.5, 8, 5), -4.2, 4, 0, 0, 0, 0, 1, 1, 1, 0)); // left leg
-            P.push(makePart(B(4.5, 8, 5), 4.2, 4, 0, 0, 0, 0, 1, 1, 1, 0)); // right leg
+            P.push(makePart(S(2.4, 14, 10), -8.8, 22, 0, 0, 0, 0, 1, 1, 1, 2)); // left shoulder joint
+            P.push(makePart(S(2.4, 14, 10), 8.8, 22, 0, 0, 0, 0, 1, 1, 1, 2)); // right shoulder joint
+            P.push(makePart(C(2.2, 2.2, 13, 16), -10.2, 16.5, 0, 0, 0, 0.12, 1, 1, 1, 3)); // left arm connected
+            P.push(makePart(C(2.2, 2.2, 13, 16), 10.2, 16.5, 0, 0, 0, -0.12, 1, 1, 1, 3)); // right arm connected
+            P.push(makePart(B(4.5, 8.6, 5), -4.2, 4.3, 0, 0, 0, 0, 1, 1, 1, 0)); // left leg
+            P.push(makePart(B(4.5, 8.6, 5), 4.2, 4.3, 0, 0, 0, 0, 1, 1, 1, 0)); // right leg
             break;
 
         case 'mech':
@@ -843,7 +927,8 @@ function loadDemoModel(name) {
             P.push(makePart(S(12, 32, 24), 0, 10, 2, 0, 0, 0, 0.9, 0.82, 1.55, 0));
             P.push(makePart(S(10.5, 28, 20), 0, 6.8, 3.2, 0, 0, 0, 0.85, 0.65, 1.4, 1)); // underbelly
             P.push(makePart(B(16, 1.6, 7), 0, 10, -18, 0.25, 0, 0, 1, 1, 1, 0)); // tail fluke
-            P.push(makePart(B(8, 1.5, 4.5), -11, 7, 3, 0, 0.3, -0.25, 1, 1, 1, 0));
+            P.push(makePart(B(8, 1.5, 4.5), -11, 7, 3, 0, 0.3, -0.25, 1, 1, 1, 0)); // left pectoral fin
+            P.push(makePart(B(8, 1.5, 4.5), 11, 7, 3, 0, -0.3, 0.25, 1, 1, 1, 0)); // right pectoral fin
             P.push(makePart(S(2.2, 12, 10), 0, 20, 6, 0, 0, 0, 1, 1.6, 1, 2)); // splash
             break;
 
@@ -994,6 +1079,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof initTextPalette === 'function') initTextPalette();
     if (typeof initStencilPalette === 'function') initStencilPalette();
     if (typeof drawPatternPreview === 'function') drawPatternPreview();
+    if (typeof initStudioV3Pro === 'function') initStudioV3Pro();
     if (typeof initStudiosProBridge === 'function') initStudiosProBridge();
 
     // Apply saved or URL-specified language

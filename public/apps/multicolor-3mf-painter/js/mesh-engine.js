@@ -708,8 +708,8 @@ function subdivideCurrentMesh() {
     const pos = posAttr.array;
     const faceCount = (pos.length / 9) | 0;
 
-    if (faceCount > 600000) {
-        showToast(currentLang === 'fr' ? "Le maillage a déjà une très haute densité !" : "Mesh already has very high polygon density!");
+    if (faceCount > 180000) {
+        showToast(currentLang === 'fr' ? "Le maillage a déjà une très haute densité (>180k faces) !" : "Mesh already has very high polygon density (>180k faces)!");
         return;
     }
 
@@ -877,9 +877,14 @@ function restoreHistoryEntry(entry, targetIdx) {
         }
         if (posSrc) {
             if (geom.disposeBoundsTree) geom.disposeBoundsTree();
+            // CRITICAL Three.js r128 fix: delete old normal & color buffers before resizing position
+            // so computeVertexNormals() allocates a matching buffer instead of throwing GL_INVALID_OPERATION!
+            geom.deleteAttribute('normal');
+            geom.deleteAttribute('color');
             geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posSrc), 3));
             geom.computeVertexNormals();
             geom.computeBoundingBox();
+            geom.computeBoundingSphere();
             if (geom.computeBoundsTree) geom.computeBoundsTree();
             spatialGrid = new SpatialGrid(geom, 32);
             meshTopology = buildMeshTopology(geom);
@@ -892,6 +897,10 @@ function restoreHistoryEntry(entry, targetIdx) {
     triangleColors = new Uint8Array(faceCount);
     triangleColors.set(entry.colors.subarray(0, faceCount));
     if (typeof sculptAccumByVid !== 'undefined' && sculptAccumByVid) sculptAccumByVid.clear();
+    if (typeof isShowingPurgeHeatmap !== 'undefined') isShowingPurgeHeatmap = false;
+    if (typeof markCbnDirty === 'function') markCbnDirty();
+    if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
+    if (typeof updateShadowCameraForMesh === 'function') updateShadowCameraForMesh();
     updateMeshVisualColors();
 }
 
@@ -948,13 +957,44 @@ function vertexClusterSimplify(positions, targetTriangles = 180000, inColors = n
     const vertCount = (posLen / 3) | 0;
     const vertCluster = new Int32Array(vertCount);
 
+    // Preserve sharp color seams when requested: detect vertices shared by >=2 distinct color slots
+    let borderVertKeys = null;
+    if (preserveColorBorders && inColors && inColors.length >= origTriCount) {
+        const posColorMap = new Map();
+        borderVertKeys = new Set();
+        const qKey = (x, y, z) => `${Math.round(x * 1000)}_${Math.round(y * 1000)}_${Math.round(z * 1000)}`;
+        for (let f = 0; f < origTriCount; f++) {
+            const c = inColors[f];
+            const b = f * 9;
+            for (let k = 0; k < 3; k++) {
+                const pk = qKey(positions[b + k * 3], positions[b + k * 3 + 1], positions[b + k * 3 + 2]);
+                const prev = posColorMap.get(pk);
+                if (prev === undefined) {
+                    posColorMap.set(pk, c);
+                } else if (prev !== c) {
+                    borderVertKeys.add(pk);
+                }
+            }
+        }
+    }
+
     for (let i = 0; i < vertCount; i++) {
         const idx = i * 3;
         const x = positions[idx], y = positions[idx + 1], z = positions[idx + 2];
-        const gx = Math.min(1023, Math.max(0, Math.floor((x - minX) * invCell)));
-        const gy = Math.min(1023, Math.max(0, Math.floor((y - minY) * invCell)));
-        const gz = Math.min(1023, Math.max(0, Math.floor((z - minZ) * invCell)));
-        const key = gx | (gy << 10) | (gz << 20);
+        let key;
+        if (borderVertKeys && borderVertKeys.size > 0) {
+            const pk = `${Math.round(x * 1000)}_${Math.round(y * 1000)}_${Math.round(z * 1000)}`;
+            if (borderVertKeys.has(pk)) {
+                // Keep seam vertices welded across both adjacent colors without collapsing the color boundary
+                key = 'B_' + pk;
+            }
+        }
+        if (key === undefined) {
+            const gx = Math.min(1023, Math.max(0, Math.floor((x - minX) * invCell)));
+            const gy = Math.min(1023, Math.max(0, Math.floor((y - minY) * invCell)));
+            const gz = Math.min(1023, Math.max(0, Math.floor((z - minZ) * invCell)));
+            key = gx | (gy << 10) | (gz << 20);
+        }
 
         let cl = clusterMap.get(key);
         if (!cl) {
@@ -1105,6 +1145,9 @@ function rotateModel90(axis) {
     spatialGrid = new SpatialGrid(geom, 32);
     meshTopology = buildMeshTopology(geom);
     precomputeGeometryMetrics(geom);
+    if (typeof updateShadowCameraForMesh === 'function') updateShadowCameraForMesh(geom);
+    if (typeof updateVirtualPrintBedVisual === 'function') updateVirtualPrintBedVisual();
+    if (typeof rebuildMultiCopyClones === 'function') rebuildMultiCopyClones();
     if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
     if (typeof updateStats === 'function') updateStats();
     if (typeof resetCamera === 'function') resetCamera();
@@ -1168,6 +1211,9 @@ function layModelFlatOnBed() {
     spatialGrid = new SpatialGrid(geom, 32);
     meshTopology = buildMeshTopology(geom);
     precomputeGeometryMetrics(geom);
+    if (typeof updateShadowCameraForMesh === 'function') updateShadowCameraForMesh(geom);
+    if (typeof updateVirtualPrintBedVisual === 'function') updateVirtualPrintBedVisual();
+    if (typeof rebuildMultiCopyClones === 'function') rebuildMultiCopyClones();
     if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
     if (typeof updateStats === 'function') updateStats();
     if (typeof resetCamera === 'function') resetCamera();
@@ -1179,31 +1225,40 @@ function layModelFlatOnBed() {
 // 🎯 BAMBU STUDIO / ORCASLICER PAINT_COLOR CODEC
 // ==========================================
 function encodeBambuPaintColor(slotIdx) {
-    // 0-based slotIdx -> 1-based extruder (1..16)
+    // Official Bambu Studio / OrcaSlicer / PrusaSlicer 4-bit right-to-left TriangleSelector codec
+    // 0-based slotIdx -> 1-based extruder (1..16+)
     const state = Math.max(0, (slotIdx | 0)) + 1;
-    if (state <= 1) return null; // Extruder 1 is object default (keeps XML clean & fast!)
+    if (state <= 1) return null; // Extruder 1 uses object base extruder
     if (state === 2) return '8';
     const extra = state - 3;
     if (extra <= 14) {
         return extra.toString(16).toUpperCase() + 'C';
     }
-    return '1FC'; // Extended fallback
+    // Properly encode state >= 18 as multi-nibble extended stream (e.g. 18 -> 0FC, 19 -> 1FC)
+    let rem = extra;
+    let out = 'C';
+    while (rem >= 15) {
+        out = 'F' + out;
+        rem -= 15;
+    }
+    return rem.toString(16).toUpperCase() + out;
 }
 
-function decodeBambuPaintColor(hexStr) {
-    if (!hexStr || typeof hexStr !== 'string') return 0;
+function decodeBambuPaintColor(hexStr, defaultSlot = 0) {
+    if (!hexStr || typeof hexStr !== 'string') return defaultSlot;
     const clean = hexStr.trim().toUpperCase();
-    if (!clean) return 0;
+    if (!clean) return defaultSlot;
 
     // Fast path for unsplit leaf triangles ("4", "8", "0C".."DC")
     if (clean === '4') return 0;
     if (clean === '8') return 1;
     if (clean.length === 2 && clean[1] === 'C') {
         const nib = parseInt(clean[0], 16);
-        if (!isNaN(nib)) return Math.max(0, 2 + nib); // 0C -> slot idx 2 (Extruder 3), 1C -> idx 3...
+        if (!isNaN(nib) && nib < 15) return Math.max(0, 2 + nib);
     }
 
-    // Recursive tree parser (right-to-left nibble stream) for split Bambu/Prusa triangles
+    // Recursive tree parser (right-to-left nibble stream) for split Bambu/Orca/Prusa triangles
+    // CRITICAL FIX: Per PrusaSlicer/Bambu spec, splitSides = 1 -> 2 children, splitSides = 2 -> 3 children, splitSides = 3 -> 4 children!
     let idx = clean.length - 1;
     const readNibble = () => {
         if (idx < 0) return 0;
@@ -1211,8 +1266,8 @@ function decodeBambuPaintColor(hexStr) {
         return isNaN(val) ? 0 : val;
     };
 
-    const counts = {};
-    function walkNode() {
+    const weights = {};
+    function walkNode(areaWeight) {
         if (idx < 0) return;
         const nibble = readNibble();
         const splitSides = nibble & 0x03;
@@ -1228,20 +1283,19 @@ function decodeBambuPaintColor(hexStr) {
                 }
                 state = 3 + extra;
             }
-            if (state > 0) {
-                const slot = state - 1;
-                counts[slot] = (counts[slot] || 0) + 1;
-            }
+            const slot = state > 0 ? (state - 1) : defaultSlot;
+            weights[slot] = (weights[slot] || 0) + areaWeight;
         } else {
-            const numChildren = splitSides === 3 ? 4 : 2;
-            for (let c = 0; c < numChildren; c++) walkNode();
+            const numChildren = splitSides + 1;
+            const childWeight = areaWeight / numChildren;
+            for (let c = 0; c < numChildren; c++) walkNode(childWeight);
         }
     }
-    walkNode();
+    walkNode(1.0);
 
-    let bestSlot = 0, bestCount = -1;
-    for (const k in counts) {
-        if (counts[k] > bestCount) { bestCount = counts[k]; bestSlot = parseInt(k, 10); }
+    let bestSlot = defaultSlot, bestWeight = -1;
+    for (const k in weights) {
+        if (weights[k] > bestWeight) { bestWeight = weights[k]; bestSlot = parseInt(k, 10); }
     }
     return bestSlot;
 }
@@ -1249,7 +1303,38 @@ function decodeBambuPaintColor(hexStr) {
 // ==========================================
 // 📂 FILE LOADERS (3MF, STL, OBJ, GLB)
 // ==========================================
+function updateShadowCameraForMesh() {
+    if (!dirLight1 || !currentMesh || !currentMesh.geometry) return;
+    currentMesh.geometry.computeBoundingBox();
+    const box = currentMesh.geometry.boundingBox;
+    if (!box || box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const radius = Math.max(18, Math.hypot(size.x, size.y, size.z) * 0.72);
+    dirLight1.target.position.copy(center);
+    dirLight1.target.updateMatrixWorld();
+    dirLight1.position.set(center.x + radius * 1.15, center.y + radius * 1.85, center.z + radius * 1.35);
+    const cam = dirLight1.shadow.camera;
+    cam.left = -radius;
+    cam.right = radius;
+    cam.top = radius;
+    cam.bottom = -radius;
+    cam.near = 0.5;
+    cam.far = Math.max(400, radius * 8);
+    cam.updateProjectionMatrix();
+    dirLight1.shadow.needsUpdate = true;
+}
+
 function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = false) {
+    if (!geometry || !geometry.attributes || !geometry.attributes.position || geometry.attributes.position.count < 3) {
+        showToast(currentLang === 'fr' ? "Maillage vide ou invalide." : "Empty or invalid 3D geometry.");
+        return;
+    }
+    if (geometry.index) {
+        const nonIdx = geometry.toNonIndexed();
+        geometry.dispose();
+        geometry = nonIdx;
+    }
     if (currentMesh) {
         if (currentMesh.geometry && currentMesh.geometry.disposeBoundsTree) {
             currentMesh.geometry.disposeBoundsTree();
@@ -1261,8 +1346,18 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
 
     if (typeof clearExplodedPreview === 'function') clearExplodedPreview();
     if (typeof soloSlotIndex !== 'undefined') soloSlotIndex = -1;
+    if (typeof isShowingPurgeHeatmap !== 'undefined') {
+        isShowingPurgeHeatmap = false;
+        const hb = document.getElementById('btn-purge-heatmap');
+        if (hb) hb.classList.remove('active');
+    }
+    if (typeof setPreflightMode === 'function') setPreflightMode('none', true);
+    if (typeof clearMaskingTape === 'function') clearMaskingTape();
+    if (typeof cancelAllStampingModes === 'function') cancelAllStampingModes();
     if (typeof sculptAccumByVid !== 'undefined' && sculptAccumByVid) sculptAccumByVid.clear();
+    if (typeof capturedBatchHit !== 'undefined') capturedBatchHit = null;
 
+    geometry.deleteAttribute('normal');
     geometry.computeVertexNormals();
     alignGeometryToBed(geometry);
 
@@ -1286,8 +1381,10 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
     const material = new THREE.MeshStandardMaterial({
         vertexColors: true,
         roughness: 0.45,
-        metalness: 0.1,
+        metalness: 0.08,
         side: THREE.DoubleSide,
+        shadowSide: THREE.FrontSide, // Eliminates DoubleSide self-shadowing diagonal acne!
+        wireframe: typeof isWireframe !== 'undefined' ? isWireframe : false,
         polygonOffset: true,
         polygonOffsetFactor: 1,
         polygonOffsetUnits: 1
@@ -1298,8 +1395,12 @@ function setLoadedGeometry(geometry, existingColors, optInfo, suppressToast = fa
     currentMesh.receiveShadow = true;
     scene.add(currentMesh);
 
+    updateShadowCameraForMesh();
     if (typeof layerScrubberReset === 'function') layerScrubberReset();
     if (typeof updateMirrorPlaneHelper === 'function') updateMirrorPlaneHelper();
+    if (typeof applyActivePBRMaterialToMesh === 'function') applyActivePBRMaterialToMesh();
+    if (typeof updateVirtualPrintBedVisual === 'function') updateVirtualPrintBedVisual();
+    if (typeof rebuildMultiCopyClones === 'function') rebuildMultiCopyClones();
     refreshSlotRgbFloats();
     updateMeshVisualColors();
     if (typeof resetCamera === 'function') resetCamera();
@@ -1322,20 +1423,42 @@ function loadFile(file) {
     const name = file.name.toLowerCase();
     const reader = new FileReader();
 
+    if (name.endsWith('.sp3mf')) {
+        if (typeof importEditableProjectFile === 'function') {
+            importEditableProjectFile({ target: { files: [file] } });
+        }
+        return;
+    }
+
     if (name.endsWith('.3mf')) {
         reader.onload = (e) => load3MFData(e.target.result);
         reader.readAsArrayBuffer(file);
     } else if (name.endsWith('.stl')) {
         reader.onload = (e) => {
-            if (typeof THREE.STLLoader === 'undefined') {
-                showToast("STLLoader unavailable.");
-                return;
+            try {
+                if (typeof THREE.STLLoader === 'undefined') {
+                    showToast("STLLoader unavailable.");
+                    return;
+                }
+                const loader = new THREE.STLLoader();
+                let rawGeom = loader.parse(e.target.result);
+                if (!rawGeom || !rawGeom.attributes || !rawGeom.attributes.position || rawGeom.attributes.position.count < 3) {
+                    showToast(currentLang === 'fr' ? "Fichier STL vide ou invalide." : "Empty or invalid STL file.");
+                    return;
+                }
+                if (rawGeom.index) {
+                    const tmp = rawGeom.toNonIndexed();
+                    rawGeom.dispose();
+                    rawGeom = tmp;
+                }
+                // Standard CAD STL is Z-up -> convert cleanly to Three.js Y-up matching 3MF/Export!
+                rawGeom.rotateX(-Math.PI / 2);
+                const { geom, optInfo } = simplifyGeometryIfNeeded(rawGeom);
+                setLoadedGeometry(geom, null, optInfo);
+            } catch (err) {
+                console.error('STL parse error:', err);
+                showToast(currentLang === 'fr' ? "Erreur de lecture du fichier STL." : "Failed to parse STL file.");
             }
-            const loader = new THREE.STLLoader();
-            let rawGeom = loader.parse(e.target.result);
-            if (rawGeom.index) rawGeom = rawGeom.toNonIndexed();
-            const { geom, optInfo } = simplifyGeometryIfNeeded(rawGeom);
-            setLoadedGeometry(geom, null, optInfo);
         };
         reader.readAsArrayBuffer(file);
     } else if (name.endsWith('.obj')) {
@@ -1345,7 +1468,7 @@ function loadFile(file) {
         reader.onload = (e) => loadGLBData(e.target.result);
         reader.readAsArrayBuffer(file);
     } else {
-        showToast(currentLang === 'fr' ? "Formats supportés : .stl, .3mf, .obj, .glb" : "Supported formats: .stl, .3mf, .obj, .glb");
+        showToast(currentLang === 'fr' ? "Formats supportés : .stl, .3mf, .obj, .glb, .sp3mf" : "Supported formats: .stl, .3mf, .obj, .glb, .sp3mf");
     }
 }
 
@@ -1617,7 +1740,8 @@ async function parse3MFWithJSZip(arrayBuffer) {
     const combinedColors = [];
     const vVec = new THREE.Vector3();
 
-    function renderObject(objId, docPath, parentMatrix) {
+    function renderObject(objId, docPath, parentMatrix, depth = 0) {
+        if (depth > 32) return; // Cycle guard
         const map = docObjects.get(docPath) || docObjects.get(rootPath);
         if (!map) return;
         const obj = map[objId];
@@ -1626,9 +1750,12 @@ async function parse3MFWithJSZip(arrayBuffer) {
         if (obj.type === "mesh") {
             const verts = obj.vertices;
             const tris = obj.triangles;
+            const flipped = parentMatrix.determinant() < 0;
             for (let t = 0; t < tris.length; t++) {
                 const tri = tris[t];
-                const i1 = tri.v1 * 3, i2 = tri.v2 * 3, i3 = tri.v3 * 3;
+                const i1 = tri.v1 * 3;
+                const i2 = (flipped ? tri.v3 : tri.v2) * 3;
+                const i3 = (flipped ? tri.v2 : tri.v3) * 3;
                 if (i1 + 2 >= verts.length || i2 + 2 >= verts.length || i3 + 2 >= verts.length) continue;
 
                 vVec.set(verts[i1], verts[i1 + 1], verts[i1 + 2]).applyMatrix4(parentMatrix);
@@ -1646,17 +1773,17 @@ async function parse3MFWithJSZip(arrayBuffer) {
         } else if (obj.type === "components") {
             obj.components.forEach(comp => {
                 const compMat = parentMatrix.clone().multiply(comp.matrix);
-                renderObject(comp.targetId, comp.targetPath || docPath, compMat);
+                renderObject(comp.targetId, comp.targetPath || docPath, compMat, depth + 1);
             });
         }
     }
 
-    buildItems.forEach(item => renderObject(item.objId, item.path, item.matrix));
+    buildItems.forEach(item => renderObject(item.objId, item.path, item.matrix, 0));
 
     if (combinedPositions.length === 0) {
-        for (const [, map] of docObjects.entries()) {
+        for (const [subPath, map] of docObjects.entries()) {
             for (const id of Object.keys(map)) {
-                if (map[id].type === "mesh") renderObject(id, rootPath, new THREE.Matrix4());
+                if (map[id].type === "mesh") renderObject(id, subPath, new THREE.Matrix4(), 0);
             }
         }
     }
@@ -1851,6 +1978,7 @@ function loadGLBData(arrayBuffer) {
                 filamentSlots = matHexes.slice(0, 16).map((hex, idx) => ({
                     id: idx + 1, name: `GLB #${idx + 1}`, color: hex, hex: hex, type: "PLA Basic"
                 }));
+                activeSlotIndex = 0; // Prevents TypeError crash on hover when slot count shrinks!
                 refreshSlotRgbFloats();
                 renderFilamentGrid();
             }
@@ -1868,19 +1996,32 @@ function loadGLBData(arrayBuffer) {
                 const matCol = (mat && mat.color) ? mat.color : null;
                 if (colAttr || matCol) hasVertexOrMatColor = true;
                 mesh.updateMatrixWorld(true);
-                const v = new THREE.Vector3();
-                for (let i = 0; i < pos.count; i++) {
-                    v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
-                    combinedPositions.push(v.x, v.y, v.z);
-                    if (i % 3 === 0) {
-                        if (colAttr) {
-                            combinedColors.push(findClosestSlotPerceptual(colAttr.getX(i), colAttr.getY(i), colAttr.getZ(i)));
-                        } else if (matCol) {
-                            combinedColors.push(findClosestSlotPerceptual(matCol.r, matCol.g, matCol.b));
-                        } else {
-                            combinedColors.push(0);
-                        }
+                const flipped = mesh.matrixWorld.determinant() < 0;
+                const v0 = new THREE.Vector3(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
+                for (let i = 0; i + 2 < pos.count; i += 3) {
+                    v0.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+                    v1.fromBufferAttribute(pos, flipped ? i + 2 : i + 1).applyMatrix4(mesh.matrixWorld);
+                    v2.fromBufferAttribute(pos, flipped ? i + 1 : i + 2).applyMatrix4(mesh.matrixWorld);
+                    combinedPositions.push(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+                    if (colAttr) {
+                        const r = (colAttr.getX(i) + colAttr.getX(i + 1) + colAttr.getX(i + 2)) / 3;
+                        const g = (colAttr.getY(i) + colAttr.getY(i + 1) + colAttr.getY(i + 2)) / 3;
+                        const b = (colAttr.getZ(i) + colAttr.getZ(i + 1) + colAttr.getZ(i + 2)) / 3;
+                        combinedColors.push(findClosestSlotPerceptual(r, g, b));
+                    } else if (matCol) {
+                        combinedColors.push(findClosestSlotPerceptual(matCol.r, matCol.g, matCol.b));
+                    } else {
+                        combinedColors.push(0);
                     }
+                }
+                if (geom !== mesh.geometry) geom.dispose();
+            });
+            // Dispose temporary GLTF scene GPU resources
+            gltf.scene.traverse(c => {
+                if (c.isMesh) {
+                    if (c.geometry) c.geometry.dispose();
+                    const mats = Array.isArray(c.material) ? c.material : [c.material];
+                    mats.forEach(m => { if (m) { if (m.map) m.map.dispose(); m.dispose(); } });
                 }
             });
 

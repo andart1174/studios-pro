@@ -36,16 +36,28 @@ function openPainterDB() {
     });
 }
 
+function formatRelativeTimeAgo(savedAtMs, isFr) {
+    const diffSec = Math.max(0, Math.floor((Date.now() - (savedAtMs || Date.now())) / 1000));
+    if (diffSec < 60) return isFr ? "à l'instant" : 'just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return isFr ? `il y a ${diffMin} min` : `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return isFr ? `il y a ${diffHr} h` : `${diffHr}h ago`;
+    const diffDays = Math.floor(diffHr / 24);
+    return isFr ? `il y a ${diffDays} j` : `${diffDays}d ago`;
+}
+
 async function saveProjectToIndexedDB(silent = false) {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return false;
     const posAttr = currentMesh.geometry.attributes.position;
     if (!posAttr || posAttr.count === 0) return false;
 
-    // Avoid wasting IDB quota on gigantic >2.5M tri meshes
+    // Avoid wasting IDB quota on gigantic >800k tri meshes
     if (triangleColors.length > 800000) return false;
 
+    let db = null;
     try {
-        const db = await openPainterDB();
+        db = await openPainterDB();
         const payload = {
             version: 3,
             savedAt: Date.now(),
@@ -57,8 +69,9 @@ async function saveProjectToIndexedDB(silent = false) {
                 id: s.id,
                 color: s.color,
                 hex: s.color,
-                name: s.name,
+                name: String(s.name || '').slice(0, 40),
                 type: s.type || 'PLA Basic',
+                brand: s.brand || 'Generic',
                 visible: s.visible !== false
             })),
             activeSlotIndex: typeof activeSlotIndex === 'number' ? activeSlotIndex : 0,
@@ -71,10 +84,10 @@ async function saveProjectToIndexedDB(silent = false) {
             const store = tx.objectStore(PAINTER_STORE_NAME);
             store.put(payload, PAINTER_SAVE_KEY);
             tx.oncomplete = () => resolve(true);
-            tx.onerror = (e) => reject(e.target.error);
+            tx.onerror = (e) => reject(e.target.error || new Error('IDB write error'));
+            tx.onabort = (e) => reject(e.target.error || new Error('IDB write aborted'));
         });
 
-        db.close();
         autoSaveDirty = false;
         updateSaveIndicator(payload.savedAt);
         if (!silent && typeof showToast === 'function') {
@@ -83,9 +96,24 @@ async function saveProjectToIndexedDB(silent = false) {
         return true;
     } catch (err) {
         console.warn('AutoSave warning:', err);
+        if (!silent && typeof showToast === 'function') {
+            const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
+            showToast(isFr
+                ? 'Stockage navigateur plein — utilisez "Sauvegarder .sp3mf" à la place.'
+                : 'Browser storage full — use "Save .sp3mf" file instead.');
+        }
         return false;
+    } finally {
+        if (db) { try { db.close(); } catch (_) {} }
     }
 }
+
+window.addEventListener('pagehide', () => {
+    if (autoSaveDirty) {
+        clearTimeout(autoSaveTimer);
+        saveProjectToIndexedDB(true);
+    }
+});
 
 function updateSaveIndicator(timestampMs) {
     const el = document.getElementById('autosave-status');
@@ -98,15 +126,15 @@ function updateSaveIndicator(timestampMs) {
 }
 
 async function checkSavedProjectBanner() {
+    let db = null;
     try {
-        const db = await openPainterDB();
+        db = await openPainterDB();
         const saved = await new Promise((resolve) => {
             const tx = db.transaction(PAINTER_STORE_NAME, 'readonly');
             const req = tx.objectStore(PAINTER_STORE_NAME).get(PAINTER_SAVE_KEY);
             req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => resolve(null);
         });
-        db.close();
 
         if (!saved || !saved.positions || !saved.triangleColors || saved.triangleColors.length === 0) return;
         // Only offer restore banner if the session had actual user edits (not untouched default demo!)
@@ -120,28 +148,30 @@ async function checkSavedProjectBanner() {
         const banner = document.getElementById('recovery-banner');
         const msgEl = document.getElementById('recovery-banner-text');
         if (banner && msgEl) {
-            const minsAgo = Math.max(1, Math.round((Date.now() - saved.savedAt) / 60000));
             const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
+            const relTime = formatRelativeTimeAgo(saved.savedAt, isFr);
             msgEl.textContent = isFr
-                ? `Session sauvegardée (${saved.modelTitle || 'Modèle'}, il y a ${minsAgo} min)`
-                : `Saved session found (${saved.modelTitle || 'Model'}, ${minsAgo} min ago)`;
+                ? `Session sauvegardée (${saved.modelTitle || 'Modèle'}, ${relTime})`
+                : `Saved session found (${saved.modelTitle || 'Model'}, ${relTime})`;
             banner.style.display = 'flex';
         }
     } catch (_) {
         // Ignore IDB errors in restricted incognito contexts
+    } finally {
+        if (db) { try { db.close(); } catch (_) {} }
     }
 }
 
 async function restoreSavedProject() {
+    let db = null;
     try {
-        const db = await openPainterDB();
+        db = await openPainterDB();
         const saved = await new Promise((resolve) => {
             const tx = db.transaction(PAINTER_STORE_NAME, 'readonly');
             const req = tx.objectStore(PAINTER_STORE_NAME).get(PAINTER_SAVE_KEY);
             req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => resolve(null);
         });
-        db.close();
 
         if (!saved || !saved.positions || !saved.triangleColors) {
             if (typeof showToast === 'function') showToast('No saved session found');
@@ -150,15 +180,19 @@ async function restoreSavedProject() {
 
         if (Array.isArray(saved.filamentSlots) && saved.filamentSlots.length > 0) {
             filamentSlots.length = 0;
-            saved.filamentSlots.forEach((s, idx) => filamentSlots.push({
-                id: s.id || (idx + 1),
-                color: s.color,
-                hex: s.hex || s.color,
-                name: s.name,
-                type: s.type || 'PLA Basic',
-                visible: s.visible !== false
-            }));
-            if (typeof saved.activeSlotIndex === 'number') activeSlotIndex = saved.activeSlotIndex;
+            saved.filamentSlots.slice(0, 16).forEach((s, idx) => {
+                const safeCol = typeof normalizeHex === 'function' ? normalizeHex(s.color || s.hex) : (s.color || '#FFFFFF');
+                filamentSlots.push({
+                    id: idx + 1,
+                    color: safeCol,
+                    hex: safeCol,
+                    name: String(s.name || `Slot #${idx + 1}`).replace(/[<>]/g, '').slice(0, 40),
+                    type: String(s.type || 'PLA Basic').slice(0, 32),
+                    brand: String(s.brand || 'Generic').slice(0, 32),
+                    visible: s.visible !== false
+                });
+            });
+            activeSlotIndex = Math.max(0, Math.min(filamentSlots.length - 1, parseInt(saved.activeSlotIndex, 10) || 0));
             if (typeof refreshSlotRgbFloats === 'function') refreshSlotRgbFloats();
             if (typeof renderFilamentGrid === 'function') renderFilamentGrid();
         }
@@ -171,15 +205,18 @@ async function restoreSavedProject() {
         const triCount = Math.floor(saved.positions.length / 9);
         const restoredColors = new Uint8Array(triCount);
         restoredColors.set(saved.triangleColors.subarray(0, triCount));
+        for (let i = 0; i < restoredColors.length; i++) {
+            if (restoredColors[i] >= filamentSlots.length) restoredColors[i] = 0;
+        }
 
         if (typeof setLoadedGeometry === 'function') {
             setLoadedGeometry(geom, restoredColors, null, true);
         }
-        currentModelTitle = saved.modelTitle || 'Restored Model';
+        currentModelTitle = String(saved.modelTitle || 'Restored Model').slice(0, 80);
 
-        if (saved.cameraPos && camera && controls) {
+        if (Array.isArray(saved.cameraPos) && saved.cameraPos.length === 3 && camera && controls) {
             camera.position.set(saved.cameraPos[0], saved.cameraPos[1], saved.cameraPos[2]);
-            if (saved.cameraTarget) {
+            if (Array.isArray(saved.cameraTarget) && saved.cameraTarget.length === 3) {
                 controls.target.set(saved.cameraTarget[0], saved.cameraTarget[1], saved.cameraTarget[2]);
             }
             controls.update();
@@ -193,6 +230,8 @@ async function restoreSavedProject() {
     } catch (err) {
         console.error('Restore error:', err);
         return false;
+    } finally {
+        if (db) { try { db.close(); } catch (_) {} }
     }
 }
 
@@ -202,61 +241,97 @@ async function dismissRecoveryBanner() {
 }
 
 async function clearSavedProject() {
+    clearTimeout(autoSaveTimer);
+    autoSaveDirty = false;
+    let db = null;
     try {
-        const db = await openPainterDB();
+        db = await openPainterDB();
         await new Promise((resolve) => {
             const tx = db.transaction(PAINTER_STORE_NAME, 'readwrite');
             tx.objectStore(PAINTER_STORE_NAME).delete(PAINTER_SAVE_KEY);
             tx.oncomplete = () => resolve();
             tx.onerror = () => resolve();
+            tx.onabort = () => resolve();
         });
-        db.close();
         dismissRecoveryBanner();
         if (typeof showToast === 'function') showToast(t('savedCleared', 'Saved browser session cleared'));
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+        if (db) { try { db.close(); } catch (_) {} }
+    }
 }
 
 // ==========================================
-// STUDIOS-PRO LICENSE & PAYWALL BRIDGE
+// STUDIOS-PRO LICENSE & PAYWALL BRIDGE (HARDENED)
 // ==========================================
 
 function initStudiosProBridge() {
     const STUDIO_REF = 'multicolor-3mf-painter';
-    const channel = typeof BroadcastChannel !== 'undefined'
+    const isEmbedded = (window.self !== window.top);
+    const channel = (isEmbedded && typeof BroadcastChannel !== 'undefined')
         ? new BroadcastChannel('studios_pro_channel')
         : null;
 
     let isAllowed = false;
     let isPremiumUser = false;
     let pendingAction = null;
+    let exportInFlight = false;
     let msgSeq = 0;
-    window.isPremiumUser = false;
+
+    // Read-only accessor so watermark/UI checks work without allowing console spoofing
+    window.isStudiosProPremium = function () { return isPremiumUser === true; };
+
+    function isTrustedOrigin(origin) {
+        if (!origin) return true;
+        if (origin === window.location.origin) return true;
+        if (origin === 'https://studios-pro.com' || origin === 'https://www.studios-pro.com') return true;
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+        return false;
+    }
 
     function postToHost(msg) {
         const envelope = {
             ...msg,
             _msgId: `${STUDIO_REF}_${Date.now()}_${++msgSeq}`
         };
-        if (channel) {
+        if (channel && isEmbedded) {
             try { channel.postMessage(envelope); } catch (_) {}
         }
-        if (window.parent && window.parent !== window) {
-            try { window.parent.postMessage(envelope, '*'); } catch (_) {}
+        if (isEmbedded && window.parent) {
+            const targetOrigin = (window.location.origin && window.location.origin !== 'null')
+                ? window.location.origin
+                : '*';
+            try { window.parent.postMessage(envelope, targetOrigin); } catch (_) {
+                try { window.parent.postMessage(envelope, '*'); } catch (__) {}
+            }
         }
     }
     window.studiosProPostToHost = postToHost;
 
-    // Request current user status immediately
-    postToHost({ type: 'GET_USER_STATUS' });
+    // Request current user status immediately when embedded
+    if (isEmbedded) {
+        postToHost({ type: 'GET_USER_STATUS' });
+    }
 
     function runExportWithConsumption(act) {
         if (typeof act !== 'function') return;
-        Promise.resolve(act()).finally(() => {
-            if (!isPremiumUser && !window.isPremiumUser) {
+        if (exportInFlight) return;
+        exportInFlight = true;
+        Promise.resolve()
+            .then(() => act())
+            .then(() => {
+                if (!isPremiumUser) {
+                    isAllowed = false;
+                    if (isEmbedded) postToHost({ type: 'EXPORT_COMPLETED' });
+                }
+            })
+            .catch((err) => {
+                console.error('Export action error:', err);
                 isAllowed = false;
-                postToHost({ type: 'EXPORT_COMPLETED' });
-            }
-        });
+            })
+            .finally(() => {
+                exportInFlight = false;
+            });
     }
 
     function handleHostMessage(msg) {
@@ -264,7 +339,6 @@ function initStudiosProBridge() {
         if (msg.type === 'EXPORT_ALLOWED') {
             isAllowed = true;
             isPremiumUser = !!(msg.payload && msg.payload.isPremium);
-            window.isPremiumUser = isPremiumUser;
             const modal = document.getElementById('local-payment-modal');
             if (modal) modal.style.display = 'none';
 
@@ -275,7 +349,6 @@ function initStudiosProBridge() {
             }
         } else if (msg.type === 'USER_STATUS_RESPONSE' || msg.type === 'USER_STATUS_CHANGED') {
             isPremiumUser = !!(msg.payload && msg.payload.isPremium);
-            window.isPremiumUser = isPremiumUser;
         }
     }
 
@@ -283,7 +356,8 @@ function initStudiosProBridge() {
         channel.onmessage = (e) => { if (e && e.data) handleHostMessage(e.data); };
     }
     window.addEventListener('message', (e) => {
-        if (e && e.data) handleHostMessage(e.data);
+        if (!e || !e.data || !isTrustedOrigin(e.origin)) return;
+        handleHostMessage(e.data);
     });
 
     // Back button closes embedded iframe cleanly or navigates home standalone
@@ -291,8 +365,9 @@ function initStudiosProBridge() {
     if (backBtn) {
         backBtn.onclick = function (e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
-            postToHost({ type: 'CLOSE_STUDIO' });
-            if (window.self === window.top) {
+            if (isEmbedded) {
+                postToHost({ type: 'CLOSE_STUDIO' });
+            } else {
                 window.location.href = '/';
             }
         };
@@ -312,18 +387,20 @@ function initStudiosProBridge() {
     }
     if (upgradeProBtn) {
         upgradeProBtn.onclick = () => {
-            postToHost({
-                type: 'START_STRIPE_PAYMENT',
-                payload: { type: 'premium', ref: STUDIO_REF }
-            });
-            if (window.self === window.top) {
+            if (isEmbedded) {
+                postToHost({
+                    type: 'START_STRIPE_PAYMENT',
+                    payload: { type: 'premium', ref: STUDIO_REF }
+                });
+            } else {
                 window.location.href = `https://studios-pro.com/?ref=${STUDIO_REF}&upgrade=pro`;
             }
         };
     }
 
     window.triggerStudiosProPaywall = function (actionCallback, forcePremium) {
-        if (isAllowed || isPremiumUser || window.isPremiumUser) {
+        if (exportInFlight) return;
+        if (isAllowed || isPremiumUser) {
             if (typeof actionCallback === 'function') {
                 runExportWithConsumption(actionCallback);
             }
@@ -332,17 +409,18 @@ function initStudiosProBridge() {
 
         pendingAction = actionCallback;
 
-        if (window.self !== window.top) {
+        if (isEmbedded) {
             postToHost({
                 type: 'TRIGGER_PAYMENT_MODAL',
                 payload: { ref: STUDIO_REF, forcePremium: !!forcePremium }
             });
         } else {
             if (!forcePremium) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
+                let used = 0;
+                try { used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10) || 0; } catch (_) {}
                 if (used < 5) {
                     used++;
-                    localStorage.setItem('freeExportsUsed', used.toString());
+                    try { localStorage.setItem('freeExportsUsed', used.toString()); } catch (_) {}
                     const remaining = 5 - used;
                     if (typeof showToast === 'function') {
                         const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
@@ -363,7 +441,9 @@ function initStudiosProBridge() {
         }
     };
 
-    // Wrap export & share functions transparently through paywall
+    // Approved Paywall Policy:
+    // PAYWALLED = Production 3D/Client exports (.3mf, .stl ZIP, .obj ZIP, Snap-Fit Kit, Batch .3mf ZIP, HTML 3D Client Proof, 4K Mockups)
+    // 100% FREE = .sp3mf project save/load, AR Preview, watermarked PNG Snapshot, watermarked Time-Lapse Video, Turntable, Spool Rack backup
     [
         'exportBambu3MF',
         'export3MF',
@@ -371,41 +451,29 @@ function initStudiosProBridge() {
         'exportSeparateSTLs',
         'exportOBJ',
         'executeSplitterExport',
-        'downloadShareSnapshot'
+        'executeBatchName3MFExport',
+        'exportStandaloneHTML3D',
+        'render4KStudioMockup'
     ].forEach((fnName) => {
         const origFn = window[fnName];
-        if (typeof origFn === 'function') {
-            window[fnName] = function (...args) {
+        if (typeof origFn === 'function' && !origFn._paywallWrapped) {
+            const wrapped = function (...args) {
                 window.triggerStudiosProPaywall(() => origFn.apply(this, args));
             };
+            wrapped._paywallWrapped = true;
+            window[fnName] = wrapped;
         }
     });
 
-    // Safe copy/cut guard: NEVER interfere with editable inputs, textareas, selects, or normal canvas shortcuts
-    ['copy', 'cut'].forEach((evt) => {
-        document.addEventListener(evt, (e) => {
-            const rawTgt = e && e.target;
-            const tgt = (rawTgt && rawTgt.nodeType === 3) ? rawTgt.parentElement : rawTgt;
-            const tag = tgt && tgt.tagName ? tgt.tagName.toUpperCase() : '';
-            if (
-                tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'CANVAS' ||
-                (tgt && tgt.isContentEditable) ||
-                (tgt && tgt.closest && tgt.closest('input, textarea, select, [contenteditable="true"]'))
-            ) {
-                return;
-            }
-        });
-    });
-
-    // Anchor download interceptor
+    // Anchor download interceptor (allows dataset.bypassed === 'true' for FREE items!)
     const origAnchorClick = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {
-        if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed) {
+        if (this.download && this.href && this.dataset.bypassed !== 'true') {
+            if (!isPremiumUser && !isAllowed) {
                 const selfAnchor = this;
                 window.triggerStudiosProPaywall(() => {
                     selfAnchor.dataset.bypassed = 'true';
-                    selfAnchor.click();
+                    origAnchorClick.call(selfAnchor);
                     setTimeout(() => { delete selfAnchor.dataset.bypassed; }, 1000);
                 });
                 return;

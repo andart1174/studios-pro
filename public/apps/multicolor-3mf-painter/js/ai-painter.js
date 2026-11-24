@@ -329,6 +329,7 @@ function segmentMeshRegions() {
 
         const tris = [];
         let areaSum = 0;
+        let weightSum = 0;
         let cx = 0, cy = 0, cz = 0;
         let nx = 0, ny = 0, nz = 0;
         let minY = Infinity, maxY = -Infinity;
@@ -339,6 +340,7 @@ function segmentMeshRegions() {
             tris.push(t);
             const w = Math.max(triAreas[t], 1e-6);
             areaSum += triAreas[t];
+            weightSum += w;
             const i3 = t * 3;
             cx += triCentroids[i3] * w;
             cy += triCentroids[i3 + 1] * w;
@@ -365,7 +367,7 @@ function segmentMeshRegions() {
             }
         }
 
-        const invW = areaSum > 1e-8 ? 1 / areaSum : 1 / Math.max(1, tris.length);
+        const invW = weightSum > 1e-8 ? 1 / weightSum : 1 / Math.max(1, tris.length);
         const meanCx = cx * invW;
         const meanCy = cy * invW;
         const meanCz = cz * invW;
@@ -510,7 +512,8 @@ function parsePromptToTheme(promptText) {
         { id: 'stealth', rx: /(stealth|furtif|tactical|tactique|military|army|batman)/ },
         { id: 'ocean', rx: /(ocean|océan|coral|corail|shark|requin|fish|poisson|marine)/ },
         { id: 'steampunk', rx: /(steampunk|brass|laiton|clock|horloge|copper|cuivre|vintage)/ },
-        { id: 'halloween', rx: /(halloween|spooky|pumpkin|citrouille|ghost|fantôme|witch)/ }
+        { id: 'halloween', rx: /(halloween|spooky|pumpkin|citrouille|ghost|fantôme|witch)/ },
+        { id: 'retro', rx: /(retro|rétro|80s|90s|arcade|vaporwave|synthwave|gameboy|pixel)/ }
     ];
 
     let matchedTheme = null;
@@ -521,9 +524,15 @@ function parsePromptToTheme(promptText) {
         }
     }
 
+    // Word-boundary matching so "forest"/"orange" never falsely match French "or" (gold)!
+    const hasWord = (kw) => {
+        const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`(?:^|[\\s,.;:!?()\\/-])${esc}(?:$|[\\s,.;:!?()\\/-])`, 'i').test(text);
+    };
+
     const explicitColors = [];
     for (const ck of colorKeywords) {
-        if (ck.keys.some(k => text.includes(k))) {
+        if (ck.keys.some(k => hasWord(k))) {
             if (!explicitColors.some(e => e.hex === ck.hex)) {
                 explicitColors.push({ hex: ck.hex, name: ck.name });
             }
@@ -535,7 +544,7 @@ function parsePromptToTheme(promptText) {
         if (!padded.some(c => c.hex === '#14171F' || c.hex === '#111827')) {
             padded.push({ hex: '#14171F', name: 'Deep Contrast' });
         }
-        if (padded.length < 4) {
+        if (padded.length < 4 && !padded.some(c => c.hex === '#F8FAFC')) {
             padded.push({ hex: '#F8FAFC', name: 'Highlight White' });
         }
         return {
@@ -581,6 +590,13 @@ function applyAIPaletteAndPaint(theme, styleMode) {
         return;
     }
     if (!theme || !Array.isArray(theme.colors) || theme.colors.length === 0) return;
+
+    if (typeof soloSlotIndex !== 'undefined') soloSlotIndex = -1;
+    if (typeof isShowingPurgeHeatmap !== 'undefined') {
+        isShowingPurgeHeatmap = false;
+        const hBtn = document.getElementById('btn-purge-heatmap');
+        if (hBtn) hBtn.classList.remove('active');
+    }
 
     const respectCurrentSlots = !!document.getElementById('ai-respect-slot-count')?.checked;
     // Update filamentSlots cleanly while optionally locking to user's existing AMS slot count
@@ -655,24 +671,39 @@ function applyAIPaletteAndPaint(theme, styleMode) {
             triangleColors[t] = Math.min(paletteLen - 1, Math.floor(norm * paletteLen));
         }
     } else if (styleMode === 'cel') {
-        // Paint smooth regions cleanly, then outline sharp creases with darkest slot
+        // Find actual darkest slot in active palette for comic ink outline
+        let inkSlot = bodySlot;
+        let lowestLum = Infinity;
+        for (let s = 0; s < paletteLen; s++) {
+            const c = new THREE.Color(filamentSlots[s].color || '#FFFFFF');
+            const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+            if (lum < lowestLum) { lowestLum = lum; inkSlot = s; }
+        }
+        const fillPool = [];
+        for (let s = 0; s < paletteLen; s++) if (s !== inkSlot) fillPool.push(s);
+        if (fillPool.length === 0) fillPool.push(0);
+
         for (let r = 0; r < seg.regions.length; r++) {
             const reg = seg.regions[r];
-            let slot = bodySlot;
-            if (reg.role === 'crown') slot = secondarySlot;
-            else if (reg.role === 'accent') slot = accentSlot;
-            else if (reg.role === 'trim') slot = trimSlot;
-            else if (reg.role === 'base') slot = primarySlot;
-            else slot = primarySlot;
+            let slot = fillPool[0];
+            if (reg.role === 'crown') slot = fillPool[1 % fillPool.length];
+            else if (reg.role === 'accent') slot = fillPool[2 % fillPool.length];
+            else if (reg.role === 'trim') slot = fillPool[3 % fillPool.length];
+            else if (reg.role === 'base') slot = fillPool[0];
+            else slot = fillPool[r % fillPool.length];
 
             for (let k = 0; k < reg.tris.length; k++) {
                 triangleColors[reg.tris[k]] = slot;
             }
         }
-        // Dark ink contour on high dihedral edges
+        // Only ink creases if mesh isn't low-poly all-90-deg boxes (check fraction of sharp tris!)
+        let sharpRatio = 0;
+        for (let t = 0; t < triCount; t++) if (seg.maxEdgeAngle[t] > 0.55) sharpRatio++;
+        sharpRatio /= Math.max(1, triCount);
+        const inkThresh = sharpRatio > 0.45 ? 1.75 : 0.55;
         for (let t = 0; t < triCount; t++) {
-            if (seg.maxEdgeAngle[t] > 0.45) {
-                triangleColors[t] = bodySlot;
+            if (seg.maxEdgeAngle[t] > inkThresh) {
+                triangleColors[t] = inkSlot;
             }
         }
     } else {

@@ -230,6 +230,124 @@ function undoLastTapePoint() {
     }
 }
 
+// ==========================================
+// 🌈 #7 3D SPATIAL AIRBRUSH DITHER & GRADIENT PAINT ENGINE
+// ==========================================
+const BAYER_4X4 = [
+     0,  8,  2, 10,
+    12,  4, 14,  6,
+     3, 11,  1,  9,
+    15,  7, 13,  5
+];
+let airbrushDotMm = 0.8;         // Nozzle-safe spatial dither dot size (2× 0.4mm nozzle)
+let airbrushSoftness = 0.72;     // Radial feather width (0.2 = crisp edge, 1.0 = full soft fade)
+let airbrushSecondarySlot = -1;  // -1 = blend over existing mesh color; >=0 = blend with specific slot
+let _shiftPanActive = false;
+
+function sampleBayer3D(x, y, z, dotMm) {
+    const inv = 1.0 / Math.max(0.25, dotMm || 0.8);
+    const ix = Math.floor(x * inv) & 3;
+    const iy = Math.floor(y * inv) & 3;
+    const iz = Math.floor(z * inv) & 3;
+    // Combine 3D cell coordinates cleanly into a well-distributed [0, 1) Bayer threshold
+    const b2d = BAYER_4X4[(iy << 2) | ((ix + iz * 2) & 3)];
+    return (b2d + 0.5) / 16.0;
+}
+
+function setAirbrushDotSize(val) {
+    airbrushDotMm = Math.max(0.4, Math.min(3.0, parseFloat(val) || 0.8));
+    const lbl = document.getElementById('val-airbrush-dot');
+    if (lbl) lbl.textContent = `${airbrushDotMm.toFixed(1)} mm`;
+}
+
+function setAirbrushSoftness(val) {
+    airbrushSoftness = Math.max(0.15, Math.min(1.0, (parseFloat(val) || 72) / 100));
+    const lbl = document.getElementById('val-airbrush-softness');
+    if (lbl) lbl.textContent = `${Math.round(airbrushSoftness * 100)}%`;
+}
+
+function apply3DGradientDither(axis = 'y', slotAIdx = 0, slotBIdx = 1, bandStart = 0.15, bandEnd = 0.85, dotMm = 0.8) {
+    if (!currentMesh || !currentMesh.geometry || !triangleColors) {
+        showToast(t('aiNoModel', 'Load a 3D model first.'));
+        return;
+    }
+    const geom = currentMesh.geometry;
+    const pos = geom.attributes.position.array;
+    const faceCount = (pos.length / 9) | 0;
+    if (faceCount === 0) return;
+
+    // Ensure enough mesh detail for clean dither dots (auto-subdivide once if coarse)
+    if (faceCount < 16000 && typeof subdivideCurrentMesh === 'function') {
+        const prevCommit = typeof commitHistory === 'function';
+        // Only refine if mesh is very coarse (< 8000 tris)
+        if (faceCount < 8000) {
+            subdivideCurrentMesh();
+        }
+    }
+
+    const g2 = currentMesh.geometry;
+    g2.computeBoundingBox();
+    const box = g2.boundingBox;
+    const p2 = g2.attributes.position.array;
+    const fCount2 = (p2.length / 9) | 0;
+    const sA = Math.max(0, Math.min(filamentSlots.length - 1, parseInt(slotAIdx, 10) || 0));
+    const sB = Math.max(0, Math.min(filamentSlots.length - 1, parseInt(slotBIdx, 10) || 1));
+    const lo = Math.max(0, Math.min(0.95, parseFloat(bandStart) || 0.15));
+    const hi = Math.max(lo + 0.05, Math.min(1.0, parseFloat(bandEnd) || 0.85));
+    const cx0 = (box.min.x + box.max.x) * 0.5;
+    const cy0 = (box.min.y + box.max.y) * 0.5;
+    const cz0 = (box.min.z + box.max.z) * 0.5;
+    const maxR = Math.max(1e-3, Math.hypot(box.max.x - cx0, box.max.y - cy0, box.max.z - cz0));
+
+    for (let f = 0; f < fCount2; f++) {
+        const b = f * 9;
+        const fx = (p2[b] + p2[b + 3] + p2[b + 6]) / 3;
+        const fy = (p2[b + 1] + p2[b + 4] + p2[b + 7]) / 3;
+        const fz = (p2[b + 2] + p2[b + 5] + p2[b + 8]) / 3;
+        let u = 0;
+        if (axis === 'x') u = (fx - box.min.x) / Math.max(1e-4, box.max.x - box.min.x);
+        else if (axis === 'z') u = (fz - box.min.z) / Math.max(1e-4, box.max.z - box.min.z);
+        else if (axis === 'radial') u = Math.hypot(fx - cx0, fy - cy0, fz - cz0) / maxR;
+        else u = (fy - box.min.y) / Math.max(1e-4, box.max.y - box.min.y);
+
+        const tNorm = Math.max(0, Math.min(1, (u - lo) / (hi - lo)));
+        const thresh = sampleBayer3D(fx, fy, fz, dotMm || airbrushDotMm);
+        triangleColors[f] = (tNorm > thresh) ? sB : sA;
+    }
+
+    if (typeof soloSlotIndex !== 'undefined') soloSlotIndex = -1;
+    if (typeof isShowingPurgeHeatmap !== 'undefined') isShowingPurgeHeatmap = false;
+    updateMeshVisualColors();
+    if (typeof commitHistory === 'function') commitHistory(false);
+    showToast(currentLang === 'fr'
+        ? `🌈 Dégradé Airbrush 3D appliqué (${filamentSlots[sA]?.name} ➔ ${filamentSlots[sB]?.name}) !`
+        : `🌈 3D Airbrush Dither Gradient applied (${filamentSlots[sA]?.name} ➔ ${filamentSlots[sB]?.name})!`);
+}
+
+// Shift-key Pan binding BEFORE OrbitControls pointerdown
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Shift' && controls && controls.mouseButtons && activeTool !== 'view') {
+        _shiftPanActive = true;
+        controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    }
+});
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift' && _shiftPanActive) {
+        _shiftPanActive = false;
+        if (controls && controls.mouseButtons && activeTool !== 'view') {
+            controls.mouseButtons.LEFT = null;
+        }
+    }
+});
+window.addEventListener('blur', () => {
+    if (_shiftPanActive) {
+        _shiftPanActive = false;
+        if (controls && controls.mouseButtons && activeTool !== 'view') {
+            controls.mouseButtons.LEFT = null;
+        }
+    }
+});
+
 function selectTool(tool) {
     activeTool = tool || 'brush';
     lineStartPoint = null;
@@ -237,13 +355,17 @@ function selectTool(tool) {
     lineStartNdc = null;
     if (linePreviewLine) linePreviewLine.visible = false;
     if (activeTool !== 'tape') clearTapePreview();
-    if (typeof cancelStampingMode === 'function' && !isTextStampingMode && !isStencilStampingMode && !(typeof isQRStampingMode !== 'undefined' && isQRStampingMode)) {
-        // Keep clean
+    if (typeof cancelStampingMode === 'function') {
+        cancelStampingMode(true);
     }
+    if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
 
     document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById('tool-' + activeTool);
     if (btn) btn.classList.add('active');
+
+    const airbrushPanel = document.getElementById('airbrush-dither-controls');
+    if (airbrushPanel) airbrushPanel.style.display = (activeTool === 'airbrush') ? 'block' : 'none';
 
     if (!controls) return;
     controls.enabled = true;
@@ -254,18 +376,18 @@ function selectTool(tool) {
         if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = THREE.TOUCH.ROTATE;
         if (vp) vp.style.cursor = 'grab';
         if (brushHelperRing) brushHelperRing.visible = false;
-    } else if (activeTool === 'brush' || activeTool === 'line' || activeTool === 'eraser' || activeTool === 'tape') {
-        if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
+    } else if (activeTool === 'brush' || activeTool === 'airbrush' || activeTool === 'line' || activeTool === 'eraser' || activeTool === 'tape') {
+        if (controls.mouseButtons) controls.mouseButtons.LEFT = _shiftPanActive ? THREE.MOUSE.PAN : null;
         if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
         if (vp) vp.style.cursor = 'crosshair';
         if (activeTool === 'tape' && brushHelperRing) brushHelperRing.visible = false;
     } else if (activeTool === 'bucket' || activeTool === 'wand' || activeTool === 'shell') {
-        if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
+        if (controls.mouseButtons) controls.mouseButtons.LEFT = _shiftPanActive ? THREE.MOUSE.PAN : null;
         if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
         if (vp) vp.style.cursor = 'cell';
         if (brushHelperRing) brushHelperRing.visible = false;
     } else if (activeTool === 'dropper') {
-        if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
+        if (controls.mouseButtons) controls.mouseButtons.LEFT = _shiftPanActive ? THREE.MOUSE.PAN : null;
         if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
         if (vp) vp.style.cursor = 'help';
         if (brushHelperRing) brushHelperRing.visible = false;
@@ -275,8 +397,20 @@ function selectTool(tool) {
 function getRaycastIntersection() {
     if (!currentMesh) return null;
     raycaster.setFromCamera(mouse, camera);
+    const isClipped = (typeof layerSliceRatio === 'number' && layerSliceRatio < 0.999 && currentMesh.material && currentMesh.material.clippingPlanes && currentMesh.material.clippingPlanes.length > 0);
+    const prevFirstHit = raycaster.firstHitOnly;
+    if (isClipped) raycaster.firstHitOnly = false;
     const intersects = raycaster.intersectObject(currentMesh);
-    return intersects.length > 0 ? intersects[0] : null;
+    raycaster.firstHitOnly = prevFirstHit;
+    if (!intersects.length) return null;
+    if (!isClipped) return intersects[0];
+    const clipPlane = currentMesh.material.clippingPlanes[0];
+    for (let i = 0; i < intersects.length; i++) {
+        if (clipPlane.distanceToPoint(intersects[i].point) >= -0.02) {
+            return intersects[i];
+        }
+    }
+    return null;
 }
 
 function onPointerDown(e) {
@@ -329,7 +463,7 @@ function onPointerDown(e) {
     if (activeTool === 'view') return;
 
     const hit = getRaycastIntersection();
-    if (activeTool === 'brush' || activeTool === 'eraser') {
+    if (activeTool === 'brush' || activeTool === 'airbrush' || activeTool === 'eraser') {
         if (!hit) return;
         isPainting = true;
         strokeDidModify = false;
@@ -389,14 +523,20 @@ function onPointerMove(e) {
 function onPointerUp() {
     // Restore LEFT mouse button restriction after Shift+Left pan
     if (activeTool !== 'view' && controls && controls.mouseButtons) {
-        controls.mouseButtons.LEFT = null;
+        controls.mouseButtons.LEFT = _shiftPanActive ? THREE.MOUSE.PAN : null;
     }
     if (isPainting) {
         isPainting = false;
         lastHitPoint = null;
         lastHitNormal = null;
         if (strokeDidModifyGeo && currentMesh) {
-            precomputeGeometryMetrics(currentMesh.geometry);
+            const g = currentMesh.geometry;
+            g.computeBoundingBox();
+            g.computeBoundingSphere();
+            meshTopology = buildMeshTopology(g);
+            precomputeGeometryMetrics(g);
+            if (typeof updateShadowCameraForMesh === 'function') updateShadowCameraForMesh(g);
+            if (typeof rebuildMultiCopyClones === 'function') rebuildMultiCopyClones();
         }
         if (strokeDidModify || strokeDidModifyGeo) {
             if (typeof commitHistory === 'function') commitHistory(strokeDidModifyGeo);
@@ -433,7 +573,7 @@ function updateBrushHelperWithHit(hit) {
     }
 
     if (!brushHelperRing || !currentMesh) return;
-    if (activeTool !== 'brush' && activeTool !== 'eraser' && activeTool !== 'line') {
+    if (activeTool !== 'brush' && activeTool !== 'airbrush' && activeTool !== 'eraser' && activeTool !== 'line') {
         brushHelperRing.visible = false;
         return;
     }
@@ -536,27 +676,41 @@ function paintStraightLine(p1, p2, n1 = null, n2 = null, ndc1 = null, ndc2 = nul
     }
 }
 
-function maybeAdaptiveSubdivideNear(centers, queryRad, brushRadius) {
+function maybeAdaptiveSubdivideNear(centers, queryRad, brushRadius, passNormals = null) {
     if (!isAdaptiveBrushEnabled || !spatialGrid || !currentMesh) return false;
+    // Eraser should never bloat geometry triangle count!
+    if (activeTool === 'eraser') return false;
     const geom = currentMesh.geometry;
     const pos = geom.attributes.position.array;
     const faceCount = (pos.length / 9) | 0;
     if (faceCount > 320000) return false;
 
     const isPat = (activeBrushTexture !== 'none');
-    const maxAllowedEdge = isPat
-        ? Math.max(0.32, Math.min(brushRadius * 0.35, (brushTextureScale || 14) * 0.11, 1.1))
-        : Math.max(0.38, Math.min(brushRadius * 0.42, 1.4));
+    const isAirbrush = (activeTool === 'airbrush');
+    const maxAllowedEdge = isAirbrush
+        ? Math.max(0.35, Math.min(brushRadius * 0.25, (airbrushDotMm || 0.8) * 0.9, 1.0))
+        : (isPat
+            ? Math.max(0.32, Math.min(brushRadius * 0.35, (brushTextureScale || 14) * 0.11, 1.1))
+            : Math.max(0.38, Math.min(brushRadius * 0.42, 1.4)));
     const maxEdgeSq = maxAllowedEdge * maxAllowedEdge;
     let didAnySplit = false;
 
     for (let pass = 0; pass < 3; pass++) {
         const curPos = currentMesh.geometry.attributes.position.array;
+        const fn = (meshTopology && meshTopology.faceNormals && meshTopology.faceCount === ((curPos.length / 9) | 0))
+            ? meshTopology.faceNormals
+            : null;
         const toSplit = new Set();
 
         for (let c = 0; c < centers.length; c++) {
             const [cx, cy, cz] = centers[c];
+            const pn = passNormals && passNormals[c] ? passNormals[c] : null;
             spatialGrid.querySphere(cx, cy, cz, queryRad, (f) => {
+                // Respect Front-Only so thin walls don't get subdivided on the back side!
+                if (isBackfaceProtected && pn && fn) {
+                    const f3 = f * 3;
+                    if (fn[f3] * pn.x + fn[f3 + 1] * pn.y + fn[f3 + 2] * pn.z < 0.12) return;
+                }
                 const p = f * 9;
                 const ax = curPos[p], ay = curPos[p + 1], az = curPos[p + 2];
                 const bx = curPos[p + 3], by = curPos[p + 4], bz = curPos[p + 5];
@@ -574,7 +728,6 @@ function maybeAdaptiveSubdivideNear(centers, queryRad, brushRadius) {
         if (!didSplit) break;
         didAnySplit = true;
         strokeDidModifyGeo = true;
-        sculptAccumByVid.clear();
     }
     return didAnySplit;
 }
@@ -704,7 +857,12 @@ function paintSphereAtPoint(worldPoint, radius, hitNormal, seedFaceHint = undefi
     }
 
     // Smart Rivara Adaptive Subdivision on coarse faces inside the brush sphere
-    const didSubdivide = maybeAdaptiveSubdivideNear(passes.map(p => [p.x, p.y, p.z]), queryRad, radius);
+    const didSubdivide = maybeAdaptiveSubdivideNear(
+        passes.map(p => [p.x, p.y, p.z]),
+        queryRad,
+        radius,
+        passes.map(p => p.norm)
+    );
     if (didSubdivide) passes[0].seed = undefined; // Face indices shifted after subdivision
 
     const geom = currentMesh.geometry;
@@ -765,7 +923,19 @@ function paintSphereAtPoint(worldPoint, radius, hitNormal, seedFaceHint = undefi
             const cz = spatialGrid.faceCenters[f3 + 2];
 
             let hitMask = true;
-            if (activeBrushTexture !== 'none') {
+            if (activeTool === 'airbrush') {
+                // #7 3D Spatial Bayer Airbrush Dither: solid core -> smooth printable halftone feather!
+                const distFromCenter = Math.hypot(cx - px, cy - py, cz - pz);
+                if (distFromCenter > radius) {
+                    hitMask = false;
+                } else {
+                    const normR = distFromCenter / Math.max(0.01, radius);
+                    const coreR = Math.max(0.0, 1.0 - (airbrushSoftness || 0.72));
+                    const density = normR <= coreR ? 1.0 : Math.max(0, 1.0 - (normR - coreR) / Math.max(0.05, 1.0 - coreR));
+                    const bayerT = sampleBayer3D(cx, cy, cz, airbrushDotMm || 0.8);
+                    if (density <= bayerT) hitMask = false;
+                }
+            } else if (activeBrushTexture !== 'none') {
                 if (brushTextureStampMode === 'stamp' && T && B) {
                     const dx = cx - px, dy = cy - py, dz = cz - pz;
                     const uc = dx * T.x + dy * T.y + dz * T.z;
@@ -1417,7 +1587,7 @@ function drawPatternPreview() {
     for (let py = 0; py < h; py++) {
         for (let px = 0; px < w; px++) {
             const u = (px - w / 2);
-            const v = (py - h / 2);
+            const v = -(py - h / 2); // Match 3D camera-up (+B) vertical axis!
             const hit = evaluatePatternSDF(activeBrushTexture, u, v, previewScaleRatio, brushTextureAngle, isPatternInverted, isStampMode);
             const idx = (py * w + px) * 4;
             data[idx]     = hit ? fg.r : bg.r;

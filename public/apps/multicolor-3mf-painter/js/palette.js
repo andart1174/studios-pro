@@ -189,6 +189,15 @@ function addColorAsNewSlot(hex, name) {
     return activeSlotIndex;
 }
 
+function _escPalHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function renderFilamentGrid() {
     if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
     const grid = document.getElementById('filament-grid');
@@ -209,11 +218,12 @@ function renderFilamentGrid() {
             ? `${usage.grams.toFixed(1)}g (${usage.pct}%)`
             : '';
 
+        const safeSlotName = _escPalHtml(slot.name);
         div.innerHTML = `
             <span class="slot-number" style="color:${dark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.82)'};text-shadow:${dark ? '0 1px 2px #000' : 'none'};">#${slot.id}</span>
             <span class="slot-solo-badge ${isSolo ? 'active' : ''}" onclick="toggleSlotSolo(${index}, event)" title="${currentLang === 'fr' ? 'Isoler cette couleur (Solo)' : 'Solo / Isolate this color'}"><i data-lucide="${isSolo ? 'eye' : 'eye-off'}" style="width:10px;height:10px;"></i></span>
-            <span class="slot-edit-badge" onclick="event.stopPropagation(); openColorEditor(${index})" title="Edit Color"><i data-lucide="edit-2" style="width:10px;height:10px;"></i></span>
-            <span class="slot-name" style="color:${dark ? '#fff' : '#0f172a'};text-shadow:${dark ? '0 1px 3px rgba(0,0,0,0.9)' : 'none'};">${slot.name}</span>
+            <span class="slot-edit-badge" onclick="event.stopPropagation(); openColorEditor(${index})" title="${currentLang === 'fr' ? 'Modifier Couleur' : 'Edit Color'}"><i data-lucide="edit-2" style="width:10px;height:10px;"></i></span>
+            <span class="slot-name" style="color:${dark ? '#fff' : '#0f172a'};text-shadow:${dark ? '0 1px 3px rgba(0,0,0,0.9)' : 'none'};">${safeSlotName}</span>
             ${usageStr ? `<span class="slot-usage-pill" style="color:${dark ? 'rgba(255,255,255,0.88)' : 'rgba(15,23,42,0.85)'};background:${dark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)'};">${usageStr}</span>` : ''}
         `;
         grid.appendChild(div);
@@ -239,9 +249,12 @@ function renderSlotUsageBar() {
     }
     const totalG = used.reduce((acc, u) => acc + u.grams, 0);
     const totalCost = used.reduce((acc, u) => acc + u.costUsd, 0);
+    // Normalize display widths so flex bar never overflows 100%
+    const rawW = used.map(u => Math.max(2, u.pct));
+    const sumW = rawW.reduce((a, b) => a + b, 0) || 100;
     bar.innerHTML = `
         <div class="usage-bar-track">
-            ${used.map(u => `<span style="width:${Math.max(3, u.pct)}%;background:${u.slot.color};" title="#${u.slot.id} ${u.slot.name}: ${u.grams.toFixed(1)}g ($${u.costUsd.toFixed(2)})"></span>`).join('')}
+            ${used.map((u, i) => `<span style="width:${((rawW[i] / sumW) * 100).toFixed(2)}%;background:${_escPalHtml(u.slot.color)};" title="#${u.slot.id} ${_escPalHtml(u.slot.name)}: ${u.grams.toFixed(1)}g ($${u.costUsd.toFixed(2)})"></span>`).join('')}
         </div>
         <div class="usage-bar-meta">
             <span>${used.length} ${currentLang === 'fr' ? 'bobines actives' : 'active spools'}</span>
@@ -300,16 +313,39 @@ function removeActiveSlot() {
     }
     filamentSlots.splice(removedIdx, 1);
     filamentSlots.forEach((s, idx) => s.id = idx + 1);
+    if (typeof loadedSpoolsIndices !== 'undefined' && loadedSpoolsIndices) loadedSpoolsIndices = null;
     refreshSlotRgbFloats();
     activeSlotIndex = Math.max(0, Math.min(filamentSlots.length - 1, removedIdx - 1));
-    renderFilamentGrid();
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+    renderFilamentGrid();
+    if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
     if (typeof commitHistory === 'function') commitHistory(false);
     showToast(currentLang === 'fr' ? "Slot supprimé." : "Slot deleted.");
 }
 
+function _remapOutOfRangeSlotsPerceptual(oldRgbSnapshot) {
+    if (typeof triangleColors === 'undefined' || !triangleColors) return;
+    const newLen = filamentSlots.length;
+    const remapCache = new Map();
+    for (let f = 0; f < triangleColors.length; f++) {
+        const s = triangleColors[f];
+        if (s >= newLen) {
+            let mapped = remapCache.get(s);
+            if (mapped === undefined) {
+                const rgb = oldRgbSnapshot[s];
+                mapped = (rgb && typeof findClosestSlotPerceptual === 'function')
+                    ? findClosestSlotPerceptual(rgb[0], rgb[1], rgb[2])
+                    : (s % newLen);
+                remapCache.set(s, mapped);
+            }
+            triangleColors[f] = mapped;
+        }
+    }
+}
+
 function applyPresetPalette(type) {
     soloSlotIndex = -1;
+    const oldRgb = slotRgbFloats.map(v => v ? v.slice() : [0.5, 0.5, 0.5]);
     if (type === 'studio4') {
         filamentSlots = [
             { id: 1, name: "Jade White", color: "#F8FAFC", hex: "#F8FAFC", type: "PLA Basic" },
@@ -350,15 +386,12 @@ function applyPresetPalette(type) {
             { id: 4, name: "Lavender", color: "#E9D5FF", hex: "#E9D5FF", type: "PLA Matte" }
         ];
     }
-    if (typeof triangleColors !== 'undefined' && triangleColors) {
-        for (let f = 0; f < triangleColors.length; f++) {
-            if (triangleColors[f] >= filamentSlots.length) triangleColors[f] = triangleColors[f] % filamentSlots.length;
-        }
-    }
     refreshSlotRgbFloats();
+    _remapOutOfRangeSlotsPerceptual(oldRgb);
     activeSlotIndex = 0;
     renderFilamentGrid();
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+    if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
     if (typeof commitHistory === 'function') commitHistory(false);
     showToast(currentLang === 'fr' ? "Palette prédéfinie appliquée !" : "Preset palette applied!");
 }
@@ -427,22 +460,17 @@ function extractPaletteFromImage(e) {
             }
 
             soloSlotIndex = -1;
+            const oldRgb = slotRgbFloats.map(v => v ? v.slice() : [0.5, 0.5, 0.5]);
             filamentSlots = centers.map((c, idx) => {
                 const hex = rgbToHex(c[0], c[1], c[2]);
                 return { id: idx + 1, name: `Extracted #${idx + 1}`, color: hex, hex: hex, type: "PLA Basic" };
             });
-            // Clamp out-of-range triangleColors cleanly if slot count shrank
-            if (typeof triangleColors !== 'undefined' && triangleColors) {
-                for (let f = 0; f < triangleColors.length; f++) {
-                    if (triangleColors[f] >= filamentSlots.length) {
-                        triangleColors[f] = triangleColors[f] % filamentSlots.length;
-                    }
-                }
-            }
             refreshSlotRgbFloats();
+            _remapOutOfRangeSlotsPerceptual(oldRgb);
             activeSlotIndex = 0;
             renderFilamentGrid();
             if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
+            if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
             if (typeof commitHistory === 'function') commitHistory(false);
             showToast(currentLang === 'fr' ? "Palette perceptuelle extraite de l'image !" : "Perceptual palette extracted from image!");
         };
@@ -457,7 +485,8 @@ function populateSlotDropdowns() {
         'relief-base-slot', 'relief-emboss-slot', 'cavity-slot-select',
         'swap-slot-a', 'swap-slot-b', 'text-color-slot', 'stencil-color-slot',
         'height-bottom-slot', 'height-top-slot',
-        'qr-fg-slot', 'qr-bg-slot', 'batch-color-slot', 'pattern-target-slot'
+        'qr-fg-slot', 'qr-bg-slot', 'batch-color-slot', 'pattern-target-slot',
+        'airbrush-grad-slot-a', 'airbrush-grad-slot-b'
     ];
     selects.forEach(id => {
         const el = document.getElementById(id);
@@ -579,6 +608,10 @@ function applyColorEditor() {
     refreshSlotRgbFloats();
     renderFilamentGrid();
     updateSingleSlotColor(editingSlotIndex);
+    if (typeof applyActivePBRMaterialToMesh === 'function') applyActivePBRMaterialToMesh();
+    if (typeof markCbnDirty === 'function') markCbnDirty();
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
     if (typeof commitHistory === 'function') commitHistory(false);
     document.getElementById('color-editor-modal').style.display = 'none';
     showToast(`Slot #${filamentSlots[editingSlotIndex].id}: ${name}`);
@@ -592,6 +625,12 @@ function switchCatalogTab(tab) {
     const grid = document.getElementById('catalog-swatches-grid');
     if (!grid) return;
     grid.innerHTML = '';
+    const tabTypeMap = {
+        'studio-pla': 'PLA Basic',
+        'studio-matte': 'PLA Matte',
+        'studio-silk': 'PLA Silk',
+        'studio-petg': 'PETG'
+    };
     const swatches = filamentCatalogs[tab] || [];
     swatches.forEach(s => {
         const chip = document.createElement('div');
@@ -601,6 +640,8 @@ function switchCatalogTab(tab) {
         chip.onclick = () => {
             setPickerFromHex(s.hex);
             document.getElementById('modal-slot-name').value = s.name;
+            const typeSel = document.getElementById('modal-slot-type');
+            if (typeSel && tabTypeMap[tab]) typeSel.value = tabTypeMap[tab];
             updateSingleSlotColorLive(editingSlotIndex, s.hex);
         };
         grid.appendChild(chip);
@@ -674,6 +715,7 @@ function setupSpectrumInteractions() {
     wrapper.addEventListener('pointerdown', (e) => { isDragging = true; handlePos(e); });
     window.addEventListener('pointermove', (e) => { if (isDragging) handlePos(e); });
     window.addEventListener('pointerup', () => { isDragging = false; });
+    window.addEventListener('pointercancel', () => { isDragging = false; });
 }
 
 function onHueSliderInput(val) {
@@ -731,6 +773,8 @@ function updateSingleSlotColorLive(slotIdx, newHex) {
     if (colorUpdateRaf) cancelAnimationFrame(colorUpdateRaf);
     colorUpdateRaf = requestAnimationFrame(() => {
         if (!currentMesh || !triangleColors) return;
+        if (typeof isShowingPurgeHeatmap !== 'undefined' && isShowingPurgeHeatmap) return;
+        if (typeof soloSlotIndex === 'number' && soloSlotIndex >= 0 && soloSlotIndex !== slotIdx) return;
         const rgb = hexToRgb(newHex);
         const r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
         const geom = currentMesh.geometry;
@@ -753,6 +797,8 @@ function updateSingleSlotColorLive(slotIdx, newHex) {
 
 function updateSingleSlotColor(slotIdx) {
     if (!currentMesh || !triangleColors) return;
+    if (typeof isShowingPurgeHeatmap !== 'undefined' && isShowingPurgeHeatmap) return;
+    if (typeof soloSlotIndex === 'number' && soloSlotIndex >= 0 && soloSlotIndex !== slotIdx) return;
     const rgb = slotRgbFloats[slotIdx];
     if (!rgb) return;
     const geom = currentMesh.geometry;
@@ -785,7 +831,7 @@ function executeSwapSlots() {
     if (!triangleColors) return;
     const slotA = parseInt(document.getElementById('swap-slot-a').value, 10);
     const slotB = parseInt(document.getElementById('swap-slot-b').value, 10);
-    if (slotA === slotB) return;
+    if (isNaN(slotA) || isNaN(slotB) || slotA === slotB) return;
 
     for (let f = 0; f < triangleColors.length; f++) {
         if (triangleColors[f] === slotA) triangleColors[f] = slotB;
@@ -801,7 +847,7 @@ function executeReplaceSlot() {
     if (!triangleColors) return;
     const slotA = parseInt(document.getElementById('swap-slot-a').value, 10);
     const slotB = parseInt(document.getElementById('swap-slot-b').value, 10);
-    if (slotA === slotB) return;
+    if (isNaN(slotA) || isNaN(slotB) || slotA === slotB) return;
 
     for (let f = 0; f < triangleColors.length; f++) {
         if (triangleColors[f] === slotA) triangleColors[f] = slotB;

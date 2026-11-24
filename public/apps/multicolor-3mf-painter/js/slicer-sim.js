@@ -10,6 +10,25 @@ let layerSlicePlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 10000);
 let isLayerScrubberActive = false;
 let layerSliceRatio = 1.0;
 
+function _escHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getFilamentDensityGcm3(rawType) {
+    const tStr = String(rawType || 'PLA').toUpperCase();
+    if (tStr.includes('PETG')) return 1.27;
+    if (tStr.includes('ABS')) return 1.04;
+    if (tStr.includes('ASA')) return 1.07;
+    if (tStr.includes('TPU')) return 1.21;
+    if (tStr.includes('CF') || tStr.includes('CARBON')) return 1.29;
+    return 1.24; // Standard PLA
+}
+
 function getSlotLum(slotIdx) {
     if (typeof getSlotLuminance01 === 'function') return getSlotLuminance01(slotIdx);
     const slot = filamentSlots && filamentSlots[slotIdx];
@@ -40,6 +59,7 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
     const slotTris = new Int32Array(filamentSlots.length);
     const slotArea = new Float32Array(filamentSlots.length);
     let totalArea = 0;
+    let signedVol6 = 0;
 
     for (let t = 0; t < triCount; t++) {
         const i3 = t * 3;
@@ -64,6 +84,11 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
         triArea[t] = a;
         totalArea += a;
 
+        // Exact signed tetrahedron volume contribution: pA · (pB × pC) = 6 * V_tet
+        signedVol6 += pA.x * (pB.y * pC.z - pB.z * pC.y)
+                    + pA.y * (pB.z * pC.x - pB.x * pC.z)
+                    + pA.z * (pB.x * pC.y - pB.y * pC.x);
+
         const s = Math.max(0, Math.min(filamentSlots.length - 1, triangleColors[t] || 0));
         slotTris[s]++;
         slotArea[s] += a;
@@ -81,7 +106,7 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
         const s = Math.max(0, Math.min(filamentSlots.length - 1, triangleColors[t] || 0));
         const bit = 1 << Math.min(30, s);
         const l0 = Math.max(0, Math.min(layerCount - 1, Math.floor((triProjMin[t] - minH) / actualLayerH)));
-        const l1 = Math.max(0, Math.min(layerCount - 1, Math.floor((triProjMax[t] - minH - 1e-5) / actualLayerH)));
+        const l1 = Math.max(l0, Math.min(layerCount - 1, Math.floor((triProjMax[t] - minH - 1e-5) / actualLayerH)));
         for (let l = l0; l <= l1; l++) {
             layerSlotMasks[l] |= bit;
         }
@@ -151,12 +176,30 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
         totalSwaps += swapsThisLayer;
     }
 
-    // Approximate solid print mass from bounding box & surface area
+    // True closed signed mesh volume (mm³) -> realistic 2-wall shell + 15% gyroid infill + per-material density!
     geom.computeBoundingBox();
-    const size = new THREE.Vector3();
-    geom.boundingBox.getSize(size);
-    const estShellVolumeCm3 = (totalArea * 1.4) / 1000; // ~1.4mm effective shell+infill thickness
-    const partGrams = Math.max(4, estShellVolumeCm3 * 1.24 * 0.42);
+    const closedVolMm3 = Math.abs(signedVol6) / 6.0;
+    const shellVolMm3 = totalArea * 0.96; // ~2.4 perimeter lines * 0.4mm nozzle
+    let printedVolCm3;
+    if (closedVolMm3 > totalArea * 0.15) {
+        const effectiveShell = Math.min(closedVolMm3, shellVolMm3);
+        const effectiveInfill = Math.max(0, closedVolMm3 - effectiveShell) * 0.15;
+        printedVolCm3 = (effectiveShell + effectiveInfill) / 1000.0;
+    } else {
+        // Fallback for non-manifold open shells
+        printedVolCm3 = (totalArea * 0.85) / 1000.0;
+    }
+
+    // Area-weighted average filament density across active slots
+    let weightedDensity = 1.24;
+    if (totalArea > 1e-4) {
+        let densSum = 0;
+        for (let s = 0; s < filamentSlots.length; s++) {
+            if (slotArea[s] > 0) densSum += (slotArea[s] / totalArea) * getFilamentDensityGcm3(filamentSlots[s]?.type);
+        }
+        if (densSum > 0.5) weightedDensity = densSum;
+    }
+    const partGrams = Math.max(0.2, printedVolCm3 * weightedDensity);
 
     const usedSlots = [];
     for (let s = 0; s < filamentSlots.length; s++) {
@@ -190,11 +233,13 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
         purgeGrams: +purgeGrams.toFixed(1),
         partGrams: +partGrams.toFixed(1),
         totalGrams: +(partGrams + purgeGrams).toFixed(1),
+        volumeCm3: +(closedVolMm3 / 1000.0).toFixed(2),
         totalMinutes,
         usedSlots,
         slotTris,
         slotArea,
         totalArea,
+        layerSlotMasks,
         layerUniqueColors,
         minH,
         maxH,
@@ -203,6 +248,11 @@ function analyzePrintForAxis(nx, ny, nz, layerHeightMm = 0.2) {
 }
 
 function getSwapFlushGrams(fromSlot, toSlot) {
+    if (typeof getFlushVolumeMm3 === 'function') {
+        const mm3 = getFlushVolumeMm3(fromSlot, toSlot);
+        const dens = getFilamentDensityGcm3(filamentSlots[toSlot]?.type);
+        return Math.max(0.05, (mm3 / 1000.0) * dens);
+    }
     const lumFrom = getSlotLum(fromSlot);
     const lumTo = getSlotLum(toSlot);
     // Dark -> Light requires significantly more flushing to avoid bleeding
@@ -242,14 +292,24 @@ function updateStats() {
         if (elSwaps) {
             elSwaps.textContent = `${analysis.totalSwaps} swaps (~${analysis.purgeGrams}g)`;
         }
-        // #5 Populate per-slot Grams, Cost & % Area stats!
+        // #5 Populate per-slot Grams, Cost & exact Largest-Remainder 100% Area stats!
         if (typeof slotUsageStats !== 'undefined') {
             const totalA = Math.max(1e-4, analysis.totalArea || 1);
+            const rawPcts = filamentSlots.map((_, s) => ((analysis.slotArea[s] || 0) / totalA) * 100);
+            const floorPcts = rawPcts.map(p => Math.floor(p));
+            let rem = 100 - floorPcts.reduce((a, b) => a + b, 0);
+            const order = rawPcts.map((p, idx) => ({ idx, frac: p - floorPcts[idx], hasTris: (analysis.slotTris[idx] || 0) > 0 }))
+                .filter(o => o.hasTris)
+                .sort((a, b) => b.frac - a.frac);
+            for (let k = 0; k < order.length && rem > 0; k++) {
+                floorPcts[order[k].idx]++;
+                rem--;
+            }
             slotUsageStats = filamentSlots.map((_, s) => {
                 const areaFrac = (analysis.slotArea[s] || 0) / totalA;
                 const grams = +(analysis.partGrams * areaFrac).toFixed(1);
                 const costUsd = +((grams / 1000) * 24).toFixed(2);
-                const pct = Math.round(areaFrac * 100);
+                const pct = (analysis.slotTris[s] || 0) > 0 ? Math.max(0, floorPcts[s]) : 0;
                 return { grams, costUsd, pct, tris: analysis.slotTris[s] || 0 };
             });
             if (typeof renderSlotUsageBar === 'function') renderSlotUsageBar();
@@ -275,6 +335,8 @@ function updateStats() {
                 }
             });
         }
+        if (typeof updateCostCalculatorUI === 'function') updateCostCalculatorUI(analysis);
+        if (typeof updateMultiCopySavingsUI === 'function') updateMultiCopySavingsUI(analysis);
     }
 
     if (isLayerScrubberActive) {
@@ -397,8 +459,8 @@ function refreshPurgeOptimizerReport() {
     if (warnBox) {
         if (report.warnings.length > 0) {
             const items = report.warnings.slice(0, 3).map((w) => {
-                const dName = filamentSlots[w.darkSlot]?.name || `Slot ${w.darkSlot + 1}`;
-                const lName = filamentSlots[w.lightSlot]?.name || `Slot ${w.lightSlot + 1}`;
+                const dName = _escHtml(filamentSlots[w.darkSlot]?.name || `Slot ${w.darkSlot + 1}`);
+                const lName = _escHtml(filamentSlots[w.lightSlot]?.name || `Slot ${w.lightSlot + 1}`);
                 return isFr
                     ? `• <b>${dName}</b> ↔ <b>${lName}</b> partagent <b>${w.sharedLayers}</b> couches (+${w.extraWasteG}g purge)`
                     : `• <b>${dName}</b> ↔ <b>${lName}</b> share <b>${w.sharedLayers}</b> layers (~+${w.extraWasteG}g flush)`;
@@ -625,9 +687,9 @@ function scanExpensiveAMSSpeckles() {
         const i3 = t * 3;
         const y0 = pos.getY(i3), y1 = pos.getY(i3 + 1), y2 = pos.getY(i3 + 2);
         const l0 = Math.max(0, Math.min(layerCount - 1, Math.floor((Math.min(y0, y1, y2) - minY) / actualLH)));
-        const l1 = Math.max(0, Math.min(layerCount - 1, Math.floor((Math.max(y0, y1, y2) - minY - 1e-5) / actualLH)));
+        const l1 = Math.max(l0, Math.min(layerCount - 1, Math.floor((Math.max(y0, y1, y2) - minY - 1e-5) / actualLH)));
         triL0[t] = l0; triL1[t] = l1;
-        const s = triangleColors[t] || 0;
+        const s = Math.max(0, Math.min(filamentSlots.length - 1, triangleColors[t] || 0));
         for (let l = l0; l <= l1; l++) layerSlotFaceCount[s][l]++;
     }
 
@@ -704,9 +766,9 @@ function scanExpensiveAMSSpeckles() {
             outEl.innerHTML = `<div style="font-size:0.75rem;color:#34d399;padding:8px;background:rgba(16,185,129,0.1);border-radius:8px;">${isFr ? '✅ Aucune micro-tache coûteuse détectée ! Votre peinture est super propre.' : '✅ Zero expensive stray speckles detected! Your paint job is super clean.'}</div>`;
         } else {
             outEl.innerHTML = lastExpensiveSpeckles.map((p, idx) => {
-                const sName = filamentSlots[p.slot]?.name || `Slot #${p.slot + 1}`;
-                const dName = filamentSlots[p.domSlot]?.name || `Slot #${p.domSlot + 1}`;
-                const sCol = filamentSlots[p.slot]?.color || '#fff';
+                const sName = _escHtml(filamentSlots[p.slot]?.name || `Slot #${p.slot + 1}`);
+                const dName = _escHtml(filamentSlots[p.domSlot]?.name || `Slot #${p.domSlot + 1}`);
+                const sCol = _escHtml(filamentSlots[p.slot]?.color || '#fff');
                 return `
                     <div class="speckle-card">
                         <div style="display:flex;align-items:center;gap:6px;min-width:0;">
@@ -826,21 +888,25 @@ function updateLayerScrubberBounds() {
     const minY = currentMesh.geometry.boundingBox.min.y;
     const maxY = currentMesh.geometry.boundingBox.max.y;
     const span = Math.max(0.2, maxY - minY);
-    const totalLayers = Math.max(1, Math.round(span / 0.2));
+    const layerH = Math.max(0.08, Math.min(1.0, parseFloat(document.getElementById('purge-layer-height')?.value || '0.2') || 0.2));
+    const totalLayers = Math.max(1, Math.round(span / layerH));
     const currentY = minY + span * layerSliceRatio;
     const curLayer = Math.max(1, Math.min(totalLayers, Math.round(totalLayers * layerSliceRatio)));
+    const isFr = (typeof currentLang !== 'undefined' && currentLang === 'fr');
 
     layerSlicePlane.constant = currentY + 0.01;
     const label = document.getElementById('layer-scrubber-label');
     if (label) {
         label.textContent = layerSliceRatio >= 0.999
-            ? `All ${totalLayers} layers (${span.toFixed(1)}mm)`
-            : `Layer ${curLayer}/${totalLayers} (${(currentY - minY).toFixed(1)}mm)`;
+            ? (isFr ? `Toutes ${totalLayers} couches (${span.toFixed(1)}mm)` : `All ${totalLayers} layers (${span.toFixed(1)}mm)`)
+            : (isFr ? `Couche ${curLayer}/${totalLayers} (${(currentY - minY).toFixed(1)}mm)` : `Layer ${curLayer}/${totalLayers} (${(currentY - minY).toFixed(1)}mm)`);
     }
 }
 
 function setLayerSliceRatio(val) {
-    layerSliceRatio = Math.max(0.02, Math.min(1.0, parseFloat(val)));
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) return;
+    layerSliceRatio = Math.max(0.02, Math.min(1.0, parsed));
     if (!currentMesh || !currentMesh.material) return;
 
     const enableClip = layerSliceRatio < 0.999;
@@ -889,8 +955,8 @@ function renderColorByNumbersBar() {
     bar.innerHTML = filamentSlots.map((slot, s) => `
         <button class="cbn-pill ${s === activeSlotIndex ? 'active' : ''}" onclick="selectSlot(${s}); renderColorByNumbersBar();">
             <span class="cbn-num">#${s + 1}</span>
-            <span class="cbn-dot" style="background:${slot.color};"></span>
-            <span>${slot.name}</span>
+            <span class="cbn-dot" style="background:${_escHtml(slot.color)};"></span>
+            <span>${_escHtml(slot.name)}</span>
         </button>
     `).join('');
 }
@@ -988,17 +1054,17 @@ function updateColorByNumbersOverlay() {
     if (cbnDirty) rebuildCbnMarkers();
     if (cbnCachedMarkers.length === 0) return;
 
+    const rect = renderer.domElement.getBoundingClientRect();
     const m = camera.matrixWorldInverse.elements;
-    const camKey = `${m[0].toFixed(3)},${m[5].toFixed(3)},${m[12].toFixed(2)},${m[13].toFixed(2)},${m[14].toFixed(2)}`;
+    const camKey = `${m[0].toFixed(3)},${m[5].toFixed(3)},${m[12].toFixed(2)},${m[13].toFixed(2)},${m[14].toFixed(2)},${Math.round(rect.width)}x${Math.round(rect.height)}`;
     if (camKey === lastCbnCamKey) return;
     lastCbnCamKey = camKey;
 
-    const rect = renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector3();
     for (let i = 0; i < cbnCachedMarkers.length; i++) {
         const mk = cbnCachedMarkers[i];
         v.copy(mk.pos).applyMatrix4(currentMesh.matrixWorld).project(camera);
-        if (v.z > 1) {
+        if (v.z > 1 || v.z < -1) {
             mk.el.style.display = 'none';
             continue;
         }
@@ -1114,8 +1180,8 @@ function openLoadedSpoolsModal() {
         return `
             <label style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(255,255,255,0.04);border-radius:8px;cursor:pointer;">
                 <input type="checkbox" class="spool-checkbox" value="${i}" ${checked}>
-                <span style="width:14px;height:14px;border-radius:4px;background:${slot.color};border:1px solid rgba(255,255,255,0.3);"></span>
-                <span style="font-size:0.82rem;">${i + 1}. ${slot.name}</span>
+                <span style="width:14px;height:14px;border-radius:4px;background:${_escHtml(slot.color)};border:1px solid rgba(255,255,255,0.3);"></span>
+                <span style="font-size:0.82rem;">${i + 1}. ${_escHtml(slot.name)}</span>
             </label>
         `;
     }).join('');

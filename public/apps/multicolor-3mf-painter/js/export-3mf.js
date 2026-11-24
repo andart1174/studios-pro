@@ -23,18 +23,19 @@ function escapeXml(str) {
         .replace(/'/g, '&apos;');
 }
 
-function downloadBlob(blob, filename) {
+function downloadBlob(blob, filename, bypassPaywall = false) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    if (bypassPaywall) a.dataset.bypassed = 'true';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
         if (a.parentNode) a.parentNode.removeChild(a);
         URL.revokeObjectURL(url);
-    }, 2500);
+    }, 60000);
 }
 
 /**
@@ -207,15 +208,67 @@ function closeExportModal() {
 }
 
 // ==========================================
-// 1. NATIVE BAMBU STUDIO / ORCASLICER 3MF (paint_color + model_settings)
+// 1. NATIVE BAMBU STUDIO / ORCASLICER / PRUSASLICER 3MF
+// (Unique IDs + paint_color + slic3rpe:mmu_segmentation + Flush Matrix + Multi-Copy Plate)
 // ==========================================
 
-async function buildBambu3MFBlob(geom, triColors, slots) {
+function _getExportBedAndOffsets() {
+    const bed = (typeof getActivePrintBedDims === 'function')
+        ? getActivePrintBedDims()
+        : { w: 256, d: 256, printerModel: 'Bambu Lab X1 Carbon' };
+    const offsets = (typeof getMultiCopyPlateOffsets === 'function')
+        ? getMultiCopyPlateOffsets()
+        : [{ x: 0, y: 0 }];
+    return {
+        bedW: bed.w || 256,
+        bedD: bed.d || 256,
+        printerModel: bed.printerModel || 'Bambu Lab X1 Carbon',
+        offsets: (Array.isArray(offsets) && offsets.length > 0) ? offsets : [{ x: 0, y: 0 }]
+    };
+}
+
+function _buildProjectSettingsJson(slots, printerModel) {
+    const mapSlicerType = (rawType) => {
+        const tStr = String(rawType || 'PLA').toUpperCase();
+        if (tStr.includes('PETG')) return 'PETG';
+        if (tStr.includes('ABS')) return 'ABS';
+        if (tStr.includes('ASA')) return 'ASA';
+        if (tStr.includes('TPU')) return 'TPU';
+        return 'PLA';
+    };
+
+    const cfg = {
+        filament_colour: slots.map(s => (s.color || '#FFFFFF').toUpperCase()),
+        filament_type: slots.map(s => mapSlicerType(s.type)),
+        filament_settings_id: slots.map(s => s.type || 'Generic PLA'),
+        filament_vendor: slots.map(s => s.brand || 'Generic'),
+        printer_model: printerModel || 'Bambu Lab X1 Carbon',
+        enable_prime_tower: '1'
+    };
+
+    if (typeof getBambuFlushMatrixFlatArray === 'function') {
+        const flatMatrix = getBambuFlushMatrixFlatArray(slots.length);
+        if (Array.isArray(flatMatrix) && flatMatrix.length === slots.length * slots.length) {
+            cfg.flush_volumes_matrix = flatMatrix;
+        }
+    }
+    if (typeof getFlushSettingsForSlicer === 'function') {
+        const fs = getFlushSettingsForSlicer();
+        if (fs) {
+            cfg.flush_multiplier = String(fs.multiplier ?? 1.0);
+            cfg.flush_into_infill = fs.flushIntoInfill ? '1' : '0';
+        }
+    }
+    return JSON.stringify(cfg, null, 2);
+}
+
+async function buildBambu3MFBlob(geom, triColors, slots, options = {}) {
     const welded = weldGeometryAndColors(geom, triColors, true);
     const activeIndices = [];
     const slotUsed = new Uint8Array(slots.length);
     for (let i = 0; i < welded.triangles.length; i++) {
-        slotUsed[welded.triangles[i].slot] = 1;
+        const s = welded.triangles[i].slot;
+        if (s >= 0 && s < slots.length) slotUsed[s] = 1;
     }
     for (let s = 0; s < slots.length; s++) {
         if (slotUsed[s] || s === 0) activeIndices.push(s);
@@ -224,10 +277,16 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
     const slotToMatIdx = new Map();
     activeIndices.forEach((s, idx) => slotToMatIdx.set(s, idx));
 
+    const plateInfo = _getExportBedAndOffsets();
+    const copyOffsets = options.singleCopy ? [{ x: 0, y: 0 }] : plateInfo.offsets;
+    const centerX = plateInfo.bedW * 0.5;
+    const centerY = plateInfo.bedD * 0.5;
+
     const xb = new XmlChunkBuilder();
     xb.push(`<?xml version="1.0" encoding="UTF-8"?>\n`);
-    xb.push(`<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n`);
-    xb.push(`  <metadata name="Application">Studios-Pro MultiColor 3MF Painter</metadata>\n`);
+    xb.push(`<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n`);
+    xb.push(`  <metadata name="Application">BambuStudio-01.09.03.50</metadata>\n`);
+    xb.push(`  <metadata name="Designer">Studios-Pro MultiColor 3MF Painter</metadata>\n`);
     xb.push(`  <metadata name="BambuStudio:3mfVersion">1</metadata>\n`);
     xb.push(`  <metadata name="StudiosPro:UpAxis">Z</metadata>\n`);
     xb.push(`  <resources>\n`);
@@ -238,7 +297,7 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
         xb.push(`      <base name="${escapeXml(slot.name || `Slot ${s + 1}`)}" displaycolor="${hex}FF"/>\n`);
     }
     xb.push(`    </basematerials>\n`);
-    xb.push(`    <object id="1" type="model" name="StudiosPro_Painted_Model">\n`);
+    xb.push(`    <object id="2" type="model" name="StudiosPro_Painted_Model">\n`);
     xb.push(`      <mesh>\n`);
     xb.push(`        <vertices>\n`);
     for (let i = 0; i < welded.vertices.length; i++) {
@@ -256,7 +315,7 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
         if (!code) {
             xb.push(`          <triangle v1="${t.v1}" v2="${t.v2}" v3="${t.v3}" pid="1" p1="${matIdx}"/>\n`);
         } else {
-            xb.push(`          <triangle v1="${t.v1}" v2="${t.v2}" v3="${t.v3}" pid="1" p1="${matIdx}" paint_color="${code}"/>\n`);
+            xb.push(`          <triangle v1="${t.v1}" v2="${t.v2}" v3="${t.v3}" pid="1" p1="${matIdx}" paint_color="${code}" slic3rpe:mmu_segmentation="${code}"/>\n`);
         }
     }
     xb.push(`        </triangles>\n`);
@@ -264,16 +323,26 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
     xb.push(`    </object>\n`);
     xb.push(`  </resources>\n`);
     xb.push(`  <build>\n`);
-    xb.push(`    <item objectid="1" transform="1 0 0 0 1 0 0 0 1 0 0 0" printable="1"/>\n`);
+    copyOffsets.forEach((off) => {
+        const tx = (centerX + (off.x || 0)).toFixed(4);
+        const ty = (centerY + (off.y || 0)).toFixed(4);
+        xb.push(`    <item objectid="2" transform="1 0 0 0 1 0 0 0 1 ${tx} ${ty} 0" printable="1"/>\n`);
+    });
     xb.push(`  </build>\n`);
     xb.push(`</model>\n`);
 
+    const instancesXml = copyOffsets.map((_, idx) => `    <model_instance>
+      <metadata key="object_id" value="2"/>
+      <metadata key="instance_id" value="${idx}"/>
+      <metadata key="identify_id" value="${idx + 1}"/>
+    </model_instance>`).join('\n');
+
     const modelSettingsXml = `<?xml version="1.0" encoding="UTF-8"?>
 <config>
-  <object id="1">
+  <object id="2">
     <metadata key="name" value="StudiosPro_Painted_Model"/>
     <metadata key="extruder" value="1"/>
-    <part id="1" subtype="normal_part">
+    <part id="2" subtype="normal_part">
       <metadata key="name" value="PaintedMesh"/>
       <metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>
       <metadata key="extruder" value="1"/>
@@ -282,31 +351,12 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
   <plate>
     <metadata key="plater_id" value="1"/>
     <metadata key="plater_name" value="plate_1"/>
-    <model_instance>
-      <metadata key="object_id" value="1"/>
-      <metadata key="instance_id" value="0"/>
-      <metadata key="identify_id" value="1"/>
-    </model_instance>
+${instancesXml}
   </plate>
 </config>
 `;
 
-    const mapSlicerType = (rawType) => {
-        const tStr = String(rawType || 'PLA').toUpperCase();
-        if (tStr.includes('PETG')) return 'PETG';
-        if (tStr.includes('ABS')) return 'ABS';
-        if (tStr.includes('ASA')) return 'ASA';
-        if (tStr.includes('TPU')) return 'TPU';
-        return 'PLA';
-    };
-
-    const projectConfigJson = JSON.stringify({
-        filament_colour: slots.map(s => (s.color || '#FFFFFF').toUpperCase()),
-        filament_type: slots.map(s => mapSlicerType(s.type)),
-        filament_settings_id: slots.map(s => s.type || 'Generic PLA'),
-        filament_vendor: slots.map(() => 'Generic'),
-        printer_model: 'Bambu Lab X1 Carbon'
-    }, null, 2);
+    const projectConfigJson = _buildProjectSettingsJson(slots, plateInfo.printerModel);
 
     const contentTypesXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -337,11 +387,12 @@ async function buildBambu3MFBlob(geom, triColors, slots) {
 
 async function exportBambu3MF() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
-    showToast(t('exportingBambu3MF', 'Generating Bambu/Orca Native 3MF...'));
+    showToast(t('exportingBambu3MF', 'Generating Bambu/Orca/Prusa Native 3MF...'));
     const blob = await buildBambu3MFBlob(currentMesh.geometry, triangleColors, filamentSlots);
-    downloadBlob(blob, 'StudiosPro_Bambu_Painted.3mf');
+    const copies = (typeof multiCopyCount === 'number' && multiCopyCount > 1) ? `_${multiCopyCount}xPlate` : '';
+    downloadBlob(blob, `StudiosPro_Bambu_Painted${copies}.3mf`);
     closeExportModal();
-    showToast(t('exportedBambu3MF', 'Bambu & OrcaSlicer Native .3mf exported!'));
+    showToast(t('exportedBambu3MF', 'Bambu, Orca & Prusa Native .3mf exported!'));
 }
 
 // ==========================================
@@ -412,19 +463,33 @@ async function export3MF() {
         xb.push(`        </triangles>\n      </mesh>\n    </object>\n`);
     });
 
-    xb.push(`    <object id="100" type="model" name="MultiColor_Assembly">\n      <components>\n`);
+    const assemblyId = usedSlots.length + 10;
+    const plateInfo = _getExportBedAndOffsets();
+    const centerX = plateInfo.bedW * 0.5;
+    const centerY = plateInfo.bedD * 0.5;
+
+    xb.push(`    <object id="${assemblyId}" type="model" name="MultiColor_Assembly">\n      <components>\n`);
     for (const item of objectIds) {
         xb.push(`        <component objectid="${item.objId}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n`);
     }
     xb.push(`      </components>\n    </object>\n`);
-    xb.push(`  </resources>\n  <build>\n    <item objectid="100" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n  </build>\n</model>\n`);
+    xb.push(`  </resources>\n  <build>\n`);
+    plateInfo.offsets.forEach((off) => {
+        const tx = (centerX + (off.x || 0)).toFixed(4);
+        const ty = (centerY + (off.y || 0)).toFixed(4);
+        xb.push(`    <item objectid="${assemblyId}" transform="1 0 0 0 1 0 0 0 1 ${tx} ${ty} 0" printable="1"/>\n`);
+    });
+    xb.push(`  </build>\n</model>\n`);
 
+    const thumbB64 = captureThumbnailBase64();
     const zip = new JSZip();
-    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`);
-    zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`);
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="config" ContentType="text/plain"/></Types>`);
+    zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>${thumbB64 ? '<Relationship Target="/Metadata/plate_1.png" Id="rel-2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>' : ''}</Relationships>`);
     zip.file('3D/3dmodel.model', xb.toString());
+    zip.file('Metadata/project_settings.config', _buildProjectSettingsJson(filamentSlots, plateInfo.printerModel));
+    if (thumbB64) zip.file('Metadata/plate_1.png', thumbB64, { base64: true });
 
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     downloadBlob(blob, 'StudiosPro_MultiPart_Color.3mf');
     closeExportModal();
     showToast(t('exportedMulti3MF', 'Multi-Part .3mf exported!'));
@@ -438,16 +503,20 @@ async function exportSingleMesh3MF() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
     showToast(t('exportingSingle3MF', 'Generating Single-Mesh 3MF...'));
     const welded = weldGeometryAndColors(currentMesh.geometry, triangleColors, true);
+    const plateInfo = _getExportBedAndOffsets();
+    const centerX = plateInfo.bedW * 0.5;
+    const centerY = plateInfo.bedD * 0.5;
 
     const xb = new XmlChunkBuilder();
     xb.push(`<?xml version="1.0" encoding="UTF-8"?>\n`);
-    xb.push(`<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n`);
-    xb.push(`  <metadata name="Application">Studios-Pro MultiColor 3MF Painter</metadata>\n`);
+    xb.push(`<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">\n`);
+    xb.push(`  <metadata name="Application">BambuStudio-01.09.03.50</metadata>\n`);
+    xb.push(`  <metadata name="Designer">Studios-Pro MultiColor 3MF Painter</metadata>\n`);
     xb.push(`  <resources>\n    <basematerials id="1">\n`);
     filamentSlots.forEach((slot, s) => {
         xb.push(`      <base name="${escapeXml(slot.name || `Slot ${s + 1}`)}" displaycolor="${(slot.color || '#FFFFFF').toUpperCase()}FF"/>\n`);
     });
-    xb.push(`    </basematerials>\n    <object id="1" type="model" name="PaintedMesh">\n      <mesh>\n        <vertices>\n`);
+    xb.push(`    </basematerials>\n    <object id="2" type="model" name="PaintedMesh">\n      <mesh>\n        <vertices>\n`);
     for (let i = 0; i < welded.vertices.length; i++) {
         const v = welded.vertices[i];
         xb.push(`          <vertex x="${v[0].toFixed(4)}" y="${v[1].toFixed(4)}" z="${v[2].toFixed(4)}"/>\n`);
@@ -455,16 +524,28 @@ async function exportSingleMesh3MF() {
     xb.push(`        </vertices>\n        <triangles>\n`);
     for (let i = 0; i < welded.triangles.length; i++) {
         const tr = welded.triangles[i];
-        xb.push(`          <triangle v1="${tr.v1}" v2="${tr.v2}" v3="${tr.v3}" pid="1" p1="${tr.slot}"/>\n`);
+        const code = typeof encodeBambuPaintColor === 'function' ? encodeBambuPaintColor(tr.slot) : null;
+        if (code) {
+            xb.push(`          <triangle v1="${tr.v1}" v2="${tr.v2}" v3="${tr.v3}" pid="1" p1="${tr.slot}" paint_color="${code}" slic3rpe:mmu_segmentation="${code}"/>\n`);
+        } else {
+            xb.push(`          <triangle v1="${tr.v1}" v2="${tr.v2}" v3="${tr.v3}" pid="1" p1="${tr.slot}"/>\n`);
+        }
     }
-    xb.push(`        </triangles>\n      </mesh>\n    </object>\n  </resources>\n  <build>\n    <item objectid="1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n  </build>\n</model>\n`);
+    xb.push(`        </triangles>\n      </mesh>\n    </object>\n  </resources>\n  <build>\n`);
+    plateInfo.offsets.forEach((off) => {
+        const tx = (centerX + (off.x || 0)).toFixed(4);
+        const ty = (centerY + (off.y || 0)).toFixed(4);
+        xb.push(`    <item objectid="2" transform="1 0 0 0 1 0 0 0 1 ${tx} ${ty} 0" printable="1"/>\n`);
+    });
+    xb.push(`  </build>\n</model>\n`);
 
     const zip = new JSZip();
-    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`);
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/><Default Extension="config" ContentType="text/plain"/></Types>`);
     zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`);
     zip.file('3D/3dmodel.model', xb.toString());
+    zip.file('Metadata/project_settings.config', _buildProjectSettingsJson(filamentSlots, plateInfo.printerModel));
 
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     downloadBlob(blob, 'StudiosPro_SingleMesh.3mf');
     closeExportModal();
     showToast(t('exportedSingle3MF', 'Single-Mesh .3mf exported!'));
@@ -490,7 +571,7 @@ async function exportSeparateSTLs() {
         const stlBlob = createBinarySTL(triList, welded.vertices);
         zip.file(`Part_${s + 1}_${safeName}.stl`, stlBlob);
     });
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     downloadBlob(zipBlob, 'StudiosPro_Aligned_STLs.zip');
     closeExportModal();
     showToast(t('exportedSTLs', 'Aligned STLs ZIP exported!'));
@@ -498,13 +579,35 @@ async function exportSeparateSTLs() {
 
 async function exportOBJ() {
     if (!currentMesh || !currentMesh.geometry || !triangleColors) return;
-    const welded = weldGeometryAndColors(currentMesh.geometry, triangleColors, true);
+    // Standard Wavefront OBJ is Y-up (matches Blender, Maya, 3D Viewer) with both MTL materials + per-vertex RGB
+    const welded = weldGeometryAndColors(currentMesh.geometry, triangleColors, false);
+    const vCount = welded.vertices.length;
+    const vSlotCounts = new Float32Array(vCount * 4); // r, g, b, count
+    const slotThreeColors = filamentSlots.map(s => new THREE.Color(s.color || '#FFFFFF'));
+
+    for (let i = 0; i < welded.triangles.length; i++) {
+        const tr = welded.triangles[i];
+        const col = slotThreeColors[tr.slot] || slotThreeColors[0];
+        for (const vid of [tr.v1, tr.v2, tr.v3]) {
+            const b = vid * 4;
+            vSlotCounts[b] += col.r;
+            vSlotCounts[b + 1] += col.g;
+            vSlotCounts[b + 2] += col.b;
+            vSlotCounts[b + 3] += 1;
+        }
+    }
+
     const xb = new XmlChunkBuilder();
-    xb.push('# Studios-Pro MultiColor 3MF Painter OBJ Export\n');
+    xb.push('# Studios-Pro MultiColor 3MF Painter OBJ Export (Y-Up + Vertex RGB + MTL)\n');
     xb.push('mtllib model.mtl\n');
-    for (let i = 0; i < welded.vertices.length; i++) {
+    for (let i = 0; i < vCount; i++) {
         const v = welded.vertices[i];
-        xb.push(`v ${v[0].toFixed(4)} ${v[1].toFixed(4)} ${v[2].toFixed(4)}\n`);
+        const b = i * 4;
+        const cnt = vSlotCounts[b + 3] || 1;
+        const r = (vSlotCounts[b] / cnt).toFixed(4);
+        const g = (vSlotCounts[b + 1] / cnt).toFixed(4);
+        const bl = (vSlotCounts[b + 2] / cnt).toFixed(4);
+        xb.push(`v ${v[0].toFixed(4)} ${v[1].toFixed(4)} ${v[2].toFixed(4)} ${r} ${g} ${bl}\n`);
     }
     let lastSlot = -1;
     const sorted = [...welded.triangles].sort((a, b) => a.slot - b.slot);
@@ -525,7 +628,7 @@ async function exportOBJ() {
     const zip = new JSZip();
     zip.file('model.obj', xb.toString());
     zip.file('model.mtl', mtl);
-    const blob = await zip.generateAsync({ type: 'blob' });
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     downloadBlob(blob, 'StudiosPro_Color_OBJ.zip');
     closeExportModal();
     showToast(t('exportedOBJ', 'Color OBJ + MTL ZIP exported!'));
@@ -667,6 +770,38 @@ function buildClosedSolidForSlot(welded, targetSlot, shellMm = 2.0, clearanceMm 
                 }
             }
         }
+    }
+
+    // If this colored region is already a closed watertight manifold (zero boundary edges),
+    // return it directly as a compact solid instead of creating inverted duplicate inner shells!
+    if (boundaryEdges.length === 0) {
+        const localMap = new Map();
+        const compactVerts = [];
+        const compactTris = [];
+        let cx = 0, cy = 0, cz = 0;
+        const getL = (origV) => {
+            let idx = localMap.get(origV);
+            if (idx === undefined) {
+                idx = compactVerts.length;
+                compactVerts.push(welded.vertices[origV]);
+                localMap.set(origV, idx);
+            }
+            return idx;
+        };
+        for (let i = 0; i < patchTris.length; i++) {
+            const tr = patchTris[i];
+            compactTris.push({ v1: getL(tr.v1), v2: getL(tr.v2), v3: getL(tr.v3), slot: targetSlot });
+            const p = welded.vertices[tr.v1];
+            cx += p[0]; cy += p[1]; cz += p[2];
+        }
+        return {
+            vertices: compactVerts,
+            triangles: compactTris,
+            boundaryEdges: 0,
+            pinCount: 0,
+            centroid: [cx / patchTris.length, cy / patchTris.length, cz / patchTris.length],
+            isClosedOriginal: true
+        };
     }
 
     const outMap = new Map();
@@ -860,11 +995,14 @@ function openSplitterModal() {
 
     if (currentMesh && triangleColors && summaryEl) {
         const counts = new Int32Array(filamentSlots.length);
-        for (let i = 0; i < triangleColors.length; i++) counts[triangleColors[i]]++;
+        for (let i = 0; i < triangleColors.length; i++) {
+            const sl = triangleColors[i];
+            if (sl < counts.length) counts[sl]++;
+        }
         const parts = [];
         for (let s = 0; s < filamentSlots.length; s++) {
             if (counts[s] > 0) {
-                parts.push(`<span class="stat-pill" style="border-left:3px solid ${filamentSlots[s].color}">${filamentSlots[s].name}: ${counts[s]} tris</span>`);
+                parts.push(`<span class="stat-pill" style="border-left:3px solid ${escapeXml(filamentSlots[s].color)}">${escapeXml(filamentSlots[s].name)}: ${counts[s]} tris</span>`);
             }
         }
         summaryEl.innerHTML = parts.join(' ');
@@ -902,7 +1040,7 @@ async function executeSplitterExport() {
         totalPins += solid.pinCount || 0;
     }
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     downloadBlob(zipBlob, 'StudiosPro_Watertight_SnapFit_Kit.zip');
     closeSplitterModal();
     showToast(currentLang === 'fr'
@@ -911,42 +1049,76 @@ async function executeSplitterExport() {
 }
 
 // ==========================================
-// 6. AR BRIDGE EXPORT (SAFETY GUARDS AGAINST HEATMAP / CLIPPING)
+// 6. AR BRIDGE EXPORT (TRUE LINEAR-RGB COLORS + ISOLATED CLONE)
 // ==========================================
 
 async function openARPreview() {
-    if (!currentMesh || !currentMesh.geometry) {
+    if (!currentMesh || !currentMesh.geometry || !triangleColors) {
         showToast(t('aiNoModel', 'Load a 3D model first.'));
         return;
     }
     if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
-        showToast('AR Bridge unavailable');
+        showToast(currentLang === 'fr' ? 'Pont AR indisponible' : 'AR Bridge unavailable');
         return;
     }
 
-    const prevHeatmap = typeof isShowingPurgeHeatmap !== 'undefined' && isShowingPurgeHeatmap;
-    const prevClipRatio = typeof layerSliceRatio !== 'undefined' ? layerSliceRatio : 1.0;
-
+    // Build a clean isolated clone with true sRGB->Linear vertex colors (glTF 2.0 spec),
+    // immune to Solo dimming, Purge Heatmap, Preflight overlay, Wireframe, or Z-Slice clipping!
+    let exportGeom = null;
+    let exportMat = null;
     try {
-        if (prevHeatmap && typeof updateMeshVisualColors === 'function') {
-            updateMeshVisualColors();
+        const srcPos = currentMesh.geometry.attributes.position;
+        const vertCount = srcPos.count;
+        const faceCount = (vertCount / 3) | 0;
+
+        exportGeom = new THREE.BufferGeometry();
+        exportGeom.setAttribute('position', srcPos.clone());
+        if (currentMesh.geometry.attributes.normal) {
+            exportGeom.setAttribute('normal', currentMesh.geometry.attributes.normal.clone());
+        } else {
+            exportGeom.computeVertexNormals();
         }
-        if (prevClipRatio < 0.999 && currentMesh.material) {
-            currentMesh.material.clippingPlanes = null;
+
+        // Convert slot hex colors to true Linear RGB for glTF / QuickLook / SceneViewer fidelity
+        const slotLin = filamentSlots.map(s => {
+            const c = new THREE.Color(s.color || '#FFFFFF');
+            c.convertSRGBToLinear();
+            return [c.r, c.g, c.b];
+        });
+        const colArr = new Float32Array(vertCount * 3);
+        for (let f = 0; f < faceCount; f++) {
+            const s = triangleColors[f] || 0;
+            const rgb = slotLin[s] || slotLin[0] || [0.9, 0.9, 0.9];
+            const b = f * 9;
+            colArr[b] = rgb[0]; colArr[b + 1] = rgb[1]; colArr[b + 2] = rgb[2];
+            colArr[b + 3] = rgb[0]; colArr[b + 4] = rgb[1]; colArr[b + 5] = rgb[2];
+            colArr[b + 6] = rgb[0]; colArr[b + 7] = rgb[1]; colArr[b + 8] = rgb[2];
         }
+        exportGeom.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+
+        const pbr = (typeof getActivePBRParams === 'function')
+            ? getActivePBRParams()
+            : { roughness: 0.42, metalness: 0.08 };
+        exportMat = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: pbr.roughness,
+            metalness: pbr.metalness,
+            side: THREE.DoubleSide
+        });
+        const exportMesh = new THREE.Mesh(exportGeom, exportMat);
+
         showToast(t('launchingAR', 'Preparing 3D painted model for AR Viewer...'));
-        await window.StudiosProAR.exportSceneAndOpenAR(currentMesh, {
+        await window.StudiosProAR.exportSceneAndOpenAR(exportMesh, {
             name: 'StudiosPro_MultiColor_Creation',
             placement: 'floor',
+            unit: 'mm',
             sourceStudio: 'multicolor-3mf-painter'
         });
+    } catch (err) {
+        console.error('AR export error:', err);
+        showToast(currentLang === 'fr' ? 'Erreur lors du lancement AR.' : 'Failed to launch AR preview.');
     } finally {
-        if (prevHeatmap && typeof togglePurgeHeatmap === 'function') {
-            isShowingPurgeHeatmap = false;
-            togglePurgeHeatmap();
-        }
-        if (prevClipRatio < 0.999 && typeof setLayerSliceRatio === 'function') {
-            setLayerSliceRatio(prevClipRatio);
-        }
+        if (exportGeom) exportGeom.dispose();
+        if (exportMat) exportMat.dispose();
     }
 }
