@@ -30,6 +30,7 @@ function init3D() {
     renderer = new THREE.WebGLRenderer({
         canvas,
         antialias: true,
+        alpha: true,
         powerPreference: 'high-performance',
         preserveDrawingBuffer: true
     });
@@ -327,10 +328,10 @@ function isAnyModalOpen() {
 function closeAllModals() {
     document.querySelectorAll('.modal-overlay').forEach(m => {
         m.classList.remove('open');
-        if (m.style.display === 'flex' || m.style.display === 'block') m.style.display = 'none';
+        if (m.style.display) m.style.display = '';
     });
     const pay = document.getElementById('local-payment-modal');
-    if (pay) pay.style.display = 'none';
+    if (pay) pay.style.display = '';
     if (typeof clearExplodedPreview === 'function') clearExplodedPreview();
     const keepOverlay = (typeof isShowingPurgeHeatmap !== 'undefined' && isShowingPurgeHeatmap)
         || (typeof activePreflightMode !== 'undefined' && activePreflightMode && activePreflightMode !== 'none');

@@ -96,11 +96,12 @@ function clearStampGhost() {
         stampGhostTex = null;
     }
     stampGhostActiveKind = null;
+    lastStampHit = null;
     const hud = document.getElementById('stamp-live-hud');
     if (hud) hud.style.display = 'none';
 }
 
-function cancelStampingMode(silent = false) {
+function cancelStampingMode(silent = false, skipSelectTool = false) {
     const wasActive = isTextStampingMode || isStencilStampingMode ||
         (typeof isQRStampingMode !== 'undefined' && isQRStampingMode) ||
         (typeof isBatchPlacementMode !== 'undefined' && isBatchPlacementMode);
@@ -109,7 +110,9 @@ function cancelStampingMode(silent = false) {
     if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
     if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
     clearStampGhost();
-    if (typeof selectTool === 'function') selectTool(activeTool);
+    if (!skipSelectTool && typeof selectTool === 'function') {
+        selectTool(activeTool);
+    }
     if (wasActive && !silent && typeof showToast === 'function') {
         showToast(currentLang === 'fr' ? "Mode tampon annulé." : "Stamping mode cancelled.");
     }
@@ -669,6 +672,8 @@ function applyBinaryMaskStampToSurface(maskBits, W, H, physW, physH, opts, hit, 
     spatialGrid = new SpatialGrid(newGeom, 32);
     meshTopology = buildMeshTopology(newGeom);
     precomputeGeometryMetrics(newGeom);
+    if (typeof updateShadowCameraForMesh === 'function') updateShadowCameraForMesh(newGeom);
+    if (typeof rebuildMultiCopyClones === 'function') rebuildMultiCopyClones();
     updateMeshVisualColors();
     if (!skipHistoryCommit) commitHistory(true);
     if (!suppressToast && successToast) showToast(successToast);
@@ -835,7 +840,7 @@ function onTextColorSlotChange(val) {
 
 function openTextModal() {
     if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle 3D !" : "Please load a 3D model first!"); return; }
-    cancelStampingMode(true);
+    cancelStampingMode(true, true);
     populateSlotDropdowns();
 
     // Auto-recommend a sensible initial text size for current model dimensions
@@ -856,7 +861,8 @@ function openTextModal() {
 }
 
 function closeTextModal() {
-    document.getElementById('text-stamp-modal').style.display = 'none';
+    const m = document.getElementById('text-stamp-modal');
+    if (m) m.style.display = '';
 }
 
 function startTextStampingMode() {
@@ -874,6 +880,7 @@ function startTextStampingMode() {
 
     pendingTextConfig = { text: txt, mode, slot, size, depth, rotation, wrap, font, hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255] };
     closeTextModal();
+    if (window.innerWidth <= 900 && typeof setMobileView === 'function') setMobileView('canvas');
 
     isStencilStampingMode = false;
     if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
@@ -1229,7 +1236,7 @@ function onStencilColorSlotChange(val) {
 
 function openStencilModal() {
     if (!currentMesh) { showToast(currentLang === 'fr' ? "Chargez un modèle 3D !" : "Please load a 3D model first!"); return; }
-    cancelStampingMode(true);
+    cancelStampingMode(true, true);
     populateSlotDropdowns();
     initStencilPalette();
     renderStencilGlyphGrid(activeStencilCategory || 'gaming');
@@ -1241,7 +1248,8 @@ function openStencilModal() {
 }
 
 function closeStencilModal() {
-    document.getElementById('stencil-modal').style.display = 'none';
+    const m = document.getElementById('stencil-modal');
+    if (m) m.style.display = '';
 }
 
 function renderActiveStencilToCanvas(S, colorHex) {
@@ -1324,6 +1332,7 @@ function startStencilStampingMode() {
         hex, rgb: [rgbObj.r / 255, rgbObj.g / 255, rgbObj.b / 255]
     };
     closeStencilModal();
+    if (window.innerWidth <= 900 && typeof setMobileView === 'function') setMobileView('canvas');
 
     isTextStampingMode = false;
     if (typeof isQRStampingMode !== 'undefined') isQRStampingMode = false;
@@ -1496,7 +1505,8 @@ function openReliefModal() {
 
 function closeReliefModal() {
     if (reliefPreviewRaf) cancelAnimationFrame(reliefPreviewRaf);
-    document.getElementById('relief-modal').style.display = 'none';
+    const m = document.getElementById('relief-modal');
+    if (m) m.style.display = '';
     updateMeshVisualColors();
 }
 
@@ -1592,7 +1602,8 @@ function applyReliefColoring() {
     }
 
     if (reliefPreviewRaf) cancelAnimationFrame(reliefPreviewRaf);
-    document.getElementById('relief-modal').style.display = 'none';
+    const rm = document.getElementById('relief-modal');
+    if (rm) rm.style.display = '';
     updateMeshVisualColors();
     commitHistory(false);
     showToast(translations[currentLang].toastReliefApplied);
@@ -1608,7 +1619,8 @@ function openCavityModal() {
 
 function closeCavityModal() {
     if (cavityPreviewRaf) cancelAnimationFrame(cavityPreviewRaf);
-    document.getElementById('cavity-modal').style.display = 'none';
+    const cm = document.getElementById('cavity-modal');
+    if (cm) cm.style.display = '';
     updateMeshVisualColors();
 }
 
@@ -1654,7 +1666,8 @@ function applyCavityColoring() {
     }
 
     if (cavityPreviewRaf) cancelAnimationFrame(cavityPreviewRaf);
-    document.getElementById('cavity-modal').style.display = 'none';
+    const cm = document.getElementById('cavity-modal');
+    if (cm) cm.style.display = '';
     updateMeshVisualColors();
     commitHistory(false);
     showToast(translations[currentLang].toastCavityApplied);
@@ -1725,7 +1738,8 @@ function openDecalModal() {
 }
 
 function closeDecalModal() {
-    document.getElementById('decal-modal').style.display = 'none';
+    const dm = document.getElementById('decal-modal');
+    if (dm) dm.style.display = '';
 }
 
 function handleDecalImageUpload(e) {

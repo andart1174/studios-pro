@@ -73,6 +73,8 @@ header {
     align-items: center;
     gap: 10px;
     min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
 }
 
 .brand-badge {
@@ -85,6 +87,7 @@ header {
     letter-spacing: 0.6px;
     text-transform: uppercase;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .brand-title {
@@ -95,6 +98,9 @@ header {
     -webkit-text-fill-color: transparent;
     letter-spacing: -0.3px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .brand-sub {
@@ -111,6 +117,7 @@ header {
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
+    flex: 0 0 auto;
 }
 
 .lang-switch {
@@ -1961,17 +1968,22 @@ header {
 }
 .cost-breakdown b { color: #f8fafc; font-family: 'Inter', monospace; }
 
-/* Responsive Desktop Breakpoints (Zero Header Overflow on 1280px–1536px Laptops!) */
-@media (max-width: 1520px) {
-    .brand-sub { display: none; }
-    header { padding: 0 12px; gap: 6px; }
+/* Responsive Desktop Breakpoints (Zero Header Overflow on 1024px–1620px Laptops!) */
+@media (max-width: 1620px) {
+    .brand-sub, #autosave-status { display: none; }
+    header { padding: 0 12px; gap: 8px; }
     .btn-top { padding: 6px 9px; font-size: 0.77rem; }
 }
-@media (max-width: 1260px) {
+@media (max-width: 1480px) {
     .brand-badge { display: none; }
-    .brand-title { font-size: 1.05rem; }
-    .header-actions { gap: 5px; }
-    .btn-top { padding: 6px 8px; font-size: 0.74rem; gap: 4px; }
+    .brand-title { font-size: 1.06rem; }
+    .header-actions { gap: 6px; }
+    .btn-top { padding: 6px 8px; font-size: 0.75rem; gap: 5px; }
+}
+@media (max-width: 1220px) {
+    .brand-title { font-size: 0.96rem; }
+    .header-actions { gap: 4px; }
+    .btn-top { padding: 5px 7px; font-size: 0.72rem; gap: 4px; }
     .panel-right { width: 345px; }
 }
 

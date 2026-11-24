@@ -1202,7 +1202,7 @@ function layModelFlatOnBed() {
     }
 
     const q = new THREE.Quaternion().setFromUnitVectors(dirs[bestD], new THREE.Vector3(0, -1, 0));
-    geom.applyQuaternion(q);
+    geom.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q));
     geom.computeVertexNormals();
     alignGeometryToBed(geom);
     if (geom.disposeBoundsTree) geom.disposeBoundsTree();

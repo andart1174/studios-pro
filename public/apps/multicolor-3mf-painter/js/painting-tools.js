@@ -356,7 +356,7 @@ function selectTool(tool) {
     if (linePreviewLine) linePreviewLine.visible = false;
     if (activeTool !== 'tape') clearTapePreview();
     if (typeof cancelStampingMode === 'function') {
-        cancelStampingMode(true);
+        cancelStampingMode(true, true);
     }
     if (typeof isBatchPlacementMode !== 'undefined') isBatchPlacementMode = false;
 

@@ -587,7 +587,8 @@ function openColorEditor(slotIdx) {
 }
 
 function closeColorEditor() {
-    document.getElementById('color-editor-modal').style.display = 'none';
+    const m = document.getElementById('color-editor-modal');
+    if (m) m.style.display = '';
     if (colorUpdateRaf) cancelAnimationFrame(colorUpdateRaf);
     // Rollback live preview if user clicked Cancel!
     if (typeof updateMeshVisualColors === 'function') updateMeshVisualColors();
@@ -613,7 +614,8 @@ function applyColorEditor() {
     if (typeof updateStats === 'function') updateStats();
     if (typeof updateMobileFilamentBar === 'function') updateMobileFilamentBar();
     if (typeof commitHistory === 'function') commitHistory(false);
-    document.getElementById('color-editor-modal').style.display = 'none';
+    const cm = document.getElementById('color-editor-modal');
+    if (cm) cm.style.display = '';
     showToast(`Slot #${filamentSlots[editingSlotIndex].id}: ${name}`);
 }
 
@@ -629,6 +631,7 @@ function switchCatalogTab(tab) {
         'studio-pla': 'PLA Basic',
         'studio-matte': 'PLA Matte',
         'studio-silk': 'PLA Silk',
+        'studio-pro': 'PLA Basic',
         'studio-petg': 'PETG'
     };
     const swatches = filamentCatalogs[tab] || [];
@@ -824,7 +827,8 @@ function openSwapModal() {
 }
 
 function closeSwapModal() {
-    document.getElementById('swap-modal').style.display = 'none';
+    const m = document.getElementById('swap-modal');
+    if (m) m.style.display = '';
 }
 
 function executeSwapSlots() {

@@ -1221,7 +1221,7 @@ function applySmartOrientationByIndex(idx = 0) {
         } else {
             q.setFromUnitVectors(fromDir, targetUp);
         }
-        geom.applyQuaternion(q);
+        geom.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q));
         geom.computeVertexNormals();
         if (typeof alignGeometryToBed === 'function') alignGeometryToBed(geom);
         if (geom.disposeBoundsTree) geom.disposeBoundsTree();

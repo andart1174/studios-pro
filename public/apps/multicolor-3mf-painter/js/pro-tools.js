@@ -304,8 +304,21 @@ function buildQRMaskAndPreview(cfg) {
 
 function openQRBatchModal(initialTab = 'qr') {
     if (!currentMesh) { showToast(t('aiNoModel', 'Load a 3D model first.')); return; }
-    if (typeof cancelStampingMode === 'function') cancelStampingMode(true);
+    if (typeof cancelStampingMode === 'function') cancelStampingMode(true, true);
     populateSlotDropdowns();
+
+    // Auto-recommend a sensible initial QR size that fits nicely on current model
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    const sz = box.getSize(new THREE.Vector3());
+    const minFace = Math.max(12, Math.min(sz.x, sz.y));
+    const recQR = Math.max(10, Math.min(24, Math.round(minFace * 0.72)));
+    const qrSl = document.getElementById('slider-qr-size');
+    if (qrSl && !qrSl.dataset.userTouched) {
+        qrSl.value = recQR;
+        const lbl = document.getElementById('val-qr-size');
+        if (lbl) lbl.textContent = `${recQR} mm`;
+    }
+
     switchQRBatchTab(initialTab);
     updateQRModalPreview();
     document.getElementById('qr-batch-modal').style.display = 'flex';
@@ -313,7 +326,8 @@ function openQRBatchModal(initialTab = 'qr') {
 }
 
 function closeQRBatchModal() {
-    document.getElementById('qr-batch-modal').style.display = 'none';
+    const m = document.getElementById('qr-batch-modal');
+    if (m) m.style.display = '';
 }
 
 function switchQRBatchTab(tab) {
@@ -353,6 +367,7 @@ function startQRStampingMode() {
 
     pendingQRConfig = { text, mode, fgSlot, bgSlot, includeBackplate, size, depth, rotation: 0, wrap: 'flat' };
     closeQRBatchModal();
+    if (window.innerWidth <= 900 && typeof setMobileView === 'function') setMobileView('canvas');
 
     isTextStampingMode = false;
     isStencilStampingMode = false;
@@ -476,6 +491,7 @@ function startBatchAnchorPlacement() {
     };
 
     closeQRBatchModal();
+    if (window.innerWidth <= 900 && typeof setMobileView === 'function') setMobileView('canvas');
     isTextStampingMode = false;
     isStencilStampingMode = false;
     isQRStampingMode = false;
@@ -486,6 +502,7 @@ function startBatchAnchorPlacement() {
 
     controls.enabled = true;
     if (controls.mouseButtons) controls.mouseButtons.LEFT = null;
+    if (controls.touches && typeof THREE.TOUCH !== 'undefined') controls.touches.ONE = null;
     document.getElementById('viewport-container').style.cursor = 'crosshair';
     showToast(currentLang === 'fr'
         ? `Cliquez sur le modèle pour placer le lot de ${rawNames.length} prénoms (Q/E pivoter, +/- taille) !`

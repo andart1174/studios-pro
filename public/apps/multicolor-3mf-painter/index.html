@@ -11,7 +11,7 @@
 
     <!-- Three.js r128 + MeshBVH + Loaders/Exporters + AR Bridge + JSZip + Lucide -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.3/build/index.umd.cjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.5.10/umd/index.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
@@ -1373,7 +1373,7 @@
                         <span data-i18n="labelSizeShort">Size:</span>
                         <strong id="val-qr-size" style="color:#38bdf8;">20 mm</strong>
                     </div>
-                    <input id="slider-qr-size" class="control-slider" type="range" min="10" max="60" step="1" value="20" oninput="document.getElementById('val-qr-size').textContent = this.value + ' mm'">
+                    <input id="slider-qr-size" class="control-slider" type="range" min="10" max="60" step="1" value="20" oninput="this.dataset.userTouched='1'; document.getElementById('val-qr-size').textContent = this.value + ' mm'">
                 </div>
                 <div>
                     <div class="control-label">
