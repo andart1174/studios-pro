@@ -4,7 +4,7 @@
 
 let config = {
     // Workspace & Framing
-    workspaceMode: 'quick',       // 'quick' (4-step HueForge) | 'pro' (Full CAD & 2D Sculpt)
+    workspaceMode: 'pro',         // 'pro' (Full CAD & 2D Sculpt default) | 'quick' (4-step HueForge)
     aspectPreset: 'auto',         // 'auto','1:1','4:5','3:4','16:9','a5','a4','a1mini','x1c','polaroid'
     cropZoom: 1.0,
     cropPanX: 0.0,
@@ -70,7 +70,28 @@ let config = {
     slicerProfile: 'bambu_ams',   // 'bambu_ams', 'bambu_ams_lite', 'prusa_mmu3', 'manual_m600', 'cura_pause'
     muralConnector: 'dovetail',   // 'none', 'dovetail', 'magnets'
     costPerKg: 24.00,
-    lightboxKelvin: 4000
+    lightboxKelvin: 4000,
+
+    // Unique Pro Studio Tools (V3)
+    showPrintBed: false,
+    printBedPreset: 'bambu_256',  // 'bambu_180', 'bambu_256', 'prusa_mk4', 'creality_300'
+    crossSectionActive: false,
+    crossSectionAxis: 'y',        // 'y' (horizontal cut) | 'x' (vertical cut)
+    crossSectionPos: 50,          // 5..95%
+    smartCutoutActive: false,
+    smartCutoutMode: 'diecut',    // 'diecut' (remove void) | 'flatten' (flatten to base)
+    smartCutoutSensitivity: 42,   // 15..85
+    backsideSignatureEnabled: false,
+    backsideSignatureText: '',
+    backsideEditionText: '',
+    backsideSignatureDepth: 0.24, // 0.16..0.40 mm
+    triptychPreview: false,
+    triptychGapMm: 20,            // 10..35 mm
+    electricityRateKwh: 0.18,
+    printerWatts: 120,
+    packagingCost: 2.50,
+    etsyFeePct: 12,
+    profitMarginPct: 180
 };
 
 // ==========================================
@@ -552,6 +573,11 @@ let scene, camera, renderer, controls;
 let reliefMesh = null;
 let frameMesh = null;
 let qr3DMesh = null;
+let printBedGroup = null;
+let crossSectionLineMesh = null;
+let triptychSideMeshes = [];
+let crossSectionClipPlane = null;
+let _splitPrevCameraState = null;
 let studioLights = [];
 let backlightLight = null;
 let keyStudioLight = null;
@@ -584,6 +610,8 @@ let customZDeltaBuffer = null;     // Float32Array (in mm, +/- relief sculpting 
 let cutoutMaskBuffer = null;       // Uint8Array (0 = solid, 1 = drilled open-air cutout)
 let userEditMaskBuffer = null;     // Uint8Array (1 = user painted/sculpted pixel)
 let bgExteriorVoidMask = null;     // Uint8Array (1 = exterior connected background void in photo mode)
+let smartCutoutMask = null;        // Uint8Array (1 = AI smart subject cutout removed background)
+let backsideSigMaskCache = null;   // Cached mirrored 2D engraving bitmap for backside signature
 let lastProcessedMeta = null;
 let isCanvasUserEdited = false;
 let bufferWidth = 0;

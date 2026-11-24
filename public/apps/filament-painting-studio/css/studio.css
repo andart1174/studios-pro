@@ -1175,12 +1175,12 @@ select option,
     color: #fff;
 }
 
-/* Interactive Before / After Split-Screen Photo vs 3D Comparator */
+/* Interactive Before / After Split-Screen Photo vs 3D Comparator (1:1 Transparent Overlay) */
 #split-compare-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 32;
+    z-index: 16;
     display: none;
     overflow: hidden;
     user-select: none;
@@ -1193,7 +1193,7 @@ select option,
     inset: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at center, #111827 0%, #06090e 100%);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1215,7 +1215,7 @@ select option,
     box-shadow: 0 0 18px rgba(56, 189, 248, 0.95);
     pointer-events: auto;
     cursor: ew-resize;
-    z-index: 35;
+    z-index: 24;
 }
 #split-divider-knob {
     position: absolute;
@@ -1238,18 +1238,21 @@ select option,
 }
 .split-badge {
     position: absolute;
-    top: 58px;
-    padding: 5px 12px;
+    top: 60px;
+    padding: 4px 10px;
     border-radius: 8px;
-    font-size: 0.72rem;
+    font-size: 0.69rem;
     font-weight: 800;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     background: rgba(15, 23, 42, 0.92);
     border: 1px solid rgba(56, 189, 248, 0.45);
     color: #f8fafc;
     backdrop-filter: blur(8px);
     box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-    z-index: 34;
+    z-index: 22;
+}
+#split-compare-overlay .split-badge:first-of-type {
+    top: 136px;
 }
 
 /* Ultra-Quality Suite Card in Section 2 */
@@ -1660,6 +1663,136 @@ body.workspace-quick .quick-step-badge {
     cursor: crosshair;
     background: #090d16;
     display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🚀 STUDIO V3 — SUB-ACCORDIONS, OPTICAL STRIP, CROSS-SECTION, AI CUTOUT & COST CALC
+   ═══════════════════════════════════════════════════════════════ */
+.sub-accordion {
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.45);
+    margin-top: 8px;
+    overflow: hidden;
+}
+.sub-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.03);
+    transition: background 0.15s ease;
+}
+.sub-accordion-header:hover {
+    background: rgba(56, 189, 248, 0.09);
+}
+.sub-accordion-header > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.sub-acc-chevron {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    transition: transform 0.2s ease;
+}
+.sub-accordion.collapsed .sub-acc-chevron {
+    transform: rotate(-90deg);
+}
+.sub-accordion.collapsed .sub-accordion-body {
+    display: none;
+}
+.sub-accordion-body {
+    padding: 8px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+/* Smart AI Subject Cutout Box */
+.ai-cutout-box {
+    background: rgba(244, 63, 94, 0.05);
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    border-radius: 8px;
+    padding: 7px 8px;
+    margin-bottom: 8px;
+}
+#btn-ai-subject-cutout.active {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.42), rgba(192, 132, 252, 0.35)) !important;
+    border-color: #fb7185 !important;
+    color: #fff !important;
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);
+}
+
+/* Live Kubelka-Munk Optical Mixing & TD Gradient Strip */
+.optical-mixing-wrap {
+    margin: 7px 0 9px 0;
+    padding: 6px 8px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(192, 132, 252, 0.28);
+    border-radius: 8px;
+}
+#optical-mixing-canvas {
+    width: 100%;
+    height: 26px;
+    display: block;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Live 3D Cross-Section Floating Engineering HUD */
+.cross-section-hud {
+    position: absolute;
+    top: 62px;
+    right: 14px;
+    width: 340px;
+    max-width: calc(100% - 28px);
+    background: rgba(10, 15, 26, 0.94);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    border-radius: 12px;
+    padding: 10px 12px;
+    z-index: 28;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+#cross-section-canvas {
+    width: 100%;
+    height: auto;
+    border-radius: 7px;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    display: block;
+}
+
+/* Print Cost & Etsy Profit Calculator KPI Boxes */
+.cost-kpi-box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-panel);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+}
+.cost-kpi-box span {
+    font-size: 0.67rem;
+    color: var(--text-sub);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.cost-kpi-box strong {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+.cost-kpi-box small {
+    font-size: 0.66rem;
 }
 
 /* Responsive Laptop Header (ZERO Overflow on 1280px–1536px!) */

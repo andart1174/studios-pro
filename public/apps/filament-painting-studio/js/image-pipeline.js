@@ -199,23 +199,43 @@ function applyAspectCropPreset(preset, skipRefresh = false) {
     }
 }
 
+function syncCropSlidersUI() {
+    const zEl = document.getElementById('slider-crop-zoom');
+    const xEl = document.getElementById('slider-crop-panx');
+    const yEl = document.getElementById('slider-crop-pany');
+    const zoom = Math.max(1.0, Math.min(3.0, Number(config.cropZoom) || 1.0));
+    const panX = Math.max(-1.0, Math.min(1.0, Number(config.cropPanX) || 0.0));
+    const panY = Math.max(-1.0, Math.min(1.0, Number(config.cropPanY) || 0.0));
+    if (zEl) zEl.value = zoom.toFixed(2);
+    if (xEl) xEl.value = Math.round(panX * 100);
+    if (yEl) yEl.value = Math.round(panY * 100);
+    const vz = document.getElementById('val-crop-zoom');
+    const vx = document.getElementById('val-crop-panx');
+    const vy = document.getElementById('val-crop-pany');
+    if (vz) vz.innerText = zoom.toFixed(2) + '×';
+    if (vx) vx.innerText = Math.round(panX * 100) + '%';
+    if (vy) vy.innerText = Math.round(panY * 100) + '%';
+}
+
 function updateCropTransform() {
     const zEl = document.getElementById('slider-crop-zoom');
     const xEl = document.getElementById('slider-crop-panx');
     const yEl = document.getElementById('slider-crop-pany');
     const capEl = document.getElementById('input-polaroid-caption');
     if (zEl) {
-        config.cropZoom = parseFloat(zEl.value) / 100;
+        // slider-crop-zoom uses direct float range [1.0 .. 3.0] (step 0.05)
+        const rawZ = parseFloat(zEl.value);
+        config.cropZoom = Math.max(1.0, Math.min(3.0, Number.isFinite(rawZ) ? rawZ : 1.0));
         const vz = document.getElementById('val-crop-zoom');
-        if (vz) vz.innerText = Math.round(config.cropZoom * 100) + '%';
+        if (vz) vz.innerText = config.cropZoom.toFixed(2) + '×';
     }
     if (xEl) {
-        config.cropPanX = parseFloat(xEl.value) / 100;
+        config.cropPanX = Math.max(-1.0, Math.min(1.0, (parseFloat(xEl.value) || 0) / 100));
         const vx = document.getElementById('val-crop-panx');
         if (vx) vx.innerText = Math.round(config.cropPanX * 100) + '%';
     }
     if (yEl) {
-        config.cropPanY = parseFloat(yEl.value) / 100;
+        config.cropPanY = Math.max(-1.0, Math.min(1.0, (parseFloat(yEl.value) || 0) / 100));
         const vy = document.getElementById('val-crop-pany');
         if (vy) vy.innerText = Math.round(config.cropPanY * 100) + '%';
     }
@@ -224,6 +244,7 @@ function updateCropTransform() {
     if (!isDrawingTemplateActive && sourceImage) {
         processSourceImage(false, true);
         requestMeshUpdate();
+        if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
     }
 }
 
@@ -231,19 +252,12 @@ function resetCropTransform() {
     config.cropZoom = 1.0;
     config.cropPanX = 0.0;
     config.cropPanY = 0.0;
-    const zEl = document.getElementById('slider-crop-zoom');
-    const xEl = document.getElementById('slider-crop-panx');
-    const yEl = document.getElementById('slider-crop-pany');
-    if (zEl) zEl.value = 100;
-    if (xEl) xEl.value = 0;
-    if (yEl) yEl.value = 0;
-    const vz = document.getElementById('val-crop-zoom');
-    const vx = document.getElementById('val-crop-panx');
-    const vy = document.getElementById('val-crop-pany');
-    if (vz) vz.innerText = '100%';
-    if (vx) vx.innerText = '0%';
-    if (vy) vy.innerText = '0%';
-    updateCropTransform();
+    syncCropSlidersUI();
+    if (!isDrawingTemplateActive && sourceImage) {
+        processSourceImage(false, true);
+        requestMeshUpdate();
+        if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
+    }
 }
 
 function loadUploadedFile(file) {
@@ -270,6 +284,10 @@ function loadUploadedFile(file) {
             config.cropPanX = 0.0;
             config.cropPanY = 0.0;
             config.removeCanvasBg = false;
+            config.smartCutoutActive = false;
+            smartCutoutMask = null;
+            syncCropSlidersUI();
+            if (typeof syncSmartCutoutUI === 'function') syncSmartCutoutUI();
             editorSymmetryMode = 'none';
             activeQRStamp = null;
             activeSoundwave = null;
@@ -1088,6 +1106,12 @@ function processSourceImage(preserveUserEdits = true, forceFromSource = false) {
 
     // 8. Build exterior-connected background mask for safe Photo Mode die-cut removal
     rebuildBgExteriorVoidMask(targetCols, targetRows);
+    // Recompute Smart AI Subject Cutout mask if active
+    if (config.smartCutoutActive && !isDrawingTemplateActive) {
+        computeSmartAISubjectMask(targetCols, targetRows);
+    } else {
+        smartCutoutMask = null;
+    }
 
     lastProcessedMeta = {
         w: targetCols,
@@ -1148,6 +1172,7 @@ function rotateImage() {
     processSourceImage(false, true);
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     requestMeshUpdate();
+    if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
     showToast(`${translations[currentLang]?.toastRotated || 'Rotated'}: ${config.rotation}°`);
 }
 
@@ -1158,6 +1183,7 @@ function toggleFlipX() {
     processSourceImage(false, true);
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     requestMeshUpdate();
+    if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
 }
 
 function toggleFlipY() {
@@ -1167,6 +1193,7 @@ function toggleFlipY() {
     processSourceImage(false, true);
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     requestMeshUpdate();
+    if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
 }
 
 function resetOrientation() {
@@ -1178,18 +1205,11 @@ function resetOrientation() {
     config.cropZoom = 1.0;
     config.cropPanX = 0.0;
     config.cropPanY = 0.0;
-    const zEl = document.getElementById('slider-crop-zoom');
-    const pxEl = document.getElementById('slider-crop-panx');
-    const pyEl = document.getElementById('slider-crop-pany');
-    if (zEl) zEl.value = 1;
-    if (pxEl) pxEl.value = 0;
-    if (pyEl) pyEl.value = 0;
-    const vz = document.getElementById('val-crop-zoom'); if (vz) vz.innerText = '1.00×';
-    const vx = document.getElementById('val-crop-panx'); if (vx) vx.innerText = '0%';
-    const vy = document.getElementById('val-crop-pany'); if (vy) vy.innerText = '0%';
+    syncCropSlidersUI();
     processSourceImage(false, true);
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     requestMeshUpdate();
+    if (typeof renderSplitCompareSource === 'function' && isSplitCompareMode) renderSplitCompareSource();
 }
 
 function updateBgSculptMode() {
@@ -1340,6 +1360,15 @@ function isPixelCutoutVoid(colIdx, rowIdx, w, h, bgRgb, baseRgbCache = null) {
 
     if (isOutsideOutlineShape(nx, ny, config.outlineShape)) return true;
     if (cutoutMaskBuffer && cutoutMaskBuffer[pIdx] === 1) return true;
+
+    // Smart AI Subject Cutout (Die-Cut Silhouette mode — works even on textured/multi-color backgrounds!)
+    if (config.smartCutoutActive && config.smartCutoutMode !== 'flatten' && smartCutoutMask && smartCutoutMask.length > pIdx) {
+        // Protect QR Code & Soundwave zones
+        const inQR = activeQRStamp && u >= activeQRStamp.u0 && u <= activeQRStamp.u1 && v >= activeQRStamp.v0 && v <= activeQRStamp.v1;
+        const inWave = activeSoundwave && u >= activeSoundwave.u0 && u <= activeSoundwave.u1 && v >= activeSoundwave.v0 && v <= activeSoundwave.v1;
+        if (!inQR && !inWave && smartCutoutMask[pIdx] === 1) return true;
+    }
+
     if (!config.removeCanvasBg) return false;
 
     // Protect active QR Code & Soundwave zones from being punched out in Model-Only mode
@@ -1713,6 +1742,10 @@ function loadSample(type) {
         config.cropPanX = 0.0;
         config.cropPanY = 0.0;
         config.removeCanvasBg = false;
+        config.smartCutoutActive = false;
+        smartCutoutMask = null;
+        syncCropSlidersUI();
+        if (typeof syncSmartCutoutUI === 'function') syncSmartCutoutUI();
         activeQRStamp = null;
         activeSoundwave = null;
         studioOverlays = { texts: [], stamps: [], qr: null, soundwave: null };
@@ -1760,4 +1793,216 @@ function loadSample(type) {
         if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     };
     img.src = dataUrl;
+}
+
+// ==========================================
+// ✂️ SMART AI SUBJECT CUTOUT (MULTI-CLUSTER LAB + SOBEL EDGE-AWARE SEGMENTATION)
+// ==========================================
+
+function computeSmartAISubjectMask(w, h) {
+    if (!colorDataBuffer || !w || !h) {
+        smartCutoutMask = null;
+        return;
+    }
+    const N = w * h;
+    const sens = Math.max(15, Math.min(85, Number(config.smartCutoutSensitivity) || 42));
+    // 1. Sample border ring into up to 5 dominant LAB color clusters (handles gradients & textured walls!)
+    const borderSamples = [];
+    const ring = Math.max(2, Math.min(6, Math.floor(Math.min(w, h) * 0.02)));
+    const stepX = Math.max(1, Math.floor(w / 32));
+    const stepY = Math.max(1, Math.floor(h / 32));
+    const pushBorder = (x, y) => {
+        const i4 = (y * w + x) * 4;
+        borderSamples.push(rgbToLab(colorDataBuffer[i4], colorDataBuffer[i4 + 1], colorDataBuffer[i4 + 2]));
+    };
+    for (let x = 0; x < w; x += stepX) {
+        pushBorder(x, 0);
+        pushBorder(x, Math.min(h - 1, ring));
+        pushBorder(x, h - 1);
+        pushBorder(x, Math.max(0, h - 1 - ring));
+    }
+    for (let y = ring; y < h - ring; y += stepY) {
+        pushBorder(0, y);
+        pushBorder(Math.min(w - 1, ring), y);
+        pushBorder(w - 1, y);
+        pushBorder(Math.max(0, w - 1 - ring), y);
+    }
+
+    // Mini K-means (K = 5) in CIE LAB space on border samples
+    const K = Math.min(5, Math.max(1, borderSamples.length));
+    const centroids = [];
+    for (let k = 0; k < K; k++) {
+        const s = borderSamples[Math.floor((k / K) * borderSamples.length)];
+        centroids.push([s[0], s[1], s[2]]);
+    }
+    for (let iter = 0; iter < 5; iter++) {
+        const sums = Array.from({ length: K }, () => [0, 0, 0, 0]);
+        for (let i = 0; i < borderSamples.length; i++) {
+            const p = borderSamples[i];
+            let bestK = 0, bestD = Infinity;
+            for (let k = 0; k < K; k++) {
+                const c = centroids[k];
+                const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2;
+                if (d < bestD) { bestD = d; bestK = k; }
+            }
+            sums[bestK][0] += p[0]; sums[bestK][1] += p[1]; sums[bestK][2] += p[2]; sums[bestK][3]++;
+        }
+        for (let k = 0; k < K; k++) {
+            if (sums[k][3] > 0) {
+                centroids[k] = [sums[k][0] / sums[k][3], sums[k][1] / sums[k][3], sums[k][2] / sums[k][3]];
+            }
+        }
+    }
+
+    // 2. Compute luminance + Sobel edge magnitude so flood-fill stops crisply on subject outlines
+    const lumBuf = new Float32Array(N);
+    for (let p = 0; p < N; p++) {
+        const i4 = p * 4;
+        lumBuf[p] = 0.299 * colorDataBuffer[i4] + 0.587 * colorDataBuffer[i4 + 1] + 0.114 * colorDataBuffer[i4 + 2];
+    }
+    const edgeBuf = new Float32Array(N);
+    for (let y = 1; y < h - 1; y++) {
+        const row = y * w;
+        for (let x = 1; x < w - 1; x++) {
+            const p = row + x;
+            const gx = -lumBuf[p - w - 1] + lumBuf[p - w + 1] - 2 * lumBuf[p - 1] + 2 * lumBuf[p + 1] - lumBuf[p + w - 1] + lumBuf[p + w + 1];
+            const gy = -lumBuf[p - w - 1] - 2 * lumBuf[p - w] - lumBuf[p - w + 1] + lumBuf[p + w - 1] + 2 * lumBuf[p + w] + lumBuf[p + w + 1];
+            edgeBuf[p] = Math.hypot(gx, gy) * 0.25;
+        }
+    }
+
+    // 3. Edge-Aware Multi-Cluster LAB Flood Fill from all 4 outer edges
+    const bgMask = new Uint8Array(N);
+    const visited = new Uint8Array(N);
+    const queue = new Int32Array(N);
+    let qHead = 0, qTail = 0;
+
+    // Sensitivity [15..85] maps cleanly to CIE LAB distance threshold [14..52]
+    const baseLabThresh = 8.0 + sens * 0.52;
+    const edgeStopThresh = 22.0 + (85 - sens) * 0.45;
+    const localStepThreshSq = Math.pow(14.0 + sens * 0.42, 2);
+
+    const minDistToBorderClusters = (r, g, b) => {
+        const lab = rgbToLab(r, g, b);
+        let best = Infinity;
+        for (let k = 0; k < K; k++) {
+            const c = centroids[k];
+            const d = Math.hypot(lab[0] - c[0], lab[1] - c[1], lab[2] - c[2]);
+            if (d < best) best = d;
+        }
+        return best;
+    };
+
+    const trySeed = (x, y) => {
+        const p = y * w + x;
+        if (visited[p]) return;
+        if (userEditMaskBuffer && userEditMaskBuffer[p] === 1) return;
+        visited[p] = 1;
+        const i4 = p * 4;
+        if (minDistToBorderClusters(colorDataBuffer[i4], colorDataBuffer[i4 + 1], colorDataBuffer[i4 + 2]) <= baseLabThresh * 1.15) {
+            bgMask[p] = 1;
+            queue[qTail++] = p;
+        }
+    };
+
+    for (let x = 0; x < w; x++) { trySeed(x, 0); trySeed(x, h - 1); }
+    for (let y = 1; y < h - 1; y++) { trySeed(0, y); trySeed(w - 1, y); }
+
+    const tryStep = (np, pr, pg, pb) => {
+        if (visited[np]) return;
+        if (userEditMaskBuffer && userEditMaskBuffer[np] === 1) return;
+        visited[np] = 1;
+        const nx = (np % w) / Math.max(1, w - 1) * 2 - 1;
+        const ny = ((np / w) | 0) / Math.max(1, h - 1) * 2 - 1;
+        // Center-prior protection: require tighter background confidence inside central subject zone
+        const centerDist = Math.hypot(nx, ny);
+        const centerFactor = centerDist < 0.55 ? 0.78 : 1.0;
+
+        const i4 = np * 4;
+        const r = colorDataBuffer[i4], g = colorDataBuffer[i4 + 1], b = colorDataBuffer[i4 + 2];
+        const localDiffSq = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2;
+        if (edgeBuf[np] > edgeStopThresh && localDiffSq > localStepThreshSq * 0.45) return;
+
+        const labDist = minDistToBorderClusters(r, g, b);
+        if (labDist <= baseLabThresh * centerFactor || (localDiffSq <= localStepThreshSq * 0.42 && labDist <= baseLabThresh * 1.32 * centerFactor)) {
+            bgMask[np] = 1;
+            queue[qTail++] = np;
+        }
+    };
+
+    while (qHead < qTail) {
+        const p = queue[qHead++];
+        const x = p % w;
+        const y = (p - x) / w;
+        const i4 = p * 4;
+        const pr = colorDataBuffer[i4], pg = colorDataBuffer[i4 + 1], pb = colorDataBuffer[i4 + 2];
+        if (x > 0) tryStep(p - 1, pr, pg, pb);
+        if (x < w - 1) tryStep(p + 1, pr, pg, pb);
+        if (y > 0) tryStep(p - w, pr, pg, pb);
+        if (y < h - 1) tryStep(p + w, pr, pg, pb);
+    }
+
+    // 4. Clean 1-pass morphological smoothing (closes single-pixel halo noise along silhouette edge)
+    const cleaned = new Uint8Array(bgMask);
+    for (let y = 1; y < h - 1; y++) {
+        const row = y * w;
+        for (let x = 1; x < w - 1; x++) {
+            const p = row + x;
+            const nSum = bgMask[p - 1] + bgMask[p + 1] + bgMask[p - w] + bgMask[p + w]
+                + bgMask[p - w - 1] + bgMask[p - w + 1] + bgMask[p + w - 1] + bgMask[p + w + 1];
+            if (bgMask[p] === 1 && nSum <= 2) cleaned[p] = 0;
+            else if (bgMask[p] === 0 && nSum >= 7) cleaned[p] = 1;
+        }
+    }
+
+    // Safety guard: never delete >92% of the image (prevents blank screen on flat solid artwork)
+    let bgCount = 0;
+    for (let i = 0; i < N; i++) if (cleaned[i] === 1) bgCount++;
+    if (bgCount > N * 0.92) {
+        cleaned.fill(0);
+    }
+
+    smartCutoutMask = cleaned;
+}
+
+function syncSmartCutoutUI() {
+    const on = !!config.smartCutoutActive;
+    const btn = document.getElementById('btn-ai-subject-cutout');
+    if (btn) btn.classList.toggle('active', on);
+    const wrap = document.getElementById('ai-cutout-controls');
+    if (wrap) wrap.style.display = on ? 'block' : 'none';
+    const sl = document.getElementById('slider-ai-cutout-sens');
+    const vl = document.getElementById('val-ai-cutout-sens');
+    if (sl) sl.value = config.smartCutoutSensitivity || 42;
+    if (vl) vl.innerText = (config.smartCutoutSensitivity || 42) + '%';
+    const sel = document.getElementById('select-ai-cutout-mode');
+    if (sel) sel.value = config.smartCutoutMode || 'diecut';
+}
+
+function toggleSmartAISubjectCutout(forceVal) {
+    config.smartCutoutActive = (typeof forceVal === 'boolean') ? forceVal : !config.smartCutoutActive;
+    if (config.smartCutoutActive) {
+        computeSmartAISubjectMask(processedCanvas.width || bufferWidth, processedCanvas.height || bufferHeight);
+    } else {
+        smartCutoutMask = null;
+    }
+    syncSmartCutoutUI();
+    if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
+    requestMeshUpdate();
+    showToast(config.smartCutoutActive
+        ? (currentLang === 'fr' ? '✂️ Détourage IA Sujet activé (ajustez la sensibilité si besoin)' : '✂️ AI Smart Subject Cutout ON (fine-tune sensitivity below)')
+        : (currentLang === 'fr' ? 'Détourage IA désactivé' : 'AI Subject Cutout OFF'));
+}
+
+function updateSmartCutoutParams() {
+    const sl = document.getElementById('slider-ai-cutout-sens');
+    const sel = document.getElementById('select-ai-cutout-mode');
+    if (sl) config.smartCutoutSensitivity = parseInt(sl.value, 10) || 42;
+    if (sel) config.smartCutoutMode = sel.value || 'diecut';
+    syncSmartCutoutUI();
+    if (config.smartCutoutActive) {
+        computeSmartAISubjectMask(processedCanvas.width || bufferWidth, processedCanvas.height || bufferHeight);
+        if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
+        requestMeshUpdate();
+    }
 }

@@ -63,8 +63,15 @@ function updateRakingLight() {
     updateRakingLightPosition();
 }
 
+function getActiveClippingPlanes() {
+    const planes = [];
+    if (clipPlane) planes.push(clipPlane);
+    if (crossSectionClipPlane) planes.push(crossSectionClipPlane);
+    return planes;
+}
+
 function disposeSceneMeshes() {
-    [reliefMesh, frameMesh, qr3DMesh].forEach(m => {
+    [reliefMesh, frameMesh, qr3DMesh, crossSectionLineMesh].forEach(m => {
         if (!m) return;
         if (scene) scene.remove(m);
         if (m.geometry) m.geometry.dispose();
@@ -73,9 +80,30 @@ function disposeSceneMeshes() {
             else { if (m.material.map) m.material.map.dispose(); m.material.dispose(); }
         }
     });
+    if (printBedGroup && scene) {
+        scene.remove(printBedGroup);
+        printBedGroup.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+                if (o.material.map) o.material.map.dispose();
+                o.material.dispose();
+            }
+        });
+    }
+    if (Array.isArray(triptychSideMeshes)) {
+        triptychSideMeshes.forEach(m => {
+            if (!m) return;
+            if (scene) scene.remove(m);
+            if (m.geometry) m.geometry.dispose();
+            if (m.material) m.material.dispose();
+        });
+        triptychSideMeshes = [];
+    }
     reliefMesh = null;
     frameMesh = null;
     qr3DMesh = null;
+    crossSectionLineMesh = null;
+    printBedGroup = null;
 }
 
 function init3D() {
@@ -124,6 +152,7 @@ function init3D() {
     renderer.localClippingEnabled = true;
 
     clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 10000);
+    crossSectionClipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 10000);
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -132,6 +161,17 @@ function init3D() {
     controls.minDistance = 30;
     controls.target.set(0, 0, 1.2);
     controls.update();
+
+    // Keep Before/After Split Compare photo 1:1 aligned when zooming or panning!
+    let _splitSyncRaf = null;
+    controls.addEventListener('change', () => {
+        if (!isSplitCompareMode) return;
+        if (_splitSyncRaf) return;
+        _splitSyncRaf = requestAnimationFrame(() => {
+            _splitSyncRaf = null;
+            if (isSplitCompareMode) renderSplitCompareSource();
+        });
+    });
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.86);
     scene.add(ambient);
@@ -523,6 +563,23 @@ function diagnosePixelDeltaE(px, py) {
     };
 }
 
+function fitCameraFrontForPlaque() {
+    if (!camera || !controls) return;
+    const w = Math.max(20, config.width || 140);
+    const h = Math.max(20, config.height || 140);
+    const fovRad = (camera.fov || 40) * Math.PI / 180;
+    const aspect = Math.max(0.3, camera.aspect || 1.33);
+    const fitH = (h * 0.5) / Math.tan(fovRad * 0.5);
+    const fitW = (w * 0.5) / (Math.tan(fovRad * 0.5) * aspect);
+    const dist = Math.max(fitH, fitW) * 1.34 + (config.maxRelief || 2.4);
+    camera.up.set(0, 1, 0);
+    camera.position.set(0, 0, Math.max(80, Math.min(720, dist)));
+    controls.target.set(0, 0, (config.maxRelief || 2.4) * 0.5);
+    camera.lookAt(0, 0, (config.maxRelief || 2.4) * 0.5);
+    controls.update();
+    camera.updateMatrixWorld(true);
+}
+
 function toggleSplitCompareMode() {
     isSplitCompareMode = !isSplitCompareMode;
     ['btn-top-split-compare', 'btn-toggle-split-compare', 'btn-sec2-split-compare', 'btn-split-compare', 'btn-split-compare-sec2'].forEach(id => {
@@ -536,12 +593,26 @@ function toggleSplitCompareMode() {
         overlay.style.display = isSplitCompareMode ? 'block' : 'none';
         if (divider) divider.style.display = isSplitCompareMode ? 'block' : 'none';
         if (isSplitCompareMode) {
+            if (camera && controls) {
+                _splitPrevCameraState = {
+                    pos: camera.position.clone(),
+                    target: controls.target.clone()
+                };
+                // Snap straight-on front view so 2D original & 3D relief align pixel-for-pixel!
+                fitCameraFrontForPlaque();
+            }
+            if (splitComparePercent < 15 || splitComparePercent > 85) splitComparePercent = 50;
             renderSplitCompareSource();
             updateSplitCompareUI(splitComparePercent);
+        } else if (_splitPrevCameraState && camera && controls) {
+            camera.position.copy(_splitPrevCameraState.pos);
+            controls.target.copy(_splitPrevCameraState.target);
+            controls.update();
+            _splitPrevCameraState = null;
         }
     }
     showToast(isSplitCompareMode
-        ? (currentLang === 'fr' ? '🌗 Comparateur Avant/Après activé (Glissez la barre centrale ↔)' : '🌗 Before / After Split Compare ON (Drag the center divider ↔)')
+        ? (currentLang === 'fr' ? '🌗 Comparateur 1:1 Avant/Après activé (Glissez ↔)' : '🌗 1:1 Before / After Split Compare ON (Drag ↔)')
         : (currentLang === 'fr' ? 'Comparateur fermé' : 'Split Compare closed'));
 }
 
@@ -628,7 +699,7 @@ function syncQualityControlsUI() {
         ['slider-color-snap', 'val-color-snap', config.colorSnap, '%'],
         ['slider-boundary-sharpness', 'val-boundary-sharpness', config.boundarySharpness, '%'],
         ['slider-sculpt-dome', 'val-sculpt-dome', config.sculpturalDome, '%'],
-        ['slider-gamma', 'val-gamma', Math.round((config.gamma || 1.0) * 100), 'gamma'],
+        ['slider-gamma', 'val-gamma', Number(config.gamma || 1.0), 'gamma'],
         ['slider-shadow-lift', 'val-shadow-lift', config.shadowLift, '%'],
         ['slider-highlight-ceiling', 'val-highlight-ceiling', config.highlightCeiling, '%'],
         ['slider-vibrance', 'val-vibrance', config.vibrance, '%']
@@ -636,9 +707,9 @@ function syncQualityControlsUI() {
     pairs.forEach(([sId, vId, val, unit]) => {
         const s = document.getElementById(sId);
         const v = document.getElementById(vId);
-        if (s && val !== undefined) s.value = val;
+        if (s && val !== undefined) s.value = (unit === 'gamma') ? Number(val).toFixed(2) : val;
         if (v && val !== undefined) {
-            if (unit === 'gamma') v.innerText = (val / 100).toFixed(2);
+            if (unit === 'gamma') v.innerText = Number(val).toFixed(2) + '×';
             else if (sId === 'slider-subject-pop' || sId === 'slider-vibrance') v.innerText = (val > 0 ? '+' : '') + val + unit;
             else v.innerText = val + unit;
         }
@@ -661,6 +732,21 @@ function syncQualityControlsUI() {
         const el = document.getElementById(id);
         if (el && val !== undefined) el.value = String(val);
     });
+
+    const resBadge = document.getElementById('badge-engine-res');
+    if (resBadge) {
+        resBadge.innerText = config.engineResolution >= 512 ? 'Ultra-HD 512px' : (config.engineResolution >= 360 ? 'HD 360px' : 'Std 220px');
+    }
+    const modeBadge = document.getElementById('badge-color-mode');
+    if (modeBadge) {
+        const modeMap = {
+            chromatic: 'Bambu AMS CAD',
+            stratified: currentLang === 'fr' ? 'Pauses M600' : 'Layer-Swap M600',
+            cmyw: 'CMYW LED',
+            luminance: 'Monochrome'
+        };
+        modeBadge.innerText = modeMap[config.colorMode] || 'Bambu AMS CAD';
+    }
 
     const checks = [
         ['chk-bilateral', !!config.bilateralEdgeLock],
@@ -698,21 +784,54 @@ function renderSplitCompareSource() {
     if (!cv || !vp || !rawSrc) return;
     const cw = Math.max(1, vp.clientWidth);
     const ch = Math.max(1, vp.clientHeight);
-    cv.width = cw;
-    cv.height = ch;
+    if (cv.width !== cw || cv.height !== ch) {
+        cv.width = cw;
+        cv.height = ch;
+    }
     const ctx = cv.getContext('2d');
-    ctx.fillStyle = '#06090e';
-    ctx.fillRect(0, 0, cw, ch);
+    // TRANSPARENT outside the plaque bounds so dragging to 20% NEVER shows a dead black curtain!
+    ctx.clearRect(0, 0, cw, ch);
 
-    const aspect = (config.width || 140) / Math.max(1, config.height || 140);
-    const maxBox = Math.min(cw, ch) * 0.72;
-    let drawW = maxBox, drawH = maxBox;
-    if (aspect >= 1) drawH = maxBox / aspect;
-    else drawW = maxBox * aspect;
-    const dx = (cw - drawW) * 0.5;
-    const dy = (ch - drawH) * 0.5;
+    const w = Math.max(20, config.width || 140);
+    const h = Math.max(20, config.height || 140);
+    const zTop = Math.max(getEffectiveRearBaseZ() + 0.2, (config.maxRelief || 2.4) * 0.65);
 
-    // Build oriented + smart-cropped original source photo so left pane aligns 1:1 with the 3D plaque!
+    // Project exact 3D corners of the plaque through the live Three.js camera for 1:1 overlap!
+    let dx = 0, dy = 0, drawW = cw * 0.6, drawH = ch * 0.6;
+    if (camera && typeof THREE !== 'undefined') {
+        camera.updateMatrixWorld(true);
+        const corners = [
+            new THREE.Vector3(-w * 0.5,  h * 0.5, zTop),
+            new THREE.Vector3( w * 0.5,  h * 0.5, zTop),
+            new THREE.Vector3(-w * 0.5, -h * 0.5, zTop),
+            new THREE.Vector3( w * 0.5, -h * 0.5, zTop)
+        ];
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        corners.forEach(pt => {
+            pt.project(camera);
+            const sx = (pt.x * 0.5 + 0.5) * cw;
+            const sy = (-pt.y * 0.5 + 0.5) * ch;
+            if (sx < minX) minX = sx;
+            if (sx > maxX) maxX = sx;
+            if (sy < minY) minY = sy;
+            if (sy > maxY) maxY = sy;
+        });
+        if (isFinite(minX) && isFinite(maxX) && (maxX - minX) > 20 && (maxY - minY) > 20) {
+            dx = minX;
+            dy = minY;
+            drawW = maxX - minX;
+            drawH = maxY - minY;
+        }
+    } else {
+        const aspect = w / h;
+        const maxBox = Math.min(cw, ch) * 0.72;
+        drawW = aspect >= 1 ? maxBox : maxBox * aspect;
+        drawH = aspect >= 1 ? maxBox / aspect : maxBox;
+        dx = (cw - drawW) * 0.5;
+        dy = (ch - drawH) * 0.5;
+    }
+
+    // Build oriented + smart-cropped original source photo matching processSourceImage() 1:1
     const isRot90 = ((config.rotation || 0) % 180 !== 0);
     const imgNatW = rawSrc.naturalWidth || rawSrc.width || 1;
     const imgNatH = rawSrc.naturalHeight || rawSrc.height || 1;
@@ -744,13 +863,33 @@ function renderSplitCompareSource() {
     const sy = (srcH - cropH) * 0.5 + (config.cropPanY || 0) * maxPanY;
 
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-    ctx.shadowBlur = 28;
+    // Clip to plaque outline shape when non-rectangular (circle/heart/hex/star/shield/oval/arch)
+    const shape = config.outlineShape || 'rect';
+    if (shape !== 'rect' && typeof sampleOutlineBoundaryPointAtAngle === 'function') {
+        ctx.beginPath();
+        const segs = 96;
+        for (let i = 0; i <= segs; i++) {
+            const theta = (i / segs) * Math.PI * 2;
+            const pt = sampleOutlineBoundaryPointAtAngle(w, h, shape, theta);
+            const px = dx + ((pt[0] / w) + 0.5) * drawW;
+            const py = dy + (0.5 - (pt[1] / h)) * drawH;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.clip();
+    }
     ctx.drawImage(oriented, sx, sy, cropW, cropH, dx, dy, drawW, drawH);
     ctx.restore();
-    ctx.strokeStyle = 'rgba(192, 132, 252, 0.65)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(dx, dy, drawW, drawH);
+
+    // Subtle alignment outline frame
+    ctx.save();
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.72)';
+    ctx.lineWidth = 1.5;
+    if (shape === 'rect') {
+        ctx.strokeRect(dx, dy, drawW, drawH);
+    }
+    ctx.restore();
 }
 
 function startSplitCompareDrag(e) {
@@ -777,6 +916,10 @@ function startSplitCompareDrag(e) {
 function updateEngineResolution() {
     const el = document.getElementById('select-engine-res');
     if (el) config.engineResolution = parseInt(el.value, 10) || 360;
+    const resBadge = document.getElementById('badge-engine-res');
+    if (resBadge) {
+        resBadge.innerText = config.engineResolution >= 512 ? 'Ultra-HD 512px' : (config.engineResolution >= 360 ? 'HD 360px' : 'Std 220px');
+    }
     processSourceImage(true, false);
     requestMeshUpdate();
     showToast(`⚙️ ${currentLang === 'fr' ? 'Résolution moteur' : 'Engine Resolution'}: ${config.engineResolution} px`);
@@ -867,6 +1010,17 @@ function updateColorMode() {
     const el = document.getElementById('select-color-mode');
     if (el) config.colorMode = el.value;
 
+    const modeBadge = document.getElementById('badge-color-mode');
+    if (modeBadge) {
+        const map = {
+            chromatic: 'Bambu AMS CAD',
+            stratified: currentLang === 'fr' ? 'Pauses M600' : 'Layer-Swap M600',
+            cmyw: 'CMYW LED',
+            luminance: currentLang === 'fr' ? 'Monochrome' : 'Monochrome'
+        };
+        modeBadge.innerText = map[config.colorMode] || 'Bambu AMS CAD';
+    }
+
     // If switching to CMYW Color Lithophane, offer Bambu CMYK Lithophane spools automatically!
     if (config.colorMode === 'cmyw') {
         filaments = [
@@ -882,6 +1036,7 @@ function updateColorMode() {
 
     requestMeshUpdate();
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
+    if (typeof renderOpticalMixingStrip === 'function') renderOpticalMixingStrip();
     updateSlicerTable();
     updateColorMatchBadge();
 }
@@ -891,23 +1046,33 @@ function updateQualityParams() {
     const tdEl = document.getElementById('slider-td-blend');
     if (tdEl) config.tdOpticalBlend = parseInt(tdEl.value, 10);
 
+    // Fixed: wire Optical Dithering slider directly so Section 2 slider works live!
+    const dithEl = document.getElementById('slider-dithering');
+    if (dithEl) config.opticalDithering = Math.max(0, Math.min(100, parseInt(dithEl.value, 10) || 0));
+
     const sharpEl = document.getElementById('slider-sharpness');
     if (sharpEl) config.detailSharpness = parseInt(sharpEl.value, 10);
 
     const popEl = document.getElementById('slider-subject-pop');
     if (popEl) config.subjectPop = parseInt(popEl.value, 10);
 
-    // Sync BOTH colorSnap and boundarySharpness from whichever slider changed!
-    const activeEl = document.activeElement;
-    if (activeEl && activeEl.id === 'slider-color-snap') {
-        setUnifiedColorSnap(activeEl.value);
-    } else if (activeEl && activeEl.id === 'slider-boundary-sharpness') {
-        setUnifiedColorSnap(activeEl.value);
+    // Sync BOTH colorSnap and boundarySharpness cleanly (not restricted to activeElement!)
+    const snapEl = document.getElementById('slider-boundary-sharpness') || document.getElementById('slider-color-snap');
+    if (snapEl) {
+        const sv = Math.max(10, Math.min(100, parseInt(snapEl.value, 10) || 80));
+        config.colorSnap = sv;
+        config.boundarySharpness = sv;
     }
 
     config.sculpturalDome = readInt('slider-sculpt-dome', config.sculpturalDome);
+
+    // CRITICAL FIX: slider-gamma is float [0.4 .. 2.2] — NEVER parseInt()/100!
     const gammaEl = document.getElementById('slider-gamma');
-    if (gammaEl) config.gamma = (parseInt(gammaEl.value, 10) || 100) / 100;
+    if (gammaEl) {
+        const gVal = parseFloat(gammaEl.value);
+        config.gamma = Math.max(0.4, Math.min(2.2, Number.isFinite(gVal) ? gVal : 1.0));
+    }
+
     config.shadowLift = readInt('slider-shadow-lift', config.shadowLift);
     config.highlightCeiling = readInt('slider-highlight-ceiling', config.highlightCeiling);
     config.vibrance = readInt('slider-vibrance', config.vibrance);
@@ -921,6 +1086,7 @@ function updateQualityParams() {
 
     syncQualityControlsUI();
     processSourceImage(true, false);
+    if (typeof renderOpticalMixingStrip === 'function') renderOpticalMixingStrip();
     requestMeshUpdate();
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
 }
@@ -934,12 +1100,16 @@ function getEffectiveRearBaseZ() {
     const isFlat = !config.topography || config.topography === 'flat';
     if (!isFlat) return baseZ;
 
-    // Ensure mechanical rear mounts have real printable depth while keeping back 100% flat on Z=0!
+    // Ensure mechanical rear mounts & backside signature have real printable depth while keeping back 100% flat on Z=0!
     const mount = config.mounting || 'flat';
     if (mount === 'keyhole') baseZ = Math.max(baseZ, 2.80);
     else if (mount === 'magnets_6' || mount === 'magnets_10') baseZ = Math.max(baseZ, 2.50);
     else if (mount === 'magnets_8') baseZ = Math.max(baseZ, 3.50);
     else if (config.nfcPocket) baseZ = Math.max(baseZ, 0.80);
+    if (config.backsideSignatureEnabled && (config.backsideSignatureText || config.backsideEditionText)) {
+        const sigDepth = Math.max(0.16, Math.min(0.40, Number(config.backsideSignatureDepth) || 0.24));
+        baseZ = Math.max(baseZ, sigDepth + 0.36);
+    }
     return baseZ;
 }
 
@@ -1079,6 +1249,11 @@ function generate3DReliefMesh() {
                 lum = computeSculpturalBasReliefZ(lum, nx, ny, cr, cg, cb, bgRgb, config.sculpturalDome);
             }
 
+            // Smart AI Subject Cutout (Flatten Background mode — cleanly levels backdrop to baseZ!)
+            if (config.smartCutoutActive && config.smartCutoutMode === 'flatten' && smartCutoutMask && smartCutoutMask.length > pIdx && smartCutoutMask[pIdx] === 1) {
+                lum = 0.0;
+            }
+
             let zVal;
             if (config.colorMode === 'cmyw') {
                 // Lithophane height: darker areas = thicker filament (blocks more backlight)!
@@ -1167,6 +1342,10 @@ function generate3DReliefMesh() {
     const baseCol0 = parsedOrig[0] ? parsedOrig[0].rgb : [17, 24, 39];
 
     let sumDE = 0, maxDE = 0, deCount = 0;
+    const isTriptych = !!config.triptychPreview && topo === 'flat';
+    const tripGapMm = isTriptych ? Math.max(10, Math.min(40, Number(config.triptychGapMm) || 20)) : 0;
+    const tripCol1 = Math.floor(cols / 3);
+    const tripCol2 = Math.floor((cols * 2) / 3);
 
     for (let r = 0; r < rows; r++) {
         const vNorm = r / Math.max(1, rows - 1);
@@ -1176,7 +1355,11 @@ function generate3DReliefMesh() {
             const pIdx = r * cols + c;
             const uNorm = c / Math.max(1, cols - 1);
             const nx = uNorm * 2.0 - 1.0;
-            const xMm = nx * (w * 0.5);
+            let xMm = nx * (w * 0.5);
+            if (isTriptych) {
+                if (c < tripCol1) xMm -= tripGapMm;
+                else if (c >= tripCol2) xMm += tripGapMm;
+            }
 
             const tZ = topZArr[pIdx];
             const bZ = botZArr[pIdx];
@@ -1338,6 +1521,8 @@ function generate3DReliefMesh() {
 
     for (let r = 0; r < cellRows; r++) {
         for (let c = 0; c < cellCols; c++) {
+            // In 3-Panel Wall Triptych Preview, cleanly split the 2 inter-panel gap columns!
+            if (isTriptych && (c === tripCol1 - 1 || c === tripCol2 - 1)) continue;
             const p00 = r * cols + c;
             const p10 = p00 + 1;
             const p01 = p00 + cols;
@@ -1435,16 +1620,17 @@ function generate3DReliefMesh() {
     gridGeom.setAttribute('color', new THREE.BufferAttribute(finalCol, 3));
     gridGeom.setIndex(new THREE.BufferAttribute(finalIdx, 1));
     gridGeom.computeVertexNormals();
-    gridGeom.userData = { gridCols: cols, gridRows: rows, activeCells, cellCols, cellRows, isClosedCyl };
+    gridGeom.userData = { gridCols: cols, gridRows: rows, activeCells, cellCols, cellRows, isClosedCyl, topZArr, botZArr, voidArr, w, h, baseZ, maxReliefZ };
 
     const isDiagnostic = isOverhangWarning || isZebraExposure || isNozzleInspectMode || isDeltaEHeatmap || isLightbox;
+    const activePlanes = getActiveClippingPlanes();
     const mat = new THREE.MeshStandardMaterial({
         vertexColors: true,
         roughness: 0.48,
         metalness: 0.06,
         wireframe: isWireframe,
         side: THREE.FrontSide,
-        clippingPlanes: clipPlane ? [clipPlane] : []
+        clippingPlanes: activePlanes
     });
     applyActivePBRFinishToMaterial(mat);
     if (isLightbox) {
@@ -1489,8 +1675,17 @@ function generate3DReliefMesh() {
 
     buildQR3DOverlayMesh();
     buildFrameMesh();
+    buildPrintBedVisualMesh();
+    syncCrossSectionCutaway();
+    if (config.crossSectionActive) renderCrossSectionProfileCanvas();
+    renderOpticalMixingStrip();
     updateHUD();
     updateSlicerTable();
+    if (typeof updateCostCalculatorUI === 'function') {
+        const cm = document.getElementById('cost-modal');
+        if (cm && cm.style.display === 'flex') updateCostCalculatorUI();
+    }
+    if (isSplitCompareMode) renderSplitCompareSource();
 }
 
 // ==========================================
@@ -1581,7 +1776,7 @@ function buildQR3DOverlayMesh() {
         roughness: 0.55,
         metalness: 0.04,
         wireframe: isWireframe,
-        clippingPlanes: clipPlane ? [clipPlane] : []
+        clippingPlanes: getActiveClippingPlanes()
     });
     qr3DMesh = new THREE.Mesh(plane, mat);
     scene.add(qr3DMesh);
@@ -1623,6 +1818,26 @@ function computeRearCavityDepthMm(x, y, topZ, w, h, baseZ) {
         const dy = Math.abs(y) - cy;
         if (dx * dx + dy * dy <= magR * magR) {
             recess = Math.max(recess, Math.min(targetD, Math.max(0.40, baseZ - 0.40)));
+        }
+    }
+
+    // Backside Embossed / Recessed Signature & Edition Number (Z = 0..0.24mm directly on build plate, zero supports!)
+    if (config.backsideSignatureEnabled && (config.backsideSignatureText || config.backsideEditionText)) {
+        if (!backsideSigMaskCache) rebuildBacksideSignatureMask();
+        if (backsideSigMaskCache && backsideSigMaskCache.data) {
+            const uBack = (x / Math.max(1, w)) + 0.5;
+            const vBack = 0.5 - (y / Math.max(1, h));
+            // Restrict signature cleanly to bottom-center plaque band (avoids keyhole/magnets!)
+            if (uBack >= 0.14 && uBack <= 0.86 && vBack >= 0.68 && vBack <= 0.92) {
+                const su = (uBack - 0.14) / 0.72;
+                const sv = (vBack - 0.68) / 0.24;
+                const px = Math.min(backsideSigMaskCache.w - 1, Math.max(0, Math.floor(su * backsideSigMaskCache.w)));
+                const py = Math.min(backsideSigMaskCache.h - 1, Math.max(0, Math.floor(sv * backsideSigMaskCache.h)));
+                if (backsideSigMaskCache.data[py * backsideSigMaskCache.w + px] > 0) {
+                    const sigDepth = Math.max(0.16, Math.min(0.40, Number(config.backsideSignatureDepth) || 0.24));
+                    recess = Math.max(recess, Math.min(sigDepth, Math.max(0.16, baseZ - 0.28)));
+                }
+            }
         }
     }
 
@@ -1872,8 +2087,28 @@ function buildFrameMesh() {
     const h = config.height || 140;
     const baseZ = getEffectiveRearBaseZ();
     const maxZ = Math.max(baseZ + 0.4, config.maxRelief || 2.4);
-    const cad = buildFrameAndMountingTriangles(w, h, baseZ, maxZ, { includeFrame: true, includeMounting: true });
-    const tris = cad.combined;
+    let tris = [];
+    if (config.triptychPreview) {
+        // Build 3 individual gallery frames for Left, Center & Right Triptych panels!
+        const gap = Math.max(10, Math.min(40, Number(config.triptychGapMm) || 20));
+        const pw = w / 3;
+        const offsets = [-(pw + gap), 0, (pw + gap)];
+        offsets.forEach((ox) => {
+            const pCad = buildFrameAndMountingTriangles(pw, h, baseZ, maxZ, { includeFrame: true, includeMounting: false });
+            if (pCad && pCad.combined && pCad.combined.length) {
+                pCad.combined.forEach(t => {
+                    tris.push([
+                        [t[0][0] + ox, t[0][1], t[0][2]],
+                        [t[1][0] + ox, t[1][1], t[1][2]],
+                        [t[2][0] + ox, t[2][1], t[2][2]]
+                    ]);
+                });
+            }
+        });
+    } else {
+        const cad = buildFrameAndMountingTriangles(w, h, baseZ, maxZ, { includeFrame: true, includeMounting: true });
+        tris = cad.combined;
+    }
     if (!tris || tris.length === 0) return;
 
     const combinedPos = new Float32Array(tris.length * 9);
@@ -1890,14 +2125,14 @@ function buildFrameMesh() {
     frameGeom.setAttribute('position', new THREE.BufferAttribute(combinedPos, 3));
     frameGeom.computeVertexNormals();
 
-    // Synced with Filament Slot #0 color, live slicer clipPlane & wireframe!
+    // Synced with Filament Slot #0 color, live slicer + cross-section clipPlanes & wireframe!
     const baseHex = (filaments[0] && filaments[0].color) ? filaments[0].color : '#111827';
     const frameMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color(baseHex),
         roughness: 0.48,
         metalness: 0.08,
         wireframe: isWireframe,
-        clippingPlanes: clipPlane ? [clipPlane] : []
+        clippingPlanes: getActiveClippingPlanes()
     });
 
     frameMesh = new THREE.Mesh(frameGeom, frameMat);
@@ -2414,6 +2649,7 @@ function renderLayerEqualizerUI() {
         handle.onpointerdown = (e) => startEqualizerDrag(e, i);
         bar.appendChild(handle);
     }
+    if (typeof renderOpticalMixingStrip === 'function') renderOpticalMixingStrip();
 }
 
 function updateEqualizerBarInPlace() {
@@ -2435,6 +2671,7 @@ function updateEqualizerBarInPlace() {
     for (let i = 1; i < n; i++) {
         if (handles[i - 1]) handles[i - 1].style.left = `${Math.round(filaments[i].startPct * 100)}%`;
     }
+    if (typeof renderOpticalMixingStrip === 'function') renderOpticalMixingStrip();
 }
 
 function startEqualizerDrag(e, handleIdx) {
@@ -2753,6 +2990,11 @@ function syncAllControlsFromConfig() {
 
     syncQualityControlsUI();
     if (typeof syncRemoveCanvasUI === 'function') syncRemoveCanvasUI();
+    if (typeof syncSmartCutoutUI === 'function') syncSmartCutoutUI();
+    if (typeof syncCropSlidersUI === 'function') syncCropSlidersUI();
+    if (typeof syncBacksideSignatureUI === 'function') syncBacksideSignatureUI();
+    if (typeof syncTriptychUI === 'function') syncTriptychUI();
+    if (typeof syncPrintBedUI === 'function') syncPrintBedUI();
     applyLightboxKelvinToScene();
     updateRakingLightPosition();
 }
@@ -2857,6 +3099,7 @@ function changeFilamentTD(idx, newTD) {
     const parsed = parseFloat(newTD);
     filaments[idx].td = Number.isFinite(parsed) ? Math.max(0.2, Math.min(15.0, parsed)) : 2.0;
     updateColorMatchBadge();
+    if (typeof renderOpticalMixingStrip === 'function') renderOpticalMixingStrip();
     if (typeof render2DEditorPreview === 'function' && centerViewMode === '2d') render2DEditorPreview();
     requestMeshUpdate();
 }
@@ -3041,5 +3284,611 @@ function copySlicerGcodeScript() {
             .catch(() => showToast(currentLang === 'fr' ? 'Copie bloquée par le navigateur.' : 'Clipboard access blocked.'));
     } else {
         showToast(currentLang === 'fr' ? 'Presse-papiers indisponible.' : 'Clipboard API unavailable.');
+    }
+}
+
+// ==========================================
+// 🌈 UNIQUE FEATURE 2: LIVE OPTICAL MIXING & TD GRADIENT STRIP
+// ==========================================
+
+function renderOpticalMixingStrip() {
+    const cv = document.getElementById('optical-mixing-canvas');
+    if (!cv || !filaments || filaments.length === 0) return;
+    const w = 360, h = 28;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const ctx = cv.getContext('2d');
+    const baseZ = getEffectiveRearBaseZ();
+    const maxZ = Math.max(baseZ + 0.4, config.maxRelief || 2.4);
+    const span = maxZ - baseZ;
+    const sortedTD = prepareSortedFilamentsForTD(filaments);
+    const blend = (config.tdOpticalBlend !== undefined ? config.tdOpticalBlend : 65) / 100;
+
+    // Render continuous physical Kubelka-Munk / Beer-Lambert optical ramp from baseZ -> maxZ
+    for (let x = 0; x < w; x++) {
+        const lum = x / Math.max(1, w - 1);
+        const zVal = baseZ + lum * span;
+        const [r, g, b] = computeBeerLambertTDColor(lum, zVal, baseZ, maxZ, sortedTD, blend, true);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(x, 0, 1, h);
+    }
+
+    // Draw crisp vertical swap ticks with Layer # labels
+    ctx.font = '700 9px Inter, system-ui, sans-serif';
+    ctx.textBaseline = 'top';
+    let opaqueWarningSlot = null;
+
+    for (let i = 1; i < sortedTD.length; i++) {
+        const f = sortedTD[i];
+        const px = Math.round(Math.max(0.01, Math.min(0.99, f.startPct)) * w);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(px, 0, 1.5, h);
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(px + 2, 2, 24, 11);
+        ctx.fillStyle = '#f8fafc';
+        const { startLayer } = getSlotStartZAndLayer(f.origIdx);
+        ctx.fillText(`L${startLayer}`, px + 4, 3);
+
+        // Detect overly opaque upper filament (TD <= 0.7mm) that eliminates optical blending transitions
+        if (f.td <= 0.75 && !opaqueWarningSlot) {
+            opaqueWarningSlot = f.name;
+        }
+    }
+
+    const warnEl = document.getElementById('optical-mixing-warning');
+    if (warnEl) {
+        if (opaqueWarningSlot) {
+            warnEl.style.display = 'block';
+            warnEl.innerText = currentLang === 'fr'
+                ? `⚠️ "${opaqueWarningSlot}" a un TD très bas (<0.8mm) : transition nette sans fondu.`
+                : `⚠️ "${opaqueWarningSlot}" has very low TD (<0.8mm): sharp step with minimal optical blend.`;
+        } else {
+            warnEl.style.display = 'none';
+        }
+    }
+}
+
+// ==========================================
+// 🔬 UNIQUE FEATURE 1: LIVE 3D CROSS-SECTION / CUTAWAY INSPECTOR (10× PROFILE)
+// ==========================================
+
+function toggleCrossSectionInspector(forceVal) {
+    config.crossSectionActive = (typeof forceVal === 'boolean') ? forceVal : !config.crossSectionActive;
+    const btn = document.getElementById('btn-cross-section');
+    if (btn) btn.classList.toggle('active', config.crossSectionActive);
+    const hud = document.getElementById('cross-section-hud');
+    if (hud) hud.style.display = config.crossSectionActive ? 'flex' : 'none';
+    syncCrossSectionCutaway();
+    if (config.crossSectionActive) {
+        renderCrossSectionProfileCanvas();
+        showToast(currentLang === 'fr'
+            ? '🔬 Coupe 3D transversale activée (glissez le curseur pour inspecter les couches !)'
+            : '🔬 Live 3D Cross-Section Inspector ON (drag slider to inspect filament layers!)');
+    }
+}
+
+function setCrossSectionAxis(axis) {
+    config.crossSectionAxis = (axis === 'x') ? 'x' : 'y';
+    const bx = document.getElementById('btn-cs-axis-x');
+    const by = document.getElementById('btn-cs-axis-y');
+    if (bx) bx.classList.toggle('active', config.crossSectionAxis === 'x');
+    if (by) by.classList.toggle('active', config.crossSectionAxis === 'y');
+    syncCrossSectionCutaway();
+    if (config.crossSectionActive) renderCrossSectionProfileCanvas();
+}
+
+function updateCrossSectionPos(pct) {
+    config.crossSectionPos = Math.max(5, Math.min(95, parseInt(pct, 10) || 50));
+    const v = document.getElementById('val-cs-pos');
+    if (v) v.innerText = config.crossSectionPos + '%';
+    syncCrossSectionCutaway();
+    if (config.crossSectionActive) renderCrossSectionProfileCanvas();
+}
+
+function syncCrossSectionCutaway() {
+    if (!crossSectionClipPlane) return;
+    if (crossSectionLineMesh && scene) {
+        scene.remove(crossSectionLineMesh);
+        if (crossSectionLineMesh.geometry) crossSectionLineMesh.geometry.dispose();
+        if (crossSectionLineMesh.material) crossSectionLineMesh.material.dispose();
+        crossSectionLineMesh = null;
+    }
+
+    if (!config.crossSectionActive) {
+        crossSectionClipPlane.normal.set(0, -1, 0);
+        crossSectionClipPlane.constant = 10000;
+        return;
+    }
+
+    const w = Math.max(20, config.width || 140);
+    const h = Math.max(20, config.height || 140);
+    const maxZ = Math.max(getEffectiveRearBaseZ() + 0.4, config.maxRelief || 2.4);
+    const frac = (config.crossSectionPos || 50) / 100;
+
+    if (config.crossSectionAxis === 'x') {
+        const cutX = -w * 0.5 + frac * w;
+        crossSectionClipPlane.normal.set(-1, 0, 0);
+        crossSectionClipPlane.constant = cutX;
+        if (scene && typeof THREE !== 'undefined') {
+            const g = new THREE.PlaneGeometry(0.9, h + 14);
+            const m = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.72, side: THREE.DoubleSide });
+            crossSectionLineMesh = new THREE.Mesh(g, m);
+            crossSectionLineMesh.position.set(cutX, 0, maxZ + 0.6);
+            scene.add(crossSectionLineMesh);
+        }
+    } else {
+        const cutY = h * 0.5 - frac * h;
+        crossSectionClipPlane.normal.set(0, 1, 0);
+        crossSectionClipPlane.constant = -cutY;
+        if (scene && typeof THREE !== 'undefined') {
+            const g = new THREE.PlaneGeometry(w + 14, 0.9);
+            const m = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.72, side: THREE.DoubleSide });
+            crossSectionLineMesh = new THREE.Mesh(g, m);
+            crossSectionLineMesh.position.set(0, cutY, maxZ + 0.6);
+            scene.add(crossSectionLineMesh);
+        }
+    }
+}
+
+function renderCrossSectionProfileCanvas() {
+    const cv = document.getElementById('cross-section-canvas');
+    if (!cv || !reliefMesh || !reliefMesh.geometry || !reliefMesh.geometry.userData) return;
+    const ud = reliefMesh.geometry.userData;
+    const { gridCols: cols, gridRows: rows, topZArr, botZArr, voidArr, w, h, baseZ, maxReliefZ } = ud;
+    if (!topZArr || !botZArr || !cols || !rows) return;
+
+    const cw = 360, ch = 128;
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#070b14';
+    ctx.fillRect(0, 0, cw, ch);
+
+    const padL = 38, padR = 10, padT = 16, padB = 20;
+    const plotW = cw - padL - padR;
+    const plotH = ch - padT - padB;
+    const zCeil = Math.max(maxReliefZ + 0.3, 2.8);
+    const zToY = (z) => padT + plotH - (Math.max(0, Math.min(zCeil, z)) / zCeil) * plotH;
+
+    // Horizontal millimeter gridlines
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+    ctx.lineWidth = 1;
+    ctx.font = '600 9px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const steps = 4;
+    for (let s = 0; s <= steps; s++) {
+        const zTick = (s / steps) * zCeil;
+        const y = zToY(zTick);
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(cw - padR, y); ctx.stroke();
+        ctx.fillText(zTick.toFixed(1) + 'mm', padL - 4, y);
+    }
+
+    const sortedTD = prepareSortedFilamentsForTD(filaments);
+    const span = Math.max(0.1, maxReliefZ - baseZ);
+    const frac = (config.crossSectionPos || 50) / 100;
+    const isX = (config.crossSectionAxis === 'x');
+    const fixedIdx = isX ? Math.min(cols - 1, Math.max(0, Math.round(frac * (cols - 1)))) : Math.min(rows - 1, Math.max(0, Math.round(frac * (rows - 1))));
+    const sampleCount = isX ? rows : cols;
+
+    let minZFound = Infinity, maxZFound = 0, cavitySeen = false;
+
+    for (let sx = 0; sx < plotW; sx++) {
+        const k = Math.min(sampleCount - 1, Math.floor((sx / Math.max(1, plotW - 1)) * sampleCount));
+        const pIdx = isX ? (k * cols + fixedIdx) : (fixedIdx * cols + k);
+        if (voidArr && voidArr[pIdx]) continue;
+        const tZ = topZArr[pIdx];
+        const bZ = botZArr[pIdx];
+        if (tZ < minZFound) minZFound = tZ;
+        if (tZ > maxZFound) maxZFound = tZ;
+        if (bZ > 0.08) cavitySeen = true;
+
+        // Paint each physical stacked filament color band between bZ and tZ!
+        for (let fi = 0; fi < sortedTD.length; fi++) {
+            const sZ = fi === 0 ? 0.0 : (baseZ + sortedTD[fi].startPct * span);
+            const eZ = (fi + 1 < sortedTD.length) ? (baseZ + sortedTD[fi + 1].startPct * span) : (maxReliefZ + 1.0);
+            const segBot = Math.max(bZ, sZ);
+            const segTop = Math.min(tZ, eZ);
+            if (segTop > segBot + 0.005) {
+                const yTop = zToY(segTop);
+                const yBot = zToY(segBot);
+                ctx.fillStyle = sortedTD[fi].color;
+                ctx.fillRect(padL + sx, yTop, 1.2, Math.max(1, yBot - yTop));
+            }
+        }
+        // Highlight underside cavities (Keyhole / Magnet / NFC / Signature) in glowing amber hatch
+        if (bZ > 0.05) {
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+            ctx.fillRect(padL + sx, zToY(bZ), 1.2, Math.max(1, zToY(0) - zToY(bZ)));
+        }
+    }
+
+    // Build plate Z = 0.00mm line
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(padL, zToY(0)); ctx.lineTo(cw - padR, zToY(0)); ctx.stroke();
+
+    // Footer specs
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#cbd5e1';
+    const spanMm = isX ? h : w;
+    const cutMm = (frac * (isX ? w : h)).toFixed(1);
+    const infoEl = document.getElementById('cs-metrics-text');
+    const summaryStr = `${isX ? 'X' : 'Y'}=${cutMm}mm • Z: ${isFinite(minZFound) ? minZFound.toFixed(2) : '0.00'}–${maxZFound.toFixed(2)}mm • Base ${baseZ.toFixed(2)}mm${cavitySeen ? ' • 🕳️ Cavity' : ''}`;
+    ctx.fillText(`0 mm`, padL, ch - 8);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${spanMm.toFixed(0)} mm`, cw - padR, ch - 8);
+    if (infoEl) infoEl.innerText = summaryStr;
+}
+
+// ==========================================
+// 🖨️ UNIQUE FEATURE 4: VIRTUAL PRINT-BED FIT VISUALIZER
+// ==========================================
+
+const PRINT_BED_PRESETS = {
+    bambu_180:    { name: 'Bambu A1 Mini', w: 180, h: 180 },
+    bambu_256:    { name: 'Bambu X1C / P1S / A1', w: 256, h: 256 },
+    prusa_mk4:    { name: 'Prusa MK4 / Core One', w: 250, h: 210 },
+    creality_300: { name: 'Creality K1 Max / 300', w: 300, h: 300 }
+};
+
+function getPlaqueFootprintWithFrame() {
+    let fw = 0;
+    if (config.frameStyle === 'thin') fw = 2.5;
+    else if (config.frameStyle === 'bevel') fw = 5.0;
+    else if (config.frameStyle === 'deep') fw = 8.0;
+    const gap = config.triptychPreview ? (Math.max(10, Math.min(40, Number(config.triptychGapMm) || 20)) * 2) : 0;
+    const extraPanelsFrame = config.triptychPreview ? (fw * 4) : 0;
+    return {
+        totalW: (config.width || 140) + fw * 2 + gap + extraPanelsFrame,
+        totalH: (config.height || 140) + fw * 2
+    };
+}
+
+function syncPrintBedUI() {
+    const on = !!config.showPrintBed;
+    const btn = document.getElementById('btn-toggle-printbed');
+    if (btn) btn.classList.toggle('active', on);
+    const bar = document.getElementById('printbed-bar');
+    if (bar) bar.style.display = on ? 'flex' : 'none';
+    const sel = document.getElementById('select-printbed-preset');
+    if (sel) sel.value = config.printBedPreset || 'bambu_256';
+    updatePrintBedFitBadge();
+}
+
+function updatePrintBedFitBadge() {
+    const badge = document.getElementById('badge-printbed-fit');
+    const fitBtn = document.getElementById('btn-fit-to-bed');
+    const bed = PRINT_BED_PRESETS[config.printBedPreset] || PRINT_BED_PRESETS.bambu_256;
+    const { totalW, totalH } = getPlaqueFootprintWithFrame();
+    const fits = (totalW <= bed.w - 4) && (totalH <= bed.h - 4);
+    if (badge) {
+        if (fits) {
+            badge.innerText = currentLang === 'fr'
+                ? `✅ Tient (${Math.round(totalW)}×${Math.round(totalH)} / ${bed.w}×${bed.h}mm)`
+                : `✅ Fits (${Math.round(totalW)}×${Math.round(totalH)} / ${bed.w}×${bed.h}mm)`;
+            badge.style.color = '#34d399';
+            badge.style.borderColor = 'rgba(16,185,129,0.45)';
+        } else {
+            badge.innerText = currentLang === 'fr'
+                ? `⚠️ Trop grand (${Math.round(totalW)}×${Math.round(totalH)} > ${bed.w}×${bed.h}mm)`
+                : `⚠️ Exceeds Bed (${Math.round(totalW)}×${Math.round(totalH)} > ${bed.w}×${bed.h}mm)`;
+            badge.style.color = '#fca5a5';
+            badge.style.borderColor = 'rgba(239,68,68,0.65)';
+        }
+    }
+    if (fitBtn) fitBtn.style.display = fits ? 'none' : 'inline-flex';
+}
+
+function togglePrintBedVisualizer(forceVal) {
+    config.showPrintBed = (typeof forceVal === 'boolean') ? forceVal : !config.showPrintBed;
+    syncPrintBedUI();
+    buildPrintBedVisualMesh();
+    showToast(config.showPrintBed
+        ? (currentLang === 'fr' ? '🖨️ Plateau imprimante 3D affiché' : '🖨️ Virtual 3D Print Bed ON')
+        : (currentLang === 'fr' ? 'Plateau 3D masqué' : 'Virtual 3D Print Bed OFF'));
+}
+
+function setPrintBedPreset(presetId) {
+    config.printBedPreset = PRINT_BED_PRESETS[presetId] ? presetId : 'bambu_256';
+    syncPrintBedUI();
+    buildPrintBedVisualMesh();
+}
+
+function fitModelToActivePrintBed() {
+    const bed = PRINT_BED_PRESETS[config.printBedPreset] || PRINT_BED_PRESETS.bambu_256;
+    let fw = config.frameStyle === 'deep' ? 8 : (config.frameStyle === 'bevel' ? 5 : (config.frameStyle === 'thin' ? 2.5 : 0));
+    const maxW = Math.max(40, bed.w - fw * 2 - 12);
+    const maxH = Math.max(40, bed.h - fw * 2 - 12);
+    const scale = Math.min(maxW / Math.max(1, config.width), maxH / Math.max(1, config.height));
+    if (scale < 1.0) {
+        config.width = Math.max(40, Math.floor(config.width * scale));
+        config.height = Math.max(40, Math.floor(config.height * scale));
+        const inW = document.getElementById('input-width');
+        const inH = document.getElementById('input-height');
+        if (inW) inW.value = config.width;
+        if (inH) inH.value = config.height;
+        updateDimensions('width');
+        showToast(currentLang === 'fr'
+            ? `✅ Ajusté au plateau ${bed.name} (${config.width}×${config.height}mm) !`
+            : `✅ Scaled to fit ${bed.name} (${config.width}×${config.height}mm)!`);
+    }
+}
+
+function buildPrintBedVisualMesh() {
+    if (!scene || typeof THREE === 'undefined') return;
+    if (printBedGroup) {
+        scene.remove(printBedGroup);
+        printBedGroup.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+                if (o.material.map) o.material.map.dispose();
+                o.material.dispose();
+            }
+        });
+        printBedGroup = null;
+    }
+    updatePrintBedFitBadge();
+    if (!config.showPrintBed) return;
+
+    const bed = PRINT_BED_PRESETS[config.printBedPreset] || PRINT_BED_PRESETS.bambu_256;
+    const { totalW, totalH } = getPlaqueFootprintWithFrame();
+    const fits = (totalW <= bed.w - 4) && (totalH <= bed.h - 4);
+
+    // Draw crisp PEI textured plate grid onto CanvasTexture
+    const texSize = 512;
+    const cv = document.createElement('canvas');
+    cv.width = texSize; cv.height = texSize;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#0c1220';
+    ctx.fillRect(0, 0, texSize, texSize);
+
+    // 10mm minor grid & 50mm major grid
+    const pxPerMmX = texSize / bed.w;
+    const pxPerMmY = texSize / bed.h;
+    for (let xMm = 0; xMm <= bed.w; xMm += 10) {
+        ctx.strokeStyle = (xMm % 50 === 0) ? 'rgba(56, 189, 248, 0.28)' : 'rgba(148, 163, 184, 0.10)';
+        ctx.lineWidth = (xMm % 50 === 0) ? 1.5 : 0.8;
+        const px = xMm * pxPerMmX;
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, texSize); ctx.stroke();
+    }
+    for (let yMm = 0; yMm <= bed.h; yMm += 10) {
+        ctx.strokeStyle = (yMm % 50 === 0) ? 'rgba(56, 189, 248, 0.28)' : 'rgba(148, 163, 184, 0.10)';
+        ctx.lineWidth = (yMm % 50 === 0) ? 1.5 : 0.8;
+        const py = yMm * pxPerMmY;
+        ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(texSize, py); ctx.stroke();
+    }
+
+    // Glowing perimeter border (Emerald when fits, Crimson Red when oversized!)
+    ctx.strokeStyle = fits ? '#10b981' : '#ef4444';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, texSize - 6, texSize - 6);
+
+    ctx.fillStyle = fits ? '#6ee7b7' : '#fca5a5';
+    ctx.font = 'bold 18px Outfit, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${bed.name}  •  ${bed.w}×${bed.h} mm`, 16, texSize - 16);
+
+    const tex = new THREE.CanvasTexture(cv);
+    tex.anisotropy = 4;
+
+    printBedGroup = new THREE.Group();
+    const plateGeo = new THREE.PlaneGeometry(bed.w, bed.h);
+    const plateMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.92, side: THREE.DoubleSide });
+    const plateMesh = new THREE.Mesh(plateGeo, plateMat);
+    const isCurved = config.topography && config.topography !== 'flat';
+    if (isCurved) {
+        plateMesh.rotation.x = -Math.PI * 0.5;
+        plateMesh.position.set(0, -(config.height || 140) * 0.5 - 0.5, 0);
+    } else {
+        plateMesh.position.set(0, 0, -0.35);
+    }
+    printBedGroup.add(plateMesh);
+    scene.add(printBedGroup);
+}
+
+// ==========================================
+// ✍️ UNIQUE FEATURE 6: BACKSIDE EMBOSSED SIGNATURE & EDITION NUMBER
+// ==========================================
+
+function rebuildBacksideSignatureMask() {
+    if (!config.backsideSignatureEnabled) {
+        backsideSigMaskCache = null;
+        return;
+    }
+    const line1 = String(config.backsideSignatureText || '').trim();
+    const line2 = String(config.backsideEditionText || '').trim();
+    if (!line1 && !line2) {
+        backsideSigMaskCache = null;
+        return;
+    }
+
+    const mw = 420, mh = 128;
+    const cv = document.createElement('canvas');
+    cv.width = mw; cv.height = mh;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, mw, mh);
+
+    // Horizontally mirrored so when viewing the BACK of the printed plaque it reads left-to-right!
+    ctx.save();
+    ctx.translate(mw, 0);
+    ctx.scale(-1, 1);
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (line1 && line2) {
+        ctx.font = '800 34px Outfit, sans-serif';
+        ctx.fillText(line1.slice(0, 32), mw * 0.5, mh * 0.34, mw - 24);
+        ctx.font = '700 24px Inter, sans-serif';
+        ctx.fillText(line2.slice(0, 36), mw * 0.5, mh * 0.72, mw - 24);
+    } else {
+        ctx.font = '800 38px Outfit, sans-serif';
+        ctx.fillText((line1 || line2).slice(0, 34), mw * 0.5, mh * 0.5, mw - 24);
+    }
+    ctx.restore();
+
+    const imgData = ctx.getImageData(0, 0, mw, mh).data;
+    const mask = new Uint8Array(mw * mh);
+    for (let i = 0; i < mw * mh; i++) {
+        mask[i] = imgData[i * 4] > 110 ? 1 : 0;
+    }
+    backsideSigMaskCache = { w: mw, h: mh, data: mask };
+}
+
+function syncBacksideSignatureUI() {
+    const chk = document.getElementById('chk-backside-sig');
+    const wrap = document.getElementById('backside-sig-fields');
+    const t1 = document.getElementById('input-backside-sig');
+    const t2 = document.getElementById('input-backside-edition');
+    const dep = document.getElementById('select-backside-depth');
+    if (chk) chk.checked = !!config.backsideSignatureEnabled;
+    if (wrap) wrap.style.display = config.backsideSignatureEnabled ? 'block' : 'none';
+    if (t1) t1.value = config.backsideSignatureText || '';
+    if (t2) t2.value = config.backsideEditionText || '';
+    if (dep) dep.value = String(config.backsideSignatureDepth || 0.24);
+}
+
+function updateBacksideSignature() {
+    const chk = document.getElementById('chk-backside-sig');
+    const t1 = document.getElementById('input-backside-sig');
+    const t2 = document.getElementById('input-backside-edition');
+    const dep = document.getElementById('select-backside-depth');
+    if (chk) config.backsideSignatureEnabled = chk.checked;
+    if (t1) config.backsideSignatureText = t1.value || '';
+    if (t2) config.backsideEditionText = t2.value || '';
+    if (dep) config.backsideSignatureDepth = parseFloat(dep.value) || 0.24;
+    if (config.backsideSignatureEnabled && !config.backsideSignatureText && !config.backsideEditionText) {
+        config.backsideSignatureText = 'STUDIOS-PRO ART';
+        config.backsideEditionText = 'Edition 1/10';
+    }
+    syncBacksideSignatureUI();
+    rebuildBacksideSignatureMask();
+    renderFilamentStackUI();
+    requestMeshUpdate();
+}
+
+function previewBacksideCamera() {
+    if (!camera || !controls) return;
+    camera.up.set(0, 1, 0);
+    camera.position.set(0, -35, -245);
+    controls.target.set(0, 0, 0);
+    camera.lookAt(0, 0, 0);
+    controls.update();
+    showToast(currentLang === 'fr' ? '🔄 Vue arrière (signature gravée Z=0.00mm)' : '🔄 Rear View (backside engraving on Z=0.00mm)');
+}
+
+// ==========================================
+// 🖼️ UNIQUE FEATURE 8: 3-PANEL WALL TRIPTYCH PREVIEW CONTROLS
+// ==========================================
+
+function syncTriptychUI() {
+    const chk = document.getElementById('chk-triptych-preview');
+    const wrap = document.getElementById('triptych-controls-wrap');
+    const sl = document.getElementById('slider-triptych-gap');
+    const vl = document.getElementById('val-triptych-gap');
+    if (chk) chk.checked = !!config.triptychPreview;
+    if (wrap) wrap.style.display = config.triptychPreview ? 'block' : 'none';
+    if (sl) sl.value = config.triptychGapMm || 20;
+    if (vl) vl.innerText = (config.triptychGapMm || 20) + ' mm';
+}
+
+function toggleTriptychPreview(forceVal) {
+    config.triptychPreview = (typeof forceVal === 'boolean') ? forceVal : !config.triptychPreview;
+    if (config.triptychPreview && config.topography !== 'flat') {
+        config.topography = 'flat';
+        const el = document.getElementById('select-topography');
+        if (el) el.value = 'flat';
+    }
+    syncTriptychUI();
+    requestMeshUpdate();
+    showToast(config.triptychPreview
+        ? (currentLang === 'fr' ? '🖼️ Aperçu Triptyque 3 Panneaux activé !' : '🖼️ 3-Panel Wall Triptych Preview ON!')
+        : (currentLang === 'fr' ? 'Aperçu Triptyque désactivé' : '3-Panel Triptych Preview OFF'));
+}
+
+function updateTriptychGap(val) {
+    config.triptychGapMm = Math.max(10, Math.min(40, parseInt(val, 10) || 20));
+    syncTriptychUI();
+    requestMeshUpdate();
+}
+
+// ==========================================
+// 💰 UNIQUE FEATURE 7: PRINT COST & ETSY / MAKERWORLD PROFIT CALCULATOR
+// ==========================================
+
+function openCostCalculatorModal() {
+    if (typeof closeAllModals === 'function') closeAllModals();
+    const modal = document.getElementById('cost-modal');
+    if (modal) modal.style.display = 'flex';
+    const mapIn = {
+        'cost-input-spool': config.costPerKg || 24,
+        'cost-input-kwh': config.electricityRateKwh || 0.18,
+        'cost-input-watts': config.printerWatts || 120,
+        'cost-input-pack': config.packagingCost || 2.50,
+        'cost-input-fee': config.etsyFeePct || 12,
+        'cost-input-margin': config.profitMarginPct || 180
+    };
+    Object.entries(mapIn).forEach(([id, v]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+    });
+    updateCostCalculatorUI();
+}
+
+function updateCostCalculatorUI() {
+    const readF = (id, fb) => { const e = document.getElementById(id); const v = e ? parseFloat(e.value) : NaN; return Number.isFinite(v) ? v : fb; };
+    config.costPerKg = Math.max(5, Math.min(200, readF('cost-input-spool', config.costPerKg || 24)));
+    config.electricityRateKwh = Math.max(0, Math.min(2, readF('cost-input-kwh', config.electricityRateKwh || 0.18)));
+    config.printerWatts = Math.max(20, Math.min(1500, readF('cost-input-watts', config.printerWatts || 120)));
+    config.packagingCost = Math.max(0, Math.min(100, readF('cost-input-pack', config.packagingCost || 2.5)));
+    config.etsyFeePct = Math.max(0, Math.min(45, readF('cost-input-fee', config.etsyFeePct || 12)));
+    config.profitMarginPct = Math.max(20, Math.min(800, readF('cost-input-margin', config.profitMarginPct || 180)));
+
+    _cachedMetricsFrameId = -1;
+    const m = computePrintMetrics();
+    const filamentCost = (m.totalGrams / 1000) * config.costPerKg;
+    const printHours = m.estMinutes / 60;
+    const powerCost = (config.printerWatts / 1000) * printHours * config.electricityRateKwh;
+    const prodCost = filamentCost + powerCost + config.packagingCost;
+    const feeRate = config.etsyFeePct / 100;
+    const targetNetMultiplier = 1 + (config.profitMarginPct / 100);
+    const recommendedPrice = Math.max(prodCost + 2, (prodCost * targetNetMultiplier) / Math.max(0.25, 1 - feeRate));
+    const platformFees = recommendedPrice * feeRate;
+    const netProfit = recommendedPrice - prodCost - platformFees;
+
+    const setTxt = (id, t) => { const e = document.getElementById(id); if (e) e.innerText = t; };
+    setTxt('cost-val-filament', `$${filamentCost.toFixed(2)} (${m.totalGrams}g)`);
+    setTxt('cost-val-power', `$${powerCost.toFixed(2)} (${m.timeStr})`);
+    setTxt('cost-val-total', `$${prodCost.toFixed(2)}`);
+    setTxt('cost-val-fees', `$${platformFees.toFixed(2)} (${config.etsyFeePct}%)`);
+    setTxt('cost-val-retail', `$${recommendedPrice.toFixed(2)}`);
+    setTxt('cost-val-profit', `+$${netProfit.toFixed(2)}`);
+
+    const tbody = document.getElementById('cost-spool-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        (m.perSlot || []).forEach((s) => {
+            const cSlot = (s.grams / 1000) * config.costPerKg;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${window.safeEscapeHtml(s.color)};margin-right:6px;vertical-align:middle;border:1px solid rgba(255,255,255,0.3);"></span>${window.safeEscapeHtml(s.name)}</td>
+                <td>${s.grams.toFixed(1)} g (${s.pct}%)</td>
+                <td style="color:#6ee7b7;font-weight:700;">$${cSlot.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    updateHUD();
+}
+
+function copyCostBreakdownText() {
+    const prod = document.getElementById('cost-val-total')?.innerText || '';
+    const retail = document.getElementById('cost-val-retail')?.innerText || '';
+    const profit = document.getElementById('cost-val-profit')?.innerText || '';
+    const m = computePrintMetrics();
+    const txt = `Studios-Pro Print Quote (${config.width}×${config.height}×${config.maxRelief}mm)\nWeight: ${m.totalGrams}g PLA | Est. Time: ${m.timeStr}\nProduction Cost: ${prod}\nRecommended Retail Price: ${retail}\nEstimated Net Profit: ${profit}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(() => showToast(translations[currentLang]?.toastCopied || 'Copied!'));
     }
 }

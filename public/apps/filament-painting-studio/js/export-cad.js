@@ -12,7 +12,7 @@ function openExportModal() {
 }
 
 function closeAllModals() {
-    ['export-modal', 'slicer-modal', 'share-modal', 'camera-td-modal', 'spool-rack-modal', 'mockup-modal'].forEach(id => {
+    ['export-modal', 'slicer-modal', 'share-modal', 'camera-td-modal', 'spool-rack-modal', 'mockup-modal', 'timelapse-modal', 'cost-modal'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -89,11 +89,19 @@ async function executeExport(format) {
             const blob = await generateWallMuralZip({ ...options, gridN });
             if (!blob || blob.size < 64) throw new Error('Empty Mural ZIP');
             downloadFileDirect(blob, `StudiosPro_Wall_Mural_${gridN}x${gridN}_3MF_${Date.now()}.zip`);
+        } else if (format === 'triptych_zip') {
+            if (pBar) pBar.style.width = '55%';
+            if (pText) pText.innerText = currentLang === 'fr' ? 'Création Triptyque 3 Panneaux (.3MF ZIP)...' : 'Building 3-Panel Wall Triptych (.3MF ZIP)...';
+            await new Promise(r => setTimeout(r, 50));
+            const blob = await generateWallTriptychZip(options);
+            if (!blob || blob.size < 64) throw new Error('Empty Triptych ZIP');
+            downloadFileDirect(blob, `StudiosPro_Wall_Triptych_3Panels_3MF_${Date.now()}.zip`);
         } else if (format === 'html_3d') {
             if (pBar) pBar.style.width = '65%';
             if (pText) pText.innerText = currentLang === 'fr' ? 'Compilation de la visionneuse 3D HTML autonome...' : 'Packaging standalone interactive 3D HTML showcase...';
             await new Promise(r => setTimeout(r, 40));
-            const ok = await downloadStandaloneHTML3D();
+            // Call internal exporter directly so bridge.js _exportInFlight guard never blocks it!
+            const ok = await exportStandaloneHTML3DInternal();
             if (!ok) throw new Error('HTML 3D export failed');
         } else {
             return false;
@@ -104,7 +112,11 @@ async function executeExport(format) {
         await new Promise(r => setTimeout(r, 260));
 
         closeAllModals();
-        showToast(format === 'mural_zip' ? (translations[currentLang]?.toastMuralExported || 'Wall Mural ZIP exported!') : (translations[currentLang]?.toastExportSuccess || 'Export complete!'));
+        showToast(format === 'mural_zip'
+            ? (translations[currentLang]?.toastMuralExported || 'Wall Mural ZIP exported!')
+            : (format === 'triptych_zip'
+                ? (translations[currentLang]?.toastTriptychExported || '🖼️ 3-Panel Wall Triptych (.3MF ZIP) exported!')
+                : (translations[currentLang]?.toastExportSuccess || 'Export complete!')));
         return true;
     } catch (err) {
         console.error('Export failed:', err);
@@ -119,27 +131,69 @@ async function executeExport(format) {
 // ==========================================
 // 🧱 UNIFIED ULTRA-HD WATERTIGHT SOLID GENERATOR (100% PARITY WITH 3D PREVIEW + Z-UP!)
 // ==========================================
+// Real Male + Female Blind Underside Dovetail Interlock (Zero visible front artwork seam + 0.25mm FDM clearance!)
+function getMuralDovetailTabZ(baseZ) {
+    return Math.min(Math.max(0.48, baseZ * 0.54), 1.10);
+}
+
+function computeMuralFemaleDovetailDepthMm(x, y, w, h, baseZ, tileCrop, connectorType) {
+    if (!tileCrop || connectorType !== 'dovetail') return 0.0;
+    const { rowTile, colTile } = tileCrop;
+    const hw = w * 0.5, hh = h * 0.5;
+    const clearXY = 0.28; // Real FDM slide-fit clearance per side
+    const tabNeckHalf = 4.6 * 0.5 + clearXY;
+    const tabHeadHalf = 7.4 * 0.5 + clearXY;
+    const tabDepth = 4.2 + clearXY;
+    const pocketZ = Math.min(baseZ - 0.36, getMuralDovetailTabZ(baseZ) + 0.16);
+    if (pocketZ <= 0.20) return 0.0;
+
+    // West interior edge (-X, colTile > 0): receives East male dovetails of neighbor (colTile - 1)
+    if (colTile > 0) {
+        const u = x - (-hw); // distance inward from West edge [0 .. tabDepth]
+        if (u >= -0.05 && u <= tabDepth) {
+            const frac = Math.max(0, Math.min(1, u / tabDepth));
+            const halfW = tabNeckHalf + (tabHeadHalf - tabNeckHalf) * frac;
+            if (Math.abs(y - (-h * 0.26)) <= halfW || Math.abs(y - (h * 0.26)) <= halfW) {
+                return pocketZ;
+            }
+        }
+    }
+
+    // North interior edge (+Y, rowTile > 0): receives South male dovetails of neighbor (rowTile - 1)
+    if (rowTile > 0) {
+        const v = hh - y; // distance inward from North edge [0 .. tabDepth]
+        if (v >= -0.05 && v <= tabDepth) {
+            const frac = Math.max(0, Math.min(1, v / tabDepth));
+            const halfW = tabNeckHalf + (tabHeadHalf - tabNeckHalf) * frac;
+            if (Math.abs(x - (-w * 0.26)) <= halfW || Math.abs(x - (w * 0.26)) <= halfW) {
+                return pocketZ;
+            }
+        }
+    }
+    return 0.0;
+}
+
 function buildInterlockingMuralConnectors(w, h, baseZ, tileCrop, connectorType) {
     if (!tileCrop || !connectorType || connectorType === 'none') return [];
-    const { rowTile, colTile, gridN } = tileCrop;
+    const { rowTile, colTile } = tileCrop;
+    const gridCols = tileCrop.gridCols || tileCrop.gridN || 1;
+    const gridRows = tileCrop.gridRows || tileCrop.gridN || 1;
     const tris = [];
     const hw = w * 0.5, hh = h * 0.5;
-    const tabZ = Math.min(Math.max(0.48, baseZ * 0.85), 1.6);
+    const tabZ = getMuralDovetailTabZ(baseZ);
 
     if (connectorType === 'dovetail') {
-        // Add male dovetail alignment tabs on Right (East) & Bottom (South) interior edges
+        // Male dovetail alignment tongues on East & South interior edges [Z=0..tabZ]
+        // (mating cleanly into underside female sockets on neighbor's West & North edges!)
         const tabNeckW = 4.6, tabHeadW = 7.4, tabDepth = 4.2;
-        if (colTile < gridN - 1) {
-            // East edge (+X) tabs at y = ±h*0.26
+        if (colTile < gridCols - 1) {
             [-h * 0.26, h * 0.26].forEach(ty => {
                 const pts = [
-                    [hw - 0.5, ty - tabNeckW * 0.5],
+                    [hw - 0.6, ty - tabNeckW * 0.5],
                     [hw + tabDepth, ty - tabHeadW * 0.5],
                     [hw + tabDepth, ty + tabHeadW * 0.5],
-                    [hw - 0.5, ty + tabNeckW * 0.5]
+                    [hw - 0.6, ty + tabNeckW * 0.5]
                 ];
-                const inner = [[hw - 0.5, ty - 0.1], [hw + 0.1, ty - 0.1], [hw + 0.1, ty + 0.1], [hw - 0.5, ty + 0.1]];
-                // Emit solid trapezoidal dovetail prism [Z=0..tabZ]
                 const v = [
                     [pts[0][0], pts[0][1], 0], [pts[1][0], pts[1][1], 0], [pts[2][0], pts[2][1], 0], [pts[3][0], pts[3][1], 0],
                     [pts[0][0], pts[0][1], tabZ], [pts[1][0], pts[1][1], tabZ], [pts[2][0], pts[2][1], tabZ], [pts[3][0], pts[3][1], tabZ]
@@ -148,12 +202,11 @@ function buildInterlockingMuralConnectors(w, h, baseZ, tileCrop, connectorType) 
                 for (let fi = 0; fi < fIdx.length; fi += 3) tris.push([v[fIdx[fi]], v[fIdx[fi+1]], v[fIdx[fi+2]]]);
             });
         }
-        if (rowTile < gridN - 1) {
-            // South edge (-Y) tabs at x = ±w*0.26
+        if (rowTile < gridRows - 1) {
             [-w * 0.26, w * 0.26].forEach(tx => {
                 const pts = [
-                    [tx - tabNeckW * 0.5, -hh + 0.5],
-                    [tx + tabNeckW * 0.5, -hh + 0.5],
+                    [tx - tabNeckW * 0.5, -hh + 0.6],
+                    [tx + tabNeckW * 0.5, -hh + 0.6],
                     [tx + tabHeadW * 0.5, -hh - tabDepth],
                     [tx - tabHeadW * 0.5, -hh - tabDepth]
                 ];
@@ -166,7 +219,7 @@ function buildInterlockingMuralConnectors(w, h, baseZ, tileCrop, connectorType) 
             });
         }
     } else if (connectorType === 'magnets') {
-        // Rear magnetic alignment flange ears with 6.2mm magnet rings along shared interior edges
+        // Rear magnetic alignment flange ears with Ø6.3mm magnet rings along shared interior edges
         const addEar = (ex, ey) => {
             const inPts = [], outPts = [];
             for (let s = 0; s < 20; s++) {
@@ -176,8 +229,8 @@ function buildInterlockingMuralConnectors(w, h, baseZ, tileCrop, connectorType) 
             }
             tris.push(...buildClosedAnnularPrismTris(inPts, outPts, 0, Math.max(1.2, tabZ)));
         };
-        if (colTile < gridN - 1) addEar(hw + 1.5, 0);
-        if (rowTile < gridN - 1) addEar(0, -hh - 1.5);
+        if (colTile < gridCols - 1) addEar(hw + 1.5, 0);
+        if (rowTile < gridRows - 1) addEar(0, -hh - 1.5);
     }
     return tris;
 }
@@ -194,9 +247,10 @@ function buildWatertightReliefData(options = {}) {
         maxRes = Math.max(maxRes, 288);
     }
 
-    const gridDiv = options.tileCrop ? options.tileCrop.gridN : 1;
-    const w = Math.max(20, (config.width || 140) / gridDiv);
-    const h = Math.max(20, (config.height || 140) / gridDiv);
+    const gridCols = options.tileCrop ? (options.tileCrop.gridCols || options.tileCrop.gridN || 1) : 1;
+    const gridRows = options.tileCrop ? (options.tileCrop.gridRows || options.tileCrop.gridN || 1) : 1;
+    const w = Math.max(20, (config.width || 140) / gridCols);
+    const h = Math.max(20, (config.height || 140) / gridRows);
     const plaqueAspect = h / w;
 
     // Symmetric resolution clamping (prevents memory explosion on tall/portrait images!)
@@ -218,9 +272,9 @@ function buildWatertightReliefData(options = {}) {
 
     if (processedCanvas && processedCanvas.width > 0) {
         if (options.tileCrop) {
-            const { rowTile, colTile, gridN } = options.tileCrop;
-            const sw = processedCanvas.width / gridN;
-            const sh = processedCanvas.height / gridN;
+            const { rowTile, colTile } = options.tileCrop;
+            const sw = processedCanvas.width / gridCols;
+            const sh = processedCanvas.height / gridRows;
             ctx.drawImage(processedCanvas, colTile * sw, rowTile * sh, sw, sh, 0, 0, targetCols, targetRows);
         } else {
             ctx.drawImage(processedCanvas, 0, 0, targetCols, targetRows);
@@ -235,7 +289,11 @@ function buildWatertightReliefData(options = {}) {
 
     const cols = targetCols;
     const rows = targetRows;
-    const baseZ = typeof getEffectiveRearBaseZ === 'function' ? getEffectiveRearBaseZ() : Math.max(0.20, config.baseThickness || 0.60);
+    let baseZ = typeof getEffectiveRearBaseZ === 'function' ? getEffectiveRearBaseZ() : Math.max(0.20, config.baseThickness || 0.60);
+    // Ensure dovetail murals have enough base thickness for strong underside blind sockets + continuous front roof!
+    if (options.tileCrop && options.muralConnector === 'dovetail') {
+        baseZ = Math.max(baseZ, 1.40);
+    }
     const maxReliefZ = Math.max(baseZ + 0.4, config.maxRelief || 2.4);
     const layerH = Math.max(0.04, config.layerHeight || 0.08);
     const N = cols * rows;
@@ -275,10 +333,10 @@ function buildWatertightReliefData(options = {}) {
             vc = vertIdx % cols;
             vr = Math.floor(vertIdx / cols);
             const gNormX = options.tileCrop
-                ? (options.tileCrop.colTile + (vc / Math.max(1, cols - 1))) / options.tileCrop.gridN
+                ? (options.tileCrop.colTile + (vc / Math.max(1, cols - 1))) / gridCols
                 : (vc / Math.max(1, cols - 1));
             const gNormY = options.tileCrop
-                ? (options.tileCrop.rowTile + (vr / Math.max(1, rows - 1))) / options.tileCrop.gridN
+                ? (options.tileCrop.rowTile + (vr / Math.max(1, rows - 1))) / gridRows
                 : (vr / Math.max(1, rows - 1));
             const vnx = gNormX * 2.0 - 1.0;
             const vny = 1.0 - gNormY * 2.0;
@@ -321,14 +379,14 @@ function buildWatertightReliefData(options = {}) {
     for (let r = 0; r < rows; r++) {
         const y = h * 0.5 - (r / Math.max(1, rows - 1)) * h;
         const gNormY = options.tileCrop
-            ? (options.tileCrop.rowTile + (r / Math.max(1, rows - 1))) / options.tileCrop.gridN
+            ? (options.tileCrop.rowTile + (r / Math.max(1, rows - 1))) / gridRows
             : (r / Math.max(1, rows - 1));
         const ny = 1.0 - gNormY * 2.0;
 
         for (let c = 0; c < cols; c++) {
             const x = -w * 0.5 + (c / Math.max(1, cols - 1)) * w;
             const gNormX = options.tileCrop
-                ? (options.tileCrop.colTile + (c / Math.max(1, cols - 1))) / options.tileCrop.gridN
+                ? (options.tileCrop.colTile + (c / Math.max(1, cols - 1))) / gridCols
                 : (c / Math.max(1, cols - 1));
             const nx = gNormX * 2.0 - 1.0;
             const outsideShape = isOutsideOutlineShape(nx, ny, config.outlineShape);
@@ -380,6 +438,13 @@ function buildWatertightReliefData(options = {}) {
                 lum = computeSculpturalBasReliefZ(lum, nx, ny, red, green, blue, cachedBgRgb, config.sculpturalDome);
             }
 
+            // Smart AI Subject Cutout Flatten mode parity with 3D viewport!
+            if (config.smartCutoutActive && config.smartCutoutMode === 'flatten' && smartCutoutMask && processedCanvas && processedCanvas.width > 0) {
+                const sc = Math.min(processedCanvas.width - 1, Math.round(gNormX * (processedCanvas.width - 1)));
+                const sr = Math.min(processedCanvas.height - 1, Math.round(gNormY * (processedCanvas.height - 1)));
+                if (smartCutoutMask[sr * processedCanvas.width + sc] === 1) lum = 0.0;
+            }
+
             let z;
             if (config.colorMode === 'cmyw') {
                 const ch = computeCMYWChannels(red, green, blue);
@@ -421,7 +486,13 @@ function buildWatertightReliefData(options = {}) {
 
             if (outsideShape) z = baseZ * 0.55;
             reliefHeights[topIdx] = z;
-            botHeights[topIdx] = options.tileCrop ? 0.0 : computeRearCavityDepthMm(x, y, z, w, h, baseZ);
+            if (options.tileCrop) {
+                const femalePocket = computeMuralFemaleDovetailDepthMm(x, y, w, h, baseZ, options.tileCrop, options.muralConnector);
+                const rearMount = options.tileCrop.isTriptych ? computeRearCavityDepthMm(x, y, z, w, h, baseZ) : 0.0;
+                botHeights[topIdx] = Math.max(femalePocket, rearMount);
+            } else {
+                botHeights[topIdx] = computeRearCavityDepthMm(x, y, z, w, h, baseZ);
+            }
         }
     }
 
@@ -477,12 +548,12 @@ function buildWatertightReliefData(options = {}) {
 
     for (let r = 0; r < cellRows; r++) {
         const gCenterY = options.tileCrop
-            ? (options.tileCrop.rowTile + ((r + 0.5) / Math.max(1, cellRows))) / options.tileCrop.gridN
+            ? (options.tileCrop.rowTile + ((r + 0.5) / Math.max(1, cellRows))) / gridRows
             : ((r + 0.5) / Math.max(1, cellRows));
         const origR = Math.min(procH - 1, Math.round(gCenterY * (procH - 1)));
         for (let c = 0; c < cellCols; c++) {
             const gCenterX = options.tileCrop
-                ? (options.tileCrop.colTile + ((c + 0.5) / Math.max(1, cellCols))) / options.tileCrop.gridN
+                ? (options.tileCrop.colTile + ((c + 0.5) / Math.max(1, cellCols))) / gridCols
                 : ((c + 0.5) / Math.max(1, cellCols));
             const origC = Math.min(procW - 1, Math.round(gCenterX * (procW - 1)));
             if (!isPixelCutoutVoid(origC, origR, procW, procH, cachedBgRgb, baseRgbCache)) {
@@ -503,7 +574,7 @@ function buildWatertightReliefData(options = {}) {
     for (let r = 0; r < cellRows; r++) {
         const rowOff = r * cellCols;
         const gCenterY = options.tileCrop
-            ? (options.tileCrop.rowTile + ((r + 0.5) / Math.max(1, cellRows))) / options.tileCrop.gridN
+            ? (options.tileCrop.rowTile + ((r + 0.5) / Math.max(1, cellRows))) / gridRows
             : ((r + 0.5) / Math.max(1, cellRows));
         for (let c = 0; c < cellCols; c++) {
             if (activeCells[rowOff + c] === 0) continue;
@@ -515,7 +586,7 @@ function buildWatertightReliefData(options = {}) {
             const br = wrapEast ? ((r + 1) * cols) : (bl + 1);
 
             const gCenterX = options.tileCrop
-                ? (options.tileCrop.colTile + ((c + 0.5) / Math.max(1, cellCols))) / options.tileCrop.gridN
+                ? (options.tileCrop.colTile + ((c + 0.5) / Math.max(1, cellCols))) / gridCols
                 : ((c + 0.5) / Math.max(1, cellCols));
             const qrCell = sampleActiveQRStamp(gCenterX, gCenterY);
             const waveCell = sampleActiveSoundwave(gCenterX, gCenterY);
@@ -1478,6 +1549,44 @@ async function generateWallMuralZip(options = {}) {
     return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }
 
+// ==========================================
+// 🖼️ 3-PANEL WALL TRIPTYCH GENERATOR (3 SEPARATE FRAMED .3MF PANELS + HANGING GUIDE)
+// ==========================================
+async function generateWallTriptychZip(options = {}) {
+    const zip = createArchiveZip();
+    const panelNames = ['Left', 'Center', 'Right'];
+    const gapMm = Math.max(10, Math.min(40, Number(config.triptychGapMm) || 20));
+    const panelW = (config.width / 3).toFixed(1);
+    const panelH = Number(config.height || 140).toFixed(1);
+    const totalWallW = (Number(config.width || 140) + gapMm * 2).toFixed(1);
+
+    for (let col = 0; col < 3; col++) {
+        const panelBlob = await generate3MFPackage({
+            ...options,
+            includeFrame: options.includeFrame !== false,
+            muralConnector: 'none',
+            tileCrop: { rowTile: 0, colTile: col, gridCols: 3, gridRows: 1, gridN: 3, isTriptych: true }
+        });
+        const ab = await panelBlob.arrayBuffer();
+        zip.file(`Triptych_Panel_${col + 1}_${panelNames[col]}_(${panelW}x${panelH}mm).3mf`, ab);
+    }
+
+    let guide = `============================================================\n`;
+    guide += `STUDIOS-PRO 3-PANEL GALLERY WALL TRIPTYCH GUIDE\n`;
+    guide += `============================================================\n`;
+    guide += `Format                 : 3 Separate Multi-Color .3MF Panels (Bambu/Orca/Prusa)\n`;
+    guide += `Individual Panel Size  : ${panelW} mm x ${panelH} mm x ${config.maxRelief} mm\n`;
+    guide += `Recommended Wall Gap   : ${gapMm} mm between adjacent panels\n`;
+    guide += `Total Mounted Wall Span: ${totalWallW} mm wide x ${panelH} mm tall\n`;
+    guide += `Outer Frame Style      : ${(config.frameStyle || 'none').toUpperCase()}\n\n`;
+    guide += `WALL HANGING LAYOUT (Left -> Right):\n`;
+    guide += `  [ Panel 1: Left ] <-- ${gapMm}mm gap --> [ Panel 2: Center ] <-- ${gapMm}mm gap --> [ Panel 3: Right ]\n\n`;
+    guide += generateSlicerScriptText();
+    zip.file('README_Triptych_Hanging_Guide.txt', guide);
+
+    return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+}
+
 function downloadFileDirect(blob, filename) {
     const a = document.createElement('a');
     a.dataset.bypassed = 'true';
@@ -1983,7 +2092,7 @@ function downloadModelOnlyPNG(mode = 'auto') {
             const baseZ = config.baseThickness;
             const maxReliefZ = config.maxRelief;
             const reliefSpan = Math.max(0.08, maxReliefZ - baseZ);
-            const hasHeightOffset = (typeof heightOffsetBuffer !== 'undefined' && heightOffsetBuffer && heightOffsetBuffer.length === srcW * srcH);
+            const hasHeightOffset = (typeof customZDeltaBuffer !== 'undefined' && customZDeltaBuffer && customZDeltaBuffer.length === srcW * srcH);
 
             const cachedBgRgb = computeBorderBackgroundRGB(colorDataBuffer, srcW, srcH);
             const baseRgbCache = (parsedFilaments[0] && parsedFilaments[0].rgb) ? parsedFilaments[0].rgb : [20, 20, 24];
@@ -2018,7 +2127,7 @@ function downloadModelOnlyPNG(mode = 'auto') {
                     data[i + 3] = 255;
                 } else {
                     const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
-                    const zDelta = hasHeightOffset ? heightOffsetBuffer[pIdx] : 0;
+                    const zDelta = hasHeightOffset ? customZDeltaBuffer[pIdx] : 0;
                     if (config.colorMode === 'luminance') {
                         const v = Math.round(lum * 255);
                         data[i] = v; data[i + 1] = v; data[i + 2] = v; data[i + 3] = 255;
@@ -2028,8 +2137,8 @@ function downloadModelOnlyPNG(mode = 'auto') {
                         data[i] = cR; data[i + 1] = cG; data[i + 2] = cB; data[i + 3] = 255;
                     } else if (config.colorMode === 'stratified') {
                         let dLum = lum;
-                        if (ditherPct > 0) {
-                            const bayer = ((BAYER_4X4[(rowIdx & 3) * 4 + (colIdx & 3)] / 16.0) - 0.5) * (ditherPct / 100.0) * 0.14;
+                        if (ditherPct > 0 && typeof BAYER_8X8 !== 'undefined') {
+                            const bayer = ((BAYER_8X8[((rowIdx & 7) << 3) | (colIdx & 7)] / 64.0) - 0.5) * (ditherPct / 100.0) * 0.14;
                             dLum = Math.max(0, Math.min(1, lum + bayer));
                         }
                         const zVal = Math.max(baseZ, Math.min(maxReliefZ, baseZ + dLum * reliefSpan + zDelta));
@@ -2482,9 +2591,14 @@ async function loadProjectFromSPFPJson(jsonTextOrObj) {
         };
         if (typeof syncProcessedCanvasFromBuffer === 'function') syncProcessedCanvasFromBuffer();
         if (typeof rebuildBgExteriorVoidMask === 'function') rebuildBgExteriorVoidMask(bw, bh);
+        if (config.smartCutoutActive && typeof computeSmartAISubjectMask === 'function') computeSmartAISubjectMask(bw, bh);
     } else if (sourceImage) {
         processSourceImage(false, true);
     }
+
+    if (typeof rebuildBacksideSignatureMask === 'function') rebuildBacksideSignatureMask();
+    if (typeof syncSmartCutoutUI === 'function') syncSmartCutoutUI();
+    if (typeof syncCropSlidersUI === 'function') syncCropSlidersUI();
 
     // Update Photo/Draw sidebar visibility WITHOUT calling openCleanBlankCanvas() (which wiped loaded Draw projects!)
     const btnPhoto = document.getElementById('btn-studio-photo');
@@ -3233,8 +3347,9 @@ h1{font-size:1.05rem;color:#38bdf8}
 <script>
 const DATA=${payloadJson};
 document.getElementById('meta').innerHTML='<strong>'+DATA.width+' × '+DATA.height+' × '+DATA.maxRelief+' mm</strong><br>Layer: '+DATA.layerHeight+'mm • '+DATA.totalLayers+' layers • ~'+DATA.grams+'g ('+DATA.timeStr+')';
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const rec=document.getElementById('recipe');
-DATA.recipe.forEach(r=>{const d=document.createElement('div');d.className='row';d.innerHTML='<span class="dot" style="background:'+r.color+'"></span><div style="flex:1"><strong>#'+r.slot+' '+r.name+'</strong><br><span style="color:#94a3b8;font-size:.72rem">Layer #'+r.layer+' ('+r.z.toFixed(2)+'mm) • TD '+r.td+'mm</span></div>';rec.appendChild(d);});
+DATA.recipe.forEach(r=>{const d=document.createElement('div');d.className='row';const col=/^#[0-9a-f]{6}$/i.test(r.color||'')?r.color:'#38bdf8';d.innerHTML='<span class="dot" style="background:'+col+'"></span><div style="flex:1"><strong>#'+r.slot+' '+esc(r.name)+'</strong><br><span style="color:#94a3b8;font-size:.72rem">Layer #'+r.layer+' ('+r.z.toFixed(2)+'mm) • TD '+r.td+'mm</span></div>';rec.appendChild(d);});
 const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true});
 if(gl){
   const vs='attribute vec3 p;attribute vec3 c;uniform mat4 mvp;varying vec3 vc;void main(){vc=c;gl_Position=mvp*vec4(p,1.0);}';
@@ -3276,7 +3391,7 @@ if(gl){
 </html>`;
 }
 
-async function downloadStandaloneHTML3D() {
+async function exportStandaloneHTML3DInternal() {
     try {
         if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
         const htmlStr = buildStandaloneHTML3DString();
@@ -3288,6 +3403,248 @@ async function downloadStandaloneHTML3D() {
     } catch (err) {
         console.error('Standalone HTML 3D export error:', err);
         return false;
+    }
+}
+
+async function downloadStandaloneHTML3D() {
+    return await exportStandaloneHTML3DInternal();
+}
+
+// ==========================================
+// 🎬 1-CLICK LAYER-BUILD TIME-LAPSE REEL GENERATOR (9:16 TIKTOK/REELS & 1:1 ETSY WEBM)
+// ==========================================
+let _isRecordingTimelapse = false;
+
+function openTimelapseModal() {
+    closeAllModals();
+    if (typeof flushPending3DMeshIfDirty === 'function') flushPending3DMeshIfDirty();
+    const modal = document.getElementById('timelapse-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+async function recordLayerBuildTimelapse(aspectMode = '9:16') {
+    if (_isRecordingTimelapse) return;
+    if (!renderer || !scene || !camera || !controls) {
+        showToast(currentLang === 'fr' ? 'Moteur 3D requis pour la vidéo.' : '3D engine required for video export.');
+        return;
+    }
+    if (typeof MediaRecorder === 'undefined' || typeof HTMLCanvasElement.prototype.captureStream !== 'function') {
+        showToast(currentLang === 'fr' ? 'Votre navigateur ne supporte pas MediaRecorder WebM.' : 'Your browser does not support WebM MediaRecorder.');
+        return;
+    }
+
+    _isRecordingTimelapse = true;
+    const pBox = document.getElementById('timelapse-progress-box');
+    const pBar = document.getElementById('timelapse-progress-bar');
+    const pText = document.getElementById('timelapse-status-text');
+    if (pBox) pBox.style.display = 'block';
+    if (pBar) pBar.style.width = '5%';
+    if (pText) pText.innerText = currentLang === 'fr' ? 'Préparation du rendu Time-Lapse...' : 'Preparing Time-Lapse video render...';
+
+    // Save current studio camera, clipPlane & raking light so we restore seamlessly!
+    const savedPos = camera.position.clone();
+    const savedTarget = controls.target.clone();
+    const savedAz = config.rakingLightAngle;
+    const savedEl = config.rakingLightElevation;
+    const savedLayer = currentSimLayer;
+    const wasSimActive = isSlicerSimulationActive;
+    const wasCrossActive = config.crossSectionActive;
+    if (wasCrossActive && crossSectionClipPlane) crossSectionClipPlane.constant = 10000;
+
+    const isVertical = (aspectMode === '9:16');
+    const outW = isVertical ? 720 : 960;
+    const outH = isVertical ? 1280 : 960;
+    const compCvs = document.createElement('canvas');
+    compCvs.width = outW;
+    compCvs.height = outH;
+    const ctx = compCvs.getContext('2d');
+
+    const mimeCandidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mimeType = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
+    const stream = compCvs.captureStream(30);
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 4500000 } : { videoBitsPerSecond: 4500000 });
+    const chunks = [];
+    recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+
+    const recDonePromise = new Promise((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType || 'video/webm' }));
+    });
+
+    try {
+        const totalLayers = getTotalLayerCount();
+        const metrics = computePrintMetrics();
+        const isFreeUser = !window.isPremiumUser;
+        const wMm = Math.max(40, config.width || 140);
+        const hMm = Math.max(40, config.height || 140);
+        const baseRadius = Math.max(wMm, hMm) * 1.95;
+
+        // Precompute swap layers so live caption displays the active filament name!
+        const swapSchedule = filaments.map((f, idx) => {
+            const { startLayer, startZ } = getSlotStartZAndLayer(idx);
+            return { idx, name: f.name, color: f.color, startLayer, startZ };
+        });
+
+        recorder.start();
+        const totalFrames = 195; // ~6.5 seconds @ 30fps
+        const buildEndFrame = 120;
+        const orbitEndFrame = 175;
+
+        for (let frame = 0; frame < totalFrames; frame++) {
+            const prog = frame / (totalFrames - 1);
+            let activeLayer = totalLayers;
+            let activeFil = swapSchedule[swapSchedule.length - 1];
+
+            if (frame <= buildEndFrame) {
+                const t = frame / buildEndFrame;
+                activeLayer = Math.max(1, Math.min(totalLayers, Math.round(1 + t * (totalLayers - 1))));
+                updateSlicerSimulation(activeLayer);
+                for (let k = swapSchedule.length - 1; k >= 0; k--) {
+                    if (activeLayer >= swapSchedule[k].startLayer) { activeFil = swapSchedule[k]; break; }
+                }
+                const ang = -0.32 + t * 0.64;
+                camera.position.set(Math.sin(ang) * baseRadius * 0.48, -baseRadius * 0.56, Math.cos(ang) * baseRadius * 0.92);
+                controls.target.set(0, 0, 1.2);
+                camera.lookAt(0, 0, 1.2);
+            } else if (frame <= orbitEndFrame) {
+                if (frame === buildEndFrame + 1) resetSlicerSimulation();
+                const t = (frame - buildEndFrame) / (orbitEndFrame - buildEndFrame);
+                const ang = 0.32 - Math.sin(t * Math.PI) * 0.68;
+                camera.position.set(Math.sin(ang) * baseRadius * 0.45, -baseRadius * (0.56 - t * 0.36), Math.cos(ang) * baseRadius * 0.96);
+                controls.target.set(0, 0, 1.2);
+                camera.lookAt(0, 0, 1.2);
+                // Sweep raking light to shimmer across 0.08mm relief ridges!
+                config.rakingLightAngle = Math.round((savedAz + t * 140) % 360);
+                config.rakingLightElevation = 28;
+                updateRakingLightPosition();
+            } else {
+                // Hero finale hold
+                camera.position.set(0, -baseRadius * 0.22, baseRadius * 0.98);
+                controls.target.set(0, 0, 1.2);
+                camera.lookAt(0, 0, 1.2);
+            }
+
+            renderer.render(scene, camera);
+
+            // Composite sleek Studio Reel frame
+            const grad = ctx.createLinearGradient(0, 0, 0, outH);
+            grad.addColorStop(0, '#070b14');
+            grad.addColorStop(0.5, '#0c1324');
+            grad.addColorStop(1, '#050810');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, outW, outH);
+
+            // Fit rendered WebGL canvas cleanly in center
+            const glCvs = renderer.domElement;
+            const stagePad = isVertical ? 36 : 42;
+            const stageTop = isVertical ? 150 : 92;
+            const stageBot = isVertical ? 230 : 120;
+            const availW = outW - stagePad * 2;
+            const availH = outH - stageTop - stageBot;
+            const scale = Math.min(availW / Math.max(1, glCvs.width), availH / Math.max(1, glCvs.height));
+            const dw = glCvs.width * scale;
+            const dh = glCvs.height * scale;
+            ctx.drawImage(glCvs, (outW - dw) * 0.5, stageTop + (availH - dh) * 0.5, dw, dh);
+
+            // Top title & live layer progress pill
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '800 26px Outfit, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('3D FILAMENT PAINTING', outW * 0.5, isVertical ? 68 : 44);
+
+            // Live layer pill
+            const pillW = Math.min(outW - 72, 520);
+            const pillH = 44;
+            const pillX = (outW - pillW) * 0.5;
+            const pillY = isVertical ? 90 : 58;
+            drawRoundedRectPath(ctx, pillX, pillY, pillW, pillH, 22);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = activeFil ? activeFil.color : '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(pillX + 24, pillY + pillH * 0.5, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '700 18px Inter, system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            const statusStr = frame <= buildEndFrame
+                ? `Layer ${activeLayer}/${totalLayers}  •  ${(activeFil?.name || '').slice(0, 24)}`
+                : `Complete 3D Relief  •  ${config.width}×${config.height}mm (${metrics.totalGrams}g)`;
+            ctx.fillText(statusStr, pillX + 44, pillY + pillH * 0.5 + 6);
+
+            // Bottom Filament Swatch Bar
+            const swY = outH - (isVertical ? 148 : 88);
+            const swGap = 10;
+            const swSize = Math.min(46, Math.floor((outW - 110) / Math.max(1, filaments.length)) - swGap);
+            const totalSwW = filaments.length * (swSize + swGap) - swGap;
+            let sx = (outW - totalSwW) * 0.5;
+            filaments.forEach((f, idx) => {
+                drawRoundedRectPath(ctx, sx, swY, swSize, 22, 6);
+                ctx.fillStyle = f.color;
+                ctx.fill();
+                ctx.strokeStyle = (activeFil && activeFil.idx === idx && frame <= buildEndFrame) ? '#38bdf8' : 'rgba(255,255,255,0.35)';
+                ctx.lineWidth = (activeFil && activeFil.idx === idx && frame <= buildEndFrame) ? 3 : 1;
+                ctx.stroke();
+                sx += swSize + swGap;
+            });
+
+            // Specs footer + Watermark on Free accounts (100% Free Viral Export!)
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 16px Inter, system-ui, sans-serif';
+            ctx.fillText(`${config.width}×${config.height}×${config.maxRelief}mm  •  ${config.layerHeight}mm Layers  •  ${filaments.length} Spools`, outW * 0.5, outH - (isVertical ? 94 : 44));
+
+            if (isFreeUser) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '700 18px Outfit, system-ui, sans-serif';
+                ctx.fillText('Created with Studios-Pro.com', outW * 0.5, outH - (isVertical ? 48 : 18));
+            }
+
+            if (pBar) pBar.style.width = `${Math.round(8 + prog * 88)}%`;
+            if (pText && frame % 12 === 0) {
+                pText.innerText = currentLang === 'fr'
+                    ? `Enregistrement Time-Lapse (${Math.round(prog * 100)}%)...`
+                    : `Recording Time-Lapse Reel (${Math.round(prog * 100)}%)...`;
+            }
+            await new Promise(r => setTimeout(r, 33));
+        }
+
+        recorder.stop();
+        const videoBlob = await recDonePromise;
+        if (videoBlob && videoBlob.size > 1000) {
+            const tag = isVertical ? '9x16_Reels' : '1x1_Square';
+            downloadFileDirect(videoBlob, `StudiosPro_LayerBuild_${tag}_${Date.now()}.webm`);
+            showToast(currentLang === 'fr'
+                ? '🎬 Vidéo Time-Lapse (.webm) téléchargée ! Prête pour TikTok / Reels / Etsy.'
+                : '🎬 Layer-Build Time-Lapse (.webm) downloaded! Ready for TikTok / Reels / Etsy.');
+            closeAllModals();
+        } else {
+            throw new Error('Empty recording');
+        }
+    } catch (err) {
+        console.error('Time-lapse recording failed:', err);
+        showToast(currentLang === 'fr' ? '⚠️ Erreur lors de la génération vidéo.' : '⚠️ Time-lapse recording error.');
+    } finally {
+        // Restore studio state cleanly
+        camera.position.copy(savedPos);
+        controls.target.copy(savedTarget);
+        controls.update();
+        config.rakingLightAngle = savedAz;
+        config.rakingLightElevation = savedEl;
+        updateRakingLightPosition();
+        if (wasSimActive) updateSlicerSimulation(savedLayer);
+        else resetSlicerSimulation();
+        if (wasCrossActive && typeof syncCrossSectionCutaway === 'function') syncCrossSectionCutaway();
+        renderer.render(scene, camera);
+        _isRecordingTimelapse = false;
+        if (pBox) pBox.style.display = 'none';
     }
 }
 

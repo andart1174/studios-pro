@@ -4797,7 +4797,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setLang(currentLang);
     setupDropzone();
     const hasShared = applySharedUrlParams();
-    setWorkspaceMode(config.workspaceMode || 'quick', true);
+    setWorkspaceMode(config.workspaceMode || 'pro', true);
 
     ['tiger', 'cyberpunk', 'cat', 'mountain', 'mona'].forEach(type => {
         const cvs = document.getElementById(`sample-cvs-${type}`);
@@ -4845,6 +4845,12 @@ function toggleAccordionSection(sectionId) {
     const sec = document.getElementById(sectionId);
     if (!sec) return;
     sec.classList.toggle('collapsed');
+}
+
+function toggleSubAccordion(subId) {
+    const el = document.getElementById(subId);
+    if (!el) return;
+    el.classList.toggle('collapsed');
 }
 
 // ==========================================

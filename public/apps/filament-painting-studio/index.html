@@ -21,7 +21,7 @@
 
     <link rel="stylesheet" href="css/studio.css">
 </head>
-<body class="workspace-quick">
+<body class="workspace-pro">
 
     <!-- Clean Zero-Overflow Responsive Header -->
     <header>
@@ -98,15 +98,15 @@
         <!-- Left Settings Panel -->
         <div class="panel-left">
 
-            <!-- Sticky Top Workspace Switcher: Quick HueForge (4 Steps) vs Pro CAD & 2D Studio -->
+            <!-- Sticky Top Workspace Switcher: Pro CAD & 2D Studio (Default) vs Quick HueForge (4 Steps) -->
             <div class="workspace-mode-switch" role="tablist" aria-label="Workspace Mode">
-                <button type="button" class="ws-mode-btn active" id="btn-ws-quick" onclick="setWorkspaceMode('quick')" title="Clean 4-step Photo to 3MF HueForge workflow">
-                    <i data-lucide="zap" style="width:13px;height:13px;color:#38bdf8;"></i>
-                    <span data-i18n="wsModeQuick">Quick HueForge</span>
-                </button>
-                <button type="button" class="ws-mode-btn" id="btn-ws-pro" onclick="setWorkspaceMode('pro')" title="Unlock all Pro CAD, 2D Sketch, Templates, QR, Soundwave, Murals & Lithophane tools">
+                <button type="button" class="ws-mode-btn active" id="btn-ws-pro" onclick="setWorkspaceMode('pro')" title="Full Pro CAD, 2D Sketch, Templates, QR, Soundwave, Cutout, Murals & Lithophane tools">
                     <i data-lucide="wrench" style="width:13px;height:13px;color:#c084fc;"></i>
                     <span data-i18n="wsModePro">Pro CAD &amp; 2D Studio</span>
+                </button>
+                <button type="button" class="ws-mode-btn" id="btn-ws-quick" onclick="setWorkspaceMode('quick')" title="Clean 4-step Photo to 3MF HueForge workflow">
+                    <i data-lucide="zap" style="width:13px;height:13px;color:#38bdf8;"></i>
+                    <span data-i18n="wsModeQuick">Quick HueForge</span>
                 </button>
             </div>
 
@@ -284,6 +284,31 @@
 
                             <div id="polaroid-caption-wrap" style="display:none;margin-top:5px;">
                                 <input type="text" class="text-input" id="input-polaroid-caption" placeholder="Polaroid caption (e.g. Summer 2026)" style="font-size:0.72rem;padding:4px 7px;" oninput="updateCropTransform()">
+                            </div>
+                        </div>
+
+                        <!-- NEW: Smart AI Subject Cutout (1-Click Background Removal for Complex Photos!) -->
+                        <div class="ai-cutout-box" id="ai-cutout-box">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                                <button type="button" class="btn-top" id="btn-ai-subject-cutout" onclick="toggleSmartAISubjectCutout()" style="flex:1;justify-content:center;padding:6px 8px;font-size:0.72rem;background:linear-gradient(135deg, rgba(244,63,94,0.18), rgba(192,132,252,0.18));border-color:rgba(244,63,94,0.45);color:#fda4af;font-weight:700;" title="Intelligent LAB + Edge-Aware subject isolation (works on complex & textured backgrounds!)">
+                                    <i data-lucide="scissors" style="width:13px;height:13px;color:#fb7185;"></i>
+                                    <span data-i18n="btnAISubjectCutout">✂️ Smart AI Subject Cutout (1-Click)</span>
+                                </button>
+                            </div>
+                            <div id="ai-cutout-controls" style="display:none;margin-top:7px;">
+                                <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:6px;align-items:center;">
+                                    <div class="input-group" style="margin-bottom:0;">
+                                        <div class="input-label" style="font-size:0.67rem;">
+                                            <span data-i18n="labelCutoutSens">Cutout Sensitivity</span>
+                                            <span id="val-ai-cutout-sens" style="color:#fb7185;font-weight:700;">42%</span>
+                                        </div>
+                                        <input type="range" class="range-slider" id="slider-ai-cutout-sens" min="15" max="85" value="42" oninput="updateSmartCutoutParams()">
+                                    </div>
+                                    <select class="text-input" id="select-ai-cutout-mode" style="font-size:0.69rem;padding:4px 5px;" onchange="updateSmartCutoutParams()">
+                                        <option value="diecut" selected data-i18n="optCutoutDiecut">✂️ Die-Cut Silhouette</option>
+                                        <option value="flatten" data-i18n="optCutoutFlatten">⬛ Flatten Background</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -495,8 +520,15 @@
                         </div>
                     </div>
 
-                    <!-- Pro-Only Fine-Tuning: Tone S-Curve, 2.5D Sculptor, Sharpness, 2D Tools, QR, Soundwave, Orientation -->
+                    <!-- Pro-Only Fine-Tuning Organized in Clean Collapsible Sub-Accordions -->
                     <div class="pro-only-block">
+                        <!-- Sub-Accordion 1: Tone Curve, Dynamic Range & 2.5D Sculptor (Collapsed by default to keep Pro Mode super clean!) -->
+                        <div class="sub-accordion collapsed" id="sub-acc-tone">
+                            <div class="sub-accordion-header" onclick="toggleSubAccordion('sub-acc-tone')">
+                                <span><i data-lucide="sun-medium" style="width:13px;height:13px;color:#fbbf24;"></i> <span data-i18n="subAccToneTitle">Tone Curve, 2.5D Sculptor &amp; Brightness</span></span>
+                                <span class="sub-acc-chevron">▾</span>
+                            </div>
+                            <div class="sub-accordion-body">
                         <!-- Tone Curve & Dynamic Range -->
                         <div style="background:rgba(15,23,42,0.55);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;margin-bottom:8px;">
                             <div style="font-size:0.73rem;font-weight:700;color:#fde68a;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
@@ -507,7 +539,7 @@
                                 <div class="input-group" style="margin-bottom:0;">
                                     <div class="input-label">
                                         <span data-i18n="labelGamma">Midtone Gamma</span>
-                                        <span id="val-gamma" style="color:var(--accent-amber);font-weight:700;">1.00x</span>
+                                        <span id="val-gamma" style="color:var(--accent-amber);font-weight:700;">1.00×</span>
                                     </div>
                                     <input type="range" class="range-slider" id="slider-gamma" min="0.4" max="2.2" step="0.05" value="1.0" oninput="updateQualityParams()">
                                 </div>
@@ -622,6 +654,16 @@
                                 </button>
                             </div>
                         </div>
+                            </div><!-- /sub-acc-tone body -->
+                        </div><!-- /sub-acc-tone -->
+
+                        <!-- Sub-Accordion 2: 2D Studio, 3D Text, QR Code, Soundwave & Orientation -->
+                        <div class="sub-accordion collapsed" id="sub-acc-creative">
+                            <div class="sub-accordion-header" onclick="toggleSubAccordion('sub-acc-creative')">
+                                <span><i data-lucide="sparkles" style="width:13px;height:13px;color:#c084fc;"></i> <span data-i18n="subAccCreativeTitle">2D Studio, 3D Text, QR Code &amp; Soundwave</span></span>
+                                <span class="sub-acc-chevron">▾</span>
+                            </div>
+                            <div class="sub-accordion-body">
 
                         <!-- 2D Touch-Up, Blank Canvas & Stray Paint Cleaner -->
                         <div id="subpanel-stray-cleaner" style="background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.25);border-radius:8px;padding:8px 10px;margin:8px 0 10px 0;">
@@ -794,7 +836,9 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                            </div><!-- /sub-acc-creative body -->
+                        </div><!-- /sub-acc-creative -->
+                    </div><!-- /pro-only-block -->
                 </div>
             </div>
 
@@ -889,6 +933,16 @@
                             <span id="layer-eq-summary" style="color:var(--primary);">0.60 – 2.40 mm</span>
                         </div>
                         <div class="layer-eq-bar" id="layer-equalizer-bar"></div>
+                    </div>
+
+                    <!-- NEW: Live Kubelka-Munk Optical Mixing & TD Gradient Strip -->
+                    <div class="optical-mixing-wrap" id="optical-mixing-wrap">
+                        <div class="layer-eq-header" style="margin-bottom:4px;">
+                            <span data-i18n="labelOpticalMixStrip" style="color:#c4b5fd;">🌈 Live Optical TD Blend Preview (0 → Max Z):</span>
+                            <span style="font-size:0.64rem;color:#94a3b8;">Kubelka-Munk</span>
+                        </div>
+                        <canvas id="optical-mixing-canvas" width="360" height="28"></canvas>
+                        <div id="optical-mixing-warning" style="display:none;margin-top:4px;font-size:0.67rem;color:#fbbf24;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:5px;padding:3px 6px;"></div>
                     </div>
 
                     <!-- Filament Stack Cards -->
@@ -1020,6 +1074,53 @@
                             <span data-i18n="labelNFCPocket">📱 Embed 26mm Smart NFC Tag Cavity (Backside)</span>
                         </label>
                     </div>
+
+                    <!-- NEW: Backside Embossed Signature & Edition Number (Z=0.00mm, Zero Supports!) -->
+                    <div class="pro-only-block" style="margin-top:7px;background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.24);border-radius:7px;padding:7px 9px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                            <label style="display:flex;align-items:center;gap:7px;font-size:0.72rem;cursor:pointer;color:#e9d5ff;font-weight:600;">
+                                <input type="checkbox" id="chk-backside-sig" onchange="updateBacksideSignature()" style="accent-color:#c084fc;">
+                                <span data-i18n="labelBacksideSig">✍️ Backside Embossed Signature / Edition</span>
+                            </label>
+                            <button type="button" class="btn-top" style="padding:2px 6px;font-size:0.64rem;" onclick="previewBacksideCamera()" title="Flip camera behind plaque to inspect backside engraving">
+                                <span data-i18n="btnFlipBackView">🔄 View Back</span>
+                            </button>
+                        </div>
+                        <div id="backside-sig-fields" style="display:none;margin-top:7px;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px;">
+                                <input type="text" class="text-input" id="input-backside-sig" placeholder="Artist / Studio Name" style="font-size:0.71rem;padding:4px 6px;" oninput="updateBacksideSignature()">
+                                <input type="text" class="text-input" id="input-backside-edition" placeholder="Edition 1/10 • 2026" style="font-size:0.71rem;padding:4px 6px;" oninput="updateBacksideSignature()">
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:0.67rem;color:var(--text-sub);">
+                                <span data-i18n="labelBacksideDepth">Engrave Depth (Bed Face):</span>
+                                <select class="text-input" id="select-backside-depth" style="width:125px;font-size:0.68rem;padding:2px 5px;" onchange="updateBacksideSignature()">
+                                    <option value="0.16">0.16 mm (2 Layers)</option>
+                                    <option value="0.24" selected>0.24 mm (3 Layers)</option>
+                                    <option value="0.32">0.32 mm (4 Layers)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW: 3-Panel Wall Triptych Live Preview & Wall Gap -->
+                    <div class="pro-only-block" style="margin-top:7px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.24);border-radius:7px;padding:7px 9px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                            <label style="display:flex;align-items:center;gap:7px;font-size:0.72rem;cursor:pointer;color:#a7f3d0;font-weight:600;">
+                                <input type="checkbox" id="chk-triptych-preview" onchange="toggleTriptychPreview(this.checked)" style="accent-color:#10b981;">
+                                <span data-i18n="labelTriptychPreview">🖼️ 3-Panel Wall Triptych Set</span>
+                            </label>
+                            <button type="button" class="btn-top" style="padding:2px 6px;font-size:0.64rem;border-color:rgba(16,185,129,0.45);color:#6ee7b7;" onclick="openExportModal()">
+                                <span data-i18n="btnTriptychExportMini">Export 3× .3MF</span>
+                            </button>
+                        </div>
+                        <div id="triptych-controls-wrap" style="display:none;margin-top:6px;">
+                            <div class="input-label" style="font-size:0.67rem;margin-bottom:2px;">
+                                <span data-i18n="labelTriptychGap">Wall Spacing Between Panels:</span>
+                                <span id="val-triptych-gap" style="color:#34d399;font-weight:700;">20 mm</span>
+                            </div>
+                            <input type="range" class="range-slider" id="slider-triptych-gap" min="10" max="40" step="2" value="20" oninput="updateTriptychGap(this.value)">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1058,6 +1159,10 @@
                 <button type="button" class="viewport-tab-btn" id="btn-deltae-heatmap" onclick="toggleDeltaEHeatmap()" title="CIEDE2000 ΔE Color Fidelity Heatmap — Green = Exact, Red = Out-of-Gamut (Click model to diagnose!)" style="color:#fde68a;">
                     <i data-lucide="flame" style="width:13px;height:13px;color:#f59e0b;"></i>
                     <span data-i18n="btnDeltaEHeatmap">ΔE2000</span>
+                </button>
+                <button type="button" class="viewport-tab-btn" id="btn-cross-section" onclick="toggleCrossSectionInspector()" title="Live 3D Cross-Section Cutaway Inspector — View 10× physical filament stack profile in mm" style="color:#7dd3fc;">
+                    <i data-lucide="scan-line" style="width:13px;height:13px;color:#38bdf8;"></i>
+                    <span data-i18n="btnCrossSection">Section</span>
                 </button>
             </div>
 
@@ -1555,14 +1660,44 @@
                 </div>
             </div>
 
-            <!-- Viewport HUD Info -->
+            <!-- Viewport HUD Info + Quick Cost & Reel Shortcuts -->
             <div class="viewport-hud">
                 <div class="hud-card">
                     <div style="font-weight:700;color:#fff;margin-bottom:2px;" data-i18n="hudModelStatus">Photorealistic 3D Relief</div>
                     <div id="hud-dimensions">Size: 140 × 140 × 2.4 mm</div>
                     <div id="hud-swaps">Filaments: 5 Active Colors</div>
                     <div id="hud-weight" style="color:var(--accent);">Filament: ~28g PLA (1h 45m)</div>
+                    <div style="display:flex;gap:5px;margin-top:6px;">
+                        <button type="button" class="btn-top" style="padding:3px 7px;font-size:0.67rem;background:rgba(16,185,129,0.16);border-color:rgba(16,185,129,0.4);color:#6ee7b7;" onclick="openCostCalculatorModal()" title="Print Cost & Etsy / MakerWorld Profit Calculator">
+                            <span data-i18n="btnCostCalcHud">💰 Cost &amp; Profit</span>
+                        </button>
+                        <button type="button" class="btn-top" style="padding:3px 7px;font-size:0.67rem;background:rgba(244,63,94,0.16);border-color:rgba(244,63,94,0.45);color:#fda4af;" onclick="openTimelapseModal()" title="Record 1-Click Layer-Build Time-Lapse Reel (TikTok / Reels / Etsy)">
+                            <span data-i18n="btnReelVideoHud">🎬 Reel Video</span>
+                        </button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- NEW: Live 3D Cross-Section Inspector Floating Engineering HUD -->
+            <div class="cross-section-hud" id="cross-section-hud" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <strong style="font-size:0.74rem;color:#38bdf8;display:flex;align-items:center;gap:5px;">
+                        <i data-lucide="scan-line" style="width:13px;height:13px;"></i>
+                        <span data-i18n="titleCrossSectionHud">Live 3D Cross-Section (10× Z)</span>
+                    </strong>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <button type="button" class="btn-hud active" id="btn-cs-axis-y" onclick="setCrossSectionAxis('y')" style="padding:2px 7px;font-size:0.66rem;">Y-Cut</button>
+                        <button type="button" class="btn-hud" id="btn-cs-axis-x" onclick="setCrossSectionAxis('x')" style="padding:2px 7px;font-size:0.66rem;">X-Cut</button>
+                        <button type="button" class="btn-hud" onclick="toggleCrossSectionInspector(false)" style="padding:2px 6px;font-size:0.72rem;color:#fca5a5;">&times;</button>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:0.68rem;color:var(--text-sub);">
+                    <span data-i18n="labelCutPos">Slice Plane:</span>
+                    <input type="range" class="range-slider" id="slider-cs-pos" min="5" max="95" value="50" style="flex:1;" oninput="updateCrossSectionPos(this.value)">
+                    <span id="val-cs-pos" style="color:#38bdf8;font-weight:700;min-width:28px;">50%</span>
+                </div>
+                <canvas id="cross-section-canvas" width="360" height="128"></canvas>
+                <div id="cs-metrics-text" style="font-size:0.66rem;color:#cbd5e1;font-family:monospace;">Y=70.0mm • Z: 0.60–2.40mm</div>
             </div>
 
             <!-- Live 3D Virtual Slicer Simulation HUD -->
@@ -1622,6 +1757,22 @@
                     <i data-lucide="grid" style="width:13px;height:13px;"></i>
                     <span data-i18n="btnWireframe">Wireframe</span>
                 </button>
+                <button type="button" class="btn-hud" id="btn-toggle-printbed" onclick="togglePrintBedVisualizer()" title="Show Virtual 3D Printer Build Plate & Live Fit Checker">
+                    <i data-lucide="printer" style="width:13px;height:13px;color:#34d399;"></i>
+                    <span data-i18n="btnPrintBed">Print Bed</span>
+                </button>
+                <div id="printbed-bar" style="display:none;align-items:center;gap:4px;background:rgba(15,23,42,0.95);border:1px solid rgba(16,185,129,0.4);border-radius:8px;padding:2px 6px;">
+                    <select class="text-input" id="select-printbed-preset" style="font-size:0.66rem;padding:2px 5px;width:auto;" onchange="setPrintBedPreset(this.value)">
+                        <option value="bambu_180">A1 Mini (180×180)</option>
+                        <option value="bambu_256" selected>X1C/P1S/A1 (256×256)</option>
+                        <option value="prusa_mk4">Prusa MK4 (250×210)</option>
+                        <option value="creality_300">K1 Max (300×300)</option>
+                    </select>
+                    <span id="badge-printbed-fit" style="font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:5px;border:1px solid rgba(16,185,129,0.45);color:#34d399;white-space:nowrap;">✅ Fits</span>
+                    <button type="button" class="btn-hud" id="btn-fit-to-bed" style="display:none;padding:2px 6px;font-size:0.65rem;background:rgba(245,158,11,0.25);border-color:#f59e0b;color:#fde68a;" onclick="fitModelToActivePrintBed()">
+                        <span data-i18n="btnFitBed">Fit Bed</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1999,6 +2150,18 @@
                     </div>
                 </div>
 
+                <!-- 4b. NEW: 3-Panel Wall Triptych Gallery Set (.3MF ZIP) -->
+                <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.34);border-radius:10px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="executeExport('triptych_zip')">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg, #0d9488, #14b8a6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.74rem;flex-shrink:0;">3×</div>
+                        <div>
+                            <strong style="color:#fff;font-size:0.86rem;" data-i18n="exportTriptychTitle">3-Panel Wall Triptych Set (.3MF ZIP)</strong>
+                            <div style="font-size:0.73rem;color:var(--text-sub);" data-i18n="exportTriptychSub">3 separate framed gallery panels (Left, Center, Right) + wall spacing guide</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" style="width:18px;height:18px;color:#2dd4bf;"></i>
+                </div>
+
                 <!-- 5. Standalone Interactive 3D HTML Showcase -->
                 <div style="background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.32);border-radius:10px;padding:11px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="executeExport('html_3d')">
                     <div style="display:flex;align-items:center;gap:12px;">
@@ -2036,6 +2199,21 @@
                         </div>
                     </div>
                     <i data-lucide="chevron-right" style="width:18px;height:18px;color:#38bdf8;"></i>
+                </div>
+
+                <!-- 8. FREE Viral Layer-Build Time-Lapse Reel Video (.WEBM) -->
+                <div style="background:rgba(244,63,94,0.07);border:1px solid rgba(244,63,94,0.28);border-radius:10px;padding:10px 11px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="closeAllModals();openTimelapseModal();">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg, #e11d48, #f43f5e);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.74rem;flex-shrink:0;">REEL</div>
+                        <div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <strong style="color:#fff;font-size:0.84rem;" data-i18n="exportTimelapseTitle">Layer-Build Time-Lapse Reel Video (.WEBM)</strong>
+                                <span class="badge-free-pill">FREE</span>
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--text-sub);" data-i18n="exportTimelapseSub">9:16 TikTok/Reels &amp; 1:1 Square animated build video with filament swaps</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" style="width:18px;height:18px;color:#fb7185;"></i>
                 </div>
             </div>
 
@@ -2106,6 +2284,116 @@
                 <button type="button" class="btn-top" onclick="copyShareLink()" style="flex-shrink:0;">
                     <i data-lucide="copy" style="width:13px;height:13px;"></i>
                     <span id="txt-copy-share-link" data-i18n="btnCopyLink">Copy</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Layer-Build Time-Lapse Reel Video Modal -->
+    <div class="modal-overlay" id="timelapse-modal">
+        <div class="modal-card" style="max-width:480px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="film" style="width:20px;height:20px;color:#fb7185;"></i>
+                    <span data-i18n="timelapseModalTitle">🎬 Layer-Build Time-Lapse Reel</span>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeAllModals()">&times;</button>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-sub);margin:0;line-height:1.45;" data-i18n="timelapseModalDesc">
+                Records an animated ~7-second WebM video directly in your browser showing your painting building layer-by-layer with active filament swaps and a cinematic 3D raking-light sweep.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="mockup-scene-card" onclick="recordLayerBuildTimelapse('9:16')" style="border-color:rgba(244,63,94,0.45);background:rgba(244,63,94,0.08);">
+                    <strong style="color:#fda4af;font-size:0.86rem;" data-i18n="btnReel916">📱 9:16 Vertical Reel</strong>
+                    <span style="font-size:0.72rem;color:var(--text-sub);">720×1280 • TikTok / Reels / Shorts</span>
+                </div>
+                <div class="mockup-scene-card" onclick="recordLayerBuildTimelapse('1:1')" style="border-color:rgba(56,189,248,0.45);background:rgba(56,189,248,0.08);">
+                    <strong style="color:#bae6fd;font-size:0.86rem;" data-i18n="btnReel11">⬛ 1:1 Square Video</strong>
+                    <span style="font-size:0.72rem;color:var(--text-sub);">960×960 • Etsy / MakerWorld / IG</span>
+                </div>
+            </div>
+            <div id="timelapse-progress-box" style="display:none;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:0.78rem;color:#fda4af;margin-bottom:6px;" id="timelapse-status-text">Recording Time-Lapse...</div>
+                <div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+                    <div id="timelapse-progress-bar" style="width:10%;height:100%;background:linear-gradient(90deg, #f43f5e, #38bdf8);transition:width 0.15s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Print Cost & Etsy / MakerWorld Profit Calculator Modal -->
+    <div class="modal-overlay" id="cost-modal">
+        <div class="modal-card" style="max-width:540px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="calculator" style="width:20px;height:20px;color:#34d399;"></i>
+                    <span data-i18n="costModalTitle">💰 Print Cost &amp; Etsy Profit Calculator</span>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeAllModals()">&times;</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostSpool">Spool ($/kg)</label>
+                    <input type="number" class="text-input" id="cost-input-spool" value="24" step="1" min="5" max="200" oninput="updateCostCalculatorUI()">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostKwh">Power ($/kWh)</label>
+                    <input type="number" class="text-input" id="cost-input-kwh" value="0.18" step="0.02" min="0" max="2" oninput="updateCostCalculatorUI()">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostWatts">Printer (W)</label>
+                    <input type="number" class="text-input" id="cost-input-watts" value="120" step="10" min="20" max="1500" oninput="updateCostCalculatorUI()">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostPack">Packaging ($)</label>
+                    <input type="number" class="text-input" id="cost-input-pack" value="2.50" step="0.5" min="0" max="100" oninput="updateCostCalculatorUI()">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostFee">Platform Fee (%)</label>
+                    <input type="number" class="text-input" id="cost-input-fee" value="12" step="1" min="0" max="45" oninput="updateCostCalculatorUI()">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label class="input-label" data-i18n="labelCostMargin">Markup (%)</label>
+                    <input type="number" class="text-input" id="cost-input-margin" value="180" step="10" min="20" max="800" oninput="updateCostCalculatorUI()">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div class="cost-kpi-box">
+                    <span data-i18n="kpiProdCost">Production Cost</span>
+                    <strong id="cost-val-total" style="color:#f8fafc;">$0.00</strong>
+                    <small id="cost-val-filament" style="color:#94a3b8;">$0.00</small>
+                    <small id="cost-val-power" style="color:#64748b;">$0.00</small>
+                </div>
+                <div class="cost-kpi-box" style="border-color:rgba(56,189,248,0.45);background:rgba(56,189,248,0.08);">
+                    <span data-i18n="kpiRetailPrice">Recommended Price</span>
+                    <strong id="cost-val-retail" style="color:#38bdf8;">$0.00</strong>
+                    <small id="cost-val-fees" style="color:#94a3b8;">Fees: $0.00</small>
+                </div>
+                <div class="cost-kpi-box" style="border-color:rgba(16,185,129,0.5);background:rgba(16,185,129,0.1);">
+                    <span data-i18n="kpiNetProfit">Est. Net Profit</span>
+                    <strong id="cost-val-profit" style="color:#34d399;">+$0.00</strong>
+                    <small style="color:#6ee7b7;" data-i18n="kpiPerUnit">per print sold</small>
+                </div>
+            </div>
+
+            <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border-panel);border-radius:8px;">
+                <table class="slicer-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th data-i18n="thSpool">Filament Spool</th>
+                            <th data-i18n="thUsage">Usage</th>
+                            <th data-i18n="thCost">Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cost-spool-tbody"></tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                <button type="button" class="btn-top" onclick="copyCostBreakdownText()" style="background:rgba(16,185,129,0.18);border-color:rgba(16,185,129,0.45);color:#6ee7b7;">
+                    <i data-lucide="copy" style="width:13px;height:13px;"></i>
+                    <span data-i18n="btnCopyQuote">Copy Pricing Quote</span>
                 </button>
             </div>
         </div>
