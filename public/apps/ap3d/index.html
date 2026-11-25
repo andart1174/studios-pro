@@ -1,1459 +1,520 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studio 3D | Studios-Pro</title>
-  <script>document.title = "Studio 3D | Studios-Pro";</script>
-  <script type="module" crossorigin src="./assets/index-BAPak7Xt.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-D-nFrSuv.css">
-</head>
-
-<body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
-  <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-    <span>Retour / Back</span>
-  </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
-            }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
-
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
-            } else {
-              output = 'solid exported\n';
-            }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let singleExportExpiresAt = 0;
-      let pendingTarget = null;
-      let pendingAnchor = null;
-      let isPremiumUser = false;
-      window.isExportAllowed = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'ap3d' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'ap3d' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          window.isExportAllowed = true;
-          singleExportExpiresAt = Date.now() + 8000;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            const t = pendingTarget;
-            pendingTarget = null;
-            t.click();
-          } else if (pendingAnchor) {
-            const a = pendingAnchor;
-            pendingAnchor = null;
-            a.dataset.bypassed = 'true';
-            a.click();
-            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-          if (window.self === window.top) {
-            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-            if (used < 5) {
-              used++;
-              localStorage.setItem('freeExportsUsed', String(used));
-              isAllowed = true;
-              window.isExportAllowed = true;
-              singleExportExpiresAt = Date.now() + 8000;
-              return;
-            }
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            pendingTarget = target;
-            if (localModal) localModal.style.display = 'flex';
-            return;
-          }
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'ap3d' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-            pendingAnchor = this;
-            if (window.self === window.top) {
-              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-              if (used < 5) {
-                used++;
-                localStorage.setItem('freeExportsUsed', String(used));
-                isAllowed = true;
-                window.isExportAllowed = true;
-                singleExportExpiresAt = Date.now() + 8000;
-              } else {
-                if (localModal) localModal.style.display = 'flex';
-                return;
-              }
-            } else {
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'ap3d' } });
-              return;
-            }
-          }
-          if (isAllowed) {
-            isAllowed = false;
-            window.isExportAllowed = false;
-            channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-              pendingAnchor = this;
-              if (window.self === window.top) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-                if (used < 5) {
-                  used++;
-                  localStorage.setItem('freeExportsUsed', String(used));
-                  isAllowed = true;
-                  window.isExportAllowed = true;
-                  singleExportExpiresAt = Date.now() + 8000;
-                } else {
-                  if (localModal) localModal.style.display = 'flex';
-                  return false;
-                }
-              } else {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'ap3d' } });
-                return false;
-              }
-            }
-            if (isAllowed) {
-              isAllowed = false;
-              window.isExportAllowed = false;
-              channel.postMessage({ type: 'EXPORT_COMPLETED' });
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-                pendingTarget = htmlBtn;
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'ap3d' } });
-                return;
-              }
-              
-              if ('ap3d' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
-            };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-          }
-        }
-
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
+  <title>3D Studio Pro — Ultra-HD Lithophane, Lamp, Heart, Moon Sphere & 3D Relief CAD | Studios-Pro</title>
+  <meta name="description" content="Convert any photo into watertight 3D STL lithophanes, glowing LED lamps, Moon spheres, heart ornaments, color lithophanes & bas-reliefs directly in your browser. Free online CAD by Studios-Pro." />
+  <meta name="keywords" content="3D lithophane maker online, photo to STL generator, moon lamp STL generator, curved lithophane, color lithophane generator, 3D relief CAD, heart lithophane STL, Studios-Pro" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="author" content="Studios-Pro" />
+  <link rel="canonical" href="https://studios-pro.com/apps/ap3d/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://studios-pro.com/apps/ap3d/" />
+  <meta property="og:title" content="3D Studio Pro — Ultra-HD Lithophane & 3D Relief CAD Generator" />
+  <meta property="og:description" content="Create watertight STL lithophanes, 360° lamps, moon spheres, heart keychains, color backlit sheets & WebAR previews right in your browser." />
+  <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+  <meta property="og:site_name" content="Studios-Pro" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="3D Studio Pro | Studios-Pro" />
+  <meta name="twitter:description" content="Browser CAD for 3D Lithophanes, Moon Lamps, Heart Ornaments, Color Lithophanes & Bas-Relief STLs." />
+  <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "3D Studio Pro — Lithophane & Relief CAD",
+    "url": "https://studios-pro.com/apps/ap3d/",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Web",
+    "description": "In-browser Ultra-HD 3D Lithophane, Moon Lamp, Heart Ornament, Color Backlit Sheet, and Bas-Relief watertight STL/GLB/OBJ CAD studio with optical LED simulator.",
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+    "publisher": {"@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com"}
+  }
   </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-  <!-- Back Button -->
-  <style>
-    .back-to-studios {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 9999;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      font-family: sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+</head>
 
-    .back-to-studios:hover {
-      background: #3b82f6;
-      transform: translateY(-2px);
-    }
+<body data-lang="en" data-mobile-pane="viewport">
+  <!-- INTEGRATED RESPONSIVE HEADER (Zero Overlap!) -->
+  <header class="topbar">
+    <div class="header-left">
+      <button id="back-btn" class="btn-back" type="button" title="Back to Studios-Pro">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        <span data-en>Studios</span><span data-fr>Studios</span>
+      </button>
+      <div class="logo">
+        <div class="logo-icon">🧊</div>
+        <div class="logo-meta">
+          <div class="logo-text">3D Studio Pro</div>
+          <div class="logo-sub" data-en>Ultra-HD Lithophane · Lamp · Moon Sphere · 3D Relief CAD</div>
+          <div class="logo-sub" data-fr>Lithophanie Ultra-HD · Lampe · Sphère Lune · Relief 3D CAD</div>
+        </div>
+      </div>
+      <span class="pill emerald hide-md">✦ Ultra-HD CAD</span>
+    </div>
 
-    /* Modal Local Styles */
-    #local-payment-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
+    <div class="header-right">
+      <button id="btnOpenPhoto" class="h-btn accent" type="button">
+        <span>📁</span>
+        <span data-en>Open</span><span data-fr>Ouvrir</span>
+      </button>
+      <input type="file" id="fileInput" accept="image/*,.sp3d,.json" style="display:none" />
 
-    .local-modal-content {
-      background: #0f172a;
-      padding: 40px;
-      border-radius: 40px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
+      <button id="btnSaveProject" class="h-btn hide-md" type="button" disabled title="Save .sp3d project (Free)">
+        <span>💾</span><span>.sp3d</span>
+      </button>
 
-    .local-modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
+      <div class="h-sep"></div>
 
-    .local-modal-content p {
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 25px;
-    }
+      <button id="btnUndo" class="h-btn icon-only" type="button" disabled title="Undo (Ctrl+Z)">↶</button>
+      <button id="btnRedo" class="h-btn icon-only" type="button" disabled title="Redo (Ctrl+Y)">↷</button>
 
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+      <div class="h-sep"></div>
 
-    .pay-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+      <button id="btnPreflight" class="h-btn" type="button" disabled title="3D Printability & Slicer Pre-Flight">
+        <span>🔍</span><span class="hide-md" data-en>Slicer Check</span><span class="hide-md" data-fr>Contrôle 3D</span>
+      </button>
+      <button id="btnCostCalc" class="h-btn hide-md" type="button" disabled title="Filament, LED Kit & Etsy Profit Calculator">
+        <span>💰</span><span data-en>Quote</span><span data-fr>Devis</span>
+      </button>
+      <button id="btnShortcuts" class="h-btn icon-only hide-md" type="button" title="Keyboard Shortcuts (?)">⌨️</button>
+      <button id="langToggle" class="h-btn" type="button" title="Switch English / Français">EN / FR</button>
+      <span id="creditsBadge" class="pill">5 Free</span>
+    </div>
+  </header>
 
-    .premium-btn {
-      background: #d97706;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+  <!-- MOBILE TAB SWITCHER -->
+  <div class="mobile-bar">
+    <button type="button" class="mobile-tab active" data-mobile-target="viewport">🧊 <span data-en>3D Studio</span><span data-fr>Vue 3D</span></button>
+    <button type="button" class="mobile-tab" data-mobile-target="controls">⚙️ <span data-en>CAD Controls</span><span data-fr>Réglages CAD</span></button>
+  </div>
 
-    .pay-btn:hover,
-    .premium-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
+  <!-- MAIN CAD WORKSPACE -->
+  <div class="workspace">
+    <!-- LEFT: 3D PBR & OPTICAL LED VIEWPORT + CROSS-SECTION CALIPER -->
+    <main class="stage">
+      <div class="stage-bar">
+        <div class="bar-group">
+          <button type="button" id="btnLedToggle" class="btn btn-sm btn-led-on" title="Toggle Optical LED Backlight (L)">💡 <span data-en>LED ON</span><span data-fr>LED ON</span></button>
+          <button type="button" id="btnColorBacklit" class="btn btn-sm" title="Preview Color Backlit Lithophane">🌈 <span data-en>Color Litho</span><span data-fr>Litho Couleur</span></button>
+          <button type="button" id="btnWireToggle" class="btn btn-sm" title="Toggle Wireframe (W)">🕸️ Wire</button>
+          <div class="h-sep"></div>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="iso">3/4</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="front" data-en>Front</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="front" data-fr>Face</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="side" data-en>Side</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="side" data-fr>Profil</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="top" data-en>Top</button>
+          <button type="button" class="btn btn-sm cam-btn" data-cam="top" data-fr>Dessus</button>
+          <button type="button" id="btnAutoRotate" class="btn btn-sm">↻ Auto</button>
+        </div>
 
-    .close-local-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 20px;
-    }
-  </style>
-  
+        <div class="bar-group">
+          <select id="videoModeSelect" class="inp" style="width:155px;padding:5px 8px;font-size:11px">
+            <option value="lightup">✨ Magic Light-Up Reveal</option>
+            <option value="turntable">🔄 Turntable 360°</option>
+            <option value="raking">☀️ Raking Light Sweep</option>
+          </select>
+          <button type="button" id="btnRecordVideo" class="btn btn-emerald btn-sm" disabled>🎥 REC .WEBM</button>
+        </div>
+      </div>
 
-  <div id="local-payment-modal">
-    <div class="local-modal-content">
-      <button class="close-local-modal" id="modal-close-btn">&times;</button>
-      <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
-      <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</p>
-      <div class="btn-group">
-        <button class="premium-btn" id="pay-premium-btn">Devenir Premium (10$/mois)</button>
+      <div id="progressStrip" class="progress-strip">
+        <span id="progressLabel" class="progress-txt">Generating watertight CAD mesh…</span>
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+        <span id="progressPct" class="progress-txt">0%</span>
+      </div>
+
+      <div class="viewport-box">
+        <canvas id="canvas3d"></canvas>
+
+        <!-- Welcome Drop Overlay + 4 Built-in Studio Demos -->
+        <div id="welcomeOverlay" class="welcome-overlay">
+          <div id="welcomeCard" class="welcome-card">
+            <div style="font-size:44px">🏮</div>
+            <h2 data-en>Turn Any Photo into a Glowing 3D Lithophane, Lamp or Relief</h2>
+            <h2 data-fr>Transformez une Photo en Lithophanie LED, Lampe ou Relief 3D</h2>
+            <p data-en>9 Watertight CAD Shapes (Flat, Curved Arc, 360° Cylinder, Heart, Moon Sphere, Coin, Hexagon) · True Optical LED Preview · Instant STL/GLB/WebAR · Try a demo in 1 click:</p>
+            <p data-fr>9 Formes CAD Étanches (Plat, Arc, Cylindre 360°, Cœur, Sphère Lune, Médaille, Hexagone) · Simulation LED Optique · STL/GLB/WebAR · Essayez une démo en 1 clic :</p>
+            <div class="demo-row">
+              <button type="button" id="btnHeroUpload" class="btn btn-primary">📁 <span data-en>Upload Photo</span><span data-fr>Importer Photo</span></button>
+              <button type="button" class="btn demo-btn" data-demo="portrait">🖼️ <span data-en>Portrait</span><span data-fr>Portrait</span></button>
+              <button type="button" class="btn demo-btn" data-demo="heart">❤️ <span data-en>Heart Glow</span><span data-fr>Cœur LED</span></button>
+              <button type="button" class="btn demo-btn" data-demo="landscape">🏔️ <span data-en>Sunset Lamp</span><span data-fr>Lampe Alpin</span></button>
+              <button type="button" class="btn demo-btn" data-demo="coin">🌙 <span data-en>Moon Crest</span><span data-fr>Lune / Pièce</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Live 3D CAD Specs HUD -->
+        <div id="hudBottom" class="hud-bottom">
+          <div class="hud-chips">
+            <span class="hud-chip"><span data-en>Size:</span><span data-fr>Dim :</span> <strong id="hudDims">—</strong></span>
+            <span class="hud-chip"><span data-en>Wall:</span><span data-fr>Paroi :</span> <strong id="hudWall">—</strong></span>
+            <span class="hud-chip"><span data-en>Triangles:</span><span data-fr>Triangles :</span> <strong id="hudTris">—</strong></span>
+            <span class="hud-chip"><span data-en>Est. PLA:</span><span data-fr>PLA Est. :</span> <strong id="hudPla">—</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE CROSS-SECTION THICKNESS CALIPER -->
+      <div class="caliper-dock">
+        <div class="caliper-head">
+          <span>📐 <span data-en>Live Cross-Section Wall Thickness Caliper (mm)</span><span data-fr>Coupe Transversale d'Épaisseur de Paroi en Direct (mm)</span></span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span data-en>Slice Row:</span><span data-fr>Ligne Coupe :</span>
+            <input type="range" id="caliperRowSlider" min="5" max="95" value="50" style="width:110px" />
+            <span id="caliperRowVal" class="val-tag">50%</span>
+          </div>
+        </div>
+        <canvas id="caliperCanvas" height="64"></canvas>
+      </div>
+    </main>
+
+    <!-- RIGHT: 4-TAB CAD CONTROLS SIDEBAR -->
+    <aside class="sidebar">
+      <div class="side-tabs">
+        <button type="button" class="side-tab active" data-side-tab="image"><span class="ti">🖼️</span><span data-en>Image</span><span data-fr>Image</span></button>
+        <button type="button" class="side-tab" data-side-tab="shape"><span class="ti">🏮</span><span data-en>Shape</span><span data-fr>Forme</span></button>
+        <button type="button" class="side-tab" data-side-tab="look"><span class="ti">💡</span><span data-en>Light</span><span data-fr>Lumière</span></button>
+        <button type="button" class="side-tab" data-side-tab="export"><span class="ti">📤</span><span data-en>Export</span><span data-fr>Export</span></button>
+      </div>
+
+      <div class="side-scroll">
+        <!-- TAB 1: IMAGE, PRESETS, CROP & FILTERS -->
+        <div id="pane-image" class="side-pane active">
+          <div class="card">
+            <div class="card-title">
+              <span>📷 <span data-en>Photo & 2D Tone Preview</span><span data-fr>Photo & Aperçu 2D</span></span>
+              <div style="display:flex;gap:4px">
+                <button type="button" id="btnRotate90" class="btn btn-sm" title="Rotate 90°">⟳</button>
+                <button type="button" id="btnFlipH" class="btn btn-sm" title="Flip Horizontal">⇄</button>
+              </div>
+            </div>
+            <div class="preview2d-box"><canvas id="preview2dCanvas"></canvas></div>
+            <div class="grid-2">
+              <div class="field">
+                <div class="field-row"><label data-en>Smart Crop</label><label data-fr>Recadrage</label></div>
+                <select id="cropModeSelect" class="inp">
+                  <option value="original">Original Aspect (Locked)</option>
+                  <option value="1:1">Square (1:1)</option>
+                  <option value="4:3">Classic (4:3)</option>
+                  <option value="3:4">Portrait (3:4)</option>
+                  <option value="16:9">Widescreen (16:9)</option>
+                  <option value="2:1">Panorama / Cylinder (2:1)</option>
+                </select>
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <div style="display:flex;gap:4px">
+                  <button type="button" class="btn btn-sm demo-btn" data-demo="portrait" style="flex:1" title="Portrait Demo">🖼️</button>
+                  <button type="button" class="btn btn-sm demo-btn" data-demo="heart" style="flex:1" title="Heart Demo">❤️</button>
+                  <button type="button" class="btn btn-sm demo-btn" data-demo="landscape" style="flex:1" title="Landscape Demo">🏔️</button>
+                  <button type="button" class="btn btn-sm demo-btn" data-demo="coin" style="flex:1" title="Moon/Coin Demo">🌙</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>⚡ <span data-en>1-Click Studio Presets</span><span data-fr>Préréglages Studio 1-Clic</span></span></div>
+            <div class="grid-3">
+              <button type="button" class="preset-btn active" data-preset="white-litho"><span class="si">💡</span><span data-en>White Litho</span><span data-fr>Litho Blanc</span></button>
+              <button type="button" class="preset-btn" data-preset="curved-lamp"><span class="si">🏮</span><span data-en>Curved Lamp</span><span data-fr>Lampe Arc</span></button>
+              <button type="button" class="preset-btn" data-preset="moon-sphere"><span class="si">🌕</span><span data-en>Moon Lamp</span><span data-fr>Lampe Lune</span></button>
+              <button type="button" class="preset-btn" data-preset="heart-gift"><span class="si">❤️</span><span data-en>Heart Gift</span><span data-fr>Cœur Cadeau</span></button>
+              <button type="button" class="preset-btn" data-preset="bronze-coin"><span class="si">🪙</span><span data-en>Bronze Coin</span><span data-fr>Médaille</span></button>
+              <button type="button" class="preset-btn" data-preset="wood-relief"><span class="si">🪵</span><span data-en>Wood Relief</span><span data-fr>Relief Bois</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>🎚️ <span data-en>Image Tuning</span><span data-fr>Réglages Image</span></span>
+              <button type="button" id="btnResetFilters" class="btn btn-sm">↺ <span data-en>Reset</span><span data-fr>Init</span></button>
+            </div>
+
+            <div class="field">
+              <div class="field-row"><label data-en>Sharpen (Details)</label><label data-fr>Netteté (Détails)</label><span id="sharpenVal" class="val-tag">1</span></div>
+              <input type="range" id="sharpenSlider" min="0" max="10" step="1" value="1" />
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Contrast</label><label data-fr>Contraste</label><span id="contrastVal" class="val-tag">+10%</span></div>
+              <input type="range" id="contrastSlider" min="-80" max="100" step="2" value="10" />
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Brightness</label><label data-fr>Luminosité</label><span id="brightnessVal" class="val-tag">0%</span></div>
+              <input type="range" id="brightnessSlider" min="-80" max="80" step="2" value="0" />
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Gamma Curve</label><label data-fr>Courbe Gamma</label><span id="gammaVal" class="val-tag">1.00</span></div>
+              <input type="range" id="gammaSlider" min="30" max="260" step="5" value="100" />
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Noise Reduction</label><label data-fr>Réduction Bruit</label><span id="noiseVal" class="val-tag">0</span></div>
+              <input type="range" id="noiseSlider" min="0" max="6" step="1" value="0" />
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Smoothing Blur</label><label data-fr>Lissage Flou</label><span id="blurVal" class="val-tag">0px</span></div>
+              <input type="range" id="blurSlider" min="0" max="10" step="1" value="0" />
+            </div>
+            <label class="check-row"><input type="checkbox" id="invertChk" /><span data-en>Invert Polarity (Swap Light/Dark)</span><span data-fr>Inverser Polarité (Clair/Sombre)</span></label>
+          </div>
+        </div>
+
+        <!-- TAB 2: 9 CAD SHAPES, DIMENSIONS & CUSTOM 3D TEXT -->
+        <div id="pane-shape" class="side-pane">
+          <div class="card">
+            <div class="card-title"><span>🏮 <span data-en>9 Parametric Watertight CAD Shapes</span><span data-fr>9 Formes CAD Étanches Paramétriques</span></span></div>
+            <div class="grid-3">
+              <button type="button" class="shape-btn active" data-shape="flat"><span class="si">🖼️</span><span data-en>Flat Plaque</span><span data-fr>Plaque</span></button>
+              <button type="button" class="shape-btn" data-shape="arc"><span class="si">🌙</span><span data-en>Curved Arc</span><span data-fr>Arc Courbé</span></button>
+              <button type="button" class="shape-btn" data-shape="cylinder"><span class="si">🏮</span><span data-en>360° Lamp</span><span data-fr>Lampe 360°</span></button>
+              <button type="button" class="shape-btn" data-shape="heart"><span class="si">❤️</span><span data-en>Heart</span><span data-fr>Cœur</span></button>
+              <button type="button" class="shape-btn" data-shape="circle"><span class="si">🪙</span><span data-en>Coin / Disc</span><span data-fr>Médaille</span></button>
+              <button type="button" class="shape-btn" data-shape="oval"><span class="si">🥚</span><span data-en>Oval Cameo</span><span data-fr>Camée Oval</span></button>
+              <button type="button" class="shape-btn" data-shape="hexagon"><span class="si">⬡</span><span data-en>Hex Tile</span><span data-fr>Hexagone</span></button>
+              <button type="button" class="shape-btn" data-shape="sphere"><span class="si">🌕</span><span data-en>Moon Globe</span><span data-fr>Sphère Lune</span></button>
+              <button type="button" class="shape-btn" data-shape="lantern"><span class="si">📦</span><span data-en>Lantern</span><span data-fr>Lanterne</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>📐 <span data-en>Dimensions & Wall Calibration</span><span data-fr>Dimensions & Calibrage Paroi</span></span></div>
+            <div class="field">
+              <div class="field-row"><label data-en>CAD Relief Mode</label><label data-fr>Mode Relief CAD</label></div>
+              <select id="cadModeSelect" class="inp">
+                <option value="lithophane">💡 Lithophane (Bright = Thin Wall)</option>
+                <option value="relief">🗿 Bas-Relief / Coin (Bright = High)</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <div class="field-row"><label data-en>Width / Diameter (mm)</label><label data-fr>Largeur / Diamètre (mm)</label><span id="widthVal" class="val-tag">120 mm</span></div>
+              <input type="range" id="widthSlider" min="30" max="280" step="2" value="120" />
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <div class="field-row"><label data-en>Min Wall (mm)</label><label data-fr>Paroi Min (mm)</label></div>
+                <input type="number" id="minThickInput" class="inp" min="0.4" max="12" step="0.1" value="0.8" />
+              </div>
+              <div class="field">
+                <div class="field-row"><label data-en>Max Wall (mm)</label><label data-fr>Paroi Max (mm)</label></div>
+                <input type="number" id="maxThickInput" class="inp" min="1.2" max="30" step="0.2" value="3.2" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <div class="field-row"><label data-en>Frame Width (mm)</label><label data-fr>Bordure (mm)</label></div>
+                <input type="number" id="frameWidthInput" class="inp" min="0" max="20" step="1" value="4" />
+              </div>
+              <div class="field">
+                <div class="field-row"><label data-en>Frame Height (mm)</label><label data-fr>Hauteur Bord (mm)</label></div>
+                <input type="number" id="frameHeightInput" class="inp" min="1.5" max="32" step="0.2" value="4.0" />
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field-row"><label data-en>Arc Curve Angle (°)</label><label data-fr>Angle d'Arc (°)</label><span id="curveAngleVal" class="val-tag">110°</span></div>
+              <input type="range" id="curveAngleSlider" min="30" max="210" step="5" value="110" />
+            </div>
+
+            <div class="field">
+              <div class="field-row"><label data-en>Lamp LED Socket Opening (mm)</label><label data-fr>Ouverture Douille LED (mm)</label><span id="socketVal" class="val-tag">38 mm</span></div>
+              <input type="range" id="socketSlider" min="0" max="90" step="2" value="38" />
+            </div>
+
+            <div class="grid-2">
+              <label class="check-row"><input type="checkbox" id="builtInStandChk" /><span data-en>Desk Stand Foot</span><span data-fr>Socle Intégré</span></label>
+              <label class="check-row"><input type="checkbox" id="keychainHoleChk" /><span data-en>Keychain Hole</span><span data-fr>Trou Porte-Clé</span></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>✍️ <span data-en>3D Custom Text on Frame (Flat)</span><span data-fr>Texte 3D sur Bordure (Plaque)</span></span></div>
+            <input type="text" id="frameTextInput" class="inp" maxlength="42" placeholder="e.g. Forever · 2026" />
+            <div class="grid-2">
+              <select id="frameTextMode" class="inp">
+                <option value="emboss">Raised 3D Emboss</option>
+                <option value="engrave">Recessed 3D Engrave</option>
+              </select>
+              <button type="button" id="btnApplyText" class="btn btn-sm btn-primary"><span data-en>Apply Text</span><span data-fr>Appliquer</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: OPTICAL LED LIGHT & PBR MATERIALS -->
+        <div id="pane-look" class="side-pane">
+          <div class="card">
+            <div class="card-title"><span>💡 <span data-en>Optical LED Backlight Simulator</span><span data-fr>Simulateur LED Rétro-Éclairé</span></span></div>
+            <div class="grid-2">
+              <label class="check-row"><input type="checkbox" id="ledOnChk" checked /><span data-en>Backlight LED ON</span><span data-fr>LED Allumée</span></label>
+              <label class="check-row"><input type="checkbox" id="colorBacklitChk" /><span data-en>Color Litho Sheet</span><span data-fr>Feuille Couleur</span></label>
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>LED Temperature</label><label data-fr>Température LED</label></div>
+              <select id="ledTempSelect" class="inp">
+                <option value="2700">2700K — Warm Cozy Lamp</option>
+                <option value="4000">4000K — Natural Ivory</option>
+                <option value="6500">6500K — Cool Daylight</option>
+                <option value="amber">2000K — Candle Amber</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>LED Brightness</label><label data-fr>Intensité LED</label><span id="ledIntVal" class="val-tag">115%</span></div>
+              <input type="range" id="ledIntSlider" min="30" max="170" value="115" />
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>🎨 <span data-en>8 PBR Materials & Raking Light</span><span data-fr>8 Matériaux PBR & Lumière Rasante</span></span></div>
+            <div class="grid-4">
+              <button type="button" class="mat-swatch active" data-mat="litho" style="background:#e2e8f0;color:#0f172a;text-shadow:none">Litho</button>
+              <button type="button" class="mat-swatch" data-mat="ivory" style="background:#fef3c7;color:#451a03;text-shadow:none">Ivory</button>
+              <button type="button" class="mat-swatch" data-mat="bronze" style="background:linear-gradient(135deg,#92400e,#d97706)">Bronze</button>
+              <button type="button" class="mat-swatch" data-mat="gold" style="background:linear-gradient(135deg,#b45309,#facc15)">Gold</button>
+              <button type="button" class="mat-swatch" data-mat="marble" style="background:linear-gradient(135deg,#cbd5e1,#f8fafc);color:#0f172a;text-shadow:none">Marble</button>
+              <button type="button" class="mat-swatch" data-mat="wood" style="background:linear-gradient(135deg,#451a03,#92400e)">Wood</button>
+              <button type="button" class="mat-swatch" data-mat="emerald" style="background:linear-gradient(135deg,#065f46,#10b981)">Jade</button>
+              <button type="button" class="mat-swatch" data-mat="clay" style="background:linear-gradient(135deg,#9a3412,#ea580c)">Clay</button>
+            </div>
+            <div class="field">
+              <div class="field-row"><label data-en>Raking Light Azimuth</label><label data-fr>Angle Lumière Rasante</label><span id="lightAzVal" class="val-tag">38°</span></div>
+              <input type="range" id="lightAzSlider" min="0" max="360" value="38" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: CAD EXPORT HUB & WEBAR -->
+        <div id="pane-export" class="side-pane">
+          <div class="card">
+            <div class="card-title"><span>⚙️ <span data-en>Production Export Quality (Zero-OOM)</span><span data-fr>Qualité d'Export (Sans Crash)</span></span></div>
+            <select id="exportQualitySelect" class="inp">
+              <option value="standard">Standard (~0.42 mm/px · Fast · 8–14 MB STL)</option>
+              <option value="fine" selected>Fine Print (~0.30 mm/px · Recommended · 15–25 MB)</option>
+              <option value="ultra">Ultra CAD (~0.22 mm/px · Crisp 0.12mm Layer · 28–45 MB)</option>
+            </select>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>📤 <span data-en>3D CAD & Color Lithophane Exports</span><span data-fr>Exports CAD 3D & Lithophanie Couleur</span></span></div>
+            <div class="export-list">
+              <button type="button" id="btnExportSTL" class="exp-card featured" disabled>
+                <div class="exp-left"><span class="exp-ico">🖨️</span><div><div class="exp-title" data-en>Watertight 3D Solid (.STL)</div><div class="exp-title" data-fr>Solide 3D Étanche (.STL)</div><div class="exp-sub">Verified outward normals · Bambu / Prusa / Cura</div></div></div>
+                <span class="exp-tag">STL</span>
+              </button>
+              <button type="button" id="btnExportGLB" class="exp-card" disabled>
+                <div class="exp-left"><span class="exp-ico">✨</span><div><div class="exp-title" data-en>Textured 1:1 3D Model (.GLB)</div><div class="exp-title" data-fr>Modèle 3D Texturé 1:1 (.GLB)</div><div class="exp-sub">Optical LED / Linear RGB PBR (meters)</div></div></div>
+                <span class="exp-tag">GLB</span>
+              </button>
+              <button type="button" id="btnExportOBJ" class="exp-card" disabled>
+                <div class="exp-left"><span class="exp-ico">📐</span><div><div class="exp-title" data-en>Wavefront Mesh + UVs (.OBJ)</div><div class="exp-title" data-fr>Maillage Wavefront + UVs (.OBJ)</div><div class="exp-sub">Blender / ZBrush / Aspire ready (mm)</div></div></div>
+                <span class="exp-tag">OBJ</span>
+              </button>
+              <button type="button" id="btnExportColorSheet" class="exp-card featured" disabled>
+                <div class="exp-left"><span class="exp-ico">🌈</span><div><div class="exp-title" data-en>Color Lithophane Print Sheet (.PNG)</div><div class="exp-title" data-fr>Feuille Couleur Lithophanie (.PNG)</div><div class="exp-sub">300 DPI calibrated backlit print overlay</div></div></div>
+                <span class="exp-tag">CMYK</span>
+              </button>
+              <button type="button" id="btnExportHTML" class="exp-card" disabled>
+                <div class="exp-left"><span class="exp-ico">🌐</span><div><div class="exp-title" data-en>Interactive 3D Client Proof (.HTML)</div><div class="exp-title" data-fr>Aperçu Client 3D Autonome (.HTML)</div><div class="exp-sub">Shareable WebGL file with LED ON/OFF</div></div></div>
+                <span class="exp-tag">HTML</span>
+              </button>
+              <button type="button" id="btn-preview-ar" class="exp-card ar-card" disabled>
+                <div class="exp-left"><span class="exp-ico">📱</span><div><div class="exp-title" data-en>Preview 1:1 Scale in WebAR</div><div class="exp-title" data-fr>Aperçu Échelle 1:1 en WebAR</div><div class="exp-sub">Place lamp or plaque in your room live!</div></div></div>
+                <span class="exp-tag free">FREE</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODALS -->
+  <div id="preflightModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🔍 <span data-en>3D Printability & Slicer Pre-Flight</span><span data-fr>Contrôle Imprimabilité 3D & Slicer</span></h3>
+        <button type="button" class="modal-close" data-close-modal="preflightModal">&times;</button>
+      </div>
+      <div class="modal-body" id="preflightBody"></div>
+      <div class="modal-foot"><button type="button" class="btn" data-close-modal="preflightModal"><span data-en>Close</span><span data-fr>Fermer</span></button></div>
+    </div>
+  </div>
+
+  <div id="costModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>💰 <span data-en>Print Weight, LED Kit & Etsy Profit</span><span data-fr>Poids PLA, Kit LED & Profit Etsy</span></h3>
+        <button type="button" class="modal-close" data-close-modal="costModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid-2">
+          <div class="field"><div class="field-row"><label>PLA ($/kg)</label></div><input type="number" id="qFilament" class="inp" value="24" step="1" /></div>
+          <div class="field"><div class="field-row"><label data-en>LED / Cord Kit ($)</label><label data-fr>Kit LED / Câble ($)</label></div><input type="number" id="qLedKit" class="inp" value="3.5" step="0.5" /></div>
+          <div class="field"><div class="field-row"><label data-en>Printer Power/Wear ($/h)</label><label data-fr>Coût Imprimante ($/h)</label></div><input type="number" id="qHourly" class="inp" value="1.25" step="0.25" /></div>
+          <div class="field"><div class="field-row"><label data-en>Retail Markup (×)</label><label data-fr>Marge Vente (×)</label></div><input type="number" id="qMarkup" class="inp" value="3.5" step="0.2" /></div>
+        </div>
+        <div class="quote-grid" id="quoteResults"></div>
+      </div>
+      <div class="modal-foot"><button type="button" class="btn" data-close-modal="costModal"><span data-en>Close</span><span data-fr>Fermer</span></button></div>
+    </div>
+  </div>
+
+  <div id="shortcutsModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>⌨️ <span data-en>Keyboard Shortcuts</span><span data-fr>Raccourcis Clavier</span></h3>
+        <button type="button" class="modal-close" data-close-modal="shortcutsModal">&times;</button>
+      </div>
+      <div class="modal-body" id="shortcutsBody"></div>
+      <div class="modal-foot"><button type="button" class="btn" data-close-modal="shortcutsModal"><span data-en>Close</span><span data-fr>Fermer</span></button></div>
+    </div>
+  </div>
+
+  <div id="paymentModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width:440px">
+      <div class="modal-head">
+        <h3>✨ <span data-en>Upgrade to Studios-Pro</span><span data-fr>Passer à Studios-Pro</span></h3>
+        <button type="button" class="modal-close" data-close-modal="paymentModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="pay-hero">
+          <div class="ico">💎</div>
+          <h4 data-en>You've used your 5 free production exports</h4>
+          <h4 data-fr>Vous avez utilisé vos 5 exports gratuits</h4>
+          <p data-en>Unlock unlimited watertight 3D STLs, Color Lithophane sheets, textured GLBs, interactive HTML proofs & clean Pro videos across all Studios-Pro tools.</p>
+          <p data-fr>Débloquez en illimité les STL 3D étanches, feuilles Lithophanie Couleur, GLB texturés, aperçus HTML et vidéos Pro sans filigrane sur tout Studios-Pro.</p>
+        </div>
+        <button type="button" id="pay-premium-btn" class="btn-pro-upgrade">
+          <span data-en>Unlock Unlimited Pro ($10 / month)</span>
+          <span data-fr>Débloquer Pro Illimité (10$ / mois)</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <div id="root"></div>
-  
+  <div id="globalDropOverlay" class="global-drop-overlay">
+    <div style="font-size:48px">📥</div>
+    <div data-en>Drop Photo or .sp3d Project</div>
+    <div data-fr>Déposez une Photo ou un Projet .sp3d</div>
+  </div>
 
-  </body>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts (Standard .js — zero MIME issues, zero 1.23MB opaque bundle!) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script src="../ar-viewer/ar-bridge.js"></script>
+  <script src="litho-engine.js"></script>
+  <script src="studio-viewport.js"></script>
+  <script src="app.js"></script>
+</body>
 
 </html>
