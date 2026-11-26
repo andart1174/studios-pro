@@ -42,10 +42,16 @@
       this.laserBeams = []; // [{ x1, y1, x2, y2, hex }] rendered as crisp luminous optical rays!
       this.particlesCount = 0;
 
-      // Active brush state
+      // Active brush & color studio state
       this.paletteId = 'kintsugi';
       this.autoStrata = true;
+      this.colorMode = 'strata'; // 'strata' | 'custom' | 'rainbow'
       this.strataPhase = 0;
+      this.rainbowHue = 38;
+
+      // Magnetic Reverse-Sand / Reassemble state!
+      this.reformTarget = null; // { types: Uint8Array, colors: Uint32Array, count: number }
+      this.reformAnim = null;   // { active, frame, totalFrames, count, sx, sy, tx, ty, cx, cy, col }
 
       // Undo/Redo compact RLE history stack (max 15)
       this.history = [];
@@ -93,12 +99,19 @@
       this.clock[b] = this.tickId;
     }
 
-    // Resolve authentic material color (supports Auto-Cycling Mineral Strata!)
+    // Resolve authentic material color (supports Strata Palette, Custom Color & Live Rainbow Flow!)
     pickColorForMaterial(matId, customHex, phaseOffset = 0) {
-      const { MAT, MAT_BY_ID, hexToPacked, varyPacked, samplePalettePacked, packRGBA } = SM();
+      const { MAT, MAT_BY_ID, hexToPacked, varyPacked, samplePalettePacked, hslToPacked, packRGBA } = SM();
       const def = MAT_BY_ID[matId];
       if (!def) return packRGBA(220, 220, 220, 255);
 
+      const paintable = !!def.useCustomColor;
+      if (paintable && this.colorMode === 'rainbow') {
+        return varyPacked(hslToPacked(this.rainbowHue + phaseOffset * 260, 0.90, 0.58), 10);
+      }
+      if (paintable && (this.colorMode === 'custom' || (!this.autoStrata && customHex))) {
+        return varyPacked(hexToPacked(customHex || def.hex), matId === MAT.WALL ? 6 : 12);
+      }
       if (matId === MAT.GOLD) {
         const g = Math.random();
         return g > 0.7 ? packRGBA(254, 240, 138, 255) : varyPacked(packRGBA(225, 178, 52, 255), 18);
@@ -111,10 +124,266 @@
         if (this.autoStrata) return varyPacked(samplePalettePacked(this.paletteId, this.strataPhase + phaseOffset), 10);
         return varyPacked(hexToPacked(customHex || def.hex), 14);
       }
-      if (def.useCustomColor && customHex) {
+      if (def.useCustomColor && customHex && this.colorMode === 'custom') {
         return varyPacked(hexToPacked(customHex), matId === MAT.WALL ? 6 : 12);
       }
       return varyPacked(hexToPacked(def.hex), matId === MAT.WATER ? 10 : 12);
+    }
+
+    // Eyedropper: sample exact #rrggbb hex from any non-empty canvas particle
+    sampleColorAt(x, y) {
+      const ix = Math.max(0, Math.min(this.w - 1, x | 0));
+      const iy = Math.max(0, Math.min(this.h - 1, y | 0));
+      const i = iy * this.w + ix;
+      if (this.types[i] === 0) return null;
+      const c = this.colors[i];
+      const r = (c & 255).toString(16).padStart(2, '0');
+      const g = ((c >>> 8) & 255).toString(16).padStart(2, '0');
+      const b = ((c >>> 16) & 255).toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`;
+    }
+
+    // =========================================================================
+    // KINETIC SCULPT & MAGIC BRUSHES (Recolor, Melt, Freeze, Zen Rake, Magnet!)
+    // =========================================================================
+
+    applyKineticTool(x0, y0, x1, y1, opts) {
+      const { MAT, hexToRgb, hslToPacked, samplePalettePacked, packRGBA } = SM();
+      const tool = opts.tool;
+      const r = Math.max(3, Math.min(54, opts.radius || 14));
+      const r2 = r * r;
+      const cx = Math.max(0, Math.min(this.w - 1, x1 | 0));
+      const cy = Math.max(0, Math.min(this.h - 1, y1 | 0));
+      const vx = x1 - x0, vy = y1 - y0;
+
+      if (tool === 'tint') {
+        // Recolor ANY existing particle preserving its luminance depth (great on Lion & photos!)
+        let targetCol;
+        if (this.colorMode === 'rainbow') targetCol = hslToPacked(this.rainbowHue, 0.90, 0.56);
+        else if (this.colorMode === 'strata') targetCol = samplePalettePacked(this.paletteId, this.strataPhase);
+        else {
+          const [tr, tg, tb] = hexToRgb(opts.color || '#f5c542');
+          targetCol = packRGBA(tr, tg, tb, 255);
+        }
+        const tr = targetCol & 255, tg = (targetCol >>> 8) & 255, tb = (targetCol >>> 16) & 255;
+
+        for (let dy = -r; dy <= r; dy++) {
+          const y = cy + dy; if (y < 0 || y >= this.h) continue;
+          const row = y * this.w;
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > r2) continue;
+            const x = cx + dx; if (x < 0 || x >= this.w) continue;
+            const i = row + x;
+            if (this.types[i] === 0) continue;
+            const cur = this.colors[i];
+            const cr = cur & 255, cg = (cur >>> 8) & 255, cb = (cur >>> 16) & 255;
+            const lum = (0.299 * cr + 0.587 * cg + 0.114 * cb) / 255;
+            const shade = 0.52 + lum * 0.72;
+            const nr = Math.max(0, Math.min(255, Math.round(cr * 0.25 + tr * shade * 0.75)));
+            const ng = Math.max(0, Math.min(255, Math.round(cg * 0.25 + tg * shade * 0.75)));
+            const nb = Math.max(0, Math.min(255, Math.round(cb * 0.25 + tb * shade * 0.75)));
+            this.colors[i] = packRGBA(nr, ng, nb, 255);
+          }
+        }
+        this.rainbowHue = (this.rainbowHue + 2.4) % 360;
+        this.strataPhase = (this.strataPhase + 0.008) % 1;
+        return;
+      }
+
+      if (tool === 'melt') {
+        // Turn solid monuments (Wall / Obsidian / Ice / Wood / Crystal / Leaf) locally into falling Living Sand!
+        for (let dy = -r; dy <= r; dy++) {
+          const y = cy + dy; if (y < 0 || y >= this.h) continue;
+          const row = y * this.w;
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > r2) continue;
+            const x = cx + dx; if (x < 0 || x >= this.w) continue;
+            const i = row + x;
+            const t = this.types[i];
+            if (t === MAT.WALL || t === MAT.OBSIDIAN || t === MAT.ICE || t === MAT.WOOD || t === MAT.CRYSTAL || t === MAT.LEAF || t === MAT.PLANT) {
+              this.types[i] = MAT.SAND;
+              this.meta[i] = 0;
+            }
+          }
+        }
+        return;
+      }
+
+      if (tool === 'freeze') {
+        // Freeze ANY moving grains/liquids locally into solid sculpted monument preserving exact pixel color!
+        for (let dy = -r; dy <= r; dy++) {
+          const y = cy + dy; if (y < 0 || y >= this.h) continue;
+          const row = y * this.w;
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > r2) continue;
+            const x = cx + dx; if (x < 0 || x >= this.w) continue;
+            const i = row + x;
+            const t = this.types[i];
+            if (t === MAT.SAND || t === MAT.GOLD || t === MAT.WATER || t === MAT.SNOW || t === MAT.STARDUST || t === MAT.MUD || t === MAT.LAVA) {
+              this.types[i] = MAT.WALL;
+              this.meta[i] = 0;
+            }
+          }
+        }
+        return;
+      }
+
+      const isMobile = m => (
+        m === MAT.SAND || m === MAT.GOLD || m === MAT.WATER || m === MAT.SNOW ||
+        m === MAT.STARDUST || m === MAT.FIRE || m === MAT.STEAM || m === MAT.MUD ||
+        m === MAT.ACID || m === MAT.LAVA || m === MAT.SEED || m === MAT.LEAF
+      );
+
+      if (tool === 'rake') {
+        // Japanese Zen Garden Rake & Vortex Swirl — pushes grains along drag vector!
+        const mag = Math.hypot(vx, vy);
+        const dirX = mag > 0.5 ? Math.round((vx / mag) * 3) : 0;
+        const dirY = mag > 0.5 ? Math.round((vy / mag) * 3) : -2;
+        const stepX = dirX >= 0 ? -1 : 1;
+        const stepY = dirY >= 0 ? -1 : 1;
+        for (let dy = stepY < 0 ? r : -r; stepY < 0 ? dy >= -r : dy <= r; dy += stepY) {
+          const y = cy + dy; if (y < 1 || y >= this.h - 1) continue;
+          for (let dx = stepX < 0 ? r : -r; stepX < 0 ? dx >= -r : dx <= r; dx += stepX) {
+            if (dx * dx + dy * dy > r2) continue;
+            const x = cx + dx; if (x < 1 || x >= this.w - 1) continue;
+            const i = y * this.w + x;
+            if (!isMobile(this.types[i])) continue;
+            // Tangential swirl + drag push
+            const swX = mag > 0.5 ? dirX : Math.round(-dy * 0.22);
+            const swY = mag > 0.5 ? dirY : Math.round(dx * 0.22);
+            const nx = Math.max(1, Math.min(this.w - 2, x + swX));
+            const ny = Math.max(1, Math.min(this.h - 2, y + swY));
+            const ni = ny * this.w + nx;
+            if (ni !== i && (this.types[ni] === 0 || isMobile(this.types[ni]))) {
+              this.swap(i, ni);
+            }
+          }
+        }
+        return;
+      }
+
+      if (tool === 'magnet') {
+        // Gravity Magnet — pulls mobile particles smoothly toward cursor!
+        const mr = Math.min(72, Math.round(r * 2.2));
+        const mr2 = mr * mr;
+        for (let dy = -mr; dy <= mr; dy++) {
+          const y = cy + dy; if (y < 1 || y >= this.h - 1) continue;
+          for (let dx = -mr; dx <= mr; dx++) {
+            const d2 = dx * dx + dy * dy;
+            if (d2 > mr2 || d2 < 9) continue;
+            const x = cx + dx; if (x < 1 || x >= this.w - 1) continue;
+            const i = y * this.w + x;
+            if (!isMobile(this.types[i]) || Math.random() > 0.42) continue;
+            const stepTowardsX = x + (dx > 0 ? -1 : (dx < 0 ? 1 : 0)) * (Math.abs(dx) > 10 ? 2 : 1);
+            const stepTowardsY = y + (dy > 0 ? -1 : (dy < 0 ? 1 : 0)) * (Math.abs(dy) > 10 ? 2 : 1);
+            const ni = Math.max(0, Math.min(this.h - 1, stepTowardsY)) * this.w + Math.max(0, Math.min(this.w - 1, stepTowardsX));
+            if (this.types[ni] === 0) this.swap(i, ni);
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // MAGNETIC REVERSE-SAND / REASSEMBLE MAGIC (LOCK TARGET -> SHATTER -> REFORM!)
+    // =========================================================================
+
+    lockReformTarget() {
+      let count = 0;
+      for (let i = 0; i < this.len; i++) if (this.types[i] !== 0) count++;
+      if (count < 20) return 0;
+      this.reformTarget = {
+        types: new Uint8Array(this.types),
+        colors: new Uint32Array(this.colors),
+        count
+      };
+      return count;
+    }
+
+    startMagneticReform(totalFrames = 75) {
+      if (!this.reformTarget || this.reformTarget.count < 20) return 0;
+      const tTypes = this.reformTarget.types;
+      const tColors = this.reformTarget.colors;
+
+      // Collect scattered source points currently on the canvas
+      const srcCoords = [];
+      for (let i = 0; i < this.len; i++) {
+        if (this.types[i] !== 0) srcCoords.push(i);
+      }
+
+      // Sample up to 24,000 luminous magnetic particles for silky 60 FPS flight
+      const stride = Math.max(1, Math.ceil(this.reformTarget.count / 24000));
+      const targets = [];
+      let seen = 0;
+      for (let i = 0; i < this.len; i++) {
+        if (tTypes[i] !== 0) {
+          if ((seen++ % stride) === 0) targets.push(i);
+        }
+      }
+
+      const cnt = targets.length;
+      const sx = new Float32Array(cnt);
+      const sy = new Float32Array(cnt);
+      const tx = new Float32Array(cnt);
+      const ty = new Float32Array(cnt);
+      const cx = new Float32Array(cnt);
+      const cy = new Float32Array(cnt);
+      const col = new Uint32Array(cnt);
+      const srcLen = srcCoords.length;
+
+      for (let k = 0; k < cnt; k++) {
+        const ti = targets[k];
+        const destX = ti % this.w;
+        const destY = (ti / this.w) | 0;
+        tx[k] = destX;
+        ty[k] = destY;
+        col[k] = tColors[ti];
+
+        let startX, startY;
+        if (srcLen > 0) {
+          const si = srcCoords[(k * 2654435761 >>> 0) % srcLen];
+          startX = si % this.w;
+          startY = (si / this.w) | 0;
+        } else {
+          startX = Math.random() * this.w;
+          startY = this.h - 4 - Math.random() * 24;
+        }
+        sx[k] = startX;
+        sy[k] = startY;
+        // Swirling magnetic quadratic Bezier control point!
+        const mx = (startX + destX) * 0.5;
+        const my = (startY + destY) * 0.5;
+        const swirl = (k & 1 ? 1 : -1) * (35 + (k % 65));
+        cx[k] = mx + swirl;
+        cy[k] = Math.max(8, my - Math.abs(swirl) * 0.85);
+      }
+
+      // Clear live grid while grains fly through air, then snap back intact on completion!
+      this.clear();
+      this.reformAnim = {
+        active: true,
+        frame: 0,
+        totalFrames: Math.max(20, totalFrames | 0),
+        count: cnt,
+        sx, sy, tx, ty, cx, cy, col
+      };
+      return cnt;
+    }
+
+    stepMagneticReform() {
+      const a = this.reformAnim;
+      if (!a || !a.active) return false;
+      a.frame++;
+      if (a.frame >= a.totalFrames) {
+        this.types.set(this.reformTarget.types);
+        this.colors.set(this.reformTarget.colors);
+        this.meta.fill(0);
+        this._scanSpecials();
+        this.isPaused = true; // Pause gently on completion so reassembled portrait shines intact!
+        this.pushUndo();
+        this.reformAnim = null;
+        return false;
+      }
+      return true;
     }
 
     // Continuous Bresenham Stroke + Symmetry (Off / MirrorX / Quad / 8-Way Mandala!)
@@ -133,6 +402,7 @@
         if (e2 < dx)  { err += dx; cy += sy; }
       }
       this.strataPhase = (this.strataPhase + 0.004) % 1;
+      if (this.colorMode === 'rainbow') this.rainbowHue = (this.rainbowHue + 2.2) % 360;
     }
 
     stampSymmetric(cx, cy, opts) {

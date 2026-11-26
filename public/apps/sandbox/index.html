@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zen Sandscape v4.0 — Living Physics & AI Sand-Art Atelier | Studios-Pro</title>
+  <title>Zen Sandscape v4.5 — Photo Cutout, Color Studio & Living AI Sand-Art | Studios-Pro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
         <div class="brand">
           <span class="brand-dot"></span>
           <span class="brand-title" data-i18n="appTitle">Zen Sandscape</span>
-          <span class="brand-badge">v4</span>
+          <span class="brand-badge">v4.5</span>
         </div>
         <div class="ai-bar">
           <input id="ai-prompt-input" class="ai-input" type="text" placeholder='Describe living art: e.g. "sakura waterfall golden sand"' data-i18n-placeholder="aiPromptPh">
@@ -35,7 +35,7 @@
           <button id="btn-step" class="sim-icon" type="button" title="Single Step">⏭</button>
           <button id="btn-undo" class="sim-icon" type="button" title="Undo (Ctrl+Z)">↶</button>
           <button id="btn-redo" class="sim-icon" type="button" title="Redo (Ctrl+Y)">↷</button>
-          <button id="btn-clear" class="sim-icon danger" type="button" title="Clear Canvas">🗑</button>
+          <button id="btn-clear" class="sim-btn blank-btn" type="button" title="Clean Blank Canvas">✨ <span data-i18n="blankCanvas">Blank Canvas</span></button>
           <span id="stat-particles" class="stat-pill">0 px</span>
         </div>
       </div>
@@ -44,6 +44,7 @@
         <button id="btn-stencils" class="btn-ghost" type="button">🎭 <span data-i18n="stencils">Stencils</span></button>
         <button id="btn-photo-sand" class="btn-ghost" type="button">🖼 <span data-i18n="photoSand">Photo→Sand</span></button>
         <input id="file-photo-sand" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
+        <button id="btn-text-sand" class="btn-ghost" type="button">🔤 <span data-i18n="textSand">Text→Sand</span></button>
         <button id="btn-ar-wall" class="btn-ar" type="button">📱 <span data-i18n="arWall">AR Wall 3D</span></button>
         <button id="btn-export-open" class="btn-primary" type="button">📤 <span data-i18n="exportBtn">Export Art</span></button>
         <div class="lang-switch" role="group" aria-label="Language">
@@ -64,14 +65,40 @@
         </div>
 
         <div class="dock-body">
-          <!-- TAB 1: ALL 35 MATERIALS & MECHANICS -->
+          <!-- TAB 1: FULL COLOR STUDIO + KINETIC MAGIC TOOLS + ALL 35 MATERIALS -->
           <div class="dock-pane active" id="pane-materials">
+            <!-- FRONT-AND-CENTER COLOR STUDIO! -->
+            <div class="color-studio-card">
+              <div class="cs-head">
+                <span class="cs-title">🎨 <span data-i18n="colorStudio">Color Studio</span></span>
+                <div class="cs-picker-wrap">
+                  <input id="color-picker" class="color-swatch-lg" type="color" value="#f5c542" title="Pick Any Custom Color">
+                  <span id="val-color-hex" class="hex-tag">#F5C542</span>
+                </div>
+              </div>
+              <div class="cs-modes">
+                <button class="cmode-btn" data-cmode="custom" type="button">🎨 <span data-i18n="modeCustom">Custom</span></button>
+                <button class="cmode-btn active" data-cmode="strata" type="button">🌈 <span data-i18n="modeStrata">Strata</span></button>
+                <button class="cmode-btn" data-cmode="rainbow" type="button">✨ <span data-i18n="modeRainbow">Rainbow</span></button>
+                <button id="btn-eyedropper" class="cmode-btn" type="button" title="Pick color from canvas">💉 <span data-i18n="modeDropper">Pick</span></button>
+              </div>
+              <div id="quick-swatches" class="quick-swatches"></div>
+            </div>
+
+            <!-- BRUSH SIZE + SYMMETRY + KINETIC SCULPT MAGIC TOOLS! -->
             <div class="quick-brush-bar">
               <div class="qb-row">
                 <span>Brush</span>
-                <input id="brush-size" type="range" min="1" max="36" value="10" aria-label="Brush Size">
+                <input id="brush-size" type="range" min="1" max="40" value="10" aria-label="Brush Size">
                 <strong id="val-brush-size">10</strong>
-                <input id="color-picker" class="color-swatch" type="color" value="#f5c542" title="Custom Color">
+              </div>
+              <div class="tool-strip">
+                <button class="ktool-btn active" data-tool="paint" type="button" title="Paint Material">🖌 <span data-i18n="toolPaint">Paint</span></button>
+                <button class="ktool-btn" data-tool="tint" type="button" title="Recolor existing sand/photo">🎨 <span data-i18n="toolTint">Recolor</span></button>
+                <button class="ktool-btn" data-tool="melt" type="button" title="Melt statue locally into falling sand">🔓 <span data-i18n="toolMelt">Melt</span></button>
+                <button class="ktool-btn" data-tool="freeze" type="button" title="Freeze sand locally into solid sculpture">🧊 <span data-i18n="toolFreeze">Freeze</span></button>
+                <button class="ktool-btn" data-tool="rake" type="button" title="Zen Garden Rake / Swirl">🌀 <span data-i18n="toolRake">Zen Rake</span></button>
+                <button class="ktool-btn" data-tool="magnet" type="button" title="Gravity Magnet pull">🧲 <span data-i18n="toolMagnet">Magnet</span></button>
               </div>
               <div class="sym-strip">
                 <button class="sym-btn active" data-sym="off" type="button">1× Off</button>
@@ -80,14 +107,29 @@
                 <button class="sym-btn" data-sym="mandala8" type="button">✴ Mandala 8×</button>
               </div>
             </div>
+
             <div id="materials-groups" class="materials-groups"></div>
           </div>
 
-          <!-- TAB 2: 12 LIVING AI MASTERPIECE WORLDS & FINE-ART PALETTES -->
+          <!-- TAB 2: BLANK CANVAS + 12 LIVING AI WORLDS + MAGNETIC REFORM + PALETTES -->
           <div class="dock-pane" id="pane-ai">
             <div class="card">
-              <div class="card-title">🌍 12 Living AI Worlds</div>
+              <div class="card-title">🌍 Blank Canvas & 12 Living AI Worlds</div>
+              <button id="btn-world-blank" class="world-btn blank-world-btn full" type="button">
+                <span>⬜</span><span data-i18n="blankCanvas">Blank Clean Canvas</span>
+              </button>
               <div id="ai-worlds-grid" class="worlds-grid"></div>
+            </div>
+
+            <!-- UNIQUE SIGNATURE FEATURE: MAGNETIC REVERSE-SAND MAGIC! -->
+            <div class="card reform-card">
+              <div class="card-title">⏪ <span data-i18n="reformTitle">Magnetic Reverse-Sand Magic</span></div>
+              <div class="reform-hint">Lock your placed Lion or art, melt/shatter it, then fly every grain back!</div>
+              <div class="action-pair">
+                <button id="btn-lock-target" class="btn-soft accent" type="button">📸 <span data-i18n="lockTarget">Lock Target</span></button>
+                <button id="btn-magnetic-reform" class="btn-soft magic-reform-btn" type="button" disabled>⏪ <span data-i18n="magneticReform">Reassemble</span></button>
+              </div>
+              <div id="reform-status" class="reform-status">No target locked yet</div>
             </div>
 
             <div class="card">
@@ -97,7 +139,7 @@
             </div>
           </div>
 
-          <!-- TAB 3: BRUSH SHAPES, FINE-ART SHADERS, PHYSICS & ZEN AUDIO -->
+          <!-- TAB 3: BRUSH SHAPES, FINE-ART SHADERS, CUSTOM BACKDROP, PHYSICS & ZEN AUDIO -->
           <div class="dock-pane" id="pane-fx">
             <div class="card">
               <div class="card-title">🖌 <span data-i18n="brushShape">Brush & Symmetry</span></div>
@@ -133,7 +175,13 @@
                   <option value="space">Deep Space Stars</option>
                   <option value="parchment">Zen Washi Paper</option>
                   <option value="aurora">Aurora Night</option>
+                  <option value="custom">🎨 Custom Color</option>
                 </select>
+              </div>
+              <div class="bg-custom-row">
+                <span>Custom BG Color</span>
+                <input id="bg-color-picker" class="color-swatch" type="color" value="#0a1024" title="Pick Custom Background Color">
+                <button id="btn-clear-bg-photo" class="btn-soft hidden" type="button">✕ Clear Photo BG</button>
               </div>
             </div>
 
@@ -191,6 +239,20 @@
           <canvas id="sand-canvas" width="600" height="420"></canvas>
         </div>
 
+        <!-- SLEEK BLANK-CANVAS QUICK-START FLOATING BAR (HIDES AUTOMATICALLY ONCE YOU CREATE!) -->
+        <div id="blank-welcome" class="blank-welcome">
+          <div class="bw-text">
+            <strong data-i18n="welcomeTitle">Clean Blank Studio — Ready to Create</strong>
+            <span data-i18n="welcomeSub">Draw freehand, place & cut out any photo, or launch a living AI world</span>
+          </div>
+          <div class="bw-actions">
+            <button id="bw-draw" class="bw-pill primary" type="button">🖌 Draw Freehand</button>
+            <button id="bw-photo" class="bw-pill" type="button">🖼 Upload Photo + Cutout</button>
+            <button id="bw-stencils" class="bw-pill" type="button">🦁 Stencils</button>
+            <button id="bw-kyoto" class="bw-pill" type="button">🌸 Kyoto AI World</button>
+          </div>
+        </div>
+
         <div id="rec-badge" class="rec-badge hidden">
           <span class="rec-dot"></span>
           <span id="rec-txt">REC 00:00</span>
@@ -199,30 +261,147 @@
 
         <div id="toast-banner" class="toast-banner hidden"></div>
       </section>
+
+      <!-- RIGHT FLOATING INTERACTIVE PHOTO / STENCIL / TEXT PLACEMENT STUDIO (OPENS ON PHOTO/STENCIL/TEXT!) -->
+      <aside id="photo-stage-panel" class="photo-panel hidden">
+        <div class="pp-header">
+          <div class="pp-title"><span>🦁</span><strong id="pp-label">Place & Cut Out</strong></div>
+          <button id="pp-close" class="modal-close" type="button" title="Cancel">✕</button>
+        </div>
+
+        <div class="pp-body">
+          <!-- 1. OBJECT ONLY vs WITH BACKGROUND -->
+          <div class="pp-sec">
+            <div class="pp-sec-title">1. Background Cutout Mode</div>
+            <div class="action-pair">
+              <button id="pp-mode-object" class="pp-toggle active" type="button">🦁 <span data-i18n="cutoutObject">Object Only</span></button>
+              <button id="pp-mode-full" class="pp-toggle" type="button">🖼 <span data-i18n="cutoutFull">With Background</span></button>
+            </div>
+
+            <!-- Sub-controls for OBJECT ONLY (Smart Lab Cutout + Magic Wand + Keep/Erase Brush!) -->
+            <div id="pp-object-controls" class="pp-sub">
+              <div class="slider-row">
+                <span>Cutout</span>
+                <input id="pp-sens" type="range" min="8" max="92" value="52">
+                <strong id="val-pp-sens">52</strong>
+              </div>
+              <div class="slider-row">
+                <span>Soft Edge</span>
+                <input id="pp-feather" type="range" min="0" max="5" value="1">
+                <strong id="val-pp-feather">1px</strong>
+              </div>
+              <div class="pp-tool-grid">
+                <button class="pp-tool active" data-ptool="move" type="button">✋ Move</button>
+                <button class="pp-tool" data-ptool="wand" type="button" title="Click any background patch to erase it">🪄 Wand</button>
+                <button class="pp-tool" data-ptool="keep" type="button" title="Brush to keep subject detail">+ Keep</button>
+                <button class="pp-tool" data-ptool="erase" type="button" title="Brush to erase background">- Erase</button>
+              </div>
+              <div class="action-pair">
+                <button id="pp-undo-mask" class="btn-soft" type="button">↶ Undo Mask</button>
+                <button id="pp-reset-mask" class="btn-soft" type="button">↺ Auto Re-Cut</button>
+              </div>
+            </div>
+
+            <!-- Sub-controls for WITH BACKGROUND (Artistic Edge Masks!) -->
+            <div id="pp-full-controls" class="pp-sub hidden">
+              <div class="pp-mask-strip">
+                <button class="pp-shape active" data-pshape="rect" type="button">▭ Rect</button>
+                <button class="pp-shape" data-pshape="vignette" type="button">☁ Soft</button>
+                <button class="pp-shape" data-pshape="circle" type="button">● Circle</button>
+                <button class="pp-shape" data-pshape="arch" type="button">⛩ Arch</button>
+                <button class="pp-shape" data-pshape="diamond" type="button">◆ Gem</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. SIZE, POSITION, ROTATE & FLIP (ALSO DRAG / RESIZE DIRECTLY ON CANVAS!) -->
+          <div class="pp-sec">
+            <div class="pp-sec-title">2. Position, Size & Rotate (Drag on Canvas!)</div>
+            <div class="slider-row">
+              <span>Scale</span>
+              <input id="pp-scale" type="range" min="15" max="200" value="100">
+              <strong id="val-pp-scale">100%</strong>
+            </div>
+            <div class="slider-row">
+              <span>Rotate</span>
+              <input id="pp-rot" type="range" min="-180" max="180" value="0">
+              <strong id="val-pp-rot">0°</strong>
+            </div>
+            <div class="pp-align-strip">
+              <button id="pp-flip-x" class="btn-soft" type="button" title="Flip Horizontal">⇆ Flip</button>
+              <button id="pp-flip-y" class="btn-soft" type="button" title="Flip Vertical">⇅ FlpV</button>
+              <button id="pp-align-center" class="btn-soft" type="button">◎ Center</button>
+              <button id="pp-align-ground" class="btn-soft" type="button">⤓ Ground</button>
+              <button id="pp-align-fit" class="btn-soft" type="button">⛶ Fit</button>
+            </div>
+          </div>
+
+          <!-- 3. LIVING PHYSICS BEHAVIOR & ART COLOR FILTER -->
+          <div class="pp-sec">
+            <div class="pp-sec-title">3. Living Physics & Art Style</div>
+            <select id="pp-bake-mode" class="pro-select">
+              <option value="statue">🪨 Sculpted Statue (Fixed — Stays Intact!)</option>
+              <option value="sand">⏳ Living Falling Sand (Melts Into Dunes)</option>
+              <option value="ai_split">🎨 AI Smart Multi-Material Split (Unique!)</option>
+              <option value="stardust">✨ Dissolving Bioluminescent Stardust</option>
+              <option value="ice">❄️ Frozen Ice Sculpture (Melts with Fire)</option>
+              <option value="wood">🔥 Sculpted Wood Carving (Burns Organically)</option>
+            </select>
+            <select id="pp-style" class="pro-select">
+              <option value="original">🎨 Original Photo Colors</option>
+              <option value="kintsugi">✨ Kintsugi Gold Foil</option>
+              <option value="cyber">⚡ Cyber Neon Duotone</option>
+              <option value="sakura">🌸 Sakura Pastel Dream</option>
+              <option value="marble">🏛 Engraved Museum Marble</option>
+              <option value="thermal">🌋 Thermal Magma Glow</option>
+            </select>
+            <label class="check-row"><input id="pp-clear-before" type="checkbox"><span>🧹 Clear canvas before stamping</span></label>
+            <label class="check-row"><input id="pp-pause-after" type="checkbox"><span>⏸ Keep paused after stamping</span></label>
+          </div>
+
+          <!-- 4. STAMP / SET AS STATIC BACKDROP -->
+          <div class="pp-actions">
+            <button id="pp-stamp" class="btn-primary full pp-cta" type="button">✨ <span data-i18n="stampArt">Stamp to Canvas</span></button>
+            <button id="pp-as-backdrop" class="btn-soft accent full" type="button">🌄 <span data-i18n="useAsBackdrop">Set as Static Gallery Backdrop</span></button>
+          </div>
+        </div>
+      </aside>
     </main>
   </div>
 
-  <!-- ==================== LAZY STENCIL & PHOTO-TO-SAND MODAL ==================== -->
+  <!-- ==================== LAZY STENCIL LIBRARY MODAL ==================== -->
   <div id="modal-stencils" class="modal-backdrop hidden" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>🎭 Stencil Library — Full-Color Photo→Living Sand</h2>
+        <h2>🎭 Stencil Library — Click Any Model to Position, Resize & Cut Out!</h2>
         <button id="btn-stencils-close" class="modal-close" type="button">✕</button>
       </div>
-      <div class="stencil-bar">
-        <label>Bake As:
-          <select id="sel-stencil-mat" class="pro-select inline">
-            <option value="1">⏳ Full-Color Living Sand</option>
-            <option value="36">✨ Kintsugi Gold Leaf</option>
-            <option value="37">🌌 Bioluminescent Stardust</option>
-            <option value="26">❄️ Falling Snow</option>
-            <option value="39">🎆 Firework Burst</option>
-            <option value="9">🪨 Solid Sculpted Wall</option>
-          </select>
-        </label>
-        <label class="check-row"><input id="chk-stencil-rgb" type="checkbox" checked><span>Keep Photo Colors</span></label>
-      </div>
+      <div class="stencil-tip">Every stencil opens in the Interactive Stage so you can drag, resize, rotate, switch Object Only vs Full BG, and choose Fixed Statue or Falling Sand!</div>
       <div id="stencil-grid" class="stencil-grid"></div>
+    </div>
+  </div>
+
+  <!-- ==================== TEXT -> LIVING SAND MODAL ==================== -->
+  <div id="modal-text" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>🔤 Typography → Living Sand / Gold / 3D Relief</h2>
+        <button id="btn-text-close" class="modal-close" type="button">✕</button>
+      </div>
+      <div class="text-modal-body">
+        <input id="text-sand-input" class="pro-input text-big-input" type="text" value="ZEN ART" maxlength="24" placeholder="Enter your word or name...">
+        <div class="pill-4col">
+          <button class="tfont-btn active" data-tfont="bold" type="button">Monument</button>
+          <button class="tfont-btn" data-tfont="serif" type="button">Serif</button>
+          <button class="tfont-btn" data-tfont="neon" type="button">Neon Tech</button>
+          <button class="tfont-btn" data-tfont="script" type="button">Script</button>
+        </div>
+        <div class="field-row">
+          <span>Text Color</span>
+          <input id="text-sand-color" class="color-swatch-lg" type="color" value="#f5c542">
+        </div>
+        <button id="btn-text-launch" class="btn-primary full pp-cta" type="button">✨ Open on Interactive Placement Stage</button>
+      </div>
     </div>
   </div>
 
@@ -236,7 +415,7 @@
       <div id="export-status-bar" class="export-status hidden"></div>
 
       <div class="export-title-row">
-        <input id="art-title-input" class="pro-input" type="text" value="Kyoto Sakura Waterfall" maxlength="42" placeholder="Artwork Title...">
+        <input id="art-title-input" class="pro-input" type="text" value="My Zen Sandscape" maxlength="42" placeholder="Artwork Title...">
         <label class="check-row"><input id="chk-gallery-frame" type="checkbox" checked><span>Gallery Frame</span></label>
       </div>
 
@@ -273,10 +452,11 @@
     </div>
   </div>
 
-  <!-- Zero 8.35MB models.js bloat! Clean modular load (<70KB total!) -->
+  <!-- Zero 8.35MB models.js bloat! Clean modular load (<90KB total!) -->
   <script src="js/materials-core.js"></script>
   <script src="js/sandbox-engine.js"></script>
   <script src="js/ai-director.js"></script>
+  <script src="js/photo-composer.js"></script>
   <script src="js/art-renderer.js"></script>
   <script src="js/zen-audio.js"></script>
   <script src="js/export-studio.js"></script>

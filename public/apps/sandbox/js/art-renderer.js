@@ -53,6 +53,9 @@
       this.fxBloom = true;
       this.fxTrails = false;
       this.backdrop = 'obsidian';
+      this.customBgHex = '#0a1024';
+      this.bgPhoto = null;       // Optional static gallery background photo (HTMLImageElement / Canvas)
+      this.bgPhotoAlpha = 0.78;
 
       // Static starfield dots for Deep Space backdrop
       this.stars = Array.from({ length: 85 }, () => ({
@@ -73,8 +76,26 @@
       const types = engine.types, colors = engine.colors;
       const buf = this.buf32;
 
-      // 1. Write particles into 32-bit pixel buffer with TRUE directional 3D Sculpted Relief shading!
-      if (!this.fx3d) {
+      // 1. Write particles (or Magnetic Reassemble flight sprites!) into 32-bit pixel buffer
+      if (engine.reformAnim && engine.reformAnim.active) {
+        buf.fill(0);
+        const a = engine.reformAnim;
+        const u = Math.min(1, a.frame / a.totalFrames);
+        // Smooth ease-in-out cubic flight!
+        const t = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) * 0.5;
+        const omt = 1 - t;
+        const omt2 = omt * omt, twot = 2 * omt * t, t2 = t * t;
+        for (let k = 0; k < a.count; k++) {
+          const px = Math.round(omt2 * a.sx[k] + twot * a.cx[k] + t2 * a.tx[k]);
+          const py = Math.round(omt2 * a.sy[k] + twot * a.cy[k] + t2 * a.ty[k]);
+          if (px >= 0 && px < w && py >= 0 && py < h) {
+            const c = a.col[k];
+            const idx = py * w + px;
+            buf[idx] = c;
+            if (u < 0.88 && px + 1 < w) buf[idx + 1] = c;
+          }
+        }
+      } else if (!this.fx3d) {
         buf.set(colors);
       } else {
         for (let y = 0; y < h; y++) {
@@ -106,14 +127,34 @@
       }
       this.pixCtx.putImageData(this.imgData, 0, 0);
 
-      // 2. Paint Museum Gallery Backdrop onto display canvas
+      // 2. Paint Museum Gallery Backdrop (Preset, Custom Hex Color, or Static Gallery Photo!)
       const ctx = this.ctx;
-      const bg = BACKDROPS[this.backdrop] || BACKDROPS.obsidian;
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, bg.top);
-      grad.addColorStop(1, bg.bot);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+      if (this.backdrop === 'custom') {
+        const [cr, cg, cb] = SM().hexToRgb(this.customBgHex || '#0a1024');
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, `rgb(${cr},${cg},${cb})`);
+        grad.addColorStop(1, `rgb(${Math.max(0, cr - 18)},${Math.max(0, cg - 18)},${Math.max(0, cb - 18)})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        const bg = BACKDROPS[this.backdrop] || BACKDROPS.obsidian;
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, bg.top);
+        grad.addColorStop(1, bg.bot);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      if (this.bgPhoto) {
+        ctx.save();
+        ctx.globalAlpha = this.bgPhotoAlpha;
+        // Aspect-cover draw cleanly onto 600x420 gallery stage
+        const iw = this.bgPhoto.width || w, ih = this.bgPhoto.height || h;
+        const sc = Math.max(w / iw, h / ih);
+        const dw = iw * sc, dh = ih * sc;
+        ctx.drawImage(this.bgPhoto, (w - dw) * 0.5, (h - dh) * 0.5, dw, dh);
+        ctx.restore();
+      }
 
       if (this.backdrop === 'space') {
         ctx.fillStyle = '#ffffff';
@@ -187,8 +228,81 @@
         ctx.restore();
       }
 
-      // 7. Live Symmetry Axes & Brush Cursor Ring (skipped during clean export snapshots!)
-      if (!overlayOpts.clean) {
+      // 7. Live Photo / Stencil / Text Interactive Transform Stage Preview + Handles!
+      if (!overlayOpts.clean && overlayOpts.photoStage && overlayOpts.photoStage.active && overlayOpts.photoStage.session) {
+        const stage = overlayOpts.photoStage;
+        const s = stage.session;
+        const handles = stage.getHandles();
+
+        // Draw transformed live cut-out preview directly on the sandscape!
+        ctx.save();
+        ctx.translate(s.cx, s.cy);
+        ctx.rotate((s.rotDeg * Math.PI) / 180);
+        ctx.scale(s.flipX ? -s.scale : s.scale, s.flipY ? -s.scale : s.scale);
+        ctx.drawImage(s.previewCanvas, -s.srcW * 0.5, -s.srcH * 0.5);
+        ctx.restore();
+
+        // Draw golden bounding frame + 4 corner resize handles + top rotate handle!
+        ctx.save();
+        ctx.strokeStyle = 'rgba(245, 197, 66, 0.92)';
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(handles.nw.x, handles.nw.y);
+        ctx.lineTo(handles.ne.x, handles.ne.y);
+        ctx.lineTo(handles.se.x, handles.se.y);
+        ctx.lineTo(handles.sw.x, handles.sw.y);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Rotate stem line
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(handles.topMid.x, handles.topMid.y);
+        ctx.lineTo(handles.rot.x, handles.rot.y);
+        ctx.stroke();
+
+        // Corner handles
+        [handles.nw, handles.ne, handles.se, handles.sw].forEach(p => {
+          ctx.fillStyle = '#0b1022';
+          ctx.strokeStyle = '#f5c542';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        });
+
+        // Rotate knob (cyan accent)
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(handles.rot.x, handles.rot.y, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        // Live dimension & rotation readout pill
+        const dw = Math.round(s.srcW * s.scale), dh = Math.round(s.srcH * s.scale);
+        const badge = `${dw}×${dh}px · ${Math.round(s.rotDeg)}°`;
+        ctx.font = '700 10px Inter, sans-serif';
+        const bw = ctx.measureText(badge).width + 12;
+        const bx = Math.max(6, Math.min(w - bw - 6, s.cx - bw * 0.5));
+        const by = Math.max(6, Math.min(h - 22, handles.se.y + 8));
+        ctx.fillStyle = 'rgba(7, 11, 24, 0.88)';
+        ctx.fillRect(bx, by, bw, 17);
+        ctx.strokeStyle = 'rgba(245, 197, 66, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, bw, 17);
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText(badge, bx + 6, by + 12);
+
+        // Refine/Wand tool cursor ring when in interactive touch-up mode
+        if (overlayOpts.cursor && overlayOpts.cursor.inside && s.tool !== 'move') {
+          const { x, y } = overlayOpts.cursor;
+          ctx.strokeStyle = s.tool === 'keep' ? '#34d399' : (s.tool === 'erase' ? '#f43f5e' : '#38bdf8');
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.arc(x, y, s.tool === 'wand' ? 8 : s.refineRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (!overlayOpts.clean) {
+        // 8. Live Symmetry Axes & Brush Cursor Ring (skipped during clean export snapshots!)
         const sym = overlayOpts.symmetry || 'off';
         if (sym !== 'off') {
           ctx.save();
@@ -209,14 +323,17 @@
         }
 
         if (overlayOpts.cursor && overlayOpts.cursor.inside) {
-          const { x, y, radius, shape } = overlayOpts.cursor;
+          const { x, y, radius, shape, tool } = overlayOpts.cursor;
           ctx.save();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
-          ctx.lineWidth = 1.2;
-          if (shape === 'square') {
+          ctx.strokeStyle = tool === 'melt' ? '#fb923c' : (tool === 'freeze' ? '#38bdf8' : (tool === 'tint' ? '#f472b6' : (tool === 'magnet' ? '#a855f7' : 'rgba(255, 255, 255, 0.72)')));
+          ctx.lineWidth = 1.4;
+          if (tool === 'eyedropper') {
+            ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y); ctx.moveTo(x, y - 10); ctx.lineTo(x, y + 10); ctx.stroke();
+          } else if (shape === 'square' && (!tool || tool === 'paint')) {
             ctx.strokeRect(x - radius, y - radius, radius * 2, radius * 2);
           } else {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, tool === 'magnet' ? Math.min(72, radius * 2.2) : radius, 0, Math.PI * 2); ctx.stroke();
           }
           ctx.restore();
         }

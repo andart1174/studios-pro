@@ -126,19 +126,26 @@
     );
   }
 
+  // Curated 12 Instant Artist Color Swatches for Color Studio
+  const QUICK_COLORS = [
+    '#f5c542', '#f472b6', '#38bdf8', '#10b981',
+    '#8b5cf6', '#ef4444', '#f8fafc', '#334155',
+    '#84cc16', '#f97316', '#fb7185', '#2563eb'
+  ];
+
   // Material Catalog Definitions (organized by clean UI groups!)
   const MATERIAL_LIST = [
     // FINE ART & ELEMENTS
     { id: MAT.SAND,       group: 'elements', icon: '⏳', en: 'Sand',          fr: 'Sable',          hex: '#f5b041', useCustomColor: true,  relief: 0.72 },
-    { id: MAT.GOLD,       group: 'elements', icon: '✨', en: 'Gold Leaf',     fr: 'Or Kintsugi',    hex: '#f5c542', useCustomColor: false, relief: 0.92, glow: true },
+    { id: MAT.GOLD,       group: 'elements', icon: '✨', en: 'Gold Leaf',     fr: 'Or Kintsugi',    hex: '#f5c542', useCustomColor: true,  relief: 0.92, glow: true },
     { id: MAT.STARDUST,   group: 'elements', icon: '🌌', en: 'Stardust',      fr: 'Poussière Astr.',hex: '#38bdf8', useCustomColor: true,  relief: 0.60, glow: true },
     { id: MAT.CRYSTAL,    group: 'elements', icon: '🔮', en: 'Crystal Seed',  fr: 'Cristal Vivant', hex: '#c084fc', useCustomColor: true,  relief: 0.98, glow: true },
     { id: MAT.FIREWORK,   group: 'elements', icon: '🎆', en: 'Firework',      fr: 'Feu d’Artifice', hex: '#fb7185', useCustomColor: true,  relief: 0.70, glow: true },
-    { id: MAT.WATER,      group: 'elements', icon: '💧', en: 'Water',         fr: 'Eau',            hex: '#38bdf8', useCustomColor: false, relief: 0.32 },
+    { id: MAT.WATER,      group: 'elements', icon: '💧', en: 'Water',         fr: 'Eau',            hex: '#38bdf8', useCustomColor: true,  relief: 0.32 },
     { id: MAT.FIRE,       group: 'elements', icon: '🔥', en: 'Fire',          fr: 'Feu',            hex: '#ff6b1a', useCustomColor: false, relief: 0.40, glow: true },
     { id: MAT.LAVA,       group: 'elements', icon: '🌋', en: 'Magma / Lava',  fr: 'Lave / Magma',   hex: '#f94119', useCustomColor: false, relief: 0.85, glow: true },
-    { id: MAT.SNOW,       group: 'elements', icon: '❄️', en: 'Snow',          fr: 'Neige',          hex: '#e2f1ff', useCustomColor: false, relief: 0.65 },
-    { id: MAT.ICE,        group: 'elements', icon: '🧊', en: 'Ice Block',     fr: 'Glace',          hex: '#93c5fd', useCustomColor: false, relief: 0.82 },
+    { id: MAT.SNOW,       group: 'elements', icon: '❄️', en: 'Snow',          fr: 'Neige',          hex: '#e2f1ff', useCustomColor: true,  relief: 0.65 },
+    { id: MAT.ICE,        group: 'elements', icon: '🧊', en: 'Ice Block',     fr: 'Glace',          hex: '#93c5fd', useCustomColor: true,  relief: 0.82 },
     { id: MAT.ACID,       group: 'elements', icon: '🧪', en: 'Acid',          fr: 'Acide',          hex: '#84cc16', useCustomColor: false, relief: 0.35, glow: true },
     { id: MAT.WALL,       group: 'elements', icon: '🪨', en: 'Sculpt Wall',   fr: 'Mur / Roche',    hex: '#64748b', useCustomColor: true,  relief: 1.00 },
 
@@ -238,7 +245,31 @@
       expAr: 'AR Wall Art Preview (1:1)',
       expArDesc: 'Hang your sculpted sand artwork on your real wall in AR!',
       expSave: 'Save Project (.zsand FREE)',
-      expSaveDesc: 'Compact RLE backup keeping every particle & portal'
+      expSaveDesc: 'Compact RLE backup keeping every particle & portal',
+      blankCanvas: 'Blank Canvas',
+      textSand: 'Text→Sand',
+      colorStudio: 'Color Studio',
+      modeCustom: 'Custom',
+      modeStrata: 'Strata',
+      modeRainbow: 'Rainbow',
+      modeDropper: 'Pick',
+      magicTools: 'Kinetic Sculpt Tools',
+      toolPaint: 'Paint',
+      toolTint: 'Recolor',
+      toolMelt: 'Melt',
+      toolFreeze: 'Freeze',
+      toolRake: 'Zen Rake',
+      toolMagnet: 'Magnet',
+      reformTitle: 'Magnetic Reverse-Sand Magic',
+      lockTarget: 'Lock Target',
+      magneticReform: 'Reassemble',
+      cutoutObject: 'Object Only',
+      cutoutFull: 'With Background',
+      stampArt: 'Stamp to Canvas',
+      useAsBackdrop: 'Set as Backdrop',
+      cancelStage: 'Cancel',
+      welcomeTitle: 'Clean Blank Studio — Ready to Create',
+      welcomeSub: 'Draw freehand, place & cut out any photo, or launch a living AI world'
     },
     fr: {
       back: 'Retour',
@@ -288,14 +319,38 @@
       expAr: 'Aperçu Tableau AR 3D (Mur)',
       expArDesc: 'Accrochez votre œuvre de sable en 3D sur votre mur !',
       expSave: 'Sauver Projet (.zsand GRATUIT)',
-      expSaveDesc: 'Sauvegarde compacte RLE (particules, portails & FX)'
+      expSaveDesc: 'Sauvegarde compacte RLE (particules, portails & FX)',
+      blankCanvas: 'Écran Vide',
+      textSand: 'Texte→Sable',
+      colorStudio: 'Studio Couleur',
+      modeCustom: 'Fixe',
+      modeStrata: 'Strates',
+      modeRainbow: 'Arc-en-ciel',
+      modeDropper: 'Pipette',
+      magicTools: 'Outils Magiques Cinétiques',
+      toolPaint: 'Peindre',
+      toolTint: 'Recolorer',
+      toolMelt: 'Fondre',
+      toolFreeze: 'Figer',
+      toolRake: 'Râteau Zen',
+      toolMagnet: 'Aimant',
+      reformTitle: 'Magie Sable Magnétique Inversé',
+      lockTarget: 'Fixer Cible',
+      magneticReform: 'Réassembler',
+      cutoutObject: 'Objet Seul',
+      cutoutFull: 'Avec Fond',
+      stampArt: 'Appliquer',
+      useAsBackdrop: 'Mettre en Fond',
+      cancelStage: 'Annuler',
+      welcomeTitle: 'Toile Vierge — Prêt à Créer',
+      welcomeSub: 'Dessinez librement, placez et découpez vos photos ou lancez un monde IA'
     }
   };
 
   function getT(lang) { return I18N[lang === 'fr' ? 'fr' : 'en']; }
 
   const SandMaterials = {
-    MAT, MATERIAL_LIST, MAT_BY_ID, GROUPS, PALETTES, I18N,
+    MAT, MATERIAL_LIST, MAT_BY_ID, GROUPS, PALETTES, QUICK_COLORS, I18N,
     packRGBA, hexToRgb, hexToPacked, varyPacked, hslToPacked, samplePalettePacked, getT
   };
 
