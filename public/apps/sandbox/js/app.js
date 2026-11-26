@@ -1,441 +1,658 @@
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Zen Sandscape v4.0 — Main Atelier Application Controller
+ * Wires SandMaterials + SandboxEngine (60 FPS) + AIDirector (12 Living Worlds & Prompt)
+ * + ArtRenderer (3D Relief + Bloom + Trails + 8-Way Mandala) + ZenAudio (Non-Clipping Synth)
+ * + SandExports (4K Print, MP4+Audio, Interactive HTML, 3D Relief STL/GLB & 1:1 AR Wall Art)
+ * + Studios-Pro BroadcastChannel('studios_pro_channel') + Lazy Stencils!
+ */
+(function () {
+  'use strict';
 
-  const SIM_WIDTH = 800; const SIM_HEIGHT = 600;
+  const SM = window.SandMaterials;
+  const AI = window.AIDirector;
+  const ZA = window.ZenAudio;
+  const EX = window.SandExports;
+  const $ = id => document.getElementById(id);
 
-  // Stare aplicație globala
-  let currentLanguage = 'en';
-  let currentTool = MAT_SAND;
-  let isSprayBrush = false; 
-  let isSymBrush = false;
-  let brushSize = 10;
-  let currentColor = '#f59e0b';
-  let isDrawing = false;
-  let isRecording = false;
+  const STENCILS = [
+    { id: 'dragon',  en: 'Fire Dragon',     fr: 'Dragon de Feu' },
+    { id: 'castle',  en: 'Medieval Castle', fr: 'Château Médiéval' },
+    { id: 'lion',    en: 'Wild Lion',       fr: 'Lion Royal' },
+    { id: 'wolf',    en: 'Dire Wolf',       fr: 'Loup Polaire' },
+    { id: 'wizard',  en: 'Arcane Wizard',   fr: 'Mage Astral' },
+    { id: 'ship',    en: 'Pirate Galleon',  fr: 'Galion Pirate' },
+    { id: 'ufo',     en: 'Cosmic UFO',      fr: 'OVNI Cosmique' },
+    { id: 'fighter', en: 'Star Fighter',    fr: 'Chasseur Spatial' },
+    { id: 'alien',   en: 'Star Visitor',    fr: 'Visiteur Astral' },
+    { id: 'hero',    en: 'Cyber Hero',      fr: 'Héros Cyber' }
+  ];
 
-  let mediaRecorder = null; let recordedChunks = [];
-
-  const canvasEl = document.getElementById("sand-canvas");
-  const engine = new window.SandBoxEngine(canvasEl, SIM_WIDTH, SIM_HEIGHT);
-  window.engine = engine;
-
-  /* ------ GRAVITY & WIND ------ */
-  const gravSlider = document.getElementById("grav-slider");
-  const windSlider = document.getElementById("wind-slider");
-  gravSlider.addEventListener("input", e => engine.gravY = parseInt(e.target.value));
-  windSlider.addEventListener("input", e => engine.windX = parseInt(e.target.value));
-
-  /* ------ AUDIO ASMR ------ */
-  let audioCtx = null; let audioGain = null; let isAudioOn = false; let noiseSrc = null;
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const bSize = 2 * audioCtx.sampleRate;
-      const noise = audioCtx.createBuffer(1, bSize, audioCtx.sampleRate);
-      const out = noise.getChannelData(0);
-      for (let i = 0; i < bSize; i++) out[i] = Math.random() * 2 - 1;
-      noiseSrc = audioCtx.createBufferSource(); noiseSrc.buffer = noise; noiseSrc.loop = true;
-      const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1500;
-      audioGain = audioCtx.createGain(); audioGain.gain.value = 0;
-      noiseSrc.connect(f); f.connect(audioGain); audioGain.connect(audioCtx.destination);
-      noiseSrc.start();
-    }
-  }
-  const btnAudio = document.getElementById("btn-asmr");
-  btnAudio.onclick = () => {
-    isAudioOn = !isAudioOn;
-    if (isAudioOn) {
-      if (!audioCtx) initAudio();
-      audioCtx.resume();
-      audioGain.gain.setTargetAtTime(0.05, audioCtx.currentTime, 0.5); 
-      btnAudio.innerHTML = `🎵 <span data-i18n="audio_on">${window.I18N[currentLanguage]["audio_on"]}</span>`;
-      btnAudio.style.color = "#a3e635"; btnAudio.style.borderColor = "#a3e635";
-    } else {
-      if (audioGain) audioGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5); 
-      btnAudio.innerHTML = `🎵 <span data-i18n="audio_off">${window.I18N[currentLanguage]["audio_off"]}</span>`;
-      btnAudio.style.color = "#facc15"; btnAudio.style.borderColor = "rgba(250, 204, 21, 0.3)";
-    }
+  const ui = {
+    lang: 'en',
+    activeMat: SM.MAT.SAND,
+    activeWorld: 'kyoto',
+    brushSize: 10,
+    brushShape: 'circle',
+    symmetry: 'off',
+    laserDir: 0,
+    customColor: '#f5c542',
+    isPro: false,
+    pendingExport: null,
+    isPointerDown: false,
+    lastX: 0, lastY: 0,
+    cursor: { x: 0, y: 0, radius: 10, shape: 'circle', inside: false },
+    recStartMs: 0,
+    recTimerId: null,
+    stencilsBuilt: false
   };
 
-  /* ------ COLORS ------ */
-  const PRESET_COLORS = ['#f3f4f6', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#0ea5e9', '#84cc16', '#ef4444', '#d97706', '#475569'];
-  const colorGrid = document.getElementById("color-grid"); const colorPicker = document.getElementById("color-picker");
-  function renderColorGrid() {
-    colorGrid.innerHTML = '';
-    PRESET_COLORS.forEach(c => {
-      const sw = document.createElement('div'); sw.className = `color-swatch ${(c === currentColor && currentTool !== MAT_ERASER) ? 'active' : ''}`;
-      sw.style.backgroundColor = c;
-      sw.onclick = () => { currentColor = c; if (currentTool === MAT_ERASER) setTool(MAT_SAND); colorPicker.value = c; renderColorGrid(); };
-      colorGrid.appendChild(sw);
+  const engine = new window.SandboxEngine(600, 420);
+  const renderer = new window.ArtRenderer($('sand-canvas'), 600, 420);
+
+  engine.onPianoHit = yNorm => ZA.playChime(yNorm);
+  engine.onExplosion = r => ZA.playBoom(r);
+
+  const hostChannel = (typeof BroadcastChannel !== 'undefined')
+    ? new BroadcastChannel('studios_pro_channel')
+    : null;
+
+  let _toastTimer = null;
+  function showToast(msg, ms = 2500) {
+    const el = $('toast-banner');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
+  }
+
+  // =========================================================================
+  // 1. UI BUILDERS (MATERIALS, 12 AI WORLDS, 8 PALETTES, LAZY STENCILS)
+  // =========================================================================
+
+  function renderMaterialsPanel() {
+    const wrap = $('materials-groups');
+    wrap.innerHTML = '';
+    SM.GROUPS.forEach(grp => {
+      const sec = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'mat-group-title';
+      title.textContent = ui.lang === 'fr' ? grp.fr : grp.en;
+      const grid = document.createElement('div');
+      grid.className = 'mat-grid';
+
+      SM.MATERIAL_LIST.filter(m => m.group === grp.id).forEach(m => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mat-btn' + (ui.activeMat === m.id ? ' active' : '');
+        b.dataset.mat = String(m.id);
+        b.innerHTML = `<span>${m.icon}</span><span>${ui.lang === 'fr' ? m.fr : m.en}</span>`;
+        b.addEventListener('click', () => {
+          ui.activeMat = m.id;
+          wrap.querySelectorAll('.mat-btn').forEach(el => el.classList.toggle('active', Number(el.dataset.mat) === m.id));
+        });
+        grid.appendChild(b);
+      });
+      sec.append(title, grid);
+      wrap.appendChild(sec);
     });
   }
-  colorPicker.addEventListener("input", e => { currentColor = e.target.value; if (currentTool === MAT_ERASER) setTool(MAT_SAND); renderColorGrid(); });
-  renderColorGrid();
 
-  /* ------ MATERIALS ------ */
-  const tools = { sand: document.getElementById("btn-tool-sand"), water: document.getElementById("btn-tool-water"), fire: document.getElementById("btn-tool-fire"), acid: document.getElementById("btn-tool-acid"), seed: document.getElementById("btn-tool-seed"), wire: document.getElementById("btn-tool-wire"), spark: document.getElementById("btn-tool-spark"), wall: document.getElementById("btn-tool-wall"), eraser: document.getElementById("btn-tool-eraser"), ant: document.getElementById("btn-tool-ant"), c4: document.getElementById("btn-tool-c4"), lava: document.getElementById("btn-tool-lava"), portalin: document.getElementById("btn-tool-portalin"), portalout: document.getElementById("btn-tool-portalout"), cloud: document.getElementById("btn-tool-cloud"), emitter: document.getElementById("btn-tool-emitter"), vortex: document.getElementById("btn-tool-vortex") || document.createElement("div"), virus: document.getElementById("btn-tool-virus"), repulsor: document.getElementById("btn-tool-repulsor"), piano: document.getElementById("btn-tool-piano"), snow: document.getElementById("btn-tool-snow"), ice: document.getElementById("btn-tool-ice"), sensor: document.getElementById("btn-tool-sensor"), switch: document.getElementById("btn-tool-switch"), laser: document.getElementById("btn-tool-laser"), mirror: document.getElementById("btn-tool-mirror"), fish: document.getElementById("btn-tool-fish"), bee: document.getElementById("btn-tool-bee"), conveyor: document.getElementById("btn-tool-conveyor"), fan: document.getElementById("btn-tool-fan") };
-  function setTool(t) {
-    currentTool = t; Object.values(tools).forEach(b => b.classList.remove("active"));
-    if (t===MAT_SAND) tools.sand.classList.add("active");
-    if (t===MAT_WATER) tools.water.classList.add("active");
-    if (t===MAT_FIRE) tools.fire.classList.add("active");
-    if (t===MAT_ACID) tools.acid.classList.add("active");
-    if (t===MAT_SEED) tools.seed.classList.add("active");
-    if (t===MAT_WIRE) tools.wire.classList.add("active");
-    if (t===MAT_SPARK) tools.spark.classList.add("active");
-    if (t===MAT_ANT) tools.ant.classList.add("active");
-    if (t===MAT_C4) tools.c4.classList.add("active");
-    if (t===MAT_LAVA) tools.lava.classList.add("active");
-    if (t===MAT_PORTAL_IN) tools.portalin.classList.add("active");
-    if (t===MAT_PORTAL_OUT) tools.portalout.classList.add("active");
-    if (t===MAT_CLOUD) tools.cloud.classList.add("active");
-    if (t===MAT_EMITTER) tools.emitter.classList.add("active");
-    if (t===MAT_VORTEX) tools.vortex.classList.add("active");
-    if (t===MAT_VIRUS) tools.virus.classList.add("active");
-    if (t===MAT_REPULSOR) tools.repulsor.classList.add("active");
-    if (t===MAT_PIANO) tools.piano.classList.add("active");
-    if (t===MAT_SNOW) tools.snow.classList.add("active");
-    if (t===MAT_ICE) tools.ice.classList.add("active");
-    if (t===MAT_SENSOR) tools.sensor.classList.add("active");
-    if (t===MAT_SWITCH) tools.switch.classList.add("active");
-    if (t===MAT_LASER) tools.laser.classList.add("active");
-    if (t===MAT_MIRROR) tools.mirror.classList.add("active");
-    if (t===MAT_FISH) tools.fish.classList.add("active");
-    if (t===MAT_BEE) tools.bee.classList.add("active");
-    if (t===MAT_CONVEYOR) tools.conveyor.classList.add("active");
-    if (t===MAT_FAN) tools.fan.classList.add("active");
-    if (t===MAT_WALL) tools.wall.classList.add("active");
-    if (t===MAT_ERASER) { tools.eraser.classList.add("active"); renderColorGrid(); }
-  }
-  Object.keys(tools).forEach(k => {
-    let mat = MAT_SAND; 
-    if(k==='water') mat=MAT_WATER; if(k==='fire') mat=MAT_FIRE; if(k==='acid') mat=MAT_ACID; 
-    if(k==='seed') mat=MAT_SEED; if(k==='wire') mat=MAT_WIRE; if(k==='spark') mat=MAT_SPARK; 
-    if(k==='ant') mat=MAT_ANT; if(k==='c4') mat=MAT_C4; if(k==='lava') mat=MAT_LAVA; 
-    if(k==='portalin') mat=MAT_PORTAL_IN; if(k==='portalout') mat=MAT_PORTAL_OUT;
-    if(k==='cloud') mat=MAT_CLOUD; if(k==='emitter') mat=MAT_EMITTER; if(k==='vortex') mat=MAT_VORTEX; 
-    if(k==='virus') mat=MAT_VIRUS; if(k==='repulsor') mat=MAT_REPULSOR;
-    if(k==='piano') mat=MAT_PIANO; if(k==='snow') mat=MAT_SNOW; if(k==='ice') mat=MAT_ICE;
-    if(k==='sensor') mat=MAT_SENSOR; if(k==='switch') mat=MAT_SWITCH;
-    if(k==='laser') mat=MAT_LASER; if(k==='mirror') mat=MAT_MIRROR; 
-    if(k==='fish') mat=MAT_FISH; if(k==='bee') mat=MAT_BEE;
-    if(k==='conveyor') mat=MAT_CONVEYOR; if(k==='fan') mat=MAT_FAN;
-    if(k==='wall') mat=MAT_WALL; if(k==='eraser') mat=MAT_ERASER;
-    tools[k].onclick = () => setTool(mat);
-  });
+  function renderAIWorldsPanel() {
+    const grid = $('ai-worlds-grid');
+    grid.innerHTML = '';
+    AI.LIVING_WORLDS.forEach(w => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'world-btn' + (ui.activeWorld === w.id ? ' active' : '');
+      b.dataset.world = w.id;
+      b.innerHTML = `<span>${w.icon}</span><span>${ui.lang === 'fr' ? w.fr : w.en}</span>`;
+      b.addEventListener('click', () => loadLivingWorld(w.id));
+      grid.appendChild(b);
+    });
 
-  /* ------ BRUSH TYPE ------ */
-  const btnSolid = document.getElementById("btn-brush-solid"); const btnSpray = document.getElementById("btn-brush-spray"); const btnSym = document.getElementById("btn-brush-sym");
-  btnSolid.onclick = () => { isSprayBrush = false; btnSolid.classList.add("active"); btnSpray.classList.remove("active"); };
-  btnSpray.onclick = () => { isSprayBrush = true; btnSpray.classList.add("active"); btnSolid.classList.remove("active"); };
-  btnSym.onclick = () => { isSymBrush = !isSymBrush; if(isSymBrush) btnSym.classList.add("active"); else btnSym.classList.remove("active"); };
-
-  const sizeSlider = document.getElementById("brush-size"); const lblSize = document.getElementById("lbl-size");
-  sizeSlider.addEventListener("input", e => { brushSize = parseInt(e.target.value); lblSize.innerText = brushSize; });
-
-  /* ------ DRAWING EVENTS ------ */
-  function getCoordinates(e) {
-    const rect = canvasEl.getBoundingClientRect();
-    let cx = e.clientX; let cy = e.clientY;
-    if (e.touches && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
-    const scaleX = SIM_WIDTH / rect.width; const scaleY = SIM_HEIGHT / rect.height;
-    return { x: Math.floor((cx - rect.left) * scaleX), y: Math.floor((cy - rect.top) * scaleY) };
-  }
-  const doDraw = (e) => {
-    if (!isDrawing) return;
-    const cd = getCoordinates(e);
-    if (cd) engine.drawCircle(cd.x, cd.y, brushSize, currentTool, currentColor, isSprayBrush, isSymBrush);
-    if (isAudioOn && audioGain && (currentTool===MAT_SAND||currentTool===MAT_WATER||currentTool===MAT_ACID)) audioGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.1); 
-  };
-  canvasEl.addEventListener("pointerdown", e => { isDrawing = true; doDraw(e); if(canvasEl.setPointerCapture) canvasEl.setPointerCapture(e.pointerId); });
-  canvasEl.addEventListener("pointermove", doDraw);
-  const stopDraw = e => {
-    isDrawing = false; if(canvasEl.releasePointerCapture && e.pointerId) canvasEl.releasePointerCapture(e.pointerId);
-    if (isAudioOn && audioGain) audioGain.gain.setTargetAtTime(0.05, audioCtx.currentTime, 1.0); 
-  };
-  canvasEl.addEventListener("pointerup", stopDraw); canvasEl.addEventListener("pointercancel", stopDraw);
-
-  /* ------ BLUEPRINTS ------ */
-  document.getElementById("btn-save-slot").onclick = () => {
-    const t = engine.types; const c = engine.colors; const pl = [];
-    for (let i = 0; i < t.length; i++) if (t[i] !== 0) pl.push({i, t: t[i], c: c[i]});
-    localStorage.setItem("sandscape_bp", JSON.stringify(pl));
-    alert(currentLanguage === 'en' ? "Blueprint Saved!" : "Projet Sauvegardé!");
-  };
-  document.getElementById("btn-load-slot").onclick = () => {
-    const d = localStorage.getItem("sandscape_bp"); if (!d) return alert("Empty.");
-    try { const pl = JSON.parse(d); engine.clearCanvas(); pl.forEach(p => { engine.types[p.i] = p.t; engine.colors[p.i] = p.c; }); } catch(e){}
-  };
-
-  /* ------ ADVANCED OPS ------ */
-  const btn3D = document.getElementById("btn-3d");
-  btn3D.onclick = () => {
-     engine.render3D = !engine.render3D;
-     if(engine.render3D) btn3D.classList.add("active"); else btn3D.classList.remove("active");
-  };
-
-  /* ------ STENCIL & IMAGE HUD ------ */
-  const fileUpl = document.getElementById("file-uploader");
-  const imgHud = document.getElementById("image-hud");
-  const hudCanvas = document.getElementById("image-hud-canvas");
-  const hudScale = document.getElementById("hud-scale");
-  const hudThresh = document.getElementById("hud-thresh");
-  const hudApply = document.getElementById("hud-apply");
-  const hudApplyMat = document.getElementById("hud-apply-mat");
-  const hudCancel = document.getElementById("hud-cancel");
-  const hCtx = hudCanvas.getContext("2d", { willReadFrequently: true });
-  
-  let currentLoadedImage = null;
-  let hudOffsetX = 0; let hudOffsetY = 0;
-  let hudIsDragging = false; let hudLastX = 0; let hudLastY = 0;
-
-  document.getElementById("btn-image-trigger").onclick = () => fileUpl.click();
-
-  // STENCIL LIBRARY LOGIC
-  const stencilLib = document.getElementById("stencil-lib");
-  document.getElementById("btn-lib-trigger").onclick = () => stencilLib.classList.remove("hidden");
-  document.getElementById("btn-lib-close").onclick = () => stencilLib.classList.add("hidden");
-
-  const stencils = {
-     space: [{id:'alien',n:'Grey Alien'}, {id:'ufo',n:'UFO Ship'}, {id:'fighter',n:'Space Jet'}],
-     animals: [{id:'lion',n:'Wild Lion'}, {id:'dragon',n:'Fire Dragon'}, {id:'wolf',n:'Dire Wolf'}],
-     fantasy: [{id:'hero',n:'Super Hero'}, {id:'wizard',n:'Dark Wizard'}],
-      structures: [{id:'castle',n:'Medieval Castle'}, {id:'ship',n:'Pirate Ship'}]
-  };
-
-  function loadStencil(id) {
-     stencilLib.classList.add("hidden");
-     const img = new Image();
-     img.onload = () => {
-        currentLoadedImage = img; hudOffsetX = 0; hudOffsetY = 0;
-        imgHud.classList.remove("hidden"); drawHudPreview();
-     };
-     // Safe data-uri load
-     img.src = window.MODEL_ASSETS[id];
+    const pGrid = $('palettes-grid');
+    pGrid.innerHTML = '';
+    Object.values(SM.PALETTES).forEach(p => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pal-btn' + (engine.paletteId === p.id ? ' active' : '');
+      b.dataset.pal = p.id;
+      b.innerHTML = `<span>${ui.lang === 'fr' ? p.fr : p.en}</span><div class="pal-bar" style="background:linear-gradient(90deg,${p.colors.join(',')})"></div>`;
+      b.addEventListener('click', () => {
+        engine.paletteId = p.id;
+        engine.autoStrata = true;
+        $('chk-auto-strata').checked = true;
+        pGrid.querySelectorAll('.pal-btn').forEach(el => el.classList.toggle('active', el.dataset.pal === p.id));
+        showToast(`🎨 ${ui.lang === 'fr' ? p.fr : p.en}`);
+      });
+      pGrid.appendChild(b);
+    });
   }
 
-  // Populate Stencils
-  Object.keys(stencils).forEach(k => {
-     const grid = document.getElementById("grid-" + k);
-     stencils[k].forEach(em => {
-        const d = document.createElement("div");
-        d.className = "lib-item"; 
-        d.style.backgroundImage = `url('${window.MODEL_ASSETS[em.id]}')`;
-        d.innerHTML = `<div class="lib-title-lb">${em.n}</div>`;
-        d.onclick = () => loadStencil(em.id);
-        grid.appendChild(d);
-     });
-  });
+  function loadLivingWorld(worldId, opts = {}) {
+    const meta = AI.buildWorld(engine, worldId, opts);
+    ui.activeWorld = meta.id;
+    renderer.backdrop = meta.backdrop || 'obsidian';
+    renderer.fxBloom = meta.bloom !== false;
+    renderer.fxTrails = !!meta.trails;
+    renderer.clearTrails();
 
-  fileUpl.addEventListener("change", e => {
-     const file = e.target.files[0]; if (!file) return;
-     const img = new Image();
-     img.onload = () => {
-        currentLoadedImage = img;
-        hudOffsetX = 0; hudOffsetY = 0;
-        imgHud.classList.remove("hidden");
-        drawHudPreview();
-     };
-     const fr = new FileReader(); fr.onload = e => img.src = e.target.result; fr.readAsDataURL(file);
-  });
-
-  hudCanvas.addEventListener("pointerdown", e => {
-      hudIsDragging = true;
-      hudLastX = e.clientX; hudLastY = e.clientY;
-      hudCanvas.setPointerCapture(e.pointerId);
-  });
-  hudCanvas.addEventListener("pointermove", e => {
-      if(!hudIsDragging) return;
-      hudOffsetX += (e.clientX - hudLastX);
-      hudOffsetY += (e.clientY - hudLastY);
-      hudLastX = e.clientX; hudLastY = e.clientY;
-      drawHudPreview();
-  });
-  const stopHudDrag = e => {
-      hudIsDragging = false;
-      if(hudCanvas.releasePointerCapture) hudCanvas.releasePointerCapture(e.pointerId);
-  };
-  hudCanvas.addEventListener("pointerup", stopHudDrag);
-  hudCanvas.addEventListener("pointercancel", stopHudDrag);
-
-  function drawHudPreview() {
-     if(!currentLoadedImage) return;
-     hCtx.clearRect(0,0,SIM_WIDTH,SIM_HEIGHT);
-     const scaleNum = parseInt(hudScale.value) / 100;
-     const threshNum = parseInt(hudThresh.value);
-     document.getElementById('lbl-img-scale').innerText = hudScale.value;
-     document.getElementById('lbl-img-tol').innerText = threshNum;
-     
-     const bw = currentLoadedImage.width * scaleNum;
-     const bh = currentLoadedImage.height * scaleNum;
-     const bx = (SIM_WIDTH - bw) / 2 + hudOffsetX;
-     const by = (SIM_HEIGHT - bh) / 2 + hudOffsetY;
-     hCtx.drawImage(currentLoadedImage, bx, by, bw, bh);
-     
-     if (threshNum > 0) {
-        const limitLuma = 255 - Math.floor((threshNum / 100) * 200);
-        const idata = hCtx.getImageData(0,0,SIM_WIDTH,SIM_HEIGHT);
-        const d = idata.data;
-        for(let i=0; i<d.length; i+=4) {
-           if(d[i+3] > 0) { // is rendered pixel
-              const luma = (d[i] + d[i+1] + d[i+2]) / 3;
-              if(luma > limitLuma) d[i+3] = 0; // make transparent if it is too bright (white bg removal)
-           }
-        }
-        hCtx.putImageData(idata, 0, 0);
-     }
+    $('art-title-input').value = ui.lang === 'fr' ? meta.fr : meta.en;
+    syncControlsFromEngine();
+    renderAIWorldsPanel();
+    showToast(`${meta.icon} ${ui.lang === 'fr' ? meta.fr : meta.en}`);
   }
 
-  hudScale.addEventListener("input", drawHudPreview);
-  hudThresh.addEventListener("input", drawHudPreview);
-
-  hudCancel.onclick = () => { imgHud.classList.add("hidden"); fileUpl.value = ""; currentLoadedImage = null; };
-  hudApply.onclick = () => {
-     // Bake process
-     const d = hCtx.getImageData(0,0,SIM_WIDTH,SIM_HEIGHT).data;
-     for(let i=0; i<d.length; i+=4) {
-        if(d[i+3] > 50) { // solid enough
-           const pxIdx = i / 4;
-           const u32 = new Uint32Array(new Uint8Array([d[i], d[i+1], d[i+2], 255]).buffer)[0];
-           engine.types[pxIdx] = MAT_WALL;
-           engine.colors[pxIdx] = u32;
-        }
-     }
-     imgHud.classList.add("hidden"); fileUpl.value = ""; currentLoadedImage = null;
+  function syncControlsFromEngine() {
+    $('slider-grav').value = engine.gravY;
+    $('val-grav').textContent = engine.gravY === 0 ? '0G' : String(engine.gravY);
+    $('slider-wind').value = engine.windX;
+    $('val-wind').textContent = String(engine.windX);
+    $('sel-backdrop').value = renderer.backdrop;
+    $('btn-fx-3d').classList.toggle('active', renderer.fx3d);
+    $('btn-fx-bloom').classList.toggle('active', renderer.fxBloom);
+    $('btn-fx-trails').classList.toggle('active', renderer.fxTrails);
+    $('chk-auto-strata').checked = engine.autoStrata;
   }
 
-  hudApplyMat.onclick = () => {
-     // Bake process using Current Tool/Color
-     const d = hCtx.getImageData(0,0,SIM_WIDTH,SIM_HEIGHT).data;
-     const u32Color = engine.hexToRealUint32(currentColor);
-     for(let i=0; i<d.length; i+=4) {
-        if(d[i+3] > 50) { 
-           const pxIdx = i / 4;
-           if (currentTool === MAT_ERASER) { engine.types[pxIdx] = 0; engine.colors[pxIdx] = 0; }
-           else {
-              engine.types[pxIdx] = currentTool;
-              engine.colors[pxIdx] = u32Color;
-           }
-        }
-     }
-     imgHud.classList.add("hidden"); fileUpl.value = ""; currentLoadedImage = null;
-  }
-
-
-  /* ------ EXPORTS ------ */
-  document.getElementById("btn-clear").onclick = () => engine.clearCanvas();
-  document.getElementById("btn-export-photo").onclick = () => {
-    const a = document.createElement("a"); a.download = `Sandscape_PRO_${Date.now()}.png`; a.href = canvasEl.toDataURL("image/png"); a.click();
-  };
-  const btnVideo = document.getElementById("btn-export-video"); const badgeRec = document.getElementById("recording-badge");
-  btnVideo.onclick = () => {
-    if (isRecording) {
-      mediaRecorder.stop(); isRecording = false; btnVideo.classList.remove("active"); btnVideo.style.color = "inherit"; badgeRec.classList.add("hidden");
-    } else {
-      const stream = canvasEl.captureStream(60); recordedChunks = [];
-      let ops = { mimeType: 'video/webm;codecs=vp9' }; if (!MediaRecorder.isTypeSupported(ops.mimeType)) ops = { mimeType: 'video/webm' };
-      mediaRecorder = new MediaRecorder(stream, ops);
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const u = URL.createObjectURL(new Blob(recordedChunks, { type: ops.mimeType }));
-        const a = document.createElement('a'); a.href = u; a.download = `Sandscape_Video_${Date.now()}.webm`; a.click(); URL.revokeObjectURL(u); applyLanguage();
-      };
-      mediaRecorder.start(); isRecording = true; btnVideo.classList.add("active"); btnVideo.style.color = "#f85149"; badgeRec.classList.remove("hidden"); applyLanguage();
+  // Lazy-load Stencils from models/*.png ONLY when user opens Stencils Modal (0 bytes at startup!)
+  function openStencilsModal() {
+    if (!ui.stencilsBuilt) {
+      const grid = $('stencil-grid');
+      grid.innerHTML = '';
+      STENCILS.forEach(st => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'stencil-card';
+        card.innerHTML = `<img src="models/${st.id}.png" loading="lazy" alt="${st.en}"><span>${ui.lang === 'fr' ? st.fr : st.en}</span>`;
+        card.addEventListener('click', () => bakeImageFromUrl(`models/${st.id}.png`, ui.lang === 'fr' ? st.fr : st.en));
+        grid.appendChild(card);
+      });
+      ui.stencilsBuilt = true;
     }
-  };
+    $('modal-stencils').classList.remove('hidden');
+  }
 
-  document.getElementById("btn-export-html").onclick = async () => {
-    try {
-      const responseCss = await fetch('css/style.css').then(r => r.text());
-      const responseEngine = await fetch('js/engine.js').then(r => r.text());
-      const responseModels = await fetch('js/models.js').then(r => r.text());
-      const responseTrans = await fetch('js/translations.js').then(r => r.text());
-      const responseApp = await fetch('js/app.js').then(r => r.text());
+  function bakeImageFromUrl(src, label) {
+    const img = new Image();
+    img.onload = () => {
+      const targetW = Math.min(340, engine.w - 40);
+      const scale = Math.min(targetW / img.width, (engine.h - 40) / img.height);
+      const dw = Math.max(40, Math.round(img.width * scale));
+      const dh = Math.max(40, Math.round(img.height * scale));
+      const tmp = document.createElement('canvas');
+      tmp.width = dw; tmp.height = dh;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(img, 0, 0, dw, dh);
+      const data = tctx.getImageData(0, 0, dw, dh);
+      const matId = Number($('sel-stencil-mat').value) || SM.MAT.SAND;
+      const keepRgb = $('chk-stencil-rgb').checked;
+      const count = AI.bakeImageDataToEngine(engine, data, dw, dh, { matId, preserveRGB: keepRgb, customHex: ui.customColor });
+      $('modal-stencils').classList.add('hidden');
+      showToast(`✨ Baked ${label} (${count.toLocaleString('en-US')} particles)`);
+    };
+    img.onerror = () => showToast('❌ Failed to load stencil image');
+    img.src = src;
+  }
 
-      // Grab current layout state
-      const t = engine.types; const c = engine.colors; const pl = [];
-      for (let i = 0; i < t.length; i++) if (t[i] !== 0) pl.push({i, t: t[i], c: c[i]});
-      const stateJson = JSON.stringify(pl);
+  // =========================================================================
+  // 2. CANVAS DRAWING INTERACTION (CONTINUOUS STROKE + HOLD-TO-POUR!)
+  // =========================================================================
 
-      // We need to fetch and inline index.html but replace external scripts and style links
-      let indexHtml = await fetch('index.html').then(r => r.text());
+  function getCanvasCoords(e) {
+    const cv = $('sand-canvas');
+    const rect = cv.getBoundingClientRect();
+    return [
+      Math.max(0, Math.min(engine.w - 1, Math.floor(((e.clientX - rect.left) / rect.width) * engine.w))),
+      Math.max(0, Math.min(engine.h - 1, Math.floor(((e.clientY - rect.top) / rect.height) * engine.h)))
+    ];
+  }
 
-      // Remove injected studios-pro back-button and payment logic wrapper
-      indexHtml = indexHtml.replace(/<!-- Back Button and Payment logic -->[\s\S]*?<!-- Back Button and Payment logic -->/gi, '');
+  function currentStrokeOpts() {
+    return {
+      matId: ui.activeMat,
+      radius: ui.brushSize,
+      shape: ui.brushShape,
+      symmetry: ui.symmetry,
+      color: ui.customColor,
+      laserDir: ui.laserDir
+    };
+  }
 
-      // Clean up header links and script tags from indexHtml
-      indexHtml = indexHtml.replace(/<link rel="stylesheet" href="css\/style\.css">/g, '');
-      indexHtml = indexHtml.replace(/<script src="js\/translations\.js"><\/script>/g, '');
-      indexHtml = indexHtml.replace(/<script src="js\/engine\.js"><\/script>/g, '');
-      indexHtml = indexHtml.replace(/<script src="js\/models\.js"><\/script>/g, '');
-      indexHtml = indexHtml.replace(/<script src="js\/app\.js"><\/script>/g, '');
+  function bindCanvasEvents() {
+    const cv = $('sand-canvas');
+    cv.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+      const [x, y] = getCanvasCoords(e);
+      ui.isPointerDown = true;
+      ui.lastX = x; ui.lastY = y;
+      ui.cursor = { x, y, radius: ui.brushSize, shape: ui.brushShape, inside: true };
+      engine.drawStroke(x, y, x, y, currentStrokeOpts());
+    });
 
-      // Build inlined scripts/styles
-      const styles = '<style>\n' + responseCss + '\n' +
-        '/* Hide UI controls and disable drawing in export */\n' +
-        '.sidebar { display: none !important; }\n' +
-        'canvas { pointer-events: none !important; }\n' +
-        '</style>';
-      const scripts = 
-        '<sc' + 'ript>\n' + responseTrans + '\n</sc' + 'ript>\n' +
-        '<sc' + 'ript>\n' + responseEngine + '\n</sc' + 'ript>\n' +
-        '<sc' + 'ript>\n' + responseModels + '\n</sc' + 'ript>\n' +
-        '<sc' + 'ript>\n' + responseApp + '\n</sc' + 'ript>\n' +
-        '<sc' + 'ript>\n' +
-        '  document.addEventListener("DOMContentLoaded", () => {\n' +
-        '    setTimeout(() => {\n' +
-        '      const savedState = ' + stateJson + ';\n' +
-        '      if (savedState && savedState.length > 0 && window.engine) {\n' +
-        '        window.engine.clearCanvas();\n' +
-        '        savedState.forEach(p => {\n' +
-        '          window.engine.types[p.i] = p.t;\n' +
-        '          window.engine.colors[p.i] = p.c;\n' +
-        '        });\n' +
-        '      }\n' +
-        '    }, 100);\n' +
-        '  });\n' +
-        '</sc' + 'ript>\n';
+    cv.addEventListener('pointermove', e => {
+      const [x, y] = getCanvasCoords(e);
+      ui.cursor = { x, y, radius: ui.brushSize, shape: ui.brushShape, inside: true };
+      if (!ui.isPointerDown) return;
+      engine.drawStroke(ui.lastX, ui.lastY, x, y, currentStrokeOpts());
+      ui.lastX = x; ui.lastY = y;
+    });
 
-      // Insert styles in head
-      indexHtml = indexHtml.replace('</he' + 'ad>', styles + '\n</he' + 'ad>');
-      // Insert scripts in body
-      indexHtml = indexHtml.replace('</bo' + 'dy>', scripts + '\n</bo' + 'dy>');
+    const endStroke = () => {
+      if (!ui.isPointerDown) return;
+      ui.isPointerDown = false;
+      engine.pushUndo();
+    };
+    cv.addEventListener('pointerup', endStroke);
+    cv.addEventListener('pointercancel', endStroke);
+    cv.addEventListener('pointerleave', () => { ui.cursor.inside = false; });
+  }
 
-      // Create download link
-      const blob = new Blob([indexHtml], { type: 'text/html' });
-      const u = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = u;
-      a.download = `Sandscape_Interactive_${Date.now()}.html`;
-      // Mark as bypassed so it downloads directly
-      a.dataset.bypassed = 'true';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(u);
-    } catch(err) {
-      alert("Error generating HTML export: " + err.message);
+  // =========================================================================
+  // 3. EXPORT PERMISSION GATE (Studios-Pro BroadcastChannel — ZERO FALSE TRAPS!)
+  // =========================================================================
+
+  function setExportStatus(msg) {
+    const bar = $('export-status-bar');
+    if (!msg) { bar.classList.add('hidden'); return; }
+    bar.textContent = msg;
+    bar.classList.remove('hidden');
+  }
+
+  function executePendingExport() {
+    if (!ui.pendingExport) return;
+    const { format, fn } = ui.pendingExport;
+    ui.pendingExport = null;
+    Promise.resolve(fn())
+      .then(() => {
+        if (hostChannel) {
+          try { hostChannel.postMessage({ type: 'EXPORT_COMPLETED', payload: { format, app: 'sandbox' }, _msgId: 'zs_done_' + Date.now() }); } catch (_) {}
+        }
+      })
+      .catch(err => setExportStatus('❌ ' + (err?.message || String(err))));
+  }
+
+  function requestExportPermission(format, fn) {
+    if (window.parent === window || ui.isPro) {
+      Promise.resolve(fn()).catch(err => setExportStatus('❌ ' + (err?.message || String(err))));
+      return;
     }
-  };
+    setExportStatus(ui.lang === 'fr' ? '⏳ Vérification de l’autorisation d’export...' : '⏳ Verifying export permission...');
+    ui.pendingExport = { format, fn };
+    const msg = {
+      type: 'TRIGGER_PAYMENT_MODAL',
+      payload: { format, app: 'sandbox' },
+      _msgId: 'zs_exp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
+    };
+    if (hostChannel) hostChannel.postMessage(msg);
+    else window.parent.postMessage(msg, '*');
+  }
 
-  /* ------ TRANSLATIONS I18N ------ */
-  const btnEn = document.getElementById("btn-en"); const btnFr = document.getElementById("btn-fr");
-  function applyLanguage() {
-    const dict = window.I18N[currentLanguage];
-    document.querySelectorAll("[data-i18n]").forEach(el => {
-      const key = el.getAttribute("data-i18n");
-      if (dict[key]) {
-        if (key === "btn_video" && isRecording) el.innerText = dict["stop_video"];
-        else if (key === "audio_off" && isAudioOn) el.innerText = dict["audio_on"];
-        else el.innerText = dict[key];
+  function handleHostMessage(d) {
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'SET_LANG' && d.lang) setLanguage(d.lang);
+    else if (d.type === 'USER_TIER_STATUS') ui.isPro = !!(d.isPro || d.tier === 'pro' || d.tier === 'vip');
+    else if (d.type === 'USER_STATUS_RESPONSE' && d.payload) ui.isPro = !!d.payload.isPremium;
+    else if (d.type === 'EXPORT_ALLOWED') {
+      if (d.payload && d.payload.isPremium) ui.isPro = true;
+      executePendingExport();
+    } else if (d.type === 'SHOW_PAYWALL_MODAL' || d.type === 'EXPORT_BLOCKED') {
+      ui.pendingExport = null;
+      setExportStatus('');
+    }
+  }
+  window.addEventListener('message', e => handleHostMessage(e.data));
+  if (hostChannel) hostChannel.onmessage = e => handleHostMessage(e.data);
+
+  // =========================================================================
+  // 4. BILINGUAL I18N (EN / FR)
+  // =========================================================================
+
+  function setLanguage(lang) {
+    ui.lang = lang === 'fr' ? 'fr' : 'en';
+    const dict = SM.getT(ui.lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) el.textContent = dict[k];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const k = el.getAttribute('data-i18n-placeholder');
+      if (dict[k]) el.placeholder = dict[k];
+    });
+    $('btn-lang-en').classList.toggle('active', ui.lang === 'en');
+    $('btn-lang-fr').classList.toggle('active', ui.lang === 'fr');
+    ui.stencilsBuilt = false;
+    renderMaterialsPanel();
+    renderAIWorldsPanel();
+  }
+
+  // =========================================================================
+  // 5. EVENT BINDINGS
+  // =========================================================================
+
+  function bindEvents() {
+    // Clean CLOSE_STUDIO (shuts down audio & any active video recording!)
+    $('btn-back').addEventListener('click', () => {
+      if (EX.isRecording()) EX.stopVideoRec();
+      ZA.shutdown();
+      if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+      else showToast('Studio stopped cleanly');
+    });
+
+    // AI Prompt Bar
+    const runPrompt = () => {
+      const txt = $('ai-prompt-input').value.trim();
+      if (!txt) return;
+      const p = AI.parseArtPrompt(txt);
+      loadLivingWorld(p.worldId, { palette: p.palette || undefined, grav: p.grav });
+    };
+    $('btn-ai-prompt').addEventListener('click', runPrompt);
+    $('ai-prompt-input').addEventListener('keydown', e => { if (e.key === 'Enter') runPrompt(); });
+
+    // Play / Pause / Step / Undo / Redo / Clear
+    $('btn-play-pause').addEventListener('click', () => {
+      engine.isPaused = !engine.isPaused;
+      const t = SM.getT(ui.lang);
+      $('btn-play-pause').classList.toggle('active', !engine.isPaused);
+      $('btn-play-pause').innerHTML = engine.isPaused ? `▶ <span>${t.play}</span>` : `⏸ <span>${t.pause}</span>`;
+    });
+    $('btn-step').addEventListener('click', () => {
+      const prev = engine.isPaused;
+      engine.isPaused = false;
+      engine.step();
+      engine.isPaused = prev;
+    });
+    $('btn-undo').addEventListener('click', () => { if (engine.undo()) { renderer.clearTrails(); showToast('↶ Undo'); } });
+    $('btn-redo').addEventListener('click', () => { if (engine.redo()) { renderer.clearTrails(); showToast('↷ Redo'); } });
+    $('btn-clear').addEventListener('click', () => { engine.clear(); renderer.clearTrails(); engine.pushUndo(); showToast('🗑 Canvas cleared'); });
+
+    // Stencils & Full-Color Photo->Living Sand Upload
+    $('btn-stencils').addEventListener('click', openStencilsModal);
+    $('btn-stencils-close').addEventListener('click', () => $('modal-stencils').classList.add('hidden'));
+    $('modal-stencils').addEventListener('click', e => { if (e.target === $('modal-stencils')) $('modal-stencils').classList.add('hidden'); });
+
+    $('btn-photo-sand').addEventListener('click', () => $('file-photo-sand').click());
+    $('file-photo-sand').addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => bakeImageFromUrl(String(reader.result), file.name);
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+
+    // Direct 1:1 AR Wall Art Handoff (FREE!)
+    const runAR = () => {
+      try {
+        const res = EX.openARWallArt(engine, $('art-title-input').value);
+        showToast(`📱 AR 3D Wall Art Ready (${(res.size / 1024).toFixed(0)} KB)`);
+      } catch (err) {
+        showToast('❌ AR Error: ' + err.message);
       }
+    };
+    $('btn-ar-wall').addEventListener('click', runAR);
+
+    // Language
+    $('btn-lang-en').addEventListener('click', () => setLanguage('en'));
+    $('btn-lang-fr').addEventListener('click', () => setLanguage('fr'));
+
+    // Dock Tabs
+    document.querySelectorAll('.dock-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const t = tab.dataset.tab;
+        document.querySelectorAll('.dock-tab').forEach(b => b.classList.toggle('active', b === tab));
+        document.querySelectorAll('.dock-pane').forEach(p => p.classList.toggle('active', p.id === `pane-${t}`));
+      });
     });
-    btnEn.classList.remove("active"); btnFr.classList.remove("active");
-    if (currentLanguage === "en") btnEn.classList.add("active");
-    if (currentLanguage === "fr") btnFr.classList.add("active");
+
+    // Brush, Symmetry, Shapes, Laser Dir & Palette Harmonize
+    $('brush-size').addEventListener('input', e => {
+      ui.brushSize = Number(e.target.value) || 10;
+      $('val-brush-size').textContent = String(ui.brushSize);
+    });
+    $('color-picker').addEventListener('input', e => {
+      ui.customColor = e.target.value;
+      engine.autoStrata = false;
+      $('chk-auto-strata').checked = false;
+    });
+    document.querySelectorAll('.sym-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        ui.symmetry = b.dataset.sym;
+        document.querySelectorAll('.sym-btn').forEach(el => el.classList.toggle('active', el === b));
+      });
+    });
+    document.querySelectorAll('.shape-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        ui.brushShape = b.dataset.shape;
+        document.querySelectorAll('.shape-btn').forEach(el => el.classList.toggle('active', el === b));
+      });
+    });
+    document.querySelectorAll('.ldir-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        ui.laserDir = Number(b.dataset.ldir) || 0;
+        document.querySelectorAll('.ldir-btn').forEach(el => el.classList.toggle('active', el === b));
+      });
+    });
+    $('chk-auto-strata').addEventListener('change', e => { engine.autoStrata = e.target.checked; });
+    $('btn-harmonize').addEventListener('click', () => {
+      AI.harmonizeCanvasPalette(engine, engine.paletteId);
+      showToast('✨ Artwork harmonized to palette!');
+    });
+
+    // Visual Shaders & Backdrops
+    $('btn-fx-3d').addEventListener('click', e => { renderer.fx3d = !renderer.fx3d; e.currentTarget.classList.toggle('active', renderer.fx3d); });
+    $('btn-fx-bloom').addEventListener('click', e => { renderer.fxBloom = !renderer.fxBloom; e.currentTarget.classList.toggle('active', renderer.fxBloom); });
+    $('btn-fx-trails').addEventListener('click', e => {
+      renderer.fxTrails = !renderer.fxTrails;
+      if (!renderer.fxTrails) renderer.clearTrails();
+      e.currentTarget.classList.toggle('active', renderer.fxTrails);
+    });
+    $('sel-backdrop').addEventListener('change', e => { renderer.backdrop = e.target.value; });
+
+    // Physics Sliders
+    $('slider-grav').addEventListener('input', e => {
+      engine.gravY = Number(e.target.value);
+      $('val-grav').textContent = engine.gravY === 0 ? '0G' : String(engine.gravY);
+    });
+    $('slider-wind').addEventListener('input', e => {
+      engine.windX = Number(e.target.value);
+      $('val-wind').textContent = String(engine.windX);
+    });
+    $('slider-speed').addEventListener('input', e => {
+      engine.timeScale = Number(e.target.value) || 1;
+      $('val-speed').textContent = `${engine.timeScale}×`;
+    });
+
+    // Zen Audio Controls
+    $('btn-audio-toggle').addEventListener('click', e => {
+      const on = ZA.setEnabled(!ZA.isEnabled());
+      e.currentTarget.classList.toggle('active', on);
+      e.currentTarget.innerHTML = `${on ? '🔊' : '🔇'} <span>${SM.getT(ui.lang).audioToggle}</span>`;
+    });
+    $('sel-scale').addEventListener('change', e => ZA.setScale(e.target.value));
+    $('slider-vol').addEventListener('input', e => {
+      ZA.setVolume(Number(e.target.value) / 100);
+      $('val-vol').textContent = `${e.target.value}%`;
+    });
+
+    // FREE Save / Load .zsand
+    const saveZsand = () => {
+      const res = EX.exportProjectFree(engine, { fx3d: renderer.fx3d, fxBloom: renderer.fxBloom, fxTrails: renderer.fxTrails, backdrop: renderer.backdrop }, $('art-title-input').value);
+      showToast(`💾 Saved ${res.filename} (${(res.size / 1024).toFixed(1)} KB)`);
+      return res;
+    };
+    $('btn-save-zsand').addEventListener('click', saveZsand);
+    $('btn-load-zsand').addEventListener('click', () => $('file-load-zsand').click());
+    $('file-load-zsand').addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result));
+          if (engine.deserializeRLE(data)) {
+            if (data.fx) {
+              if (data.fx.backdrop) renderer.backdrop = data.fx.backdrop;
+              if (data.fx.fx3d !== undefined) renderer.fx3d = !!data.fx.fx3d;
+              if (data.fx.fxBloom !== undefined) renderer.fxBloom = !!data.fx.fxBloom;
+              if (data.fx.fxTrails !== undefined) renderer.fxTrails = !!data.fx.fxTrails;
+            }
+            if (data.title) $('art-title-input').value = data.title;
+            renderer.clearTrails();
+            syncControlsFromEngine();
+            showToast(`📂 Loaded ${file.name}`);
+          } else showToast('❌ Invalid .zsand file');
+        } catch (_) { showToast('❌ Parse error'); }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
+    // Export Modal & All 7 Cards
+    $('btn-export-open').addEventListener('click', () => { setExportStatus(''); $('modal-export').classList.remove('hidden'); });
+    $('btn-export-close').addEventListener('click', () => $('modal-export').classList.add('hidden'));
+    $('modal-export').addEventListener('click', e => { if (e.target === $('modal-export')) $('modal-export').classList.add('hidden'); });
+
+    $('exp-btn-png4k').addEventListener('click', () => requestExportPermission('png', async () => {
+      renderer.render(engine, { clean: true });
+      const res = await EX.exportFramed4KPNG($('sand-canvas'), $('art-title-input').value, $('chk-gallery-frame').checked);
+      setExportStatus(`✅ Exported 4K Fine-Art Print: ${res.filename} (${(res.size / 1024).toFixed(0)} KB)`);
+    }));
+
+    const stopRecUI = () => {
+      clearInterval(ui.recTimerId);
+      ui.recTimerId = null;
+      $('rec-badge').classList.add('hidden');
+    };
+    $('btn-stop-rec-pill').addEventListener('click', () => EX.stopVideoRec());
+
+    $('exp-btn-video').addEventListener('click', () => {
+      if (EX.isRecording()) { EX.stopVideoRec(); return; }
+      requestExportPermission('mp4', () => {
+        $('modal-export').classList.add('hidden');
+        const info = EX.startVideoRec($('sand-canvas'), $('art-title-input').value, res => {
+          stopRecUI();
+          if (res) showToast(`🎬 Saved ${res.filename} (${(res.size / 1024).toFixed(0)} KB)`, 3500);
+        });
+        if (info) {
+          ui.recStartMs = Date.now();
+          $('rec-badge').classList.remove('hidden');
+          ui.recTimerId = setInterval(() => {
+            const sec = Math.floor((Date.now() - ui.recStartMs) / 1000);
+            $('rec-txt').textContent = `REC ${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+          }, 400);
+          showToast(`🔴 Recording Living Art (.${info.ext.toUpperCase()})...`);
+        }
+      });
+    });
+
+    $('exp-btn-html').addEventListener('click', () => requestExportPermission('html', () => {
+      const res = EX.exportInteractiveHTML(engine, $('art-title-input').value);
+      setExportStatus(`✅ Exported Interactive Web Art: ${res.filename} (${(res.size / 1024).toFixed(1)} KB)`);
+    }));
+
+    $('exp-btn-stl').addEventListener('click', () => requestExportPermission('stl', () => {
+      const res = EX.exportReliefSTL(engine, $('art-title-input').value);
+      setExportStatus(`✅ Exported Watertight 3D Sand-Relief STL: ${res.filename} (${(res.size / 1024).toFixed(0)} KB)`);
+    }));
+
+    $('exp-btn-glb').addEventListener('click', () => requestExportPermission('glb', () => {
+      const res = EX.exportReliefGLB(engine, $('art-title-input').value);
+      setExportStatus(`✅ Exported Colored 3D Relief GLB: ${res.filename} (${(res.size / 1024).toFixed(0)} KB)`);
+    }));
+
+    $('exp-btn-ar').addEventListener('click', () => {
+      $('modal-export').classList.add('hidden');
+      runAR();
+    });
+
+    $('exp-btn-zsand').addEventListener('click', () => {
+      const res = saveZsand();
+      setExportStatus(`✅ Saved FREE Backup: ${res.filename} (${(res.size / 1024).toFixed(1)} KB)`);
+    });
+
+    // Keyboard shortcuts (Space Pause, Ctrl+Z/Y Undo/Redo, Escape Close)
+    window.addEventListener('keydown', e => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+      if (e.code === 'Space') { e.preventDefault(); $('btn-play-pause').click(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); $('btn-undo').click(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); $('btn-redo').click(); }
+      else if (e.key === 'Escape') { $('modal-export').classList.add('hidden'); $('modal-stencils').classList.add('hidden'); }
+    });
   }
 
-  btnEn.onclick = () => { currentLanguage = 'en'; applyLanguage(); };
-  btnFr.onclick = () => { currentLanguage = 'fr'; applyLanguage(); };
-  applyLanguage();
+  // =========================================================================
+  // 6. HOST NEXUS CONTRACTS (getAppState, getAppTags, sp_remix_state)
+  // =========================================================================
 
-});
+  window.getAppState = () => ({
+    ...engine.serializeRLE(),
+    title: $('art-title-input').value,
+    fx: { fx3d: renderer.fx3d, fxBloom: renderer.fxBloom, fxTrails: renderer.fxTrails, backdrop: renderer.backdrop }
+  });
+
+  window.getAppTags = () => ['zen-sandscape', 'generative-art', ui.activeWorld, engine.paletteId];
+
+  // =========================================================================
+  // 7. 60 FPS ANIMATION LOOP & BOOT
+  // =========================================================================
+
+  let frameCounter = 0;
+  function loop() {
+    requestAnimationFrame(loop);
+    if (document.hidden) return;
+
+    // Hold-to-Pour continuous stream while pointer is held!
+    if (ui.isPointerDown) {
+      engine.drawStroke(ui.lastX, ui.lastY, ui.lastX, ui.lastY, currentStrokeOpts());
+    }
+
+    if (!engine.isPaused) {
+      const steps = Math.max(1, Math.min(3, engine.timeScale | 0));
+      for (let s = 0; s < steps; s++) engine.step();
+    }
+
+    renderer.render(engine, {
+      clean: EX.isRecording(),
+      symmetry: ui.symmetry,
+      cursor: ui.cursor
+    });
+
+    if ((++frameCounter & 15) === 0) {
+      $('stat-particles').textContent = `${engine.particlesCount.toLocaleString('en-US')} px`;
+    }
+  }
+
+  function boot() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('lang') === 'fr') ui.lang = 'fr';
+
+    bindCanvasEvents();
+    bindEvents();
+    setLanguage(ui.lang);
+
+    let restored = false;
+    try {
+      const raw = localStorage.getItem('sp_remix_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.format === 'studios-pro-zsand-v4' && engine.deserializeRLE(parsed)) {
+          restored = true;
+          localStorage.removeItem('sp_remix_state');
+        }
+      }
+    } catch (_) {}
+
+    if (!restored) loadLivingWorld('kyoto');
+
+    if (hostChannel && window.parent !== window) {
+      try { hostChannel.postMessage({ type: 'GET_USER_STATUS' }); } catch (_) {}
+    }
+
+    loop();
+  }
+
+  boot();
+})();
