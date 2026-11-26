@@ -611,15 +611,41 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 }
 
 async function openARViewer(scaleMode, project) {
-  if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+  if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function') {
     throw new Error('Studios-Pro AR Bridge not loaded');
   }
   const scale = scaleMode === 'real' ? 1.0 : 0.02; // 1:1 meters OR 1:50 tabletop maquette
   const clean = cloneCleanBuilding(scale, false);
   if (!clean) throw new Error('3D model not ready');
-  await window.StudiosProAR.exportSceneAndOpenAR(clean, {
-    title: `Architect Pro 2 (${scaleMode === 'real' ? '1:1' : '1:50'})`,
-    placement: 'floor'
+  const box = new THREE.Box3().setFromObject(clean);
+  const sz = new THREE.Vector3();
+  box.getSize(sz);
+  const dimsMm = {
+    x: Math.round(sz.x * 1000 * 10) / 10,
+    y: Math.round(sz.y * 1000 * 10) / 10,
+    z: Math.round(sz.z * 1000 * 10) / 10
+  };
+  return new Promise((resolve, reject) => {
+    const exporter = new GLTFExporter();
+    exporter.parse(
+      clean,
+      res => {
+        const ok = window.StudiosProAR.sendModel({
+          modelData: res,
+          extension: 'glb',
+          isBinary: true,
+          name: `${slugName(project)}_AR_${scaleMode === 'real' ? '1to1' : '1to50'}.glb`,
+          placement: 'floor',
+          dimensionsMm: dimsMm,
+          autoScale: scaleMode === 'real' ? 'fixed' : 'auto',
+          sourceStudio: 'architect-pro-2'
+        });
+        if (!ok) return reject(new Error('AR transfer failed'));
+        resolve(true);
+      },
+      err => reject(err),
+      { binary: true }
+    );
   });
 }
 

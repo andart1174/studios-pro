@@ -591,15 +591,35 @@ class SP2Viewport {
   }
 
   async sendToWebAR(name) {
-    if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+    if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function') {
       throw new Error('AR Bridge unavailable');
     }
     const meterGroup = this._buildMeterGroup();
+    const box = new THREE.Box3().setFromObject(meterGroup);
+    const sz = new THREE.Vector3();
+    box.getSize(sz);
+    const dimsMm = { x: Math.round(sz.x * 1000 * 10) / 10, y: Math.round(sz.y * 1000 * 10) / 10, z: Math.round(sz.z * 1000 * 10) / 10 };
     try {
-      await window.StudiosProAR.exportSceneAndOpenAR(meterGroup, {
-        name: name || 'StudioPro2_Creation',
-        placement: 'floor',
-        sourceStudio: 'studio-pro-2'
+      const exporter = new GLTFExporter();
+      await new Promise((resolve, reject) => {
+        exporter.parse(
+          meterGroup,
+          glb => {
+            window.StudiosProAR.sendModel({
+              modelData: glb,
+              extension: 'glb',
+              isBinary: true,
+              name: (name || 'StudioPro2_Creation').replace(/\.glb$/i, '') + '.glb',
+              placement: 'floor',
+              dimensionsMm: dimsMm,
+              autoScale: 'auto',
+              sourceStudio: 'studio-pro-2'
+            });
+            resolve(true);
+          },
+          err => reject(err),
+          { binary: true }
+        );
       });
     } finally {
       this._disposeGroup(meterGroup);

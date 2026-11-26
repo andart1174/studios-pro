@@ -255,7 +255,7 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 
     // 11. FREE View in AR (FIXED 100x Scale Bug! Supports 1:50 Tabletop Maquette OR 1:1 Real Meters!)
     async previewAR(mode) {
-      if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+      if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function' || !window.THREE_ARCH) {
         window.showToast && window.showToast('AR Bridge unavailable in standalone mode', 'Pont RA indisponible hors hub');
         return;
       }
@@ -267,11 +267,32 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
         isMaquette ? 'Launching AR Tabletop Maquette (1:50)...' : 'Launching AR Real Scale (1:1 m)...',
         isMaquette ? 'Lancement RA Maquette 1:50...' : 'Lancement RA Échelle 1:1 m...'
       );
-      await window.StudiosProAR.exportSceneAndOpenAR(
-        cleanGroup,
-        isMaquette ? 'architect_maquette_1to50.glb' : 'architect_real_1to1.glb',
-        { placement: 'floor', sourceStudio: 'architect-pro-1' }
-      );
+      const { THREE, GLTFExporter } = window.THREE_ARCH;
+      const box = new THREE.Box3().setFromObject(cleanGroup);
+      const sz = new THREE.Vector3();
+      box.getSize(sz);
+      const dimsMm = { x: Math.round(sz.x * 1000 * 10) / 10, y: Math.round(sz.y * 1000 * 10) / 10, z: Math.round(sz.z * 1000 * 10) / 10 };
+      const exporter = new GLTFExporter();
+      await new Promise((resolve, reject) => {
+        exporter.parse(
+          cleanGroup,
+          res => {
+            window.StudiosProAR.sendModel({
+              modelData: res,
+              extension: 'glb',
+              isBinary: true,
+              name: isMaquette ? 'architect_maquette_1to50.glb' : 'architect_real_1to1.glb',
+              placement: 'floor',
+              dimensionsMm: dimsMm,
+              autoScale: isMaquette ? 'auto' : 'fixed',
+              sourceStudio: 'architect-pro-1'
+            });
+            resolve(true);
+          },
+          err => reject(err),
+          { binary: true }
+        );
+      });
     }
   };
 })();

@@ -607,15 +607,35 @@ class MechViewport {
   }
 
   async sendToWebAR(partName) {
-    if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+    if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function') {
       throw new Error('AR Bridge unavailable');
     }
     const meterGroup = this._buildMeterGroup();
+    const box = new THREE.Box3().setFromObject(meterGroup);
+    const sz = new THREE.Vector3();
+    box.getSize(sz);
+    const dimsMm = { x: Math.round(sz.x * 1000 * 10) / 10, y: Math.round(sz.y * 1000 * 10) / 10, z: Math.round(sz.z * 1000 * 10) / 10 };
     try {
-      await window.StudiosProAR.exportSceneAndOpenAR(meterGroup, {
-        name: partName || 'MechGenPro_Part',
-        placement: 'floor',
-        sourceStudio: 'mech-gen-pro'
+      const exporter = new GLTFExporter();
+      await new Promise((resolve, reject) => {
+        exporter.parse(
+          meterGroup,
+          glb => {
+            window.StudiosProAR.sendModel({
+              modelData: glb,
+              extension: 'glb',
+              isBinary: true,
+              name: (partName || 'MechGenPro_Part').replace(/\.glb$/i, '') + '.glb',
+              placement: 'floor',
+              dimensionsMm: dimsMm,
+              autoScale: 'auto',
+              sourceStudio: 'mech-gen-pro'
+            });
+            resolve(true);
+          },
+          err => reject(err),
+          { binary: true }
+        );
       });
     } finally {
       this._disposeGroup(meterGroup);

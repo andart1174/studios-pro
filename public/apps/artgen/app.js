@@ -1101,6 +1101,7 @@ function bindEvents() {
     setTimeout(() => window.Art3DExport.open3DStudio($('viewport-3d'), _mainCv), 40);
   });
   $('btn-ar-quick').addEventListener('click', async () => {
+    toast(S.lang === 'fr' ? '📱 Préparation du relief 3D pour AR...' : '📱 Preparing 3D sculpture for AR...');
     try { await window.Art3DExport.openARRelief(_mainCv); }
     catch (err) { toast('AR error: ' + err.message); }
   });
@@ -1162,6 +1163,7 @@ function bindEvents() {
     .forEach(id => $(id).addEventListener('change', refresh3D));
 
   $('btn-3d-ar').addEventListener('click', async () => {
+    toast(S.lang === 'fr' ? '📱 Ouverture dans AR Viewer...' : '📱 Opening sculpture in AR Viewer...');
     try { await window.Art3DExport.openARRelief(_mainCv); } catch (err) { toast('AR error: ' + err.message); }
   });
   $('btn-3d-stl').addEventListener('click', () => requestExport('stl', () => { window.Art3DExport.exportSTL(_mainCv); toast('🧊 Watertight Binary .STL exported!'); }));

@@ -369,20 +369,80 @@ function exportDepthMapPNG(canvas, opts) {
 }
 
 async function openARRelief(canvas, opts) {
-  if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+  if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function') {
     throw new Error('Studios-Pro AR Bridge not loaded');
   }
-  // Build clean 0.45m gallery wall sculpture in meters (with real normals & linear vertex colors!)
-  const mesh = buildExportMesh(canvas, { ...(opts || _reliefOpts), widthMm: 450, resolution: 120 }, true);
+  const merged = { ...(opts || _reliefOpts), widthMm: 450, resolution: 128 };
+  const geo = buildWatertightReliefGeometry(canvas, merged);
+  geo.scale(0.001, 0.001, 0.001); // exact mm -> meters (0.45m gallery wall plaque!)
+
+  // Downscale painting texture to max 1024px so GLB embeds sharp artwork fast for mobile AR
+  let arTex = null;
+  if (!merged.finish || merged.finish === 'color') {
+    const maxTex = 1024;
+    const sc = Math.min(1, maxTex / Math.max(canvas.width, canvas.height));
+    const tc = document.createElement('canvas');
+    tc.width = Math.max(64, Math.round(canvas.width * sc));
+    tc.height = Math.max(64, Math.round(canvas.height * sc));
+    tc.getContext('2d').drawImage(canvas, 0, 0, tc.width, tc.height);
+    arTex = new THREE.CanvasTexture(tc);
+    arTex.colorSpace = THREE.SRGBColorSpace;
+  }
+
+  const mat = makeReliefMaterial(merged.finish || 'color', arTex);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'ArtGen_Relief_Sculpture';
+
   const grp = new THREE.Group();
   grp.name = 'ArtGen_AR_Sculpture';
   grp.add(mesh);
-  await window.StudiosProAR.exportSceneAndOpenAR(grp, {
-    title: 'ArtGen Studio 3D Relief',
-    placement: 'wall'
+  grp.updateMatrixWorld(true);
+
+  // Center on X/Z and rest bottom cleanly at Y = 0
+  const box = new THREE.Box3().setFromObject(grp);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  mesh.position.set(-center.x, -box.min.y, -center.z);
+  grp.updateMatrixWorld(true);
+
+  const dimsMm = {
+    x: Math.round(size.x * 1000 * 10) / 10,
+    y: Math.round(size.y * 1000 * 10) / 10,
+    z: Math.round(size.z * 1000 * 10) / 10
+  };
+
+  return new Promise((resolve, reject) => {
+    const exporter = new GLTFExporter();
+    exporter.parse(
+      grp,
+      res => {
+        geo.dispose();
+        mat.dispose();
+        if (arTex) arTex.dispose();
+        const ok = window.StudiosProAR.sendModel({
+          modelData: res,
+          extension: 'glb',
+          isBinary: true,
+          name: `ArtGen_Relief_${dateStamp()}.glb`,
+          placement: 'wall',
+          dimensionsMm: dimsMm,
+          autoScale: 'auto',
+          sourceStudio: 'artgen'
+        });
+        if (!ok) return reject(new Error('AR transfer failed'));
+        resolve(true);
+      },
+      err => {
+        geo.dispose();
+        mat.dispose();
+        if (arTex) arTex.dispose();
+        reject(err);
+      },
+      { binary: true }
+    );
   });
-  mesh.geometry.dispose();
-  mesh.material.dispose();
 }
 
 // =========================================================================

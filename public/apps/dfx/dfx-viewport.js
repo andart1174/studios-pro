@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 const MATERIALS_3D = {
   aluminum: { color: 0xd0d9e4, metalness: 0.86, roughness: 0.26, clearcoat: 0.15 },
@@ -1133,7 +1134,7 @@ class DfxViewportController {
    * Launch untouched AR Viewer bridge at exact 1:1 physical meters (mm * 0.001)!
    */
   async launchAR(filename) {
-    if (!window.StudiosProAR || typeof window.StudiosProAR.exportSceneAndOpenAR !== 'function') {
+    if (!window.StudiosProAR || typeof window.StudiosProAR.sendModel !== 'function') {
       throw new Error('AR Bridge not available');
     }
     this._ensureThreeInit();
@@ -1141,7 +1142,31 @@ class DfxViewportController {
     const arClone = this.extrudeGroup.clone(true);
     arClone.scale.setScalar(0.001); // exact mm -> meters 1:1 real-world AR scale
     arClone.updateMatrixWorld(true);
-    await window.StudiosProAR.exportSceneAndOpenAR(arClone, filename || 'dfx_studio_part.glb', { placement: 'floor' });
+    const box = new THREE.Box3().setFromObject(arClone);
+    const sz = new THREE.Vector3();
+    box.getSize(sz);
+    const dimsMm = { x: Math.round(sz.x * 1000 * 10) / 10, y: Math.round(sz.y * 1000 * 10) / 10, z: Math.round(sz.z * 1000 * 10) / 10 };
+    const exporter = new GLTFExporter();
+    await new Promise((resolve, reject) => {
+      exporter.parse(
+        arClone,
+        res => {
+          window.StudiosProAR.sendModel({
+            modelData: res,
+            extension: 'glb',
+            isBinary: true,
+            name: filename || 'dfx_studio_part.glb',
+            placement: 'floor',
+            dimensionsMm: dimsMm,
+            autoScale: 'auto',
+            sourceStudio: 'dfx'
+          });
+          resolve(true);
+        },
+        err => reject(err),
+        { binary: true }
+      );
+    });
   }
 
   capturePNGDataURL() {
