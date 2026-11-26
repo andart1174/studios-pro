@@ -1,1515 +1,582 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studio DFX | Studios-Pro</title>
-  <script>document.title = "Studio DFX | Studios-Pro";</script>
-  <script type="module" crossorigin src="./assets/index-BubpDXVr.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Chp1DZXB.css">
-</head>
-
-<body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  <title>DFX Studio Pro — Photo to DXF Vectorizer, 2D CAD Viewer, Auto-Repair &amp; Laser/CNC | Studios-Pro</title>
+  <meta name="description" content="Professional browser-based Photo-to-DXF vectorizer, native AutoCAD DXF/SVG viewer, True Single-Line Laser Centerline tracer, CAD Doctor OVERKILL &amp; Contour Healer, Kerf Offset, 3D Extrude STL &amp; GRBL G-Code generator." />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <link rel="canonical" href="https://studios-pro.com/apps/dfx/" />
+  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="DFX Studio Pro — Photo-to-DXF, 2D CAD Viewer &amp; Laser/CNC Suite" />
+  <meta property="og:description" content="Convert photos, sketches &amp; logos into exact 1:1 mm DXF/SVG/G-Code or inspect &amp; repair CAD DXF blueprints with OVERKILL, Kerf Offset &amp; 3D Extrude STL." />
+  <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
     }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
-  <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-    <span>Retour / Back</span>
-  </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
-            }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
-
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
-            } else {
-              output = 'solid exported\n';
-            }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let singleExportExpiresAt = 0;
-      let pendingTarget = null;
-      let pendingAnchor = null;
-      let isPremiumUser = false;
-      window.isExportAllowed = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'dfx' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'dfx' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          window.isExportAllowed = true;
-          singleExportExpiresAt = Date.now() + 8000;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            const t = pendingTarget;
-            pendingTarget = null;
-            t.click();
-          } else if (pendingAnchor) {
-            const a = pendingAnchor;
-            pendingAnchor = null;
-            a.dataset.bypassed = 'true';
-            a.click();
-            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-          if (window.self === window.top) {
-            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-            if (used < 5) {
-              used++;
-              localStorage.setItem('freeExportsUsed', String(used));
-              isAllowed = true;
-              window.isExportAllowed = true;
-              singleExportExpiresAt = Date.now() + 8000;
-              return;
-            }
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            pendingTarget = target;
-            if (localModal) localModal.style.display = 'flex';
-            return;
-          }
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-            pendingAnchor = this;
-            if (window.self === window.top) {
-              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-              if (used < 5) {
-                used++;
-                localStorage.setItem('freeExportsUsed', String(used));
-                isAllowed = true;
-                window.isExportAllowed = true;
-                singleExportExpiresAt = Date.now() + 8000;
-              } else {
-                if (localModal) localModal.style.display = 'flex';
-                return;
-              }
-            } else {
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-              return;
-            }
-          }
-          if (isAllowed) {
-            isAllowed = false;
-            window.isExportAllowed = false;
-            channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-              pendingAnchor = this;
-              if (window.self === window.top) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-                if (used < 5) {
-                  used++;
-                  localStorage.setItem('freeExportsUsed', String(used));
-                  isAllowed = true;
-                  window.isExportAllowed = true;
-                  singleExportExpiresAt = Date.now() + 8000;
-                } else {
-                  if (localModal) localModal.style.display = 'flex';
-                  return false;
-                }
-              } else {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-                return false;
-              }
-            }
-            if (isAllowed) {
-              isAllowed = false;
-              window.isExportAllowed = false;
-              channel.postMessage({ type: 'EXPORT_COMPLETED' });
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-                pendingTarget = htmlBtn;
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'dfx' } });
-                return;
-              }
-              
-              if ('dfx' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
-            };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-          }
-        }
-
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
+  }
   </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-  <!-- Back Button -->
-  <style>
-    .back-to-studios {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 9999;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      font-family: sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
+</head>
+<body data-lang="en" data-mobile-pane="viewport">
 
-    .back-to-studios:hover {
-      background: #10b981;
-      transform: translateY(-2px);
-    }
-
-    /* Modal Local Styles */
-    #local-payment-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
-
-    .local-modal-content {
-      background: #0f172a;
-      padding: 40px;
-      border-radius: 40px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .local-modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    .local-modal-content p {
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 25px;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .pay-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .premium-btn {
-      background: #d97706;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .pay-btn:hover,
-    .premium-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
-
-    .close-local-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 20px;
-    }
-  </style>
-  
-
-  <div id="local-payment-modal">
-    <div class="local-modal-content">
-      <button class="close-local-modal" id="modal-close-btn">&times;</button>
-      <div style="font-size: 40px; margin-bottom: 20px;">💳</div>
-      <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</p>
-      <div class="btn-group">
-        <button class="premium-btn" id="pay-premium-btn">Devenir Premium (10$/mois)</button>
+  <!-- INTEGRATED ZERO-OVERLAP CAD HEADER -->
+  <header class="topbar">
+    <div class="header-left">
+      <button id="back-btn" class="btn-back" type="button" title="Back to Studios-Pro">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Studios</span>
+      </button>
+      <div class="brand">
+        <div class="brand-badge">DX</div>
+        <div style="min-width:0;overflow:hidden;">
+          <div class="brand-title">DFX Studio Pro</div>
+          <div class="brand-sub" data-en>Photo→DXF · CAD Viewer · Auto-Repair · Laser/CNC · 3D Extrude</div>
+          <div class="brand-sub" data-fr>Photo→DXF · Visionneuse CAO · Réparation · Laser/CNC · Extrusion 3D</div>
+        </div>
       </div>
+    </div>
+
+    <div class="header-center">
+      <div class="view-switcher" role="tablist">
+        <button type="button" class="view-tab active" data-view="split" title="Before/After Split Compare">◧ <span data-en>Split</span><span data-fr>Comparatif</span></button>
+        <button type="button" class="view-tab" data-view="vector" title="Pure CAD Vector Blueprint">✦ <span data-en>Vector CAD</span><span data-fr>Vecteur CAO</span></button>
+        <button type="button" class="view-tab" data-view="raster" title="Processed Raster / Laser Dither Preview">▦ <span data-en>Raster</span><span data-fr>Trame</span></button>
+        <button type="button" class="view-tab" data-view="3d" title="Live 2D to 3D Extrusion Preview">🧊 <span data-en>3D Extrude</span><span data-fr>Extrusion 3D</span></button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button type="button" class="h-btn primary" id="btnImportFile" title="Open PNG, JPG, WEBP, DXF, SVG or .spdfx">
+        📂 <span data-en>Import</span><span data-fr>Importer</span>
+      </button>
+      <input type="file" id="fileInput" accept="image/*,.dxf,.svg,.spdfx,.json" style="display:none" />
+
+      <select id="sampleSelect" class="sample-select" title="Load Built-in Pro Sample">
+        <option value="flange">⚙️ Flange 120mm (Photo)</option>
+        <option value="wolf">🏔️ Alpine Medallion</option>
+        <option value="sketch">📝 Paper Sketch (Sauvola)</option>
+        <option value="circuit">🔥 Single-Line Circuit</option>
+        <option value="colorlogo">🎨 Multi-Color Crest</option>
+        <option value="dxf_nema17">📐 NEMA-17 Plate (.DXF)</option>
+        <option value="dxf_doctor">🩺 CAD Doctor Demo (.DXF)</option>
+      </select>
+
+      <button type="button" class="h-btn icon-only" id="btnUndo" title="Undo (Ctrl+Z)" disabled>↶</button>
+      <button type="button" class="h-btn icon-only" id="btnRedo" title="Redo (Ctrl+Y)" disabled>↷</button>
+
+      <button type="button" class="h-btn ar" id="btnViewAR" title="Preview 1:1m in Augmented Reality (FREE)">
+        📱 <span data-en>View AR</span><span data-fr>Voir RA</span>
+      </button>
+
+      <div class="lang-pill">
+        <button type="button" class="lang-btn active" data-set-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-set-lang="fr">FR</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN 3-PANE WORKSPACE -->
+  <div class="workspace">
+
+    <!-- LEFT SIDEBAR: IMAGE/TRACE & CAD DOCTOR/LAYERS -->
+    <aside class="sidebar sidebar-left">
+      <div class="sidebar-tabs">
+        <button type="button" class="s-tab active" data-left-tab="trace">
+          🎨 <span data-en>Image &amp; Trace</span><span data-fr>Image &amp; Vector</span>
+        </button>
+        <button type="button" class="s-tab" data-left-tab="cad">
+          🩺 <span data-en>CAD &amp; Layers</span><span data-fr>CAO &amp; Calques</span>
+        </button>
+      </div>
+
+      <!-- LEFT TAB 1: IMAGE PREPROCESSING & VECTORIZER -->
+      <div class="sidebar-scroll" id="paneTrace">
+        <!-- 6 Working Smart Presets -->
+        <div class="card accent-emerald">
+          <div class="card-head">
+            <span class="card-title">⚡ <span data-en>Smart Presets</span><span data-fr>Préréglages Intelligents</span></span>
+          </div>
+          <div class="preset-grid">
+            <button type="button" class="preset-btn active" data-preset="logo">🖼️ <span data-en>Logo Cut</span><span data-fr>Logo Découpe</span></button>
+            <button type="button" class="preset-btn" data-preset="photo">📸 <span data-en>Photo Dither</span><span data-fr>Photo Gravure</span></button>
+            <button type="button" class="preset-btn" data-preset="laser">🔥 <span data-en>Single-Line</span><span data-fr>Ligne Unique</span></button>
+            <button type="button" class="preset-btn" data-preset="sketch">📝 <span data-en>Paper Sketch</span><span data-fr>Croquis Papier</span></button>
+            <button type="button" class="preset-btn" data-preset="edges">📐 <span data-en>Canny Edges</span><span data-fr>Contours Canny</span></button>
+            <button type="button" class="preset-btn" data-preset="multicolor">🎨 <span data-en>Multi-Color</span><span data-fr>Multi-Couleur</span></button>
+          </div>
+        </div>
+
+        <!-- TRUE SINGLE-LINE LASER MODE -->
+        <div class="laser-banner" id="laserModeCard" role="button" tabindex="0">
+          <div>
+            <div class="laser-title">🔥 <span data-en>LASER MODE</span><span data-fr>MODE LASER</span> <span id="laserStateLbl">OFF</span></div>
+            <div class="laser-sub" data-en>Topological Single-Line Centerline (Zero Double-Cut!)</div>
+            <div class="laser-sub" data-fr>Axe Médian Ligne Unique Topologique (Zéro Double-Passe!)</div>
+          </div>
+          <input type="checkbox" id="chkLaserMode" style="width:18px;height:18px;accent-color:#f97316;pointer-events:none" />
+        </div>
+
+        <!-- MODE & MULTI-LAYER -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🔬 <span data-en>Extraction Mode</span><span data-fr>Mode d'Extraction</span></span>
+          </div>
+          <div class="ctrl">
+            <select id="selDitherMode" class="field-select">
+              <option value="Threshold (B&W)">Threshold (B&amp;W Cut)</option>
+              <option value="Adaptive Paper Scan (Sauvola)">Adaptive Paper Scan (Sauvola)</option>
+              <option value="Edge Detection">Edge Detection (True Canny)</option>
+              <option value="Grayscale">Grayscale (Continuous)</option>
+              <option value="Floyd-Steinberg">Floyd-Steinberg (Laser Photo)</option>
+              <option value="Atkinson (Sharper)">Atkinson (Sharper Halftone)</option>
+              <option value="Stucki">Stucki Diffusion</option>
+              <option value="Sierra-Lite">Sierra-Lite Diffusion</option>
+              <option value="Jarvis-Judice-Ninke">Jarvis-Judice-Ninke</option>
+              <option value="Ordered Bayer 4x4">Ordered Bayer 4×4</option>
+            </select>
+          </div>
+          <label class="check-row">
+            <span class="ctrl-label" data-en>Auto Threshold (Otsu)</span>
+            <span class="ctrl-label" data-fr>Seuil Auto (Otsu)</span>
+            <input type="checkbox" id="chkAutoThresh" checked />
+          </label>
+          <div class="ctrl" id="manualThreshWrap">
+            <div class="ctrl-row">
+              <span class="ctrl-label" data-en>Threshold</span><span class="ctrl-label" data-fr>Seuil</span>
+              <span class="ctrl-val" id="valThreshold">128</span>
+            </div>
+            <input type="range" id="rngThreshold" min="10" max="245" value="128" />
+          </div>
+          <label class="check-row">
+            <span class="ctrl-label" data-en>Multi-Layer Color DXF (K-Means)</span>
+            <span class="ctrl-label" data-fr>DXF Multi-Couleurs (K-Means)</span>
+            <input type="checkbox" id="chkMultiColor" />
+          </label>
+          <div class="ctrl" id="multiColorWrap" style="display:none">
+            <div class="ctrl-row">
+              <span class="ctrl-label" data-en>Color Layers</span><span class="ctrl-label" data-fr>Calques Couleur</span>
+              <span class="ctrl-val" id="valNumColors">4</span>
+            </div>
+            <input type="range" id="rngNumColors" min="2" max="8" step="1" value="4" />
+          </div>
+        </div>
+
+        <!-- IMAGE PREPROCESSING -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🎛️ <span data-en>Preprocessing</span><span data-fr>Prétraitement</span></span>
+            <button type="button" class="btn btn-emerald" id="btnAutoEnhance" style="height:24px;padding:0 8px;font-size:10.5px">
+              ✨ <span data-en>Auto-Enhance</span><span data-fr>Auto-Optimiser</span>
+            </button>
+          </div>
+
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Brightness</span><span class="ctrl-label" data-fr>Luminosité</span><span class="ctrl-val" id="valBrightness">0</span></div>
+            <input type="range" id="rngBrightness" min="-100" max="100" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Contrast</span><span class="ctrl-label" data-fr>Contraste</span><span class="ctrl-val" id="valContrast">0</span></div>
+            <input type="range" id="rngContrast" min="-100" max="100" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label">Gamma</span><span class="ctrl-val" id="valGamma">1.0</span></div>
+            <input type="range" id="rngGamma" min="0.2" max="3.0" step="0.1" value="1.0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Line Strength</span><span class="ctrl-label" data-fr>Force des Traits</span><span class="ctrl-val" id="valLineStrength">0</span></div>
+            <input type="range" id="rngLineStrength" min="0" max="100" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Sharpen</span><span class="ctrl-label" data-fr>Netteté</span><span class="ctrl-val" id="valSharpen">0</span></div>
+            <input type="range" id="rngSharpen" min="0" max="100" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Denoise</span><span class="ctrl-label" data-fr>Débruitage</span><span class="ctrl-val" id="valDenoise">0</span></div>
+            <input type="range" id="rngDenoise" min="0" max="100" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Surface Smoothing</span><span class="ctrl-label" data-fr>Lissage Surface</span><span class="ctrl-val" id="valSurfaceSmooth">0</span></div>
+            <input type="range" id="rngSurfaceSmooth" min="0" max="100" value="0" />
+          </div>
+          <label class="check-row">
+            <span class="ctrl-label" data-en>Invert Colors</span><span class="ctrl-label" data-fr>Inverser les Couleurs</span>
+            <input type="checkbox" id="chkInvert" />
+          </label>
+        </div>
+
+        <!-- ULTIMATE QUALITY FILTERS -->
+        <div class="card accent-orange">
+          <div class="card-head">
+            <span class="card-title orange">⚡ <span data-en>Ultimate Quality Filters</span><span data-fr>Filtres Haute Qualité</span></span>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Bilateral Filter (Fast LUT)</span><span class="ctrl-label" data-fr>Filtre Bilatéral (Rapide)</span><span class="ctrl-val" id="valBilateral">0</span></div>
+            <input type="range" id="rngBilateral" min="0" max="4" step="1" value="0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label">Unsharp Mask</span><span class="ctrl-val" id="valUnsharp">0</span></div>
+            <input type="range" id="rngUnsharp" min="0" max="100" step="5" value="0" />
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label" data-en>Morphology</span><span class="ctrl-label" data-fr>Morphologie</span>
+            <select id="selMorphology" class="field-select">
+              <option value="0">None</option>
+              <option value="1">Erode (Thin lines)</option>
+              <option value="2">Dilate (Thicken lines)</option>
+              <option value="3">Open (Remove speckles)</option>
+              <option value="4">Close (Bridge gaps)</option>
+            </select>
+          </div>
+          <label class="check-row">
+            <span class="ctrl-label" data-en>3×3 Median Filter</span><span class="ctrl-label" data-fr>Filtre Médian 3×3</span>
+            <input type="checkbox" id="chkMedian" />
+          </label>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Line Thinning (Skeleton)</span><span class="ctrl-label" data-fr>Squelettisation</span><span class="ctrl-val" id="valThinning">0</span></div>
+            <input type="range" id="rngThinning" min="0" max="30" step="1" value="0" />
+          </div>
+        </div>
+
+        <!-- VECTOR PRECISION & EXPERT CONTROLS -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">✒️ <span data-en>Vector Tracing Precision</span><span data-fr>Précision Vectorisation</span></span>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Smoothness / Simplify</span><span class="ctrl-label" data-fr>Lissage / Simplification</span><span class="ctrl-val" id="valSmoothness">1.0</span></div>
+            <input type="range" id="rngSmoothness" min="0.2" max="8.0" step="0.1" value="1.0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Speckle Filter (Path Omit)</span><span class="ctrl-label" data-fr>Filtre Bruit (Min px)</span><span class="ctrl-val" id="valPathOmit">6</span></div>
+            <input type="range" id="rngPathOmit" min="0" max="150" step="1" value="6" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Curve Passes</span><span class="ctrl-label" data-fr>Passes Courbes</span><span class="ctrl-val" id="valBlurPasses">1</span></div>
+            <input type="range" id="rngBlurPasses" min="0" max="4" step="1" value="1" />
+          </div>
+          <label class="check-row">
+            <span class="ctrl-label" data-en>Corner Sharpness (90° Pin)</span><span class="ctrl-label" data-fr>Angles Droits Nets (90°)</span>
+            <input type="checkbox" id="chkRightAngle" checked />
+          </label>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label">Line Precision (ltres)</span><span class="ctrl-val" id="valLtres">1.0</span></div>
+            <input type="range" id="rngLtres" min="0.2" max="4.0" step="0.1" value="1.0" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label">Curve Precision (qtres)</span><span class="ctrl-val" id="valQtres">1.0</span></div>
+            <input type="range" id="rngQtres" min="0.2" max="4.0" step="0.1" value="1.0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- LEFT TAB 2: PHYSICAL SCALE, CAD DOCTOR & LAYERS -->
+      <div class="sidebar-scroll" id="paneCad" style="display:none">
+        <!-- Exact 1:1 mm Scale & Transforms -->
+        <div class="card accent-cyan">
+          <div class="card-head">
+            <span class="card-title cyan">📐 <span data-en>Physical Scale (1:1 mm)</span><span data-fr>Échelle Physique (1:1 mm)</span></span>
+          </div>
+          <div class="dim-row">
+            <div class="ctrl">
+              <span class="ctrl-label" data-en>Width (mm)</span><span class="ctrl-label" data-fr>Largeur (mm)</span>
+              <input type="number" id="numWidthMm" class="field-num" value="120" min="5" max="5000" step="0.5" />
+            </div>
+            <div style="padding-bottom:7px;color:var(--text-dim);font-weight:800">×</div>
+            <div class="ctrl">
+              <span class="ctrl-label" data-en>Height (mm)</span><span class="ctrl-label" data-fr>Hauteur (mm)</span>
+              <input type="number" id="numHeightMm" class="field-num" value="120" min="5" max="5000" step="0.5" readonly />
+            </div>
+          </div>
+          <button type="button" class="btn btn-cyan" id="btnStartCalibrate" style="width:100%">
+            📏 <span data-en>2-Point Scale Calibrator</span><span data-fr>Calibration Échelle 2 Points</span>
+          </button>
+          <div class="btn-grid-3">
+            <button type="button" class="btn btn-ghost" id="btnMirrorX" title="Mirror Horizontally">⇄ Flip X</button>
+            <button type="button" class="btn btn-ghost" id="btnMirrorY" title="Mirror Vertically">⇅ Flip Y</button>
+            <button type="button" class="btn btn-ghost" id="btnRotate90" title="Rotate 90° CW">↻ 90°</button>
+          </div>
+        </div>
+
+        <!-- CAD DOCTOR (OVERKILL + CONTOUR HEALER) -->
+        <div class="card accent-orange">
+          <div class="card-head">
+            <span class="card-title orange">🩺 <span data-en>CAD Doctor — Auto-Repair</span><span data-fr>Docteur CAO — Réparation</span></span>
+          </div>
+          <div class="diag-grid">
+            <div class="diag-chip ok" id="chipClosed"><span class="d-lbl" data-en>Closed Loops</span><span class="d-lbl" data-fr>Boucles Fermées</span><span class="d-val" id="diagClosed">0</span></div>
+            <div class="diag-chip err" id="chipOpen"><span class="d-lbl" data-en>Open Ends</span><span class="d-lbl" data-fr>Bouts Ouverts</span><span class="d-val" id="diagOpen">0</span></div>
+            <div class="diag-chip warn" id="chipDups"><span class="d-lbl" data-en>Duplicates</span><span class="d-lbl" data-fr>Doublons</span><span class="d-val" id="diagDups">0</span></div>
+            <div class="diag-chip info" id="chipIslands"><span class="d-lbl" data-en>Islands / Dust</span><span class="d-lbl" data-fr>Îlots / Bruit</span><span class="d-val" id="diagIslands">0</span></div>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Heal Gap Tolerance</span><span class="ctrl-label" data-fr>Tolérance Soudure</span><span class="ctrl-val" id="valStitchTol">0.50 mm</span></div>
+            <input type="range" id="rngStitchTol" min="0.05" max="3.0" step="0.05" value="0.50" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>OVERKILL Dup Tolerance</span><span class="ctrl-label" data-fr>Tolérance Doublons</span><span class="ctrl-val" id="valDupTol">0.08 mm</span></div>
+            <input type="range" id="rngDupTol" min="0.01" max="0.50" step="0.01" value="0.08" />
+          </div>
+          <button type="button" class="btn btn-orange" id="btnRunDoctor" style="width:100%">
+            🩺 <span data-en>Auto-Repair (OVERKILL + Heal)</span><span data-fr>Réparer (OVERKILL + Souder)</span>
+          </button>
+        </div>
+
+        <!-- LAYER MANAGER -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🗂️ <span data-en>CAD Layers (ACI)</span><span data-fr>Calques CAO (ACI)</span></span>
+            <span class="ctrl-val" id="valLayerCount">1</span>
+          </div>
+          <div class="layer-list" id="layerList"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER VIEWPORT -->
+    <main class="viewport-stage" id="viewportStage">
+      <div class="viewport-canvas-wrap">
+        <canvas id="cadCanvas2D"></canvas>
+        <div id="cadContainer3D"></div>
+
+        <!-- Floating CAD Tool Dock -->
+        <div class="tool-dock" id="toolDock">
+          <button type="button" class="dock-btn active" data-tool="pan" title="Pan &amp; Drag Split (Space)">✋ <span data-en>Pan</span><span data-fr>Main</span></button>
+          <button type="button" class="dock-btn" data-tool="select" title="Select / Delete Path">↖ <span data-en>Select</span><span data-fr>Sélect</span></button>
+          <button type="button" class="dock-btn" data-tool="measure" title="Measure Distance &amp; Angle (mm)">📏 <span data-en>Measure</span><span data-fr>Mesurer</span></button>
+          <button type="button" class="dock-btn" data-tool="calibrate" title="2-Point Physical Calibration">📐 <span data-en>Calibrate</span><span data-fr>Calibrer</span></button>
+          <span class="dock-sep"></span>
+          <button type="button" class="dock-btn active" id="btnTogGrid" title="Toggle Metric Grid">⊞</button>
+          <button type="button" class="dock-btn active" id="btnTogFill" title="Toggle Translucent Fill">▣</button>
+          <button type="button" class="dock-btn active" id="btnTogDiag" title="Toggle CAD Doctor Overlay">🩺</button>
+          <span class="dock-sep"></span>
+          <button type="button" class="dock-btn" id="btnZoomOut" title="Zoom Out">−</button>
+          <button type="button" class="dock-btn" id="btnFitView" title="Fit Drawing to Viewport">Fit</button>
+          <button type="button" class="dock-btn" id="btnZoomIn" title="Zoom In">+</button>
+        </div>
+
+        <!-- Selected Path Quick Delete Bar -->
+        <div class="selection-pill" id="selectionPill">
+          <span id="selectionInfo">Path selected</span>
+          <button type="button" class="btn btn-orange" id="btnDeleteSelected" style="height:22px;padding:0 8px;font-size:10.5px">
+            🗑 <span data-en>Delete</span><span data-fr>Supprimer</span>
+          </button>
+        </div>
+
+        <!-- Global Drag & Drop Overlay -->
+        <div class="drop-overlay" id="dropOverlay">
+          <div style="font-size:38px">📂</div>
+          <strong data-en>Drop Image, DXF, SVG or .spdfx anywhere!</strong>
+          <strong data-fr>Déposez Image, DXF, SVG ou .spdfx ici !</strong>
+          <span>PNG · JPG · WEBP · AutoCAD DXF (R12–R2018) · SVG · .spdfx</span>
+        </div>
+      </div>
+
+      <!-- Bottom Telemetry & Laser/CNC Simulator Bar -->
+      <div class="bottom-hud">
+        <div class="hud-metrics">
+          <span><b id="hudCursor">0.0, 0.0 mm</b></span>
+          <span><b class="em" id="hudSize">120×120 mm</b></span>
+          <span><b id="hudPaths">0</b>p · <b id="hudNodes">0</b>n</span>
+          <span><span data-en>Cut:</span><span data-fr>Coupe:</span> <b class="em" id="hudCutLen">0.00m</b></span>
+          <span><b id="hudTime">0.0m</b></span>
+        </div>
+        <div class="sim-bar">
+          <button type="button" class="sim-btn" id="btnSimPlay">▶ <span data-en>Sim</span><span data-fr>Simu</span></button>
+          <button type="button" class="sim-btn" id="btnSimStop" title="Reset Simulator">⏹</button>
+          <input type="range" id="rngSimProg" min="0" max="1000" value="0" title="Scrub Laser/CNC Toolpath" />
+          <select id="selSimSpeed" class="layer-op" title="Simulation Speed">
+            <option value="1">1×</option>
+            <option value="3" selected>3×</option>
+            <option value="8">8×</option>
+          </select>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: KERF, 3D EXTRUDE, G-CODE & EXPORTS -->
+    <aside class="sidebar sidebar-right">
+      <div class="sidebar-scroll">
+
+        <!-- KERF & DXF/SVG OPTIONS -->
+        <div class="card accent-emerald">
+          <div class="card-head">
+            <span class="card-title">⚙️ <span data-en>DXF / SVG &amp; Laser Kerf</span><span data-fr>DXF / SVG &amp; Trait Laser</span></span>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Kerf Offset (±mm)</span><span class="ctrl-label" data-fr>Compensation Kerf</span><span class="ctrl-val" id="valKerf">0.00 mm</span></div>
+            <input type="range" id="rngKerf" min="0" max="1.00" step="0.02" value="0" />
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label" data-en>DXF Standard</span><span class="ctrl-label" data-fr>Standard DXF</span>
+            <select id="selDxfVer" class="field-select">
+              <option value="R12">AutoCAD R12 (Universal CNC/Laser)</option>
+              <option value="R2000">AutoCAD R2000 (LWPOLYLINE)</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Coordinate Precision</span><span class="ctrl-label" data-fr>Décimales</span><span class="ctrl-val" id="valDecimals">3</span></div>
+            <input type="range" id="rngDecimals" min="1" max="4" step="1" value="3" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Line Preview Width</span><span class="ctrl-label" data-fr>Épaisseur Aperçu</span><span class="ctrl-val" id="valStrokeW">1.6 px</span></div>
+            <input type="range" id="rngStrokeW" min="0.5" max="5.0" step="0.1" value="1.6" />
+          </div>
+        </div>
+
+        <!-- 3D EXTRUDE SETTINGS -->
+        <div class="card accent-cyan">
+          <div class="card-head">
+            <span class="card-title cyan">🧊 <span data-en>3D Extrude &amp; STL</span><span data-fr>Extrusion 3D &amp; STL</span></span>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Thickness (Z)</span><span class="ctrl-label" data-fr>Épaisseur (Z)</span><span class="ctrl-val" id="valThick3d">5.0 mm</span></div>
+            <input type="range" id="rngThick3d" min="1" max="40" step="0.5" value="5" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Edge Bevel</span><span class="ctrl-label" data-fr>Chanfrein</span><span class="ctrl-val" id="valBevel3d">0.4 mm</span></div>
+            <input type="range" id="rngBevel3d" min="0" max="2.5" step="0.1" value="0.4" />
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label" data-en>3D Material</span><span class="ctrl-label" data-fr>Matériau 3D</span>
+            <select id="selMat3d" class="field-select">
+              <option value="aluminum">Anodized Aluminum</option>
+              <option value="plywood">Laser Birch Plywood</option>
+              <option value="acrylic_black">Cast Black Acrylic</option>
+              <option value="brass">Satin Brass</option>
+              <option value="emerald_cad">Emerald CAD Resin</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- GRBL G-CODE SETTINGS -->
+        <div class="card accent-orange">
+          <div class="card-head">
+            <span class="card-title orange">⚡ <span data-en>Laser / CNC G-Code</span><span data-fr>G-Code Laser / CNC</span></span>
+          </div>
+          <div class="ctrl">
+            <select id="selMachineMode" class="field-select">
+              <option value="laser">GRBL Laser (M4 Dynamic Power)</option>
+              <option value="cnc">CNC Router (Multi-Pass Z)</option>
+            </select>
+          </div>
+          <div class="btn-grid-2">
+            <div class="ctrl">
+              <span class="ctrl-label" data-en>Feed (mm/m)</span><span class="ctrl-label" data-fr>Avance</span>
+              <input type="number" id="numFeedRate" class="field-num" value="1200" min="50" max="15000" step="50" />
+            </div>
+            <div class="ctrl">
+              <span class="ctrl-label" data-en>Passes</span><span class="ctrl-label" data-fr>Passes</span>
+              <input type="number" id="numPasses" class="field-num" value="1" min="1" max="12" step="1" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label" data-en>Laser Power / Z Depth</span><span class="ctrl-label" data-fr>Puissance / Prof. Z</span><span class="ctrl-val" id="valPowerDepth">85% · 3mm</span></div>
+            <input type="range" id="rngPower" min="10" max="100" step="5" value="85" />
+          </div>
+        </div>
+
+        <!-- BMP RASTER SETTINGS -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title violet">🖼️ <span data-en>BMP Quality Settings</span><span data-fr>Réglages BMP</span></span>
+          </div>
+          <select id="selBmpMode" class="field-select">
+            <option value="color">24-bit True Color (Real RGB)</option>
+            <option value="grayscale">8-bit Grayscale (256-Level)</option>
+            <option value="highcontrast">1-bit Laser B&amp;W (RDWorks)</option>
+          </select>
+          <div class="ctrl">
+            <div class="ctrl-row"><span class="ctrl-label">DPI</span><span class="ctrl-val" id="valBmpDpi">300 DPI</span></div>
+            <input type="range" id="rngBmpDpi" min="72" max="600" step="1" value="300" />
+          </div>
+        </div>
+
+        <!-- EXPORT ACTIONS -->
+        <div class="card accent-emerald">
+          <div class="card-head">
+            <span class="card-title">📦 <span data-en>Export 1:1 mm Files</span><span data-fr>Exporter Fichiers 1:1 mm</span></span>
+          </div>
+          <button type="button" class="btn btn-emerald" id="btnExportDXF">⬇ Save DXF (1:1 mm)</button>
+          <div class="btn-grid-2">
+            <button type="button" class="btn btn-violet" id="btnExportSVG">⬇ Save SVG</button>
+            <button type="button" class="btn btn-orange" id="btnExportGCode">⬇ G-Code .NC</button>
+          </div>
+          <div class="btn-grid-2">
+            <button type="button" class="btn btn-cyan" id="btnExportSTL">⬇ 3D STL</button>
+            <button type="button" class="btn btn-blue" id="btnExportBMP">⬇ Save BMP</button>
+          </div>
+          <div class="btn-grid-2" style="margin-top:2px">
+            <button type="button" class="btn btn-ghost" id="btnExportPNG">📸 PNG <span style="font-size:9.5px;color:#34d399">FREE</span></button>
+            <button type="button" class="btn btn-ghost" id="btnSaveProject">💾 .spdfx <span style="font-size:9.5px;color:#34d399">FREE</span></button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="mobile-nav">
+    <button type="button" class="m-nav-btn active" data-m-pane="viewport">✦ CAD</button>
+    <button type="button" class="m-nav-btn" data-m-pane="controls">🎨 Trace &amp; CAD</button>
+    <button type="button" class="m-nav-btn" data-m-pane="export">📦 Export</button>
+  </nav>
+
+  <!-- 2-POINT CALIBRATION MODAL -->
+  <div class="modal-backdrop" id="calibrateModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <span data-en>📐 2-Point Physical Scale Calibration</span>
+        <span data-fr>📐 Calibration Physique en 2 Points</span>
+        <button type="button" class="modal-close" data-close-modal="calibrateModal">&times;</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.5" id="calibrateDesc"></p>
+      <div class="ctrl">
+        <span class="ctrl-label" data-en>True Real-World Length (mm)</span>
+        <span class="ctrl-label" data-fr>Longueur Réelle (mm)</span>
+        <input type="number" id="numCalibTargetMm" class="field-num" value="50" min="0.5" max="10000" step="0.1" />
+      </div>
+      <button type="button" class="btn btn-emerald" id="btnApplyCalibrate">
+        ✓ <span data-en>Apply 1:1 mm Calibration</span><span data-fr>Appliquer Calibration 1:1 mm</span>
+      </button>
     </div>
   </div>
 
-  <div id="root"></div>
-  
+  <!-- FALLBACK STANDALONE PAYWALL MODAL -->
+  <div class="modal-backdrop" id="paymentModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <span data-en>Unlock Unlimited CAD Exports</span>
+        <span data-fr>Débloquer les Exports CAO Illimités</span>
+        <button type="button" class="modal-close" data-close-modal="paymentModal">&times;</button>
+      </div>
+      <p style="font-size:12.5px;color:var(--text-dim);line-height:1.5" data-en>
+        You have used your 5 free exports. Saving .spdfx projects, PNG snapshots, and 1:1 m WebAR previews remain unlimited and free. Upgrade to Studios-Pro for unlimited DXF, SVG, G-Code, STL &amp; BMP exports.
+      </p>
+      <p style="font-size:12.5px;color:var(--text-dim);line-height:1.5" data-fr>
+        Vous avez utilisé vos 5 exports gratuits. La sauvegarde .spdfx, les aperçus PNG et la prévisualisation WebAR 1:1 m restent gratuits et illimités. Passez à Studios-Pro pour des exports DXF, SVG, G-Code, STL et BMP illimités.
+      </p>
+      <button type="button" class="btn btn-emerald" id="btnUpgradePro">
+        ✦ <span data-en>Upgrade to Studios-Pro</span><span data-fr>Passer à Studios-Pro</span>
+      </button>
+    </div>
+  </div>
 
-  </body>
+  <div class="toast" id="toast"></div>
 
+  <!-- External AR Bridge (strictly untouched contract!) -->
+  <script src="../ar-viewer/ar-bridge.js"></script>
+  <!-- Modular DFX Studio Pro Engines -->
+  <script src="dfx-raster.js"></script>
+  <script src="dfx-vector.js"></script>
+  <script type="module" src="dfx-viewport.js"></script>
+  <script src="app.js"></script>
+</body>
 </html>
