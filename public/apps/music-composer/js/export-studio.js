@@ -478,12 +478,41 @@ draw();
     if (audioStream) combinedTracks.push(...audioStream.getAudioTracks());
     const combinedStream = new MediaStream(combinedTracks);
 
-    const { mime, ext } = pickBestVideoMime();
+    const candidates = [
+      { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+      { mime: 'video/mp4',                              ext: 'mp4' },
+      { mime: 'video/webm;codecs=vp9,opus',             ext: 'webm' },
+      { mime: 'video/webm;codecs=vp8,opus',             ext: 'webm' },
+      { mime: 'video/webm',                             ext: 'webm' },
+      { mime: '',                                       ext: 'webm' }
+    ];
+
+    let chosen = { mime: '', ext: 'webm' };
+    _videoRecorder = null;
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      if (c.mime) {
+        let ok = false;
+        try { ok = MediaRecorder.isTypeSupported(c.mime); } catch (_) { ok = false; }
+        if (!ok) continue;
+      }
+      try {
+        const opts = c.mime ? { mimeType: c.mime, videoBitsPerSecond: 4500000 } : { videoBitsPerSecond: 4500000 };
+        _videoRecorder = new MediaRecorder(combinedStream, opts);
+        chosen = c;
+        break;
+      } catch (_) {
+        _videoRecorder = null;
+      }
+    }
+    if (!_videoRecorder) {
+      cleanupVideoTracks();
+      throw new Error('MediaRecorder unsupported in this browser');
+    }
+
+    const { mime, ext } = chosen;
     _activeExt = ext;
     _videoChunks = [];
-
-    const options = mime ? { mimeType: mime, videoBitsPerSecond: 4500000 } : { videoBitsPerSecond: 4500000 };
-    _videoRecorder = new MediaRecorder(combinedStream, options);
 
     _videoRecorder.ondataavailable = e => {
       if (e.data && e.data.size > 0) _videoChunks.push(e.data);

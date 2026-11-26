@@ -426,17 +426,49 @@ function applyEmotion(emotionId) {
 }
 
 // =========================================================================
-// 5. EXPORT PERMISSION GATE (ONLY FOR PRO EXPORTS — .spmusic ALWAYS FREE!)
+// 5. EXPORT PERMISSION GATE (Studios-Pro BroadcastChannel + FREE .spmusic!)
 // =========================================================================
 
+const hostChannel = (typeof BroadcastChannel !== 'undefined')
+  ? new BroadcastChannel('studios_pro_channel')
+  : null;
+
+function notifyHostExportCompleted(format) {
+  const msg = { type: 'EXPORT_COMPLETED', payload: { format, app: 'music-composer' }, _msgId: 'mc_done_' + Date.now() };
+  try { if (hostChannel) hostChannel.postMessage(msg); } catch (_) {}
+}
+
+function executePendingExport() {
+  if (!state.pendingExportAction) return;
+  const { format, runFn } = state.pendingExportAction;
+  state.pendingExportAction = null;
+  Promise.resolve(runFn())
+    .then(() => notifyHostExportCompleted(format))
+    .catch(err => setExportStatus('❌ Export error: ' + (err && err.message ? err.message : String(err))));
+}
+
 function requestExportPermission(format, runFn) {
-  // Standalone local run OR Pro user -> immediate export!
+  // Always unlock Web Audio synchronously inside user click gesture!
+  if (format === 'wav' || format === 'mp4' || format === 'html' || format === 'stems') {
+    AE.ensureReady().catch(() => {});
+  }
+  // Standalone local run OR verified Premium/Admin user -> immediate export!
   if (window.parent === window || state.isPro) {
-    runFn();
+    Promise.resolve(runFn()).catch(err => setExportStatus('❌ Export error: ' + (err && err.message ? err.message : String(err))));
     return;
   }
+  setExportStatus(state.lang === 'fr' ? '⏳ Vérification de l’autorisation d’export...' : '⏳ Verifying export permission...');
   state.pendingExportAction = { format, runFn };
-  window.parent.postMessage({ type: 'CHECK_EXPORT_LIMIT', format, app: 'music-composer' }, '*');
+  const msg = {
+    type: 'TRIGGER_PAYMENT_MODAL',
+    payload: { format, app: 'music-composer' },
+    _msgId: 'mc_exp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
+  };
+  if (hostChannel) {
+    hostChannel.postMessage(msg);
+  } else {
+    window.parent.postMessage(msg, '*');
+  }
 }
 
 function setExportStatus(msg) {
@@ -955,20 +987,30 @@ function bindEvents() {
 }
 
 // =========================================================================
-// 8. HOST CONTRACTS (Studios-Pro Parent Messaging + Remix State)
+// 8. HOST CONTRACTS (Studios-Pro BroadcastChannel + Window Messaging + Remix)
 // =========================================================================
 
-window.addEventListener('message', e => {
-  const d = e.data;
+function handleHostMessage(d) {
   if (!d || typeof d !== 'object') return;
-  if (d.type === 'SET_LANG' && d.lang) setLanguage(d.lang);
-  else if (d.type === 'USER_TIER_STATUS') state.isPro = !!(d.isPro || d.tier === 'pro' || d.tier === 'vip');
-  else if (d.type === 'EXPORT_ALLOWED' && state.pendingExportAction) {
-    const fn = state.pendingExportAction.runFn;
+  if (d.type === 'SET_LANG' && d.lang) {
+    setLanguage(d.lang);
+  } else if (d.type === 'USER_TIER_STATUS') {
+    state.isPro = !!(d.isPro || d.tier === 'pro' || d.tier === 'vip');
+  } else if (d.type === 'USER_STATUS_RESPONSE' && d.payload) {
+    state.isPro = !!d.payload.isPremium;
+  } else if (d.type === 'EXPORT_ALLOWED') {
+    if (d.payload && d.payload.isPremium) state.isPro = true;
+    executePendingExport();
+  } else if (d.type === 'SHOW_PAYWALL_MODAL' || d.type === 'EXPORT_BLOCKED') {
     state.pendingExportAction = null;
-    fn();
+    setExportStatus('');
   }
-});
+}
+
+window.addEventListener('message', e => handleHostMessage(e.data));
+if (hostChannel) {
+  hostChannel.onmessage = e => handleHostMessage(e.data);
+}
 
 window.getAppState = () => ({
   format: 'studios-pro-music-v4',
@@ -1046,6 +1088,11 @@ function boot() {
   buildPianoKeyboard();
   bindEvents();
   setLanguage(state.lang);
+
+  // Query live Premium/Admin status from Studios-Pro host right on boot!
+  if (hostChannel && window.parent !== window) {
+    try { hostChannel.postMessage({ type: 'GET_USER_STATUS' }); } catch (_) {}
+  }
 }
 
 boot();
