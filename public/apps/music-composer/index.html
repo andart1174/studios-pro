@@ -1,1740 +1,377 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4D Music Composer & Visualizer</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="./css/style.css">
-</head>
-<body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
-  <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-    <span>Retour / Back</span>
-  </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
-            }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
-
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
-            } else {
-              output = 'solid exported\n';
-            }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let singleExportExpiresAt = 0;
-      let pendingTarget = null;
-      let pendingAnchor = null;
-      let isPremiumUser = false;
-      window.isExportAllowed = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'musc' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'musc' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          window.isExportAllowed = true;
-          singleExportExpiresAt = Date.now() + 8000;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            const t = pendingTarget;
-            pendingTarget = null;
-            t.click();
-          } else if (pendingAnchor) {
-            const a = pendingAnchor;
-            pendingAnchor = null;
-            a.dataset.bypassed = 'true';
-            a.click();
-            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-          if (window.self === window.top) {
-            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-            if (used < 5) {
-              used++;
-              localStorage.setItem('freeExportsUsed', String(used));
-              isAllowed = true;
-              window.isExportAllowed = true;
-              singleExportExpiresAt = Date.now() + 8000;
-              return;
-            }
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            pendingTarget = target;
-            if (localModal) localModal.style.display = 'flex';
-            return;
-          }
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-            pendingAnchor = this;
-            if (window.self === window.top) {
-              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-              if (used < 5) {
-                used++;
-                localStorage.setItem('freeExportsUsed', String(used));
-                isAllowed = true;
-                window.isExportAllowed = true;
-                singleExportExpiresAt = Date.now() + 8000;
-              } else {
-                if (localModal) localModal.style.display = 'flex';
-                return;
-              }
-            } else {
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
-              return;
-            }
-          }
-          if (isAllowed) {
-            isAllowed = false;
-            window.isExportAllowed = false;
-            channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-              pendingAnchor = this;
-              if (window.self === window.top) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-                if (used < 5) {
-                  used++;
-                  localStorage.setItem('freeExportsUsed', String(used));
-                  isAllowed = true;
-                  window.isExportAllowed = true;
-                  singleExportExpiresAt = Date.now() + 8000;
-                } else {
-                  if (localModal) localModal.style.display = 'flex';
-                  return false;
-                }
-              } else {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
-                return false;
-              }
-            }
-            if (isAllowed) {
-              isAllowed = false;
-              window.isExportAllowed = false;
-              channel.postMessage({ type: 'EXPORT_COMPLETED' });
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-                pendingTarget = htmlBtn;
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'musc' } });
-                return;
-              }
-              
-              if ('musc' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
-            };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-          }
-        }
-
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
+  <title>4D Music Composer v4.0 — AI Music Studio | Studios-Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
 
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
     }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
+  }
   </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-
-  <!-- Back Button and Payment logic -->
-  
-  
-  
-
-
-    <!-- Top Overlay (Language & branding) -->
-    <header class="top-bar">
-        <h1 class="brand-title"><i class="fa-solid fa-compact-disc fa-spin-pulse"></i> <span data-i18n="appTitle">4D Music Composer</span></h1>
-        
-        <div class="header-controls" style="display: flex; gap: 10px;">
-            <button id="btn-zen" class="lang-btn" title="Zen Theater Mode"><i class="fa-solid fa-expand"></i> Zen</button>
-            <button id="btn-share" class="lang-btn" style="color: #00f3ff; border-color: #00f3ff;" title="Copy Viral Link"><i class="fa-solid fa-share-nodes"></i> Share URL</button>
-            <button id="lang-btn" class="lang-btn">🇺🇸 EN | 🇫🇷 FR</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body>
+  <div id="app-shell">
+    <!-- ==================== TOPBAR ==================== -->
+    <header class="topbar" id="topbar">
+      <div class="tb-left">
+        <button id="btn-back" class="btn-ghost btn-back" type="button" title="Back to Studios-Pro">
+          <span>←</span><span data-i18n="back">Back</span>
+        </button>
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-title" data-i18n="appTitle">4D Music Composer</span>
+          <span class="brand-badge">v4</span>
         </div>
+        <input id="song-title-input" class="title-input" type="text" value="Synthwave Odyssey" maxlength="40" aria-label="Song Title">
+      </div>
+
+      <div class="tb-center">
+        <div class="transport-pill">
+          <button id="btn-play" class="btn-play" type="button">▶ <span data-i18n="play">Play</span></button>
+          <button id="btn-stop" class="btn-icon" type="button" title="Stop">■</button>
+          <button id="btn-song-mode" class="btn-chip active" type="button" title="Toggle Song Mode (A→D) vs Loop Current Bank" data-i18n="songMode">Song A→D</button>
+          <div class="bpm-ctrl">
+            <span class="bpm-lbl">BPM</span>
+            <input id="bpm-slider" type="range" min="60" max="190" value="112" aria-label="BPM">
+            <span id="bpm-val" class="bpm-num">112</span>
+          </div>
+          <button id="btn-rec" class="btn-rec" type="button" title="Record 4D Music Video (MP4/WebM)">● <span data-i18n="recVideo">REC Video</span></button>
+          <button id="btn-mic" class="btn-chip" type="button" title="Microphone AutoWah FX">🎙 <span data-i18n="micOn">Mic FX</span></button>
+        </div>
+      </div>
+
+      <div class="tb-right">
+        <button id="btn-export-open" class="btn-primary" type="button">📤 <span data-i18n="exportBtn">Export Music</span></button>
+        <button id="btn-zen" class="btn-ghost" type="button" title="Zen Fullscreen Stage">⛶ <span data-i18n="zen">Zen</span></button>
+        <button id="btn-share" class="btn-ghost" type="button" title="Copy Share Link">🔗 <span data-i18n="share">Share</span></button>
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button id="btn-lang-en" class="lang-btn active" type="button">EN</button>
+          <button id="btn-lang-fr" class="lang-btn" type="button">FR</button>
+        </div>
+      </div>
     </header>
 
-    <div class="main-layout">
-        
-        <!-- Left Panel: Sequencer & Instruments -->
-        <aside class="panel left-panel glass-panel">
-            <h2 data-i18n="instrumentsTitle">Instruments & Sequence</h2>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
-                <div class="pattern-banks" style="display:flex; gap:5px;">
-                    <button class="btn-bank active-bank" id="bank-0">A</button>
-                    <button class="btn-bank" id="bank-1">B</button>
-                    <button class="btn-bank" id="bank-2">C</button>
-                    <button class="btn-bank" id="bank-3">D</button>
-                </div>
-                <div style="flex:1; display:flex; flex-direction:column;">
-                    <label id="swing-label" data-i18n="swing" style="font-size: 0.8rem; color: var(--accent-primary);">Swing 0%</label>
-                    <input type="range" id="swing-slider" min="0" max="100" value="0" style="accent-color: var(--accent-primary);">
-                </div>
-                <div style="flex:1; display:flex; flex-direction:column;">
-                    <label id="pitch-label" data-i18n="pitch" style="font-size: 0.8rem; color: #ff00ea;">Pitch: 0</label>
-                    <input type="range" id="master-pitch" min="-12" max="12" value="0" style="accent-color: #ff00ea;">
-                </div>
-            </div>
+    <!-- ==================== MIDDLE WORKSPACE (4D STAGE + AI SIDEBAR) ==================== -->
+    <main class="workspace">
+      <section class="stage-wrap">
+        <div id="stage-4d" class="stage-4d"></div>
 
-            <div class="control-group" style="padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 10px;">
-                <label data-i18n="presetLabel" style="font-size:0.8rem; color:#fff; display:block; margin-bottom:5px;">Studio Templates</label>
-                <div style="display: flex; gap: 5px;">
-                    <select id="preset-library-select" class="glass-select" style="flex:1;">
-                        <option value="">-- Load 25 Presets --</option>
-                    </select>
-                    <button id="btn-load-preset" class="btn-primary" style="padding: 5px 10px;" title="Load Preset to Sequencer"><i class="fa-solid fa-download"></i></button>
-                    <button id="btn-auto-fill" class="btn-glow" style="background: linear-gradient(45deg, #ff00ff, #ffaa00); padding: 5px 10px; border-color: #ff00ff;" title="Magic Auto Drum Fill (Inject ghost notes to end of measure)"><i class="fa-solid fa-drum"></i></button>
-                </div>
-            </div>
+        <!-- Floating Song Arrangement Timeline Bar (A -> B -> C -> D) -->
+        <div class="timeline-hud" id="timeline-hud">
+          <div class="bank-pills" id="bank-pills">
+            <button class="bank-pill active" data-bank="0" type="button"><strong>A</strong><span>Intro</span></button>
+            <button class="bank-pill" data-bank="1" type="button"><strong>B</strong><span>Verse</span></button>
+            <button class="bank-pill" data-bank="2" type="button"><strong>C</strong><span>Chorus</span></button>
+            <button class="bank-pill" data-bank="3" type="button"><strong>D</strong><span>Outro</span></button>
+          </div>
+          <div class="stage-meta" id="stage-meta">
+            <span id="meta-genre-badge" class="meta-badge">Synthwave</span>
+            <span id="meta-key-badge" class="meta-badge alt">A Minor</span>
+            <span id="meta-step-badge" class="meta-step">01/16</span>
+          </div>
+        </div>
 
-            <div class="instrument-rack" id="instrument-rack">
-                <!-- Instrument rows will be dynamically generated by JS -->
-            </div>
-            
-            <div style="display: flex; gap: 10px; margin-top: auto;">
-                <button id="btn-save" class="btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="save">Save</span></button>
-                <button id="btn-load" class="btn-secondary" style="flex: 1; font-size: 0.85rem;"><i class="fa-solid fa-folder-open"></i> <span data-i18n="load">Load</span></button>
-            </div>
-        </aside>
+        <button id="btn-exit-zen" class="btn-exit-zen" type="button">✕ <span data-i18n="exitZen">Exit Zen</span></button>
 
-        <!-- Center Stage: 3D Visualizer -->
-        <main class="center-stage" id="stage-container">
-            <button id="btn-exit-zen" style="display: none; position: absolute; top: 20px; right: 20px; z-index: 10000; padding: 10px 20px; background: rgba(255,0,0,0.5); border: 1px solid #ff0000; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-compress"></i> EXIT ZEN</button>
-            <!-- Three.js Canvas will be injected here -->
-            <div class="stage-overlay">
-                <div class="transport-controls">
-                    <button id="btn-play" class="btn-primary"><i class="fa-solid fa-play"></i> <span data-i18n="play">Play</span></button>
-                    <button id="btn-stop" class="btn-secondary"><i class="fa-solid fa-stop"></i> <span data-i18n="stop">Stop</span></button>
-                    <button id="btn-record" class="btn-danger" style="background: rgba(255, 50, 50, 0.2); border: 1px solid #ff5555; padding: 10px 15px;"><i class="fa-solid fa-circle"></i> <span data-i18n="record">REC</span></button>
-                    <button id="btn-mic" class="btn-secondary" style="background: rgba(0, 200, 255, 0.2); color: #00f3ff; border: 1px solid #00f3ff;"><i class="fa-solid fa-microphone-lines"></i> <span data-i18n="mic">Mic</span></button>
-                    <div class="bpm-control">
-                        <label for="bpm-slider" data-i18n="bpm">BPM: <span id="bpm-value">120</span></label>
-                        <input type="range" id="bpm-slider" min="60" max="200" value="120">
-                    </div>
-                </div>
-            </div>
-        </main>
+        <div id="rec-indicator" class="rec-indicator hidden">
+          <span class="rec-dot"></span>
+          <span id="rec-status-txt">REC 00:00</span>
+        </div>
 
-        <!-- Right Panel: AI & Effects -->
-        <aside class="panel right-panel glass-panel">
-            <h2 data-i18n="aiGeneratorTitle">AI Music Generator</h2>
-            <p class="ai-desc" data-i18n="aiDesc">Auto-generate unique melodic and rhythmic sequences.</p>
-            
-            <div class="visual-controls" style="margin-bottom: 10px;">
-                <label data-i18n="aiGenre">Musical Genre</label>
-                <select id="genre-select" class="glass-select">
-                    <option value="techno">Techno / Trance</option>
-                    <option value="house">Deep House</option>
-                    <option value="synthwave">Retro Synthwave</option>
-                    <option value="trap">Trap / Hip-Hop</option>
-                    <option value="ambient">Ambient Space</option>
-                </select>
-            </div>
-            
-            <button id="btn-ai-gen" class="btn-glow"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="generateMusic">Generate Magic</span></button>
-            <button id="btn-autopilot" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #ff00ff;"><i class="fa-solid fa-infinity"></i> <span data-i18n="autopilot">Autopilot: OFF</span></button>
-            <button id="btn-export-midi" class="btn-glow" style="background: linear-gradient(45deg, #0088ff, #00f3ff);"><i class="fa-solid fa-file-audio"></i> <span data-i18n="exportMidi">Export MIDI</span></button>
-            <button id="btn-export-stems" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #ffaa00;" title="Export Audio Stems (.WAV)"><i class="fa-solid fa-file-waveform"></i> <span data-i18n="exportStems">Export Stems (WAV)</span></button>
-            <button id="btn-clear" class="btn-danger"><i class="fa-solid fa-trash"></i> <span data-i18n="clearSequence">Clear All</span></button>
+        <div id="toast-banner" class="toast-banner hidden"></div>
+      </section>
 
-            <div class="separator"></div>
-            
-            <h2 data-i18n="visualsTitle">4D Visuals</h2>
-            <div class="visual-controls">
-                <label data-i18n="modelType">Model Type</label>
-                        <select id="model-select" class="glass-select">
-                            <optgroup label="Entities (Animated)">
-                                <option value="sentinel" data-i18n="sentinel">Quantum Sentinel</option>
-                                <option value="jellyfish" data-i18n="jellyfish">Ethereal Jellyfish</option>
-                                <option value="golem" data-i18n="golem">Rhythm Golem</option>
-                                <option value="seraphim" data-i18n="seraphim">The Seraphim</option>
-                                <option value="arachnoid" data-i18n="arachnoid">Arachnoid Construct</option>
-                                <option value="parasite" data-i18n="parasite">Neural Parasite</option>
-                                <option value="twins" data-i18n="twins">Symbiotic Twins</option>
-                                <option value="lotus" data-i18n="lotus">Hyper-Lotus</option>
-                            </optgroup>
-                            <optgroup label="Abstract Shapes">
-                                <option value="cube" data-i18n="cube">Tesseract Cube</option>
-                                <option value="sphere" data-i18n="sphere">Energy Sphere</option>
-                                <option value="torus" data-i18n="torus">Infinity Loop</option>
-                                <option value="icosahedron" data-i18n="icosahedron">Quantum Crystal</option>
-                                <option value="pyramid" data-i18n="pyramid">Mystic Pyramid</option>
-                                <option value="dodecahedron" data-i18n="dodecahedron">Sacred Dodecahedron</option>
-                                <option value="torusknot" data-i18n="torusknot">Torus Knot</option>
-                            </optgroup>
-                        </select>
-                
-                <label data-i18n="customText">Custom 3D Neon Text</label>
-                <input type="text" id="neon-text-input" placeholder="Type Brand..." maxlength="15" autocomplete="off" style="width: 100%; margin-bottom: 10px; padding: 6px; background: rgba(0,0,0,0.6); color: #00f3ff; border: 1px solid #00f3ff; font-family: 'Outfit'; font-weight: bold; font-size: 1rem; border-radius: 4px;">
-                
-                <label data-i18n="colorTheme">Color Theme</label>
-                <select id="color-select" class="glass-select">
-                    <option value="cyberpunk" data-i18n="cyberpunk">Cyberpunk Neon</option>
-                    <option value="synthwave" data-i18n="synthwave">Retro Synthwave</option>
-                    <option value="matrix" data-i18n="matrix">Matrix Green</option>
-                    <option value="fire" data-i18n="fire">Lava Inferno</option>
-                    <option value="ocean" data-i18n="ocean">Deep Ocean</option>
-                    <option value="gold" data-i18n="gold">Royal Gold</option>
-                    <option value="vaporwave" data-i18n="vaporwave">Vaporwave Dream</option>
-                </select>
-                <button id="btn-vj-camera" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: #00ffff;"><i class="fa-solid fa-video"></i> <span data-i18n="vjCamera">VJ Camera: OFF</span></button>
-                <button id="btn-lite-mode" class="btn-glow" style="margin-top: 10px; width: 100%; background: rgba(0, 255, 170, 0.1); border-color: #00ffaa; color: #00ffaa;" title="Disable Bloom & Post-FX for laptops/slow GPUs"><i class="fa-solid fa-bolt"></i> High Performance (Lite)</button>
-                <div class="separator"></div>
-                
-                <h2 data-i18n="fxTitle" style="font-size: 1rem; border-bottom: none; padding: 0;">Audio Effects</h2>
-                
-                <label data-i18n="reverbLevel">Reverb</label>
-                <input type="range" id="fx-reverb" min="0" max="100" value="50" style="margin-bottom: 5px; accent-color: #8800ff; width: 100%;">
-                
-                <label data-i18n="delayLevel">Delay</label>
-                <input type="range" id="fx-delay" min="0" max="100" value="20" style="margin-bottom: 5px; accent-color: #0088ff; width: 100%;">
-                
-                <label data-i18n="distLevel">Distortion</label>
-                <input type="range" id="fx-dist" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ff3300; width: 100%;">
-                
-                <label data-i18n="chorusLevel">Chorus</label>
-                <input type="range" id="fx-chorus" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #00ffaa; width: 100%;">
-                
-                <label data-i18n="bitLevel">8-Bit Crush</label>
-                <input type="range" id="fx-bit" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ff00aa; width: 100%;">
-                
-                <label data-i18n="phaserLevel">Space Phaser</label>
-                <input type="range" id="fx-phaser" min="0" max="100" value="0" style="margin-bottom: 5px; accent-color: #ffff00; width: 100%;">
-            </div>
-        </aside>
+      <!-- RIGHT PANEL: AI COMPOSER (30 GENRES) + LIVE EMOTIONS + 4D VISUALS -->
+      <aside class="right-panel" id="right-panel">
+        <div class="panel-card">
+          <div class="panel-head">
+            <span class="panel-icon">✨</span>
+            <h2 data-i18n="aiTitle">AI Music Composer (30 Genres)</h2>
+          </div>
 
-    </div>
+          <select id="genre-select" class="pro-select" aria-label="AI Musical Genre"></select>
 
-    <!-- ============================================================
-         PROFESSIONAL KEYBOARD SYNTHESIZER PANEL (Fixed Bottom)
-         ============================================================ -->
-    <div id="keyboard-synth-panel">
+          <div class="prompt-row">
+            <input id="ai-prompt-input" class="pro-input" type="text" placeholder='Describe song: e.g. "epic orchestral 95 bpm"' data-i18n-placeholder="promptPlaceholder">
+            <button id="btn-ai-prompt" class="btn-magic-sm" type="button" title="Compose from Prompt">🔮</button>
+          </div>
 
-        <!-- Controls row -->
-        <div class="ks-top-bar">
+          <button id="btn-compose-full" class="btn-compose" type="button">
+            ✨ <span data-i18n="composeFull">Compose Full Song (A→D)</span>
+          </button>
 
-            <!-- Title -->
-            <span class="ks-label">🎹 Live Keys</span>
+          <div class="action-pair">
+            <button id="btn-variation" class="btn-soft" type="button">🔀 <span data-i18n="variation">Variation</span></button>
+            <button id="btn-autopilot" class="btn-soft" type="button">∞ <span data-i18n="autopilot">Autopilot</span></button>
+          </div>
+        </div>
 
-            <!-- Waveform selector -->
-            <span class="ks-label" style="color:var(--text-muted); margin-left:4px;">Wave:</span>
-            <div class="ks-wave-group" id="ks-wave-group">
-                <button class="ks-wave-btn active" data-wave="sawtooth">SAW</button>
-                <button class="ks-wave-btn" data-wave="sine">SIN</button>
-                <button class="ks-wave-btn" data-wave="triangle">TRI</button>
-                <button class="ks-wave-btn" data-wave="square">SQR</button>
-                <button class="ks-wave-btn" data-wave="pulse">PLS</button>
-            </div>
+        <div class="panel-card">
+          <div class="panel-head">
+            <span class="panel-icon">🎭</span>
+            <h2 data-i18n="emotionsTitle">Live Emotion Re-Harmonizer</h2>
+          </div>
+          <div class="emotion-grid" id="emotion-grid"></div>
+        </div>
 
-            <!-- Divider -->
-            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+        <div class="panel-card">
+          <div class="panel-head">
+            <span class="panel-icon">🌌</span>
+            <h2 data-i18n="visualsTitle">4D Stage & Visuals</h2>
+          </div>
 
-            <!-- Octave shift -->
-            <div class="ks-octave-display">
-                <span class="ks-label" style="color:var(--text-muted);">OCT:</span>
-                <button class="ks-octave-btn" id="ks-oct-down">−</button>
-                <span id="ks-octave-val">4</span>
-                <button class="ks-octave-btn" id="ks-oct-up">+</button>
-            </div>
+          <div class="field-row">
+            <label for="model-select" data-i18n="modelLbl">4D Entity</label>
+            <select id="model-select" class="pro-select compact"></select>
+          </div>
 
-            <!-- Divider -->
-            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
-
-            <!-- ADSR -->
-            <span class="ks-label" style="color:var(--text-muted);">ADSR:</span>
-            <div class="ks-adsr-group">
-                <div class="ks-adsr-item">
-                    <label>A</label>
-                    <input type="range" id="ks-adsr-a" min="0.001" max="2" step="0.001" value="0.02">
-                </div>
-                <div class="ks-adsr-item">
-                    <label>D</label>
-                    <input type="range" id="ks-adsr-d" min="0.001" max="2" step="0.001" value="0.1">
-                </div>
-                <div class="ks-adsr-item">
-                    <label>S</label>
-                    <input type="range" id="ks-adsr-s" min="0" max="1" step="0.01" value="0.5">
-                </div>
-                <div class="ks-adsr-item">
-                    <label>R</label>
-                    <input type="range" id="ks-adsr-r" min="0.01" max="4" step="0.01" value="0.8">
-                </div>
-            </div>
-
-            <!-- Divider -->
-            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
-
-            <!-- Chord Mode -->
-            <button class="ks-toggle-btn" id="ks-chord-btn">♩ Chord</button>
-
-            <!-- Arpeggiator -->
-            <button class="ks-toggle-btn" id="ks-arp-btn">↑↓ Arp</button>
-            <select id="ks-arp-speed">
-                <option value="4n">1/4</option>
-                <option value="8n" selected>1/8</option>
-                <option value="16n">1/16</option>
+          <div class="field-row">
+            <label for="theme-select" data-i18n="themeLbl">Color Theme</label>
+            <select id="theme-select" class="pro-select compact">
+              <option value="cyberpunk">Cyberpunk Neon</option>
+              <option value="synthwave">Synthwave Sunset</option>
+              <option value="matrix">Matrix Emerald</option>
+              <option value="fire">Solar Inferno</option>
+              <option value="ocean">Abyssal Ocean</option>
+              <option value="gold">Imperial Gold</option>
+              <option value="vaporwave">Vaporwave Dream</option>
             </select>
+          </div>
 
-            <!-- Divider -->
-            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); flex-shrink:0;"></div>
+          <div class="field-row">
+            <label for="neon-title-input" data-i18n="neonTextLbl">3D Neon Title</label>
+            <input id="neon-title-input" class="pro-input compact" type="text" placeholder="Text in 3D space..." maxlength="32">
+          </div>
 
-            <!-- Sustain indicator -->
-            <span id="ks-sustain-indicator">SUSTAIN OFF</span>
+          <div class="action-pair">
+            <button id="btn-vj-cam" class="btn-soft" type="button">🎥 <span data-i18n="vjCam">VJ Camera</span></button>
+            <button id="btn-lite-mode" class="btn-soft" type="button">⚡ <span data-i18n="liteMode">Lite Mode</span></button>
+          </div>
+        </div>
+      </aside>
+    </main>
 
-            <!-- Velocity hint -->
-            <span id="ks-vel-display">vel: mf</span>
+    <!-- ==================== BOTTOM 3-TAB PRO DAW DRAWER ==================== -->
+    <section class="daw-drawer" id="daw-drawer">
+      <div class="daw-tabs-bar">
+        <div class="daw-tabs" role="tablist">
+          <button class="daw-tab active" data-tab="seq" type="button" role="tab">🥁 <span data-i18n="tabSeq">Sequencer & Mixer (8 Tracks)</span></button>
+          <button class="daw-tab" data-tab="keys" type="button" role="tab">🎹 <span data-i18n="tabKeys">Live Piano, Chords & Loops</span></button>
+          <button class="daw-tab" data-tab="fx" type="button" role="tab">🎛️ <span data-i18n="tabFx">Master FX & Sound Design</span></button>
+        </div>
+        <div class="daw-quick-tools">
+          <button id="btn-drum-fill" class="btn-mini" type="button">🥁 <span data-i18n="drumFill">Drum Fill</span></button>
+          <button id="btn-clear-bank" class="btn-mini danger" type="button">🗑 <span data-i18n="clearBank">Clear Bank</span></button>
+          <button id="btn-save-proj" class="btn-mini accent" type="button">💾 <span data-i18n="saveProj">Save .spmusic</span></button>
+          <button id="btn-load-proj" class="btn-mini" type="button">📂 <span data-i18n="loadProj">Load</span></button>
+          <input id="file-load-proj" type="file" accept=".spmusic,.json" class="hidden">
+        </div>
+      </div>
 
-            <!-- Keyboard shortcut hint -->
-            <span style="font-size:0.6rem; color:rgba(255,255,255,0.25); white-space:nowrap; margin-left:auto;">
-                ← → Octave &nbsp;|&nbsp; Space = Sustain &nbsp;|&nbsp; Shift = forte &nbsp;|&nbsp; Ctrl = piano
-            </span>
+      <!-- TAB 1: FULL-WIDTH 8-TRACK × 16-STEP SEQUENCER & MIXER -->
+      <div class="daw-pane active" id="tab-seq">
+        <div class="seq-container" id="seq-container"></div>
+      </div>
+
+      <!-- TAB 2: FIXED 2-OCTAVE LIVE PIANO, 7 DIATONIC CHORD PADS & 3-SLOT LOOP RECORDER -->
+      <div class="daw-pane" id="tab-keys">
+        <div class="keys-toolbar">
+          <div class="kt-group">
+            <span class="kt-lbl">WAVE</span>
+            <button class="wave-btn active" data-wave="sawtooth" type="button">SAW</button>
+            <button class="wave-btn" data-wave="sine" type="button">SIN</button>
+            <button class="wave-btn" data-wave="triangle" type="button">TRI</button>
+            <button class="wave-btn" data-wave="square" type="button">SQR</button>
+          </div>
+          <div class="kt-group">
+            <span class="kt-lbl">OCT</span>
+            <button id="btn-oct-down" class="mini-sq" type="button">−</button>
+            <span id="oct-val" class="oct-num">4</span>
+            <button id="btn-oct-up" class="mini-sq" type="button">+</button>
+          </div>
+          <div class="kt-group">
+            <button id="btn-kb-chord" class="kt-toggle" type="button">Chord</button>
+            <button id="btn-kb-arp" class="kt-toggle" type="button">Arp</button>
+            <button id="btn-kb-lock" class="kt-toggle" type="button">Scale Lock</button>
+          </div>
+          <div class="kt-group">
+            <span class="kt-lbl">HARM</span>
+            <button class="harm-btn active" data-harm="0" type="button">Off</button>
+            <button class="harm-btn" data-harm="1" type="button">1v</button>
+            <button class="harm-btn" data-harm="2" type="button">2v</button>
+            <button class="harm-btn" data-harm="3" type="button">3v</button>
+          </div>
+          <div class="kt-group">
+            <span class="kt-lbl">LOOPS</span>
+            <button class="loop-btn" data-loop="0" type="button">F1</button>
+            <button class="loop-btn" data-loop="1" type="button">F2</button>
+            <button class="loop-btn" data-loop="2" type="button">F3</button>
+            <button id="btn-loops-clear" class="mini-sq danger" type="button" title="Clear Loops">✕</button>
+          </div>
+          <span class="kt-hint">Tab+Mouse: Theremin XY</span>
         </div>
 
-        <!-- Piano Keys -->
-        <div id="ks-keys-container">
-            <!-- Keys are generated by JS -->
+        <div class="chord-pads-row" id="chord-pads-row"></div>
+
+        <div class="piano-stage">
+          <div class="piano-inner" id="piano-keys"></div>
         </div>
+      </div>
 
-        <!-- ── ROW 2: Advanced Pro Features ── -->
-        <div class="ks-row2">
-
-            <!-- Emotion Engine -->
-            <span class="ks-label" style="flex-shrink:0;">🎭 Emotion:</span>
-            <div class="ks-emotion-group">
-                <button class="ks-emotion-btn" data-emotion="happy">😊 Happy</button>
-                <button class="ks-emotion-btn" data-emotion="sad">😢 Sad</button>
-                <button class="ks-emotion-btn" data-emotion="tense">⚡ Tense</button>
-                <button class="ks-emotion-btn" data-emotion="dreamy">🌊 Dreamy</button>
-                <button class="ks-emotion-btn" data-emotion="rage">🔥 Rage</button>
-                <button class="ks-emotion-btn" data-emotion="zen">🧘 Zen</button>
+      <!-- TAB 3: MASTER FX & SOUND DESIGN -->
+      <div class="daw-pane" id="tab-fx">
+        <div class="fx-grid">
+          <div class="fx-col">
+            <h3>Lead Timbre & Keyboard ADSR</h3>
+            <div class="timbre-grid" id="timbre-grid">
+              <button class="timbre-btn active" data-timbre="supersaw" type="button">Supersaw</button>
+              <button class="timbre-btn" data-timbre="piano" type="button">Grand Piano</button>
+              <button class="timbre-btn" data-timbre="bell" type="button">Crystal Bell</button>
+              <button class="timbre-btn" data-timbre="pluck" type="button">Synth Pluck</button>
+              <button class="timbre-btn" data-timbre="flute" type="button">Air Flute</button>
+              <button class="timbre-btn" data-timbre="square" type="button">8-Bit Square</button>
             </div>
-
-            <!-- Divider -->
-            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
-
-            <!-- Scale Lock -->
-            <span class="ks-label" style="flex-shrink:0;">🔒 Scale:</span>
-            <select id="ks-scale-select">
-                <option value="chromatic">Chromatic (all)</option>
-                <option value="major">Major</option>
-                <option value="minor">Natural Minor</option>
-                <option value="pentatonic">Pentatonic</option>
-                <option value="blues">Blues</option>
-                <option value="dorian">Dorian</option>
-                <option value="phrygian">Phrygian</option>
-                <option value="lydian">Lydian</option>
-                <option value="mixolydian">Mixolydian</option>
-                <option value="harmonic">Harmonic Minor</option>
-            </select>
-            <button class="ks-toggle-btn" id="ks-scale-lock-btn">Lock OFF</button>
-
-            <!-- Divider -->
-            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
-
-            <!-- AI Harmonizer -->
-            <span class="ks-label" style="flex-shrink:0;">🤖 Harmony:</span>
-            <button class="ks-harm-btn" id="ks-harm-off" data-voices="0">Off</button>
-            <button class="ks-harm-btn active" id="ks-harm-1" data-voices="1">1v</button>
-            <button class="ks-harm-btn" id="ks-harm-2" data-voices="2">2v</button>
-            <button class="ks-harm-btn" id="ks-harm-3" data-voices="3">3v</button>
-
-            <!-- Divider -->
-            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
-
-            <!-- Loop Recorder -->
-            <span class="ks-label" style="flex-shrink:0;">🔴 Loops:</span>
-            <div id="ks-loop-group">
-                <div class="ks-loop-btn" id="ks-loop-0" data-loop="0">
-                    <span class="ks-loop-label">F1</span>
-                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-0" style="background:#ff4444;"></div></div>
-                </div>
-                <div class="ks-loop-btn" id="ks-loop-1" data-loop="1">
-                    <span class="ks-loop-label">F2</span>
-                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-1" style="background:#44aaff;"></div></div>
-                </div>
-                <div class="ks-loop-btn" id="ks-loop-2" data-loop="2">
-                    <span class="ks-loop-label">F3</span>
-                    <div class="ks-loop-bar"><div class="ks-loop-fill" id="ks-loop-fill-2" style="background:#44ff88;"></div></div>
-                </div>
-                <button id="ks-loop-clear">✕ Clear</button>
+            <div class="adsr-row">
+              <label>A <input id="adsr-a" type="range" min="5" max="100" value="15"></label>
+              <label>D <input id="adsr-d" type="range" min="10" max="100" value="25"></label>
+              <label>S <input id="adsr-s" type="range" min="10" max="100" value="50"></label>
+              <label>R <input id="adsr-r" type="range" min="10" max="100" value="55"></label>
             </div>
+          </div>
 
-            <!-- Divider -->
-            <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);flex-shrink:0;"></div>
+          <div class="fx-col">
+            <h3>Key, Scale, Groove & Pitch</h3>
+            <div class="key-scale-row">
+              <select id="root-select" class="pro-select compact" aria-label="Musical Key Root"></select>
+              <select id="scale-select" class="pro-select compact" aria-label="Musical Scale"></select>
+            </div>
+            <div class="slider-item">
+              <span>Swing</span>
+              <input id="fx-swing" type="range" min="0" max="70" value="0">
+              <strong id="val-swing">0%</strong>
+            </div>
+            <div class="slider-item">
+              <span>Master Pitch</span>
+              <input id="fx-pitch" type="range" min="-12" max="12" value="0">
+              <strong id="val-pitch">0 st</strong>
+            </div>
+            <div class="slider-item">
+              <span>Lead Filter</span>
+              <input id="fx-filter" type="range" min="0" max="100" value="65">
+              <strong id="val-filter">65%</strong>
+            </div>
+          </div>
 
-            <!-- Theremin hint -->
-            <span id="theremin-hint" style="display:none;">🎵 THEREMIN ACTIVE</span>
-            <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);white-space:nowrap;margin-left:auto;">
-                Tab = Theremin (mouse XY) &nbsp;|&nbsp; F1-F3 = Loops &nbsp;|&nbsp; Scale Lock = perfect improv
-            </span>
+          <div class="fx-col">
+            <h3>Parallel Master FX Bus</h3>
+            <div class="slider-item">
+              <span>Reverb</span>
+              <input id="fx-reverb" type="range" min="0" max="100" value="38">
+              <strong id="val-reverb">38%</strong>
+            </div>
+            <div class="slider-item">
+              <span>Ping-Pong Delay</span>
+              <input id="fx-delay" type="range" min="0" max="100" value="25">
+              <strong id="val-delay">25%</strong>
+            </div>
+            <div class="slider-item">
+              <span>Stereo Chorus</span>
+              <input id="fx-chorus" type="range" min="0" max="100" value="20">
+              <strong id="val-chorus">20%</strong>
+            </div>
+            <div class="slider-item">
+              <span>Warm Drive</span>
+              <input id="fx-dist" type="range" min="0" max="100" value="0">
+              <strong id="val-dist">0%</strong>
+            </div>
+            <div class="slider-item">
+              <span>Phaser</span>
+              <input id="fx-phaser" type="range" min="0" max="100" value="0">
+              <strong id="val-phaser">0%</strong>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== EXPORT STUDIO MODAL ==================== -->
+  <div id="modal-export" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="export-modal-title" data-i18n="exportTitle">Export Music, MP4 Video & Web Player</h2>
+        <button id="btn-export-close" class="modal-close" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div id="export-status-bar" class="export-status hidden"></div>
+
+      <div class="export-grid">
+        <button id="exp-btn-wav" class="export-card" type="button">
+          <div class="ec-icon cyan">🎧</div>
+          <div class="ec-body">
+            <strong data-i18n="expWav">Studio Master Audio (.WAV)</strong>
+            <span data-i18n="expWavDesc">Fast offline 44.1kHz stereo mixdown (&lt;2s)</span>
+          </div>
+        </button>
+
+        <button id="exp-btn-mp4" class="export-card featured" type="button">
+          <div class="ec-icon pink">🎬</div>
+          <div class="ec-body">
+            <strong data-i18n="expMp4">4D Music Video (.MP4 / .WebM)</strong>
+            <span data-i18n="expMp4Desc">Full song rendered with synced 4D visuals + audio</span>
+          </div>
+        </button>
+
+        <button id="exp-btn-web" class="export-card featured" type="button">
+          <div class="ec-icon violet">🌐</div>
+          <div class="ec-body">
+            <strong data-i18n="expWeb">Web Music Player (.HTML)</strong>
+            <span data-i18n="expWebDesc">Standalone offline web player with audio & visualizer</span>
+          </div>
+        </button>
+
+        <button id="exp-btn-midi" class="export-card" type="button">
+          <div class="ec-icon emerald">🎹</div>
+          <div class="ec-body">
+            <strong data-i18n="expMidi">Multi-Track DAW MIDI (.MID)</strong>
+            <span data-i18n="expMidiDesc">FL Studio / Ableton / Logic ready (GM Ch 10 drums)</span>
+          </div>
+        </button>
+
+        <button id="exp-btn-stems" class="export-card" type="button">
+          <div class="ec-icon amber">🎚️</div>
+          <div class="ec-body">
+            <strong data-i18n="expStems">Offline Track Stems (.WAV)</strong>
+            <span data-i18n="expStemsDesc">Clean isolated audio stems without freezing</span>
+          </div>
+        </button>
+
+        <button id="exp-btn-proj" class="export-card" type="button">
+          <div class="ec-icon sky">💾</div>
+          <div class="ec-body">
+            <strong data-i18n="expProj">Save Project (.spmusic FREE)</strong>
+            <span data-i18n="expProjDesc">Full 4-section song, BPM, FX & 4D settings</span>
+          </div>
+        </button>
+      </div>
     </div>
+  </div>
 
-    <!-- Theremin Overlay (shown when Tab held) -->
-    <div id="theremin-active-bar"></div>
-    <div id="theremin-cursor"></div>
-
-    <!-- Scripts via CDN -->
-    <!-- Three.js and Post-Processing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
-    <!-- Tonejs MIDI parser/writer -->
-    <script src="https://unpkg.com/@tonejs/midi"></script>
-    <!-- Tone.js for high performance audio -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    
-    <!-- Application Logic -->
-    <script src="./js/presets.js"></script>
-    <script src="./js/app.js"></script>
-
-  </body>
+  <!-- Scripts (Clean Modular Order) -->
+  <script src="js/music-theory.js"></script>
+  <script src="js/audio-engine.js"></script>
+  <script src="js/export-studio.js"></script>
+  <script type="module" src="js/visuals4d.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
 </html>
