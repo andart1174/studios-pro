@@ -1,1671 +1,426 @@
 <!DOCTYPE html>
-<html lang="en"> <!-- v3.0 -->
-
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>ArchitectPro — Intelligent House Builder</title>
-  <meta name="description"
-    content="Professional interactive house construction planner with 2D editor, 3D model, materials calculator and cost estimator." />
-  <link rel="stylesheet" href="style.css?v=3" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-</head>
-
-<body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architect Pro 2 — Structural Engineering & 7-Phase Construction Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="style.css?v=3.0" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
     }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
-  <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-    <span>Retour / Back</span>
-  </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
-            }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
-
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
-            } else {
-              output = 'solid exported\n';
-            }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let singleExportExpiresAt = 0;
-      let pendingTarget = null;
-      let pendingAnchor = null;
-      let isPremiumUser = false;
-      window.isExportAllowed = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'arp2' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'arp2' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          window.isExportAllowed = true;
-          singleExportExpiresAt = Date.now() + 8000;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            const t = pendingTarget;
-            pendingTarget = null;
-            t.click();
-          } else if (pendingAnchor) {
-            const a = pendingAnchor;
-            pendingAnchor = null;
-            a.dataset.bypassed = 'true';
-            a.click();
-            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if ((target.dataset && target.dataset.bypassed === 'true') || id === 'btn-preview-ar' || id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-          if (window.self === window.top) {
-            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-            if (used < 5) {
-              used++;
-              localStorage.setItem('freeExportsUsed', String(used));
-              isAllowed = true;
-              window.isExportAllowed = true;
-              singleExportExpiresAt = Date.now() + 8000;
-              return;
-            }
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            pendingTarget = target;
-            if (localModal) localModal.style.display = 'flex';
-            return;
-          }
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp2' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-            pendingAnchor = this;
-            if (window.self === window.top) {
-              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-              if (used < 5) {
-                used++;
-                localStorage.setItem('freeExportsUsed', String(used));
-                isAllowed = true;
-                window.isExportAllowed = true;
-                singleExportExpiresAt = Date.now() + 8000;
-              } else {
-                if (localModal) localModal.style.display = 'flex';
-                return;
-              }
-            } else {
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp2' } });
-              return;
-            }
-          }
-          if (isAllowed) {
-            isAllowed = false;
-            window.isExportAllowed = false;
-            channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-              pendingAnchor = this;
-              if (window.self === window.top) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-                if (used < 5) {
-                  used++;
-                  localStorage.setItem('freeExportsUsed', String(used));
-                  isAllowed = true;
-                  window.isExportAllowed = true;
-                  singleExportExpiresAt = Date.now() + 8000;
-                } else {
-                  if (localModal) localModal.style.display = 'flex';
-                  return false;
-                }
-              } else {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp2' } });
-                return false;
-              }
-            }
-            if (isAllowed) {
-              isAllowed = false;
-              window.isExportAllowed = false;
-              channel.postMessage({ type: 'EXPORT_COMPLETED' });
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-                pendingTarget = htmlBtn;
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'arp2' } });
-                return;
-              }
-              
-              if ('arp2' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
-            };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
-          }
-        }
-
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
   </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-
-  <!-- Back Button and Payment logic -->
-  
-  
-  
-
-
-  <!-- ═══════════════════ WIZARD ═══════════════════ -->
-  <div id="wizard-screen">
-    <div class="wizard-brand">
-      <div class="wizard-brand-icon">🏗️</div>
-      <h1 id="wiz-title">ArchitectPro</h1>
-    </div>
-    <p class="wizard-subtitle" id="wiz-subtitle">Build your dream home, step by step</p>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="../ar-viewer/ar-bridge.js"></script>
+</head>
+<body>
+  <!-- =================================================================== -->
+  <!-- 1. WIZARD CONFIGURATION OVERLAY (WITH 4 QUICK-START TEMPLATES)      -->
+  <!-- =================================================================== -->
+  <div id="wizard-overlay" class="wizard-overlay">
     <div class="wizard-card">
-      <div class="wizard-grid">
-        <div class="form-group" style="grid-column:1/-1">
-          <label id="wiz-label-type">House Type</label>
-          <select id="inp-type">
-            <option value="0">Single Story</option>
-            <option value="1">2 Floors</option>
-            <option value="2">3 Floors</option>
-            <option value="3">Villa / Custom</option>
-          </select>
+      <div class="wizard-head">
+        <div class="wizard-brand">
+          <div class="brand-badge">A2</div>
+          <div>
+            <h1 id="wiz-title">Configure Your Construction Project</h1>
+            <p id="wiz-sub">Structural engineering, 7-phase 3D build simulator, live 2D CAD &amp; full BOQ estimator</p>
+          </div>
         </div>
-        <div class="form-group"><label id="wiz-label-length">Length (m)</label><input type="number" id="inp-length"
-            value="12" min="5" max="50" step="0.5" /></div>
-        <div class="form-group"><label id="wiz-label-width">Width (m)</label><input type="number" id="inp-width"
-            value="9" min="4" max="40" step="0.5" /></div>
-        <div class="form-group"><label id="wiz-label-fh">Floor Height (m)</label><input type="number"
-            id="inp-floor-height" value="2.8" min="2.4" max="4.5" step="0.1" /></div>
-        <div class="form-group"><label id="wiz-label-floors">Number of Floors</label><input type="number"
-            id="inp-floors" value="1" min="1" max="5" step="1" /></div>
-        <div class="form-group"><label id="wiz-label-foundation">Foundation Type</label>
-          <select id="inp-foundation">
-            <option value="0">Strip Foundation</option>
-            <option value="1">Raft Slab</option>
-            <option value="2">Pile Foundation</option>
-          </select>
-        </div>
-        <div class="form-group"><label id="wiz-label-roof">Roof Type</label>
-          <select id="inp-roof">
-            <option value="0">Flat Roof</option>
-            <option value="1">Gable Roof (2 slopes)</option>
-            <option value="2" selected>Hip Roof (4 slopes)</option>
-          </select>
-        </div>
-        <div class="form-group"><label id="wiz-label-budget">Total Budget ($)</label><input type="number"
-            id="inp-budget" value="250000" min="10000" step="5000" /></div>
-        <div class="form-group"><label id="wiz-label-region">Region / Climate</label>
-          <select id="inp-region">
-            <option value="0">Temperate</option>
-            <option value="1">Cold / Nordic</option>
-            <option value="2">Hot / Mediterranean</option>
-            <option value="3">Tropical</option>
-          </select>
+        <div class="wizard-head-actions">
+          <button id="btn-wiz-back-studio" class="btn btn-ghost btn-sm" title="Return to Studios-Pro">← <span data-i18n="back">Back</span></button>
+          <button id="btn-wiz-close" class="btn btn-ghost btn-sm hidden" title="Close">✕</button>
         </div>
       </div>
-      <button class="btn-primary" onclick="startApp()"><span>🔨</span><span id="wiz-btn-text">Generate My Plan
-          →</span></button>
-    </div>
-    <div style="margin-top:1.5rem">
-      <div class="lang-toggle">
-        <button class="lang-btn active" id="wiz-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
-        <button class="lang-btn" id="wiz-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+
+      <!-- Quick-Start Templates -->
+      <div class="wiz-section-label" data-i18n="quickPresets">Quick-Start Engineering Templates</div>
+      <div id="wiz-presets" class="preset-grid"></div>
+
+      <!-- Engineering Form -->
+      <div class="wiz-form-grid">
+        <div class="field">
+          <label for="inp-type" data-i18n="houseType">House Type</label>
+          <select id="inp-type"></select>
+        </div>
+        <div class="field">
+          <label for="inp-layout" data-i18n="layoutPreset">Initial Interior Partitioning</label>
+          <select id="inp-layout"></select>
+        </div>
+        <div class="field">
+          <label for="inp-length"><span data-i18n="length">Length</span> (<span class="unit-len-lbl">m</span>)</label>
+          <input id="inp-length" type="number" step="0.5" min="4" max="60" value="12" />
+        </div>
+        <div class="field">
+          <label for="inp-width"><span data-i18n="width">Width</span> (<span class="unit-len-lbl">m</span>)</label>
+          <input id="inp-width" type="number" step="0.5" min="4" max="50" value="9" />
+        </div>
+        <div class="field">
+          <label for="inp-height"><span data-i18n="floorHeight">Floor Height</span> (<span class="unit-len-lbl">m</span>)</label>
+          <input id="inp-height" type="number" step="0.1" min="2.2" max="5.0" value="2.85" />
+        </div>
+        <div class="field">
+          <label for="inp-floors" data-i18n="floors">Number of Floors</label>
+          <input id="inp-floors" type="number" step="1" min="1" max="5" value="1" />
+        </div>
+        <div class="field">
+          <label for="inp-foundation" data-i18n="foundation">Foundation System</label>
+          <select id="inp-foundation"></select>
+        </div>
+        <div class="field">
+          <label for="inp-roof" data-i18n="roofType">Roof Architecture</label>
+          <select id="inp-roof"></select>
+        </div>
+        <div class="field">
+          <label for="inp-budget" data-i18n="budget">Target Budget ($)</label>
+          <input id="inp-budget" type="number" step="5000" min="25000" max="10000000" value="240000" />
+        </div>
+        <div class="field">
+          <label for="inp-region" data-i18n="region">Region / Climate Zone</label>
+          <select id="inp-region"></select>
+        </div>
       </div>
-      <div class="lang-toggle mt-2">
-        <button class="lang-btn active" id="wiz-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
-        <button class="lang-btn" id="wiz-unit-imperial" onclick="setUnitSystem('imperial')">Imperial (ft)</button>
+
+      <div class="wiz-footer">
+        <div class="wiz-toggles">
+          <div class="seg-group" id="wiz-lang-group">
+            <button type="button" class="seg-btn active" data-lang="en">EN</button>
+            <button type="button" class="seg-btn" data-lang="fr">FR</button>
+          </div>
+          <div class="seg-group" id="wiz-unit-group">
+            <button type="button" class="seg-btn active" data-unit="metric">Metric (m)</button>
+            <button type="button" class="seg-btn" data-unit="imperial">Imperial (ft)</button>
+          </div>
+        </div>
+        <button id="btn-start-app" class="btn btn-primary btn-lg" data-i18n="generateBtn">Launch Engineering Workspace →</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════ APP ═══════════════════════ -->
-  <div id="app-screen">
-
-    <!-- HEADER -->
-    <header class="app-header">
-      <div class="header-brand">
-        <div class="header-brand-icon">🏗️</div>
-        <span>ArchitectPro</span>
-      </div>
-      <div class="header-actions">
-        <button class="btn-sm" onclick="resetApp()">🔄 <span data-i18n="newProject">New Project</span></button>
-        <button class="btn-sm" onclick="exportToPrint()">🖨️ <span data-i18n="printProject">Print</span></button>
-        <button class="btn-sm" onclick="exportToPDF()">📄 <span data-i18n="exportPDF">Download PDF</span></button>
-        <button class="btn-sm" onclick="exportGLB()" id="btn-export-glb">📦 <span data-i18n="exportGLB">Download GLB</span></button>
-        <button class="btn-sm" id="btn-preview-ar" data-bypassed="true" onclick="exportAR()" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;border:none;font-weight:700;">📱 <span data-i18n="previewAR">AR</span></button>
-        <button class="btn-sm" onclick="exportSTL()" id="btn-export-stl">📦 <span data-i18n="exportSTL">Download STL</span></button>
-        <button class="btn-sm" onclick="exportOBJ()" id="btn-export-obj">📦 <span data-i18n="exportOBJ">Download OBJ</span></button>
-        <div class="lang-toggle">
-          <button class="lang-btn active" id="app-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
-          <button class="lang-btn" id="app-lang-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+  <!-- =================================================================== -->
+  <!-- 2. MAIN WORKSPACE SHELL                                             -->
+  <!-- =================================================================== -->
+  <div id="app-workspace" class="app-shell hidden">
+    <!-- Top Header (Native Back Button — ZERO Overlap!) -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="btn-back-studios" class="btn btn-back" title="Return to Studios-Pro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span data-i18n="back">Back</span>
+        </button>
+        <div class="top-brand">
+          <div class="brand-badge sm">A2</div>
+          <div class="top-brand-text">
+            <strong>ArchitectPro 2</strong>
+            <span id="top-proj-summary">12.0 m × 9.0 m · 1F</span>
+          </div>
         </div>
-        <div class="lang-toggle">
-          <button class="lang-btn active" id="app-unit-metric" onclick="setUnitSystem('metric')">Metric (m)</button>
-          <button class="lang-btn" id="app-unit-imperial" onclick="setUnitSystem('imperial')">Imperial (ft)</button>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btn-open-wizard" class="btn btn-ghost btn-sm">⚙ <span data-i18n="newProj">Project Specs</span></button>
+        <button id="btn-save-proj" class="btn btn-ghost btn-sm">💾 <span data-i18n="saveProj">Save</span></button>
+        <button id="btn-load-proj" class="btn btn-ghost btn-sm">📂 <span data-i18n="loadProj">Load</span></button>
+        <input id="inp-load-file" type="file" accept=".sparch2,.json" class="hidden" />
+        <button id="btn-open-export" class="btn btn-accent-outline btn-sm">📤 <span data-i18n="exportMenu">Export &amp; CAD</span></button>
+        <button id="btn-open-ar" class="btn btn-ar btn-sm">📱 <span data-i18n="arBtn">AR View</span></button>
+
+        <div class="seg-group compact" id="top-lang-group">
+          <button type="button" class="seg-btn active" data-lang="en">EN</button>
+          <button type="button" class="seg-btn" data-lang="fr">FR</button>
+        </div>
+        <div class="seg-group compact" id="top-unit-group">
+          <button type="button" class="seg-btn active" data-unit="metric">m</button>
+          <button type="button" class="seg-btn" data-unit="imperial">ft</button>
         </div>
       </div>
     </header>
 
-    <div class="app-body">
-
-      <!-- SIDEBAR -->
+    <!-- Main Body Layout -->
+    <div class="workspace-body">
+      <!-- LEFT SIDEBAR -->
       <aside class="sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-section-title" data-i18n="progress">Progress</div>
-          <div class="progress-ring-wrap">
-            <div class="progress-ring">
-              <svg width="72" height="72" viewBox="0 0 72 72">
-                <circle cx="36" cy="36" r="28" fill="none" stroke="#2a2f42" stroke-width="7" />
-                <circle id="progress-arc" cx="36" cy="36" r="28" fill="none" stroke="#f59e0b" stroke-width="7"
-                  stroke-dasharray="175.93" stroke-dashoffset="175.93" stroke-linecap="round"
-                  style="transition:stroke-dashoffset 0.6s ease" />
-              </svg>
-              <div class="progress-ring-text" id="progress-pct">0%</div>
+        <!-- Overall Progress Ring -->
+        <div class="side-block progress-card">
+          <div class="side-title" data-i18n="overallProgress">Construction Progress</div>
+          <div class="progress-ring-row">
+            <svg class="progress-svg" viewBox="0 0 64 64">
+              <circle class="ring-bg" cx="32" cy="32" r="26" />
+              <circle id="progress-ring-fill" class="ring-fg" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+            </svg>
+            <div>
+              <div id="progress-pct" class="progress-big">0%</div>
+              <div id="progress-sub" class="muted-xs">0 / 42 steps</div>
             </div>
-            <div class="progress-label" data-i18n="progress">Overall Progress</div>
           </div>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-section-title" data-i18n="phases">Phases</div>
-          <div class="phase-list" id="phase-list"></div>
+
+        <!-- 7 Construction Phases -->
+        <div class="side-block">
+          <div class="side-title" data-i18n="phases">7 Construction Phases</div>
+          <nav id="phase-nav" class="phase-list"></nav>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-section-title" data-i18n="colorCustomizer">Colors</div>
-          <div class="color-grid" id="color-grid"></div>
+
+        <!-- Color Palette -->
+        <div class="side-block">
+          <div class="side-title" data-i18n="colors">Material Palette</div>
+          <div class="color-grid">
+            <label class="color-chip"><input type="color" id="col-extWalls" value="#e5d5c0" /><span data-i18n="extWalls">Facade</span></label>
+            <label class="color-chip"><input type="color" id="col-roof" value="#b45309" /><span data-i18n="roof">Roof</span></label>
+            <label class="color-chip"><input type="color" id="col-winDoors" value="#1e293b" /><span data-i18n="winDoors">Glazing/Trim</span></label>
+            <label class="color-chip"><input type="color" id="col-intWalls" value="#f1f5f9" /><span data-i18n="intWalls">Interior</span></label>
+            <label class="color-chip"><input type="color" id="col-floor" value="#c8a882" /><span data-i18n="floorCol">Floor Slab</span></label>
+            <label class="color-chip"><input type="color" id="col-ground" value="#3f8f54" /><span data-i18n="groundCol">Site Yard</span></label>
+          </div>
         </div>
-        <div class="sidebar-section">
-          <div class="sidebar-section-title" data-i18n="budget">Budget</div>
-          <div class="budget-info">
-            <span class="budget-val" id="budget-spent-val">$0</span>
-            <span style="color:var(--text-faint)" id="budget-total-val">$0</span>
+
+        <!-- Budget Tracker -->
+        <div class="side-block budget-card">
+          <div class="side-title" data-i18n="budgetTracker">Budget vs Estimate</div>
+          <div class="budget-nums">
+            <strong id="budget-est">$0</strong>
+            <span id="budget-target" class="muted-xs">/ $240,000</span>
           </div>
-          <div class="budget-bar">
-            <div class="budget-fill" id="budget-fill" style="width:0%"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="budget-pct" id="budget-pct-text">0%</span>
-            <span class="budget-over-text" id="budget-over" style="display:none" data-i18n="overBudget">⚠️ Over
-              budget!</span>
-          </div>
+          <div class="budget-track"><div id="budget-bar" class="budget-fill"></div></div>
+          <div id="budget-status" class="budget-status-lbl">Within target budget</div>
         </div>
       </aside>
 
-      <!-- MAIN -->
-      <main class="main-content" id="main-content">
-
-        <!-- Overview -->
-        <div class="overview-bar">
-          <div class="overview-stat"><span class="ov-label">📐 Area</span><span class="ov-val" id="ov-area">—</span>
+      <!-- MAIN SCROLL CONTENT -->
+      <main class="main-panel">
+        <!-- 6 Live Engineering KPIs -->
+        <section class="kpi-strip">
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiArea">Total Area</span>
+            <strong id="kpi-area" class="kpi-val amber">108.0 m²</strong>
           </div>
-          <div class="overview-stat"><span class="ov-label">🏠 Phases</span><span class="ov-val">7</span></div>
-          <div class="overview-stat"><span class="ov-label">💲 <span
-                data-i18n="materialCost">Materials</span></span><span class="ov-val" id="ov-mat-cost">—</span></div>
-          <div class="overview-stat"><span class="ov-label">👷 <span data-i18n="laborCost">Labor</span></span><span
-              class="ov-val" id="ov-lab-cost">—</span></div>
-          <div class="overview-stat"><span class="ov-label">📊 Total Est.</span><span class="ov-val green"
-              id="ov-total">—</span></div>
-          <div style="margin-left:auto">
-            <span id="hdr-dims" style="font-size:0.88rem;color:var(--text-muted);font-weight:600"></span>
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiMat">Materials BOQ</span>
+            <strong id="kpi-mat" class="kpi-val">$0</strong>
           </div>
-        </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiLabor">Labor Est.</span>
+            <strong id="kpi-labor" class="kpi-val">$0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiTotal">Total Estimate</span>
+            <strong id="kpi-total" class="kpi-val green">$0</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiDuration">Schedule</span>
+            <strong id="kpi-duration" class="kpi-val info">28 wks</strong>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-lbl" data-i18n="kpiEnergy">Energy Class</span>
+            <strong id="kpi-energy" class="kpi-val"><span id="kpi-energy-badge" class="energy-pill">A</span> <span id="kpi-energy-kwh" class="muted-xs">52 kWh/m²</span></strong>
+          </div>
+        </section>
 
-        <!-- ═══ SPLIT SCREEN ═══ -->
-        <div class="split-container">
-
-          <!-- LEFT: 2D EDITOR -->
-          <div class="editor-panel">
-
-            <!-- Toolbar -->
-            <div class="editor-toolbar" id="editor-toolbar">
-              <div class="tool-group">
-                <button class="tool-btn active" id="tool-select" onclick="setTool('select')" title="Select element">↖
-                  <span data-i18n="toolSelect">Select</span></button>
+        <!-- DUAL INTERACTIVE STUDIO: 2D STRUCTURAL CAD + 3D 7-PHASE SIMULATOR -->
+        <section class="studio-split">
+          <!-- 2D CAD PANEL -->
+          <div class="panel-card cad-panel">
+            <div class="cad-toolbar">
+              <div class="tool-group" id="cad-tool-group">
+                <button class="tool-btn active" data-tool="select" title="Select / Drag (V)">↖ <span data-tool-lbl="select">Select</span></button>
+                <button class="tool-btn" data-tool="wall" title="Draw Wall (W)">━ <span data-tool-lbl="wall">Wall</span></button>
+                <button class="tool-btn" data-tool="column" title="Structural Column (C)">⊞ <span data-tool-lbl="column">Column</span></button>
+                <button class="tool-btn" data-tool="window" title="Window Cutout">🪟 <span data-tool-lbl="window">Window</span></button>
+                <button class="tool-btn" data-tool="door" title="Door Opening">🚪 <span data-tool-lbl="door">Door</span></button>
+                <button class="tool-btn" data-tool="stairs" title="Staircase">🪜 <span data-tool-lbl="stairs">Stairs</span></button>
+                <button class="tool-btn" data-tool="measure" title="Measure Distance">📏 <span data-tool-lbl="measure">Measure</span></button>
+                <button class="tool-btn danger" data-tool="erase" title="Erase Element">✕ <span data-tool-lbl="erase">Erase</span></button>
               </div>
-              <div class="tool-sep"></div>
-              <div class="tool-group">
-                <button class="tool-btn" id="tool-wall" onclick="setTool('wall')" title="Draw interior wall">▬ <span
-                    data-i18n="toolWall">Wall</span></button>
-                <button class="tool-btn" id="tool-window" onclick="setTool('window')" title="Place window">🪟 <span
-                    data-i18n="toolWindow">Window</span></button>
-                <button class="tool-btn" id="tool-door" onclick="setTool('door')" title="Place door">🚪 <span
-                    data-i18n="toolDoor">Door</span></button>
-                <button class="tool-btn" id="tool-stairs" onclick="setTool('stairs')" title="Place staircase">🪜 <span
-                    data-i18n="toolStairs">Stairs</span></button>
-              </div>
-              <div class="tool-sep"></div>
-              <button class="tool-btn" id="tool-erase" onclick="setTool('erase')" title="Erase element">🗑️ <span
-                  data-i18n="toolErase">Erase</span></button>
-            </div>
-
-            <!-- Tool Options Bar (always visible, changes per tool) -->
-            <div class="tool-options-bar" id="tool-options-bar">
-              <!-- populated by editor.js buildToolOptions() -->
-            </div>
-
-            <!-- Canvas + Properties -->
-            <div class="editor-canvas-wrap" id="editor-canvas-wrap">
-              <canvas id="canvas-editor"></canvas>
-              <div class="properties-panel" id="properties-panel" style="display:none"></div>
-            </div>
-
-            <!-- Footer: floors + controls -->
-            <div class="editor-footer">
-              <div class="floor-tabs" id="floor-tabs"></div>
-              <div class="editor-controls">
-                <button class="ctrl-btn" id="btn-undo" onclick="editorUndo()" disabled>↩ Undo</button>
-                <button class="ctrl-btn" id="btn-redo" onclick="editorRedo()" disabled>↪ Redo</button>
-                <button class="ctrl-btn active" id="btn-grid" onclick="toggleGrid()">⊞ Grid</button>
+              <div class="tool-right">
+                <select id="sel-quick-layout" class="mini-select" title="1-Click Auto-Partition">
+                  <option value="" selected disabled>⚡ Auto-Layout</option>
+                  <option value="family3">3-Room Family</option>
+                  <option value="villa4">4-Room Villa</option>
+                  <option value="open">Open Plan</option>
+                  <option value="empty">Clear Interior</option>
+                </select>
+                <button id="btn-cad-undo" class="icon-btn" title="Undo (Ctrl+Z)" disabled>↶</button>
+                <button id="btn-cad-redo" class="icon-btn" title="Redo (Ctrl+Y)" disabled>↷</button>
+                <button id="btn-cad-grid" class="icon-btn active" title="Toggle Grid">#</button>
+                <button id="btn-cad-fit" class="icon-btn" title="Reset Zoom">⊡</button>
               </div>
             </div>
-          </div>
 
-          <!-- RIGHT: 3D MODEL -->
-          <div class="view-3d-panel">
-            <canvas id="canvas-3d"></canvas>
-            <div class="view-3d-label">🏠 3D Model — drag to rotate · scroll to zoom</div>
-            <div class="canvas-overlay">
-              <button class="canvas-btn" onclick="resetCamera()">⟳ Reset</button>
-              <button class="canvas-btn" id="btn-wireframe" onclick="toggleWireframe()">⬡ Wire</button>
+            <!-- Dynamic Tool Options / Selected Element Inspector -->
+            <div id="cad-options-bar" class="cad-options-bar"></div>
+
+            <!-- 2D Canvas -->
+            <div class="cad-canvas-wrap">
+              <canvas id="cad-canvas"></canvas>
+            </div>
+
+            <!-- Multi-Floor Selector Bar -->
+            <div class="floor-bar">
+              <div id="floor-tabs" class="floor-tabs"></div>
+              <span id="cad-stats-badge" class="muted-xs">0 rooms · 0 walls</span>
             </div>
           </div>
 
-        </div><!-- end split-container -->
+          <!-- 3D SIMULATOR PANEL -->
+          <div class="panel-card view3d-panel">
+            <div class="view3d-hud-top">
+              <span id="hud-phase-pill" class="phase-pill">Phase 1/7 · Foundation</span>
+              <div class="hud-btn-row">
+                <button id="btn-timelapse" class="hud-btn accent">▶ <span data-i18n="timelapse">Time-Lapse</span></button>
+                <button id="btn-mep-xray" class="hud-btn" title="3D Plumbing/UFH/Electrical X-Ray">⚡ <span data-i18n="mepXray">MEP X-Ray</span></button>
+                <button id="btn-cutaway" class="hud-btn" title="Dollhouse Cutaway">✂ <span data-i18n="cutaway">Cutaway</span></button>
+                <button id="btn-wireframe" class="hud-btn" title="Wireframe">◫</button>
+              </div>
+            </div>
 
-        <!-- Phase header -->
-        <div class="phase-header" id="phase-header">
-          <div class="phase-header-icon" id="ph-icon">⛏️</div>
-          <div class="phase-header-text">
-            <h2 id="ph-name">Foundation</h2>
-            <p id="ph-sub">Phase 1 of 7</p>
+            <div id="viewport-3d" class="viewport-3d"></div>
+
+            <div class="view3d-hud-bottom">
+              <div class="cam-presets">
+                <button class="hud-btn sm" data-cam="iso">Iso</button>
+                <button class="hud-btn sm" data-cam="front">Front</button>
+                <button class="hud-btn sm" data-cam="top">Top</button>
+              </div>
+              <label class="sun-slider-wrap">
+                <span>☀ <span id="sun-time-lbl">13:30</span></span>
+                <input id="inp-sun-hour" type="range" min="7" max="19" step="0.5" value="13.5" />
+              </label>
+            </div>
           </div>
-          <div class="phase-nav">
-            <button class="btn-phase-nav" onclick="changePhase(-1)">‹</button>
-            <button class="btn-phase-nav" onclick="changePhase(1)">›</button>
+        </section>
+
+        <!-- ENGINEERING COMMAND DECK (4 TABS: STEPS / BOQ / STRUCTURAL & THERMAL / GANTT) -->
+        <section class="panel-card deck-panel">
+          <div class="deck-header">
+            <div class="deck-phase-info">
+              <span id="deck-phase-icon" class="deck-icon">⛏️</span>
+              <div>
+                <h2 id="deck-phase-title">Phase 1 — Foundation &amp; Earthworks</h2>
+                <span id="deck-phase-sub" class="muted-xs">Phase 1 of 7</span>
+              </div>
+            </div>
+            <div class="deck-nav-btns">
+              <button id="btn-prev-phase" class="icon-btn" title="Previous Phase">‹</button>
+              <button id="btn-next-phase" class="icon-btn" title="Next Phase">›</button>
+            </div>
           </div>
-        </div>
 
-        <!-- Steps -->
-        <div class="panel-card">
-          <div class="panel-title">🪜 <span data-i18n="steps">Steps</span> — <span class="pton"
-              id="steps-phase-name">Foundation</span></div>
-          <div class="steps-grid" id="steps-grid" style="padding:10px"></div>
-        </div>
+          <div class="deck-tabs" id="deck-tabs">
+            <button class="deck-tab active" data-tab="steps">📋 <span data-i18n="tabs.steps">Engineering Steps (6)</span></button>
+            <button class="deck-tab" data-tab="boq">🧮 <span data-i18n="tabs.boq">Bill of Quantities (BOQ)</span></button>
+            <button class="deck-tab" data-tab="structural">🏗️ <span data-i18n="tabs.structural">Structural &amp; Thermal</span></button>
+            <button class="deck-tab" data-tab="gantt">📅 <span data-i18n="tabs.gantt">Gantt Schedule &amp; Cash-Flow</span></button>
+          </div>
 
-        <!-- Materials + Costs -->
-        <div class="data-grid">
-          <div class="panel-card">
-            <div class="panel-title">🧮 <span data-i18n="materials">Materials Calculator</span></div>
-            <div style="overflow-x:auto">
-              <table class="mat-table">
+          <!-- TAB 1: ENGINEERING STEPS -->
+          <div id="tab-steps" class="deck-pane active">
+            <div id="steps-grid" class="steps-grid"></div>
+          </div>
+
+          <!-- TAB 2: BILL OF QUANTITIES (FIXED 5-COLUMN TABLE!) -->
+          <div id="tab-boq" class="deck-pane">
+            <div class="boq-toolbar">
+              <div class="seg-group compact" id="boq-scope-group">
+                <button type="button" class="seg-btn active" data-scope="phase" data-i18n="boqActive">Active Phase</button>
+                <button type="button" class="seg-btn" data-scope="all" data-i18n="boqAll">All 7 Phases (58)</button>
+              </div>
+              <div class="boq-actions">
+                <button id="btn-reset-prices" class="btn btn-ghost btn-sm" data-i18n="resetPrices">Reset Default Prices</button>
+                <button id="btn-quick-csv" class="btn btn-accent-outline btn-sm">📊 Excel .CSV</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="boq-table">
                 <thead>
                   <tr>
-                    <th data-i18n="materialItem">Material</th>
-                    <th data-i18n="qty">Qty</th>
-                    <th data-i18n="unit">Unit</th>
-                    <th data-i18n="total">Total</th>
+                    <th data-i18n="matCol">Material / Trade Item</th>
+                    <th class="num" data-i18n="qtyCol">Quantity</th>
+                    <th class="num" data-i18n="unitCol">Unit</th>
+                    <th class="num" data-i18n="unitPriceCol">Unit Price ($)</th>
+                    <th class="num" data-i18n="totalCol">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody id="mat-tbody"></tbody>
+                <tbody id="boq-tbody"></tbody>
+                <tfoot id="boq-tfoot"></tfoot>
               </table>
             </div>
           </div>
-          <div class="panel-card">
-            <div class="panel-title">💲 <span data-i18n="costs">Cost Estimator</span></div>
-            <div class="cost-rows" id="cost-rows"></div>
+
+          <!-- TAB 3: STRUCTURAL ENGINEERING & THERMAL ANALYSIS -->
+          <div id="tab-structural" class="deck-pane">
+            <div id="structural-dashboard" class="eng-grid"></div>
           </div>
-        </div>
 
-        <!-- Tips -->
-        <div class="tips-row" id="tips-row"></div>
-
+          <!-- TAB 4: GANTT SCHEDULE & CASH-FLOW -->
+          <div id="tab-gantt" class="deck-pane">
+            <div id="gantt-container" class="gantt-wrap"></div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <!-- =================================================================== -->
+  <!-- 3. EXPORT MODAL & AR SCALE MODAL                                    -->
+  <!-- =================================================================== -->
+  <div id="modal-export" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 data-i18n="exportTitle">Professional CAD, Engineering &amp; 3D Exports</h3>
+        <button class="icon-btn modal-close" data-close="modal-export">✕</button>
+      </div>
+      <div class="modal-section-lbl" data-i18n="freeExports">Free Project &amp; AR Exports</div>
+      <div class="export-grid">
+        <button class="exp-card" data-exp="sparch2"><strong>💾 Save Project (.sparch2)</strong><span>Full editable blueprint, BOQ &amp; progress</span></button>
+        <button class="exp-card" data-exp="png"><strong>🖼️ 3D Render (.PNG)</strong><span>High-resolution viewport snapshot</span></button>
+        <button class="exp-card" data-exp="print"><strong>🖨️ Print Sheet</strong><span>Quick clean browser print</span></button>
+        <button class="exp-card accent" data-exp="ar"><strong>📱 View in AR (Free)</strong><span>1:50 Tabletop or 1:1 Site Scale</span></button>
+      </div>
+      <div class="modal-section-lbl" data-i18n="proExports">Engineering Dossier, CAD &amp; 3D Exports</div>
+      <div class="export-grid">
+        <button class="exp-card" data-exp="pdf"><strong>📑 Engineering Dossier (.PDF)</strong><span>Multi-page specs, 2D+3D, Gantt &amp; 58-item BOQ</span></button>
+        <button class="exp-card" data-exp="csv"><strong>📊 Excel Spreadsheet (.CSV)</strong><span>Full 58-item BOQ &amp; labor for suppliers</span></button>
+        <button class="exp-card" data-exp="dxf"><strong>📐 AutoCAD 2D (.DXF R12)</strong><span>1:1 mm layered structural CAD plan</span></button>
+        <button class="exp-card" data-exp="svg"><strong>🗺️ Vector Blueprint (.SVG)</strong><span>Dimensioned architectural floor plan</span></button>
+        <button class="exp-card" data-exp="glb"><strong>📦 Clean 3D Model (.GLB)</strong><span>1:1 m building only (no ground bloat)</span></button>
+        <button class="exp-card" data-exp="stl"><strong>🖨️ 3D Print Maquette (.STL)</strong><span>Binary 1:100 mm Z-up print-ready</span></button>
+        <button class="exp-card" data-exp="obj"><strong>🧊 Wavefront 3D (.OBJ)</strong><span>Universal 3D CAD geometry</span></button>
+        <button class="exp-card" data-exp="html"><strong>🌐 Interactive 3D (.HTML)</strong><span>Self-contained shareable 3D viewer</span></button>
+      </div>
+    </div>
+  </div>
 
-  <script src="data.js?v=3"></script>
-  <script src="editor.js?v=3"></script>
-  <script src="three-scene.js?v=3"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
-  <script src="../ar-viewer/ar-bridge.js"></script>
-  <script src="export-handler.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <div id="modal-ar" class="modal-backdrop hidden">
+    <div class="modal-box sm">
+      <div class="modal-head">
+        <h3 data-i18n="arTitle">Augmented Reality Scale</h3>
+        <button class="icon-btn modal-close" data-close="modal-ar">✕</button>
+      </div>
+      <div class="ar-choice-list">
+        <button id="btn-ar-tabletop" class="exp-card accent">
+          <strong data-i18n="arTabletop">1:50 Tabletop Maquette (Table)</strong>
+          <span>Inspect the entire architectural model on your desk or meeting table</span>
+        </button>
+        <button id="btn-ar-real" class="exp-card">
+          <strong data-i18n="arReal">1:1 Full Real Scale (Site Walkthrough)</strong>
+          <span>Place the full-size structure outdoors on your building plot</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
-  </body>
+  <div id="toast-box" class="toast-box"></div>
 
+  <!-- Scripts -->
+  <script src="eng-core.js?v=3.0"></script>
+  <script src="cad2d.js?v=3.0"></script>
+  <script type="module" src="scene3d.js?v=3.0"></script>
+  <script type="module" src="export-suite.js?v=3.0"></script>
+  <script type="module" src="app.js?v=3.0"></script>
+</body>
 </html>
