@@ -1,1552 +1,400 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STUDIOS-PRO - Scripting Live Sandbox (Prototype)</title>
-  <link rel="stylesheet" href="style.css?v=3">
-  <!-- Load External Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripting Studio PRO v5.0 | Parametric CAD & AI Code-to-3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./style.css?v=5">
 </head>
 <body>
-<!-- Back Button and Payment logic -->
-  <style>
-    .back-to-studios {
-      position: fixed; top: 20px; left: 20px; z-index: 99999;
-      background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
-      color: white; padding: 10px 20px; border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;
-      font-family: sans-serif; font-size: 14px; font-weight: 600;
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-    .back-to-studios:hover { background: #3b82f6; transform: translateY(-2px); }
-  </style>
-  <button id="back-btn" class="back-to-studios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-    <span>Retour / Back</span>
-  </button>
-  <script>
-    (function () {
-      // Monkey patch Blob constructor to handle DataView gracefully
-      const OriginalBlob = window.Blob;
-      const CustomBlob = function (blobParts, options) {
-        if (blobParts && Array.isArray(blobParts)) {
-          const safeParts = blobParts.map(part => {
-            if (typeof DataView !== 'undefined' && part instanceof DataView) {
-              return new Uint8Array(part.buffer, part.byteOffset, part.byteLength);
+
+    <!-- ── UNIFIED STUDIOS-PRO BRIDGE & PAYWALL GATE (ZERO BLOAT!) ── -->
+    <script>
+      (function () {
+        const channel = new BroadcastChannel('studios_pro_channel');
+        const params = new URLSearchParams(window.location.search);
+        let isPremiumUser = params.get('premium') === 'true';
+        let singleExportExpiresAt = 0;
+        let pendingCallback = null;
+        window.isPremiumUser = isPremiumUser;
+
+        channel.onmessage = (e) => {
+          const msg = e.data || {};
+          if (msg.type === 'EXPORT_ALLOWED') {
+            singleExportExpiresAt = Date.now() + 10000;
+            if (msg.payload && msg.payload.isPremium) {
+              isPremiumUser = true;
+              window.isPremiumUser = true;
             }
-            return part;
-          });
-          return new OriginalBlob(safeParts, options);
-        }
-        return new OriginalBlob(blobParts, options);
-      };
-      CustomBlob.prototype = OriginalBlob.prototype;
-      window.Blob = CustomBlob;
+            if (typeof pendingCallback === 'function') {
+              const fn = pendingCallback;
+              pendingCallback = null;
+              fn();
+            }
+          } else if (msg.type === 'USER_STATUS_RESPONSE' || msg.type === 'USER_STATUS_CHANGED') {
+            isPremiumUser = !!(msg.payload && msg.payload.isPremium);
+            window.isPremiumUser = isPremiumUser;
+          }
+        };
+        try { channel.postMessage({ type: 'GET_USER_STATUS' }); } catch (_) {}
 
-      function base64ToBytes(base64) {
-        const binString = atob(base64);
-        const len = binString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      if (typeof THREE !== 'undefined') {
-        THREE.STLExporter = class STLExporter {
-          parse(scene, options = {}) {
-            const binary = options.binary !== undefined ? options.binary : false;
-            const objects = [];
-            let triangles = 0;
-            scene.traverse(function(object) {
-              if (object.isMesh) {
-                const geometry = object.geometry;
-                const index = geometry.index;
-                const positionAttribute = geometry.getAttribute('position');
-                triangles += index !== null ? index.count / 3 : positionAttribute.count / 3;
-                objects.push({ object3d: object, geometry: geometry });
-              }
-            });
-            let output;
-            let offset = 80;
-            if (binary === true) {
-              const bufferLength = triangles * 2 + triangles * 3 * 4 * 4 + 80 + 4;
-              const arrayBuffer = new ArrayBuffer(bufferLength);
-              output = new DataView(arrayBuffer);
-              output.setUint32(offset, triangles, true);
-              offset += 4;
+        window.StudiosProGate = {
+          closeStudio() {
+            if (window.ScriptingStudioTeardown) {
+              try { window.ScriptingStudioTeardown(); } catch (_) {}
+            }
+            const inIframe = window.parent && window.parent !== window;
+            if (inIframe) {
+              try { window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*'); } catch (_) {}
             } else {
-              output = 'solid exported\n';
+              try { channel.postMessage({ type: 'CLOSE_STUDIO' }); } catch (_) {}
             }
-            const vA = new THREE.Vector3();
-            const vB = new THREE.Vector3();
-            const vC = new THREE.Vector3();
-            const cb = new THREE.Vector3();
-            const ab = new THREE.Vector3();
-            const normal = new THREE.Vector3();
-            for (let i = 0, il = objects.length; i < il; i++) {
-              const object = objects[i].object3d;
-              const geometry = objects[i].geometry;
-              const index = geometry.index;
-              const positionAttribute = geometry.getAttribute('position');
-              if (index !== null) {
-                for (let j = 0; j < index.count; j += 3) {
-                  const a = index.getX(j + 0);
-                  const b = index.getX(j + 1);
-                  const c = index.getX(j + 2);
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              } else {
-                for (let j = 0; j < positionAttribute.count; j += 3) {
-                  const a = j + 0;
-                  const b = j + 1;
-                  const c = j + 2;
-                  writeFace(a, b, c, positionAttribute, object);
-                }
-              }
-            }
-            if (binary === false) {
-              output += 'endsolid exported\n';
-            }
-            return output;
-
-            function writeFace(a, b, c, positionAttribute, object) {
-              vA.fromBufferAttribute(positionAttribute, a);
-              vB.fromBufferAttribute(positionAttribute, b);
-              vC.fromBufferAttribute(positionAttribute, c);
-              if (object.isSkinnedMesh === true) {
-                object.boneTransform(a, vA);
-                object.boneTransform(b, vB);
-                object.boneTransform(c, vC);
-              }
-              vA.applyMatrix4(object.matrixWorld);
-              vB.applyMatrix4(object.matrixWorld);
-              vC.applyMatrix4(object.matrixWorld);
-              writeNormal(vA, vB, vC);
-              writeVertex(vA);
-              writeVertex(vB);
-              writeVertex(vC);
-              if (binary === true) {
-                output.setUint16(offset, 0, true);
-                offset += 2;
-              } else {
-                output += '\t\tendloop\n\tendfacet\n';
-              }
-            }
-            function writeNormal(vA, vB, vC) {
-              cb.subVectors(vC, vB);
-              ab.subVectors(vA, vB);
-              cb.cross(ab).normalize();
-              normal.copy(cb).normalize();
-              if (binary === true) {
-                output.setFloat32(offset, normal.x, true);
-                offset += 4;
-                output.setFloat32(offset, normal.y, true);
-                offset += 4;
-                output.setFloat32(offset, normal.z, true);
-                offset += 4;
-              } else {
-                output += '\tfacet normal ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n\t\touter loop\n';
-              }
-            }
-            function writeVertex(vertex) {
-              if (binary === true) {
-                output.setFloat32(offset, vertex.x, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.y, true);
-                offset += 4;
-                output.setFloat32(offset, vertex.z, true);
-                offset += 4;
-              } else {
-                output += '\t\t\tvertex ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-              }
-            }
-          }
-        };
-      }
-
-      // --- Object URL Hooking (prevent race condition with URL.revokeObjectURL) ---
-      const blobMap = new Map();
-      const originalCreateObjectURL = URL.createObjectURL;
-      const originalRevokeObjectURL = URL.revokeObjectURL;
-
-      URL.createObjectURL = function(obj) {
-        const url = originalCreateObjectURL.call(URL, obj);
-        if (obj instanceof Blob) {
-          blobMap.set(url, obj);
-        }
-        return url;
-      };
-
-      const activeExports = new Set();
-      const revokeQueue = new Set();
-
-      URL.revokeObjectURL = function(url) {
-        if (activeExports.has(url)) {
-          revokeQueue.add(url);
-        } else {
-          originalRevokeObjectURL.call(URL, url);
-          blobMap.delete(url);
-        }
-      };
-
-      function releaseUrl(url) {
-        activeExports.delete(url);
-        if (revokeQueue.has(url)) {
-          originalRevokeObjectURL.call(URL, url);
-          revokeQueue.delete(url);
-          blobMap.delete(url);
-        }
-      }
-
-      const channel = new BroadcastChannel('studios_pro_channel');
-      let isAllowed = false;
-      let singleExportExpiresAt = 0;
-      let pendingTarget = null;
-      let pendingAnchor = null;
-      let isPremiumUser = false;
-      window.isExportAllowed = false;
-
-      const backBtn = document.getElementById('back-btn');
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          channel.postMessage({ type: 'CLOSE_STUDIO' });
-          window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-        };
-      }
-
-      // Hide local payment modal if any (since some apps have local modals)
-      const localModal = document.getElementById('local-payment-modal');
-      if (localModal) {
-        localModal.style.display = 'none';
-        const localCloseBtn = document.getElementById('modal-close-btn');
-        if (localCloseBtn) localCloseBtn.onclick = () => { localModal.style.display = 'none'; pendingTarget = null; };
-        const localPaySingleBtn = document.getElementById('pay-single-btn');
-        if (localPaySingleBtn) localPaySingleBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'single', ref: 'scripting-live' } });
-          localModal.style.display = 'none';
-        };
-        const localPayPremiumBtn = document.getElementById('pay-premium-btn');
-        if (localPayPremiumBtn) localPayPremiumBtn.onclick = () => {
-          channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'scripting-live' } });
-          localModal.style.display = 'none';
-        };
-      }
-
-      channel.onmessage = (e) => {
-        if (e.data.type === 'EXPORT_ALLOWED') {
-          isAllowed = true;
-          window.isExportAllowed = true;
-          singleExportExpiresAt = Date.now() + 8000;
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-          if (localModal) localModal.style.display = 'none';
-          if (pendingTarget) {
-            const t = pendingTarget;
-            pendingTarget = null;
-            t.click();
-          } else if (pendingAnchor) {
-            const a = pendingAnchor;
-            pendingAnchor = null;
-            a.dataset.bypassed = 'true';
-            a.click();
-            setTimeout(() => { try { delete a.dataset.bypassed; } catch (_) {} }, 1000);
-          }
-        } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-          isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-          window.isPremiumUser = isPremiumUser;
-        } else if (e.data.type === 'LOAD_EXTERNAL_FILE') {
-          (async () => {
-            try {
-              const { name, extension, data, isBinary } = e.data.payload;
-              console.log("Receiving external file from extension:", name);
-              let file;
-              if (isBinary) {
-                const res = await fetch(data);
-                const blob = await res.blob();
-                file = new File([blob], name, { type: 'application/octet-stream' });
-              } else {
-                file = new File([data], name, { type: 'text/plain' });
-              }
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              // Set files on file inputs and trigger change
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) { console.error("Input change dispatch error:", err); }
-              });
-
-              // Dispatch drag events
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) { console.error("Drop dispatch error:", err); }
-              });
-              
-              console.log('Successfully injected file:', name);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_FILE:', err);
-            }
-          })();
-        } else if (e.data.type === 'LOAD_EXTERNAL_URL') {
-          (async () => {
-            try {
-              const { url } = e.data.payload;
-              const name = url.split('/').pop().split('?')[0] || 'imported_file';
-              console.log("Receiving external url from extension:", url);
-              const response = await fetch(url);
-              const blob = await response.blob();
-              const file = new File([blob], name, { type: 'application/octet-stream' });
-
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(file);
-
-              const dropEvent = new DragEvent('drop', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-              
-              const dragOverEvent = new DragEvent('dragover', {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: dataTransfer
-              });
-
-              const fileInputs = document.querySelectorAll('input[type="file"]');
-              fileInputs.forEach(input => {
-                try {
-                  input.files = dataTransfer.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch(err) {}
-              });
-
-              [document, document.body, window].forEach(t => {
-                try {
-                  t.dispatchEvent(dragOverEvent);
-                  t.dispatchEvent(dropEvent);
-                } catch(err) {}
-              });
-              
-              console.log('Successfully loaded file from url:', url);
-            } catch (err) {
-              console.error('Error handling LOAD_EXTERNAL_URL:', err);
-            }
-          })();
-        }
-      };
-
-      channel.postMessage({ type: 'GET_USER_STATUS' });
-
-      document.addEventListener('click', (e) => {
-        if (!e.isTrusted) return;
-
-        if (isAllowed) {
-          isAllowed = false;
-          pendingTarget = null;
-          return;
-        }
-
-        let target = e.target;
-        if (!target) return;
-        if (typeof target.closest === 'function') {
-          target = target.closest('button') || target.closest('a') || target;
-        }
-        if (!target || typeof target.getAttribute !== 'function') return;
-
-        // Bypass if it is our own programmatically generated bypassed export anchor
-        if (target.dataset && target.dataset.bypassed === 'true') return;
-
-        const text = (target.innerText || target.textContent || "").toLowerCase();
-        const titleAttr = (target.getAttribute('title') || "").toLowerCase();
-        const aria = (target.getAttribute('aria-label') || "").toLowerCase();
-        const id = (target.id || "").toLowerCase();
-        const dataTip = (target.getAttribute('data-tip') || "").toLowerCase();
-        const onclickAttr = (target.getAttribute('onclick') || "").toLowerCase();
-        
-        const cls = target.className;
-        let clsStr = '';
-        if (typeof cls === 'string') {
-          clsStr = cls.toLowerCase();
-        } else if (cls && typeof cls.baseVal === 'string') {
-          clsStr = cls.baseVal.toLowerCase();
-        }
-
-                const keywords = ['export', 'download', 'telecharger', 'save', 'obj', 'stl', 'glb', 'gltf', 'ply', 'g-code', 'gcode', 'fbx', 'dae', '3mf', 'png', 'jpg', 'jpeg', 'capture', 'video', 'record', 'rec', 'enr', 'mp4', 'webm', 'render', 'html', 'cert', 'certif', 'nft', 'sign', 'signature', 'stamp', 'snapshot', 'snap', 'shot', 'expcert', 'expnft', 'takesnapshot', 'stampsignature'];
-        const isExport = keywords.some(k => text.includes(k) || titleAttr.includes(k) || aria.includes(k) || id.includes(k) || clsStr.includes(k) || dataTip.includes(k) || onclickAttr.includes(k));
-        
-        if (target.classList && typeof target.classList.contains === 'function' && target.classList.contains('lang-btn')) return;
-        if (id === 'pay-single-btn' || id === 'pay-premium-btn' || id === 'modal-close-btn' || id === 'back-btn' || id === 'injected-save-html-btn') return;
-
-        if (isExport && !isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-          if (window.self === window.top) {
-            let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-            if (used < 5) {
-              used++;
-              localStorage.setItem('freeExportsUsed', String(used));
-              isAllowed = true;
-              window.isExportAllowed = true;
-              singleExportExpiresAt = Date.now() + 8000;
+          },
+          requireExport(label, fn) {
+            if (isPremiumUser || window.isPremiumUser || Date.now() <= singleExportExpiresAt) {
+              singleExportExpiresAt = 0;
+              fn();
+              try { channel.postMessage({ type: 'EXPORT_COMPLETED' }); } catch (_) {}
               return;
             }
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            pendingTarget = target;
-            if (localModal) localModal.style.display = 'flex';
-            return;
-          }
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          pendingTarget = target;
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live' } });
-        }
-      }, true);
-
-      // --- WEB EXPORT PRO INTERCEPTOR ---
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download && this.href && !this.dataset.bypassed) {
-          if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-            pendingAnchor = this;
             if (window.self === window.top) {
-              let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-              if (used < 5) {
-                used++;
-                localStorage.setItem('freeExportsUsed', String(used));
-                isAllowed = true;
-                window.isExportAllowed = true;
-                singleExportExpiresAt = Date.now() + 8000;
-              } else {
-                if (localModal) localModal.style.display = 'flex';
-                return;
-              }
-            } else {
-              channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live' } });
+              fn();
               return;
             }
-          }
-          if (isAllowed) {
-            isAllowed = false;
-            window.isExportAllowed = false;
-            channel.postMessage({ type: 'EXPORT_COMPLETED' });
-          }
-          const fileUrl = this.href;
-          const fileName = this.download;
-
-          if (window.isGeneratingHtmlExport) {
-            window.isGeneratingHtmlExport = false; // Reset flag
-            activeExports.add(fileUrl);
-            generateHtmlExport(fileUrl, fileName).catch(e => {
-              console.error(e);
-              alert("Error generating HTML export: " + e.message);
-            });
-            return;
-          }
-        }
-        return originalAnchorClick.apply(this, arguments);
-      };
-
-      // Intercept programmatic click events (e.g., from FileSaver.js or custom click dispatchers)
-      const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
-      EventTarget.prototype.dispatchEvent = function(event) {
-        if (event && event.type === 'click' && this instanceof HTMLAnchorElement) {
-          if (this.download && this.href && !this.dataset.bypassed) {
-            if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-              pendingAnchor = this;
-              if (window.self === window.top) {
-                let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-                if (used < 5) {
-                  used++;
-                  localStorage.setItem('freeExportsUsed', String(used));
-                  isAllowed = true;
-                  window.isExportAllowed = true;
-                  singleExportExpiresAt = Date.now() + 8000;
-                } else {
-                  if (localModal) localModal.style.display = 'flex';
-                  return false;
-                }
-              } else {
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live' } });
-                return false;
-              }
-            }
-            if (isAllowed) {
-              isAllowed = false;
-              window.isExportAllowed = false;
-              channel.postMessage({ type: 'EXPORT_COMPLETED' });
-            }
-            const fileUrl = this.href;
-            const fileName = this.download;
-
-            if (window.isGeneratingHtmlExport) {
-              window.isGeneratingHtmlExport = false; // Reset flag
-              activeExports.add(fileUrl);
-              generateHtmlExport(fileUrl, fileName).catch(e => {
-                console.error(e);
-                alert("Error generating HTML export: " + e.message);
-              });
-              return false; // prevent event default/propagation simulation
-            }
-          }
-        }
-        return originalDispatchEvent.apply(this, arguments);
-      };
-
-      // Intercept modern showSaveFilePicker API (File System Access API)
-      if (typeof window.showSaveFilePicker === 'function') {
-        const originalShowSaveFilePicker = window.showSaveFilePicker;
-        window.showSaveFilePicker = function(options) {
-          if (window.isGeneratingHtmlExport) {
-            const suggestedName = (options && options.suggestedName) || 'export';
-            return new Promise((resolve, reject) => {
-              const mockFileHandle = {
-                kind: 'file',
-                name: suggestedName,
-                createWritable: async function() {
-                  return {
-                    write: async function(data) {
-                      const fileUrl = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-                      window.isGeneratingHtmlExport = false; // Reset flag
-                      activeExports.add(fileUrl);
-                      generateHtmlExport(fileUrl, suggestedName).catch(e => {
-                        console.error(e);
-                        alert("Error generating HTML export: " + e.message);
-                      });
-                    },
-                    close: async function() {
-                      resolve(mockFileHandle);
-                    }
-                  };
-                }
-              };
-            });
-          }
-          return originalShowSaveFilePicker.apply(this, arguments);
-        };
-      }
-
-      // Inject "Save HTML" button dynamically for all apps
-      setInterval(() => {
-        const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="button"]'));
-        
-        // Filter out buttons that are pay buttons, back buttons, close buttons, or already HTML buttons
-        const validButtons = buttons.filter(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          const id = (btn.id || '').toLowerCase();
-          if (id.includes('html') || id.includes('pay') || id.includes('back') || id.includes('close') || id.includes('premium') || id.includes('pdf')) return false;
-          if (txt.includes('html') || txt.includes('pay') || txt.includes('back') || txt.includes('close') || txt.includes('premium') || txt.includes('pdf')) return false;
-          return true;
-        });
-
-        // Always find the base buttons in every tick for visibility syncing
-        let baseBtn = null;
-        const priorities = [
-          ['glb', 'gltf'],
-          ['stl'],
-          ['obj'],
-          ['ply'],
-          ['3mf'],
-          ['save svg', 'export svg', 'download svg', 'svg'],
-          ['save dxf', 'export dxf', 'download dxf', 'dxf'],
-          ['png', 'jpg', 'jpeg', 'capture', 'image'],
-          ['save', 'export', 'download', 'telecharger', 'render', 'capture']
-        ];
-        for (const kwList of priorities) {
-          baseBtn = validButtons.find(btn => {
-            const txt = (btn.textContent || btn.value || '').toLowerCase();
-            return kwList.some(kw => txt.includes(kw));
-          });
-          if (baseBtn) break;
-        }
-
-        // Check if there is an existing button that already contains 'html'
-        const hasExistingHtmlBtn = buttons.some(btn => {
-          const txt = (btn.textContent || btn.value || '').toLowerCase();
-          return txt.includes('html') && !btn.id.includes('injected-save-html-btn');
-        });
-
-        // 1. INJECT SAVE HTML BUTTON
-        if (baseBtn && !hasExistingHtmlBtn && !document.getElementById('injected-save-html-btn')) {
-          const parent = baseBtn.parentElement;
-          if (parent) {
-            const htmlBtn = document.createElement(baseBtn.tagName);
-            htmlBtn.id = 'injected-save-html-btn';
-            htmlBtn.className = baseBtn.className;
-            
-            // Style matching (strip display:none if set initially)
-            htmlBtn.style.cssText = baseBtn.style.cssText.replace(/display:s*none;?/g, '');
-            htmlBtn.style.background = 'linear-gradient(135deg, #6366f1, #a855f7)';
-            htmlBtn.style.color = '#ffffff';
-            htmlBtn.style.borderColor = 'transparent';
-            
-            // Spacing adjustments
-            const display = window.getComputedStyle(parent).display;
-            if (display.includes('flex') || display.includes('grid')) {
-              // Flex or grid layouts handle layout automatically
-            } else {
-              htmlBtn.style.marginTop = '8px';
-              htmlBtn.style.marginLeft = '4px';
-            }
-
-            // Determine HTML button text based on base button text length/language
-            const baseText = baseBtn.textContent.trim();
-            let btnText = 'Save HTML';
-            if (baseText.length <= 5) {
-              btnText = 'HTML';
-            } else if (baseText.toLowerCase().includes('télécharger') || baseText.toLowerCase().includes('telecharger')) {
-              btnText = 'Télécharger HTML';
-            } else if (baseText.toLowerCase().includes('export')) {
-              btnText = 'Export HTML';
-            } else if (baseText.toLowerCase().includes('sauvegarder')) {
-              btnText = 'Sauvegarder HTML';
-            }
-            
-            if (baseBtn.tagName === 'INPUT') {
-              htmlBtn.value = btnText;
-            } else {
-              htmlBtn.textContent = btnText;
-            }
-            
-            htmlBtn.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!isPremiumUser && !window.isPremiumUser && !isAllowed && Date.now() > singleExportExpiresAt) {
-                pendingTarget = htmlBtn;
-                channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live' } });
-                return;
-              }
-              
-              if ('scripting-live' === 'musc') {
-                const btnShare = document.getElementById('btn-share');
-                if (btnShare) {
-                  btnShare.click(); // Sets location.hash with the compressed state
-                  Promise.all([
-                    fetch('/apps/music-composer/index.html').then(r => r.text()),
-                    fetch('/apps/music-composer/css/style.css').then(r => r.text()),
-                    fetch('/apps/music-composer/js/presets.js').then(r => r.text()),
-                    fetch('/apps/music-composer/js/app.js').then(r => r.text())
-                  ]).then(([htmlText, cssText, presetsText, jsText]) => {
-                      let cleanHtml = htmlText;
-                      cleanHtml = cleanHtml.replace('<link rel="stylesheet" href="./css/style.css">', '<style>' + cssText + '</style>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/presets.js"><\/script>', '<script>' + presetsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace('<script src="./js/app.js"><\/script>', '<script>' + jsText + '<\/script>');
-                      cleanHtml = cleanHtml.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?studios_pro_channel[\s\S]*?<\/script>/gi, '');
-                      cleanHtml = cleanHtml.replace(/<button[^>]*id=["']back-btn["'][^>]*>[\s\S]*?<\/button>/gi, '');
-                      
-                      const hash = window.location.hash;
-                      const playbackScript = `
-  <style>
-    body { padding-bottom: 0 !important; }
-    .top-bar { display: none !important; }
-    .left-panel { display: none !important; }
-    .right-panel { display: none !important; }
-    #keyboard-synth-panel { display: none !important; }
-    .stage-overlay { bottom: 30px !important; }
-  </style>
-  <script>
-    window.location.hash = "${hash}";
-    window.addEventListener('load', function() {
-      setTimeout(() => {
-        const zenBtn = document.getElementById('btn-zen');
-        if (zenBtn) zenBtn.click();
-        const splash = document.createElement('div');
-        splash.style.position = 'fixed';
-        splash.style.top = '0'; splash.style.left = '0';
-        splash.style.width = '100vw'; splash.style.height = '100vh';
-        splash.style.background = '#05070a';
-        splash.style.color = '#fff';
-        splash.style.display = 'flex';
-        splash.style.flexDirection = 'column';
-        splash.style.alignItems = 'center';
-        splash.style.justifyContent = 'center';
-        splash.style.zIndex = '99999';
-        splash.style.fontFamily = 'sans-serif';
-        splash.style.cursor = 'pointer';
-        splash.innerHTML = '<h2 style="margin-bottom:10px;">Interactive Music Composer</h2><p style="color:#94a3b8; margin:0;">Click anywhere to start playback</p>';
-        document.body.appendChild(splash);
-        splash.onclick = function() {
-          if (typeof Tone !== "undefined") {
-            Tone.start().then(() => {
-              const playBtn = document.getElementById('btn-play');
-              if (playBtn) playBtn.click();
-              splash.remove();
-            });
-          } else {
-            splash.remove();
-          }
-        };
-      }, 500);
-    });
-  <\/script>
-  `;
-                      cleanHtml = cleanHtml.replace('</body>', playbackScript + '</body>');
-                      const blob = new Blob([cleanHtml], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = 'music_composer_interactive.html';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                  }).catch(err => {
-                      alert("Error generating HTML: " + err.message);
-                  });
-                }
-                return;
-              }
-              
-              window.isGeneratingHtmlExport = true;
-              baseBtn.click();
+            pendingCallback = () => {
+              fn();
+              try { channel.postMessage({ type: 'EXPORT_COMPLETED' }); } catch (_) {}
             };
-            
-            baseBtn.parentNode.insertBefore(htmlBtn, baseBtn.nextSibling);
+            channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'scripting-live', action: label } });
           }
-        }
+        };
+      })();
+    </script>
 
-        // 2. DYNAMIC VISIBILITY SYNCING
-        const activeHtmlBtn = document.getElementById('injected-save-html-btn');
-        if (activeHtmlBtn && baseBtn) {
-          const isBaseVisible = window.getComputedStyle(baseBtn).display !== 'none' && baseBtn.style.display !== 'none';
-          activeHtmlBtn.style.display = isBaseVisible ? '' : 'none';
-        }
-      }, 1000);
-
-      async function generateHtmlExport(fileUrl, fileName) {
-        let blob;
-        if (blobMap.has(fileUrl)) {
-          blob = blobMap.get(fileUrl);
-        } else if (fileUrl.startsWith('data:')) {
-          const parts = fileUrl.split(',');
-          const header = parts[0];
-          const dataStr = parts.slice(1).join(',');
-          let mime = 'text/plain';
-          const mimeMatch = header.match(/:(.*?)(;|$)/);
-          if (mimeMatch) {
-            mime = mimeMatch[1];
-          }
-          if (header.includes(';base64')) {
-            blob = new Blob([base64ToBytes(dataStr)], { type: mime });
-          } else {
-            let decoded = dataStr;
-            try {
-              decoded = decodeURIComponent(dataStr);
-            } catch (err) {
-              try {
-                decoded = unescape(dataStr);
-              } catch (e2) {}
-            }
-            blob = new Blob([decoded], { type: mime });
-          }
-        } else {
-          const response = await fetch(fileUrl);
-          blob = await response.blob();
-        }
-
-        const extension = fileName.split('.').pop().toLowerCase();
-
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result;
-            const base64 = result.substring(result.indexOf(',') + 1);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        let htmlContent = '';
-
-        if (['stl', 'obj', 'glb', 'gltf', 'ply', 'gbl'].includes(extension)) {
-          htmlContent = get3DTemplate(base64Data, extension, fileName);
-        } else if (extension === 'svg') {
-          htmlContent = getSvgTemplate(base64Data, fileName);
-        } else if (['png', 'jpg', 'jpeg'].includes(extension)) {
-          htmlContent = getImageTemplate(base64Data, extension, fileName);
-        } else {
-          htmlContent = getTextTemplate(base64Data, extension, fileName);
-        }
-
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const a = document.createElement('a');
-        a.href = htmlUrl;
-        a.download = fileName.replace('.' + extension, '_interactive.html');
-        a.dataset.bypassed = 'true'; // bypass our monkey patch!
-        document.body.appendChild(a);
-        originalAnchorClick.call(a); // trigger download natively!
-        document.body.removeChild(a);
-        URL.revokeObjectURL(htmlUrl);
-        
-        releaseUrl(fileUrl);
-      }
-
-      function get3DTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - 3D Interactive Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    #container { width: 100vw; height: 100vh; display: block; }
-    #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; background: rgba(15, 23, 42, 0.8); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; transition: opacity 0.3s ease; z-index: 10; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #3b82f6; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .control-group input[type="color"] { border: none; background: none; cursor: pointer; width: 40px; height: 25px; padding: 0; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
-  ${extension === 'stl' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"><\/script>' : ''}
-  ${extension === 'obj' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"><\/script>' : ''}
-  ${extension === 'ply' ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"><\/script>' : ''}
-  ${['glb', 'gltf'].includes(extension) ? '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>' : ''}
-</head>
-<body>
-  <div id="loader">Loading 3D Model...</div>
-  <div id="container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Model Color</span><input type="color" id="modelColor" value="#3b82f6"></div>
-    <div class="control-group"><span>Background</span><input type="color" id="bgColor" value="#0b1329"></div>
-    <div class="control-group"><span>Auto Rotate</span><input type="checkbox" id="autoRotate"></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1329);
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-    
-    scene.add(new THREE.AmbientLight(0x666666));
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight1.position.set(1, 1, 1).normalize();
-    scene.add(dirLight1);
-    const dirLight2 = new THREE.DirectionalLight(0x555555, 0.5);
-    dirLight2.position.set(-1, -1, -1).normalize();
-    scene.add(dirLight2);
-    camera.add(new THREE.PointLight(0xffffff, 0.5));
-    scene.add(camera);
-    
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    let currentMesh;
-    
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    
-    function base64ToArrayBuffer(base64) {
-      return base64ToBytes(base64).buffer;
-    }
-    
-    try {
-      const buffer = base64ToArrayBuffer(base64Data);
-      let loader;
-      if (extension === 'stl') {
-        loader = new THREE.STLLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.2 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'ply') {
-        loader = new THREE.PLYLoader();
-        const geometry = loader.parse(buffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-        currentMesh = new THREE.Mesh(geometry, material);
-        scene.add(currentMesh);
-        adjustCamera(geometry);
-      } else if (extension === 'obj') {
-        loader = new THREE.OBJLoader();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const obj = loader.parse(text);
-        currentMesh = obj;
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
-          } else if (child.isLine || child.isLineSegments || child.material) {
-            child.material = new THREE.LineBasicMaterial({ color: 0x3b82f6 });
-          }
-        });
-        scene.add(obj);
-        adjustCamera(obj);
-      } else if (['glb', 'gltf'].includes(extension)) {
-        loader = new THREE.GLTFLoader();
-        loader.parse(buffer, '', (gltf) => {
-          currentMesh = gltf.scene;
-          scene.add(currentMesh);
-          adjustCamera(currentMesh);
-        }, (error) => {
-          console.error(error);
-          document.getElementById('loader').innerText = 'Error loading model';
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = 'Failed to parse model';
-    }
-    
-    function adjustCamera(objOrGeom) {
-      document.getElementById('loader').style.opacity = '0';
-      setTimeout(() => document.getElementById('loader').remove(), 300);
-      
-      let boundingBox = new THREE.Box3();
-      let hasGeometry = false;
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        boundingBox.setFromBufferAttribute(objOrGeom.attributes.position);
-        hasGeometry = true;
-      } else {
-        // Traverse and calculate bounding box of only meshes, lines and line segments, ignoring grids, helpers, lights, cameras
-        objOrGeom.traverse((child) => {
-          if (child.isMesh || child.isLine || child.isLineSegments) {
-            if (child.geometry) {
-              const nameLower = (child.name || '').toLowerCase();
-              const typeLower = (child.type || '').toLowerCase();
-              if (typeLower.includes('grid') || nameLower.includes('grid') || typeLower.includes('helper') || nameLower.includes('helper')) {
-                return;
-              }
-              child.geometry.computeBoundingBox();
-              if (child.geometry.boundingBox) {
-                const childBox = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
-                if (isFinite(childBox.min.x) && isFinite(childBox.max.x)) {
-                  if (!hasGeometry) {
-                    boundingBox.copy(childBox);
-                    hasGeometry = true;
-                  } else {
-                    boundingBox.union(childBox);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-      
-      if (!hasGeometry) {
-        boundingBox.setFromObject(objOrGeom);
-      }
-      
-      const center = new THREE.Vector3();
-      boundingBox.getCenter(center);
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
-      
-      if (objOrGeom.attributes && objOrGeom.attributes.position) {
-        objOrGeom.center();
-      } else {
-        // Shift geometry group meshes to center at 0,0,0
-        objOrGeom.position.x -= center.x;
-        objOrGeom.position.y -= center.y;
-        objOrGeom.position.z -= center.z;
-      }
-      
-      let maxDim = Math.max(size.x, size.y, size.z);
-      if (isNaN(maxDim) || !isFinite(maxDim) || maxDim <= 0) {
-        maxDim = 50;
-      }
-      
-      camera.near = Math.min(0.1, maxDim / 100);
-      camera.far = Math.max(10000, maxDim * 100);
-      camera.updateProjectionMatrix();
-
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2.5;
-      camera.position.set(maxDim * 0.8, maxDim * 0.8, cameraZ);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-    
-    document.getElementById('modelColor').addEventListener('input', (e) => {
-      if (!currentMesh) return;
-      currentMesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(e.target.value);
-        } else if (child.isLine || child.isLineSegments || child.material) {
-          child.material.color.set(e.target.value);
-        }
-      });
-    });
-    document.getElementById('bgColor').addEventListener('input', (e) => { scene.background.set(e.target.value); });
-    document.getElementById('autoRotate').addEventListener('change', (e) => { controls.autoRotate = e.target.checked; controls.autoRotateSpeed = 2.0; });
-    
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-    animate();
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getSvgTemplate(base64Data, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Vector Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; }
-    #viewer-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #viewer-container:active { cursor: grabbing; }
-    svg { width: 100%; height: 100%; max-width: 90%; max-height: 90%; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; max-width: 300px; }
-    .panel h3 { margin-top: 0; margin-bottom: 12px; font-size: 16px; letter-spacing: 0.5px; color: #10b981; }
-    .control-group { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .btn { background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-    .btn:hover { background: #059669; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"><\/script>
-</head>
-<body>
-  <div id="viewer-container"></div>
-  <div class="panel">
-    <h3>${fileName}</h3>
-    <div class="control-group"><span>Vector Image (SVG)</span><button class="btn" id="resetBtn">Reset View</button></div>
-  </div>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let svgText = "";
-    try {
-      svgText = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      svgText = "Error decoding SVG content.";
-    }
-    document.getElementById('viewer-container').innerHTML = svgText;
-    
-    window.onload = function() {
-      const svgElement = document.querySelector('#viewer-container svg');
-      if (svgElement) {
-        svgElement.setAttribute('id', 'interactive-svg');
-        const panZoomInstance = svgPanZoom('#interactive-svg', { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 50 });
-        document.getElementById('resetBtn').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.resetPan(); });
-      }
-    };
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getImageTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Interactive Image Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0b1329; color: #ffffff; font-family: sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #image-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; cursor: grab; }
-    #image-container:active { cursor: grabbing; }
-    img { max-width: 90%; max-height: 90%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
-    .panel { position: absolute; bottom: 24px; left: 24px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; }
-    .panel h3 { margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #3b82f6; }
-  </style>
-</head>
-<body>
-  <div id="image-container"><img id="zoomable-img" alt="Exported Image"></div>
-  <div class="panel"><h3>${fileName}</h3><span style="font-size: 12px; opacity: 0.7;">Use pinch or drag to interact</span></div>
-  <script>
-    const base64Data = "${base64Data}";
-    const extension = "${extension}";
-    const img = document.getElementById('zoomable-img');
-    const mime = extension === 'jpg' ? 'jpeg' : extension;
-    img.src = "data:image/" + mime + ";base64," + base64Data;
-    
-    const container = document.getElementById('image-container');
-    let scale = 1, pointX = 0, pointY = 0, start = { x: 0, y: 0 }, isPanning = false;
-    function setTransform() { img.style.transform = "translate(" + pointX + "px, " + pointY + "px) scale(" + scale + ")"; }
-    container.onmousedown = function(e) { e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; isPanning = true; }
-    container.onmouseup = function(e) { isPanning = false; }
-    container.onmousemove = function(e) { e.preventDefault(); if (!isPanning) return; pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform(); }
-    container.onwheel = function(e) {
-      e.preventDefault();
-      const xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
-      const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-      (delta > 0) ? (scale *= 1.2) : (scale /= 1.2);
-      scale = Math.min(Math.max(0.1, scale), 10);
-      pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
-      setTransform();
-    }
-  <\/script>
-</body>
-</html>`;
-      }
-
-      function getTextTemplate(base64Data, extension, fileName) {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Document Viewer</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #0f172a; color: #cbd5e1; font-family: monospace; font-size: 14px; }
-    header { background-color: #1e293b; padding: 15px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h3 { margin: 0; color: #fff; }
-    .btn { background: #3b82f6; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #2563eb; }
-    pre { margin: 0; padding: 30px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <header><h3>${fileName} (${extension.toUpperCase()})</h3><button class="btn" id="copyBtn">Copy Code</button></header>
-  <pre><code id="code-content"></code></pre>
-  <script>
-    const base64Data = "${base64Data}";
-    function base64ToBytes(base64) {
-      const binString = atob(base64);
-      const len = binString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    let code = "";
-    try {
-      code = new TextDecoder('utf-8').decode(base64ToBytes(base64Data));
-    } catch (e) {
-      code = "Error decoding document content.";
-    }
-    document.getElementById('code-content').textContent = code;
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const btn = document.getElementById('copyBtn');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerText = 'Copied!';
-        btn.style.background = '#10b981';
-        setTimeout(() => { btn.innerText = 'Copy Code'; btn.style.background = '#3b82f6'; }, 2000);
-      });
-    });
-  <\/script>
-</body>
-</html>`;
-      }
-    })();
-  </script>
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-<!-- Back Button and Payment logic -->
-  
-  
-  
-  <header>
-    <div style="display: flex; align-items: center; gap: 12px;">
-      
-      <h1 id="app-title" style="margin: 0;"><i class="fa-solid fa-code"></i> STUDIOS-PRO <span class="version-tag">Scripting Live Sandbox</span></h1>
-    </div>
-    <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
-      <!-- Collaboration status badge -->
-      <div class="collab-status-badge" id="collab-status-badge" style="display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-        <span class="collab-dot offline" id="collab-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 8px #94a3b8;"></span>
-        <span id="collab-text" style="font-size: 0.75rem; font-weight: 600; color: #94a3b8;">Single Mode</span>
-      </div>
-      <div id="header-tag" style="font-size: 0.8rem; color: var(--text-muted);">Offline Desktop Prototype</div>
-      <button id="btn-lang" class="lang-btn">🇺🇸 EN | 🇫🇷 FR</button>
-    </div>
-  </header>
-  
-  <div class="workspace">
-    <!-- LEFT PANEL: Editor & Console -->
-    <div class="editor-panel">
-      <div class="panel-header">
-        <h2 id="editor-title"><i class="fa-solid fa-square-terminal"></i> Script Editor</h2>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <select class="template-select" id="preset-select" style="display: none;">
-            <option value="spiroHelix">Spiro-Helix</option>
-            <option value="torusKnot">Torus Knot</option>
-            <option value="parametricVase">Parametric Vase</option>
-            <option value="hyperHelix">Helix 4D</option>
-            <option value="lorenzAttractor">Lorenz Attractor</option>
-            <option value="lSystemTree">L-System Tree</option>
-            <option value="mobiusStrip">Möbius Strip</option>
-            <option value="kleinBottle">Klein Bottle</option>
-            <option value="particleVortex">Particle Vortex</option>
-            <option value="webcamSelfie">3D Webcam Point-Cloud</option>
-            <option value="audioVisualizer">3D Audio Visualizer</option>
-            <option value="physicsSandbox">3D Physics Sandbox</option>
-          </select>
-          <button class="btn btn-secondary collab-btn" id="btn-collab-lock" title="Request Edit Lock" style="padding: 6px 10px; border-radius: 8px; font-size: 0.85rem;"><i class="fa-solid fa-lock-open"></i></button>
-          <button class="btn btn-secondary collab-btn" id="btn-collab-camera" title="Sync Camera Rotation" style="padding: 6px 10px; border-radius: 8px; font-size: 0.85rem;"><i class="fa-solid fa-video-slash"></i></button>
-          <button class="btn btn-secondary btn-gallery" id="btn-gallery-open" style="padding: 6px 12px; border-radius: 8px;">
-            <i class="fa-solid fa-images"></i> <span id="lbl-gallery-btn">Browse Templates</span>
-          </button>
+    <!-- ── TOP HEADER BAR (ZERO OVERLAP) ── -->
+    <header class="top-header">
+        <div class="hdr-left">
+            <button id="back-btn" class="back-btn-inline" title="Retour / Back">
+                <i class="fa-solid fa-chevron-left"></i>
+                <span data-i18n="backBtn">Back</span>
+            </button>
+            <h1 class="brand-title">
+                <i class="fa-solid fa-code"></i>
+                <span data-i18n="appTitle">Scripting Studio</span>
+                <span class="ver-pill">v5 PRO</span>
+            </h1>
         </div>
-      </div>
-      
-      <div class="code-container">
-        <div class="line-numbers" id="line-numbers"></div>
-        <div class="editor-area">
-          <pre class="highlight-pre" id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
-          <textarea class="code-textarea" id="code-editor" spellcheck="false" placeholder="Write JavaScript code here..."></textarea>
-          <div id="editor-lock-overlay" class="editor-lock-overlay" style="display: none;">
-            <div class="lock-overlay-content">
-              <i class="fa-solid fa-lock" style="font-size: 2.2rem; margin-bottom: 10px; color: #f43f5e;"></i>
-              <div id="lock-overlay-text" style="font-weight: 600; font-size: 0.85rem; color: #fff;">Partner is editing...</div>
+
+        <!-- ✨ AI Code-to-3D Bar -->
+        <div class="ai-bar">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:#38bdf8;font-size:0.78rem;"></i>
+            <input type="text" id="ai-code-input" data-i18n-placeholder="aiPlaceholder" placeholder="AI Code-to-3D: Diamond Ring, 24-floor Tower, Sports Car...">
+            <button id="btn-ai-code-go" class="ai-go">
+                <span data-i18n="aiBtn">AI Code</span>
+            </button>
+        </div>
+
+        <div class="hdr-right">
+            <span id="scene-stats-pill" class="stat-pill">Solid PBR</span>
+            <div id="collab-status-badge" class="collab-pill">
+                <span class="collab-dot"></span>
+                <span id="collab-status-text" data-i18n="singleMode">Solo</span>
             </div>
-          </div>
-          <div id="floating-slider-container" class="floating-slider" style="display: none;">
-            <input type="range" id="floating-slider">
-            <span id="floating-slider-val">0</span>
-          </div>
+            <button id="btn-ar-quick" data-bypassed="true" class="hdr-btn ar-cta" title="View in AR Viewer 3D (FREE)">
+                <i class="fa-solid fa-vr-cardboard"></i> <span>AR</span>
+            </button>
+            <button id="btn-open-export" class="hdr-btn export-cta" title="All Export Options (GLB, STL, OBJ, AR, Video, PNG, HTML)">
+                <i class="fa-solid fa-download"></i> <span data-i18n="exportBtn">Export</span>
+            </button>
+            <button id="btn-lang" class="hdr-btn">EN | FR</button>
         </div>
-      </div>
-      
-      <div class="actions-bar">
-        <button class="btn btn-run" id="btn-run"><i class="fa-solid fa-play"></i> <span id="lbl-run">Run Script</span></button>
-        <button class="btn btn-secondary" id="btn-format" style="flex: 1;"><i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-format">Format Code</span></button>
-        <button class="btn btn-secondary" id="btn-sketch-open" style="flex: 1;"><i class="fa-solid fa-palette"></i> <span id="lbl-sketch-open">Draw 3D</span></button>
-        <button class="btn btn-secondary" id="btn-share" style="flex: 1;"><i class="fa-solid fa-share-nodes"></i> <span id="lbl-share">Share</span></button>
-        <button class="btn btn-secondary" id="btn-collab-start" style="flex: 1;"><i class="fa-solid fa-user-group"></i> <span id="lbl-collab-start">Collab</span></button>
-        <button class="btn btn-preview" id="btn-preview" style="flex: 1; display: none;"><i class="fa-solid fa-expand"></i> <span id="lbl-preview">Full Preview</span></button>
-      </div>
-      
-      <div class="console-panel">
-        <div class="console-header">
-          <div class="console-tabs">
-            <button class="console-tab-btn active" id="tab-console"><i class="fa-solid fa-terminal"></i> <span id="lbl-tab-console">Console</span></button>
-            <button class="console-tab-btn" id="tab-history"><i class="fa-solid fa-clock-rotate-left"></i> <span id="lbl-tab-history">History</span></button>
-            <button class="console-tab-btn" id="tab-toolbox"><i class="fa-solid fa-toolbox"></i> <span id="lbl-tab-toolbox">Toolbox</span></button>
-            <button class="console-tab-btn" id="tab-projects"><i class="fa-solid fa-folder-open"></i> <span id="lbl-tab-projects">Projects</span></button>
-          </div>
-          <canvas id="audio-spec-canvas" width="120" height="20" style="display: none; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); margin-left: auto; margin-right: 8px;"></canvas>
+    </header>
+
+    <!-- ── MAIN SPLIT WORKSPACE ── -->
+    <main class="workspace">
+
+        <!-- ═══ LEFT PANEL: SCRIPT EDITOR + BOTTOM DRAWER ═══ -->
+        <section class="editor-panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <i class="fa-solid fa-terminal"></i>
+                    <span data-i18n="editorTitle">Script Editor</span>
+                </span>
+                <div class="panel-hdr-actions">
+                    <button id="btn-collab-lock" class="icon-btn" style="display:none;" title="Toggle Edit Lock">
+                        <i class="fa-solid fa-lock-open"></i>
+                    </button>
+                    <button id="btn-gallery-open" class="icon-btn" style="border-color:rgba(56,189,248,0.45);color:#7dd3fc;">
+                        <i class="fa-solid fa-shapes"></i>
+                        <span data-i18n="browseTemplates">Templates (20)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Code Editor -->
+            <div class="editor-wrap">
+                <div id="line-numbers" class="line-numbers">1</div>
+                <div class="code-layer-box">
+                    <pre id="code-highlight" class="code-highlight" aria-hidden="true"></pre>
+                    <textarea id="code-editor" class="code-textarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+                </div>
+            </div>
+
+            <!-- Action Buttons (ZERO CLIPPING!) -->
+            <div class="actions-bar">
+                <button id="btn-run" class="act-btn primary" title="Run Script (Ctrl+Enter)">
+                    <i class="fa-solid fa-play"></i> <span data-i18n="runBtn">Run</span>
+                </button>
+                <button id="btn-format" class="act-btn" title="Auto-Format Code">
+                    <i class="fa-solid fa-wand-sparkles"></i> <span data-i18n="formatBtn">Format</span>
+                </button>
+                <button id="btn-sketch-open" class="act-btn" style="border-color:rgba(245,185,66,0.45);color:#fcd34d;" title="Draw 2D Profile -> 3D Code">
+                    <i class="fa-solid fa-pen-nib"></i> <span data-i18n="drawBtn">Draw 3D</span>
+                </button>
+                <button id="btn-share" class="act-btn" title="Copy Shareable Viewer URL">
+                    <i class="fa-solid fa-share-nodes"></i> <span data-i18n="shareBtn">Share</span>
+                </button>
+                <button id="btn-collab-start" class="act-btn" title="Start Live Collab Room">
+                    <i class="fa-solid fa-users"></i> <span data-i18n="collabBtn">Collab</span>
+                </button>
+                <button id="btn-html-full" class="act-btn" style="display:none;border-color:#a855f7;color:#d8b4fe;">
+                    <i class="fa-solid fa-expand"></i> <span data-i18n="fullHtmlBtn">Fullscreen</span>
+                </button>
+            </div>
+
+            <!-- Bottom Drawer: Console / History / Toolbox / Projects -->
+            <div class="bottom-drawer">
+                <div class="drawer-tabs">
+                    <button class="dtab-btn active" data-dtab="console"><i class="fa-solid fa-terminal"></i> <span data-i18n="tabConsole">Console</span></button>
+                    <button class="dtab-btn" data-dtab="toolbox"><i class="fa-solid fa-toolbox"></i> <span data-i18n="tabToolbox">Toolbox</span></button>
+                    <button class="dtab-btn" data-dtab="projects"><i class="fa-solid fa-folder"></i> <span data-i18n="tabProjects">Projects</span></button>
+                    <button class="dtab-btn" data-dtab="history"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="tabHistory">History</span></button>
+                </div>
+
+                <!-- Pane 1: Console & Live REPL -->
+                <div id="pane-console" class="drawer-pane active">
+                    <div id="console-logs" class="console-logs"></div>
+                    <div class="repl-bar">
+                        <span style="color:#38bdf8;font-family:'Fira Code',monospace;font-weight:700;">&gt;</span>
+                        <input type="text" id="console-repl-input" placeholder='REPL: api.addGear(0,3,0,12,2,0.5,0.4,"gold") or /say hello'>
+                        <button id="btn-repl-send" class="icon-btn" style="color:#38bdf8;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pane 2: Parametric CAD Toolbox -->
+                <div id="pane-toolbox" class="drawer-pane">
+                    <div class="proj-bar">
+                        <input type="text" id="toolbox-search" data-i18n-placeholder="searchSnippets" placeholder="Search CAD snippets (gear, tube, box, gold)...">
+                    </div>
+                    <div id="toolbox-list" class="drawer-scroll"></div>
+                </div>
+
+                <!-- Pane 3: Local Projects (100% FREE — Never Paywalled!) -->
+                <div id="pane-projects" class="drawer-pane">
+                    <div class="proj-bar">
+                        <input type="text" id="project-name-input" data-i18n-placeholder="projNamePh" placeholder="Project name...">
+                        <button id="btn-project-store" class="act-btn primary" style="padding:4px 10px;">
+                            <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="saveBtn">Save</span>
+                        </button>
+                        <button id="btn-spcode-export" class="icon-btn" title="Download .spcode file (FREE)">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                        </button>
+                        <input type="file" id="spcode-import-input" accept=".spcode,.js,.json,.txt" style="display:none;">
+                        <button id="btn-spcode-import" class="icon-btn" title="Load .spcode / .js file (FREE)">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </button>
+                    </div>
+                    <div id="projects-list" class="drawer-scroll"></div>
+                </div>
+
+                <!-- Pane 4: History -->
+                <div id="pane-history" class="drawer-pane">
+                    <div id="history-list" class="drawer-scroll"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ RIGHT PANEL: 3D PBR VIEWPORT & LIVE INSPECTOR ═══ -->
+        <section class="viewport-panel">
+            <div id="viewport-3d"></div>
+            <iframe id="html-preview-frame" sandbox="allow-scripts"></iframe>
+
+            <!-- Scrollable Right Inspector HUD -->
+            <aside class="viewport-hud" id="viewport-hud">
+                <!-- Live Script Parameters (api.param / api.addSlider) -->
+                <div class="hud-card" id="script-params-card" style="display:none;">
+                    <h4><i class="fa-solid fa-sliders"></i> <span data-i18n="liveParams">Live Parameters</span></h4>
+                    <div id="script-params-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+                </div>
+
+                <!-- Scene & Lighting Settings -->
+                <div class="hud-card">
+                    <h4><i class="fa-solid fa-sun"></i> <span data-i18n="sceneTitle">Scene & View</span></h4>
+                    <select id="ambient-preset" class="hud-select">
+                        <option value="studio">Studio PBR (Default)</option>
+                        <option value="cyber">Space Cyber Neon</option>
+                        <option value="sunset">Golden Sunset</option>
+                        <option value="matrix">Emerald Matrix</option>
+                        <option value="light">Clean White CAD</option>
+                    </select>
+                    <div class="hud-row">
+                        <span data-i18n="modelColor">Default Color</span>
+                        <input type="color" id="model-color" value="#38bdf8">
+                    </div>
+                    <div class="hud-row">
+                        <span data-i18n="bgColor">Background</span>
+                        <input type="color" id="bg-color" value="#0b1122">
+                    </div>
+                    <div class="hud-row">
+                        <span data-i18n="autoRot">Auto Rotate</span>
+                        <input type="checkbox" id="auto-rotate" checked>
+                    </div>
+                    <button id="btn-reset-cam" class="icon-btn" style="width:100%;justify-content:center;">
+                        <i class="fa-solid fa-crosshairs"></i> <span data-i18n="fitView">Fit Camera</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Bottom Quick Export Dock -->
+            <div class="export-dock" id="export-dock">
+                <button id="dock-glb" class="dock-btn"><i class="fa-solid fa-cube"></i> GLB</button>
+                <button id="dock-stl" class="dock-btn"><i class="fa-solid fa-cubes"></i> STL</button>
+                <button id="dock-obj" class="dock-btn"><i class="fa-solid fa-draw-polygon"></i> OBJ</button>
+                <button id="dock-ar" data-bypassed="true" class="dock-btn ar"><i class="fa-solid fa-vr-cardboard"></i> AR 3D</button>
+                <button id="dock-png" class="dock-btn"><i class="fa-solid fa-camera"></i> PNG</button>
+                <button id="dock-rec" class="dock-btn rec"><i class="fa-solid fa-circle"></i> <span data-i18n="recBtn">REC</span></button>
+                <button id="dock-html" class="dock-btn"><i class="fa-solid fa-globe"></i> HTML</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══ TEMPLATES GALLERY MODAL (17 REAL SOLID PBR MODELS!) ═══ -->
+    <div id="gallery-modal" class="modal-bg">
+        <div class="modal-card">
+            <div class="modal-hdr">
+                <h3><i class="fa-solid fa-shapes" style="color:#38bdf8;"></i> <span data-i18n="galleryTitle">Real 3D Parametric Templates</span></h3>
+                <button id="btn-gallery-close" class="modal-x"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="tpl-cats" id="tpl-cat-bar">
+                <button class="tpl-cat-btn active" data-tcat="all">All (20)</button>
+                <button class="tpl-cat-btn" data-tcat="mechanical">⚙️ Mechanical</button>
+                <button class="tpl-cat-btn" data-tcat="architecture">🏛️ Architecture</button>
+                <button class="tpl-cat-btn" data-tcat="sculptures">💍 Sculptures</button>
+                <button class="tpl-cat-btn" data-tcat="interactive">🚀 Sci-Fi & Live</button>
+            </div>
+            <div id="gallery-grid" class="tpl-grid"></div>
         </div>
-        <div class="console-logs" id="console-logs"></div>
-        <div class="code-history-panel" id="code-history-panel" style="display: none;">
-          <div class="history-list" id="history-list"></div>
-        </div>
-        <div class="toolbox-panel" id="toolbox-panel" style="display: none;">
-          <div class="toolbox-search-bar" style="padding: 6px 12px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center;">
-            <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem; color: var(--text-muted);"></i>
-            <input type="text" id="toolbox-search" placeholder="Search API features..." style="background: transparent; border: none; outline: none; color: #fff; font-size: 0.75rem; flex: 1; font-family: inherit;">
-          </div>
-          <div class="toolbox-list" id="toolbox-list" style="overflow-y: auto; height: calc(100% - 31px); padding: 8px 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px;"></div>
-        </div>
-        <div class="projects-panel" id="projects-panel" style="display: none;">
-          <div class="projects-save-bar" style="padding: 8px 12px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="project-name-input" placeholder="Project name..." style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px 10px; color: #fff; font-size: 0.75rem; flex: 1; outline: none; font-family: inherit;">
-            <button class="btn btn-run" id="btn-project-save" style="padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; background: linear-gradient(135deg, #10b981, #059669); border: none;"><i class="fa-solid fa-floppy-disk"></i> <span id="lbl-project-save">Save</span></button>
-          </div>
-          <div class="projects-list" id="projects-list" style="overflow-y: auto; height: calc(100% - 39px); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
-        <div class="console-repl-bar">
-          <span class="repl-prompt">&gt;</span>
-          <input type="text" id="console-repl-input" placeholder="Type api commands (e.g. api.addSphere(0,0,0,2))...">
-          <button id="btn-repl-send"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-      </div>
     </div>
-    
-    <!-- RIGHT PANEL: Three.js Canvas & HUD -->
-    <div class="viewport-panel">
-      <div class="viewport-hud">
-        <div class="hud-group">
-          <h3 id="lbl-hud-colors">Color Settings</h3>
-          <div class="hud-control">
-            <span id="lbl-model-color">Model Color</span>
-            <input type="color" id="modelColor" value="#38bdf8">
-          </div>
-          <div class="hud-control">
-            <span id="lbl-bg-color">Background</span>
-            <input type="color" id="bgColor" value="#0b0f19">
-          </div>
-        </div>
-        <div class="hud-group">
-          <h3 id="lbl-hud-camera">View Settings</h3>
-          <div class="hud-control">
-            <span id="lbl-auto-rotate">Auto Rotate</span>
-            <input type="checkbox" id="autoRotate">
-          </div>
-          <div class="hud-control" style="flex-direction: column; align-items: stretch; gap: 4px; margin-top: 8px;">
-            <span id="lbl-env-preset" style="font-size: 0.7rem; color: var(--text-muted);">Scene Style</span>
-            <select id="ambientPreset" class="template-select" style="width: 100%; font-size: 0.75rem; padding: 4px 8px; display: block;">
-              <option value="cyber">Space Cyber</option>
-              <option value="sunset">Neon Sunset</option>
-              <option value="matrix">Matrix Green</option>
-              <option value="studio">Studio Light</option>
-            </select>
-          </div>
-        </div>
-        <div class="hud-group" id="generative-hud" style="display: none;">
-          <h3 id="lbl-hud-gen">Generative Parameters</h3>
-          <div id="gen-controls" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
-        <div class="hud-group" id="script-controls-hud" style="display: none;">
-          <h3 id="lbl-hud-script-params">Script Parameters</h3>
-          <div id="script-controls-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
-      </div>
-      
-      <div class="export-panel">
-        <button class="btn-export" id="btn-exp-obj"><i class="fa-solid fa-cube"></i> <span id="lbl-exp-obj">Export OBJ</span></button>
-        <button class="btn-export" id="btn-exp-stl"><i class="fa-solid fa-cubes"></i> <span id="lbl-exp-stl">Export STL</span></button>
-        <button class="btn-export btn-export-html" id="btn-exp-html"><i class="fa-solid fa-file-code"></i> <span id="lbl-exp-html">Export Interactive HTML</span></button>
-        <button class="btn-export" id="btn-screenshot"><i class="fa-solid fa-camera"></i> <span id="lbl-screenshot">Screenshot</span></button>
-        <button class="btn-export" id="btn-record"><i class="fa-solid fa-circle"></i> <span id="lbl-record">Record</span></button>
-      </div>
-      
-      <!-- 3D Sketcher Overlay Canvas & Controls -->
-      <canvas id="sketch-canvas" style="display: none;"></canvas>
-      <div id="sketch-toolbar" class="sketch-toolbar" style="display: none;">
-        <span style="font-weight: 800; color: var(--accent-cyan); font-size: 0.85rem; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-pen-ruler"></i> <span id="lbl-sketch-title">3D Sketcher</span></span>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn-secondary sketch-btn active" id="btn-sketch-lathe" title="Lathe (Revolution)" style="padding: 6px 10px; border-radius: 8px; font-size: 0.8rem;"><i class="fa-solid fa-rotate"></i> <span id="lbl-sketch-lathe">Lathe (Vase)</span></button>
-          <button class="btn btn-secondary sketch-btn" id="btn-sketch-extrude" title="Extrude (Depth)" style="padding: 6px 10px; border-radius: 8px; font-size: 0.8rem;"><i class="fa-solid fa-expand"></i> <span id="lbl-sketch-extrude">Extrude (Depth)</span></button>
-        </div>
-        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15);"></div>
-        <button class="btn btn-secondary" id="btn-sketch-clear" style="padding: 6px 10px; border-radius: 8px; font-size: 0.8rem;"><i class="fa-solid fa-trash-can"></i> <span id="lbl-sketch-clear">Clear</span></button>
-        <button class="btn btn-run" id="btn-sketch-save" style="padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; background: linear-gradient(135deg, #10b981, #059669); border-color: transparent;"><i class="fa-solid fa-check"></i> <span id="lbl-sketch-save">Generate Code</span></button>
-        <button class="btn btn-secondary" id="btn-sketch-exit" style="padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; border-color: rgba(239,68,68,0.4); color: #fca5a5;"><i class="fa-solid fa-xmark"></i> <span id="lbl-sketch-exit">Exit</span></button>
-      </div>
-      <div id="sketch-instructions" class="sketch-instructions" style="display: none;">
-        Draw profile on the right side of the axis
-      </div>
 
-      <div id="canvas3d"></div>
-      <iframe id="html-preview-frame" style="display: none; border: none; width: 100%; height: 100%; background: transparent;"></iframe>
+    <!-- ═══ EXPORT PRO SUITE MODAL ═══ -->
+    <div id="export-modal" class="modal-bg">
+        <div class="modal-card" style="max-width:650px;">
+            <div class="modal-hdr">
+                <h3><i class="fa-solid fa-box-open" style="color:#10b981;"></i> <span data-i18n="expSuiteTitle">Scripting Studio Export Suite</span></h3>
+                <button id="btn-export-close" class="modal-x"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="exp-grid">
+                <button id="btn-exp-glb" class="exp-card featured">
+                    <div class="exp-ic"><i class="fa-solid fa-cube"></i></div>
+                    <div><h4>3D PBR Binary (.GLB)</h4><p>Full metallics & colors for Blender, Unity & Web</p></div>
+                </button>
+                <button id="btn-exp-stl" class="exp-card">
+                    <div class="exp-ic" style="color:#34d399;"><i class="fa-solid fa-cubes"></i></div>
+                    <div><h4>3D Print Solid (.STL)</h4><p>Watertight binary mesh (120mm) for Bambu/Prusa/Cura</p></div>
+                </button>
+                <button id="btn-exp-obj" class="exp-card">
+                    <div class="exp-ic" style="color:#fbbf24;"><i class="fa-solid fa-draw-polygon"></i></div>
+                    <div><h4>Wavefront Mesh (.OBJ)</h4><p>Universal CAD mesh with normals & triangles</p></div>
+                </button>
+                <button id="btn-exp-ar" data-bypassed="true" class="exp-card featured">
+                    <div class="exp-ic" style="color:#f472b6;"><i class="fa-solid fa-vr-cardboard"></i></div>
+                    <div><h4>AR Viewer 3D (FREE)</h4><p>Send solid PBR .GLB directly into Augmented Reality</p></div>
+                </button>
+                <button id="btn-exp-html" class="exp-card">
+                    <div class="exp-ic" style="color:#a855f7;"><i class="fa-solid fa-globe"></i></div>
+                    <div><h4>Standalone 3D (.HTML)</h4><p>Single-file offline viewer with Orbit & PBR lights</p></div>
+                </button>
+                <button id="btn-exp-reel" class="exp-card">
+                    <div class="exp-ic" style="color:#ec4899;"><i class="fa-solid fa-film"></i></div>
+                    <div><h4>360° Turntable Reel (6s)</h4><p>1-click 60fps auto-orbit showcase video (MP4/WebM)</p></div>
+                </button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid var(--border);font-size:0.75rem;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <strong style="color:#38bdf8;"><i class="fa-solid fa-camera"></i> Studio PNG:</strong>
+                    <select id="png-scale-sel" class="hud-select" style="width:auto;padding:4px 8px;">
+                        <option value="1">HD (1×)</option>
+                        <option value="2" selected>Ultra 2K (2×)</option>
+                        <option value="3">Studio 4K (3×)</option>
+                    </select>
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="png-alpha-chk"> Transparent</label>
+                </div>
+                <button id="btn-exp-png" class="act-btn primary"><i class="fa-solid fa-download"></i> PNG</button>
+            </div>
+        </div>
     </div>
-  </div>
-  
-  <div id="toast"></div>
 
-  <!-- Fullscreen HTML Preview Overlay -->
-  <div id="html-fullscreen-overlay" class="html-fullscreen-overlay" style="display: none;">
-    <div class="html-overlay-toolbar">
-      <div class="html-overlay-title"><i class="fa-solid fa-code"></i> <span id="lbl-overlay-title">HTML Live Preview</span></div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <button class="html-overlay-btn" id="btn-overlay-refresh"><i class="fa-solid fa-rotate-right"></i> <span id="lbl-overlay-refresh">Refresh</span></button>
-        <button class="html-overlay-btn html-overlay-btn-exit" id="btn-overlay-exit"><i class="fa-solid fa-xmark"></i> <span id="lbl-overlay-exit">Exit Preview</span></button>
-      </div>
+    <!-- ═══ DRAW 3D SKETCHER MODAL (ZERO HUD COLLISION, NEVER PAYWALLED!) ═══ -->
+    <div id="sketch-modal" class="modal-bg">
+        <div class="modal-card" style="max-width:580px;">
+            <div class="modal-hdr">
+                <h3 style="color:#fcd34d;"><i class="fa-solid fa-pen-nib"></i> Draw 3D — Profile to Parametric Code</h3>
+                <button id="btn-sketch-close" class="modal-x"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;gap:6px;">
+                    <button class="tpl-cat-btn active" data-sketch-mode="lathe">🏺 Lathe 360°</button>
+                    <button class="tpl-cat-btn" data-sketch-mode="extrude">⭐ Extrude Solid</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:0.74rem;color:#cbd5e1;">
+                    <span>Material:</span>
+                    <select id="sketch-mat-select" class="hud-select" style="width:auto;">
+                        <option value="gold">18K Gold</option>
+                        <option value="chrome">Chrome</option>
+                        <option value="ceramic">Ceramic</option>
+                        <option value="emerald">Emerald</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="neon">Neon Cyan</option>
+                    </select>
+                </div>
+            </div>
+            <canvas id="sketch-2d-canvas" width="520" height="330" style="border-radius:12px;border:1px solid rgba(56,189,248,0.35);cursor:crosshair;max-width:100%;display:block;margin:0 auto;"></canvas>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <button id="btn-sketch-clear" class="act-btn" style="border-color:#ef4444;color:#fca5a5;"><i class="fa-solid fa-trash"></i> Clear</button>
+                <button id="btn-sketch-generate" class="act-btn primary"><i class="fa-solid fa-code"></i> Generate 3D Code</button>
+            </div>
+        </div>
     </div>
-    <iframe id="html-fullscreen-frame" style="flex: 1; border: none; width: 100%; background: white;"></iframe>
-  </div>
 
-  <!-- Visual Templates Gallery Modal -->
-  <div id="gallery-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="lbl-gallery-title"><i class="fa-solid fa-images"></i> Templates Gallery</h2>
-        <button class="modal-close" id="btn-gallery-close">&times;</button>
-      </div>
-      <div class="gallery-grid" id="gallery-grid"></div>
+    <!-- ═══ FULLSCREEN HTML SANDBOX OVERLAY (NEVER PAYWALLED!) ═══ -->
+    <div id="html-full-modal" class="modal-bg" style="padding:0;z-index:500;">
+        <div style="width:100vw;height:100vh;display:flex;flex-direction:column;background:#070c1c;">
+            <div style="height:48px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:#0f172a;border-bottom:1px solid var(--border);">
+                <strong style="color:#38bdf8;"><i class="fa-solid fa-globe"></i> HTML5 Fullscreen Live Preview</strong>
+                <div style="display:flex;gap:8px;">
+                    <button id="btn-html-refresh" class="act-btn"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                    <button id="btn-html-exit" class="act-btn primary"><i class="fa-solid fa-xmark"></i> Exit</button>
+                </div>
+            </div>
+            <iframe id="html-full-frame" sandbox="allow-scripts" style="flex:1;width:100%;border:none;background:#fff;"></iframe>
+        </div>
     </div>
-  </div>
 
-  <script src="app.js"></script>
+    <!-- Three.js r128 + OrbitControls + GLTFExporter + AR Bridge -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="../ar-viewer/ar-bridge.js"></script>
 
-  </body>
+    <!-- Scripting Studio PRO v5.0 Modules -->
+    <script src="./js/engine3d.js?v=5"></script>
+    <script src="./js/templates.js?v=5"></script>
+    <script src="./js/export-studio.js?v=5"></script>
+    <script src="./js/sketcher.js?v=5"></script>
+    <script src="./js/app.js?v=5"></script>
+</body>
 </html>
