@@ -160,6 +160,14 @@ const MusicEngine = (() => {
         isPlaying = false; clearTimeout(schedulerId); pIdx = 0; lastNoteTime = 0;
     }
 
+    function dispose() {
+        stop();
+        if (ctx) {
+            try { ctx.close(); } catch (_) {}
+            ctx = null; masterGain = null; streamDest = null; analyser = null; analyserData = null;
+        }
+    }
+
     function setVolume(v) { if (masterGain) masterGain.gain.setTargetAtTime(v, getCtx().currentTime, 0.05); }
     
     function setBPM(v) {
@@ -201,7 +209,7 @@ const MusicEngine = (() => {
 
     return {
         PRESETS, AI_THEMES,
-        playPreset, stop, setVolume, setBPM, aiGenerate,
+        playPreset, stop, dispose, setVolume, setBPM, aiGenerate,
         isPlaying: () => isPlaying,
         currentIdx: () => currentPresetIdx,
         getAudioStream,
