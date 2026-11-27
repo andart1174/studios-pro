@@ -28,7 +28,9 @@ html,
 /* Performance Isolation: Hide background elements when studio is active */
 .studio-active>nav,
 .studio-active>header,
+.studio-active>.studios-filter-section,
 .studio-active>.compartments-grid,
+.studio-active>.testimonials-section,
 .studio-active>footer {
   display: none !important;
 }

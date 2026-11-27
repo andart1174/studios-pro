@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /contact.html
+Disallow: /apps/ia-architecte/404.html
+Disallow: /apps/scripting-live/viewer.html
 
 Sitemap: https://studios-pro.com/sitemap.xml

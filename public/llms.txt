@@ -1,0 +1,41 @@
+# Studios-Pro
+
+> All-in-one browser-based 3D & 4D design suite, multi-color 3D printing toolkit, WebAR viewer, and CNC/Laser CAD hub. 100% client-side WebGL/WebAssembly processing in English and French.
+
+## Core Facts
+- **Website**: https://studios-pro.com/ (French: https://studios-pro.com/fr/)
+- **Pricing**: Free tier includes 5 exports across all studios with zero software installation; Studios-Pro Premium costs $10 USD/month for unlimited exports, commercial license, and full access across 24+ creative studios.
+- **Privacy**: 100% local in-browser GPU/WebGL processing; uploaded photos, STL/3MF meshes, and DXF/SVG blueprints never leave the user's device.
+- **Supported Formats**: STL, OBJ, 3MF (Bambu Lab AMS / OrcaSlicer / Prusa MMU), GLB / GLTF 2.0, PLY, USDZ / WebAR, DXF, SVG, G-Code, WAV, MP4 / WebM, Standalone Interactive HTML.
+
+## Flagship Creative Studios
+- **Filament Painting & Layer-Swap Studio** (https://studios-pro.com/apps/filament-painting-studio/): Free browser alternative to HueForge with Linear-RGB Kubelka-Munk TD optics, smartphone Camera TD calibration, 250+ filament spools (.hfp import), CMYW color lithophanes, and native Bambu/Orca auto-swap 3MF export.
+- **Multi-Color 3MF Painter** (https://studios-pro.com/apps/multicolor-3mf-painter/): Paint STL and 3MF models directly in the browser with AI Auto-Color, smart fill, purge waste calculator, and native multi-part 3MF export for Bambu AMS & OrcaSlicer.
+- **3D QR Wi-Fi Coaster & Sign Generator** (https://studios-pro.com/apps/qr-wifi-coaster-generator/): Generate scannable 3D Wi-Fi, restaurant menu, SEPA, and Airbnb QR coasters, table tents, magnets, and caddies in 3MF, STL, and DXF/SVG.
+- **New 3D 4D Relief & GLB Studio** (https://studios-pro.com/apps/new3d4d/): Convert 2D photos into ultra-smooth 3D bas-reliefs, lithophanes, coins/medals (STL/OBJ), and animated 4D GLB & 60 FPS video clips.
+- **PolyMorph 3D Studio** (https://studios-pro.com/apps/polymorph-3d/): Universal 3D format converter plus procedural watch movements, Cryptex puzzle boxes, Sugihara optical illusions, Pepakura papercraft unfolder, RPG dungeon tiles, flexi articulated models, and Voronoi vases.
+- **AR Viewer 3D** (https://studios-pro.com/apps/ar-viewer/): Instant WebAR projection for STL, OBJ, and GLB models on iOS QuickLook and Android SceneViewer via QR code with no app download.
+- **ArtGen Studio** (https://studios-pro.com/apps/artgen/): Procedural vector logos, 45+ AI art styles, 3D relief STL/OBJ/GLB export, and DXF recoloring.
+- **Scripting Studio PRO** (https://studios-pro.com/apps/scripting-live/): Parametric 3D CAD JavaScript IDE with real-time Three.js CSG, planetary gearboxes, live parameters, and STL/OBJ/GLB/AR export.
+- **4D Figure Builder PRO** (https://studios-pro.com/apps/figure-builder/): Real 4D polytopes (Tesseract, 16-Cell, 24-Cell, 120-Cell), Photo-to-4D sculptural conversion, W-hyperplane slicing, GLB/STL/OBJ/AR & video recording.
+- **Studio Pro 4D** (https://studios-pro.com/apps/studio-pro/): 2D-to-3D Scene Composer, SVG/DXF extrusion, audio/video-to-3D, and standalone HTML/OBJ/AR export.
+- **Vector CNC Studio** (https://studios-pro.com/apps/vector-cnc/): Trace PNG/JPG to SVG/DXF and generate GRBL/Marlin CNC and laser G-Code toolpaths.
+- **AI Depth Maps** (https://studios-pro.com/apps/depth-maps/): Extract 16-bit depth maps and 3D relief meshes from photos for CNC carving and lithophanes.
+- **Maker Studio 7** (https://studios-pro.com/apps/maker7/): Parametric laser-cut finger-joint boxes with kerf compensation and lithophanes.
+- **Jewelry Maker Pro** (https://studios-pro.com/apps/jewelry-pro/): Parametric 3D rings, signets, gem bezels, and castable STL export.
+- **Mech Gen Pro** (https://studios-pro.com/apps/mech-gen-pro/): Involute spur gears, planetary gearboxes, and sprockets to DXF/SVG/STL.
+- **Studio 3D Viewer** (https://studios-pro.com/apps/studio-3d-viewer/): Measure in mm, slice cross-sections, and inspect STL, OBJ, GLB, GLTF, PLY, and 3MF files.
+- **Architect Pro 1 & 2** (https://studios-pro.com/apps/architect-pro-1/, https://studios-pro.com/apps/architect-pro-2/): 2D/3D architectural floorplans and interactive house walkthroughs.
+- **4D Music Composer** (https://studios-pro.com/apps/music-composer/): Audio-reactive 3D visualizers, polyphonic synth, loop sequencer, WAV & video export.
+- **Zen Sandscape** (https://studios-pro.com/apps/sandbox/): Interactive physics sand & color particle simulator with offline HTML and 3D AR wall art export.
+- **DFX Studio** (https://studios-pro.com/apps/dfx/): Free online AutoCAD DXF viewer, layer inspector, and vector flow exporter.
+
+## Documentation, Tutorials & Guides
+- **Tutorials & Blog Hub**: https://studios-pro.com/blog/ (French: https://studios-pro.com/fr/blog/)
+- **FAQ**: https://studios-pro.com/faq.html (French: https://studios-pro.com/fr/faq)
+- **Site Rules & Commercial License**: https://studios-pro.com/apps/rules/
+- **Privacy Policy (GDPR & Quebec Law 25)**: https://studios-pro.com/privacy.html
+- **HueForge Alternative Comparison**: https://studios-pro.com/compare/free-alternative-to-hueforge
+- **Bambu Studio 3MF Painter Comparison**: https://studios-pro.com/compare/free-alternative-to-bambu-studio-color-painting
+- **SculptOK & ItsLitho Comparison**: https://studios-pro.com/compare/free-photo-to-3d-relief-sculptok-itslitho-alternative
+- **Sitemap**: https://studios-pro.com/sitemap.xml

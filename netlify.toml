@@ -58,7 +58,14 @@
   status = 200
   force = true
 
-# Static HTML, XML, and verification files — serve them as-is (MUST be before the SPA catch-all)
+# Canonical domain redirect (www -> apex)
+[[redirects]]
+  from = "https://www.studios-pro.com/*"
+  to = "https://studios-pro.com/:splat"
+  status = 301
+  force = true
+
+# Static HTML, XML, and verification files — serve them as-is (MUST be before the catch-all)
 [[redirects]]
   from = "/sitemap.xml"
   to = "/sitemap.xml"
@@ -78,8 +85,32 @@
   force = false
 
 [[redirects]]
+  from = "/BingSiteAuth.xml"
+  to = "/BingSiteAuth.xml"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/llms.txt"
+  to = "/llms.txt"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/googlefb2bcd50466119a3.html"
+  to = "/googlefb2bcd50466119a3.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/f89ae7b4f1094014a700fcd8d747035b.txt"
   to = "/f89ae7b4f1094014a700fcd8d747035b.txt"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/manifest.json"
+  to = "/manifest.json"
   status = 200
   force = false
 
@@ -90,10 +121,101 @@
   force = false
 
 [[redirects]]
+  from = "/privacy.html"
+  to = "/privacy.html"
+  status = 200
+  force = false
+
+[[redirects]]
   from = "/contact.html"
   to = "/contact.html"
   status = 200
   force = false
+
+[[redirects]]
+  from = "/404.html"
+  to = "/404.html"
+  status = 200
+  force = false
+
+# Bilingual French SEO routes (/fr/)
+[[redirects]]
+  from = "/fr"
+  to = "/fr/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/"
+  to = "/fr/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/fr/faq.html"
+  to = "/fr/faq"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/faq"
+  to = "/fr/faq.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/fr/blog"
+  to = "/fr/blog/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/blog/"
+  to = "/fr/blog/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/fr/blog/*.html"
+  to = "/fr/blog/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/blog/*"
+  to = "/fr/blog/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/fr/tools/*.html"
+  to = "/fr/tools/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/tools/*"
+  to = "/fr/tools/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/fr/compare/*.html"
+  to = "/fr/compare/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/compare/*"
+  to = "/fr/compare/:splat.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/blog"
+  to = "/blog/"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/blog/"
@@ -102,10 +224,16 @@
   force = false
 
 [[redirects]]
+  from = "/blog/index.html"
+  to = "/blog/"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/blog/*.html"
-  to = "/blog/:splat.html"
-  status = 200
-  force = false
+  to = "/blog/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/blog/*"
@@ -115,9 +243,9 @@
 
 [[redirects]]
   from = "/viewer/*.html"
-  to = "/viewer/:splat.html"
-  status = 200
-  force = false
+  to = "/viewer/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/viewer/*"
@@ -127,9 +255,9 @@
 
 [[redirects]]
   from = "/convert/*.html"
-  to = "/convert/:splat.html"
-  status = 200
-  force = false
+  to = "/convert/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/convert/*"
@@ -139,9 +267,9 @@
 
 [[redirects]]
   from = "/ar-viewer/*.html"
-  to = "/ar-viewer/:splat.html"
-  status = 200
-  force = false
+  to = "/ar-viewer/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/ar-viewer/*"
@@ -163,9 +291,9 @@
 
 [[redirects]]
   from = "/cards/*.html"
-  to = "/cards/:splat.html"
-  status = 200
-  force = false
+  to = "/cards/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/cards/*"
@@ -175,9 +303,9 @@
 
 [[redirects]]
   from = "/tools/*.html"
-  to = "/tools/:splat.html"
-  status = 200
-  force = false
+  to = "/tools/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/tools/*"
@@ -187,9 +315,9 @@
 
 [[redirects]]
   from = "/compare/*.html"
-  to = "/compare/:splat.html"
-  status = 200
-  force = false
+  to = "/compare/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/compare/*"
@@ -197,11 +325,11 @@
   status = 200
   force = false
 
-# SPA catch-all — React app for everything else
+# True HTTP 404 for unknown paths (eliminates Google Soft-404s; homepage / serves index.html automatically)
 [[redirects]]
   from = "/*"
-  to = "/index.html"
-  status = 200
+  to = "/404.html"
+  status = 404
 
 # ─── SECURITY & SEO HEADERS ────────────────────────────────────────────
 # Allow iframe embedding across external websites (WordPress, blogs, tools, online viewers)
@@ -210,8 +338,8 @@
   [headers.values]
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy-Report-Only = "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; worker-src 'self' blob:; frame-src 'self' https://js.stripe.com https://checkout.stripe.com;"
 Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), display-capture=(self), autoplay=*, fullscreen=*"
 
 
@@ -247,6 +375,22 @@ Permissions-Policy = "camera=*, xr-spatial-tracking=*, microphone=(self), displa
   for = "/sitemap.xml"
   [headers.values]
     Cache-Control = "public, max-age=86400"
+
+# Exclude utility & internal error endpoints from search indexing
+[[headers]]
+  for = "/contact.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/apps/ia-architecte/404.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/apps/scripting-live/viewer.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
 
 # =====================================================
 # 🔮 AR / 3D MODEL HEADERS — REQUIRED FOR GOOGLE SCENVIEWER & IOS QUICKLOOK

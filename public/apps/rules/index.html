@@ -1,315 +1,271 @@
 <!DOCTYPE html>
-<html lang="fr">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Règles du Site | Studios-Pro</title>
-    <script>document.title = "Règles du Site | Studios-Pro";</script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
-            color: white;
-            padding: 40px;
-            line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            min-height: 100vh;
-        }
-
-        .container {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(20px);
-            border-radius: 32px;
-            padding: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .back-to-studios {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9999;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .back-to-studios:hover {
-            background: #3b82f6;
-            transform: translateY(-2px);
-        }
-
-        h1 {
-            color: #3b82f6;
-            font-size: 3rem;
-            font-weight: 900;
-            margin-bottom: 2.5rem;
-            text-align: center;
-            letter-spacing: -0.04em;
-        }
-
-        section {
-            margin-bottom: 40px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        section:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-
-        h2 {
-            color: #60a5fa;
-            font-size: 1.5rem;
-            margin-top: 0;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .point-number {
-            background: #3b82f6;
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            font-weight: 800;
-        }
-
-        p {
-            color: #94a3b8;
-            font-size: 1.1rem;
-            margin-bottom: 0;
-        }
-
-        .highlight {
-            color: #f8fafc;
-            font-weight: 600;
-        }
-
-        .lang-switch {
-            text-align: right;
-            margin-bottom: 30px;
-        }
-
-        .lang-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            padding: 8px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-left: 10px;
-            transition: all 0.3s;
-            font-weight: 700;
-        }
-
-        .lang-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-
-        .content-en {
-            display: none;
-        }
-
-        /* Back Button Same Style */
-        .back-to-studios {
-            position: fixed;
-            top: 40px;
-            left: 40px;
-            z-index: 9999;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 800;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .back-to-studios:hover {
-            background: #3b82f6;
-            transform: translateY(-2px);
-        }
-
-        @media (max-width: 1100px) {
-            .back-to-studios {
-                position: absolute;
-                top: 20px;
-                left: 20px;
-            }
-
-            .container {
-                padding: 30px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Rules, Terms & Privacy Policy | Studios-Pro</title>
+  <meta name="description" content="Official Studios-Pro Site Rules, Terms of Service, Privacy Policy (GDPR & Quebec Law 25), Cookies disclosure, Subscription terms, and Free vs Pro Commercial License.">
+  <link rel="canonical" href="https://studios-pro.com/apps/rules/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050a18;
+      --card: rgba(15, 23, 42, 0.85);
+      --border: rgba(148, 163, 184, 0.2);
+      --c1: #38bdf8;
+      --c2: #10b981;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top right, #111c3a, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.65;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: rgba(5, 10, 24, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { background: #2563eb; border-color: #60a5fa; }
+    .lang-switch {
+      display: inline-flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 6px 13px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .lang-btn.active { background: #fff; color: #020617; }
+    main {
+      max-width: 900px;
+      margin: 34px auto 64px;
+      padding: 0 20px;
+    }
+    .doc-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff, #38bdf8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .updated { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; }
+    section {
+      margin-bottom: 24px;
+      padding: 20px 22px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 14px;
+    }
+    h2 {
+      font-size: 1.08rem;
+      color: var(--c1);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    p, li { color: #cbd5e1; font-size: 0.93rem; }
+    p + p { margin-top: 8px; }
+    ul { padding-left: 20px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    strong { color: #f8fafc; }
+    a { color: var(--c1); }
+    .lang-block { display: none; }
+    .lang-block.active { display: block; }
+    @media (max-width: 600px) {
+      .topbar { padding: 12px 14px; }
+      .doc-card { padding: 22px 18px; }
+      h1 { font-size: 1.55rem; }
+    }
+  </style>
 </head>
-
 <body>
-    <a href="/" class="back-to-studios">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6" />
-        </svg>
-        <span>Retour / Back</span>
-    </a>
-
-    <div class="lang-switch">
-        <button id="btn-fr" class="lang-btn active" onclick="showLang('fr')">Français</button>
-        <button id="btn-en" class="lang-btn" onclick="showLang('en')">English</button>
+  <header class="topbar">
+    <button type="button" id="back-btn" class="back-btn">← <span id="back-label">Back to Studios-Pro</span></button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" id="btn-en" class="lang-btn" onclick="setLang('en')">EN</button>
+      <button type="button" id="btn-fr" class="lang-btn" onclick="setLang('fr')">FR</button>
     </div>
+  </header>
 
-    <div class="container">
-        <div id="content-fr" class="content-fr">
-            <h1>Règles du Studio</h1>
+  <main>
+    <div class="doc-card">
+      <!-- ENGLISH VERSION -->
+      <div id="block-en" class="lang-block">
+        <h1>Site Rules, Terms of Service & Privacy Policy</h1>
+        <p class="updated">Last updated: November 2026 • Applies to studios-pro.com & all 24+ browser studios</p>
 
-            <section>
-                <h2><span class="point-number">1</span> Confidentialité</h2>
-                <p>Le site <span class="highlight">ne demande aucune donnée personnelle</span>. Vous vous inscrivez avec
-                    votre e-mail et vous payez lors de l'exportation du modèle. Vous pouvez créer un compte premium et
-                    payer une fois par mois pour avoir un accès illimité à l'exportation.</p>
-            </section>
+        <section>
+          <h2>1. Privacy Policy & Personal Data (GDPR & Quebec Law 25)</h2>
+          <p>Studios-Pro processes all 3D mesh generation, lithophane relief calculations, 3MF painting, CNC vectorization, and WebGL rendering <strong>locally inside your browser</strong> whenever possible. Your design source files are never permanently stored on our servers.</p>
+          <p>However, to operate accounts, subscriptions, and analytics, we collect limited personal information strictly when required:</p>
+          <ul>
+            <li><strong>Account & Authentication (Google Firebase):</strong> Your email address, display name (if using Google Sign-In), user ID, and export counter.</li>
+            <li><strong>Billing (Stripe):</strong> Processed exclusively by Stripe (PCI-DSS compliant). Studios-Pro never sees or stores your credit card number.</li>
+            <li><strong>Contact & Newsletter Forms (Netlify Forms & Firestore):</strong> Your name, email address, and message content when you voluntarily contact us or subscribe.</li>
+            <li><strong>Temporary Mobile AR Share & Live Collab:</strong> If you explicitly click "Share to Mobile AR QR", a temporary `.glb` file is cached for 7 days via Netlify Blobs so your phone can download it. Collaborative scripting rooms transmit code only inside rooms you join while signed in.</li>
+            <li><strong>Your Rights & Data Deletion:</strong> Under GDPR and Quebec Law 25, you may request access, correction, or complete deletion of your account and personal data at any time via the Contact form or by contacting our Privacy Officer (<em>Responsable de la protection des renseignements personnels</em>) at <strong>support@studios-pro.com</strong>.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">2</span> Paiements Sécurisés</h2>
-                <p>Les paiements sont traités via <span class="highlight">-STRIPE-</span>, un système hautement sécurisé
-                    utilisé par les plus grandes entreprises mondiales. Le site ne voit jamais les coordonnées de votre
-                    carte ; Stripe traite la transaction en toute sécurité et transfère les fonds directement au
-                    propriétaire.</p>
-            </section>
+        <section>
+          <h2>2. Cookies & Analytics</h2>
+          <p>Studios-Pro uses browser <code>localStorage</code> to save your language preference (EN/FR), studio drafts, and guest export count. We also use <strong>Google Analytics 4 (GA4)</strong> and <strong>Google Ads</strong> conversion tags to measure site performance and improve our tools. You can block or clear cookies at any time through your browser settings.</p>
+        </section>
 
-            <section>
-                <h2><span class="point-number">3</span> Persistance des Données</h2>
-                <p>Le site <span class="highlight">ne conserve aucun modèle</span>. Une fois que vous quittez la page ou
-                    que vous la rechargez, votre modèle est définitivement supprimé pour garantir votre confidentialité.
-                </p>
-            </section>
+        <section>
+          <h2>3. Free Plan, Pro Subscription ($10 USD/mo), Cancellation & Refunds</h2>
+          <ul>
+            <li><strong>Free Tier:</strong> Every visitor receives <strong>5 free exports</strong> (2 guest exports + 3 additional exports after creating a free account) with zero credit card required.</li>
+            <li><strong>Studios-Pro Unlimited ($10 USD / month):</strong> Auto-renewing monthly subscription managed securely via Stripe, unlocking unlimited exports across all 24+ studios, HD CNC/3D reliefs, watermark-free standalone HTML exports, and commercial usage rights.</li>
+            <li><strong>Cancellation & Refunds:</strong> You may cancel your subscription at any time before your next billing date with zero penalty; Pro access remains active through the end of your paid billing period. For billing issues or refund requests within 7 days of accidental renewal, contact us via the Contact form or <strong>support@studios-pro.com</strong>.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">4</span> Qualité d'Exportation</h2>
-                <p>Vérifiez soigneusement votre modèle avant de l'exporter. L'application automatise la majorité du
-                    processus, mais met à votre disposition de nombreux outils de personnalisation. <span
-                        class="highlight">La qualité du résultat final dépend directement de la qualité de l'image
-                        originale chargée.</span></p>
-            </section>
+        <section>
+          <h2>4. Intellectual Property & Commercial License (Free vs. Pro)</h2>
+          <ul>
+            <li><strong>Your Creations:</strong> You retain 100% ownership of the original artwork, photos, CAD scripts, and 3D models you create using Studios-Pro.</li>
+            <li><strong>Free Plan License:</strong> Exports produced under the Free plan are licensed for personal, educational, and non-commercial prototyping use.</li>
+            <li><strong>Pro Commercial License:</strong> Active Studios-Pro Unlimited subscribers receive a <strong>full commercial license</strong> to manufacture, 3D-print, laser-cut, CNC-mill, and sell physical products or digital assets created with our studios (including STL, 3MF, OBJ, GLB, DXF, SVG, G-Code, and HTML outputs).</li>
+            <li><strong>User Responsibility:</strong> You are solely responsible for ensuring that any image, logo, or 3D file you upload does not infringe third-party copyrights or trademarks.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">5</span> Guide Compartiment 2 (DFX)</h2>
-                <p>Dans le Compartiment 2, lors du chargement d'une photo, il est normal que le modèle ne soit pas
-                    visible immédiatement. Vous devez aller dans la fonction <span class="highlight">-MODE-</span> et
-                    passer au deuxième mode : <span class="highlight">Threshold(B&W)</span>.
-                    <br><br>• Pour un <span class="highlight">Vecteur</span> : Activez "Live vector preview" et ajustez
-                    selon vos besoins.
-                    <br>• Pour un <span class="highlight">BMP</span> : Choisissez le mode souhaité et utilisez les
-                    outils de réglage.
-                </p>
-            </section>
-        </div>
+        <section>
+          <h2>5. Acceptable Use & Limitation of Liability</h2>
+          <p>You agree not to attempt unauthorized access, automated scraping/abuse of our endpoints, circumvention of export quotas, or submission of malicious scripts. Studios-Pro is provided "as is" — always preview and verify G-Code, DXF toolpaths, and STL/3MF slices in your slicer or CAM simulator before running CNC routers, laser cutters, or 3D printers. Studios-Pro is not liable for machine damage or material waste.</p>
+          <p>See also our standalone <a href="/privacy.html">Privacy Policy</a> and <a href="/faq.html">Frequently Asked Questions</a>.</p>
+        </section>
+      </div>
 
-        <div id="content-en" class="content-en">
-            <h1>Studio Rules</h1>
+      <!-- FRENCH VERSION -->
+      <div id="block-fr" class="lang-block">
+        <h1>Règles du site, Conditions d’utilisation & Confidentialité</h1>
+        <p class="updated">Dernière mise à jour : Novembre 2026 • Applicable à studios-pro.com et à nos 24+ studios web</p>
 
-            <section>
-                <h2><span class="point-number">1</span> Data Privacy</h2>
-                <p>The site <span class="highlight">does not request any personal data</span>. You register with your
-                    email and pay when exporting the model. You can create a premium account and pay once a month to
-                    have unlimited access to exports.</p>
-            </section>
+        <section>
+          <h2>1. Politique de confidentialité & Données personnelles (RGPD & Loi 25 Québec)</h2>
+          <p>Studios-Pro exécute la génération 3D, les reliefs CNC, les lithophanies, la peinture 3MF et le rendu WebGL <strong>localement dans votre navigateur</strong>. Vos fichiers source de création ne sont pas stockés de façon permanente sur nos serveurs.</p>
+          <p>Pour faire fonctionner les comptes, les abonnements et l’amélioration du service, nous collectons uniquement les données strictement nécessaires :</p>
+          <ul>
+            <li><strong>Compte & Authentification (Google Firebase) :</strong> Adresse e-mail, nom d’affichage (si connexion Google), identifiant utilisateur et compteur d’exports.</li>
+            <li><strong>Paiement (Stripe) :</strong> Géré exclusivement par Stripe (certifié PCI-DSS). Studios-Pro ne voit et ne conserve jamais vos numéros de carte bancaire.</li>
+            <li><strong>Formulaires Contact & Newsletter (Netlify Forms & Firestore) :</strong> Nom, adresse e-mail et message uniquement lorsque vous nous écrivez ou vous abonnez volontairement.</li>
+            <li><strong>Partage AR Mobile temporaire & Collab :</strong> Si vous générez un QR code AR mobile, un fichier `.glb` temporaire est hébergé 7 jours sur Netlify Blobs pour permettre le téléchargement sur téléphone. Les salons de scripting collaboratif nécessitent une connexion.</li>
+            <li><strong>Vos droits & Suppression de compte :</strong> Conformément au RGPD et à la <strong>Loi 25 (Québec)</strong>, vous pouvez demander l’accès, la rectification ou la suppression définitive de votre compte et de vos données en écrivant au Responsable de la protection des renseignements personnels via le formulaire Contact ou à <strong>support@studios-pro.com</strong>.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">2</span> Secure Payments</h2>
-                <p>Payments are processed via <span class="highlight">-STRIPE-</span>, a highly secure system used by
-                    the world's leading companies. The site never sees your card details; Stripe handles the transaction
-                    securely and transfers the funds directly to the owner.</p>
-            </section>
+        <section>
+          <h2>2. Témoins (Cookies) & Mesure d’audience</h2>
+          <p>Studios-Pro utilise le stockage local du navigateur (<code>localStorage</code>) pour mémoriser votre langue (FR/EN), vos brouillons et votre quota d’exports gratuits. Nous utilisons également <strong>Google Analytics 4 (GA4)</strong> et les balises de conversion <strong>Google Ads</strong> afin d’améliorer les performances du site. Vous pouvez désactiver ou supprimer les cookies à tout moment dans les paramètres de votre navigateur.</p>
+        </section>
 
-            <section>
-                <h2><span class="point-number">3</span> Data Persistence</h2>
-                <p>The site <span class="highlight">does not store any models</span>. Once you exit the page or reload
-                    it, your model is permanently deleted to ensure your privacy.</p>
-            </section>
+        <section>
+          <h2>3. Formule Gratuite, Abonnement Pro (10 $ USD / mois), Annulation & Remboursement</h2>
+          <ul>
+            <li><strong>Accès Gratuit :</strong> Chaque utilisateur bénéficie de <strong>5 exports gratuits</strong> (2 en mode invité + 3 supplémentaires après création gratuite d’un compte), sans carte bancaire.</li>
+            <li><strong>Studios-Pro Illimité (10 $ USD / mois) :</strong> Abonnement mensuel à renouvellement automatique via Stripe, débloquant les exports illimités dans tous nos 24+ studios, les reliefs HD, les exports HTML sans filigrane et la licence commerciale.</li>
+            <li><strong>Annulation & Remboursement :</strong> Vous pouvez annuler votre abonnement à tout moment sans pénalité avant la prochaine date de facturation ; l’accès Pro reste actif jusqu’à la fin de la période payée. Pour toute question de facturation ou demande de remboursement (sous 7 jours en cas de renouvellement accidentel), contactez-nous à <strong>support@studios-pro.com</strong>.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">4</span> Export Quality</h2>
-                <p>Review your model carefully before exporting. While the application automates most of the process, it
-                    provides numerous tools for customization. <span class="highlight">The quality of the final result
-                        depends directly on the quality of the original image uploaded.</span></p>
-            </section>
+        <section>
+          <h2>4. Propriété intellectuelle & Licence commerciale (Gratuit vs Pro)</h2>
+          <ul>
+            <li><strong>Vos créations :</strong> Vous conservez 100 % des droits sur les créations originales, photos, scripts CAO et modèles 3D que vous générez avec Studios-Pro.</li>
+            <li><strong>Licence Formule Gratuite :</strong> Les fichiers exportés gratuitement sont destinés à un usage personnel, éducatif et au prototypage non commercial.</li>
+            <li><strong>Licence Commerciale Pro :</strong> Les abonnés actifs Studios-Pro Illimité bénéficient d’une <strong>licence commerciale complète</strong> permettant de fabriquer, imprimer en 3D, découper au laser, usiner CNC et vendre des objets physiques ou fichiers issus de nos studios (STL, 3MF, OBJ, GLB, DXF, SVG, G-Code, HTML).</li>
+            <li><strong>Responsabilité :</strong> Vous êtes seul responsable de vous assurer que les images, logos ou modèles 3D importés respectent les droits d’auteur et marques déposées de tiers.</li>
+          </ul>
+        </section>
 
-            <section>
-                <h2><span class="point-number">5</span> Compartment 2 (DFX) Guide</h2>
-                <p>In Compartment 2, when uploading a photo, the model may not be visible initially. You must navigate
-                    to the <span class="highlight">-MODE-</span> function and switch to the second mode: <span
-                        class="highlight">Threshold(B&W)</span>.
-                    <br><br>• For <span class="highlight">Vectors</span>: Enable "Live vector preview" and adjust as
-                    needed.
-                    <br>• For <span class="highlight">BMP</span>: Choose your preferred mode and use the adjustment
-                    tools.
-                </p>
-            </section>
-        </div>
+        <section>
+          <h2>5. Utilisation acceptable & Limitation de responsabilité</h2>
+          <p>Il est interdit de tenter un accès non autorisé, de contourner les quotas d’export ou d’injecter des scripts malveillants. Studios-Pro est fourni « tel quel » : vérifiez toujours vos parcours G-Code, DXF et découpes STL/3MF dans votre trancheur ou simulateur FAO avant de lancer une machine CNC, un laser ou une imprimante 3D. Studios-Pro décline toute responsabilité en cas de casse matérielle ou perte de matière.</p>
+          <p>Consultez également notre <a href="/privacy.html">Politique de confidentialité</a> et notre <a href="/faq.html">Foire aux questions (FAQ)</a>.</p>
+        </section>
+      </div>
     </div>
+  </main>
 
-    <button id="back-btn" class="back-to-studios">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6" />
-        </svg>
-        <span>Retour / Back</span>
-    </button>
+  <script>
+    function setLang(lang) {
+      const l = lang === 'fr' ? 'fr' : 'en';
+      document.documentElement.lang = l;
+      document.title = l === 'fr'
+        ? 'Règles du site, Conditions & Confidentialité | Studios-Pro'
+        : 'Site Rules, Terms & Privacy Policy | Studios-Pro';
+      document.getElementById('block-en').classList.toggle('active', l === 'en');
+      document.getElementById('block-fr').classList.toggle('active', l === 'fr');
+      document.getElementById('btn-en').classList.toggle('active', l === 'en');
+      document.getElementById('btn-fr').classList.toggle('active', l === 'fr');
+      document.getElementById('back-label').textContent = l === 'fr' ? 'Retour à Studios-Pro' : 'Back to Studios-Pro';
+      try { localStorage.setItem('sp_lang', l); } catch (_) {}
+    }
 
-    <script>
-        function showLang(lang) {
-            document.getElementById('content-fr').style.display = lang === 'fr' ? 'block' : 'none';
-            document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('lang');
+      const saved = (function () { try { return localStorage.getItem('sp_lang'); } catch (_) { return null; } })();
+      const initial = (q === 'fr' || q === 'en') ? q : ((saved === 'fr' || saved === 'en') ? saved : 'en');
+      setLang(initial);
 
-            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
-            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('back-btn').addEventListener('click', function () {
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: 'CLOSE_STUDIO' }, window.location.origin); } catch (_) {}
+          try { new BroadcastChannel('studios_pro_channel').postMessage({ type: 'CLOSE_STUDIO' }); } catch (_) {}
+        } else {
+          window.location.href = '/';
         }
-
-        document.getElementById('back-btn').onclick = () => {
-            const channel = new BroadcastChannel('studios_pro_channel');
-            const msg = { type: 'CLOSE_STUDIO' };
-            channel.postMessage(msg);
-            window.parent.postMessage(msg, '*');
-        };
-    </script>
-
-  </body>
-
+      });
+    })();
+  </script>
+</body>
 </html>

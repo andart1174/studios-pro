@@ -922,14 +922,14 @@ const arViewers = [
   }
 ];
 
-const template = (page) => {
-  let pagePath = '';
-  if (viewers.some(v => v.id === page.id)) pagePath = `viewer/${page.id}`;
-  else if (converters.some(c => c.id === page.id)) pagePath = `convert/${page.id}`;
-  else if (nicheTools.some(t => t.id === page.id)) pagePath = `tools/${page.id}`;
-  else if (arViewers.some(a => a.id === page.id)) pagePath = `ar-viewer/${page.id}`;
-  else if (cardPages.some(c => c.id === page.id)) pagePath = `cards/${page.id}`;
-
+const template = (page, sectionPrefix, hasFrMirror = false) => {
+  const pagePath = `${sectionPrefix}/${page.id}`;
+  const urlEn = `https://studios-pro.com/${pagePath}`;
+  const urlFr = `https://studios-pro.com/fr/${pagePath}`;
+  const ogImg = page.ogImage || 'https://studios-pro.com/og_banner.jpg';
+  const hreflangTags = hasFrMirror
+    ? `    <link rel="alternate" hreflang="en" href="${urlEn}" />\n    <link rel="alternate" hreflang="fr" href="${urlFr}" />\n    <link rel="alternate" hreflang="x-default" href="${urlEn}" />`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -942,20 +942,22 @@ const template = (page) => {
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://studios-pro.com/${pagePath}" />
+    <meta property="og:locale" content="en_US" />${hasFrMirror ? '\n    <meta property="og:locale:alternate" content="fr_FR" />' : ''}
+    <meta property="og:url" content="${urlEn}" />
     <meta property="og:title" content="${page.titleEn}" />
     <meta property="og:description" content="${page.descEn}" />
-    <meta property="og:image" content="${page.ogImage || 'https://studios-pro.com/og_banner.jpg'}" />
+    <meta property="og:image" content="${ogImg}" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://studios-pro.com/${pagePath}" />
+    <meta name="twitter:url" content="${urlEn}" />
     <meta name="twitter:title" content="${page.titleEn}" />
     <meta name="twitter:description" content="${page.descEn}" />
-    <meta name="twitter:image" content="${page.ogImage || 'https://studios-pro.com/og_banner.jpg'}" />
+    <meta name="twitter:image" content="${ogImg}" />
     
     <!-- Canonical -->
-    <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
+    <link rel="canonical" href="${urlEn}" />
+${hreflangTags}
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -1342,14 +1344,24 @@ const template = (page) => {
                     <span data-fr>Oui, nos outils sont 100% gratuits pour la modélisation de base, la visualisation et la création de mises en page. Les fonctions premium sont proposées pour des exports avancés.</span>
                 </p>
             </div>
-            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-bottom: 16px;">
                 <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
-                    <span data-en>Are my files uploaded to a remote server?</span>
-                    <span data-fr>Mes fichiers sont-ils téléchargés sur un serveur distant ?</span>
+                    <span data-en>Are my design files uploaded to a remote server?</span>
+                    <span data-fr>Mes fichiers sont-ils envoyés sur un serveur distant ?</span>
                 </h4>
                 <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
-                    <span data-en>No. All 3D rendering, drawing extrusion, and vector conversions are performed 100% locally on your computer client-side. Your private design data never leaves your device.</span>
-                    <span data-fr>Non. Tout le rendu 3D, l'extrusion de dessin et la conversion vectorielle sont exécutés à 100% localement sur votre ordinateur. Vos données privées ne quittent jamais votre appareil.</span>
+                    <span data-en>No. All 3D rendering, mesh parsing, and CAD vector algorithms run locally on your device via client-side WebAssembly and WebGL, guaranteeing complete file privacy.</span>
+                    <span data-fr>Non. Tout le rendu 3D, l'analyse de maillage et les conversions vectorielles s'exécutent à 100 % localement sur votre appareil via WebAssembly et WebGL, garantissant une confidentialité totale.</span>
+                </p>
+            </div>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>What export features are supported?</span>
+                    <span data-fr>Quelles fonctionnalités d'exportation sont prises en charge ?</span>
+                </h4>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>${page.featureEn}</span>
+                    <span data-fr>${page.featureFr}</span>
                 </p>
             </div>
         </div>
@@ -1466,6 +1478,9 @@ const template = (page) => {
 
 const compareTemplate = (comp) => {
   const pagePath = `compare/${comp.id}`;
+  const urlEn = `https://studios-pro.com/${pagePath}`;
+  const urlFr = `https://studios-pro.com/fr/${pagePath}`;
+  const ogImg = comp.ogImage || 'https://studios-pro.com/og_banner.jpg';
   
   const tableRows = comp.table.map(row => `
     <tr>
@@ -1493,20 +1508,25 @@ const compareTemplate = (comp) => {
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://studios-pro.com/${pagePath}" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:url" content="${urlEn}" />
     <meta property="og:title" content="${comp.titleEn}" />
     <meta property="og:description" content="${comp.descEn}" />
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta property="og:image" content="${ogImg}" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://studios-pro.com/${pagePath}" />
+    <meta name="twitter:url" content="${urlEn}" />
     <meta name="twitter:title" content="${comp.titleEn}" />
     <meta name="twitter:description" content="${comp.descEn}" />
-    <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta name="twitter:image" content="${ogImg}" />
     
-    <!-- Canonical -->
-    <link rel="canonical" href="https://studios-pro.com/${pagePath}" />
+    <!-- Canonical & Hreflang -->
+    <link rel="canonical" href="${urlEn}" />
+    <link rel="alternate" hreflang="en" href="${urlEn}" />
+    <link rel="alternate" hreflang="fr" href="${urlFr}" />
+    <link rel="alternate" hreflang="x-default" href="${urlEn}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -1817,6 +1837,33 @@ const compareTemplate = (comp) => {
             </div>
         </div>
 
+        <div class="faq-section" style="margin-top: 52px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 36px;">
+            <h2 style="font-size: 2rem; margin-bottom: 24px; font-weight: 800; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center;">
+                <span data-en>Frequently Asked Questions</span>
+                <span data-fr>Questions Fréquentes</span>
+            </h2>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-bottom: 16px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>Why use Studios-Pro instead of ${comp.targetSoftware}?</span>
+                    <span data-fr>Pourquoi utiliser Studios-Pro plutôt que ${comp.targetSoftware} ?</span>
+                </h3>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>Studios-Pro runs 100% in your web browser with zero software installation, full client-side privacy, cross-platform compatibility across Windows, Mac, iPad, and Chromebook, and instant STL, OBJ, 3MF, DXF, and G-Code exports.</span>
+                    <span data-fr>Studios-Pro s'exécute à 100 % dans votre navigateur sans aucune installation, avec confidentialité totale côté client, compatibilité Windows, Mac, iPad et Chromebook, et exportations instantanées STL, OBJ, 3MF, DXF et G-Code.</span>
+                </p>
+            </div>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>Is Studios-Pro free to use?</span>
+                    <span data-fr>Studios-Pro est-il gratuit ?</span>
+                </h3>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>Yes, Studios-Pro offers free in-browser access across all 24+ creative studios with 5 free production exports included, plus an optional $10/month Premium plan for unlimited exports and commercial rights.</span>
+                    <span data-fr>Oui, Studios-Pro offre un accès gratuit dans le navigateur à nos 24+ studios créatifs avec 5 exportations offertes, ainsi qu'un forfait Premium optionnel à 10 $/mois pour des exportations illimitées et une licence commerciale.</span>
+                </p>
+            </div>
+        </div>
+
         <div class="cta-container">
             <h2 style="color: white; margin-top: 0; font-size: 2rem;">
                 <span data-en>Ready to create with Studios-Pro?</span>
@@ -1935,6 +1982,366 @@ const compareTemplate = (comp) => {
 </html>`;
 };
 
+// Native French SEO templates (/fr/, /fr/tools/*, /fr/compare/*)
+const templateFrTool = (page) => {
+  const pagePath = `tools/${page.id}`;
+  const urlEn = `https://studios-pro.com/${pagePath}`;
+  const urlFr = `https://studios-pro.com/fr/${pagePath}`;
+  const ogImg = page.ogImage || 'https://studios-pro.com/og_banner.jpg';
+  const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${page.titleFr}</title>
+    <meta name="description" content="${page.descFr}">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link rel="canonical" href="${urlFr}" />
+    <link rel="alternate" hreflang="fr" href="${urlFr}" />
+    <link rel="alternate" hreflang="en" href="${urlEn}" />
+    <link rel="alternate" hreflang="x-default" href="${urlEn}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="${urlFr}" />
+    <meta property="og:title" content="${page.titleFr}" />
+    <meta property="og:description" content="${page.descFr}" />
+    <meta property="og:image" content="${ogImg}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${page.titleFr}" />
+    <meta name="twitter:description" content="${page.descFr}" />
+    <meta name="twitter:image" content="${ogImg}" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: rgba(15, 23, 42, 0.72); --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; line-height: 1.75; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(5,7,10,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .lang-btn.active { background: #fff; color: #020617; border-color: #fff; }
+        .container { max-width: 900px; margin: 50px auto 70px; padding: 0 20px; }
+        .hero { text-align: center; margin-bottom: 44px; }
+        h1 { font-size: 2.8rem; margin: 0 0 18px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--muted); font-size: 1.15rem; max-width: 720px; margin: 0 auto 28px; }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); color: #020617; padding: 15px 40px; border-radius: 999px; font-size: 1.1rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(59,130,246,0.35); }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 40px 0; }
+        .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; }
+        .card h3 { margin: 0 0 10px; color: #fff; font-size: 1.15rem; }
+        .card p { margin: 0; color: var(--muted); font-size: 0.96rem; }
+        .faq-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+        .faq-card h3 { margin: 0 0 8px; color: #fff; font-size: 1.1rem; }
+        .faq-card p { margin: 0; color: var(--muted); font-size: 0.96rem; }
+        .footer-nav { margin-top: 46px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .footer-nav a { color: #38bdf8; text-decoration: none; padding: 7px 14px; border-radius: 8px; background: rgba(56,189,248,0.08); font-size: 0.92rem; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 1.95rem; } }
+    </style>
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "${esc(page.titleFr)}",
+        "inLanguage": "fr",
+        "operatingSystem": "Web",
+        "applicationCategory": "DesignApplication",
+        "offers": { "@type": "Offer", "price": "0.00", "priceCurrency": "USD" },
+        "description": "${esc(page.descFr)}",
+        "url": "${urlFr}",
+        "screenshot": "${ogImg}",
+        "featureList": "${esc(page.featureFr)}"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "inLanguage": "fr",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Cet outil est-il gratuit en ligne ?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Oui, Studios-Pro permet d'utiliser cet outil directement dans votre navigateur sans téléchargement, avec 5 exportations gratuites incluses." }
+          },
+          {
+            "@type": "Question",
+            "name": "Mes fichiers sont-ils envoyés sur un serveur ?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Non. Tout le rendu 3D et les conversions CAO s'exécutent à 100 % localement sur votre appareil via WebGL et WebAssembly." }
+          },
+          {
+            "@type": "Question",
+            "name": "Quelles fonctionnalités d'export sont incluses ?",
+            "acceptedAnswer": { "@type": "Answer", "text": "${esc(page.featureFr)}" }
+          }
+        ]
+      }
+    ]
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo"><img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo Studios-Pro">Studios-Pro</a>
+        <div class="lang-switch">
+            <a href="/${pagePath}" hreflang="en" class="lang-btn">EN</a>
+            <a href="/fr/${pagePath}" hreflang="fr" class="lang-btn active">FR</a>
+        </div>
+    </nav>
+    <main class="container">
+        <div class="hero">
+            <h1>${page.h1Fr}</h1>
+            <p class="subtitle">${page.descFr}</p>
+            <a href="/?ref=${page.ref}" class="cta-btn" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Ouvrir l'Outil Gratuit — Sans Inscription</a>
+        </div>
+        <div class="card-grid">
+            <div class="card"><h3>Fonctionnalités Clés</h3><p>${page.featureFr}</p></div>
+            <div class="card"><h3>100 % Local &amp; Confidentiel</h3><p>Vos fichiers 3D, photos et plans CAO restent sur votre appareil grâce au calcul WebGL / WebAssembly local.</p></div>
+            <div class="card"><h3>Export Multi-Formats</h3><p>Compatible Bambu Studio, OrcaSlicer, PrusaSlicer, LightBurn et routeurs CNC (STL, OBJ, 3MF, GLB, DXF, SVG, G-Code).</p></div>
+        </div>
+        <section style="margin-top:40px;">
+            <h2 style="text-align:center;color:#38bdf8;">Questions Fréquentes</h2>
+            <div class="faq-card"><h3>Cet outil est-il gratuit en ligne ?</h3><p>Oui, Studios-Pro permet d'utiliser cet outil directement dans votre navigateur sans téléchargement, avec 5 exportations gratuites incluses.</p></div>
+            <div class="faq-card"><h3>Mes fichiers sont-ils envoyés sur un serveur ?</h3><p>Non. Tout le rendu 3D et les conversions CAO s'exécutent à 100 % localement sur votre appareil via WebGL et WebAssembly.</p></div>
+            <div class="faq-card"><h3>Quelles fonctionnalités d'export sont incluses ?</h3><p>${page.featureFr}</p></div>
+        </section>
+        <nav class="footer-nav" aria-label="Navigation Française">
+            <a href="/fr/">Accueil Français</a>
+            <a href="/fr/blog/">Tutoriels FR</a>
+            <a href="/fr/faq">FAQ FR</a>
+            <a href="/${pagePath}" hreflang="en">English Version</a>
+        </nav>
+    </main>
+</body>
+</html>`;
+};
+
+const templateFrCompare = (comp) => {
+  const pagePath = `compare/${comp.id}`;
+  const urlEn = `https://studios-pro.com/${pagePath}`;
+  const urlFr = `https://studios-pro.com/fr/${pagePath}`;
+  const ogImg = comp.ogImage || 'https://studios-pro.com/og_banner.jpg';
+  const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const rows = comp.table.map(r => `<tr><td style="padding:14px;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:600;">${r.featureFr}</td><td style="padding:14px;border-bottom:1px solid rgba(255,255,255,0.06);color:#00f3ff;font-weight:700;">✓ ${r.us}</td><td style="padding:14px;border-bottom:1px solid rgba(255,255,255,0.06);color:#94a3b8;">${r.competitor}</td></tr>`).join('');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${comp.titleFr}</title>
+    <meta name="description" content="${comp.descFr}">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link rel="canonical" href="${urlFr}" />
+    <link rel="alternate" hreflang="fr" href="${urlFr}" />
+    <link rel="alternate" hreflang="en" href="${urlEn}" />
+    <link rel="alternate" hreflang="x-default" href="${urlEn}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="${urlFr}" />
+    <meta property="og:title" content="${comp.titleFr}" />
+    <meta property="og:description" content="${comp.descFr}" />
+    <meta property="og:image" content="${ogImg}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="${ogImg}" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: rgba(15, 23, 42, 0.72); --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; line-height: 1.75; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(5,7,10,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .lang-btn.active { background: #fff; color: #020617; border-color: #fff; }
+        .container { max-width: 960px; margin: 50px auto 70px; padding: 0 20px; }
+        h1 { font-size: 2.7rem; margin: 0 0 16px; line-height: 1.2; text-align: center; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--muted); font-size: 1.12rem; max-width: 760px; margin: 0 auto 36px; text-align: center; }
+        .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 16px; background: rgba(15,23,42,0.92); border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .faq-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+        .faq-card h3 { margin: 0 0 8px; color: #fff; font-size: 1.1rem; }
+        .faq-card p { margin: 0; color: var(--muted); font-size: 0.96rem; }
+        .cta-box { text-align: center; margin: 46px 0 36px; padding: 38px 22px; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(168,85,247,0.12)); border-radius: 20px; border: 1px solid rgba(59,130,246,0.25); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); color: #020617; padding: 15px 40px; border-radius: 999px; font-size: 1.1rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-nav { margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .footer-nav a { color: #38bdf8; text-decoration: none; padding: 7px 14px; border-radius: 8px; background: rgba(56,189,248,0.08); font-size: 0.92rem; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 1.9rem; } }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "inLanguage": "fr",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Pourquoi choisir Studios-Pro plutôt que ${esc(comp.targetSoftware)} ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Studios-Pro fonctionne à 100 % dans votre navigateur sans téléchargement, avec traitement GPU local privé sur Windows, Mac, iPad et Chromebook et exportations STL, OBJ, 3MF, DXF et G-Code." }
+        },
+        {
+          "@type": "Question",
+          "name": "Studios-Pro est-il gratuit ?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'accès aux 24+ studios est gratuit avec 5 exportations offertes, et l'abonnement Premium optionnel coûte 10 $ USD/mois pour des exports illimités et une licence commerciale." }
+        }
+      ]
+    }
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo"><img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo Studios-Pro">Studios-Pro</a>
+        <div class="lang-switch">
+            <a href="/${pagePath}" hreflang="en" class="lang-btn">EN</a>
+            <a href="/fr/${pagePath}" hreflang="fr" class="lang-btn active">FR</a>
+        </div>
+    </nav>
+    <main class="container">
+        <h1>${comp.h1Fr}</h1>
+        <p class="subtitle">${comp.leadFr}</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Fonctionnalité</th><th style="color:#00f3ff;">Studios-Pro (Web)</th><th style="color:#94a3b8;">${comp.targetSoftware}</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+        <section style="margin-top:44px;">
+            <h2 style="text-align:center;color:#38bdf8;">Questions Fréquentes</h2>
+            <div class="faq-card"><h3>Pourquoi choisir Studios-Pro plutôt que ${comp.targetSoftware} ?</h3><p>Studios-Pro fonctionne à 100 % dans votre navigateur sans téléchargement, avec traitement GPU local privé sur Windows, Mac, iPad et Chromebook et exportations STL, OBJ, 3MF, DXF et G-Code.</p></div>
+            <div class="faq-card"><h3>Studios-Pro est-il gratuit ?</h3><p>Oui, l'accès aux 24+ studios est gratuit avec 5 exportations offertes, et l'abonnement Premium optionnel coûte 10 $ USD/mois pour des exports illimités et une licence commerciale.</p></div>
+        </section>
+        <div class="cta-box">
+            <a href="/?ref=${comp.ref}" class="cta-btn" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Lancer l'Outil Gratuit</a>
+        </div>
+        <nav class="footer-nav" aria-label="Navigation Française">
+            <a href="/fr/">Accueil Français</a>
+            <a href="/fr/blog/">Tutoriels FR</a>
+            <a href="/fr/faq">FAQ FR</a>
+            <a href="/${pagePath}" hreflang="en">English Comparison</a>
+        </nav>
+    </main>
+</body>
+</html>`;
+};
+
+const generateFrenchHomeHtml = () => {
+  const topToolsLinks = nicheTools.map(t => `<a href="/fr/tools/${t.id}" class="pill-link">${t.h1Fr.replace(/\| Studios-Pro/g, '').trim()}</a>`).join('\n            ');
+  const compareLinks = comparisons.map(c => `<a href="/fr/compare/${c.id}" class="pill-link">${c.h1Fr}</a>`).join('\n            ');
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studios-Pro | Suite 3D, 4D, Colorateur 3MF &amp; CAO Gratuite en Ligne</title>
+    <meta name="description" content="Suite 3D &amp; 4D gratuite dans le navigateur : bas-relief photo 3D, colorateur 3MF Bambu AMS, sous-verres QR 3D, Filament Painting, WebAR et CAO CNC/DXF.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link rel="apple-touch-icon" href="/logo_studios_pro.png">
+    <link rel="canonical" href="https://studios-pro.com/fr/" />
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/" />
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://studios-pro.com/fr/" />
+    <meta property="og:title" content="Studios-Pro | Suite 3D, 4D, Colorateur 3MF &amp; CAO Gratuite en Ligne" />
+    <meta property="og:description" content="Suite 3D &amp; 4D gratuite dans le navigateur : bas-relief photo 3D, colorateur 3MF Bambu AMS, sous-verres QR 3D, Filament Painting, WebAR et CAO CNC/DXF." />
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #020617; --surface: rgba(15, 23, 42, 0.78); --accent: #38bdf8; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.7; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .lang-btn { border: 1px solid rgba(255,255,255,0.22); color: var(--muted); padding: 5px 11px; border-radius: 7px; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .lang-btn.active { background: #fff; color: #020617; border-color: #fff; }
+        .container { max-width: 1120px; margin: 48px auto 72px; padding: 0 20px; }
+        .hero { text-align: center; margin-bottom: 52px; }
+        h1 { font-size: 3rem; margin: 0 0 16px; line-height: 1.15; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .lead { color: var(--muted); font-size: 1.18rem; max-width: 780px; margin: 0 auto 28px; }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); color: #020617; padding: 16px 42px; border-radius: 999px; font-weight: 800; font-size: 1.1rem; text-decoration: none; text-transform: uppercase; letter-spacing: 0.8px; box-shadow: 0 12px 35px rgba(56,189,248,0.3); }
+        .studios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; margin-top: 24px; }
+        .studio-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 22px; text-decoration: none; color: inherit; transition: 0.2s; display: block; }
+        .studio-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .studio-card h3 { margin: 0 0 8px; color: #fff; font-size: 1.18rem; }
+        .studio-card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+        .section-title { font-size: 1.65rem; color: #38bdf8; margin: 52px 0 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .pill-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+        .pill-link { color: #e2e8f0; text-decoration: none; padding: 8px 14px; border-radius: 10px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; transition: 0.2s; }
+        .pill-link:hover { border-color: var(--accent); color: var(--accent); }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 2rem; } }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Studios-Pro",
+      "inLanguage": "fr",
+      "url": "https://studios-pro.com/fr/",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "description": "Suite créative 3D, 4D, impression 3D multi-couleurs 3MF (Bambu AMS), Filament Painting (alternative HueForge), WebAR et CAO CNC/Laser 100 % dans le navigateur.",
+      "offers": [
+        { "@type": "Offer", "name": "Gratuit", "price": "0.00", "priceCurrency": "USD" },
+        { "@type": "Offer", "name": "Premium", "price": "10.00", "priceCurrency": "USD" }
+      ]
+    }
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo"><img src="/logo_studios_pro.png" width="32" height="32" style="border-radius:8px;" alt="Logo Studios-Pro">Studios-Pro</a>
+        <div class="nav-right">
+            <a href="/fr/blog/" class="lang-btn">Tutoriels</a>
+            <a href="/fr/faq" class="lang-btn">FAQ</a>
+            <a href="/" hreflang="en" class="lang-btn">EN</a>
+            <a href="/fr/" hreflang="fr" class="lang-btn active">FR</a>
+        </div>
+    </nav>
+    <main class="container">
+        <header class="hero">
+            <h1>Studios-Pro — Suite 3D, 4D, 3MF Multi-Couleurs &amp; CAO Gratuite</h1>
+            <p class="lead">Plus de 24 studios créatifs dans votre navigateur : bas-relief 3D/4D depuis photo, Filament Painting (alternative gratuite à HueForge), Colorateur 3MF Bambu AMS, sous-verres QR 3D, WebAR mobile et vectorisation CNC/DXF. Zéro installation, 100 % privé sur votre appareil.</p>
+            <a href="/" class="cta-btn" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Lancer l'Application en Français</a>
+        </header>
+
+        <h2 class="section-title">Studios Phares en Ligne</h2>
+        <div class="studios-grid">
+            <a href="/?ref=filament-painting-studio" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Filament Painting Studio (Alternative HueForge)</h3><p>Simulation optique TD Kubelka-Munk, calibration Caméra TD smartphone, 250+ bobines et export 3MF auto-swap Bambu Studio / OrcaSlicer.</p></a>
+            <a href="/?ref=painter" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Colorateur 3MF Multi-Couleurs (Bambu AMS)</h3><p>Peignez vos fichiers STL et 3MF en ligne avec IA Auto-Color, remplissage intelligent, calcul de purge et export 3MF multi-pièces.</p></a>
+            <a href="/?ref=coaster" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Générateur de Sous-Verres QR Wi-Fi 3D</h3><p>Créez des sous-verres, chevalets et magnets QR Wi-Fi, menu ou Airbnb scannables en 3MF multi-couleurs, STL et DXF laser.</p></a>
+            <a href="/?ref=n3d" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>New 3D 4D Relief &amp; GLB Studio</h3><p>Transformez vos photos en bas-reliefs 3D ultra-lisses, lithophanies, médailles STL et animations GLB 4D 60 FPS.</p></a>
+            <a href="/?ref=polymorph" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>PolyMorph 3D Studio</h3><p>Convertisseur 3D universel (STL, OBJ, GLB, PLY), mouvements de montre 3D, Cryptex, papercraft, tuiles RPG et vases Voronoi.</p></a>
+            <a href="/apps/ar-viewer/?lang=fr" class="studio-card"><h3>AR Viewer 3D — WebAR Instantané</h3><p>Projetez vos modèles STL, OBJ ou GLB à taille réelle dans votre pièce sur iPhone et Android par simple QR code.</p></a>
+        </div>
+
+        <h2 class="section-title">Outils Spécialisés 3D, Impression &amp; CNC</h2>
+        <div class="pill-wrap">
+            ${topToolsLinks}
+        </div>
+
+        <h2 class="section-title">Comparatifs Logiciels Gratuits en Ligne</h2>
+        <div class="pill-wrap">
+            ${compareLinks}
+        </div>
+
+        <h2 class="section-title">Ressources, Règles &amp; Confidentialité</h2>
+        <div class="pill-wrap">
+            <a href="/fr/blog/" class="pill-link">Tutoriels &amp; Guides FR</a>
+            <a href="/fr/faq" class="pill-link">Foire Aux Questions (FAQ)</a>
+            <a href="/apps/rules/?lang=fr" class="pill-link">Règles du Site &amp; Licence Commerciale</a>
+            <a href="/privacy.html?lang=fr" class="pill-link">Politique de Confidentialité (RGPD / Loi 25)</a>
+            <a href="/" hreflang="en" class="pill-link">English Version (studios-pro.com)</a>
+        </div>
+    </main>
+</body>
+</html>`;
+};
+
 // Setup directories
 const viewerDir = path.join(__dirname, 'public/viewer');
 const convertDir = path.join(__dirname, 'public/convert');
@@ -1942,274 +2349,163 @@ const toolsDir = path.join(__dirname, 'public/tools');
 const compareDir = path.join(__dirname, 'public/compare');
 const arViewerDir = path.join(__dirname, 'public/ar-viewer');
 const cardsDir = path.join(__dirname, 'public/cards');
+const frRootDir = path.join(__dirname, 'public/fr');
+const frToolsDir = path.join(__dirname, 'public/fr/tools');
+const frCompareDir = path.join(__dirname, 'public/fr/compare');
 
-if (!fs.existsSync(viewerDir)) {
-  fs.mkdirSync(viewerDir, { recursive: true });
-}
-if (!fs.existsSync(convertDir)) {
-  fs.mkdirSync(convertDir, { recursive: true });
-}
-if (!fs.existsSync(toolsDir)) {
-  fs.mkdirSync(toolsDir, { recursive: true });
-}
-if (!fs.existsSync(compareDir)) {
-  fs.mkdirSync(compareDir, { recursive: true });
-}
-if (!fs.existsSync(arViewerDir)) {
-  fs.mkdirSync(arViewerDir, { recursive: true });
-}
-if (!fs.existsSync(cardsDir)) {
-  fs.mkdirSync(cardsDir, { recursive: true });
-}
+[viewerDir, convertDir, toolsDir, compareDir, arViewerDir, cardsDir, frRootDir, frToolsDir, frCompareDir].forEach(d => {
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+});
 
-// Generate files
+// Generate EN + FR programmatic files with explicit section prefixes (fixes /ar-viewer/* canonical bug!)
 viewers.forEach(page => {
-  fs.writeFileSync(path.join(viewerDir, `${page.id}.html`), template(page));
-  console.log(`Generated viewer/${page.id}.html`);
+  fs.writeFileSync(path.join(viewerDir, `${page.id}.html`), template(page, 'viewer', false), 'utf8');
 });
 
 converters.forEach(page => {
-  fs.writeFileSync(path.join(convertDir, `${page.id}.html`), template(page));
-  console.log(`Generated convert/${page.id}.html`);
+  fs.writeFileSync(path.join(convertDir, `${page.id}.html`), template(page, 'convert', false), 'utf8');
 });
 
 nicheTools.forEach(page => {
-  fs.writeFileSync(path.join(toolsDir, `${page.id}.html`), template(page));
-  console.log(`Generated tools/${page.id}.html`);
+  fs.writeFileSync(path.join(toolsDir, `${page.id}.html`), template(page, 'tools', true), 'utf8');
+  fs.writeFileSync(path.join(frToolsDir, `${page.id}.html`), templateFrTool(page), 'utf8');
 });
 
 comparisons.forEach(comp => {
-  fs.writeFileSync(path.join(compareDir, `${comp.id}.html`), compareTemplate(comp));
-  console.log(`Generated compare/${comp.id}.html`);
+  fs.writeFileSync(path.join(compareDir, `${comp.id}.html`), compareTemplate(comp), 'utf8');
+  fs.writeFileSync(path.join(frCompareDir, `${comp.id}.html`), templateFrCompare(comp), 'utf8');
 });
 
 arViewers.forEach(page => {
-  fs.writeFileSync(path.join(arViewerDir, `${page.id}.html`), template(page));
-  console.log(`Generated ar-viewer/${page.id}.html`);
+  fs.writeFileSync(path.join(arViewerDir, `${page.id}.html`), template(page, 'ar-viewer', false), 'utf8');
 });
 
 cardPages.forEach(page => {
-  fs.writeFileSync(path.join(cardsDir, `${page.id}.html`), template(page));
-  console.log(`Generated cards/${page.id}.html`);
+  fs.writeFileSync(path.join(cardsDir, `${page.id}.html`), template(page, 'cards', false), 'utf8');
 });
 
-// Update sitemap.xml
-const date = new Date().toISOString().split('T')[0];
+fs.writeFileSync(path.join(frRootDir, 'index.html'), generateFrenchHomeHtml(), 'utf8');
+console.log(`Generated EN programmatic pages + FR /fr/ index, ${nicheTools.length} /fr/tools/, ${comparisons.length} /fr/compare/ pages`);
 
-const viewerUrls = viewers.map(page => `  <url>
-    <loc>https://studios-pro.com/viewer/${page.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`).join('');
-
-const convertUrls = converters.map(page => `  <url>
-    <loc>https://studios-pro.com/convert/${page.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`).join('');
-
-const toolUrls = nicheTools.map(page => `  <url>
-    <loc>https://studios-pro.com/tools/${page.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>\n`).join('');
-
-const compareUrls = comparisons.map(comp => `  <url>
-    <loc>https://studios-pro.com/compare/${comp.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>\n`).join('');
-
-const arViewerUrls = arViewers.map(page => `  <url>
-    <loc>https://studios-pro.com/ar-viewer/${page.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`).join('');
-
-const cardUrls = cardPages.map(page => `  <url>
-    <loc>https://studios-pro.com/cards/${page.id}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>\n`).join('');
-
-// Read tutorials dynamically to avoid breaking the sitemap
-const blogDir = path.join(__dirname, 'public/blog');
-let tutorialUrls = '';
-if (fs.existsSync(blogDir)) {
-  const blogFiles = fs.readdirSync(blogDir).filter(f => f.endsWith('.html') && f !== 'index.html');
-  tutorialUrls = blogFiles.map(file => `  <url>
-    <loc>https://studios-pro.com/blog/${file.replace('.html', '')}</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>\n`).join('');
+// Helper: real file mtime YYYY-MM-DD (avoid stamping every unchanged URL with today's date)
+const fallbackDate = new Date().toISOString().split('T')[0];
+function fileLastMod(relPath) {
+  try {
+    const abs = path.join(__dirname, relPath);
+    if (fs.existsSync(abs)) {
+      return fs.statSync(abs).mtime.toISOString().split('T')[0];
+    }
+  } catch (_) {}
+  return fallbackDate;
 }
 
-const spNexusUrls = '';
-
-const baseUrls = `  <url>
-    <loc>https://studios-pro.com/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/blog/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/faq.html</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+function makeUrlEntry(loc, lastmod, changefreq, priority, alternates = null) {
+  let xhtml = '';
+  if (alternates) {
+    xhtml = `\n    <xhtml:link rel="alternate" hreflang="en" href="${alternates.en}" />\n    <xhtml:link rel="alternate" hreflang="fr" href="${alternates.fr}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${alternates.en}" />`;
+  }
+  return `  <url>
+    <loc>${loc}</loc>${xhtml}
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
   </url>\n`;
+}
 
-const appsUrls = `  <url>
-    <loc>https://studios-pro.com/apps/ar-viewer/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/artgen/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/dfx/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/depth-maps/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/mech-gen-pro/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/jewelry-pro/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/maker7/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/new3d4d/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/vector-cnc/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/studio-pro/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/studio-pro-2/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/music-composer/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/figure-builder/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/aura-gen/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/architect-pro-1/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/architect-pro-2/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/design-pro-studio/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/sandbox/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/polymorph-3d/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/multicolor-3mf-painter/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/qr-wifi-coaster-generator/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/apps/filament-painting-studio/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-\n`;
+// Build complete, deduplicated, hreflang-annotated sitemap.xml
+let entries = '';
+
+// Core EN & FR hubs
+entries += makeUrlEntry('https://studios-pro.com/', fileLastMod('index.html'), 'weekly', '1.0', { en: 'https://studios-pro.com/', fr: 'https://studios-pro.com/fr/' });
+entries += makeUrlEntry('https://studios-pro.com/fr/', fileLastMod('public/fr/index.html'), 'weekly', '0.95', { en: 'https://studios-pro.com/', fr: 'https://studios-pro.com/fr/' });
+entries += makeUrlEntry('https://studios-pro.com/blog/', fileLastMod('public/blog/index.html'), 'weekly', '0.9', { en: 'https://studios-pro.com/blog/', fr: 'https://studios-pro.com/fr/blog/' });
+entries += makeUrlEntry('https://studios-pro.com/fr/blog/', fileLastMod('public/fr/blog/index.html'), 'weekly', '0.85', { en: 'https://studios-pro.com/blog/', fr: 'https://studios-pro.com/fr/blog/' });
+entries += makeUrlEntry('https://studios-pro.com/faq.html', fileLastMod('public/faq.html'), 'monthly', '0.8', { en: 'https://studios-pro.com/faq.html', fr: 'https://studios-pro.com/fr/faq' });
+entries += makeUrlEntry('https://studios-pro.com/fr/faq', fileLastMod('public/fr/faq.html'), 'monthly', '0.8', { en: 'https://studios-pro.com/faq.html', fr: 'https://studios-pro.com/fr/faq' });
+entries += makeUrlEntry('https://studios-pro.com/privacy.html', fileLastMod('public/privacy.html'), 'yearly', '0.5');
+entries += makeUrlEntry('https://studios-pro.com/apps/rules/', fileLastMod('public/apps/rules/index.html'), 'yearly', '0.5');
+
+// All active Studio Apps
+const activeApps = [
+  ['ar-viewer', 'weekly', '0.95'],
+  ['filament-painting-studio', 'weekly', '0.95'],
+  ['multicolor-3mf-painter', 'weekly', '0.95'],
+  ['qr-wifi-coaster-generator', 'weekly', '0.95'],
+  ['polymorph-3d', 'weekly', '0.95'],
+  ['new3d4d', 'weekly', '0.9'],
+  ['artgen', 'monthly', '0.9'],
+  ['vector-cnc', 'monthly', '0.9'],
+  ['studio-pro', 'monthly', '0.9'],
+  ['scripting-live', 'monthly', '0.85'],
+  ['figure-builder', 'monthly', '0.85'],
+  ['studio-3d-viewer', 'monthly', '0.85'],
+  ['ap3d', 'monthly', '0.8'],
+  ['dfx', 'monthly', '0.8'],
+  ['depth-maps', 'monthly', '0.8'],
+  ['mech-gen-pro', 'monthly', '0.8'],
+  ['jewelry-pro', 'monthly', '0.8'],
+  ['maker7', 'monthly', '0.8'],
+  ['studio-pro-2', 'monthly', '0.8'],
+  ['music-composer', 'monthly', '0.75'],
+  ['aura-gen', 'monthly', '0.7'],
+  ['architect-pro-1', 'monthly', '0.75'],
+  ['architect-pro-2', 'monthly', '0.75'],
+  ['design-pro-studio', 'monthly', '0.75'],
+  ['sandbox', 'monthly', '0.75']
+];
+activeApps.forEach(([slug, freq, prio]) => {
+  entries += makeUrlEntry(`https://studios-pro.com/apps/${slug}/`, fileLastMod(`public/apps/${slug}/index.html`), freq, prio);
+});
+
+// Bilingual EN + FR Tools
+nicheTools.forEach(page => {
+  const alt = { en: `https://studios-pro.com/tools/${page.id}`, fr: `https://studios-pro.com/fr/tools/${page.id}` };
+  entries += makeUrlEntry(alt.en, fileLastMod(`public/tools/${page.id}.html`), 'monthly', '0.9', alt);
+  entries += makeUrlEntry(alt.fr, fileLastMod(`public/fr/tools/${page.id}.html`), 'monthly', '0.85', alt);
+});
+
+// Bilingual EN + FR Comparisons
+comparisons.forEach(comp => {
+  const alt = { en: `https://studios-pro.com/compare/${comp.id}`, fr: `https://studios-pro.com/fr/compare/${comp.id}` };
+  entries += makeUrlEntry(alt.en, fileLastMod(`public/compare/${comp.id}.html`), 'monthly', '0.85', alt);
+  entries += makeUrlEntry(alt.fr, fileLastMod(`public/fr/compare/${comp.id}.html`), 'monthly', '0.8', alt);
+});
+
+// Blog posts (EN + FR mirror where present)
+const blogDir = path.join(__dirname, 'public/blog');
+const frBlogDir = path.join(__dirname, 'public/fr/blog');
+if (fs.existsSync(blogDir)) {
+  const blogFiles = fs.readdirSync(blogDir).filter(f => f.endsWith('.html') && f !== 'index.html').sort();
+  blogFiles.forEach(file => {
+    const slug = file.replace(/\.html$/i, '');
+    const hasFr = fs.existsSync(path.join(frBlogDir, file));
+    const alt = hasFr ? { en: `https://studios-pro.com/blog/${slug}`, fr: `https://studios-pro.com/fr/blog/${slug}` } : null;
+    entries += makeUrlEntry(`https://studios-pro.com/blog/${slug}`, fileLastMod(`public/blog/${file}`), 'monthly', '0.75', alt);
+    if (hasFr) {
+      entries += makeUrlEntry(`https://studios-pro.com/fr/blog/${slug}`, fileLastMod(`public/fr/blog/${file}`), 'monthly', '0.7', alt);
+    }
+  });
+}
+
+// Viewers, Converters, AR Viewers, Cards
+viewers.forEach(page => {
+  entries += makeUrlEntry(`https://studios-pro.com/viewer/${page.id}`, fileLastMod(`public/viewer/${page.id}.html`), 'monthly', '0.8');
+});
+converters.forEach(page => {
+  entries += makeUrlEntry(`https://studios-pro.com/convert/${page.id}`, fileLastMod(`public/convert/${page.id}.html`), 'monthly', '0.8');
+});
+arViewers.forEach(page => {
+  entries += makeUrlEntry(`https://studios-pro.com/ar-viewer/${page.id}`, fileLastMod(`public/ar-viewer/${page.id}.html`), 'monthly', '0.85');
+});
+cardPages.forEach(page => {
+  entries += makeUrlEntry(`https://studios-pro.com/cards/${page.id}`, fileLastMod(`public/cards/${page.id}.html`), 'monthly', '0.85');
+});
 
 const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${appsUrls}${toolUrls}${compareUrls}${tutorialUrls}${viewerUrls}${convertUrls}${arViewerUrls}${cardUrls}</urlset>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${entries}</urlset>
 `;
 
-fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
-console.log('Regenerated sitemap.xml with programmatic SEO routes');
+fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap, 'utf8');
+console.log('Regenerated public/sitemap.xml with xhtml:hreflang alternates & real lastmod dates');

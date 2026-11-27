@@ -659,7 +659,7 @@
       setExportStatus('');
     }
   }
-  window.addEventListener('message', e => handleHostMessage(e.data));
+  window.addEventListener('message', e => { if (e.origin !== window.location.origin) return; handleHostMessage(e.data); });
   if (hostChannel) hostChannel.onmessage = e => handleHostMessage(e.data);
 
   // =========================================================================

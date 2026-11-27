@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studios-Pro | Suite 3D, 4D, Colorateur 3MF &amp; CAO Gratuite en Ligne</title>
+    <meta name="description" content="Suite 3D &amp; 4D gratuite dans le navigateur : bas-relief photo 3D, colorateur 3MF Bambu AMS, sous-verres QR 3D, Filament Painting, WebAR et CAO CNC/DXF.">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link rel="apple-touch-icon" href="/logo_studios_pro.png">
+    <link rel="canonical" href="https://studios-pro.com/fr/" />
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/" />
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://studios-pro.com/fr/" />
+    <meta property="og:title" content="Studios-Pro | Suite 3D, 4D, Colorateur 3MF &amp; CAO Gratuite en Ligne" />
+    <meta property="og:description" content="Suite 3D &amp; 4D gratuite dans le navigateur : bas-relief photo 3D, colorateur 3MF Bambu AMS, sous-verres QR 3D, Filament Painting, WebAR et CAO CNC/DXF." />
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #020617; --surface: rgba(15, 23, 42, 0.78); --accent: #38bdf8; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.7; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .lang-btn { border: 1px solid rgba(255,255,255,0.22); color: var(--muted); padding: 5px 11px; border-radius: 7px; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .lang-btn.active { background: #fff; color: #020617; border-color: #fff; }
+        .container { max-width: 1120px; margin: 48px auto 72px; padding: 0 20px; }
+        .hero { text-align: center; margin-bottom: 52px; }
+        h1 { font-size: 3rem; margin: 0 0 16px; line-height: 1.15; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .lead { color: var(--muted); font-size: 1.18rem; max-width: 780px; margin: 0 auto 28px; }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7); color: #020617; padding: 16px 42px; border-radius: 999px; font-weight: 800; font-size: 1.1rem; text-decoration: none; text-transform: uppercase; letter-spacing: 0.8px; box-shadow: 0 12px 35px rgba(56,189,248,0.3); }
+        .studios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; margin-top: 24px; }
+        .studio-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 22px; text-decoration: none; color: inherit; transition: 0.2s; display: block; }
+        .studio-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .studio-card h3 { margin: 0 0 8px; color: #fff; font-size: 1.18rem; }
+        .studio-card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+        .section-title { font-size: 1.65rem; color: #38bdf8; margin: 52px 0 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .pill-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+        .pill-link { color: #e2e8f0; text-decoration: none; padding: 8px 14px; border-radius: 10px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; transition: 0.2s; }
+        .pill-link:hover { border-color: var(--accent); color: var(--accent); }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 2rem; } }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Studios-Pro",
+      "inLanguage": "fr",
+      "url": "https://studios-pro.com/fr/",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "description": "Suite créative 3D, 4D, impression 3D multi-couleurs 3MF (Bambu AMS), Filament Painting (alternative HueForge), WebAR et CAO CNC/Laser 100 % dans le navigateur.",
+      "offers": [
+        { "@type": "Offer", "name": "Gratuit", "price": "0.00", "priceCurrency": "USD" },
+        { "@type": "Offer", "name": "Premium", "price": "10.00", "priceCurrency": "USD" }
+      ]
+    }
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo"><img src="/logo_studios_pro.png" width="32" height="32" style="border-radius:8px;" alt="Logo Studios-Pro">Studios-Pro</a>
+        <div class="nav-right">
+            <a href="/fr/blog/" class="lang-btn">Tutoriels</a>
+            <a href="/fr/faq" class="lang-btn">FAQ</a>
+            <a href="/" hreflang="en" class="lang-btn">EN</a>
+            <a href="/fr/" hreflang="fr" class="lang-btn active">FR</a>
+        </div>
+    </nav>
+    <main class="container">
+        <header class="hero">
+            <h1>Studios-Pro — Suite 3D, 4D, 3MF Multi-Couleurs &amp; CAO Gratuite</h1>
+            <p class="lead">Plus de 24 studios créatifs dans votre navigateur : bas-relief 3D/4D depuis photo, Filament Painting (alternative gratuite à HueForge), Colorateur 3MF Bambu AMS, sous-verres QR 3D, WebAR mobile et vectorisation CNC/DXF. Zéro installation, 100 % privé sur votre appareil.</p>
+            <a href="/" class="cta-btn" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Lancer l'Application en Français</a>
+        </header>
+
+        <h2 class="section-title">Studios Phares en Ligne</h2>
+        <div class="studios-grid">
+            <a href="/?ref=filament-painting-studio" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Filament Painting Studio (Alternative HueForge)</h3><p>Simulation optique TD Kubelka-Munk, calibration Caméra TD smartphone, 250+ bobines et export 3MF auto-swap Bambu Studio / OrcaSlicer.</p></a>
+            <a href="/?ref=painter" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Colorateur 3MF Multi-Couleurs (Bambu AMS)</h3><p>Peignez vos fichiers STL et 3MF en ligne avec IA Auto-Color, remplissage intelligent, calcul de purge et export 3MF multi-pièces.</p></a>
+            <a href="/?ref=coaster" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>Générateur de Sous-Verres QR Wi-Fi 3D</h3><p>Créez des sous-verres, chevalets et magnets QR Wi-Fi, menu ou Airbnb scannables en 3MF multi-couleurs, STL et DXF laser.</p></a>
+            <a href="/?ref=n3d" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>New 3D 4D Relief &amp; GLB Studio</h3><p>Transformez vos photos en bas-reliefs 3D ultra-lisses, lithophanies, médailles STL et animations GLB 4D 60 FPS.</p></a>
+            <a href="/?ref=polymorph" class="studio-card" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}"><h3>PolyMorph 3D Studio</h3><p>Convertisseur 3D universel (STL, OBJ, GLB, PLY), mouvements de montre 3D, Cryptex, papercraft, tuiles RPG et vases Voronoi.</p></a>
+            <a href="/apps/ar-viewer/?lang=fr" class="studio-card"><h3>AR Viewer 3D — WebAR Instantané</h3><p>Projetez vos modèles STL, OBJ ou GLB à taille réelle dans votre pièce sur iPhone et Android par simple QR code.</p></a>
+        </div>
+
+        <h2 class="section-title">Outils Spécialisés 3D, Impression &amp; CNC</h2>
+        <div class="pill-wrap">
+            <a href="/fr/tools/lithophane-maker-online" class="pill-link">Générateur de Lithophanie 3D & Export STL Gratuit</a>
+            <a href="/fr/tools/cookie-cutter-stl-generator" class="pill-link">Générateur d'Emporte-Pièce 3D Imprimable Gratuit</a>
+            <a href="/fr/tools/3d-keychain-name-generator" class="pill-link">Générateur de Porte-Clés & Médailles 3D Personnalisés</a>
+            <a href="/fr/tools/laser-cut-box-generator" class="pill-link">Générateur de Boîtes Découpées Laser Paramétriques</a>
+            <a href="/fr/tools/gcode-previewer-online" class="pill-link">Visualiseur de Trajectoires G-Code CNC & Laser Gratuit</a>
+            <a href="/fr/tools/image-to-cnc-relief" class="pill-link">Convertir Images 2D en Bas-Relief 3D CNC & STL</a>
+            <a href="/fr/tools/gear-sprocket-generator-dxf" class="pill-link">Générateur Paramétrique d'Engrenages & Pignons</a>
+            <a href="/fr/tools/custom-3d-ring-designer" class="pill-link">Concepteur de Bagues & Bijoux 3D Imprimables Gratuit</a>
+            <a href="/fr/tools/svg-to-gcode-laser-engraver" class="pill-link">Convertisseur SVG en G-Code Graveur Laser Gratuit</a>
+            <a href="/fr/tools/3d-text-extruder-online" class="pill-link">Extrudeur de Texte 3D & Lettrage vers STL Gratuit</a>
+            <a href="/fr/tools/3d-print-file-analyzer" class="pill-link">Analyseur de Fichiers d'Impression 3D & Inspecteur de Maillage Gratuit</a>
+            <a href="/fr/tools/3d-watch-mechanism-generator" class="pill-link">Générateur de Mouvements d'Horlogerie & Montres 3D Gratuit</a>
+            <a href="/fr/tools/cryptex-puzzle-box-stl-generator" class="pill-link">Générateur de Cryptex & Casse-Tête Mécanique 3D Gratuit</a>
+            <a href="/fr/tools/ambiguous-cylinder-illusion-maker" class="pill-link">Générateur d'Illusions d'Optique & Cylindres Ambigus 3D</a>
+            <a href="/fr/tools/pepakura-papercraft-3d-unfolder" class="pill-link">Déplieur de Modèles 3D en Patrons Papercraft 2D Gratuit</a>
+            <a href="/fr/tools/flexi-articulated-3d-generator" class="pill-link">Générateur de Modèles 3D Articulés Flexi Print-in-Place</a>
+            <a href="/fr/tools/dungeon-tiles-rpg-scenery-generator" class="pill-link">Générateur de Décors & Tuiles de Donjon 3D pour JDR sur Table</a>
+            <a href="/fr/tools/3d-topographic-terrain-cityscape-generator" class="pill-link">Générateur de Terrains Topographiques & Villes 3D Gratuit</a>
+            <a href="/fr/tools/voronoi-parametric-lamp-vase-generator" class="pill-link">Générateur de Vases & Abat-Jour Voronoi 3D Paramétrique</a>
+            <a href="/fr/tools/multicolor-3mf-painter" class="pill-link">Colorateur 3D 3MF Multi-Couleurs en Ligne Gratuit (Bambu AMS)</a>
+            <a href="/fr/tools/3d-qr-wifi-coaster-generator" class="pill-link">Générateur de Sous-Verres & Supports QR Code & Wi-Fi 3D Gratuit</a>
+            <a href="/fr/tools/filament-painting-studio-online" class="pill-link">Studio de Peinture de Filaments & Changement de Couche 3D Gratuit</a>
+            <a href="/fr/tools/photo-to-3d-4d-relief-glb-stl" class="pill-link">Studio Photo vers Bas-Relief 3D Ultra STL & GLB 4D Animé Gratuit</a>
+            <a href="/fr/tools/3d-portrait-bas-relief-coin-medal-maker" class="pill-link">Sculpteur en Ligne de Portrait Bas-Relief 3D, Pièces & Médailles STL</a>
+            <a href="/fr/tools/animated-4d-glb-hologram-creator" class="pill-link">Générateur de Modèles GLB 4D Animés & Vidéo 60 FPS depuis Photo</a>
+        </div>
+
+        <h2 class="section-title">Comparatifs Logiciels Gratuits en Ligne</h2>
+        <div class="pill-wrap">
+            <a href="/fr/compare/free-alternative-to-meshmixer" class="pill-link">Meilleure Alternative Gratuite en Ligne à Autodesk Meshmixer</a>
+            <a href="/fr/compare/free-online-tinkercad-alternative" class="pill-link">Alternative Gratuite à Tinkercad pour Créateurs 3D & CNC</a>
+            <a href="/fr/compare/vectric-aspire-free-alternative-browser" class="pill-link">Alternative Gratuite en Ligne à Vectric Aspire pour Relief CNC</a>
+            <a href="/fr/compare/lightburn-free-dxf-alternative" class="pill-link">Alternative Gratuite en Ligne à LightBurn pour Découpe Laser</a>
+            <a href="/fr/compare/photoshop-3d-relief-alternative" class="pill-link">Alternative Gratuite en Ligne aux Fonctions 3D de Photoshop</a>
+            <a href="/fr/compare/blender-for-3d-printing-simple-alternative" class="pill-link">Alternative Simple à Blender pour l'Impression 3D en Ligne</a>
+            <a href="/fr/compare/sketchfab-free-alternative-ar-viewer" class="pill-link">Meilleure Alternative Gratuite à Sketchfab pour la Réalité Augmentée</a>
+            <a href="/fr/compare/free-alternative-to-hueforge" class="pill-link">Meilleure Alternative Gratuite en Ligne à HueForge</a>
+            <a href="/fr/compare/free-alternative-to-bambu-studio-color-painting" class="pill-link">Meilleur Colorateur 3MF Multi-Couleurs en Ligne pour Bambu AMS & OrcaSlicer</a>
+            <a href="/fr/compare/free-photo-to-3d-relief-sculptok-itslitho-alternative" class="pill-link">Meilleure Alternative Gratuite en Ligne à SculptOK & ItsLitho</a>
+        </div>
+
+        <h2 class="section-title">Ressources, Règles &amp; Confidentialité</h2>
+        <div class="pill-wrap">
+            <a href="/fr/blog/" class="pill-link">Tutoriels &amp; Guides FR</a>
+            <a href="/fr/faq" class="pill-link">Foire Aux Questions (FAQ)</a>
+            <a href="/apps/rules/?lang=fr" class="pill-link">Règles du Site &amp; Licence Commerciale</a>
+            <a href="/privacy.html?lang=fr" class="pill-link">Politique de Confidentialité (RGPD / Loi 25)</a>
+            <a href="/" hreflang="en" class="pill-link">English Version (studios-pro.com)</a>
+        </div>
+    </main>
+</body>
+</html>

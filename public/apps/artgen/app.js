@@ -804,6 +804,7 @@ function requestExport(kind, fn) {
 }
 
 window.addEventListener('message', ev => {
+    if (ev.origin !== window.location.origin) return;
   const d = ev.data;
   if (!d || typeof d !== 'object') return;
   if (d.type === 'SET_LANG' && d.lang) applyLanguage(d.lang);

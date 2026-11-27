@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studios-Pro | Tutoriels 3D, 4D, 3MF Multi-Couleurs &amp; CNC</title>
+    <meta name="description" content="Tutoriels complets et guides pratiques en français pour les 24+ studios Studios-Pro : Filament Painting, 3MF Painter Bambu AMS, Sous-verres QR 3D, WebAR et CNC.">
+    <link rel="canonical" href="https://studios-pro.com/fr/blog/">
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/blog/">
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/blog/">
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/blog/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:title" content="Studios-Pro | Tutoriels 3D, 4D, 3MF Multi-Couleurs &amp; CNC">
+    <meta property="og:description" content="Tutoriels complets et guides pratiques en français pour les 24+ studios Studios-Pro : Filament Painting, 3MF Painter Bambu AMS, Sous-verres QR 3D, WebAR et CNC.">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/fr/blog/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; font-size: 0.92rem; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 1120px; margin: 48px auto 70px; padding: 0 20px; }
+        h1 { font-size: 2.9rem; margin: 0 0 14px 0; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--muted); font-size: 1.15rem; margin: 0 0 38px 0; }
+        .section-heading { font-size: 1.45rem; color: #38bdf8; margin: 46px 0 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 26px; transition: 0.25s; text-decoration: none; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(59,130,246,0.2); }
+        .card h2 { color: white; font-size: 1.3rem; margin: 0 0 12px 0; line-height: 1.3; }
+        .card p { color: var(--muted); line-height: 1.6; margin: 0 0 18px 0; flex: 1; font-size: 0.96rem; }
+        .tag { display: inline-block; align-self: flex-start; padding: 4px 12px; background: rgba(59,130,246,0.2); color: #38bdf8; border-radius: 20px; font-size: 0.78rem; font-weight: 700; margin-bottom: 12px; }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { background: none; border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; cursor: pointer; font-weight: 700; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+        .lang-btn.active { background: white; color: #020617; border-color: white; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 2rem; } .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo Studios-Pro">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 14px; align-items:center;">
+            <div class="lang-switch">
+                <a href="/blog/?lang=en" hreflang="en" class="lang-btn">EN</a>
+                <a href="/fr/blog/" hreflang="fr" class="lang-btn active">FR</a>
+            </div>
+            <a href="/" class="btn-back" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Lancer l'App</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>Tutoriels &amp; Guides en Français</h1>
+        <p class="subtitle">Maîtrisez nos 24+ studios 3D, 4D, 3MF Multi-Couleurs, WebAR et CAO CNC/Laser directement dans le navigateur.</p>
+
+        <h2 class="section-heading">Tutoriels des Studios &amp; Formats</h2>
+        <div class="grid">
+            <a href="/fr/blog/filament-painting-studio" class="card">
+                <span class="tag">Filament Art</span>
+                <h2>Filament Painting & Alternative HueForge</h2>
+                <p>Simulez la distance de transmission TD, calibrez vos bobines par caméra et exportez en 3MF auto-swap pour Bambu AMS.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/multicolor-3mf-painter" class="card">
+                <span class="tag">3MF Painter</span>
+                <h2>Coloriez vos STL & 3MF pour Bambu AMS</h2>
+                <p>Utilisez l'IA Auto-Color, le remplissage par angle et le pinceau de cavité pour exporter en 3MF multi-pièces.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/qr-wifi-coaster-generator" class="card">
+                <span class="tag">3D QR Coaster</span>
+                <h2>Générez des Sous-Verres QR Wi-Fi 3D</h2>
+                <p>Créez des sous-verres QR vérifiés, chevalets et supports assortis en 3MF multi-couleurs, STL et DXF laser.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/ar-viewer" class="card">
+                <span class="tag">AR Viewer</span>
+                <h2>Projetez vos Modèles 3D en Réalité Augmentée</h2>
+                <p>Convertissez vos STL/OBJ/GLB localement et scannez un QR code pour placer vos créations sur une table ou un mur.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/polymorph-3d" class="card">
+                <span class="tag">PolyMorph 3D</span>
+                <h2>Horlogerie, Cryptex, Flexi & Convertisseur 3D</h2>
+                <p>Convertissez vos formats 3D et générez tourbillons, boîtes secrètes, tuiles RPG, papercraft et vases Voronoi.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/new-3d-4d" class="card">
+                <span class="tag">New 3D 4D</span>
+                <h2>Photo en Bas-Relief 3D, Médailles & GLB 4D</h2>
+                <p>Sculptez des portraits bas-relief sans pics, des lithophanies et des animations 4D couleur 60 FPS sur votre GPU.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/figure-builder" class="card">
+                <span class="tag">4D Builder</span>
+                <h2>Polytopes 4D Réels & Studio Photo-vers-4D</h2>
+                <p>Faites pivoter la géométrie 4D sur les plans XW/YW/ZW, convertissez une photo en 4D et exportez en STL, GLB, AR et vidéo.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/scripting-studio" class="card">
+                <span class="tag">Scripting Studio</span>
+                <h2>CAO 3D Paramétrique & Scripting JS Live</h2>
+                <p>Écrivez des scripts CAO JavaScript avec booléens CSG, curseurs temps réel, modèles mécaniques et export STL/GLB/AR.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/studio-pro" class="card">
+                <span class="tag">Studio Pro 4D</span>
+                <h2>Compositeur 2D vers 3D, Texte, SVG & Vidéo</h2>
+                <p>Extrudez croquis, texte 3D, logos SVG/DXF et effets audio/vidéo en scènes OBJ, HTML, vidéo et AR.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/studio-pro-2" class="card">
+                <span class="tag">Studio Pro 2</span>
+                <h2>Mettez en Scène vos Modèles 3D en Haute Fidélité</h2>
+                <p>Configurez l'éclairage studio, les matériaux PBR métal/verre, les ombres et exportez vos rendus ou maillages 3D.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/artgen" class="card">
+                <span class="tag">ArtGen Studio</span>
+                <h2>Créez des Logos Vectoriels & Reliefs Imprimables 3D</h2>
+                <p>Combinez 45+ styles procéduraux, générateurs d'emblèmes et export relief 3D STL/OBJ/GLB instantané.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/architect-pro-1" class="card">
+                <span class="tag">Architect Pro</span>
+                <h2>Dessinez des Plans 2D/3D avec Précision</h2>
+                <p>Maîtrisez la conception de plans, les cotes structurelles et les aperçus 3D instantanés.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/architect-pro-2" class="card">
+                <span class="tag">Architect Pro 2</span>
+                <h2>Construisez des Maisons Interactives 3D</h2>
+                <p>Créez des architectures à plusieurs étages avec toits procéduraux, éclairage naturel et visites 3D.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/music-composer" class="card">
+                <span class="tag">4D Music</span>
+                <h2>Composez des Mondes 3D Audio-Réactifs</h2>
+                <p>Jouez sur synthétiseur polyphonique, superposez des boucles synchronisées et exportez en WAV et vidéo.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/design-pro-studio" class="card">
+                <span class="tag">Design Pro</span>
+                <h2>Créez des Graphismes Vectoriels & Maquettes</h2>
+                <p>Concevez des illustrations vectorielles et schémas précis et exportez en SVG, PNG et formats CAO.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/zen-sandscape" class="card">
+                <span class="tag">Zen Sandscape</span>
+                <h2>Physique du Sable, Photo Sable & HTML Hors Ligne</h2>
+                <p>Simulez sable, eau, lave, portails et photos en couleur, puis exportez en HTML autonome ou tableau 3D AR.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/3d-studio" class="card">
+                <span class="tag">3D Studio</span>
+                <h2>Créez des Modèles 3D Procéduraux</h2>
+                <p>Concevez des géométries procédurales, personnalisez les matériaux PBR et exportez en STL et OBJ.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/studio-3d-viewer" class="card">
+                <span class="tag">3D Viewer</span>
+                <h2>Inspectez, Mesurez & Coupez des Modèles 3D</h2>
+                <p>Glissez-déposez STL, OBJ, GLB et 3MF pour mesurer au millimètre et couper selon les axes X/Y/Z.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/dfx-studio" class="card">
+                <span class="tag">DFX Studio</span>
+                <h2>Ouvrez vos Plans DXF & Inspectez les Calques</h2>
+                <p>Chargez des dessins DXF AutoCAD, gérez les calques, vérifiez vos découpes laser et exportez en SVG ou HTML.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/depth-maps" class="card">
+                <span class="tag">Depth Maps</span>
+                <h2>Générez des Cartes de Profondeur & Reliefs CNC</h2>
+                <p>Convertissez des photos plates en cartes de hauteur 16 bits et fichiers STL de bas-relief.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/vector-cnc" class="card">
+                <span class="tag">Vector CNC</span>
+                <h2>Convertissez Images & SVG en DXF & G-Code</h2>
+                <p>Préparez des tracés vectoriels propres et du G-Code GRBL pour gravure laser et fraisage CNC.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/maker-studio-7" class="card">
+                <span class="tag">Maker Studio 7</span>
+                <h2>Conception Paramétrique de Boîtes Laser</h2>
+                <p>Générez des boîtes à encoches avec compensation kerf, boîtiers et lithophanies en DXF, SVG et STL.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/jewelry-maker-pro" class="card">
+                <span class="tag">Jewelry Maker</span>
+                <h2>Concevez des Bagues & Alliances 3D</h2>
+                <p>Ajustez tailles de bague (US/EU/UK), sertissages, gravures et exportez en STL étanche pour coulée.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/mech-gen-pro" class="card">
+                <span class="tag">Mech Gen Pro</span>
+                <h2>Concevez des Engrenages & Pignons</h2>
+                <p>Calculez dentures à développante, module, angle de pression et alésage, puis exportez en DXF, SVG ou STL.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/best-free-online-3d-model-viewer-no-download" class="card">
+                <span class="tag">3D Viewer</span>
+                <h2>Visualisation 3D Instantanée en Ligne</h2>
+                <p>Ouvrez STL, OBJ, GLB, GLTF, PLY et 3MF instantanément sans installer de logiciel.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/how-to-convert-stl-to-obj-online-free" class="card">
+                <span class="tag">3D Converter</span>
+                <h2>Conversion STL vers OBJ dans le Navigateur</h2>
+                <p>Convertissez STL en OBJ en ligne avec normales de sommets — sans envoi serveur.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/free-laser-cut-svg-generator-online" class="card">
+                <span class="tag">Vector CNC</span>
+                <h2>Générez des Tracés SVG pour Découpe Laser</h2>
+                <p>Vectorisez vos images et exportez en SVG, DXF et G-Code compatibles LightBurn et LaserGRBL.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/free-ai-image-to-3d-model-generator-online" class="card">
+                <span class="tag">Photo to 3D</span>
+                <h2>Transformez une Photo en Modèle 3D Imprimable</h2>
+                <p>Convertissez des photos 2D en bas-reliefs STL étanches, OBJ et GLB animés directement dans le navigateur.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/how-to-view-glb-file-online-free" class="card">
+                <span class="tag">3D Viewer</span>
+                <h2>Ouvrez des Fichiers GLB Instantanément</h2>
+                <p>Visualisez vos modèles GLB avec textures PBR, éclairages, animations et aperçu WebAR.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+            <a href="/fr/blog/free-dxf-viewer-online-autocad-alternative" class="card">
+                <span class="tag">DFX Studio</span>
+                <h2>Ouvrez des Fichiers AutoCAD DXF Gratuitement</h2>
+                <p>Visualisez vos plans DXF avec gestion des calques, zoom, mesure et export SVG.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
+            </a>
+        </div>
+
+        <h2 class="section-heading">Guides Pratiques Approfondis</h2>
+        <div class="grid">
+            <a href="/blog/how-to-do-filament-painting-without-hueforge?lang=fr" class="card">
+                <span class="tag">Filament Art</span>
+                <h2>Faire du Filament Painting sans HueForge (Guide Gratuit)</h2>
+                <p>Guide étape par étape : calibration TD Kubelka-Munk, Mon Rack, lithophanies CMYW et 3MF auto-swap Bambu AMS.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/how-to-convert-2d-image-to-3d-model-online?lang=fr" class="card">
+                <span class="tag">2D to 3D Guide</span>
+                <h2>Convertir une Image 2D en Modèle 3D en Ligne</h2>
+                <p>Tutoriel complet avec outil intégré pour transformer PNG, JPG et dessins en maillages 3D STL/OBJ.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/how-to-open-dxf-file-on-mac-without-autocad?lang=fr" class="card">
+                <span class="tag">macOS CAD</span>
+                <h2>Ouvrir un Fichier DXF sur Mac sans AutoCAD</h2>
+                <p>Ouvrez vos dessins DXF AutoCAD instantanément dans Safari ou Chrome sur macOS sans installer de logiciel.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/how-to-view-stl-files-on-ipad-online?lang=fr" class="card">
+                <span class="tag">iPad & iOS</span>
+                <h2>Visualiser des Fichiers STL sur iPad et iPhone</h2>
+                <p>Inspectez vos modèles 3D STL dans iOS Safari avec contrôles tactiles et sans installer d'application.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/3d-4d-studio?lang=fr" class="card">
+                <span class="tag">3D / 4D Guide</span>
+                <h2>Modèles 3D et 4D Haute Fidélité dans le Navigateur</h2>
+                <p>Découvrez la modélisation WebGL 3D & 4D et les exportations rapides pour impression 3D et CNC.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/aura-ai?lang=fr" class="card">
+                <span class="tag">Aura AI</span>
+                <h2>Génération d'Applications Web IA avec Aura AI</h2>
+                <p>Transformez vos idées en langage naturel en prototypes web interactifs et code téléchargeable.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+            <a href="/blog/ia-architecte?lang=fr" class="card">
+                <span class="tag">IA Architecte</span>
+                <h2>Idéation Architecturale Rapide avec IA Architecte</h2>
+                <p>Générez rapidement des concepts de plans architecturaux et maquettes 3D assistés par IA.</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>
+        </div>
+    </main>
+</body>
+</html>

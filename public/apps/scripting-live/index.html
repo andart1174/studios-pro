@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scripting Studio PRO v5.0 | Parametric CAD & AI Code-to-3D</title>
+    <meta name="description" content="Write parametric JavaScript CAD scripts or use AI Code-to-3D to generate real PBR solid 3D models, gears, and sculptures. Export GLB, STL, OBJ, AR, Video & PNG.">
+    <link rel="canonical" href="https://studios-pro.com/apps/scripting-live/">
+    <meta property="og:title" content="Scripting Studio PRO v5.0 — Parametric CAD & AI Code-to-3D | Studios-Pro">
+    <meta property="og:description" content="Browser-based parametric CAD scripting studio with AI Code-to-3D, 20 solid PBR templates, Draw 3D & GLB/STL/OBJ/AR exports.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://studios-pro.com/apps/scripting-live/">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -16,11 +23,10 @@
     <script>
       (function () {
         const channel = new BroadcastChannel('studios_pro_channel');
-        const params = new URLSearchParams(window.location.search);
-        let isPremiumUser = params.get('premium') === 'true';
+        let isPremiumUser = false;
         let singleExportExpiresAt = 0;
         let pendingCallback = null;
-        window.isPremiumUser = isPremiumUser;
+        window.isPremiumUser = false;
 
         channel.onmessage = (e) => {
           const msg = e.data || {};
@@ -49,7 +55,7 @@
             }
             const inIframe = window.parent && window.parent !== window;
             if (inIframe) {
-              try { window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*'); } catch (_) {}
+              try { window.parent.postMessage({ type: 'CLOSE_STUDIO' }, window.location.origin); } catch (_) {}
             } else {
               try { channel.postMessage({ type: 'CLOSE_STUDIO' }); } catch (_) {}
             }

@@ -330,6 +330,7 @@
   }
   let pendingExportResolve = null;
   window.addEventListener('message', (ev) => {
+    if (ev.origin !== window.location.origin) return;
     const d = ev.data || {};
     if (d.type === 'USER_TIER_STATUS' || d.type === 'PREMIUM_STATUS') {
       credits.isPro = !!(d.isPro || d.isPremium || d.tier === 'pro'); updateCreditsBadge();

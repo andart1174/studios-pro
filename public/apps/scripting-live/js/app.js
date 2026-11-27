@@ -537,7 +537,8 @@
 
     // ── Firestore + BroadcastChannel Collab Bridge ───────────────────────────
     const urlParams = new URLSearchParams(window.location.search);
-    let collabRoomId = urlParams.get('room') || '';
+    const rawRoom = urlParams.get('room') || '';
+    let collabRoomId = /^[a-zA-Z0-9_-]{4,32}$/.test(rawRoom) ? rawRoom : '';
     const collabUserId = 'u_' + Math.random().toString(36).slice(2, 8);
     let collabSyncTimer = null;
 
@@ -560,7 +561,7 @@
         if (!collabRoomId) return;
         const msg = { type: 'COLLAB_MSG', payload: { ...payload, userId: collabUserId } };
         if (window.parent && window.parent !== window) {
-            try { window.parent.postMessage(msg, '*'); } catch (_) {}
+            try { window.parent.postMessage(msg, window.location.origin); } catch (_) {}
         }
     }
 
@@ -573,15 +574,16 @@
     }
 
     window.addEventListener('message', (e) => {
-        if (e.origin && e.origin !== window.location.origin) return;
+        if (e.origin !== window.location.origin) return;
         const d = e.data;
         if (!d || d.type !== 'COLLAB_MSG' || !d.payload || d.payload.userId === collabUserId) return;
         if (d.payload.type === 'CODE_SYNC' && typeof d.payload.code === 'string') {
-            editorEl.value = d.payload.code;
+            // Load synced code into editor safely without auto-executing untrusted peer code!
+            editorEl.value = d.payload.code.slice(0, 40000);
             syncEditorVisuals();
-            runCurrentCode({ keepCamera: true });
+            showToast('👥 Peer updated code — click Run to execute.', 3200);
         } else if (d.payload.type === 'CHAT' && d.payload.text) {
-            logConsole(`💬 Peer: ${String(d.payload.text)}`, 'repl');
+            logConsole(`💬 Peer: ${String(d.payload.text).slice(0, 500)}`, 'repl');
         }
     });
 
@@ -592,10 +594,10 @@
             collabRoomId = 'r' + Math.random().toString(36).slice(2, 8);
             updateCollabBadge();
             if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'CREATE_COLLAB_ROOM', payload: { roomId: collabRoomId } }, '*');
+                window.parent.postMessage({ type: 'CREATE_COLLAB_ROOM', payload: { roomId: collabRoomId } }, window.location.origin);
             }
         }
-        const shareUrl = `${window.location.origin}/?ref=scripting&room=${collabRoomId}`;
+        const shareUrl = `${window.location.origin}/?ref=scripting&room=${encodeURIComponent(collabRoomId)}`;
         if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).catch(() => {});
         showToast(`👥 Collab Room ${collabRoomId} link copied!`);
         logConsole(`Collab room active: ${shareUrl}`, 'ok');
@@ -604,7 +606,7 @@
     if (collabRoomId) {
         updateCollabBadge();
         if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'COLLAB_IFRAME_READY' }, '*');
+            window.parent.postMessage({ type: 'COLLAB_IFRAME_READY' }, window.location.origin);
         }
     }
 
@@ -798,10 +800,14 @@
         renderProjects();
 
         let initialCode = null;
+        let isExternalShareCode = false;
         if (window.location.hash && window.location.hash.startsWith('#state=')) {
             try {
                 const decoded = JSON.parse(decodeURIComponent(escape(atob(window.location.hash.slice(7)))));
-                if (decoded && decoded.c) initialCode = decoded.c;
+                if (decoded && typeof decoded.c === 'string') {
+                    initialCode = decoded.c.slice(0, 40000);
+                    isExternalShareCode = true;
+                }
             } catch (_) {}
         }
         if (!initialCode && collabRoomId) {
@@ -819,7 +825,13 @@
         editorEl.value = initialCode;
         syncEditorVisuals();
         logConsole('Scripting Studio PRO v5.0 ready (Solid PBR CAD Engine + Loop Guard).', 'ok');
-        runCurrentCode({ resetParams: true, pushHist: true });
+        if (isExternalShareCode) {
+            // Security: never auto-execute untrusted #state= JS without user review & click!
+            showToast('🛡️ Shared script loaded into editor — review and click Run to execute.', 4500);
+            logConsole('Shared link code loaded safely. Click Run to execute.', 'repl');
+        } else {
+            runCurrentCode({ resetParams: true, pushHist: true });
+        }
     }
 
     boot();

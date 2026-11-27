@@ -153,7 +153,7 @@
             }
           }
         };
-        window.addEventListener('message', onMsg);
+        window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; onMsg(e); });
         window.parent.postMessage({ type: 'CHECK_EXPORT_LIMIT', studio: 'maker7' }, '*');
         setTimeout(() => { if (!done) { window.removeEventListener('message', onMsg); resolve({ allowed: true, isPro: credits.isPro }); } }, 1200);
       } else {

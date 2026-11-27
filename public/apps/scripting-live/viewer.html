@@ -82,17 +82,27 @@
       ScriptingEngine3D.init(document.getElementById('stage'), {
         onStats: (st) => { statsPill.textContent = `${st.meshes} meshes • ${st.triangles.toLocaleString()} tris`; },
         onParamsChanged: (list) => {
-          paramsBox.innerHTML = '';
+          paramsBox.textContent = '';
           list.forEach(p => {
             const row = document.createElement('div');
             row.className = 'row';
+            const lbl = document.createElement('span');
+            lbl.textContent = String(p.name || '');
             if (p.type === 'color') {
-              row.innerHTML = `<span>${p.name}</span><input type="color" value="${p.value}">`;
-              row.querySelector('input').oninput = e => ScriptingEngine3D.setParamValue(p.name, e.target.value);
+              const inp = document.createElement('input');
+              inp.type = 'color';
+              inp.value = /^#[0-9a-f]{6}$/i.test(String(p.value || '')) ? p.value : '#38bdf8';
+              inp.oninput = e => ScriptingEngine3D.setParamValue(p.name, e.target.value);
+              row.append(lbl, inp);
             } else {
-              row.innerHTML = `<span>${p.name}</span><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.value}"><span style="min-width:28px;text-align:right;color:#38bdf8;">${p.value}</span>`;
-              const inp = row.querySelector('input'), val = row.querySelectorAll('span')[1];
-              inp.oninput = e => { const v = parseFloat(e.target.value); val.textContent = v; ScriptingEngine3D.setParamValue(p.name, v); };
+              const inp = document.createElement('input');
+              inp.type = 'range';
+              inp.min = String(p.min); inp.max = String(p.max); inp.step = String(p.step); inp.value = String(p.value);
+              const val = document.createElement('span');
+              val.style.cssText = 'min-width:28px;text-align:right;color:#38bdf8;';
+              val.textContent = String(p.value);
+              inp.oninput = e => { const v = parseFloat(e.target.value); val.textContent = String(v); ScriptingEngine3D.setParamValue(p.name, v); };
+              row.append(lbl, inp, val);
             }
             paramsBox.appendChild(row);
           });
@@ -107,7 +117,28 @@
       ScriptingEngine3D.setAutoRotate(ar);
       document.getElementById('auto-rot').onchange = e => ScriptingEngine3D.setAutoRotate(e.target.checked);
 
-      ScriptingEngine3D.runScript(code, { resetParams: true });
+      // Security guard: never auto-execute untrusted shared JS on studios-pro.com without explicit user click
+      if (state && state.c) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(7,12,28,0.92);display:flex;align-items:center;justify-content:center;padding:24px;';
+        const card = document.createElement('div');
+        card.style.cssText = 'max-width:440px;background:#0f172a;border:1px solid rgba(56,189,248,0.4);border-radius:16px;padding:24px;text-align:center;display:flex;flex-direction:column;gap:14px;';
+        const h = document.createElement('h2');
+        h.style.cssText = 'font-size:1.05rem;color:#38bdf8;';
+        h.textContent = 'Shared 3D Script Preview';
+        const p = document.createElement('p');
+        p.style.cssText = 'font-size:0.84rem;color:#cbd5e1;line-height:1.5;';
+        p.textContent = 'This link contains a custom 3D script shared by another user. Click below only if you trust the sender.';
+        const btn = document.createElement('button');
+        btn.style.cssText = 'background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;';
+        btn.textContent = 'Run Shared 3D Script';
+        btn.onclick = () => { banner.remove(); ScriptingEngine3D.runScript(code, { resetParams: true }); };
+        card.append(h, p, btn);
+        banner.appendChild(card);
+        document.body.appendChild(banner);
+      } else {
+        ScriptingEngine3D.runScript(code, { resetParams: true });
+      }
       window.addEventListener('resize', () => ScriptingEngine3D.resize());
     })();
   </script>

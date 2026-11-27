@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyMorph 3D Studio — Converter, Horology & Procedural CAD | Studios-Pro</title>
+    <meta name="description" content="Convert STL, GLB, OBJ, PLY, and 3MF models and generate 3D watch movements, Cryptex puzzle boxes, Sugihara illusions, papercraft nets, and Voronoi lamps.">
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/blog/polymorph-3d">
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/blog/polymorph-3d">
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/blog/polymorph-3d">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="fr_FR">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; font-size: 0.92rem; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 840px; margin: 40px auto 70px; padding: 0 20px; }
+        h1 { font-size: 2.6rem; margin-bottom: 18px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.65rem; margin-top: 38px; color: white; }
+        p { color: #cbd5e1; font-size: 1.08rem; margin-bottom: 18px; }
+        .badge-tag { display: inline-block; padding: 4px 12px; background: rgba(59,130,246,0.2); color: #38bdf8; border-radius: 999px; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px; }
+        .cta-container { text-align: center; margin: 52px 0 36px; padding: 38px 24px; background: rgba(59,130,246,0.1); border-radius: 20px; border: 1px solid rgba(59,130,246,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6); color: #020617; padding: 15px 40px; border-radius: 50px; font-size: 1.1rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(59,130,246,0.45); }
+        .footer-links { margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .footer-links a { color: #38bdf8; text-decoration: none; font-size: 0.9rem; padding: 6px 12px; border-radius: 8px; background: rgba(56,189,248,0.08); }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr div[data-fr] { display: block; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { background: none; border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; cursor: pointer; font-weight: 700; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+        .lang-btn.active { background: white; color: #020617; border-color: white; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } .logo { font-size: 1.15rem; } h1 { font-size: 1.9rem; } }
+    </style>
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Universal 3D Converter & Procedural Generators in PolyMorph 3D",
+        "description": "Convert STL, GLB, OBJ, PLY, and 3MF models and generate 3D watch movements, Cryptex puzzle boxes, Sugihara illusions, papercraft nets, and Voronoi lamps.",
+        "image": "https://studios-pro.com/og_banner.jpg",
+        "url": "https://studios-pro.com/blog/polymorph-3d",
+        "inLanguage": "en",
+        "author": { "@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com" },
+        "publisher": { "@type": "Organization", "name": "Studios-Pro", "logo": { "@type": "ImageObject", "url": "https://studios-pro.com/logo_studios_pro.png" } }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://studios-pro.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Tutorials", "item": "https://studios-pro.com/blog/" },
+          { "@type": "ListItem", "position": 3, "name": "PolyMorph 3D", "item": "https://studios-pro.com/blog/polymorph-3d" }
+        ]
+      }
+    ]
+    </script>
+    <link rel="canonical" href="https://studios-pro.com/blog/polymorph-3d">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="PolyMorph 3D Studio — Converter, Horology & Procedural CAD | Studios-Pro">
+    <meta property="og:description" content="Convert STL, GLB, OBJ, PLY, and 3MF models and generate 3D watch movements, Cryptex puzzle boxes, Sugihara illusions, papercraft nets, and Voronoi lamps.">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/blog/polymorph-3d">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+<body class="lang-en">
+    <nav class="nav">
+        <a href="/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Studios-Pro Logo">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 14px; align-items:center;">
+            <div class="lang-switch">
+                <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button type="button" class="lang-btn" onclick="setLang('fr')">FR</button>
+            </div>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <span class="badge-tag">PolyMorph 3D</span>
+        <h1>
+            <span data-en>Universal 3D Converter & Procedural Generators in PolyMorph 3D</span>
+            <span data-fr>Convertisseur 3D Universel & Générateurs Procéduraux PolyMorph 3D</span>
+        </h1>
+        <p>
+            <span data-en>Convert STL, GLB, OBJ, PLY, and 3MF models and generate 3D watch movements, Cryptex puzzle boxes, Sugihara illusions, papercraft nets, and Voronoi lamps.</span>
+            <span data-fr>Convertissez vos modèles STL, GLB, OBJ, PLY et 3MF et générez des mouvements horlogers 3D, boîtes Cryptex, illusions de Sugihara, papercraft et vases Voronoi.</span>
+        </p>
+
+        <h2>
+            <span data-en>Multi-Engine Procedural Generators for 3D Printing</span>
+            <span data-fr>Générateurs Procéduraux Multi-Moteurs pour Impression 3D</span>
+        </h2>
+        <p>
+            <span data-en>Switch effortlessly between specialized CAD engines: mechanical watch movements with tourbillons, customizable 5-letter Da Vinci Cryptex puzzle cylinders, Kokichi Sugihara optical illusions, print-in-place flexi models, modular 28mm RPG dungeon tiles, topographic maps, and Voronoi lampshades.</span>
+            <span data-fr>Basculez entre nos moteurs spécialisés : mouvements de montre à tourbillon, cylindres Cryptex Da Vinci personnalisables, illusions d'optique de Sugihara, modèles articulés flexi sans assemblage, tuiles de donjon RPG 28 mm, cartes topographiques et abat-jour Voronoi.</span>
+        </p>
+
+        <h2>
+            <span data-en>Universal Format Conversion & Pepakura Papercraft Unfolding</span>
+            <span data-fr>Conversion Universelle & Dépliage Papercraft</span>
+        </h2>
+        <p>
+            <span data-en>Convert between STL, OBJ, GLB, PLY, and DXF locally in your browser, unfold low-poly 3D meshes into numbered 2D papercraft PDF/SVG nets with glue tabs, or send any generated creation straight to WebAR.</span>
+            <span data-fr>Convertissez entre STL, OBJ, GLB, PLY et DXF localement dans le navigateur, dépliez vos maillages 3D en patrons papercraft 2D PDF/SVG numérotés ou projetez instantanément en WebAR.</span>
+        </p>
+
+        <div class="cta-container">
+            <a href="/?ref=polymorph" class="cta-btn">
+                <span data-en>Open Application</span>
+                <span data-fr>Ouvrir l'application</span>
+            </a>
+        </div>
+
+        <nav class="footer-links" aria-label="Related links">
+            <a href="/"><span data-en>All 24+ Studios</span><span data-fr>Tous les 24+ Studios</span></a>
+            <a href="/blog/"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+            <a href="/fr/blog/polymorph-3d" hreflang="fr">Version Française</a>
+            <a href="/faq.html">FAQ</a>
+        </nav>
+    </main>
+
+    <script>
+        function setLang(l) {
+            const lang = l === 'fr' ? 'fr' : 'en';
+            document.documentElement.lang = lang;
+            document.body.className = 'lang-' + lang;
+            try { localStorage.setItem('sp_lang', lang); } catch (_) {}
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+            });
+        }
+        setLang(new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('sp_lang') || 'en');
+    </script>
+</body>
+</html>

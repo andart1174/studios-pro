@@ -3,63 +3,90 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: Only the site owner is Admin
+    // Helper: Only verified site owner or custom-claim admin
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'andart1174@gmail.com';
+      return request.auth != null &&
+             request.auth.token.email_verified == true &&
+             (
+               request.auth.token.admin == true ||
+               request.auth.token.email == 'andart1174@gmail.com'
+             );
     }
 
-    // Helper: Check if the authenticated user owns this UID or email
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // 1. USERS COLLECTION
-    match /users/{userId} {
-      // Admin can read/list/write/delete any user profile.
-      // Regular users can only read their own UID document or pre-registered document matching their email.
-      allow get: if isAdmin() || isOwner(userId) || (request.auth != null && resource != null && resource.data.email == request.auth.token.email);
-      allow list: if isAdmin() || (request.auth != null && resource.data.email == request.auth.token.email);
+    // Protected entitlement fields — ONLY server-side Admin SDK / Admin may modify!
+    function touchesProtectedUserFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'isPremium',
+        'premiumUntil',
+        'hasExportCredit',
+        'stripeSessionId',
+        'stripeSubscriptionId',
+        'stripeCustomerId',
+        'subscriptionStatus',
+        'planType',
+        'banned',
+        'role',
+        'admin',
+        'preRegistered'
+      ]);
+    }
 
-      // Creating initial user profile on registration
+    // 1. USERS COLLECTION (Zero client self-upgrade!)
+    match /users/{userId} {
+      allow get: if isAdmin() || isOwner(userId);
+      allow list: if isAdmin();
+
+      // New user profile creation: ALWAYS starts non-premium with zero credits.
+      // Premium upgrades & VIP migrations run exclusively server-side via Admin SDK!
       allow create: if isAdmin() || (
         isOwner(userId) &&
         request.resource.data.email == request.auth.token.email &&
-        (
-          request.resource.data.isPremium == false ||
-          (request.resource.data.isPremium == true && request.resource.data.stripeSessionId is string && request.resource.data.stripeSessionId.matches('^cs_.*'))
-        )
+        request.resource.data.isPremium == false &&
+        (!('premiumUntil' in request.resource.data) || request.resource.data.premiumUntil == null) &&
+        (!('hasExportCredit' in request.resource.data) || request.resource.data.hasExportCredit == false) &&
+        (!('banned' in request.resource.data) || request.resource.data.banned == false) &&
+        !('stripeSessionId' in request.resource.data) &&
+        !('stripeSubscriptionId' in request.resource.data) &&
+        !('stripeCustomerId' in request.resource.data) &&
+        !('role' in request.resource.data) &&
+        !('admin' in request.resource.data)
       );
 
-      // Updating own profile:
-      // - freeExportsUsed can only stay the same or increase (monotonic counter)
-      // - isPremium can only become true if accompanied by a valid Stripe session ID (cs_...) or migrated from an admin pre-registered email doc
+      // Regular users may ONLY increment freeExportsUsed or update non-privileged fields.
       allow update: if isAdmin() || (
         isOwner(userId) &&
+        !touchesProtectedUserFields() &&
         (
           !('freeExportsUsed' in request.resource.data) ||
           !('freeExportsUsed' in resource.data) ||
-          request.resource.data.freeExportsUsed >= resource.data.freeExportsUsed
-        ) &&
-        (
-          request.resource.data.isPremium == resource.data.isPremium ||
-          (request.resource.data.isPremium == true && (
-            (request.resource.data.stripeSessionId is string && request.resource.data.stripeSessionId.matches('^cs_.*')) ||
-            request.resource.data.premiumUntil != null
-          ))
+          (
+            request.resource.data.freeExportsUsed is int &&
+            request.resource.data.freeExportsUsed >= resource.data.freeExportsUsed
+          )
         )
       );
 
-      // Deleting duplicate pre-registered fallback doc by owner after migration, or Admin deleting any user
-      allow delete: if isAdmin() || (request.auth != null && resource.data.email == request.auth.token.email && userId != request.auth.uid);
+      allow delete: if isAdmin();
     }
 
-    // 2. CONTACT MESSAGES (Public submit, Admin-only read/update/delete)
+    // 2. CONTACT MESSAGES (Strict field allowlist & length caps)
     match /messages/{messageId} {
-      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'message', 'timestamp']) &&
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'message', 'timestamp', 'read', 'lang']) &&
+                       request.resource.data.keys().hasAll(['name', 'email', 'message', 'timestamp']) &&
                        request.resource.data.name is string &&
+                       request.resource.data.name.size() >= 1 &&
+                       request.resource.data.name.size() <= 120 &&
                        request.resource.data.email is string &&
+                       request.resource.data.email.size() >= 3 &&
+                       request.resource.data.email.size() <= 254 &&
                        request.resource.data.message is string &&
-                       request.resource.data.message.size() <= 5000;
+                       request.resource.data.message.size() >= 1 &&
+                       request.resource.data.message.size() <= 5000 &&
+                       (!('read' in request.resource.data) || request.resource.data.read == false);
       allow read, update, delete: if isAdmin();
     }
 
@@ -69,17 +96,48 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 4. NEWSLETTER SUBSCRIPTIONS (Public create, Admin-only read/delete)
+    // 4. SITE CONFIG / MAINTENANCE BANNER (Public read, Admin-only write)
+    match /site_config/{cfgId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 5. NEWSLETTER SUBSCRIPTIONS (Strict field allowlist, Admin-only read/delete)
     match /newsletter/{subId} {
-      allow create: if request.resource.data.email is string &&
+      allow create: if request.resource.data.keys().hasOnly(['email', 'timestamp', 'lang', 'source']) &&
+                       request.resource.data.email is string &&
+                       request.resource.data.email.size() >= 5 &&
                        request.resource.data.email.size() <= 254;
       allow read, update, delete: if isAdmin();
     }
 
-    // 5. LIVE COLLABORATION ROOMS (Scripting Studio)
+    // 6. LIVE COLLABORATION ROOMS (Authenticated only + strict schema & size caps)
     match /scripting_rooms/{roomId}/messages/{msgId} {
-      allow read, create: if true;
+      allow read: if request.auth != null && roomId.matches('^[a-zA-Z0-9_-]{4,32}$');
+      allow create: if request.auth != null &&
+                       roomId.matches('^[a-zA-Z0-9_-]{4,32}$') &&
+                       request.resource.data.keys().hasOnly(['userId', 'type', 'code', 'text', 'timestamp', 'uid']) &&
+                       request.resource.data.type is string &&
+                       request.resource.data.type in ['CODE_SYNC', 'CHAT'] &&
+                       (!('code' in request.resource.data) || (request.resource.data.code is string && request.resource.data.code.size() <= 40000)) &&
+                       (!('text' in request.resource.data) || (request.resource.data.text is string && request.resource.data.text.size() <= 1000));
       allow update, delete: if isAdmin();
+    }
+
+    // 7. SERVER-ONLY REDEEMED STRIPE SESSIONS (Admin SDK bypasses rules)
+    match /redeemed_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // 8. ADMIN AUDIT LOGS & SEO INDEXING LOGS (Admin read only, server writes)
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /seo_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

@@ -7,87 +7,195 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
+  sendEmailVerification,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+import {
+  Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
+  ShieldCheck, MessageSquare, Settings, Layers, Component, Cpu,
+  Boxes, BookOpen, Code, Search, Copy, Palette, Sparkles, Check,
+  Share2, Paintbrush, QrCode, HelpCircle, Menu
+} from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import AdminCommandCenter, { isUserCurrentlyPremium } from './components/AdminCommandCenter.jsx';
+import './App.css';
+
+const ADMIN_EMAIL = 'andart1174@gmail.com';
+const SAFE_ROOM_RE = /^[a-zA-Z0-9_-]{4,32}$/;
+
+function copyTextSafe(text) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => fallbackCopyText(text));
+  }
+  return Promise.resolve(fallbackCopyText(text));
+}
+
+function fallbackCopyText(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 const ContactModal = ({ isOpen, onClose, lang }) => {
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null); // { type: 'ok' | 'err', msg }
+  const isFr = lang === 'fr';
   const t = {
     fr: {
       title: "Contactez-nous",
-      name: "Nom",
-      email: "Email",
-      message: "Message",
-      send: "Envoyer",
-      sending: "Envoi...",
-      success: "Message envoyé ! Nous vous répondrons bientôt.",
+      name: "Votre nom",
+      email: "Votre adresse e-mail",
+      message: "Votre message (max 5 000 caractères)",
+      send: "Envoyer le message",
+      sending: "Envoi en cours...",
+      success: "Message envoyé ! Nous vous répondrons rapidement.",
+      invalid: "Veuillez remplir tous les champs avec une adresse e-mail valide.",
+      err: "Échec de l'envoi. Veuillez réessayer ou écrire à support@studios-pro.com.",
     },
     en: {
       title: "Contact Us",
-      name: "Name",
-      email: "Email",
-      message: "Message",
-      send: "Send",
+      name: "Your name",
+      email: "Your email address",
+      message: "Your message (max 5,000 characters)",
+      send: "Send Message",
       sending: "Sending...",
       success: "Message sent! We will get back to you soon.",
+      invalid: "Please complete all fields with a valid email address.",
+      err: "Delivery failed. Please try again or email support@studios-pro.com.",
     }
-  }[lang];
+  }[isFr ? 'fr' : 'en'];
+
+  useEffect(() => {
+    if (!isOpen) { setStatus(null); return; }
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  return (
-    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className="auth-modal contact-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
-        <button className="close-btn" onClick={onClose}><X size={20} /></button>
-        <h2>{t.title}</h2>
-        <form name="contact" method="POST" className="auth-form" onSubmit={(e) => {
-          e.preventDefault();
-          setLoading(true);
-          const formData = new FormData(e.target);
-          fetch("/", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams(formData).toString(),
-          })
-            .then(async (response) => {
-              // Netlify Forms should handle it, we alert success immediately
-              alert(t.success);
-              setLoading(false);
-              onClose();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    // Honeypot anti-spam trap
+    if (String(formData.get('bot-field') || '').trim()) {
+      setStatus({ type: 'ok', msg: t.success });
+      return;
+    }
+    const name = String(formData.get('name') || '').trim();
+    const email = String(formData.get('email') || '').trim();
+    const message = String(formData.get('message') || '').trim();
+    if (!name || !email || !email.includes('@') || !message) {
+      setStatus({ type: 'err', msg: t.invalid });
+      return;
+    }
 
-              // Also save to Firebase in background if available
-              if (db) {
-                try {
-                  await addDoc(collection(db, "messages"), {
-                    name: formData.get('name'),
-                    email: formData.get('email'),
-                    message: formData.get('message'),
-                    timestamp: new Date().toISOString(),
-                    read: false
-                  });
-                } catch (err) {
-                  console.error("Firebase background sync error:", err);
-                }
-              }
-            })
-            .catch((error) => {
-              console.error("Form submission error:", error);
-              alert(lang === 'fr' ? "Erreur de connexion: " + error.message : "Connection Error: " + error.message);
-              setLoading(false);
-            });
-        }}>
+    setLoading(true);
+    setStatus(null);
+
+    let netlifyOk = false;
+    let firestoreOk = false;
+
+    try {
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          'form-name': 'contact',
+          'bot-field': '',
+          name: name.slice(0, 120),
+          email: email.slice(0, 254),
+          message: message.slice(0, 5000),
+        }).toString(),
+      });
+      netlifyOk = res.ok;
+    } catch (err) {
+      console.warn("Netlify Form submit notice:", err);
+    }
+
+    if (db) {
+      try {
+        await addDoc(collection(db, "messages"), {
+          name: name.slice(0, 120),
+          email: email.slice(0, 254),
+          message: message.slice(0, 5000),
+          timestamp: new Date().toISOString(),
+          read: false,
+          lang: isFr ? 'fr' : 'en',
+        });
+        firestoreOk = true;
+      } catch (err) {
+        console.error("Firestore message sync error:", err);
+      }
+    }
+
+    setLoading(false);
+    if (netlifyOk || firestoreOk) {
+      setStatus({ type: 'ok', msg: t.success });
+      form.reset();
+      setTimeout(() => { setStatus(null); onClose(); }, 1800);
+    } else {
+      setStatus({ type: 'err', msg: t.err });
+    }
+  };
+
+  return (
+    <motion.div
+      className="modal-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.title}
+    >
+      <motion.div className="auth-modal contact-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+        <button type="button" className="close-btn" aria-label={isFr ? 'Fermer' : 'Close'} onClick={onClose}>
+          <X size={20} />
+        </button>
+        <h2>{t.title}</h2>
+        {status && (
+          <div style={{
+            padding: '10px 14px',
+            borderRadius: '10px',
+            fontSize: '0.84rem',
+            marginBottom: '12px',
+            background: status.type === 'ok' ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.16)',
+            border: `1px solid ${status.type === 'ok' ? 'rgba(16,185,129,0.45)' : 'rgba(239,68,68,0.45)'}`,
+            color: status.type === 'ok' ? '#6ee7b7' : '#fca5a5',
+          }}>
+            {status.msg}
+          </div>
+        )}
+        <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" className="auth-form" onSubmit={handleSubmit}>
           <input type="hidden" name="form-name" value="contact" />
+          <p style={{ display: 'none' }} aria-hidden="true">
+            <label>Don’t fill this out: <input name="bot-field" tabIndex={-1} autoComplete="off" /></label>
+          </p>
           <div className="input-group">
             <User size={18} className="input-icon" />
-            <input type="text" name="name" placeholder={t.name} required />
+            <input type="text" name="name" placeholder={t.name} maxLength={120} required />
           </div>
           <div className="input-group">
             <Mail size={18} className="input-icon" />
-            <input type="email" name="email" placeholder={t.email} required />
+            <input type="email" name="email" placeholder={t.email} maxLength={254} required />
           </div>
           <div className="input-group">
             <MessageSquare size={18} className="input-icon" style={{ top: '15px' }} />
-            <textarea name="message" placeholder={t.message} required className="contact-textarea"></textarea>
+            <textarea name="message" placeholder={t.message} maxLength={5000} required className="contact-textarea"></textarea>
           </div>
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? t.sending : t.send}
@@ -98,560 +206,20 @@ const ContactModal = ({ isOpen, onClose, lang }) => {
   );
 };
 
-import {
-  Box, Circle, Hexagon, User, LogOut, CreditCard, X, Mail, Lock,
-  ShieldCheck, MessageSquare, Settings, Users, Star, Trash2,
-  Layers, Component, Cpu, Reply, Boxes, BookOpen, Code, UserPlus, Search,
-  Megaphone, Copy, Palette, Sparkles, Check, Share2, Paintbrush, QrCode
-} from 'lucide-react';
-import './App.css';
-
-const ADMIN_EMAIL = 'andart1174@gmail.com';
-
-const AdminModal = ({ isOpen, onClose, lang }) => {
-  const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'messages', or 'announcements'
-  const [loading, setLoading] = useState(true);
-
-  // Search & Filter
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'premium', 'free'
-
-  // Pre-registration Form
-  const [newEmail, setNewEmail] = useState('');
-  const [newDuration, setNewDuration] = useState(30); // 30, 60, 365, 0 (Lifetime)
-
-  // Announcement Form
-  const [annTextFr, setAnnTextFr] = useState('');
-  const [annTextEn, setAnnTextEn] = useState('');
-  const [annActive, setAnnActive] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const fetchData = async () => {
-      if (!db) {
-        console.warn("Database not initialized.");
-        return;
-      }
-      setLoading(true);
-
-      // 1. Fetch Users
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersList = usersSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUsers(usersList);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        alert(lang === 'fr' ? "Erreur Admin (Firestore Users): " + error.message : "Admin Error (Firestore Users): " + error.message);
-      }
-
-      // 2. Fetch Messages
-      try {
-        const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
-        const messagesSnapshot = await getDocs(q);
-        const messagesList = messagesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setMessages(messagesList);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-        setMessages([]);
-      }
-
-      // 3. Fetch Announcement
-      try {
-        const annDoc = await getDoc(doc(db, "announcements", "current"));
-        if (annDoc.exists()) {
-          const data = annDoc.data();
-          setAnnTextFr(data.textFr || '');
-          setAnnTextEn(data.textEn || '');
-          setAnnActive(data.active || false);
-        }
-      } catch (error) {
-        console.error("Error fetching announcement:", error);
-      }
-
-      setLoading(false);
-    };
-    fetchData();
-  }, [isOpen]);
-
-  const setPremiumStatus = async (userId, status, days) => {
-    try {
-      let expirationString = null;
-      if (status && days > 0) {
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + days);
-        expirationString = expDate.toISOString();
-      }
-      
-      const updateData = {
-        isPremium: status,
-        premiumUntil: expirationString
-      };
-      
-      await setDoc(doc(db, "users", userId), updateData, { merge: true });
-      setUsers(users.map(u => u.id === userId ? { ...u, ...updateData } : u));
-    } catch (error) {
-      alert("Error updating user: " + error.message);
-    }
+const formatAuthError = (err, lang) => {
+  const code = err && err.code ? err.code : '';
+  const isFr = lang === 'fr';
+  const map = {
+    'auth/invalid-email': isFr ? 'Adresse e-mail invalide.' : 'Invalid email address.',
+    'auth/user-not-found': isFr ? 'Aucun compte trouvé avec cet e-mail.' : 'No account found with this email.',
+    'auth/wrong-password': isFr ? 'Mot de passe incorrect.' : 'Incorrect password.',
+    'auth/invalid-credential': isFr ? 'E-mail ou mot de passe incorrect.' : 'Invalid email or password.',
+    'auth/email-already-in-use': isFr ? 'Cet e-mail est déjà utilisé.' : 'This email is already registered.',
+    'auth/weak-password': isFr ? 'Le mot de passe doit contenir au moins 6 caractères.' : 'Password must be at least 6 characters.',
+    'auth/too-many-requests': isFr ? 'Trop de tentatives. Réessayez dans quelques minutes.' : 'Too many attempts. Please try again shortly.',
+    'auth/user-disabled': isFr ? 'Ce compte a été suspendu.' : 'This account has been suspended.',
   };
-
-  const setExportCreditStatus = async (userId, status) => {
-    try {
-      const updateData = {
-        hasExportCredit: status
-      };
-      await setDoc(doc(db, "users", userId), updateData, { merge: true });
-      setUsers(users.map(u => u.id === userId ? { ...u, ...updateData } : u));
-    } catch (error) {
-      alert("Error updating user export credit: " + error.message);
-    }
-  };
-
-  const handleDeleteUser = async (userId, email) => {
-    if (!window.confirm(lang === 'fr' ? `Supprimer définitivement le profil de ${email} ?` : `Permanently delete profile for ${email}?`)) return;
-    try {
-      await deleteDoc(doc(db, "users", userId));
-      setUsers(users.filter(u => u.id !== userId));
-      alert(lang === 'fr' ? "Utilisateur supprimé avec succès !" : "User deleted successfully!");
-    } catch (error) {
-      alert("Error deleting user: " + error.message);
-    }
-  };
-
-  const toggleMessageRead = async (msgId, currentReadStatus) => {
-    try {
-      const newStatus = !currentReadStatus;
-      await setDoc(doc(db, "messages", msgId), { read: newStatus }, { merge: true });
-      setMessages(messages.map(m => m.id === msgId ? { ...m, read: newStatus } : m));
-    } catch (error) {
-      alert("Error updating message: " + error.message);
-    }
-  };
-
-  const deleteMessage = async (msgId) => {
-    if (!window.confirm("Supprimer ce message ?")) return;
-    try {
-      await deleteDoc(doc(db, "messages", msgId));
-      setMessages(messages.filter(m => m.id !== msgId));
-    } catch (error) {
-      alert("Error deleting message: " + error.message);
-    }
-  };
-
-  const handlePreRegister = async (e) => {
-    e.preventDefault();
-    if (!newEmail) return;
-    try {
-      let expirationString = null;
-      if (newDuration > 0) {
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + newDuration);
-        expirationString = expDate.toISOString();
-      }
-      
-      const cleanEmail = newEmail.trim().toLowerCase();
-      // Use cleanEmail as document ID to match login fallback
-      const docId = cleanEmail.replace(/[^a-z0-9@.]/g, '_');
-      const docRef = doc(db, "users", docId);
-      
-      const newUserData = {
-        email: cleanEmail,
-        isPremium: true,
-        premiumUntil: expirationString,
-        createdAt: new Date().toISOString()
-      };
-
-      await setDoc(docRef, newUserData, { merge: true });
-      alert(lang === 'fr' ? "Utilisateur Premium pré-enregistré avec succès !" : "Premium user pre-registered successfully!");
-      setNewEmail('');
-      
-      // Refresh list
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const usersList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setUsers(usersList);
-    } catch (error) {
-      alert("Error pre-registering user: " + error.message);
-    }
-  };
-
-  const handleSaveAnnouncement = async (e) => {
-    e.preventDefault();
-    try {
-      const updatedAtStr = new Date().toISOString();
-      const annData = {
-        textFr: annTextFr,
-        textEn: annTextEn,
-        active: annActive,
-        updatedAt: updatedAtStr
-      };
-      await setDoc(doc(db, "announcements", "current"), annData);
-      alert(lang === 'fr' ? "Annonce enregistrée !" : "Announcement saved!");
-    } catch (error) {
-      alert("Error saving announcement: " + error.message);
-    }
-  };
-
-  // Stats calculations
-  const totalUsers = users.length;
-  const premiumUsers = users.filter(u => u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date())).length;
-  const freeUsers = totalUsers - premiumUsers;
-  const totalMessages = messages.length;
-
-  // Filtering users
-  const filteredUsers = users.filter(u => {
-    const emailMatches = u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const isPremiumUser = u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date());
-    if (filterStatus === 'premium') return emailMatches && isPremiumUser;
-    if (filterStatus === 'free') return emailMatches && !isPremiumUser;
-    return emailMatches;
-  });
-
-  const t = {
-    fr: {
-      title: "Panneau d'administration",
-      loading: "Chargement...",
-      email: "Email",
-      status: "Statut",
-      action: "Action",
-      revoke: "Révoquer",
-      makePremium: "Rendre Premium",
-      reply: "Répondre",
-      preRegTitle: "Pré-enregistrer un client Premium (par Email)",
-      preRegEmailPlace: "Email du client...",
-      preRegBtn: "Activer Premium",
-      statsTotal: "Utilisateurs",
-      statsPremium: "Premium",
-      statsFree: "Gratuit",
-      statsMsg: "Messages Contact",
-      searchPlace: "Rechercher par email...",
-      filterAll: "Tous",
-      filterPremium: "Premium",
-      filterFree: "Gratuit",
-      expLabel: "Jusqu'au",
-      durationLifetime: "À vie",
-      durationDays: "jours"
-    },
-    en: {
-      title: "Admin Dashboard",
-      loading: "Loading...",
-      email: "Email",
-      status: "Status",
-      action: "Action",
-      revoke: "Revoke",
-      makePremium: "Make Premium",
-      reply: "Reply",
-      preRegTitle: "Pre-register Premium Client (by Email)",
-      preRegEmailPlace: "Client email...",
-      preRegBtn: "Activate Premium",
-      statsTotal: "Total Users",
-      statsPremium: "Premium",
-      statsFree: "Free",
-      statsMsg: "Contact Messages",
-      searchPlace: "Search by email...",
-      filterAll: "All",
-      filterPremium: "Premium",
-      filterFree: "Free",
-      expLabel: "Expires",
-      durationLifetime: "Lifetime",
-      durationDays: "days"
-    }
-  }[lang];
-
-  if (!isOpen) return null;
-
-  return (
-    <motion.div className="modal-overlay admin-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className="auth-modal admin-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
-        <button className="close-btn" onClick={onClose}><X size={20} /></button>
-        <div className="admin-header">
-          <Settings size={24} />
-          <h2>{t.title}</h2>
-        </div>
-
-        {/* Dashboard Statistics Row */}
-        <div className="admin-stats-grid">
-          <div className="admin-stat-card">
-            <h4>{t.statsTotal}</h4>
-            <div className="stat-val">{totalUsers}</div>
-          </div>
-          <div className="admin-stat-card" style={{ borderLeft: '3px solid #8b5cf6' }}>
-            <h4>{t.statsPremium}</h4>
-            <div className="stat-val" style={{ color: '#a78bfa' }}>{premiumUsers}</div>
-          </div>
-          <div className="admin-stat-card">
-            <h4>{t.statsFree}</h4>
-            <div className="stat-val" style={{ color: '#94a3b8' }}>{freeUsers}</div>
-          </div>
-          <div className="admin-stat-card">
-            <h4>{t.statsMsg}</h4>
-            <div className="stat-val" style={{ color: '#14b8a6' }}>{totalMessages}</div>
-          </div>
-        </div>
-
-        <div className="admin-tabs">
-          <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-            <Users size={18} />
-            <span>{lang === 'fr' ? 'Utilisateurs' : 'Users'}</span>
-          </button>
-          <button className={`admin-tab-btn ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>
-            <MessageSquare size={18} />
-            <span>{lang === 'fr' ? 'Messages' : 'Messages'}</span>
-          </button>
-          <button className={`admin-tab-btn ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => setActiveTab('announcements')}>
-            <Megaphone size={18} />
-            <span>{lang === 'fr' ? 'Annonces' : 'Announcements'}</span>
-          </button>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', fontSize: '12px', alignItems: 'center' }}>
-            <span title="Firebase Status">DB: {db ? '✅' : '❌'}</span>
-            <span title="Auth Status">Auth: {auth ? '✅' : '❌'}</span>
-          </div>
-        </div>
-
-        <div className="admin-content">
-          {loading ? (
-            <div className="admin-loading">{t.loading}</div>
-          ) : activeTab === 'users' ? (
-            <div>
-              {/* Pre-registration Form */}
-              <div className="admin-pre-reg-section">
-                <h3><UserPlus size={18} color="#8b5cf6" /> <span>{t.preRegTitle}</span></h3>
-                <form onSubmit={handlePreRegister} className="admin-pre-reg-form">
-                  <input 
-                    type="email" 
-                    placeholder={t.preRegEmailPlace} 
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="admin-input-txt"
-                    required
-                  />
-                  <select 
-                    value={newDuration} 
-                    onChange={(e) => setNewDuration(parseInt(e.target.value))}
-                    className="admin-select"
-                  >
-                    <option value="30">30 {lang === 'fr' ? 'Jours' : 'Days'}</option>
-                    <option value="60">60 {lang === 'fr' ? 'Jours' : 'Days'}</option>
-                    <option value="365">1 {lang === 'fr' ? 'An' : 'Year'}</option>
-                    <option value="0">{t.durationLifetime}</option>
-                  </select>
-                  <button type="submit" className="admin-action-btn">{t.preRegBtn}</button>
-                </form>
-              </div>
-
-              {/* Users Search and Filtering */}
-              <div className="admin-search-bar">
-                <Search size={18} color="#64748b" />
-                <input 
-                  type="text" 
-                  placeholder={t.searchPlace} 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="admin-search-input"
-                />
-                <div className="lang-switch" style={{ marginLeft: 'auto' }}>
-                  <button className={`lang-btn ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>{t.filterAll}</button>
-                  <button className={`lang-btn ${filterStatus === 'premium' ? 'active' : ''}`} onClick={() => setFilterStatus('premium')}>{t.filterPremium}</button>
-                  <button className={`lang-btn ${filterStatus === 'free' ? 'active' : ''}`} onClick={() => setFilterStatus('free')}>{t.filterFree}</button>
-                </div>
-              </div>
-
-              {/* Users Table */}
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>{t.email}</th>
-                    <th>{t.status}</th>
-                    <th>{t.action}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map(u => {
-                    const isUserPremium = u.isPremium || (u.premiumUntil && new Date(u.premiumUntil) > new Date());
-                    const remainingDays = u.premiumUntil 
-                      ? Math.ceil((new Date(u.premiumUntil) - new Date()) / (1000 * 60 * 60 * 24)) 
-                      : null;
-                    const hasExportCreditVal = u.hasExportCredit || false;
-                    return (
-                      <tr key={u.id}>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{u.email}</span>
-                              <button 
-                                className="admin-icon-btn" 
-                                title={lang === 'fr' ? "Copier l'email" : "Copy Email"}
-                                onClick={() => {
-                                  navigator.clipboard.writeText(u.email);
-                                  alert(lang === 'fr' ? "Email copié !" : "Email copied!");
-                                }}
-                                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                              >
-                                <Copy size={12} />
-                              </button>
-                            </div>
-                            {isUserPremium && u.premiumUntil && (
-                              <span style={{ fontSize: '0.65rem', color: '#10b981', marginTop: '2px' }}>
-                                {t.expLabel}: {new Date(u.premiumUntil).toLocaleDateString()} ({remainingDays} {t.durationDays})
-                              </span>
-                            )}
-                            {isUserPremium && !u.premiumUntil && (
-                              <span style={{ fontSize: '0.65rem', color: '#c084fc', marginTop: '2px', fontWeight: 'bold' }}>
-                                {t.durationLifetime}
-                              </span>
-                            )}
-                            {hasExportCreditVal && (
-                              <span style={{ fontSize: '0.65rem', color: '#f59e0b', marginTop: '1px' }}>
-                                🪙 {lang === 'fr' ? "Crédit d'export actif" : "Export credit active"}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${isUserPremium ? 'premium' : 'free'}`}>
-                            {isUserPremium ? 'PREMIUM' : 'FREE'}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <select
-                              className="admin-duration-select"
-                              defaultValue=""
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'revoke') {
-                                  setPremiumStatus(u.id, false, 0);
-                                } else if (val === 'grant_credit') {
-                                  setExportCreditStatus(u.id, true);
-                                } else if (val === 'revoke_credit') {
-                                  setExportCreditStatus(u.id, false);
-                                } else if (val) {
-                                  setPremiumStatus(u.id, true, parseInt(val));
-                                }
-                                e.target.value = ""; // Reset dropdown
-                              }}
-                            >
-                              <option value="" disabled>{lang === 'fr' ? 'Gérer...' : 'Manage...'}</option>
-                              {isUserPremium && (
-                                <option value="revoke">{lang === 'fr' ? 'Révoquer Premium' : 'Revoke Premium'}</option>
-                              )}
-                              <option value="30">{lang === 'fr' ? 'Premium 30 Jours' : 'Premium 30 Days'}</option>
-                              <option value="60">{lang === 'fr' ? 'Premium 60 Jours' : 'Premium 60 Days'}</option>
-                              <option value="365">{lang === 'fr' ? 'Premium 1 An' : 'Premium 1 Year'}</option>
-                              <option value="0">{lang === 'fr' ? 'Premium À vie' : 'Premium Lifetime'}</option>
-                              <option value="divider" disabled>────────────────</option>
-                              {hasExportCreditVal ? (
-                                <option value="revoke_credit">{lang === 'fr' ? "Révoquer crédit" : "Revoke credit"}</option>
-                              ) : (
-                                <option value="grant_credit">{lang === 'fr' ? "Accorder 1 crédit" : "Grant 1 credit"}</option>
-                              )}
-                            </select>
-                            <button 
-                              className="delete-user-btn" 
-                              onClick={() => handleDeleteUser(u.id, u.email)}
-                              title={lang === 'fr' ? "Supprimer l'utilisateur" : "Delete User"}
-                              style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : activeTab === 'messages' ? (
-            <div className="admin-messages-list">
-              {messages.length === 0 ? (
-                <p className="no-messages">{lang === 'fr' ? 'Aucun message.' : 'No messages.'}</p>
-              ) : messages.map(m => (
-                <div key={m.id} className={`admin-message-card ${m.read ? 'read' : 'unread'}`}>
-                  <div className="message-header">
-                    <strong>{m.name}</strong>
-                    <span className="message-email">{m.email}</span>
-                    <div className="message-actions">
-                      <button 
-                        className={`read-toggle-btn ${m.read ? 'is-read' : 'is-unread'}`} 
-                        onClick={() => toggleMessageRead(m.id, m.read)}
-                        title={m.read ? (lang === 'fr' ? "Marquer comme non lu" : "Mark as unread") : (lang === 'fr' ? "Marquer comme lu" : "Mark as read")}
-                      >
-                        <ShieldCheck size={16} />
-                      </button>
-                      <a 
-                        href={`mailto:${m.email}?subject=Studios-Pro: Re: ${m.name}`} 
-                        className="reply-btn"
-                        title={t.reply}
-                      >
-                        <Reply size={16} />
-                      </a>
-                      <button className="delete-msg-btn" onClick={() => deleteMessage(m.id)}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="message-text">{m.message}</p>
-                  <div className="message-footer">
-                    <span className="message-badge">{m.read ? (lang === 'fr' ? 'Lu' : 'Read') : (lang === 'fr' ? 'Nouveau' : 'New')}</span>
-                    <small className="message-date">{new Date(m.timestamp).toLocaleString()}</small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="admin-announcement-section">
-              <h3>{lang === 'fr' ? "Gérer l'annonce système" : "Manage System Announcement"}</h3>
-              <form onSubmit={handleSaveAnnouncement} className="admin-announcement-form">
-                <div className="form-group-admin">
-                  <label>{lang === 'fr' ? "Texte en Français" : "French Text"}</label>
-                  <textarea
-                    value={annTextFr}
-                    onChange={(e) => setAnnTextFr(e.target.value)}
-                    placeholder="Message à afficher..."
-                    className="admin-textarea"
-                    required
-                  ></textarea>
-                </div>
-                <div className="form-group-admin">
-                  <label>{lang === 'fr' ? "Texte en Anglais" : "English Text"}</label>
-                  <textarea
-                    value={annTextEn}
-                    onChange={(e) => setAnnTextEn(e.target.value)}
-                    placeholder="Message to display..."
-                    className="admin-textarea"
-                    required
-                  ></textarea>
-                </div>
-                <div className="form-group-admin checkbox-group-admin">
-                  <label className="admin-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={annActive}
-                      onChange={(e) => setAnnActive(e.target.checked)}
-                    />
-                    <span>{lang === 'fr' ? "Activer l'annonce" : "Activate Announcement"}</span>
-                  </label>
-                </div>
-                <button type="submit" className="admin-action-btn" style={{ marginTop: '10px' }}>
-                  {lang === 'fr' ? "Enregistrer l'annonce" : "Save Announcement"}
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+  return map[code] || (isFr ? 'Erreur de connexion. Veuillez réessayer.' : (err?.message || 'Authentication error.'));
 };
 
 const AuthModal = ({ isOpen, onClose, lang }) => {
@@ -660,12 +228,12 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
     fr: {
       login: "Se connecter",
       register: "S'inscrire",
-      email: "Email",
+      email: "E-mail",
       password: "Mot de passe",
       submit: isLogin ? "Connexion" : "Créer un compte",
       switch: isLogin ? "Pas de compte ? Inscrivez-vous" : "Déjà un compte ? Connectez-vous",
       googleBtn: "Continuer avec Google",
-      orDivider: "ou avec email"
+      orDivider: "ou avec e-mail"
     },
     en: {
       login: "Login",
@@ -677,12 +245,22 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       googleBtn: "Continue with Google",
       orDivider: "or with email"
     }
-  }[lang];
+  }[lang === 'fr' ? 'fr' : 'en'];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  // Clickjacking protection: never render auth form inside third-party frames
+  if (!isOpen || (typeof window !== 'undefined' && window.self !== window.top)) return null;
 
   const handleGoogleSignIn = async () => {
     if (!auth) {
@@ -714,14 +292,15 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       onClose();
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message);
+        setError(formatAuthError(err, lang));
       }
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const handleAuth = async () => {
+  const handleAuth = async (e) => {
+    if (e) e.preventDefault();
     if (!auth) {
       setError(lang === 'fr' ? "Le système d'authentification n'est pas configuré." : "Authentication system not configured.");
       return;
@@ -729,17 +308,17 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
     setError('');
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, email.trim(), password);
         if (typeof window.gtag === 'function') {
           window.gtag('event', 'login', { method: 'Email' });
         }
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        sendEmailVerification(userCredential.user).catch(() => {});
         if (typeof window.gtag === 'function') {
           window.gtag('event', 'sign_up', { method: 'Email' });
           window.gtag('event', 'conversion', { 'send_to': 'AW-18273639003' });
         }
-        // Initialize user profile in Firestore if it doesn't already exist to avoid overwriting premium status
         const userRef = doc(db, "users", userCredential.user.uid);
         const existingDoc = await getDoc(userRef);
         const localFreeUsed = Math.max(0, parseInt(localStorage.getItem('freeExportsUsed'), 10) || 0);
@@ -754,11 +333,9 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       }
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(formatAuthError(err, lang));
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <motion.div
@@ -766,6 +343,10 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isLogin ? t.login : t.register}
     >
       <motion.div
         className="auth-modal"
@@ -773,11 +354,10 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
       >
-        <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        <button type="button" className="close-btn" aria-label={lang === 'fr' ? 'Fermer' : 'Close'} onClick={onClose}><X size={20} /></button>
         <h2>{isLogin ? t.login : t.register}</h2>
-        {error && <p style={{ color: '#ff4444', fontSize: '0.8rem', marginBottom: '10px' }}>{error}</p>}
+        {error && <p style={{ color: '#fca5a5', fontSize: '0.82rem', marginBottom: '10px' }}>{error}</p>}
         
-        {/* 1-Click Google Sign-In */}
         <button 
           type="button" 
           className="google-auth-btn" 
@@ -797,7 +377,7 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
           <span>{t.orDivider}</span>
         </div>
 
-        <div className="auth-form">
+        <form className="auth-form" onSubmit={handleAuth}>
           <div className="input-group">
             <Mail size={18} className="input-icon" />
             <input
@@ -805,6 +385,7 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
               placeholder={t.email}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <div className="input-group">
@@ -814,21 +395,20 @@ const AuthModal = ({ isOpen, onClose, lang }) => {
               placeholder={t.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
-          <button className="auth-submit" onClick={handleAuth}>{t.submit}</button>
-          <p className="auth-switch" onClick={() => setIsLogin(!isLogin)}>{t.switch}</p>
-        </div>
+          <button type="submit" className="auth-submit">{t.submit}</button>
+          <button type="button" className="auth-switch" onClick={() => setIsLogin(!isLogin)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>{t.switch}</button>
+        </form>
       </motion.div>
     </motion.div>
   );
 };
 
-import { loadStripe } from '@stripe/stripe-js';
-
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
+const SeoFooter = ({ lang, onOpenPricing, onOpenContact, onOpenRules }) => {
   const isFr = lang === 'fr';
   return (
     <footer className="seo-footer">
@@ -845,27 +425,27 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
           <div className="seo-trust-item">
             <span className="seo-trust-icon">🔒</span>
             <div>
-              <strong>{isFr ? 'Confidentialité Client-Side 100%' : '100% Client-Side Privacy'}</strong>
-              <p>{isFr ? 'Vos fichiers 3D et images restent sur votre machine' : 'Your 3D files & images stay in your browser'}</p>
+              <strong>{isFr ? 'Confidentialité 100 % locale' : '100% Client-Side Privacy'}</strong>
+              <p>{isFr ? 'Vos fichiers 3D et images restent sur votre appareil' : 'Your 3D files & images stay in your browser'}</p>
             </div>
           </div>
           <div className="seo-trust-item">
             <span className="seo-trust-icon">🎁</span>
             <div>
               <strong>{isFr ? '5 Exports Gratuits Inclus' : '5 Free Exports Included'}</strong>
-              <p>{isFr ? 'STL, OBJ, DXF, G-Code sans carte bancaire' : 'STL, OBJ, DXF, G-Code with no credit card'}</p>
+              <p>{isFr ? 'STL, OBJ, 3MF, GLB, DXF, G-Code sans carte bancaire' : 'STL, OBJ, 3MF, GLB, DXF, G-Code — no credit card'}</p>
             </div>
           </div>
           <div className="seo-trust-item">
             <span className="seo-trust-icon">💎</span>
             <div>
-              <strong>{isFr ? 'Formule Pro à 10$/mois' : 'Unlimited Pro at $10/mo'}</strong>
+              <strong>{isFr ? 'Formule Pro à 10 $ / mois' : 'Unlimited Pro at $10/mo'}</strong>
               <p>{isFr ? 'Reliefs CNC HD, WebAR et licence commerciale' : 'HD CNC reliefs, WebAR & commercial license'}</p>
             </div>
           </div>
         </div>
 
-        {/* 5-Column Categorized Directory */}
+        {/* 5-Column Categorized Directory (Zero Orphan Pages!) */}
         <div className="seo-footer-grid">
           {/* Column 1: 3D & CNC Tools */}
           <div className="seo-footer-col">
@@ -874,8 +454,12 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               {isFr ? 'Outils 3D & CNC' : '3D & CNC Tools'}
             </h4>
             <ul className="seo-footer-links">
-              <li><a href="/tools/multicolor-3mf-painter">{isFr ? 'Colorateur 3D 3MF Multi-Couleurs' : 'Multi-Color 3MF Painter & AMS'}</a></li>
+              <li><a href="/tools/filament-painting-studio-online">{isFr ? 'Peinture Filament (Alternative HueForge)' : 'Filament Painting Studio (HueForge Alt)'}</a></li>
+              <li><a href="/tools/multicolor-3mf-painter">{isFr ? 'Peinture 3D 3MF multicouleur (Bambu AMS)' : 'Multi-Color 3MF Painter & AMS'}</a></li>
               <li><a href="/tools/3d-qr-wifi-coaster-generator">{isFr ? 'Générateur Sous-Verres QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster'}</a></li>
+              <li><a href="/tools/photo-to-3d-4d-relief-glb-stl">{isFr ? 'Photo vers Relief 3D/4D GLB & STL' : 'Photo to 3D/4D Relief (GLB & STL)'}</a></li>
+              <li><a href="/tools/3d-portrait-bas-relief-coin-medal-maker">{isFr ? 'Bas-Relief Portrait, Pièce & Médaille 3D' : '3D Portrait Bas-Relief, Coin & Medal'}</a></li>
+              <li><a href="/tools/animated-4d-glb-hologram-creator">{isFr ? 'Créateur Hologramme 4D GLB Animé' : 'Animated 4D GLB Hologram Creator'}</a></li>
               <li><a href="/tools/image-to-cnc-relief">{isFr ? 'Image vers Relief 3D CNC' : 'Image to 3D CNC Relief & STL'}</a></li>
               <li><a href="/tools/lithophane-maker-online">{isFr ? 'Générateur de Lithophanies 3D' : 'Online Lithophane Maker'}</a></li>
               <li><a href="/tools/cookie-cutter-stl-generator">{isFr ? 'Générateur Emporte-Pièce STL' : 'Cookie Cutter STL Generator'}</a></li>
@@ -888,6 +472,12 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               <li><a href="/tools/cryptex-puzzle-box-stl-generator">{isFr ? 'Boîte Puzzle Cryptex STL' : 'Cryptex Puzzle Box STL Generator'}</a></li>
               <li><a href="/tools/gear-sprocket-generator-dxf">{isFr ? 'Générateur d\'Engrenages DXF' : 'Parametric Gear & Sprocket DXF'}</a></li>
               <li><a href="/tools/custom-3d-ring-designer">{isFr ? 'Concepteur de Bagues 3D' : 'Custom 3D Ring Designer'}</a></li>
+              <li><a href="/tools/3d-text-extruder-online">{isFr ? 'Extrudeur de Texte 3D en Ligne' : 'Online 3D Text Extruder'}</a></li>
+              <li><a href="/tools/3d-print-file-analyzer">{isFr ? 'Analyseur de Fichiers Impression 3D' : '3D Print File Analyzer'}</a></li>
+              <li><a href="/tools/3d-watch-mechanism-generator">{isFr ? 'Générateur Mécanisme Horloger 3D' : '3D Watch Mechanism Generator'}</a></li>
+              <li><a href="/tools/flexi-articulated-3d-generator">{isFr ? 'Générateur Flexi Articulé 3D' : 'Flexi Articulated 3D Generator'}</a></li>
+              <li><a href="/tools/dungeon-tiles-rpg-scenery-generator">{isFr ? 'Tuiles Donjon RPG 3D' : 'RPG Dungeon Tiles 3D Generator'}</a></li>
+              <li><a href="/tools/3d-topographic-terrain-cityscape-generator">{isFr ? 'Terrain Topographique & Ville 3D' : '3D Topographic Terrain & Cityscape'}</a></li>
             </ul>
           </div>
 
@@ -906,9 +496,13 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               <li><a href="/viewer/ply">{isFr ? 'Visualiseur Nuages de Points PLY' : 'PLY Point Cloud & Polygon Viewer'}</a></li>
               <li><a href="/viewer/dxf">{isFr ? 'Visualiseur DXF AutoCAD en Ligne' : 'AutoCAD DXF Blueprint CAD Viewer'}</a></li>
               <li><a href="/viewer/svg">{isFr ? 'Visualiseur & Inspecteur SVG' : 'Online SVG Vector Path Viewer'}</a></li>
-              <li><a href="/apps/ar-viewer/index.html">{isFr ? 'Visualiseur Réalité Augmentée (AR)' : 'Augmented Reality (AR) WebXR'}</a></li>
+              <li><a href="/viewer/gcode">{isFr ? 'Visualiseur G-Code Impression & CNC' : 'Online G-Code Toolpath Viewer'}</a></li>
+              <li><a href="/apps/ar-viewer/">{isFr ? 'Visualiseur Réalité Augmentée (AR)' : 'Augmented Reality (AR) WebXR'}</a></li>
               <li><a href="/ar-viewer/stl">{isFr ? 'Projeter Modèle STL en AR' : 'Project STL in AR Phone Viewer'}</a></li>
+              <li><a href="/ar-viewer/obj">{isFr ? 'Projeter Modèle OBJ en AR' : 'Project OBJ in AR Phone Viewer'}</a></li>
               <li><a href="/ar-viewer/glb">{isFr ? 'Projeter Modèle GLB en AR' : 'Project GLB in AR Mobile Viewer'}</a></li>
+              <li><a href="/cards/pokemon-card-maker">{isFr ? 'Créateur de Cartes 3D Holo' : 'Holo 3D Card Maker'}</a></li>
+              <li><a href="/cards/custom-3d-card-generator">{isFr ? 'Générateur de Cartes 3D sur Mesure' : 'Custom 3D Card Generator'}</a></li>
             </ul>
           </div>
 
@@ -916,20 +510,29 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
           <div className="seo-footer-col">
             <h4 className="seo-footer-col-title">
               <span className="seo-col-dot" style={{ background: '#10b981' }}></span>
-              {isFr ? 'Convertisseurs & CAD' : 'Converters & CAD'}
+              {isFr ? 'Convertisseurs & CAO' : 'Converters & CAD'}
             </h4>
             <ul className="seo-footer-links">
               <li><a href="/convert/2d-image-to-3d-stl">{isFr ? 'Convertir Image 2D en STL 3D' : '2D Image to 3D STL Converter'}</a></li>
               <li><a href="/convert/photo-to-3d-relief-stl">{isFr ? 'Photo vers Bas-Relief STL' : 'Photo to 3D Relief STL Converter'}</a></li>
+              <li><a href="/convert/photo-to-filament-painting-3mf">{isFr ? 'Photo vers Peinture Filament 3MF' : 'Photo to Filament Painting 3MF'}</a></li>
               <li><a href="/convert/png-to-svg">{isFr ? 'Convertisseur PNG en SVG Vectoriel' : 'PNG to SVG Vector Converter'}</a></li>
               <li><a href="/convert/jpg-to-svg">{isFr ? 'Convertisseur JPG en SVG Vectoriel' : 'JPG to SVG Vector Converter'}</a></li>
               <li><a href="/convert/dxf-to-svg">{isFr ? 'Convertisseur DXF vers SVG' : 'AutoCAD DXF to SVG Converter'}</a></li>
+              <li><a href="/convert/svg-to-dxf">{isFr ? 'Convertisseur SVG vers DXF' : 'SVG to AutoCAD DXF Converter'}</a></li>
+              <li><a href="/convert/dxf-to-gcode">{isFr ? 'Convertisseur DXF vers G-Code' : 'DXF to Laser/CNC G-Code'}</a></li>
               <li><a href="/tools/svg-to-gcode-laser-engraver">{isFr ? 'SVG vers G-Code Laser CNC' : 'SVG to Laser Engraver G-Code'}</a></li>
               <li><a href="/convert/obj-to-stl">{isFr ? 'Convertisseur OBJ vers STL' : 'OBJ to STL 3D Mesh Converter'}</a></li>
               <li><a href="/convert/stl-to-obj">{isFr ? 'Convertisseur STL vers OBJ' : 'STL to OBJ 3D Mesh Converter'}</a></li>
               <li><a href="/convert/glb-to-html">{isFr ? 'Convertir GLB en HTML Autonome' : 'GLB to Standalone HTML Exporter'}</a></li>
-              <li><a href="/apps/depth-maps/">{isFr ? 'Générateur Depth Maps IA' : 'AI Monocular Depth Map Generator'}</a></li>
-              <li><a href="/apps/vector-cnc/">{isFr ? 'Studio Vector CNC (SVG / DXF)' : 'Vector CNC Toolpath Studio'}</a></li>
+              <li><a href="/convert/stl-to-html">{isFr ? 'Convertir STL en HTML 3D' : 'STL to Interactive HTML Viewer'}</a></li>
+              <li><a href="/convert/2d-sketch-to-3d">{isFr ? 'Croquis 2D vers Modèle 3D' : '2D Sketch to 3D Model'}</a></li>
+              <li><a href="/convert/text-to-3d-model">{isFr ? 'Texte vers Modèle 3D STL' : 'Text to 3D Model Converter'}</a></li>
+              <li><a href="/convert/svg-to-3d-model">{isFr ? 'SVG Vectoriel vers 3D STL' : 'SVG to 3D Model Extruder'}</a></li>
+              <li><a href="/convert/ai-art-generator">{isFr ? 'Générateur d\'Art Vectoriel IA' : 'AI Generative Vector Art'}</a></li>
+              <li><a href="/convert/procedural-logo-maker">{isFr ? 'Créateur de Logos 3D Procédural' : 'Procedural 3D Logo Maker'}</a></li>
+              <li><a href="/convert/2d-canvas-to-3d-relief">{isFr ? 'Toile 2D vers Relief 3D' : '2D Canvas to 3D Relief'}</a></li>
+              <li><a href="/convert/image-to-depth-map">{isFr ? 'Image vers Carte de Profondeur' : 'Image to AI Depth Map'}</a></li>
             </ul>
           </div>
 
@@ -940,6 +543,9 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               {isFr ? 'Alternatives Logicielles' : 'Free Alternatives'}
             </h4>
             <ul className="seo-footer-links">
+              <li><a href="/compare/free-alternative-to-hueforge">{isFr ? 'Alternative Gratuite à HueForge' : 'Free Alternative to HueForge'}</a></li>
+              <li><a href="/compare/free-alternative-to-bambu-studio-color-painting">{isFr ? 'Alternative Peinture Bambu Studio' : 'Bambu Studio Color Painting Alternative'}</a></li>
+              <li><a href="/compare/free-photo-to-3d-relief-sculptok-itslitho-alternative">{isFr ? 'Alternative à SculptOK & ItsLitho' : 'SculptOK & ItsLitho Free Alternative'}</a></li>
               <li><a href="/compare/free-alternative-to-meshmixer">{isFr ? 'Alternative Gratuite à Meshmixer' : 'Free Alternative to Meshmixer'}</a></li>
               <li><a href="/compare/vectric-aspire-free-alternative-browser">{isFr ? 'Alternative Gratuite à Vectric Aspire' : 'Vectric Aspire Free CNC Alternative'}</a></li>
               <li><a href="/compare/free-online-tinkercad-alternative">{isFr ? 'Alternative Gratuite à Tinkercad' : 'Free Online Tinkercad Alternative'}</a></li>
@@ -957,15 +563,34 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
               {isFr ? 'Studios & Écosystème' : 'Studios & Ecosystem'}
             </h4>
             <ul className="seo-footer-links">
-              <li><a href="/apps/polymorph-3d/index.html">{isFr ? 'PolyMorph 3D Studio' : 'PolyMorph 3D Studio'}</a></li>
-              <li><a href="/apps/ar-viewer/">{isFr ? 'Visualiseur WebAR 3D' : 'WebAR 3D Model Viewer'}</a></li>
-              <li><a href="/apps/artgen/">{isFr ? 'ArtGen Studio IA' : 'ArtGen AI Vector Studio'}</a></li>
+              <li><a href="/apps/filament-painting-studio/">{isFr ? 'Studio Peinture Filament' : 'Filament Painting Studio'}</a></li>
+              <li><a href="/apps/multicolor-3mf-painter/">{isFr ? 'Peinture 3MF Multicouleur' : 'MultiColor 3MF Painter'}</a></li>
+              <li><a href="/apps/qr-wifi-coaster-generator/">{isFr ? 'Sous-Verres QR & Wi-Fi 3D' : '3D QR Wi-Fi Coaster Studio'}</a></li>
+              <li><a href="/apps/new3d4d/">{isFr ? 'New 3D 4D Relief Studio' : 'New 3D 4D Relief Studio'}</a></li>
+              <li><a href="/apps/polymorph-3d/">{isFr ? 'PolyMorph 3D Studio' : 'PolyMorph 3D Studio'}</a></li>
+              <li><a href="/apps/studio-pro/">{isFr ? 'Studio Pro 4D' : 'Studio Pro 4D'}</a></li>
+              <li><a href="/apps/studio-pro-2/">{isFr ? 'Studio Pro 2 (CAD 4D)' : 'Studio Pro 2 (4D CAD)'}</a></li>
+              <li><a href="/apps/figure-builder/">{isFr ? '4D Figure Builder PRO' : '4D Figure Builder PRO'}</a></li>
+              <li><a href="/apps/scripting-live/">{isFr ? 'Studio Scripting PRO v5' : 'Scripting Studio PRO v5'}</a></li>
+              <li><a href="/apps/design-pro-studio/">{isFr ? 'Design Pro Studio 3D' : 'Design Pro Studio 3D'}</a></li>
+              <li><a href="/apps/architect-pro-1/">{isFr ? 'Architect Pro 1' : 'Architect Pro 1'}</a></li>
+              <li><a href="/apps/architect-pro-2/">{isFr ? 'Architect Pro 2' : 'Architect Pro 2'}</a></li>
+              <li><a href="/apps/dfx/">{isFr ? 'DFX Studio Pro (CAD/CNC)' : 'DFX Studio Pro (CAD/CNC)'}</a></li>
+              <li><a href="/apps/vector-cnc/">{isFr ? 'Vector CNC Studio' : 'Vector CNC Toolpath Studio'}</a></li>
+              <li><a href="/apps/depth-maps/">{isFr ? 'Cartes de Profondeur IA' : 'AI Depth Maps Studio'}</a></li>
+              <li><a href="/apps/maker7/">{isFr ? 'Maker Studio 7' : 'Maker Studio 7'}</a></li>
+              <li><a href="/apps/jewelry-pro/">{isFr ? 'Jewelry Maker Pro' : 'Jewelry Maker Pro'}</a></li>
+              <li><a href="/apps/mech-gen-pro/">{isFr ? 'Mech Gen Pro' : 'Mech Gen Pro'}</a></li>
+              <li><a href="/apps/artgen/">{isFr ? 'ArtGen Studio IA' : 'ArtGen AI Studio'}</a></li>
+              <li><a href="/apps/music-composer/">{isFr ? '4D Music Composer' : '4D Music Composer'}</a></li>
+              <li><a href="/apps/sandbox/">{isFr ? 'Zen Sandscape 4D' : 'Zen Sandscape 4D'}</a></li>
+              <li><a href="/apps/aura-gen/">{isFr ? 'Aura AI Studio' : 'Aura AI Studio'}</a></li>
               <li><a href="/blog/">{isFr ? 'Blog & Tutoriels 3D / CNC' : '3D Design Blog & Tutorials'}</a></li>
               <li><a href="/faq.html">{isFr ? 'Questions Fréquentes (FAQ)' : 'Frequently Asked Questions (FAQ)'}</a></li>
-              <li><a href="/cards/pokemon-card-maker.html">{isFr ? 'Créateur de Cartes 3D Holo' : 'Custom 3D Card Generator'}</a></li>
+              <li><a href="/fr/">{isFr ? 'Version Française (/fr/)' : 'Version Française (/fr/)'}</a></li>
               <li>
                 <button type="button" onClick={onOpenPricing} className="seo-footer-btn-link">
-                  💎 {isFr ? 'Tarifs & Formule Pro (10$/mois)' : 'Pricing & Pro Plan ($10/mo)'}
+                  💎 {isFr ? 'Tarifs & Formule Pro (10 $ / mois)' : 'Pricing & Pro Plan ($10/mo)'}
                 </button>
               </li>
               <li>
@@ -977,7 +602,7 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright, Language, Meta */}
+        {/* Bottom Bar: Copyright, Legal, Language, Meta */}
         <div className="seo-footer-bottom">
           <div className="seo-footer-brand">
             <img src="/logo_studios_pro.png" alt="Studios-Pro" width="24" height="24" className="seo-footer-logo" />
@@ -989,6 +614,10 @@ const SeoFooter = ({ lang, onOpenPricing, onOpenContact }) => {
 
           <div className="seo-footer-meta-links">
             <span>© {new Date().getFullYear()} Studios-Pro. {isFr ? 'Tous droits réservés.' : 'All rights reserved.'}</span>
+            <button type="button" onClick={onOpenRules} className="seo-footer-btn-link" style={{ fontSize: 'inherit' }}>
+              {isFr ? 'Règles & Conditions' : 'Site Rules & Terms'}
+            </button>
+            <a href="/privacy.html">{isFr ? 'Confidentialité' : 'Privacy Policy'}</a>
             <a href="/faq.html">{isFr ? 'Aide & FAQ' : 'Help & FAQ'}</a>
             <a href="/blog/">{isFr ? 'Guides' : 'Guides'}</a>
             <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
@@ -1061,16 +690,18 @@ const StudiosPro = () => {
   const [isCoasterOpen, setIsCoasterOpen] = useState(false);
   const [isFilamentPaintingOpen, setIsFilamentPaintingOpen] = useState(false);
 
-  // Category filter and search state
+  // Category filter, mobile nav & maintenance state
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [maintenanceBanner, setMaintenanceBanner] = useState(null);
 
   const studioCategories = [
     { id: 'all', labelEn: 'All Studios (24)', labelFr: 'Tous les Studios (24)', icon: '✨' },
-    { id: '3d-printing', labelEn: '🔥 3D Printing & Bambu', labelFr: '🔥 Impression 3D & Bambu', icon: '🖨️' },
-    { id: 'cnc-laser', labelEn: '⚡ CNC & Laser CAD', labelFr: '⚡ CNC & Découpe Laser', icon: '⚡' },
-    { id: 'cad-arch', labelEn: '📐 CAD & Architecture', labelFr: '📐 CAO & Architecture', icon: '📐' },
-    { id: 'ai-creative', labelEn: '🎨 AI Art & Creative', labelFr: '🎨 Art IA & Créatif', icon: '🎨' }
+    { id: '3d-printing', labelEn: '3D Printing & Bambu', labelFr: 'Impression 3D & Bambu', icon: '🖨️' },
+    { id: 'cnc-laser', labelEn: 'CNC & Laser CAD', labelFr: 'CNC & Découpe Laser', icon: '⚡' },
+    { id: 'cad-arch', labelEn: 'CAD & Architecture', labelFr: 'CAO & Architecture', icon: '📐' },
+    { id: 'ai-creative', labelEn: 'AI Art & Creative', labelFr: 'Art IA & Créatif', icon: '🎨' }
   ];
 
   const isCardVisible = (catId, tags, title) => {
@@ -1311,18 +942,20 @@ const StudiosPro = () => {
   const getEmbedSnippet = () => {
     let url = 'https://studios-pro.com/?embed=true';
     if (embedTool === 's3dviewer') url = 'https://studios-pro.com/?embed=true&ref=s3dviewer';
-    else if (embedTool === 'painter') url = 'https://studios-pro.com/apps/multicolor-3mf-painter/index.html?embed=true';
-    else if (embedTool === 'coaster') url = 'https://studios-pro.com/apps/qr-wifi-coaster-generator/index.html?embed=true';
-    else if (embedTool === 'polymorph') url = 'https://studios-pro.com/apps/polymorph-3d/index.html?embed=true';
+    else if (embedTool === 'filament') url = 'https://studios-pro.com/apps/filament-painting-studio/?embed=true';
+    else if (embedTool === 'painter') url = 'https://studios-pro.com/apps/multicolor-3mf-painter/?embed=true';
+    else if (embedTool === 'coaster') url = 'https://studios-pro.com/apps/qr-wifi-coaster-generator/?embed=true';
+    else if (embedTool === 'polymorph') url = 'https://studios-pro.com/apps/polymorph-3d/?embed=true';
     else if (embedTool === 'ar') url = 'https://studios-pro.com/apps/ar-viewer/?embed=true';
     else if (embedTool === 'depth') url = 'https://studios-pro.com/?embed=true&ref=depth';
     else if (embedTool === 'vcnc') url = 'https://studios-pro.com/?embed=true&ref=vcnc';
-    return `<iframe src="${url}" width="100%" height="600" frameborder="0" allow="camera; xr-spatial-tracking; fullscreen" style="border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5);" loading="lazy"></iframe>\n<p style="text-align:center; font-size:12px; margin-top:6px; color:#94a3b8;"><a href="https://studios-pro.com" target="_blank" rel="noopener" style="color:#38bdf8; text-decoration:none; font-weight:600;">Powered by Studios-Pro 3D Suite</a></p>`;
+    const poweredLabel = lang === 'fr' ? 'Propulsé par Studios-Pro 3D' : 'Powered by Studios-Pro 3D Suite';
+    return `<iframe src="${url}" width="100%" height="600" allow="camera; xr-spatial-tracking; fullscreen" style="border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5);" loading="lazy"></iframe>\n<p style="text-align:center; font-size:12px; margin-top:6px; color:#94a3b8;"><a href="https://studios-pro.com" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:none; font-weight:600;">${poweredLabel}</a></p>`;
   };
 
   useEffect(() => {
     if (!db) return;
-    const fetchAnnouncement = async () => {
+    const fetchSiteBanners = async () => {
       try {
         const annDoc = await getDoc(doc(db, "announcements", "current"));
         if (annDoc.exists()) {
@@ -1338,8 +971,14 @@ const StudiosPro = () => {
       } catch (err) {
         console.error("Error fetching announcement:", err);
       }
+      try {
+        const maintDoc = await getDoc(doc(db, "site_config", "maintenance"));
+        if (maintDoc.exists()) {
+          setMaintenanceBanner(maintDoc.data());
+        }
+      } catch (_) {}
     };
-    fetchAnnouncement();
+    fetchSiteBanners();
   }, [user]);
 
   // Newsletter exit-intent trigger
@@ -1368,14 +1007,15 @@ const StudiosPro = () => {
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
-    if (!newsletterEmail) return;
-    // Save to Firebase if available
+    const cleanEmail = newsletterEmail.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) return;
     if (db) {
       try {
         await addDoc(collection(db, 'newsletter'), {
-          email: newsletterEmail,
+          email: cleanEmail.slice(0, 254),
           lang,
-          subscribedAt: new Date().toISOString()
+          source: 'popup',
+          timestamp: new Date().toISOString()
         });
       } catch (err) {
         console.error('Newsletter save error:', err);
@@ -1395,22 +1035,32 @@ const StudiosPro = () => {
     localStorage.setItem('nl_dismissed', '1');
   };
 
-  const handleShareCopy = () => {
-    navigator.clipboard.writeText('https://studios-pro.com').catch(() => {});
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
+  const handleShareCopy = async () => {
+    const shareUrl = lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com';
+    const ok = await copyTextSafe(shareUrl);
+    if (ok) {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
   };
 
-  const isAdmin = user && user.email === ADMIN_EMAIL;
+  const isAdmin = Boolean(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL && user.emailVerified);
 
   const redirectToStripe = async (type, refStudio = null) => {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (user && typeof user.getIdToken === 'function') {
+        try {
+          const idToken = await user.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+        } catch (_) {}
+      }
       const response = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           priceType: type,
-          email: user?.email || 'customer@example.com',
+          email: user?.email || undefined,
           origin: window.location.origin,
           refStudio: refStudio
         }),
@@ -1493,66 +1143,29 @@ const StudiosPro = () => {
           if (userDoc.exists()) {
             const data = userDoc.data();
             userData = { ...userData, ...data };
-            
-            if (data.isPremium === true) {
-              isUserPremium = true;
-              premiumUntilVal = data.premiumUntil || null;
-            } else if (data.premiumUntil) {
-              const now = new Date();
-              const expires = new Date(data.premiumUntil);
-              if (expires > now) {
-                isUserPremium = true;
-                premiumUntilVal = data.premiumUntil;
-              }
-            }
-            hasExportCreditVal = data.hasExportCredit || false;
+            // Fixed expiry logic: timed subscriptions expire automatically at premiumUntil!
+            isUserPremium = isUserCurrentlyPremium(data);
+            premiumUntilVal = isUserPremium ? (data.premiumUntil || null) : null;
+            hasExportCreditVal = !data.banned && Boolean(data.hasExportCredit);
             cloudFreeExportsUsed = data.freeExportsUsed;
           }
 
-          // Fallback: If not premium on their main UID document, check if there's an existing document with the same email
-          if (!isUserPremium) {
+          // Server-side VIP pre-registration migration (supports Lifetime & Timed VIP cleanly!)
+          if (!isUserPremium && authUser.emailVerified) {
             try {
-              const q = query(collection(db, "users"), where("email", "==", authUser.email));
-              const querySnapshot = await getDocs(q);
-              let fallbackDoc = null;
-              
-              querySnapshot.forEach(docSnap => {
-                if (docSnap.id !== authUser.uid) {
-                  const fData = docSnap.data();
-                  if (fData.isPremium === true || (fData.premiumUntil && new Date(fData.premiumUntil) > new Date())) {
-                    fallbackDoc = docSnap;
-                  }
-                }
+              const idToken = await authUser.getIdToken();
+              const migRes = await fetch('/.netlify/functions/admin-api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+                body: JSON.stringify({ action: 'migrate_vip' }),
               });
-
-              if (fallbackDoc) {
-                console.log("Migrating premium status from document:", fallbackDoc.id);
-                const fData = fallbackDoc.data();
+              const migData = await migRes.json().catch(() => ({}));
+              if (migRes.ok && migData.migrated && migData.isPremium) {
                 isUserPremium = true;
-                premiumUntilVal = fData.premiumUntil || null;
-                hasExportCreditVal = hasExportCreditVal || fData.hasExportCredit || false;
-                
-                // Merge this info back into the main user data
-                userData.isPremium = true;
-                if (fData.premiumUntil) userData.premiumUntil = fData.premiumUntil;
-                if (fData.hasExportCredit) userData.hasExportCredit = fData.hasExportCredit;
-
-                // Write it to the UID document
-                await setDoc(userDocRef, {
-                  isPremium: true,
-                  premiumUntil: fData.premiumUntil || null,
-                  hasExportCredit: userData.hasExportCredit || false
-                }, { merge: true });
-
-                // Delete the old duplicate document to keep Firestore clean
-                try {
-                  await deleteDoc(doc(db, "users", fallbackDoc.id));
-                } catch (delErr) {
-                  console.error("Error deleting fallback user document:", delErr);
-                }
+                premiumUntilVal = migData.premiumUntil || null;
               }
-            } catch (fallbackErr) {
-              console.error("Error running fallback email query:", fallbackErr);
+            } catch (migErr) {
+              console.warn('VIP migration notice:', migErr);
             }
           }
 
@@ -1571,39 +1184,32 @@ const StudiosPro = () => {
           // Always purge any legacy insecure boolean activation flag
           localStorage.removeItem('pendingPremiumActivation');
 
-          // If a Stripe session was completed while logged out, verify it server-side against Stripe API before activating
+          // If a Stripe session was completed while logged out, verify & activate strictly server-side
           const pendingSessionId = localStorage.getItem('pendingStripeSessionId');
           if (pendingSessionId && pendingSessionId.startsWith('cs_') && userData.stripeSessionId !== pendingSessionId) {
             localStorage.removeItem('pendingStripeSessionId');
             try {
+              const idToken = await authUser.getIdToken();
               const verifyRes = await fetch('/api/verify-session', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
                 body: JSON.stringify({ sessionId: pendingSessionId })
               });
               const verifyData = await verifyRes.json().catch(() => ({}));
               if (verifyRes.ok && verifyData.verified && verifyData.payment_status === 'paid' && verifyData.mode === 'subscription') {
-                const sessionCreatedMs = verifyData.created ? verifyData.created * 1000 : Date.now();
-                const expDate = new Date(sessionCreatedMs + 30 * 24 * 60 * 60 * 1000);
-                const expirationString = expDate.toISOString();
-
-                await setDoc(userDocRef, {
-                  isPremium: true,
-                  premiumUntil: expirationString,
-                  lastPaymentDate: new Date(sessionCreatedMs).toISOString(),
-                  stripeSessionId: pendingSessionId,
-                  freeExportsUsed: mergedFreeUsed
-                }, { merge: true });
-
                 setIsPremium(true);
-                setPremiumUntil(expirationString);
+                setPremiumUntil(verifyData.premiumUntil || null);
               }
             } catch (verifyErr) {
               console.error('[Security] Pending Stripe session verification failed:', verifyErr);
             }
           } else if (!userDoc.exists()) {
-            // New user, sync local to cloud
-            await setDoc(userDocRef, userData, { merge: true });
+            await setDoc(userDocRef, {
+              email: authUser.email,
+              isPremium: false,
+              freeExportsUsed: mergedFreeUsed,
+              createdAt: new Date().toISOString()
+            });
           } else if (mergedFreeUsed > cloudFree) {
             await setDoc(userDocRef, { freeExportsUsed: mergedFreeUsed }, { merge: true });
           }
@@ -1661,37 +1267,29 @@ const StudiosPro = () => {
         return;
       }
 
-      // Secure server-side verification against Stripe API
-      fetch('/api/verify-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId })
-      })
+      if (!user) {
+        localStorage.setItem('pendingStripeSessionId', sessionId);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setIsAuthOpen(true);
+        return;
+      }
+
+      // Authenticated server-side verification & activation against Stripe API
+      user.getIdToken().then((idToken) =>
+        fetch('/api/verify-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ sessionId })
+        })
+      )
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.verified && data.payment_status === 'paid' && data.mode === 'subscription') {
-          // Anchor expiration strictly to the Stripe session's creation timestamp (+30 days)
-          // so replaying the same session_id URL can never extend the subscription beyond its real 30-day window.
-          const sessionCreatedMs = data.created ? data.created * 1000 : Date.now();
-          const expDate = new Date(sessionCreatedMs + 30 * 24 * 60 * 60 * 1000);
-          const expirationString = expDate.toISOString();
-
           setIsPremium(true);
-          setPremiumUntil(expirationString);
-
-          if (user) {
-            setDoc(doc(db, "users", user.uid), { 
-              isPremium: true, 
-              premiumUntil: expirationString,
-              lastPaymentDate: new Date(sessionCreatedMs).toISOString(),
-              stripeSessionId: sessionId
-            }, { merge: true });
-          } else {
-            localStorage.setItem('pendingStripeSessionId', sessionId);
-          }
+          setPremiumUntil(data.premiumUntil || null);
           alert(lang === 'fr' 
-            ? "Paiement réussi et vérifié ! Votre abonnement Pro est actif pour 30 jours." 
-            : "Payment verified and successful! Your Pro subscription is active for 30 days.");
+            ? "Paiement réussi et vérifié ! Votre abonnement Pro est actif." 
+            : "Payment verified and successful! Your Pro subscription is active.");
 
           if (ref) openStudioByRef(ref);
         } else {
@@ -1776,11 +1374,14 @@ const StudiosPro = () => {
             window.gtag('event', 'export_model', { used_count: used + 1 });
           }
           const remaining = 5 - (used + 1);
-          // Show gentle notice only when reaching the end of quota
-          if (remaining <= 1) {
+          if (remaining === 1) {
             alert(langRef.current === 'fr'
-              ? `Export autorisé ! Il vous reste ${remaining} export(s) gratuit(s).`
-              : `Export granted! You have ${remaining} free export(s) left.`);
+              ? 'Export autorisé ! Il vous reste 1 export gratuit.'
+              : 'Export granted! You have 1 free export remaining.');
+          } else if (remaining === 0) {
+            alert(langRef.current === 'fr'
+              ? 'Export autorisé ! C’était votre dernier export gratuit.'
+              : 'Export granted! That was your last free export.');
           }
         } else {
           setPaymentReason('free_limit');
@@ -1803,8 +1404,14 @@ const StudiosPro = () => {
       } else if (type === 'EXPORT_COMPLETED') {
         if (creditRef.current && !premiumRef.current && !adminRef.current) {
           setHasExportCredit(false);
-          if (user) {
-            setDoc(doc(db, "users", user.uid), { hasExportCredit: false }, { merge: true });
+          if (user && typeof user.getIdToken === 'function') {
+            user.getIdToken().then((idToken) =>
+              fetch('/.netlify/functions/admin-api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+                body: JSON.stringify({ action: 'consume_export_credit' }),
+              })
+            ).catch(() => {});
           }
         }
       } else if (type === 'LOAD_EXTERNAL_FILE') {
@@ -1926,14 +1533,19 @@ const StudiosPro = () => {
         // Reset URL parameters when closing
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (type === 'CREATE_COLLAB_ROOM') {
-        const { roomId } = payload;
-        setCollabRoomId(roomId);
-        // Update URL query parameters without page reload
-        window.history.replaceState({}, document.title, `?ref=scripting&room=${roomId}`);
+        const roomId = payload && typeof payload.roomId === 'string' && SAFE_ROOM_RE.test(payload.roomId) ? payload.roomId : '';
+        if (roomId) {
+          setCollabRoomId(roomId);
+          window.history.replaceState({}, document.title, `?ref=scripting&room=${encodeURIComponent(roomId)}`);
+        }
       } else if (type === 'COLLAB_MSG') {
-        if (db && collabRoomIdRef.current) {
+        if (db && userRef.current && collabRoomIdRef.current && SAFE_ROOM_RE.test(collabRoomIdRef.current)) {
           addDoc(collection(db, "scripting_rooms", collabRoomIdRef.current, "messages"), {
-            ...payload,
+            userId: String(payload?.userId || '').slice(0, 32),
+            uid: userRef.current.uid,
+            type: payload?.type === 'CHAT' ? 'CHAT' : 'CODE_SYNC',
+            ...(payload?.code ? { code: String(payload.code).slice(0, 40000) } : {}),
+            ...(payload?.text ? { text: String(payload.text).slice(0, 1000) } : {}),
             timestamp: new Date().toISOString()
           }).catch(e => console.error("Error writing collab msg to Firestore:", e));
         }
@@ -1945,7 +1557,7 @@ const StudiosPro = () => {
             scriptingIframeRef.current.contentWindow.postMessage({
               type: 'COLLAB_MSG',
               payload: msgData
-            }, '*');
+            }, window.location.origin);
           });
         }
       } else if (type === 'PAYMENT_SUCCESS_INTERNAL') {
@@ -1954,7 +1566,7 @@ const StudiosPro = () => {
             .then((snap) => {
               if (snap.exists()) {
                 const d = snap.data();
-                const isPremNow = d.isPremium === true || (d.premiumUntil && new Date(d.premiumUntil) > new Date());
+                const isPremNow = isUserCurrentlyPremium(d);
                 if (isPremNow) {
                   setIsPremium(true);
                   setPremiumUntil(d.premiumUntil || null);
@@ -1970,7 +1582,7 @@ const StudiosPro = () => {
     channel.onmessage = (event) => handleMessage(event.data);
 
     const windowListener = (event) => {
-      if (event.origin && event.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin) return;
       if (event.data && typeof event.data === 'object' && event.data.type) {
         handleMessage(event.data);
       }
@@ -2010,7 +1622,7 @@ const StudiosPro = () => {
     if (ref) {
       openStudioByRef(ref);
     }
-    if (room) {
+    if (room && SAFE_ROOM_RE.test(room)) {
       setIsScriptingOpen(true);
       setCollabRoomId(room);
     }
@@ -2018,9 +1630,9 @@ const StudiosPro = () => {
 
   // Real-time Firestore collaboration sync
   useEffect(() => {
-    if (!db || !collabRoomId) return;
+    if (!db || !collabRoomId || !SAFE_ROOM_RE.test(collabRoomId) || !user) return;
 
-    collabMessagesRef.current = []; // Clear any messages from previous room/session
+    collabMessagesRef.current = [];
     let isInitial = true;
     const collabCollectionRef = collection(db, "scripting_rooms", collabRoomId, "messages");
     const q = query(collabCollectionRef, orderBy("timestamp", "asc"));
@@ -2034,26 +1646,22 @@ const StudiosPro = () => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msgData = change.doc.data();
-          
-          // Avoid storing duplicates in collabMessagesRef
           const exists = collabMessagesRef.current.some(m => m.timestamp === msgData.timestamp && m.userId === msgData.userId && m.type === msgData.type);
           if (!exists) {
             collabMessagesRef.current.push(msgData);
           }
-          
-          // Relay to iframe if ready
           if (isIframeReadyRef.current && scriptingIframeRef.current && scriptingIframeRef.current.contentWindow) {
             scriptingIframeRef.current.contentWindow.postMessage({
               type: 'COLLAB_MSG',
               payload: msgData
-            }, '*');
+            }, window.location.origin);
           }
         }
       });
-    });
+    }, () => {});
 
     return () => unsubscribeCollab();
-  }, [collabRoomId]);
+  }, [collabRoomId, user]);
 
   const handlePayForExport = () => {
     // Single export payment $2
@@ -2064,35 +1672,35 @@ const StudiosPro = () => {
     fr: {
       // ... existing translations ...
       welcome: "Bienvenue sur Studios-Pro",
-      heroTagline: "Studio 3D Gratuit en Ligne, 3MF Multi-Couleur & WebAR",
+      heroTagline: "Studio 3D Gratuit en Ligne, 3MF Multicouleur & WebAR",
       subtitle: "Suite Créative pour Impression 3D, Découpe Laser & Relief CNC",
-      message: "Colorisez vos modèles 3MF pour Bambu AMS, créez des tableaux de filaments style HueForge, générez des sous-verres QR scannables et projetez vos modèles en réalité augmentée. 100% privé et local dans votre navigateur.",
+      message: "Colorisez vos modèles 3MF pour Bambu AMS, créez des tableaux de filaments style HueForge, générez des sous-verres QR scannables et projetez vos modèles en réalité augmentée. Confidentialité 100 % locale dans votre navigateur.",
       app3d: "Studio 3D",
       app3dViewer: "Studio 3D Viewer",
       appARViewer: "AR Viewer",
       appdfx: "Studio DFX",
-      rules: "Règles du Site",
+      rules: "Règles du site",
       login: "Connexion",
       logout: "Déconnexion",
-      getPremium: "Devenir Premium",
-      premiumActive: "Premium Actif",
-      premiumDesc: "Accès illimité - 10$/mois",
-      payRequest: "Paiement requis pour l'export",
-      payMessage: "Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?",
-      payBtn: "Devenir Premium",
+      getPremium: "Devenir Pro",
+      premiumActive: "Pro Actif",
+      premiumDesc: "Accès illimité — 10 $ / mois",
+      payRequest: "Abonnement requis pour l'export",
+      payMessage: "Passez à la formule Pro pour exporter en illimité dans tous nos studios.",
+      payBtn: "Passer à Pro",
       cancel: "Annuler",
       contact: "Contact",
       blogBtn: "Tutoriels",
-      freeLimitTitle: "Vos 5 exports gratuits sont terminés",
-      freeLimitMsg: "Vous avez profité de vos 5 exports gratuits ! Passez à la formule Pro pour continuer à exporter sans aucune limite.",
+      freeLimitTitle: "Vos 5 exports gratuits sont utilisés",
+      freeLimitMsg: "Vous avez profité de vos 5 exports gratuits ! Passez à la formule Pro pour continuer à exporter en illimité.",
       loginNow: "Se connecter / S'inscrire",
       unlimitedTitle: "Illimité",
-      unlimitedPrice: "10$ / mois",
+      unlimitedPrice: "10 $ / mois",
       daysLeft: "jours restants",
       oneDayLeft: "jour restant",
       expired: "Expiré",
       manageSubscription: "Gérer",
-      depthMaps: "Depth Maps",
+      depthMaps: "Cartes de Profondeur IA",
       new3d4d: "New 3D 4D",
       vectorCnc: "Vector CNC",
       studioPro: "Studio Pro 4D",
@@ -2111,9 +1719,9 @@ const StudiosPro = () => {
       sandbox: "Zen Sandscape",
       artGenStudio: "ArtGen Studio",
       polymorph3d: "PolyMorph 3D Studio",
-      multicolor3mfPainter: "Studio MultiColor 3MF Painter",
-      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
-      filamentPaintingStudio: "Studio Peinture Filament & Layer-Swap",
+      multicolor3mfPainter: "Peinture 3MF Multicouleur",
+      qrWifiCoaster: "Sous-Verres QR & Wi-Fi 3D",
+      filamentPaintingStudio: "Peinture Filament & Layer-Swap",
       faqBtn: "FAQ",
       communityBtn: "Communauté"
     },
@@ -2129,17 +1737,17 @@ const StudiosPro = () => {
       rules: "Site Rules",
       login: "Login",
       logout: "Logout",
-      getPremium: "Go Premium",
-      premiumActive: "Premium Active",
-      premiumDesc: "Unlimited access - 10$/mo",
-      payRequest: "Payment required for export",
-      payMessage: "You don't have a Premium account. Would you like to go Premium?",
-      payBtn: "Go Premium",
+      getPremium: "Go Pro",
+      premiumActive: "Pro Active",
+      premiumDesc: "Unlimited access — $10/mo",
+      payRequest: "Pro plan required for export",
+      payMessage: "Upgrade to Studios-Pro Unlimited for unrestricted exports across all 24+ studios.",
+      payBtn: "Upgrade to Pro",
       cancel: "Cancel",
       contact: "Contact",
       blogBtn: "Tutorials",
-      freeLimitTitle: "Your 5 free exports are completed",
-      freeLimitMsg: "You have used your 5 free exports! Upgrade to Pro to continue unlimited exports without limits.",
+      freeLimitTitle: "All 5 free exports used",
+      freeLimitMsg: "You've used your 5 free exports! Upgrade to Pro for unlimited exports across all 24+ studios.",
       loginNow: "Login / Register",
       unlimitedTitle: "Unlimited",
       unlimitedPrice: "$10 / month",
@@ -2167,7 +1775,7 @@ const StudiosPro = () => {
       artGenStudio: "ArtGen Studio",
       polymorph3d: "PolyMorph 3D Studio",
       multicolor3mfPainter: "Studio MultiColor 3MF Painter",
-      qrWifiCoaster: "Studio 3D-QR-WiFi-Coaster Generator",
+      qrWifiCoaster: "3D QR & Wi-Fi Coaster Studio",
       filamentPaintingStudio: "Filament Painting & Layer-Swap Studio",
       faqBtn: "FAQ",
       communityBtn: "Community"
@@ -2178,12 +1786,19 @@ const StudiosPro = () => {
 
   return (
     <div className={`main-container ${(is3DOpen || is3DViewerOpen || isARViewerOpen || isDFXOpen || isRulesOpen || isDepthOpen || isNew3DOpen || isVectorOpen || isStudioProOpen || isMaker7Open || isJewelryOpen || isArchPro1Open || isArchPro2Open || isFigureBuilderOpen || isMusicComposerOpen || isDesignProOpen || isStudioPro2Open || isMechGenProOpen || isScriptingOpen || isSandboxOpen || isArtGenOpen || isPolyMorphOpen || isPainterOpen || isCoasterOpen || isFilamentPaintingOpen) ? 'studio-active' : ''} ${isAnnouncementVisible ? 'has-announcement' : ''}`}>
+      {!isEmbed && maintenanceBanner && maintenanceBanner.enabled && !isAdmin && (
+        <div className="maintenance-banner" role="alert">
+          <span>🚧 {lang === 'fr' ? maintenanceBanner.messageFr : maintenanceBanner.messageEn}</span>
+        </div>
+      )}
       {!isEmbed && isAnnouncementVisible && announcement && (
         <div className="announcement-banner">
           <span className="announcement-text">
             {lang === 'fr' ? announcement.textFr : announcement.textEn}
           </span>
           <button 
+            type="button"
+            aria-label={lang === 'fr' ? 'Fermer l’annonce' : 'Dismiss announcement'}
             className="announcement-close-btn" 
             onClick={() => {
               setIsAnnouncementVisible(false);
@@ -2194,13 +1809,20 @@ const StudiosPro = () => {
           </button>
         </div>
       )}
-      {/* Payment Request Modal */}
       {/* Pricing / Freemium Modal */}
       <AnimatePresence>
         {showPaymentRequest && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowPaymentRequest(false); }}
+            role="dialog"
+            aria-modal="true"
+          >
             <motion.div className="auth-modal pricing-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} style={{ maxWidth: '680px' }}>
-              <button className="close-btn" onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
+              <button type="button" className="close-btn" aria-label={lang === 'fr' ? 'Fermer' : 'Close'} onClick={() => setShowPaymentRequest(false)}><X size={20} /></button>
 
               <div className="pricing-icon">
                 <Sparkles size={44} color="#f59e0b" />
@@ -2208,16 +1830,16 @@ const StudiosPro = () => {
 
               <h2>
                 {paymentReason === 'premium_feature' 
-                  ? (lang === 'fr' ? "Abonnement Premium Requis" : "Premium Subscription Required") 
+                  ? (lang === 'fr' ? "Abonnement Pro Requis" : "Pro Subscription Required") 
                   : paymentReason === 'pricing_overview'
                   ? (lang === 'fr' ? "Tarifs & Formules Studios-Pro" : "Studios-Pro Pricing & Plans")
                   : currentT.freeLimitTitle}
               </h2>
               <p className="payment-desc">
                 {paymentReason === 'premium_feature' 
-                  ? (lang === 'fr' ? "Cette fonctionnalité est exclusivement réservée aux utilisateurs Pro. Choisissez votre formule pour débloquer l'accès complet !" : "This feature is reserved for Pro users. Choose your plan to unlock full access!") 
+                  ? (lang === 'fr' ? "Cette fonctionnalité est réservée aux membres Pro. Débloquez l'accès illimité dans tous nos 24+ studios !" : "This feature is reserved for Pro members. Unlock unlimited access across all 24+ studios!") 
                   : paymentReason === 'pricing_overview'
-                  ? (lang === 'fr' ? "Exports haute résolution illimités, parcours d'outils CNC, et licence commerciale directe." : "Unlimited high-resolution exports, CNC toolpaths, and commercial license.")
+                  ? (lang === 'fr' ? "Exports haute résolution illimités, parcours d'outils CNC et licence commerciale directe." : "Unlimited high-resolution exports, CNC toolpaths, and full commercial license.")
                   : currentT.freeLimitMsg}
               </p>
 
@@ -2225,16 +1847,16 @@ const StudiosPro = () => {
                 {/* Free Plan Card */}
                 <div className="pricing-card">
                   <h3>{lang === 'fr' ? "Formule Gratuite" : "Free Plan"}</h3>
-                  <div className="pricing-price">$0</div>
-                  <div className="pricing-desc">{lang === 'fr' ? "5 Exports inclus pour démarrer" : "5 Free exports included to start"}</div>
+                  <div className="pricing-price">{lang === 'fr' ? '0 $' : '$0'}</div>
+                  <div className="pricing-desc">{lang === 'fr' ? "5 exports inclus pour démarrer" : "5 free exports included to start"}</div>
                   <ul className="pricing-features-list">
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "5 Exports complets offerts (STL, OBJ, DXF, G-Code)" : "5 Full free exports (STL, OBJ, DXF, G-Code)"}</span></li>
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Accès direct aux 15+ studios 3D et CAD" : "Direct access to all 15+ 3D and CAD studios"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "5 exports complets offerts (STL, OBJ, 3MF, GLB, DXF, G-Code)" : "5 full free exports (STL, OBJ, 3MF, GLB, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Accès direct aux 24+ studios 3D et CAO" : "Direct access to all 24+ 3D and CAD studios"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Visualisation 3D & projection AR sur mobile" : "3D viewing & mobile AR projection"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Sans carte bancaire ni engagement" : "No credit card, no commitment"}</span></li>
                   </ul>
-                  <button className="pricing-select single" onClick={() => setShowPaymentRequest(false)}>
-                    {lang === 'fr' ? "Commencer Gratuitement" : "Start for Free"}
+                  <button type="button" className="pricing-select single" onClick={() => setShowPaymentRequest(false)}>
+                    {lang === 'fr' ? "Commencer gratuitement" : "Start for Free"}
                   </button>
                 </div>
 
@@ -2242,16 +1864,19 @@ const StudiosPro = () => {
                 <div className="pricing-card featured">
                   <div className="best-value">{lang === 'fr' ? 'MEILLEUR CHOIX' : 'BEST VALUE'}</div>
                   <h3>{lang === 'fr' ? "Accès Pro Illimité" : "Unlimited Pro Access"}</h3>
-                  <div className="pricing-price">$10 <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {lang === 'fr' ? 'mois' : 'mo'}</span></div>
+                  <div className="pricing-price">
+                    {lang === 'fr' ? '10 $' : '$10'}{' '}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {lang === 'fr' ? 'mois' : 'mo'}</span>
+                  </div>
                   <div className="pricing-desc">{lang === 'fr' ? "Exports illimités pour créateurs et makers" : "Unlimited exports for creators & makers"}</div>
                   <ul className="pricing-features-list">
-                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports 100% illimités (STL, OBJ, DXF, G-Code)" : "100% Unlimited exports (STL, OBJ, DXF, G-Code)"}</span></li>
+                    <li><Check size={16} /> <span>{lang === 'fr' ? "Exports 100 % illimités (STL, OBJ, 3MF, GLB, DXF, G-Code)" : "100% Unlimited exports (STL, OBJ, 3MF, GLB, DXF, G-Code)"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Reliefs 3D IA & cartes de profondeur HD" : "AI 3D reliefs & HD depth maps"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Licence commerciale complète incluse" : "Full commercial license included"}</span></li>
                     <li><Check size={16} /> <span>{lang === 'fr' ? "Exports HTML autonomes sans filigrane" : "Standalone HTML exports without watermark"}</span></li>
                   </ul>
-                  <button className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
-                    {lang === 'fr' ? "Passer à Pro (10$/mois)" : "Upgrade to Pro ($10/mo)"}
+                  <button type="button" className="pricing-select premium" onClick={() => redirectToStripe('premium')}>
+                    {lang === 'fr' ? "Passer à Pro (10 $ / mois)" : "Upgrade to Pro ($10/mo)"}
                   </button>
                 </div>
               </div>
@@ -2260,6 +1885,7 @@ const StudiosPro = () => {
                 <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   <span>{lang === 'fr' ? "Vous avez déjà un compte ?" : "Already have an account?"}</span>
                   <button
+                    type="button"
                     style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
                     onClick={() => {
                       setShowPaymentRequest(false);
@@ -2276,49 +1902,58 @@ const StudiosPro = () => {
       </AnimatePresence>
       {/* Navigation Top Bar */}
       {!isEmbed && (
-        <nav className="nav-bar">
-          <div className="nav-left">
-            <div className="lang-toggle">
-              <button className={`lang-btn ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
-              <button className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
+        <nav className="nav-bar" aria-label={lang === 'fr' ? 'Navigation principale' : 'Primary Navigation'}>
+          <div className={`nav-left ${isMobileNavOpen ? 'mobile-open' : ''}`}>
+            <div className="lang-toggle" role="group" aria-label={lang === 'fr' ? 'Choisir la langue' : 'Select language'}>
+              <button type="button" aria-label="Français" aria-pressed={lang === 'fr'} className={`lang-btn ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
+              <button type="button" aria-label="English" aria-pressed={lang === 'en'} className={`lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
             </div>
-            <button className="contact-btn-nav" onClick={() => setIsContactOpen(true)}>
-              <MessageSquare size={18} />
+            <button type="button" className="contact-btn-nav" onClick={() => { setIsMobileNavOpen(false); setIsContactOpen(true); }}>
+              <MessageSquare size={16} />
               <span>{currentT.contact}</span>
             </button>
-            <a href="/blog/" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <BookOpen size={18} />
+            <a href="/blog/" className="contact-btn-nav">
+              <BookOpen size={16} />
               <span>{currentT.blogBtn}</span>
             </a>
-            <a href="/faq.html" className="contact-btn-nav" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 'bold' }}>?</span>
+            <a href="/faq.html" className="contact-btn-nav">
+              <HelpCircle size={16} />
               <span>{currentT.faqBtn}</span>
             </a>
-            <button 
+            <button
               type="button"
-              className="contact-btn-nav" 
-              onClick={() => setIsRulesOpen(true)} 
+              className="contact-btn-nav"
+              onClick={() => { setIsMobileNavOpen(false); setIsRulesOpen(true); }}
               title={currentT.rules}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
+              <ShieldCheck size={16} />
               <span>{currentT.rules}</span>
             </button>
-            <button 
+            <button
               type="button"
-              className="contact-btn-nav share-btn-nav" 
-              onClick={() => setIsShareModalOpen(true)} 
+              className="contact-btn-nav share-btn-nav"
+              onClick={() => { setIsMobileNavOpen(false); setIsShareModalOpen(true); }}
               title={lang === 'fr' ? 'Partager Studios-Pro' : 'Share Studios-Pro'}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}
             >
               <Share2 size={16} />
               <span>{lang === 'fr' ? 'Partager' : 'Share'}</span>
             </button>
-            
           </div>
 
           <div className="nav-right">
+            <button
+              type="button"
+              className="mobile-menu-toggle"
+              aria-label={lang === 'fr' ? 'Menu navigation' : 'Toggle menu'}
+              aria-expanded={isMobileNavOpen}
+              onClick={() => setIsMobileNavOpen((prev) => !prev)}
+            >
+              {isMobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
             {!isPremium && (
               <button
+                type="button"
                 className="nav-pricing-btn"
                 onClick={() => {
                   setPaymentReason('pricing_overview');
@@ -2334,13 +1969,13 @@ const StudiosPro = () => {
               <div className="user-controls">
                 {isPremium && (
                   <div className="premium-btn active-status" style={{ cursor: 'default' }}>
-                    <CreditCard size={18} />
+                    <CreditCard size={16} />
                     <span>{currentT.premiumActive}</span>
                   </div>
                 )}
                 {isPremium && premiumUntil && (
                   <div className="premium-status-info" style={{ display: 'flex', flexDirection: 'column', padding: '0 10px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.8, color: '#10b981', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.85, color: '#10b981', fontWeight: 'bold' }}>
                       {(() => {
                         const days = Math.ceil((new Date(premiumUntil) - new Date()) / (1000 * 60 * 60 * 24));
                         return days > 0 
@@ -2352,19 +1987,19 @@ const StudiosPro = () => {
                 )}
                 <div className="user-profile">
                   {isAdmin && (
-                    <button className="admin-nav-btn" onClick={() => setIsAdminOpen(true)} title="Admin">
-                      <Settings size={18} />
+                    <button type="button" className="admin-nav-btn" onClick={() => setIsAdminOpen(true)} title="Admin Command Center">
+                      <Settings size={16} />
                       <span>Admin</span>
                     </button>
                   )}
-                  <div className="user-icon"><User size={20} /></div>
+                  <div className="user-icon"><User size={18} /></div>
                   <span className="user-email">{user.email}</span>
-                  <button className="logout-btn" onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={18} /></button>
+                  <button type="button" className="logout-btn" aria-label={currentT.logout} onClick={() => signOut(auth)} title={currentT.logout}><LogOut size={16} /></button>
                 </div>
               </div>
             ) : (
-              <button className="login-btn-nav" onClick={() => setIsAuthOpen(true)}>
-                <User size={18} />
+              <button type="button" className="login-btn-nav" onClick={() => setIsAuthOpen(true)}>
+                <User size={16} />
                 <span>{currentT.login}</span>
               </button>
             )}
@@ -2418,8 +2053,8 @@ const StudiosPro = () => {
             <span className="promo-tag">PRO</span>
             <p>
               {isPremium 
-                ? `${currentT.premiumActive} - ${currentT.unlimitedTitle}` 
-                : (lang === 'fr' ? '5 Exports Gratuits Inclus — Puis 10$/mois en Illimité' : '5 Free Exports Included — Then $10/mo for Unlimited')}
+                ? `${currentT.premiumActive} — ${currentT.unlimitedTitle}` 
+                : (lang === 'fr' ? '5 Exports Gratuits Inclus — Puis 10 $ / mois en Illimité' : '5 Free Exports Included — Then $10/mo for Unlimited')}
             </p>
           </motion.div>
         </motion.div>
@@ -2437,7 +2072,7 @@ const StudiosPro = () => {
           <div className="social-share-buttons">
             <a
               id="share-twitter"
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(lang === 'fr' ? 'Découvrez Studios-Pro – Hub 3D, DFX et IA dans votre navigateur !' : 'Check out Studios-Pro – Professional 3D, DFX & AI tools in your browser!')}&url=https%3A%2F%2Fstudios-pro.com`}
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(lang === 'fr' ? 'Découvrez Studios-Pro — 24+ studios gratuits de 3D, 3MF, WebAR, Laser & CNC dans votre navigateur !' : 'Check out Studios-Pro — 24+ free 3D, 3MF, WebAR, Laser & CNC studios right in your browser!')}&url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="share-btn share-btn-twitter"
@@ -2446,7 +2081,7 @@ const StudiosPro = () => {
             </a>
             <a
               id="share-linkedin"
-              href={`https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fstudios-pro.com&title=Studios-Pro&summary=${encodeURIComponent(lang === 'fr' ? 'Hub créatif professionnel 3D, IA et CNC' : 'Professional 3D, AI & CNC creative hub')}`}
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="share-btn share-btn-linkedin"
@@ -2454,6 +2089,7 @@ const StudiosPro = () => {
               in LinkedIn
             </a>
             <button
+              type="button"
               id="share-copy"
               className="share-btn share-btn-copy"
               onClick={handleShareCopy}
@@ -2570,7 +2206,7 @@ const StudiosPro = () => {
 
       <div className="compartments-grid">
         {/* 1. Filament Painting Studio • HueForge Alternative */}
-        {isCardVisible('3d-printing', 'hueforge filament painting layer swap 3mf bambu ams color optical td', currentT.filamentPaintingStudio) && (
+        {isCardVisible('3d-printing', 'hueforge filament painting layer swap 3mf bambu ams color optical td peinture couche couleur impression imprimante', currentT.filamentPaintingStudio) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2593,7 +2229,7 @@ const StudiosPro = () => {
             zIndex: 10,
             pointerEvents: 'none'
           }}>
-            {lang === 'fr' ? 'NOUVEAU • HUEFORGE ALTERNATIVE' : 'NEW • HUEFORGE ALTERNATIVE'}
+            {lang === 'fr' ? 'NOUVEAU • ALTERNATIVE HUEFORGE' : 'NEW • HUEFORGE ALTERNATIVE'}
           </div>
           <div className="shape-wrapper">
             <div className="shape-1" style={{ background: 'linear-gradient(135deg, #0284c7, #38bdf8, #818cf8)' }} />
@@ -2605,7 +2241,7 @@ const StudiosPro = () => {
 
         
         {/* 2. MultiColor 3MF Painter */}
-        {isCardVisible('3d-printing', 'multicolor 3mf painter bambu ams orcaslicer prusa mmu colorize stl', currentT.multicolor3mfPainter) && (
+        {isCardVisible('3d-printing', 'multicolor 3mf painter bambu ams orcaslicer prusa mmu colorize stl multicouleur peinture couleur colorier', currentT.multicolor3mfPainter) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2640,7 +2276,7 @@ const StudiosPro = () => {
 
         
         {/* 3. 3D QR WiFi Coaster & Sign Generator */}
-        {isCardVisible('3d-printing', 'qr code wifi coaster table stand 3mf stl scannable laser dxf', currentT.qrWifiCoaster) && (
+        {isCardVisible('3d-printing', 'qr code wifi coaster table stand 3mf stl scannable laser dxf sous-verre sous verre pancarte plaque', currentT.qrWifiCoaster) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2663,7 +2299,7 @@ const StudiosPro = () => {
             zIndex: 10,
             pointerEvents: 'none'
           }}>
-            {lang === 'fr' ? '3MF & STL PRINTABLE' : '3MF & STL PRINTABLE'}
+            {lang === 'fr' ? '3MF & STL IMPRIMABLE' : '3MF & STL PRINTABLE'}
           </div>
           <div className="shape-wrapper">
             <div className="shape-2" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4, #3b82f6)' }} />
@@ -2675,7 +2311,7 @@ const StudiosPro = () => {
 
         
         {/* 4. New 3D 4D Bas-Relief & Lithophane Studio */}
-        {isCardVisible('3d-printing', 'photo to 3d lithophane bas relief coin medal stl obj glb 4d', currentT.new3d4d) && (
+        {isCardVisible('3d-printing', 'photo to 3d lithophane lithophanie bas relief bas-relief coin medal piece medaille stl obj glb 4d sculpture', currentT.new3d4d) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2710,7 +2346,7 @@ const StudiosPro = () => {
 
         
         {/* 5. AR Viewer 3D */}
-        {isCardVisible('3d-printing', 'ar webar augmented reality viewer mobile 3d model sceneviewer quicklook', currentT.appARViewer) && (
+        {isCardVisible('3d-printing', 'ar webar augmented reality realite augmentee viewer visualiseur mobile 3d model sceneviewer quicklook', currentT.appARViewer) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2790,7 +2426,7 @@ const StudiosPro = () => {
 
         
         {/* 10. Studio 3D */}
-        {isCardVisible('cad-arch', 'studio 3d procedural modeling mesh editor cad', currentT.app3d) && (
+        {isCardVisible('cad-arch', 'studio 3d lithophane lithophanie lampe lamp coeur heart lune moon procedural modeling mesh editor cad cao', currentT.app3d) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2806,7 +2442,7 @@ const StudiosPro = () => {
 
         
         {/* 11. Jewelry Maker Pro */}
-        {isCardVisible('cad-arch', 'jewelry maker ring designer gem setting cad 3d print', currentT.jewelry) && (
+        {isCardVisible('cad-arch', 'jewelry maker ring bague bijoux joaillerie diamant designer gem setting cad cao 3d print', currentT.jewelry) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2822,7 +2458,7 @@ const StudiosPro = () => {
 
         
         {/* 12. Maker Studio 7 */}
-        {isCardVisible('3d-printing', 'maker studio 7 parametric box lithophane pbr texture stl', currentT.maker7) && (
+        {isCardVisible('3d-printing', 'maker studio 7 parametric box boite boites lithophane lithophanie pbr texture stl laser', currentT.maker7) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2838,7 +2474,7 @@ const StudiosPro = () => {
 
         
         {/* 13. Mech Gen Pro */}
-        {isCardVisible('cnc-laser', 'mech gen gear generator sprocket procedural dxf svg laser cnc', currentT.mechGenPro) && (
+        {isCardVisible('cnc-laser', 'mech gen gear engrenage engrenages pignon mecanique generator sprocket procedural dxf svg laser cnc', currentT.mechGenPro) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2918,7 +2554,7 @@ const StudiosPro = () => {
 
         
         {/* 18. Architect Pro 1 */}
-        {isCardVisible('cad-arch', 'architect pro 1 floor plan 2d drafting 3d interior room layout', currentT.archPro1) && (
+        {isCardVisible('cad-arch', 'architect pro 1 floor plan maison piece interieur 2d drafting 3d interior room layout architecture', currentT.archPro1) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2950,7 +2586,7 @@ const StudiosPro = () => {
 
         
         {/* 20. 4D Figure Builder */}
-        {isCardVisible('cad-arch', 'figure builder character posing mannequin 3d anatomy', currentT.figureBuilder) && (
+        {isCardVisible('cad-arch', 'figure builder photo 4d sculpture tesseract hypercube character posing mannequin 3d anatomy', currentT.figureBuilder) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2966,7 +2602,7 @@ const StudiosPro = () => {
 
         
         {/* 21. 4D Music Composer */}
-        {isCardVisible('ai-creative', 'music composer audio synthesizer visualizer beats 4d', currentT.musicComposer) && (
+        {isCardVisible('ai-creative', 'music musique audio daw chanson composer synthesizer visualizer beats 4d', currentT.musicComposer) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2982,7 +2618,7 @@ const StudiosPro = () => {
 
         
         {/* 22. Design Pro Studio */}
-        {isCardVisible('ai-creative', 'design pro layout ui graphic vector canvas', currentT.designPro) && (
+        {isCardVisible('ai-creative', 'design pro interior interieur maison meuble architecture 3d cad cao layout', currentT.designPro) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -2998,7 +2634,7 @@ const StudiosPro = () => {
 
         
         {/* 23. Scripting Studio */}
-        {isCardVisible('ai-creative', 'scripting code editor live webgl shader generator', currentT.scriptingStudio) && (
+        {isCardVisible('ai-creative', 'scripting code javascript cad cao ai editor live webgl 3d generator', currentT.scriptingStudio) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -3014,7 +2650,7 @@ const StudiosPro = () => {
 
         
         {/* 24. Zen Sandscape */}
-        {isCardVisible('ai-creative', 'zen sandscape sand art generative patterns relaxing simulation', currentT.sandbox) && (
+        {isCardVisible('ai-creative', 'zen sandscape sable sand photo art generative mandala patterns relaxing simulation', currentT.sandbox) && (
         <motion.div
           className="compartment-card"
           whileHover={{ y: -15, scale: 1.02 }}
@@ -3064,7 +2700,7 @@ const StudiosPro = () => {
               titleEn: 'Bambu Lab & Prusa MMU Ready',
               titleFr: 'Prêt pour Bambu AMS & Prusa MMU',
               descEn: 'Multi-Color 3MF Painter with smart angle fill, Beer-Lambert layer-swap filament simulation, and 1-click 3MF project exports for OrcaSlicer.',
-              descFr: 'Peinture 3MF multi-couleur intelligente, simulation optique de filament Beer-Lambert, et export 3MF direct prêt à imprimer pour Bambu Studio et OrcaSlicer.'
+              descFr: 'Peinture 3MF multicouleur intelligente, simulation optique de filament Beer-Lambert et export 3MF direct prêt à imprimer pour Bambu Studio et OrcaSlicer.'
             },
             {
               icon: '📱',
@@ -3103,6 +2739,7 @@ const StudiosPro = () => {
           lang={lang} 
           onOpenPricing={() => { setPaymentReason('pricing_overview'); setShowPaymentRequest(true); }}
           onOpenContact={() => setIsContactOpen(true)}
+          onOpenRules={() => setIsRulesOpen(true)}
         />
       )}
 
@@ -3114,6 +2751,7 @@ const StudiosPro = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={(e) => { if (e.target === e.currentTarget) handleNewsletterDismiss(); }}
           >
             <motion.div
               className="newsletter-modal"
@@ -3121,7 +2759,7 @@ const StudiosPro = () => {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.85, y: 40 }}
             >
-              <button className="close-btn" onClick={handleNewsletterDismiss}><X size={20} /></button>
+              <button type="button" className="close-btn" aria-label={lang === 'fr' ? 'Fermer' : 'Close'} onClick={handleNewsletterDismiss}><X size={20} /></button>
               {newsletterSubmitted ? (
                 <div className="newsletter-success">
                   <div className="newsletter-success-icon">🎉</div>
@@ -3132,21 +2770,22 @@ const StudiosPro = () => {
                 <>
                   <div className="newsletter-icon">✉️</div>
                   <h3 className="newsletter-title">
-                    {lang === 'fr' ? '1 export gratuit par semaine' : '1 free export per week'}
+                    {lang === 'fr' ? 'Nouveaux studios & astuces 3D' : 'New 3D studios & maker tips'}
                   </h3>
                   <p className="newsletter-desc">
                     {lang === 'fr'
-                      ? 'Inscrivez-vous à notre newsletter et recevez des astuces exclusives et des offres réservées aux abonnés.'
-                      : 'Subscribe to our newsletter and get exclusive tips and subscriber-only offers.'}
+                      ? 'Recevez nos nouveaux outils 3D/AR, tutoriels Bambu AMS & CNC et offres réservées aux membres.'
+                      : 'Get notified about new 3D/WebAR studios, Bambu AMS & CNC guides, and exclusive member offers.'}
                   </p>
                   <form className="newsletter-form" onSubmit={handleNewsletterSubmit}>
                     <input
                       id="newsletter-email-input"
                       type="email"
                       className="newsletter-input"
-                      placeholder={lang === 'fr' ? 'Votre email...' : 'Your email...'}
+                      placeholder={lang === 'fr' ? 'Votre adresse e-mail...' : 'Your email address...'}
                       value={newsletterEmail}
                       onChange={e => setNewsletterEmail(e.target.value)}
+                      maxLength={254}
                       required
                     />
                     <button type="submit" className="newsletter-submit">
@@ -3154,7 +2793,7 @@ const StudiosPro = () => {
                     </button>
                   </form>
                   <p className="newsletter-privacy">
-                    {lang === 'fr' ? '🔒 Pas de spam. Désinscription facile.' : '🔒 No spam. Unsubscribe anytime.'}
+                    {lang === 'fr' ? '🔒 Pas de spam. Désinscription à tout moment.' : '🔒 No spam. Unsubscribe anytime.'}
                   </p>
                 </>
               )}
@@ -3178,17 +2817,24 @@ const StudiosPro = () => {
             lang={lang}
           />
         )}
-        {isAdminOpen && (
-          <AdminModal
+        {isAdminOpen && isAdmin && (
+          <AdminCommandCenter
             isOpen={isAdminOpen}
             onClose={() => setIsAdminOpen(false)}
             lang={lang}
+            user={user}
+            isAdmin={isAdmin}
+            onAnnouncementSaved={(next) => {
+              setAnnouncement(next);
+              setIsAnnouncementVisible(!!next.active);
+            }}
+            onMaintenanceSaved={(next) => setMaintenanceBanner(next)}
           />
         )}
         {isShareModalOpen && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsShareModalOpen(false)}>
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsShareModalOpen(false)} role="dialog" aria-modal="true">
             <motion.div className="auth-modal share-modal" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
-              <button className="close-btn" onClick={() => setIsShareModalOpen(false)}><X size={20} /></button>
+              <button type="button" className="close-btn" aria-label={lang === 'fr' ? 'Fermer' : 'Close'} onClick={() => setIsShareModalOpen(false)}><X size={20} /></button>
               
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #0284c7, #06b6d4)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
@@ -3227,7 +2873,7 @@ const StudiosPro = () => {
                 <>
                   <div className="share-buttons-grid">
                     <a 
-                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro : plus de 20 outils gratuits de création 3D, Réalité Augmentée, Lithophanie et CNC directement en ligne : https://studios-pro.com' : 'Check out Studios-Pro: 20+ free 3D, WebAR, Lithophane & CNC maker tools right in your browser! https://studios-pro.com')}`}
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(lang === 'fr' ? 'Découvre Studios-Pro : 24+ studios gratuits de création 3D, Réalité Augmentée, Lithophanie et CNC directement en ligne : https://studios-pro.com/fr/' : 'Check out Studios-Pro: 24+ free 3D, WebAR, Lithophane & CNC maker studios right in your browser! https://studios-pro.com')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn whatsapp"
@@ -3237,7 +2883,7 @@ const StudiosPro = () => {
                     </a>
 
                     <a 
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent('https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 20+ outils gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 20+ free 3D, AR WebXR, Laser & CNC creative tools in your browser!')}`}
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}&text=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro : 24+ studios gratuits de 3D, Réalité Augmentée, Laser et CNC directement dans votre navigateur !' : 'Studios-Pro: 24+ free 3D, WebAR, Laser & CNC creative studios in your browser!')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn twitter"
@@ -3247,7 +2893,7 @@ const StudiosPro = () => {
                     </a>
 
                     <a 
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://studios-pro.com')}`}
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn facebook"
@@ -3257,7 +2903,7 @@ const StudiosPro = () => {
                     </a>
 
                     <a 
-                      href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent('https://studios-pro.com')}&media=${encodeURIComponent('https://studios-pro.com/og_banner.jpg')}&description=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro - Outils gratuits de 3D, Réalité Augmentée, Découpe Laser et CNC' : 'Studios-Pro - Free 3D, WebAR, Laser Cutting & CNC Tools')}`}
+                      href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}&media=${encodeURIComponent('https://studios-pro.com/og_banner.jpg')}&description=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro — 24+ outils gratuits de 3D, Réalité Augmentée, Découpe Laser et CNC' : 'Studios-Pro — 24+ Free 3D, WebAR, Laser Cutting & CNC Studios')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn pinterest"
@@ -3267,7 +2913,7 @@ const StudiosPro = () => {
                     </a>
 
                     <a 
-                      href={`https://reddit.com/submit?url=${encodeURIComponent('https://studios-pro.com')}&title=${encodeURIComponent('Studios-Pro - Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
+                      href={`https://reddit.com/submit?url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}&title=${encodeURIComponent(lang === 'fr' ? 'Studios-Pro — Suite gratuite 3D, WebAR, Laser & Relief CNC en ligne' : 'Studios-Pro — Free 3D Studio, WebAR Viewer, Laser & CNC Relief Hub')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn reddit"
@@ -3277,7 +2923,7 @@ const StudiosPro = () => {
                     </a>
 
                     <a 
-                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://studios-pro.com')}`}
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com')}`}
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="share-channel-btn linkedin"
@@ -3290,30 +2936,27 @@ const StudiosPro = () => {
                       <button 
                         type="button" 
                         className="share-channel-btn native-share"
+                        style={{ gridColumn: '1 / -1' }}
                         onClick={() => {
                           navigator.share({
-                            title: 'Studios-Pro 3D & AR Hub',
+                            title: lang === 'fr' ? 'Studios-Pro — Suite 3D, WebAR & CNC' : 'Studios-Pro — 3D, WebAR & CNC Hub',
                             text: lang === 'fr' ? 'Découvre Studios-Pro, la suite gratuite de création 3D et AR !' : 'Check out Studios-Pro, free 3D & WebAR creative suite!',
-                            url: 'https://studios-pro.com'
+                            url: lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com'
                           }).catch(() => {});
                         }}
                       >
                         <span className="share-icon">📱</span>
-                        <span>{lang === 'fr' ? 'Plus d\'options' : 'More...'}</span>
+                        <span>{lang === 'fr' ? 'Plus d\'options de partage' : 'More share options...'}</span>
                       </button>
                     )}
                   </div>
 
                   <div className="share-copy-box">
-                    <input type="text" readOnly value="https://studios-pro.com" className="share-link-input" />
+                    <input type="text" readOnly value={lang === 'fr' ? 'https://studios-pro.com/fr/' : 'https://studios-pro.com'} className="share-link-input" />
                     <button 
                       type="button" 
                       className="share-copy-btn" 
-                      onClick={() => {
-                        navigator.clipboard.writeText('https://studios-pro.com');
-                        setLinkCopied(true);
-                        setTimeout(() => setLinkCopied(false), 2200);
-                      }}
+                      onClick={handleShareCopy}
                     >
                       {linkCopied ? (lang === 'fr' ? '✓ Copié !' : '✓ Copied!') : (lang === 'fr' ? 'Copier' : 'Copy')}
                     </button>
@@ -3332,23 +2975,26 @@ const StudiosPro = () => {
                     <option value="s3dviewer">
                       {lang === 'fr' ? 'Visualiseur 3D & WebAR (STL, OBJ, GLB)' : '3D & WebAR Model Viewer (STL, OBJ, GLB)'}
                     </option>
+                    <option value="filament">
+                      {lang === 'fr' ? 'Studio Peinture Filament (Alternative HueForge)' : 'Filament Painting Studio (HueForge Alternative)'}
+                    </option>
                     <option value="painter">
-                      {lang === 'fr' ? 'Colorateur 3D 3MF Multi-Couleurs (Bambu AMS)' : 'Multi-Color 3MF Painter (Bambu Lab AMS)'}
+                      {lang === 'fr' ? 'Peinture 3D 3MF multicouleur (Bambu AMS)' : 'Multi-Color 3MF Painter (Bambu Lab AMS)'}
                     </option>
                     <option value="coaster">
                       {lang === 'fr' ? 'Générateur Sous-Verres 3D QR & Wi-Fi' : '3D QR Code & Wi-Fi Coaster Generator'}
                     </option>
                     <option value="polymorph">
-                      {lang === 'fr' ? 'PolyMorph 3D Studio & Mesh Slicer' : 'PolyMorph 3D Studio & Mesh Slicer'}
+                      {lang === 'fr' ? 'PolyMorph 3D Studio & Découpeur de Maillage' : 'PolyMorph 3D Studio & Mesh Slicer'}
                     </option>
                     <option value="ar">
-                      {lang === 'fr' ? 'WebAR Instant Camera Viewer' : 'WebAR Instant Camera Viewer'}
+                      {lang === 'fr' ? 'Visualiseur Caméra WebAR Instantané' : 'WebAR Instant Camera Viewer'}
                     </option>
                     <option value="depth">
                       {lang === 'fr' ? 'Convertisseur Photo vers Relief 3D (IA)' : 'AI 2D Photo to 3D Relief'}
                     </option>
                     <option value="vcnc">
-                      {lang === 'fr' ? 'Vector CNC & Découpe Laser (DXF/G-code)' : 'Vector CNC & Laser G-Code'}
+                      {lang === 'fr' ? 'Vector CNC & Découpe Laser (DXF/G-Code)' : 'Vector CNC & Laser G-Code'}
                     </option>
                     <option value="suite">
                       {lang === 'fr' ? 'Suite Complète Studios-Pro' : 'Full Studios-Pro Suite'}
@@ -3365,16 +3011,18 @@ const StudiosPro = () => {
                   <button 
                     type="button" 
                     className="embed-copy-action-btn"
-                    onClick={() => {
-                      navigator.clipboard.writeText(getEmbedSnippet());
-                      setEmbedCopied(true);
-                      setTimeout(() => setEmbedCopied(false), 2500);
+                    onClick={async () => {
+                      const ok = await copyTextSafe(getEmbedSnippet());
+                      if (ok) {
+                        setEmbedCopied(true);
+                        setTimeout(() => setEmbedCopied(false), 2500);
+                      }
                     }}
                   >
                     {embedCopied ? <Check size={18} /> : <Copy size={18} />}
                     <span>
                       {embedCopied 
-                        ? (lang === 'fr' ? '✓ Code d\'intégration copié !' : '✓ Embed code copied!')
+                        ? (lang === 'fr' ? 'Code d\'intégration copié !' : 'Embed code copied!')
                         : (lang === 'fr' ? 'Copier le code HTML' : 'Copy HTML Embed Code')}
                     </span>
                   </button>
@@ -3415,7 +3063,7 @@ const StudiosPro = () => {
         )}
          {isRulesOpen && (
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <iframe src="/apps/rules/index.html" className="studio-iframe" title="Rules" />
+            <iframe src={`/apps/rules/index.html?lang=${lang}`} className="studio-iframe" title="Site Rules & Legal" />
           </motion.div>
         )}
         {isDepthOpen && (
@@ -3487,7 +3135,7 @@ const StudiosPro = () => {
           <motion.div className="studio-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <iframe 
               ref={scriptingIframeRef}
-              src={`/apps/scripting-live/index.html?premium=${isPremium || isAdmin}&room=${collabRoomId || ''}`} 
+              src={`/apps/scripting-live/index.html${collabRoomId && SAFE_ROOM_RE.test(collabRoomId) ? `?room=${encodeURIComponent(collabRoomId)}` : ''}`} 
               className="studio-iframe" 
               title="Scripting Studio" 
             />
@@ -3550,7 +3198,7 @@ const StudiosPro = () => {
             fontWeight: 'bold',
             fontFamily: 'Outfit, sans-serif'
           }}>
-            View on Studios-Pro
+            {lang === 'fr' ? 'Voir sur Studios-Pro' : 'View on Studios-Pro'}
           </a>
         </div>
       )}

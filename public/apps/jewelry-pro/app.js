@@ -184,7 +184,7 @@
             }
           }
         };
-        window.addEventListener('message', handler);
+        window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; handler(e); });
         window.parent.postMessage({ type: 'CHECK_EXPORT_LIMIT', studio: 'jewelry-pro' }, '*');
         setTimeout(() => {
           if (!settled) {

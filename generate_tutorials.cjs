@@ -3,776 +3,1043 @@ const path = require('path');
 
 const tutorials = [
   {
-    id: 'architect-pro-1',
-    titleEn: 'Architect Pro 1 | Studios-Pro',
-    titleFr: 'Architect Pro 1 | Studios-Pro',
-    descEn: 'A guide to using Architect Pro 1 for professional 2D and 3D floor drafting.',
-    descFr: 'Un guide pour utiliser Architect Pro 1 pour le dessin professionnel de plans 2D et 3D.',
-    h1En: 'Professional Architectural Drafting with Architect Pro 1',
-    h1Fr: 'Dessin Architectural Professionnel avec Architect Pro 1',
-    tag: 'Architect Pro',
-    cardH2En: 'Draft Precision 2D/3D Floor Plans',
-    cardH2Fr: 'Dessinez des Plans 2D/3D avec Précision',
-    cardPEn: 'Master architectural layout design, structural measurements, and 3D previews.',
-    cardPFr: 'Maîtrisez la conception de plans, les mesures structurelles et les aperçus 3D.',
-    ref: 'arp1',
+    id: 'filament-painting-studio',
+    titleEn: 'Filament Painting Studio (Free HueForge Alternative) | Studios-Pro',
+    titleFr: 'Filament Painting Studio (Alternative HueForge Gratuite) | Studios-Pro',
+    descEn: 'Turn any photo into multi-color 3D filament art with Kubelka-Munk TD optics, smartphone Camera TD calibration, and Bambu AMS / OrcaSlicer 3MF export.',
+    descFr: 'Transformez vos photos en tableaux de filaments 3D multi-couleurs avec optique Kubelka-Munk TD, calibration Caméra TD et export 3MF Bambu AMS / OrcaSlicer.',
+    h1En: 'Multi-Color Filament Painting & Layer-Swap Guide',
+    h1Fr: 'Guide Complet du Filament Painting Multi-Couleurs',
+    tag: 'Filament Art',
+    ogImage: 'https://studios-pro.com/og_filament_painting_studio.jpg',
+    cardH2En: 'Filament Painting & HueForge Alternative',
+    cardH2Fr: 'Filament Painting & Alternative HueForge',
+    cardPEn: 'Simulate optical filament TD, calibrate spools with your phone camera, and export auto-swap 3MF files for Bambu AMS.',
+    cardPFr: 'Simulez la distance de transmission TD, calibrez vos bobines par caméra et exportez en 3MF auto-swap pour Bambu AMS.',
+    ref: 'filament-painting-studio',
     sections: [
       {
-        h2En: 'Drafting 2D Floor Plans',
-        h2Fr: 'Dessin de Plans 2D',
-        pEn: 'Start your project by plotting precise walls, doors, and windows on a top-down architectural grid. Measurements are instantly translated into real-world units, ensuring your designs adhere to professional standards.',
-        pFr: 'Commencez votre projet en traçant des murs, portes et fenêtres avec précision sur une grille architecturale de haut en bas. Les mesures sont instantanément traduites en unités réelles.'
+        h2En: 'Kubelka-Munk Optical Blending & Camera TD Calibration',
+        h2Fr: 'Mélange Optique Kubelka-Munk & Calibration Caméra TD',
+        pEn: 'Upload any JPG, PNG, or WebP photograph and choose from 250+ verified filament spools (Bambu Lab, Polymaker, Sunlu, eSUN, Prusament, Hatchbox) or import .hfp profiles into My Spool Rack. Measure your own spool Transmission Distance (TD) directly with a smartphone camera — no external hardware required.',
+        pFr: 'Importez une photo JPG, PNG ou WebP et choisissez parmi plus de 250 bobines calibrées (Bambu Lab, Polymaker, Sunlu, eSUN, Prusament, Hatchbox) ou importez vos profils .hfp dans Mon Rack. Mesurez la distance de transmission (TD) avec votre smartphone sans matériel externe.'
       },
       {
-        h2En: 'Seamless 3D Visualization',
-        h2Fr: 'Visualisation 3D Transparente',
-        pEn: 'Once your 2D lines are drawn, switch instantly to 3D mode. Watch your floorplan extrude into realistic rooms. Export your final blueprints directly as professional CAD-ready formats.',
-        pFr: "Une fois vos lignes 2D dessinées, passez instantanément en mode 3D. Regardez votre plan s'extruder en pièces réalistes. Exportez vos plans sous des formats professionnels."
+        h2En: 'Native Bambu Studio / OrcaSlicer Auto-Swap 3MF & CMYW Lithophanes',
+        h2Fr: 'Export 3MF Auto-Swap Bambu / OrcaSlicer & Lithophanies CMYW',
+        pEn: 'Inspect color accuracy with the ΔE2000 heatmap, switch between flat wall art, interlocking murals, or CMYW 4-spool color lithophanes, and export a DEFLATE-compressed 3MF containing exact AMS or M600 layer-swap heights plus 4K Etsy gallery mockups.',
+        pFr: 'Vérifiez la fidélité couleur via la carte ΔE2000, créez des fresques emboîtables ou des lithophanies couleur CMYW à 4 bobines, et exportez un fichier 3MF compressé avec changements AMS ou M600 intégrés ainsi que des mockups 4K.'
       }
     ]
   },
   {
-    id: 'architect-pro-2',
-    titleEn: 'Architect Pro 2 | Studios-Pro',
-    titleFr: 'Architect Pro 2 | Studios-Pro',
-    descEn: 'Discover advanced house building, real-time 3D tours, and high-quality rendering in Architect Pro 2.',
-    descFr: 'Découvrez la construction avancée de maisons, les visites 3D en temps réel et le rendu de haute qualité dans Architect Pro 2.',
-    h1En: 'Advanced House Building with Architect Pro 2',
-    h1Fr: 'Construction Avancée avec Architect Pro 2',
-    tag: 'Architect Pro 2',
-    cardH2En: 'Build Interactive 3D Houses',
-    cardH2Fr: 'Construisez des Maisons Interactives 3D',
-    cardPEn: 'Create multi-story architectures with procedural roofs and realistic lighting.',
-    cardPFr: 'Créez des architectures à plusieurs étages avec toits procéduraux et éclairage réaliste.',
-    ref: 'arp2',
+    id: 'multicolor-3mf-painter',
+    titleEn: 'Multi-Color 3MF Painter for Bambu AMS & OrcaSlicer | Studios-Pro',
+    titleFr: 'Colorateur 3MF Multi-Couleurs pour Bambu AMS & OrcaSlicer | Studios-Pro',
+    descEn: 'Paint STL and 3MF 3D printing models directly in your browser with 1-click AI Auto-Color, smart angle fill, purge estimator, and multi-part 3MF export.',
+    descFr: 'Coloriez vos modèles STL et 3MF directement dans le navigateur avec IA Auto-Color, remplissage intelligent, calcul de purge et export 3MF multi-pièces.',
+    h1En: 'Paint Multi-Color 3MF Models in Your Browser',
+    h1Fr: 'Colorier des Modèles 3MF Multi-Couleurs en Ligne',
+    tag: '3MF Painter',
+    ogImage: 'https://studios-pro.com/og_multicolor_3mf_painter.jpg',
+    cardH2En: 'Colorize STL & 3MF for Bambu AMS',
+    cardH2Fr: 'Coloriez vos STL & 3MF pour Bambu AMS',
+    cardPEn: 'Use AI Auto-Color, smart angle fill, and cavity ink brushes to export native multi-part 3MF print projects.',
+    cardPFr: 'Utilisez l\'IA Auto-Color, le remplissage par angle et le pinceau de cavité pour exporter en 3MF multi-pièces.',
+    ref: 'painter',
     sections: [
       {
-        h2En: 'Procedural House Generation',
-        h2Fr: 'Génération Procédurale de Maison',
-        pEn: 'Go beyond simple walls. Architect Pro 2 introduces procedural roofs, complex multi-story stacking, and parametric external environments that give context to your structural creations.',
-        pFr: "Allez au-delà des simples murs. Architect Pro 2 introduit des toits procéduraux, l'empilement complexe d'étages et des environnements externes paramétriques."
+        h2En: 'AI Auto-Paint, Smart Angle Fill & Precision Brushes',
+        h2Fr: 'Peinture IA Automatique, Remplissage d\'Angle & Pinceaux',
+        pEn: 'Drop any monochrome STL or 3MF model onto the canvas on desktop, iPad, or mobile. Apply 1-click AI Auto-Color to separate bases, reliefs, and cavities automatically, or refine regions with smart angle fill, height-band sliders, and 16 filament swatches.',
+        pFr: 'Glissez n\'importe quel fichier STL ou 3MF monochrome sur PC, iPad ou mobile. Lancez l\'IA Auto-Color en 1 clic pour séparer bases, reliefs et creux, ou affinez chaque zone grâce au remplissage par angle et aux 16 nuances de filaments.'
       },
       {
-        h2En: 'Interactive Walkthroughs',
-        h2Fr: 'Visites Interactives',
-        pEn: 'Step inside your design using the first-person camera mode. Navigate through doors, analyze natural lighting across different rooms, and export the entire 3D scene securely to GLB/STL.',
-        pFr: "Entrez dans votre conception en utilisant le mode caméra à la première personne. Naviguez à travers les portes, analysez l'éclairage naturel et exportez la scène."
+        h2En: 'Purge Waste Optimizer & Native Multi-Part 3MF Export',
+        h2Fr: 'Optimiseur de Purge & Export 3MF Multi-Pièces Natif',
+        pEn: 'Preview estimated filament swap counts and purge waste in real time before slicing. Export a clean multi-part 3MF package that opens directly in Bambu Studio, OrcaSlicer, and PrusaSlicer with every filament slot preserved.',
+        pFr: 'Estimez en temps réel le nombre de changements de filament et la perte de purge avant le tranchage. Exportez un fichier 3MF multi-pièces prêt pour Bambu Studio, OrcaSlicer et PrusaSlicer.'
       }
     ]
   },
   {
-    id: 'figure-builder',
-    titleEn: '4D Figure Builder | Studios-Pro',
-    titleFr: '4D Figure Builder | Studios-Pro',
-    descEn: 'Learn how to generate and record interactive hyperdimensional geometric figures.',
-    descFr: 'Apprenez à générer et enregistrer des figures géométriques hyperdimensionnelles interactives.',
-    h1En: 'Explore Hyperdimensions with 4D Figure Builder',
-    h1Fr: 'Explorez les Hyperdimensions avec 4D Figure Builder',
-    tag: '4D Builder',
-    cardH2En: 'Animate and Export 4D Polytopes',
-    cardH2Fr: 'Animez et Exportez des Polytopes 4D',
-    cardPEn: 'Morph real-time hypercubes, apply chromatic VFX, and record HD videos.',
-    cardPFr: 'Transformez des hypercubes en temps réel, appliquez des effets visuels chromatiques et enregistrez des vidéos HD.',
-    ref: 'figb',
+    id: 'qr-wifi-coaster-generator',
+    titleEn: '3D QR Wi-Fi Coaster & Sign Generator Guide | Studios-Pro',
+    titleFr: 'Guide Générateur de Sous-Verres QR Code & Wi-Fi 3D | Studios-Pro',
+    descEn: 'Design scannable 3D printable Wi-Fi, restaurant menu, Airbnb, and payment QR coasters, desk stands, magnets, and caddies in 3MF, STL, and DXF.',
+    descFr: 'Créez des sous-verres, chevalets, magnets et supports QR Wi-Fi, menu ou Airbnb scannables en impression 3D. Exportez en 3MF, STL et DXF/SVG.',
+    h1En: 'Create Scannable 3D QR Wi-Fi Coasters & Table Stands',
+    h1Fr: 'Créer des Sous-Verres & Chevalets QR Wi-Fi 3D Scannables',
+    tag: '3D QR Coaster',
+    cardH2En: 'Generate 3D QR Wi-Fi Coasters & Signs',
+    cardH2Fr: 'Générez des Sous-Verres QR Wi-Fi 3D',
+    cardPEn: 'Build verified scannable QR coasters, desk tents, and matching caddies in multi-color 3MF, STL, and laser DXF.',
+    cardPFr: 'Créez des sous-verres QR vérifiés, chevalets et supports assortis en 3MF multi-couleurs, STL et DXF laser.',
+    ref: 'coaster',
     sections: [
       {
-        h2En: 'W-Axis Manipulation',
-        h2Fr: "Manipulation de l'Axe W",
-        pEn: 'Venture outside standard 3D space by manipulating the 4th spatial dimension (W). Create Tesseracts, Glommers, and Alien parametric geometries that morph continuously over time using the double-rotation matrix.',
-        pFr: "Aventurez-vous en dehors de l'espace 3D standard en manipulant la 4ème dimension (W). Créez des tesseracts et des géométries paramétriques extraterrestres qui se transforment."
+        h2En: 'Verified Scannable QR Payloads & Custom Shapes',
+        h2Fr: 'QR Codes Vérifiés & Formes Personnalisables',
+        pEn: 'Enter Wi-Fi credentials (SSID + WPA2/WPA3 password), website URLs, digital menus, vCards, or SEPA payment links. Choose round, square, hexagonal, or table-tent profiles with high-contrast raised or recessed QR modules engineered for reliable smartphone scanning.',
+        pFr: 'Saisissez vos identifiants Wi-Fi (SSID + mot de passe WPA2/WPA3), liens web, menus digitaux, vCards ou paiements SEPA. Choisissez des formes rondes, carrées, hexagonales ou chevalets avec modules QR calibrés pour un scan instantané.'
       },
       {
-        h2En: 'Cinematic Video Recording',
-        h2Fr: 'Enregistrement Vidéo Cinématographique',
-        pEn: 'Utilize professional post-processing effects like Chromatic Aberration and Bloom. Once your animation is perfect, use the integrated REC panel to export a high-fidelity WebM video with audio included.',
-        pFr: "Utilisez des effets de post-traitement professionnels tels que l'Aberration Chromatique. Une fois votre animation parfaite, utilisez le panneau REC pour exporter une vidéo haute fidélité."
+        h2En: 'Multi-Color 3MF, Dual-STL, Caddy Racks & Laser DXF',
+        h2Fr: '3MF Multi-Couleurs, Double STL, Range-Verres & DXF Laser',
+        pEn: 'Export ready-to-print multi-color 3MF files for Bambu AMS, separate dual-STL bodies for pause-at-height swaps, shape-matched coaster caddy racks, or vector DXF/SVG files for wood and acrylic laser engraving.',
+        pFr: 'Exportez des fichiers 3MF multi-couleurs pour Bambu AMS, des STL séparés pour pause de changement de filament, des range-sous-verres assortis ou des vecteurs DXF/SVG pour découpe laser.'
       }
     ]
   },
   {
-    id: 'music-composer',
-    titleEn: '4D Music Composer | Studios-Pro',
-    titleFr: '4D Music Composer | Studios-Pro',
-    descEn: 'A guide to syncing visual art with interactive synthesizers and beat loops in 4D Music Composer.',
-    descFr: "Un guide pour synchroniser l'art visuel avec des synthétiseurs interactifs et des boucles de rythme.",
-    h1En: 'Interactive Audio-Visuals in 4D Music Composer',
-    h1Fr: 'Audio-Visuel Interactif dans 4D Music Composer',
-    tag: '4D Music',
-    cardH2En: 'Compose Audio-Reactive Worlds',
-    cardH2Fr: 'Composez des Mondes Audio-Réactifs',
-    cardPEn: 'Mix keyboard synthesizers, layer loop tracks, and sync them with 3D visuals.',
-    cardPFr: 'Mélangez des synthétiseurs, superposez des pistes et synchronisez-les avec des visuels 3D.',
-    ref: 'musc',
+    id: 'ar-viewer',
+    titleEn: 'AR Viewer 3D — Instant Browser WebAR Guide | Studios-Pro',
+    titleFr: 'AR Viewer 3D — Guide WebAR Instantané dans le Navigateur | Studios-Pro',
+    descEn: 'Upload STL, OBJ, or GLB 3D models and project them at real-world scale in Augmented Reality on iPhone and Android via QR code without installing an app.',
+    descFr: 'Importez des modèles 3D STL, OBJ ou GLB et projetez-les à taille réelle en Réalité Augmentée sur iPhone et Android par QR code sans installer d\'application.',
+    h1En: 'Instant WebAR 3D Model Projection on iOS & Android',
+    h1Fr: 'Projection de Modèles 3D en WebAR sur iOS et Android',
+    tag: 'AR Viewer',
+    cardH2En: 'Project 3D Models in Augmented Reality',
+    cardH2Fr: 'Projetez vos Modèles 3D en Réalité Augmentée',
+    cardPEn: 'Convert STL/OBJ/GLB client-side and scan a QR code to place your 3D creations on any real table or wall.',
+    cardPFr: 'Convertissez vos STL/OBJ/GLB localement et scannez un QR code pour placer vos créations sur une table ou un mur.',
+    ref: 'arviewer',
     sections: [
       {
-        h2En: 'Loop Layering and Synths',
-        h2Fr: 'Superposition de Boucles et Synthétiseurs',
-        pEn: 'Access the 4D Music Studio drawer to perform live. Use your keyboard to play the synthesizer and record up to 3 separate loop layers (F1, F2, F3) that playback synchronously in perfect BPM harmony.',
-        pFr: "Accédez au tiroir 4D Music Studio pour jouer en direct. Utilisez votre clavier pour jouer du synthétiseur et enregistrez jusqu'à 3 couches de boucles séparées."
+        h2En: 'Zero-App Mobile Projection via QR Code',
+        h2Fr: 'Projection Mobile Sans Application par QR Code',
+        pEn: 'Open Studios-Pro AR Viewer, load any STL, OBJ, or GLB file (or send a scene directly from any Studios-Pro studio), adjust color and placement (floor or wall), and scan the generated QR code. Android launches Google SceneViewer and iOS opens Apple QuickLook automatically.',
+        pFr: 'Ouvrez Studios-Pro AR Viewer, chargez un fichier STL, OBJ ou GLB (ou transférez depuis n\'importe quel studio), choisissez la couleur et le placement (sol ou mur), puis scannez le QR code. Android ouvre Google SceneViewer et iOS lance Apple QuickLook automatiquement.'
       },
       {
-        h2En: 'Visual Beat Synchronization',
-        h2Fr: 'Synchronisation Visuelle Rythmique',
-        pEn: 'Every note you play or sequence natively impacts the 3D environment. Text meshes pulse, particles scatter, and the neon geometry expands exactly to the audio amplitude, leading to stunning video exports.',
-        pFr: "Chaque note que vous jouez impacte nativement l'environnement 3D. Le texte pulse, les particules se dispersent et la géométrie s'étend exactement selon l'amplitude audio."
+        h2En: 'Client-Side Conversion & Real-World Scale',
+        h2Fr: 'Conversion Locale & Échelle Réelle',
+        pEn: 'Raw STL and OBJ printing meshes are converted to optimized binary GLB directly in your browser using a dedicated Web Worker, preserving millimeter dimensions so clients and makers can verify real physical scale before printing.',
+        pFr: 'Les fichiers STL et OBJ sont convertis en GLB binaire optimisé directement dans votre navigateur via Web Worker, en conservant les dimensions en millimètres pour valider l\'échelle réelle avant l\'impression 3D.'
       }
     ]
   },
   {
-    id: 'design-pro-studio',
-    titleEn: 'Design Pro Studio | Studios-Pro',
-    titleFr: 'Design Pro Studio | Studios-Pro',
-    descEn: 'Learn how to master advanced vector layouts and UI/UX flows in Design Pro Studio.',
-    descFr: 'Apprenez à maîtriser les mises en page vectorielles avancées et les flux UI/UX.',
-    h1En: 'Master Vector Layouts with Design Pro Studio',
-    h1Fr: 'Maîtrisez le Design Vectoriel avec Design Pro Studio',
-    tag: 'Design Pro',
-    cardH2En: 'Create Advanced Vector Graphics',
-    cardH2Fr: 'Créez des Graphiques Vectoriels Avancés',
-    cardPEn: 'A powerful tool for UI mockups, mind-mapping, and exporting SVG diagrams.',
-    cardPFr: "Un outil puissant pour les maquettes UI, les cartes mentales et l'exportation de diagrammes SVG.",
-    ref: 'desp',
+    id: 'polymorph-3d',
+    titleEn: 'PolyMorph 3D Studio — Converter, Horology & Procedural CAD | Studios-Pro',
+    titleFr: 'PolyMorph 3D Studio — Convertisseur, Horlogerie & CAO Procédurale | Studios-Pro',
+    descEn: 'Convert STL, GLB, OBJ, PLY, and 3MF models and generate 3D watch movements, Cryptex puzzle boxes, Sugihara illusions, papercraft nets, and Voronoi lamps.',
+    descFr: 'Convertissez vos modèles STL, GLB, OBJ, PLY et 3MF et générez des mouvements horlogers 3D, boîtes Cryptex, illusions de Sugihara, papercraft et vases Voronoi.',
+    h1En: 'Universal 3D Converter & Procedural Generators in PolyMorph 3D',
+    h1Fr: 'Convertisseur 3D Universel & Générateurs Procéduraux PolyMorph 3D',
+    tag: 'PolyMorph 3D',
+    cardH2En: 'Watch Movements, Cryptex, Flexi & 3D Converter',
+    cardH2Fr: 'Horlogerie, Cryptex, Flexi & Convertisseur 3D',
+    cardPEn: 'Convert 3D formats and build tourbillons, puzzle boxes, RPG dungeon tiles, papercraft nets, and Voronoi vases.',
+    cardPFr: 'Convertissez vos formats 3D et générez tourbillons, boîtes secrètes, tuiles RPG, papercraft et vases Voronoi.',
+    ref: 'polymorph',
     sections: [
       {
-        h2En: 'Infinite Canvas Workspace',
-        h2Fr: 'Espace de Travail à Toile Infinie',
-        pEn: 'Design Pro Studio offers endless space to drop shapes, create connecting nodes, and build complex algorithmic flowcharts or UI visual designs with perfect snapped precision.',
-        pFr: 'Design Pro Studio offre un espace infini pour déposer des formes, créer des nœuds de connexion et construire des organigrammes ou des conceptions visuelles UI.'
+        h2En: 'Multi-Engine Procedural Generators for 3D Printing',
+        h2Fr: 'Générateurs Procéduraux Multi-Moteurs pour Impression 3D',
+        pEn: 'Switch effortlessly between specialized CAD engines: mechanical watch movements with tourbillons, customizable 5-letter Da Vinci Cryptex puzzle cylinders, Kokichi Sugihara optical illusions, print-in-place flexi models, modular 28mm RPG dungeon tiles, topographic maps, and Voronoi lampshades.',
+        pFr: 'Basculez entre nos moteurs spécialisés : mouvements de montre à tourbillon, cylindres Cryptex Da Vinci personnalisables, illusions d\'optique de Sugihara, modèles articulés flexi sans assemblage, tuiles de donjon RPG 28 mm, cartes topographiques et abat-jour Voronoi.'
       },
       {
-        h2En: 'Exporting Universal Assets',
-        h2Fr: 'Exportation de Ressources Universelles',
-        pEn: 'Whether you need a transparent PNG for a website or a scalable SVG for CNC and Laser pathing, the studio provides reliable exports with grouping and layer hierarchy preserved.',
-        pFr: "Que vous ayez besoin d'un PNG transparent ou d'un SVG évolutif pour CNC, le studio fournit des exportations fiables tout en préservant la hiérarchie."
-      }
-    ]
-  },
-  {
-    id: 'zen-sandscape',
-    titleEn: 'Zen Sandscape Simulator | Studios-Pro',
-    titleFr: 'Simulateur Zen Sandscape | Studios-Pro',
-    descEn: 'Learn how to paint with interactive physics elements and download standalone HTML simulations in Zen Sandscape.',
-    descFr: 'Apprenez à peindre avec des éléments physiques interactifs et téléchargez des simulations HTML autonomes dans Zen Sandscape.',
-    h1En: 'Interactive Sand Physics Painting with Zen Sandscape',
-    h1Fr: 'Peinture de Sable Physique Interactive avec Zen Sandscape',
-    tag: 'Zen Sandscape',
-    cardH2En: 'Create and Export Sand Physics Simulations',
-    cardH2Fr: 'Créez et Exportez des Simulations de Sable',
-    cardPEn: 'Simulate sand gravity, portal warps, volcanic lava, voltage sparks, and export full-screen offline interactive HTML files.',
-    cardPFr: 'Simulez la gravité du sable, les portails, la lave, les étincelles et exportez des fichiers HTML autonomes plein écran.',
-    ref: 'sandbox',
-    sections: [
-      {
-        h2En: 'Fascinating Physics Particles',
-        h2Fr: 'Particules Physiques Fascinantes',
-        pEn: 'Zen Sandscape introduces dynamic particle simulation. Paint with interactive elements like falling sand, flowing water, expanding fire, toxic acid, voltage sparks, and portal teleporters. Watch them interact in real-time under custom wind and gravity controls.',
-        pFr: "Zen Sandscape introduit une simulation dynamique de particules. Peignez avec des éléments interactifs comme le sable, l'eau, le feu, l'acide, les étincelles et les téléporteurs de portail. Observez leurs interactions en temps réel sous des contrôles de vent et de gravité personnalisés."
-      },
-      {
-        h2En: 'Offline Standalone HTML Export',
-        h2Fr: 'Exportation HTML Autonome Hors Ligne',
-        pEn: 'Create your perfect animated landscape, then click the HTML export button. Studios-Pro compiles a clean, fullscreen, offline-ready simulation file. It strips all UI controls and editing panels, allowing your audience to enjoy a pure, immersive physical simulation.',
-        pFr: "Créez votre paysage animé parfait, puis cliquez sur le bouton d'exportation HTML. Studios-Pro compile un fichier de simulation curat, pe tot ecranul și pregătit pentru utilizare offline, eliminând panourile de control."
-      }
-    ]
-  },
-  {
-    id: '3d-studio',
-    titleEn: '3D Studio - Procedural Modeling | Studios-Pro',
-    titleFr: 'Studio 3D - Modélisation Procédurale | Studios-Pro',
-    descEn: 'A comprehensive guide to designing, editing, and custom-building 3D models procedurally in your browser.',
-    descFr: 'Un guide complet pour concevoir, éditer et créer des modèles 3D procéduraux dans votre navigateur.',
-    h1En: 'Procedural 3D Modeling and Mesh Customization',
-    h1Fr: 'Modélisation 3D Procédurale et Personnalisation de Maillage',
-    tag: '3D Studio',
-    cardH2En: 'Create Custom 3D Models',
-    cardH2Fr: 'Créez des Modèles 3D sur Mesure',
-    cardPEn: 'Design complex procedural geometries and customize meshes in real-time.',
-    cardPFr: 'Concevez des géométries procédurales complexes et personnalisez les maillages.',
-    ref: 'ap3d',
-    sections: [
-      {
-        h2En: 'Procedural Mesh Generation',
-        h2Fr: 'Génération de Maillage Procédural',
-        pEn: 'Create highly detailed mechanical parts, Calibration Cubes, or Torus Knots using real-time parameter controls.',
-        pFr: 'Créez des pièces mécaniques détaillées ou des nœuds toriques en utilisant des paramètres en temps réel.'
-      },
-      {
-        h2En: 'Material and Grid Customization',
-        h2Fr: 'Personnalisation des Matériaux',
-        pEn: 'Apply gold, chrome, neon, or glass textures. Adjust the background color and lighting environment for optimal rendering.',
-        pFr: "Appliquez des textures d'or, chrome, néon ou verre. Ajustez la couleur de fond et l'environnement lumineux."
-      }
-    ]
-  },
-  {
-    id: 'studio-3d-viewer',
-    titleEn: 'Studio 3D Viewer - Online CAD Inspector | Studios-Pro',
-    titleFr: 'Studio 3D Viewer - Inspecteur CAO en ligne | Studios-Pro',
-    descEn: 'Free online CAD viewer. Drag & drop STL, OBJ, GLB files to inspect, scale, translate, measure, and slice models.',
-    descFr: "Visualiseur CAO gratuit en ligne. Glissez-déposez des fichiers STL, OBJ, GLB pour inspecter, mettre à l'échelle et mesurer.",
-    h1En: 'Online 3D Model Inspection, Slicing & Measurement',
-    h1Fr: 'Inspection de Modèles 3D, Coupe et Mesure en ligne',
-    tag: '3D Viewer',
-    cardH2En: 'Inspect and Slice 3D Models',
-    cardH2Fr: 'Inspectez et Coupez des Modèles 3D',
-    cardPEn: 'Drag & drop STL, OBJ, GLB files to measure distances and slice along X/Y/Z axes.',
-    cardPFr: 'Glissez-déposez des fichiers STL, OBJ, GLB pour mesurer et couper selon les axes X/Y/Z.',
-    ref: 's3dviewer',
-    sections: [
-      {
-        h2En: 'Cross-Section Slicing and Cap Fill',
-        h2Fr: 'Coupe Transversale et Remplissage',
-        pEn: 'Slice through any 3D model using the clipping plane tool. Enable color fills and custom opacity on section caps to analyze internal geometries.',
-        pFr: "Coupez n'importe quel modèle 3D à l'aide de plans de coupe. Activez le remplissage de couleur et réglez l'opacité."
-      },
-      {
-        h2En: 'Precise CAD Measurement Tool',
-        h2Fr: 'Outil de Mesure CAO Précis',
-        pEn: 'Click any two points on the model surface to instantly calculate the distance in real-world millimeters (mm), essential for 3D printing and engineering.',
-        pFr: 'Cliquez sur deux points du modèle pour calculer instantanément la distance en millimètres réels.'
-      }
-    ]
-  },
-  {
-    id: 'dfx-studio',
-    titleEn: 'DFX Studio - Particle Physics and Flow Design | Studios-Pro',
-    titleFr: 'Studio DFX - Physique des Particules | Studios-Pro',
-    descEn: 'Simulate flow physics, interactive particle fields, and design vector paths in DFX Studio.',
-    descFr: 'Simulez la physique des fluides, des champs de particules et concevez des chemins vectoriels.',
-    h1En: 'Interactive Particle Fields & Vector Flow Simulation',
-    h1Fr: 'Simulation Interactive de Particules et Flux Vectoriels',
-    tag: 'DFX Studio',
-    cardH2En: 'Simulate Flow Particles & Vectors',
-    cardH2Fr: 'Simulez des Particules de Flux',
-    cardPEn: 'Design complex vector flow fields and sync them with interactive particles.',
-    cardPFr: 'Concevez des champs de flux vectoriels et synchronisez-les avec des particules.',
-    ref: 'dfx',
-    sections: [
-      {
-        h2En: 'Vector Flow Fields',
-        h2Fr: 'Champs de Flux Vectoriels',
-        pEn: 'Create stunning vector flow layouts. Define attractor nodes, rotational vortexes, and magnetic repellers that direct particle trajectories.',
-        pFr: "Créez de superbes champs de flux. Définissez des nœuds d'attraction, des vortex rotatifs et des répulsifs."
-      },
-      {
-        h2En: 'High-Fidelity Particle Rendering',
-        h2Fr: 'Rendu de Particules',
-        pEn: 'Customize color palettes, glow effects, trail lengths, and download standalone interactive HTML files for offline presentations.',
-        pFr: 'Personnalisez les couleurs, les effets luminescents et exportez en HTML interactif.'
-      }
-    ]
-  },
-  {
-    id: 'depth-maps',
-    titleEn: 'AI Depth Maps for 3D Reliefs | Studios-Pro',
-    titleFr: 'Cartes de Profondeur IA pour Reliefs 3D | Studios-Pro',
-    descEn: 'Generate high-quality depth maps from images using AI to create 3D reliefs for CNC routers.',
-    descFr: "Générez des cartes de profondeur à partir d'images avec l'IA pour créer des reliefs 3D.",
-    h1En: 'Generate AI Depth Maps for CNC Carving and 3D Printing',
-    h1Fr: 'Générer des Cartes de Profondeur IA pour Gravure CNC',
-    tag: 'Depth Maps',
-    cardH2En: 'Generate AI Depth Maps',
-    cardH2Fr: 'Générez des Cartes de Profondeur',
-    cardPEn: 'Convert standard flat images to realistic 3D reliefs and displacement maps.',
-    cardPFr: 'Convertissez des images plates en reliefs 3D réalistes et cartes de déplacement.',
-    ref: 'depth',
-    sections: [
-      {
-        h2En: 'AI-Powered Relief Generation',
-        h2Fr: "Génération de Relief par l'IA",
-        pEn: 'Upload any image or drawing. The AI algorithm analyzes light values to construct an accurate displacement depth map.',
-        pFr: "Téléchargez une image. L'algorithme analyse la lumière pour construire une carte de profondeur."
-      },
-      {
-        h2En: 'CNC and 3D Print Ready',
-        h2Fr: 'Prêt pour CNC et Impression 3D',
-        pEn: 'Export high-contrast grayscale depth maps, perfect for generating 3D wood carvings on CNC routers or creating lithophanes.',
-        pFr: 'Exportez des cartes en niveaux de gris, parfaites pour gravure en bois ou impression 3D.'
+        h2En: 'Universal Format Conversion & Pepakura Papercraft Unfolding',
+        h2Fr: 'Conversion Universelle & Dépliage Papercraft',
+        pEn: 'Convert between STL, OBJ, GLB, PLY, and DXF locally in your browser, unfold low-poly 3D meshes into numbered 2D papercraft PDF/SVG nets with glue tabs, or send any generated creation straight to WebAR.',
+        pFr: 'Convertissez entre STL, OBJ, GLB, PLY et DXF localement dans le navigateur, dépliez vos maillages 3D en patrons papercraft 2D PDF/SVG numérotés ou projetez instantanément en WebAR.'
       }
     ]
   },
   {
     id: 'new-3d-4d',
-    titleEn: 'New 3D 4D - Advanced Mesh Modeling | Studios-Pro',
-    titleFr: 'New 3D 4D - Modélisation de Maillage Avancée | Studios-Pro',
-    descEn: 'An advanced modeling canvas featuring real-time physics and hyper-geometric mesh creations.',
-    descFr: 'Un canevas de modélisation avancé avec physique en temps réel et créations hyper-géométriques.',
-    h1En: 'Advanced WebGL Mesh Modeling and Physics Canvas',
-    h1Fr: 'Modélisation Avancée WebGL et Canevas Physique',
+    titleEn: 'New 3D 4D Studio — Photo to 3D Bas-Relief & Animated 4D GLB | Studios-Pro',
+    titleFr: 'New 3D 4D Studio — Photo en Bas-Relief 3D & GLB 4D Animé | Studios-Pro',
+    descEn: 'Convert any 2D photograph into an ultra-smooth 3D portrait bas-relief, lithophane, embossed coin STL, or 60 FPS animated 4D GLB and video clip.',
+    descFr: 'Transformez n\'importe quelle photo 2D en bas-relief 3D ultra-lisse, lithophanie, médaille STL ou modèle GLB 4D animé à 60 FPS et vidéo.',
+    h1En: 'Convert 2D Photos into 3D Bas-Relief STL & 4D Animated GLB',
+    h1Fr: 'Transformer une Photo 2D en Bas-Relief 3D STL & GLB 4D Animé',
     tag: 'New 3D 4D',
-    cardH2En: 'Design Advanced 3D Meshes',
-    cardH2Fr: 'Concevez des Maillages 3D Avancés',
-    cardPEn: 'Create procedural geometries with real-time physics and bounding coordinates.',
-    cardPFr: 'Créez des géométries procédurales avec physique en temps réel.',
+    cardH2En: 'Photo to 3D Bas-Relief, Coins & 4D GLB',
+    cardH2Fr: 'Photo en Bas-Relief 3D, Médailles & GLB 4D',
+    cardPEn: 'Sculpt smooth anti-spike portrait reliefs, lithophanes, and full-color 60 FPS 4D animations locally on your GPU.',
+    cardPFr: 'Sculptez des portraits bas-relief sans pics, des lithophanies et des animations 4D couleur 60 FPS sur votre GPU.',
     ref: 'n3d',
     sections: [
       {
-        h2En: 'Hyper-Geometric Creations',
-        h2Fr: 'Créations Hyper-Géométriques',
-        pEn: 'Design multi-faceted meshes, adjust vertices, and generate complex architectural mockups with automated snaps.',
-        pFr: 'Concevez des maillages à facettes multiples et générez des maquettes complexes.'
+        h2En: 'Multi-Scale Anti-Spike Bas-Relief Sculpting',
+        h2Fr: 'Sculpture Bas-Relief Multi-Échelle Sans Pics',
+        pEn: 'Drop any JPG, PNG, or WebP photograph into New 3D 4D Studio. Our multi-scale Gaussian macro + clamped micro-detail engine eliminates noisy spikes to produce gallery-grade portrait reliefs, coins, medals, and glowing lithophanes with baked RGB vertex colors.',
+        pFr: 'Importez une photo JPG, PNG ou WebP dans New 3D 4D Studio. Notre moteur multi-échelle (macro gaussien + micro-détails calibrés) supprime les pics parasites pour créer des portraits bas-relief, pièces gravées et lithophanies avec couleurs RVB intégrées.'
       },
       {
-        h2En: 'Real-Time Physics Engine',
-        h2Fr: 'Moteur Physique en Temps Réel',
-        pEn: 'Enable gravity, wind vectors, and friction to simulate how your designs behave under realistic physical conditions.',
-        pFr: 'Activez la gravité et le vent pour simuler les conditions physiques réelles.'
+        h2En: 'Watertight STL/OBJ Printing & 60 FPS 4D GLB / Video Export',
+        h2Fr: 'Export STL/OBJ Étanche & GLB 4D / Vidéo 60 FPS',
+        pEn: 'Export watertight binary STL and OBJ models ready for 3D printers and CNC wood routers, or animate your sculpture with 5 real-time 4D motion modes and export animated GLB holograms, WebAR previews, and 60 FPS MP4/WebM videos.',
+        pFr: 'Exportez des fichiers STL et OBJ étanches pour impression 3D et fraisage CNC, ou animez votre sculpture avec 5 modes 4D temps réel pour exporter des hologrammes GLB, aperçus WebAR et vidéos 60 FPS MP4/WebM.'
       }
     ]
   },
   {
-    id: 'vector-cnc',
-    titleEn: 'Vector CNC - SVG to DXF path converter | Studios-Pro',
-    titleFr: 'Vector CNC - Convertisseur SVG en DXF | Studios-Pro',
-    descEn: 'Convert SVG vector files to DXF paths and generate G-code directly in your web browser.',
-    descFr: 'Convertissez des fichiers vectoriels SVG en DXF et générez du G-code dans votre navigateur.',
-    h1En: 'Online SVG to DXF Path Converter & G-Code Generator',
-    h1Fr: 'Convertisseur SVG en DXF et Générateur de G-Code en ligne',
-    tag: 'Vector CNC',
-    cardH2En: 'Convert SVG to DXF & G-Code',
-    cardH2Fr: 'Convertissez SVG en DXF & G-Code',
-    cardPEn: 'Prepare vector artwork for laser cutting, plotting, or CNC machining in seconds.',
-    cardPFr: 'Préparez vos tracés pour la découpe laser ou le fraisage CNC.',
-    ref: 'vcnc',
+    id: 'figure-builder',
+    titleEn: '4D Figure Builder PRO — Real 4D Polytopes & Photo-to-4D | Studios-Pro',
+    titleFr: '4D Figure Builder PRO — Polytopes 4D Réels & Photo-vers-4D | Studios-Pro',
+    descEn: 'Explore real mathematical 4D polytopes (Tesseract, 24-Cell, 120-Cell), turn photos into 4D sculptures, slice W-hyperplanes, and export GLB, STL, AR, and video.',
+    descFr: 'Explorez de vrais polytopes 4D (Tesseract, 24-Cell, 120-Cell), convertissez une photo en sculpture 4D, tranchez l\'axe W et exportez en GLB, STL, AR et vidéo.',
+    h1En: 'Real 4D Polytopes & Photo-to-4D Sculpting in 4D Figure Builder PRO',
+    h1Fr: 'Polytopes 4D Réels & Sculpture Photo-vers-4D dans 4D Figure Builder PRO',
+    tag: '4D Builder',
+    cardH2En: 'Real 4D Polytopes & Photo-to-4D Studio',
+    cardH2Fr: 'Polytopes 4D Réels & Studio Photo-vers-4D',
+    cardPEn: 'Rotate true 4D geometry across XW/YW/ZW planes, convert photos to 4D, and export printable STL, GLB, AR & HD video.',
+    cardPFr: 'Faites pivoter la géométrie 4D sur les plans XW/YW/ZW, convertissez une photo en 4D et exportez en STL, GLB, AR et vidéo.',
+    ref: 'figb',
     sections: [
       {
-        h2En: 'Universal Path Vectorization',
-        h2Fr: 'Vectorisation Universelle de Tracés',
-        pEn: 'Upload any SVG or image. Convert outline coordinates to CAD-compliant DXF lines, ensuring maximum compatibility with CNC machinery.',
-        pFr: 'Téléchargez un SVG. Convertissez les coordonnées en tracés DXF conformes pour CAO.'
+        h2En: 'True 4D Rotations, W-Hyperplane Slicing & Photo-to-4D',
+        h2Fr: 'Vraies Rotations 4D, Coupes d\'Hyperplan W & Photo-vers-4D',
+        pEn: 'Manipulate genuine 4-dimensional figures (Tesseract, 16-Cell, 24-Cell, 120-Cell, Clifford Torus, and 4D organic forms) across all 6 rotation planes (XY, XZ, YZ, XW, YW, ZW). Upload any photo to map luminance and contours into a live 4D hyper-sculpture with interactive W-slicing.',
+        pFr: 'Manipulez de vraies figures à 4 dimensions (Tesseract, 16-Cell, 24-Cell, 120-Cell, tore de Clifford et formes organiques) sur les 6 plans de rotation (XY, XZ, YZ, XW, YW, ZW). Chargez une photo pour la transformer en hyper-sculpture 4D interactive.'
       },
       {
-        h2En: 'Automatic G-Code Generation',
-        h2Fr: 'Génération Automatique de G-Code',
-        pEn: 'Define speed, feed rate, and cutting depth to generate ready-to-run G-code files directly in your web browser.',
-        pFr: 'Définissez la vitesse et la profondeur pour générer des fichiers G-code.'
-      }
-    ]
-  },
-  {
-    id: 'studio-pro',
-    titleEn: 'Studio Pro 4D - Advanced Environment Designer | Studios-Pro',
-    titleFr: "Studio Pro 4D - Concepteur d'Environnement | Studios-Pro",
-    descEn: 'Professional 4D procedural environment mapping and animation designer in your browser.',
-    descFr: "Concepteur d'environnement procédural 4D et d'animation dans votre navigateur.",
-    h1En: 'Professional Procedural Environment and Animation Designer',
-    h1Fr: "Concepteur d'Environnement Procédural et d'Animation",
-    tag: 'Studio Pro 4D',
-    cardH2En: 'Animate Procedural Environments',
-    cardH2Fr: 'Animez des Environnements Procéduraux',
-    cardPEn: 'Build 4D scenes, apply realistic environment lighting, and export high-res renders.',
-    cardPFr: 'Construisez des scènes 4D et appliquez des rendus haute résolution.',
-    ref: 'spro',
-    sections: [
-      {
-        h2En: '4D Procedural Architecture',
-        h2Fr: 'Architecture Procédurale 4D',
-        pEn: 'Generate endless complex terrains, custom weather atmospheric conditions, and lighting maps.',
-        pFr: 'Générez des terrains complexes et des conditions météo atmosphériques.'
-      },
-      {
-        h2En: 'High-Resolution Renders',
-        h2Fr: 'Rendus Haute Résolution',
-        pEn: 'Configure raymarching cameras, adjust shadows, and export production-ready graphics or animatics.',
-        pFr: 'Configurez des caméras Raymarching, ajustez les ombres et exportez des rendus.'
-      }
-    ]
-  },
-  {
-    id: 'maker-studio-7',
-    titleEn: 'Maker Studio 7 - Procedural Geometry Maker | Studios-Pro',
-    titleFr: 'Maker Studio 7 - Créateur Géométrique | Studios-Pro',
-    descEn: 'Design and export parametric boxes, lithophanes, and structural joints.',
-    descFr: 'Concevez et exportez des boîtes paramétriques, des lithophanies et des joints structurels.',
-    h1En: 'Procedural Parametric Designer for Engineers & Makers',
-    h1Fr: 'Paramétrique de Boîtes et Joints structurels',
-    tag: 'Maker Studio 7',
-    cardH2En: 'Parametric Box & Joint Designer',
-    cardH2Fr: 'Conception Paramétrique de Boîtes',
-    cardPEn: 'Sketch interlocking joints, layout procedural boxes, and output STL/DXF files.',
-    cardPFr: 'Dessinez des joints emboîtables et exportez en STL ou DXF.',
-    ref: 'mkr7',
-    sections: [
-      {
-        h2En: 'Interlocking Joint Layouts',
-        h2Fr: 'Tracés de Joints Emboîtables',
-        pEn: 'Easily design finger joints or t-slots for laser cutters and 3D printers, matching material thickness parameters.',
-        pFr: 'Dessinez des joints emboîtables ou des encoches en t pour découpeuse laser.'
-      },
-      {
-        h2En: 'Lithophanes and Textures',
-        h2Fr: 'Lithophanies et Textures 3D',
-        pEn: 'Convert photos to parametric 3D printed lithophanes that reveal high-definition details when backlit.',
-        pFr: 'Convertissez des photos en lithophanies 3D imprimables.'
-      }
-    ]
-  },
-  {
-    id: 'jewelry-maker-pro',
-    titleEn: 'Jewelry Maker Pro - Custom 3D Jewelry CAD | Studios-Pro',
-    titleFr: 'Jewelry Maker Pro - CAO de Bijoux 3D | Studios-Pro',
-    descEn: 'Interactive 3D custom ring and jewelry builder. Design wedding bands and gems ready for 3D printing.',
-    descFr: "Créateur interactif de bagues 3D. Concevez des alliances et des pierres prêtes pour l'impression 3D.",
-    h1En: 'Interactive Custom Jewelry Design & 3D Print CAD',
-    h1Fr: 'CAO de Conception de Bijoux Personnalisés en ligne',
-    tag: 'Jewelry Maker',
-    cardH2En: 'Design Custom 3D Printable Rings',
-    cardH2Fr: 'Concevez des Alliances Imprimables 3D',
-    cardPEn: 'Create detailed wedding bands, set diamonds, and export high-fidelity STL files.',
-    cardPFr: 'Créez des alliances détaillées, ajustez des diamants et exportez en STL.',
-    ref: 'jwly',
-    sections: [
-      {
-        h2En: 'Parametric Ring Customizer',
-        h2Fr: 'Personnalisation de Bagues',
-        pEn: 'Adjust band width, ring size, gemstone placement, and metal carats in real-time.',
-        pFr: "Ajustez la largeur de l'anneau, la taille, l'emplacement de la pierre et l'or."
-      },
-      {
-        h2En: '3D Print Optimization',
-        h2Fr: "Optimisation de l'Impression 3D",
-        pEn: 'Export watertight, print-ready STL models optimized for jewelry resin casting and metal fabrication.',
-        pFr: 'Exportez des fichiers STL prêts pour la coulée de résine et la fabrication métallique.'
-      }
-    ]
-  },
-  {
-    id: 'studio-pro-2',
-    titleEn: 'Studio Pro 2 - Advanced 4D Rendering | Studios-Pro',
-    titleFr: 'Studio Pro 2 - Rendu 4D Avancé | Studios-Pro',
-    descEn: 'Discover the upgraded environment, lighting tools, and large-scale polygon exports.',
-    descFr: "Découvrez l'environnement amélioré, les outils d'éclairage et les exportations massives.",
-    h1En: 'Hyper-Realistic Environment Rendering and Physics Simulation',
-    h1Fr: 'Rendu d\'Environnement Hyper-Réaliste et Simulation Physique',
-    tag: 'Studio Pro 2',
-    cardH2En: 'Render High-Fidelity 4D Scenes',
-    cardH2Fr: 'Rendus de Scènes 4D de Haute Qualité',
-    cardPEn: 'Discover advanced lighting models, physics constraints, and mass mesh exports.',
-    cardPFr: "Découvrez les modèles d'éclairage avancés et l'exportation de maillage.",
-    ref: 'spro2',
-    sections: [
-      {
-        h2En: 'Advanced Lighting Calculations',
-        h2Fr: "Calculs d'Éclairage Avancés",
-        pEn: 'Simulate soft shadows, ambient occlusion, and global illumination directly in your web browser.',
-        pFr: "Simulez des ombres douces et l'occlusion ambiante dans votre navigateur."
-      },
-      {
-        h2En: 'Rigid Body Physics Simulation',
-        h2Fr: 'Simulation Physique de Corps Rigides',
-        pEn: 'Animate interactions, apply collisions, and record smooth motion videos.',
-        pFr: 'Animez des interactions physiques et enregistrez des vidéos fluides.'
-      }
-    ]
-  },
-  {
-    id: 'mech-gen-pro',
-    titleEn: 'Mech Gen Pro - Procedural Gear Generator | Studios-Pro',
-    titleFr: 'Mech Gen Pro - Générateur d\'Engrenages | Studios-Pro',
-    descEn: 'Online procedural gear generator and spur gear calculator. Export mechanical gear designs directly to DXF/SVG.',
-    descFr: "Générateur procédural d'engrenages en ligne. Exportez les plans d'engrenage en DXF/SVG.",
-    h1En: 'Procedural Mechanical Gear Generator & CAD Layouts',
-    h1Fr: 'Générateur d\'Engrenages Mécaniques CAO en ligne',
-    tag: 'Mech Gen Pro',
-    cardH2En: 'Design Parametric Gears & Cogs',
-    cardH2Fr: 'Concevez des Engrenages Paramétriques',
-    cardPEn: 'Generate mechanical layouts, calculate spur gear teeth, and export to DXF.',
-    cardPFr: 'Générez des engrenages, calculez les dentures et exportez en DXF.',
-    ref: 'mechgen',
-    sections: [
-      {
-        h2En: 'Parametric Gear Calculations',
-        h2Fr: "Calculs Paramétriques d'Engrenages",
-        pEn: 'Input module size, number of teeth, pressure angle, and shaft diameter. The engine instantly plots precise gear profiles.',
-        pFr: "Saisissez la taille du module, le nombre de dents et le diamètre de l'alésage."
-      },
-      {
-        h2En: 'Vector CAD Export',
-        h2Fr: 'Exportation CAO Vectorielle',
-        pEn: 'Export gear layouts directly to SVG or DXF format, ready for laser cutters or CNC milling machines.',
-        pFr: 'Exportez les engrenages en SVG ou DXF, prêts pour découpeuse laser.'
+        h2En: '3D Printable STL/OBJ, GLB, WebAR & Cinematic Video Export',
+        h2Fr: 'Export STL/OBJ Imprimable 3D, GLB, WebAR & Vidéo Cinéma',
+        pEn: 'Freeze any 4D projection or W-slice into a solid watertight 3D mesh for STL/OBJ 3D printing, project it directly in AR Viewer, capture ultra-crisp PNG renders, or record smooth WebM/MP4 video loops.',
+        pFr: 'Figez n\'importe quelle projection 4D ou coupe W en maillage 3D solide pour impression STL/OBJ, projetez directement dans AR Viewer, capturez des rendus PNG haute définition ou enregistrez des vidéos fluides.'
       }
     ]
   },
   {
     id: 'scripting-studio',
-    titleEn: 'Scripting Studio - Live Code Playground | Studios-Pro',
-    titleFr: 'Studio Scripting - Console Interactive | Studios-Pro',
-    descEn: 'Write Javascript scripts with hot-reloading WebGL rendering outputs.',
-    descFr: 'Écrivez des scripts Javascript avec un rendu WebGL rechargé à chaud.',
-    h1En: 'Interactive WebGL Scripting Console & Live Code Output',
-    h1Fr: 'Console Interactive Javascript & Rendu WebGL en direct',
+    titleEn: 'Scripting Studio PRO — Parametric 3D CAD JavaScript IDE | Studios-Pro',
+    titleFr: 'Scripting Studio PRO — IDE JavaScript CAO 3D Paramétrique | Studios-Pro',
+    descEn: 'Code parametric 3D CAD assemblies in JavaScript with real Three.js CSG, planetary gearboxes, live parameter sliders, and STL, OBJ, GLB & WebAR export.',
+    descFr: 'Codez des assemblages CAO 3D paramétriques en JavaScript avec CSG Three.js, trains planétaires, curseurs temps réel et export STL, OBJ, GLB & WebAR.',
+    h1En: 'Parametric 3D CAD Coding with Scripting Studio PRO',
+    h1Fr: 'Conception CAO 3D Paramétrique par Code avec Scripting Studio PRO',
     tag: 'Scripting Studio',
-    cardH2En: 'Code WebGL Render Scripts',
-    cardH2Fr: 'Écrivez des Scripts de Rendu WebGL',
-    cardPEn: 'Write code with hot-reloading and interact with direct canvas output.',
-    cardPFr: 'Écrivez du code avec rechargement à chaud et observez le rendu WebGL en direct.',
+    cardH2En: 'Parametric 3D CAD & Live JS Scripting',
+    cardH2Fr: 'CAO 3D Paramétrique & Scripting JS Live',
+    cardPEn: 'Write JavaScript CAD scripts with CSG booleans, live parameter sliders, planetary gear templates, and STL/GLB/AR export.',
+    cardPFr: 'Écrivez des scripts CAO JavaScript avec booléens CSG, curseurs temps réel, modèles mécaniques et export STL/GLB/AR.',
     ref: 'scripting',
     sections: [
       {
-        h2En: 'WebGL API Access',
-        h2Fr: 'Accès API WebGL',
-        pEn: 'Interact directly with shaders, canvas rendering loops, and procedural math inputs.',
-        pFr: 'Interagissez directement avec les shaders et le canevas de rendu.'
+        h2En: 'Real Parametric Engineering API & Live Sliders',
+        h2Fr: 'API d\'Ingénierie Paramétrique & Curseurs en Direct',
+        pEn: 'Build precision mechanical assemblies — from planetary gearboxes and enclosures to architectural lattices — using clean JavaScript and built-in solid primitives, extrusions, lofts, threads, and CSG operations. Declare custom sliders directly in code to tweak dimensions in real time.',
+        pFr: 'Concevez des assemblages mécaniques précis — trains planétaires, boîtiers, treillis architecturaux — en JavaScript grâce aux primitives solides, extrusions, filetages et opérations booléennes CSG, pilotés par des curseurs temps réel.'
       },
       {
-        h2En: 'Hot-Reloading Output',
-        h2Fr: 'Rechargement de Code à Chaud',
-        pEn: 'See your visual animations update in real-time as you write and modify code lines.',
-        pFr: 'Observez vos animations se mettre à jour en temps réel lors de l\'écriture.'
+        h2En: 'Direct 3D Printing STL/OBJ, Binary GLB & AR Export',
+        h2Fr: 'Export STL/OBJ Impression 3D, GLB Binaire & AR',
+        pEn: 'Inspect real-world millimeter bounding dimensions, export watertight STL and OBJ files for your slicer, download PBR GLB scenes, or launch your scripted prototype straight into AR Viewer to inspect it on your desk.',
+        pFr: 'Vérifiez les dimensions réelles en millimètres, exportez des fichiers STL et OBJ étanches pour votre trancheur, téléchargez des scènes GLB PBR ou projetez votre prototype en AR Viewer.'
+      }
+    ]
+  },
+  {
+    id: 'studio-pro',
+    titleEn: 'Studio Pro 4D — 2D-to-3D Scene Composer & Media Studio | Studios-Pro',
+    titleFr: 'Studio Pro 4D — Compositeur de Scène 2D vers 3D & Média | Studios-Pro',
+    descEn: 'Compose 3D scenes from 2D sketches, SVG/DXF blueprints, 3D text, QR codes, images, audio, and video. Export OBJ, GLB, standalone HTML, ZIP, PNG, and WebAR.',
+    descFr: 'Composez des scènes 3D à partir de dessins 2D, plans SVG/DXF, texte 3D, QR codes, images, audio et vidéo. Exportez en OBJ, GLB, HTML autonome, PNG et WebAR.',
+    h1En: '2D-to-3D Scene Composer & Interactive Media in Studio Pro 4D',
+    h1Fr: 'Compositeur de Scène 2D vers 3D & Média dans Studio Pro 4D',
+    tag: 'Studio Pro 4D',
+    cardH2En: '2D-to-3D Scene Composer, Text, SVG & Video',
+    cardH2Fr: 'Compositeur 2D vers 3D, Texte, SVG & Vidéo',
+    cardPEn: 'Extrude sketches, 3D typography, SVG/DXF logos, and audio/video effects into OBJ, HTML, video, and AR scenes.',
+    cardPFr: 'Extrudez croquis, texte 3D, logos SVG/DXF et effets audio/vidéo en scènes OBJ, HTML, vidéo et AR.',
+    ref: 'spro',
+    sections: [
+      {
+        h2En: 'Multi-Modal 2D-to-3D Scene Composition',
+        h2Fr: 'Composition de Scène 2D vers 3D Multi-Modale',
+        pEn: 'Combine freehand 2D drawings, extruded 3D text, scannable 3D QR blocks, imported SVG/DXF vector logos, and existing GLB/OBJ/STL meshes inside one unified Three.js workspace — plus Image-to-3D, Video-to-3D, and Audio-3D reactive modules.',
+        pFr: 'Combinez croquis 2D, texte 3D extrudé, blocs QR 3D, logos SVG/DXF et maillages GLB/OBJ/STL dans un espace Three.js unifié, enrichi par les modules Image-vers-3D, Vidéo-vers-3D et Audio 3D.'
+      },
+      {
+        h2En: 'Standalone Interactive HTML, OBJ, Video & AR Export',
+        h2Fr: 'Export HTML Interactif Autonome, OBJ, Vidéo & AR',
+        pEn: 'Package any scene into a self-contained offline HTML file to embed on any website, download OBJ geometry for 3D software, record smooth video loops, capture PNGs, or send directly to AR Viewer.',
+        pFr: 'Empaquetez toute scène en fichier HTML autonome hors ligne intégrable sur n\'importe quel site, téléchargez la géométrie OBJ, enregistrez une vidéo ou envoyez directement vers AR Viewer.'
+      }
+    ]
+  },
+  {
+    id: 'studio-pro-2',
+    titleEn: 'Studio Pro 2 — Advanced 3D Lighting & Scene Studio | Studios-Pro',
+    titleFr: 'Studio Pro 2 — Éclairage 3D Avancé & Scènes | Studios-Pro',
+    descEn: 'Build multi-object 3D compositions with studio PBR lighting, custom materials, camera controls, and rapid STL, OBJ, GLB, and HTML exports.',
+    descFr: 'Construisez des compositions 3D multi-objets avec éclairage PBR studio, matériaux personnalisés et exportations rapides STL, OBJ, GLB et HTML.',
+    h1En: 'Studio PBR Lighting & 3D Scene Staging in Studio Pro 2',
+    h1Fr: 'Éclairage PBR Studio & Mise en Scène 3D dans Studio Pro 2',
+    tag: 'Studio Pro 2',
+    cardH2En: 'Stage & Render High-Fidelity 3D Scenes',
+    cardH2Fr: 'Mettez en Scène vos Modèles 3D en Haute Fidélité',
+    cardPEn: 'Configure studio lighting, PBR metals and glass materials, shadows, and export production renders or 3D meshes.',
+    cardPFr: 'Configurez l\'éclairage studio, les matériaux PBR métal/verre, les ombres et exportez vos rendus ou maillages 3D.',
+    ref: 'spro2',
+    sections: [
+      {
+        h2En: 'Studio Lighting, PBR Shaders & Environment Controls',
+        h2Fr: 'Éclairage Studio, Shaders PBR & Contrôle d\'Environnement',
+        pEn: 'Arrange multiple 3D assets, tune directional shadows, reflections, roughness, and metallic finishes in real time inside your web browser to prepare crisp product visuals and presentation views.',
+        pFr: 'Disposez plusieurs objets 3D, ajustez les ombres, reflets, rugosité et finitions métalliques en temps réel dans votre navigateur pour produire des visuels produits nets.'
+      },
+      {
+        h2En: 'Multi-Format Export for Web, Print & Presentations',
+        h2Fr: 'Export Multi-Format pour Web, Impression & Présentations',
+        pEn: 'Download clean 3D mesh files, capture transparent or studio-lit screenshots, and export interactive scenes ready to share with clients.',
+        pFr: 'Téléchargez vos maillages 3D propres, capturez des rendus studio haute résolution et exportez des scènes interactives prêtes à partager.'
+      }
+    ]
+  },
+  {
+    id: 'artgen',
+    titleEn: 'ArtGen Studio — Vector Brand Logos & 3D Reliefs | Studios-Pro',
+    titleFr: 'ArtGen Studio — Logos Vectoriels & Reliefs 3D | Studios-Pro',
+    descEn: 'Generate procedural vector brand logos, 45+ artistic styles, DXF layer recoloring, and watertight 3D relief STL/OBJ/GLB exports right in your browser.',
+    descFr: 'Générez des logos vectoriels procéduraux, plus de 45 styles artistiques, la recoloration DXF et des reliefs 3D étanches STL/OBJ/GLB dans le navigateur.',
+    h1En: 'Procedural Brand Logos, Vector Art & 3D Reliefs in ArtGen Studio',
+    h1Fr: 'Logos Vectoriels, Art Procédural & Reliefs 3D dans ArtGen Studio',
+    tag: 'ArtGen Studio',
+    cardH2En: 'Create Vector Logos & 3D Printable Reliefs',
+    cardH2Fr: 'Créez des Logos Vectoriels & Reliefs Imprimables 3D',
+    cardPEn: 'Combine 45+ procedural art styles, emblem generators, and DXF recoloring with instant STL/OBJ/GLB relief export.',
+    cardPFr: 'Combinez 45+ styles procéduraux, générateurs d\'emblèmes et export relief 3D STL/OBJ/GLB instantané.',
+    ref: 'artgen',
+    sections: [
+      {
+        h2En: 'Themed Vector Emblems & 45+ Procedural Styles',
+        h2Fr: 'Emblèmes Vectoriels & Plus de 45 Styles Procéduraux',
+        pEn: 'Design custom emblems, badges, geometric illustrations, and layered vector graphics with 35+ built-in drawing tools and instant palette harmonization. Recolor AutoCAD DXF layers cleanly for laser or print output.',
+        pFr: 'Concevez des emblèmes, badges, illustrations géométriques et visuels vectoriels avec plus de 35 outils de dessin intégrés et l\'harmonisation automatique des palettes, ainsi que la recoloration de calques DXF.'
+      },
+      {
+        h2En: '1-Click 2D Artwork to Watertight 3D STL / OBJ / GLB',
+        h2Fr: 'Conversion 2D vers 3D Étanche STL / OBJ / GLB en 1 Clic',
+        pEn: 'Turn any generated logo or canvas illustration into an extruded 3D plaque, keychain, cookie cutter, or relief sculpture with vertex colors ready for 3D printing and WebAR.',
+        pFr: 'Transformez n\'importe quel logo ou dessin en plaque 3D extrudée, porte-clés, emporte-pièce ou bas-relief coloré prêt pour l\'impression 3D et le WebAR.'
+      }
+    ]
+  },
+  {
+    id: 'architect-pro-1',
+    titleEn: 'Architect Pro 1 — 2D/3D Floor Plan Drafting | Studios-Pro',
+    titleFr: 'Architect Pro 1 — Dessin de Plans 2D/3D | Studios-Pro',
+    descEn: 'Draft accurate 2D architectural floor plans with walls, doors, windows, and instant 3D extrusion directly in your web browser.',
+    descFr: 'Tracez des plans architecturaux 2D précis avec murs, portes, fenêtres et extrusion 3D instantanée directement dans votre navigateur.',
+    h1En: 'Professional Architectural Drafting with Architect Pro 1',
+    h1Fr: 'Dessin Architectural Professionnel avec Architect Pro 1',
+    tag: 'Architect Pro',
+    cardH2En: 'Draft Precision 2D/3D Floor Plans',
+    cardH2Fr: 'Dessinez des Plans 2D/3D avec Précision',
+    cardPEn: 'Master architectural layout design, structural measurements, and instant 3D room previews.',
+    cardPFr: 'Maîtrisez la conception de plans, les cotes structurelles et les aperçus 3D instantanés.',
+    ref: 'arp1',
+    sections: [
+      {
+        h2En: 'Drafting Precision 2D Floor Plans',
+        h2Fr: 'Dessin de Plans 2D Précis',
+        pEn: 'Plot walls, partitions, doors, windows, and furniture on an architectural grid with live millimeter/meter measurements, ensuring accurate proportions for renovations, interiors, and scale models.',
+        pFr: 'Tracez murs, cloisons, portes, fenêtres et mobilier sur une grille architecturale avec mesures réelles en direct pour vos rénovations, aménagements intérieurs et maquettes.'
+      },
+      {
+        h2En: 'Instant 3D Extrusion & CAD Export',
+        h2Fr: 'Extrusion 3D Instantanée & Export CAO',
+        pEn: 'Switch from 2D blueprint mode to interactive 3D visualization in a single click, inspect room flow, and export your structural plans for presentations or 3D printing.',
+        pFr: 'Passez du plan 2D à la visualisation 3D interactive en un clic, inspectez la circulation des pièces et exportez vos plans pour présentation ou impression 3D.'
+      }
+    ]
+  },
+  {
+    id: 'architect-pro-2',
+    titleEn: 'Architect Pro 2 — Interactive 3D House Builder | Studios-Pro',
+    titleFr: 'Architect Pro 2 — Constructeur de Maisons 3D Interactif | Studios-Pro',
+    descEn: 'Build multi-story 3D houses with procedural roofs, materials, natural lighting, and interactive first-person walkthroughs in your browser.',
+    descFr: 'Construisez des maisons 3D à étages avec toits procéduraux, matériaux, éclairage naturel et visites immersives dans votre navigateur.',
+    h1En: 'Advanced 3D House Building with Architect Pro 2',
+    h1Fr: 'Construction de Maisons 3D Avancée avec Architect Pro 2',
+    tag: 'Architect Pro 2',
+    cardH2En: 'Build Interactive 3D Houses',
+    cardH2Fr: 'Construisez des Maisons Interactives 3D',
+    cardPEn: 'Create multi-story architectures with procedural roofs, realistic lighting, and walkthrough cameras.',
+    cardPFr: 'Créez des architectures à plusieurs étages avec toits procéduraux, éclairage naturel et visites 3D.',
+    ref: 'arp2',
+    sections: [
+      {
+        h2En: 'Procedural Multi-Story Houses & Roofs',
+        h2Fr: 'Maisons Multi-Étages & Toits Procéduraux',
+        pEn: 'Go beyond flat floorplans with multi-story stacking, automatic gable/hip roof generation, architectural facades, and customizable surroundings that give realistic context to your building designs.',
+        pFr: 'Allez au-delà des plans simples avec l\'empilement d\'étages, la génération automatique de toitures, les façades détaillées et les aménagements extérieurs.'
+      },
+      {
+        h2En: 'Interactive Walkthroughs & 3D Export',
+        h2Fr: 'Visites Interactives & Export 3D',
+        pEn: 'Explore rooms in first-person camera mode, check daylight angles across interiors, and export your completed architectural model securely to GLB or STL.',
+        pFr: 'Explorez chaque pièce en vue subjective, vérifiez l\'ensoleillement naturel et exportez votre maquette architecturale complète en GLB ou STL.'
+      }
+    ]
+  },
+  {
+    id: 'music-composer',
+    titleEn: '4D Music Composer — Audio-Reactive 3D Synth & Loops | Studios-Pro',
+    titleFr: '4D Music Composer — Synthétiseur 3D Audio-Réactif & Boucles | Studios-Pro',
+    descEn: 'Compose melodies with polyphonic synths and drum loops synced to real-time 3D visuals, and export WAV audio plus HD music videos.',
+    descFr: 'Composez des mélodies avec synthétiseurs polyphoniques et boucles rythmiques synchronisés à des visuels 3D, puis exportez en WAV et vidéo HD.',
+    h1En: 'Interactive Audio-Visual Composition in 4D Music Composer',
+    h1Fr: 'Composition Audio-Visuelle Interactive dans 4D Music Composer',
+    tag: '4D Music',
+    cardH2En: 'Compose Audio-Reactive 3D Worlds',
+    cardH2Fr: 'Composez des Mondes 3D Audio-Réactifs',
+    cardPEn: 'Play polyphonic synths, layer BPM-locked loops, sync 3D visuals, and export WAV audio and music videos.',
+    cardPFr: 'Jouez sur synthétiseur polyphonique, superposez des boucles synchronisées et exportez en WAV et vidéo.',
+    ref: 'musc',
+    sections: [
+      {
+        h2En: 'Polyphonic Synthesizer, Drum Sequencer & Loop Layers',
+        h2Fr: 'Synthétiseur Polyphonique, Séquenceur & Couches de Boucles',
+        pEn: 'Perform live using your computer keyboard or on-screen piano, trigger quantized drum grooves, and layer multi-track loops in tight BPM synchronization with zero external DAW installation.',
+        pFr: 'Jouez en direct au clavier ou sur le piano intégré, programmez des rythmes quantifiés et superposez des pistes en boucle parfaitement synchronisées au BPM sans installer de DAW.'
+      },
+      {
+        h2En: 'Real-Time 3D Spectrum Visuals, WAV & Video Export',
+        h2Fr: 'Visuels 3D Temps Réel, Export WAV & Vidéo',
+        pEn: 'Every bass hit and chord drives real-time 3D geometry, particles, and lighting shaders. Export clean studio WAV audio tracks or record synchronized audio-visual clips ready for social media.',
+        pFr: 'Chaque basse et chaque accord anime en direct la géométrie 3D, les particules et les shaders lumineux. Exportez vos pistes audio WAV ou enregistrez des clips vidéo synchronisés.'
+      }
+    ]
+  },
+  {
+    id: 'design-pro-studio',
+    titleEn: 'Design Pro Studio — Vector Graphics, CAD Layouts & Mockups | Studios-Pro',
+    titleFr: 'Design Pro Studio — Graphisme Vectoriel, Plans & Maquettes | Studios-Pro',
+    descEn: 'Create clean vector graphics, technical layouts, diagrams, and precision SVG/PNG/DXF assets directly in your web browser.',
+    descFr: 'Créez des graphismes vectoriels nets, schémas techniques, maquettes et exports SVG/PNG/DXF de précision directement dans le navigateur.',
+    h1En: 'Precision Vector Design & Technical Layouts in Design Pro Studio',
+    h1Fr: 'Design Vectoriel de Précision & Schémas dans Design Pro Studio',
+    tag: 'Design Pro',
+    cardH2En: 'Create Precision Vector Graphics & Layouts',
+    cardH2Fr: 'Créez des Graphismes Vectoriels & Maquettes',
+    cardPEn: 'Design crisp vector illustrations, technical layouts, and export scale-accurate SVG, PNG, and CAD assets.',
+    cardPFr: 'Concevez des illustrations vectorielles et schémas précis et exportez en SVG, PNG et formats CAO.',
+    ref: 'desp',
+    sections: [
+      {
+        h2En: 'Snapped Vector Canvas & Layer Controls',
+        h2Fr: 'Toile Vectorielle Magnétique & Gestion des Calques',
+        pEn: 'Design Pro Studio gives you a responsive vector workspace with precision snapping, alignment guides, boolean shapes, typography, and structured layers for signage, UI mockups, and technical diagrams.',
+        pFr: 'Design Pro Studio offre un espace vectoriel réactif avec magnétisme, guides d\'alignement, formes géométriques, typographie et gestion des calques pour signalétique, maquettes UI et schémas.'
+      },
+      {
+        h2En: 'Export Universal SVG, Transparent PNG & Laser Assets',
+        h2Fr: 'Export Universel SVG, PNG Transparent & Laser',
+        pEn: 'Export crisp transparent PNGs for web publishing or clean vector SVG paths ready for laser engraving, vinyl plotters, and CAD workflows.',
+        pFr: 'Exportez des PNG transparents haute définition pour le web ou des tracés vectoriels SVG propres prêts pour la gravure laser, les traceurs vinyle et la CAO.'
+      }
+    ]
+  },
+  {
+    id: 'zen-sandscape',
+    titleEn: 'Zen Sandscape — Falling Sand Physics, Photo Art & AR Wall Export | Studios-Pro',
+    titleFr: 'Zen Sandscape — Physique du Sable, Art Photo & Export Mur AR | Studios-Pro',
+    descEn: 'Paint with interactive falling-sand physics elements, turn photos into living sand art, and export standalone offline HTML or 3D AR wall reliefs.',
+    descFr: 'Peignez avec des particules physiques (sable, eau, lave, portails), transformez vos photos en sable vivant et exportez en HTML hors ligne ou relief 3D AR.',
+    h1En: 'Interactive Sand Physics, Photo Art & 3D AR Export in Zen Sandscape',
+    h1Fr: 'Physique du Sable, Art Photo & Export 3D AR dans Zen Sandscape',
+    tag: 'Zen Sandscape',
+    cardH2En: 'Sand Physics, Photo Sand Art & Offline HTML',
+    cardH2Fr: 'Physique du Sable, Photo Sable & HTML Hors Ligne',
+    cardPEn: 'Simulate sand, water, lava, portals, and color photos, then export offline HTML or 3D AR wall art.',
+    cardPFr: 'Simulez sable, eau, lave, portails et photos en couleur, puis exportez en HTML autonome ou tableau 3D AR.',
+    ref: 'sandbox',
+    sections: [
+      {
+        h2En: 'Dynamic Element Reactions & Photo-to-Sand Painting',
+        h2Fr: 'Réactions Physiques & Conversion Photo vers Sable',
+        pEn: 'Paint with falling sand, flowing water, fire, volcanic lava, voltage sparks, and portal teleporters under live gravity and wind controls — or load any photo to watch it cascade into a rich, multi-color granular mosaic.',
+        pFr: 'Peignez avec du sable, de l\'eau, du feu, de la lave volcanique, des étincelles et des portails sous contrôle du vent et de la gravité, ou chargez une photo pour la transformer en mosaïque de sable coloré.'
+      },
+      {
+        h2En: 'Standalone Offline HTML & 3D Wall Art AR Export',
+        h2Fr: 'Export HTML Autonome Hors Ligne & Tableau 3D AR',
+        pEn: 'Compile your scene into a clean, fullscreen, offline-ready HTML simulation with all editor controls removed, or export your layered sand relief as a 3D mesh and preview it directly on your wall in AR Viewer.',
+        pFr: 'Compilez votre création en fichier HTML autonome plein écran prêt pour une utilisation hors ligne sans panneaux d\'édition, ou exportez votre relief de sable en 3D pour le visualiser au mur dans AR Viewer.'
+      }
+    ]
+  },
+  {
+    id: '3d-studio',
+    titleEn: '3D Studio — Procedural 3D Modeling & STL/OBJ Export | Studios-Pro',
+    titleFr: '3D Studio — Modélisation 3D Procédurale & Export STL/OBJ | Studios-Pro',
+    descEn: 'Design, sculpt, and customize procedural 3D meshes in your browser and export watertight STL and OBJ files for 3D printing.',
+    descFr: 'Concevez et personnalisez des modèles 3D procéduraux dans votre navigateur et exportez des fichiers STL et OBJ étanches pour l\'impression 3D.',
+    h1En: 'Procedural 3D Modeling & Mesh Customization in 3D Studio',
+    h1Fr: 'Modélisation 3D Procédurale & Maillages dans 3D Studio',
+    tag: '3D Studio',
+    cardH2En: 'Create Custom Procedural 3D Models',
+    cardH2Fr: 'Créez des Modèles 3D Procéduraux',
+    cardPEn: 'Build procedural geometries, customize PBR materials, and export print-ready STL and OBJ models.',
+    cardPFr: 'Concevez des géométries procédurales, personnalisez les matériaux PBR et exportez en STL et OBJ.',
+    ref: 'ap3d',
+    sections: [
+      {
+        h2En: 'Real-Time Procedural Mesh Generation',
+        h2Fr: 'Génération de Maillage Procédural en Temps Réel',
+        pEn: 'Generate precision mechanical parts, calibration objects, parametric solids, and torus knots using intuitive live sliders with instant millimeter feedback.',
+        pFr: 'Générez des pièces mécaniques précises, objets de calibration, solides paramétriques et formes mathématiques grâce aux curseurs temps réel.'
+      },
+      {
+        h2En: 'Material Finishes & Watertight STL / OBJ Export',
+        h2Fr: 'Matériaux PBR & Export STL / OBJ Étanche',
+        pEn: 'Preview gold, chrome, matte filament, neon, or glass materials under studio lighting, then export clean STL or OBJ meshes compatible with every 3D printer slicer.',
+        pFr: 'Prévisualisez vos modèles en or, chrome, filament mat, néon ou verre sous éclairage studio, puis exportez des fichiers STL ou OBJ compatibles avec tous les trancheurs 3D.'
+      }
+    ]
+  },
+  {
+    id: 'studio-3d-viewer',
+    titleEn: 'Studio 3D Viewer — Online CAD Inspector, Measure & Slice | Studios-Pro',
+    titleFr: 'Studio 3D Viewer — Inspecteur CAO, Mesure & Coupe en Ligne | Studios-Pro',
+    descEn: 'Free online CAD viewer. Drag & drop STL, OBJ, GLB, GLTF, PLY, and 3MF files to inspect, measure in mm, slice cross-sections, and export.',
+    descFr: 'Visualiseur CAO gratuit en ligne. Glissez-déposez des fichiers STL, OBJ, GLB, GLTF, PLY et 3MF pour inspecter, mesurer en mm et couper en section.',
+    h1En: 'Online 3D Model Inspection, Slicing & Measurement',
+    h1Fr: 'Inspection de Modèles 3D, Coupe et Mesure en Ligne',
+    tag: '3D Viewer',
+    cardH2En: 'Inspect, Measure & Slice 3D Models',
+    cardH2Fr: 'Inspectez, Mesurez & Coupez des Modèles 3D',
+    cardPEn: 'Drag & drop STL, OBJ, GLB, and 3MF files to measure exact millimeter distances and slice along X/Y/Z axes.',
+    cardPFr: 'Glissez-déposez STL, OBJ, GLB et 3MF pour mesurer au millimètre et couper selon les axes X/Y/Z.',
+    ref: 's3dviewer',
+    sections: [
+      {
+        h2En: 'Cross-Section Clipping Planes & Internal Inspection',
+        h2Fr: 'Plans de Coupe Transversale & Inspection Interne',
+        pEn: 'Slice cleanly through any 3D model along X, Y, or Z axes with color-filled section caps to verify wall thickness, hollow cavities, and mechanical clearances before printing.',
+        pFr: 'Coupez n\'importe quel modèle 3D selon les axes X, Y ou Z avec remplissage de coupe pour vérifier l\'épaisseur des parois, les cavités internes et les jeux mécaniques avant impression.'
+      },
+      {
+        h2En: 'Point-to-Point Millimeter CAD Measurement',
+        h2Fr: 'Mesure CAO Point à Point en Millimètres',
+        pEn: 'Click any two surface points to compute exact real-world distances in millimeters, inspect bounding boxes and triangle counts, and export standalone interactive HTML previews.',
+        pFr: 'Cliquez sur deux points de la surface pour calculer la distance réelle en millimètres, vérifier la boîte englobante et exporter des aperçus HTML interactifs autonomes.'
+      }
+    ]
+  },
+  {
+    id: 'dfx-studio',
+    titleEn: 'DFX Studio — Online AutoCAD DXF Viewer & Vector Tool | Studios-Pro',
+    titleFr: 'DFX Studio — Visualiseur AutoCAD DXF & Outil Vectoriel | Studios-Pro',
+    descEn: 'Open AutoCAD DXF blueprints in your browser without AutoCAD, toggle layers, inspect vector dimensions, and export SVG or standalone HTML.',
+    descFr: 'Ouvrez vos plans AutoCAD DXF dans le navigateur sans AutoCAD, gérez les calques, inspectez les tracés et exportez en SVG ou HTML autonome.',
+    h1En: 'Online AutoCAD DXF Blueprint Viewer & Vector Inspector',
+    h1Fr: 'Visualiseur de Plans AutoCAD DXF & Inspecteur Vectoriel',
+    tag: 'DFX Studio',
+    cardH2En: 'Open DXF Blueprints & Inspect CAD Layers',
+    cardH2Fr: 'Ouvrez vos Plans DXF & Inspectez les Calques',
+    cardPEn: 'Load AutoCAD DXF drawings, toggle CAD layers, verify laser cut paths, and export clean SVG or HTML.',
+    cardPFr: 'Chargez des dessins DXF AutoCAD, gérez les calques, vérifiez vos découpes laser et exportez en SVG ou HTML.',
+    ref: 'dfx',
+    sections: [
+      {
+        h2En: 'Instant AutoCAD DXF Parsing & Layer Controls',
+        h2Fr: 'Lecture Instantanée DXF AutoCAD & Contrôle des Calques',
+        pEn: 'Drop any DXF CAD drawing directly into DFX Studio to inspect polylines, arcs, circles, and named AutoCAD layers with smooth pan and zoom — 100% locally in your browser.',
+        pFr: 'Glissez n\'importe quel fichier DXF dans DFX Studio pour inspecter polylignes, arcs, cercles et calques AutoCAD avec zoom fluide, 100 % localement dans votre navigateur.'
+      },
+      {
+        h2En: 'Clean SVG & Standalone Interactive Export',
+        h2Fr: 'Export SVG Propre & HTML Interactif',
+        pEn: 'Convert CAD blueprints into scalable SVG files for LightBurn, Inkscape, and web publishing, or package them as interactive shareable HTML views.',
+        pFr: 'Convertissez vos plans CAO en fichiers SVG propres pour LightBurn, Inkscape ou le web, ou exportez-les en vues HTML interactives.'
+      }
+    ]
+  },
+  {
+    id: 'depth-maps',
+    titleEn: 'AI Depth Maps for 3D Reliefs & Lithophanes | Studios-Pro',
+    titleFr: 'Cartes de Profondeur IA pour Reliefs 3D & Lithophanies | Studios-Pro',
+    descEn: 'Generate high-resolution grayscale depth maps and 3D STL reliefs from photos using AI for CNC wood carving and 3D printed lithophanes.',
+    descFr: 'Générez des cartes de profondeur haute résolution et reliefs STL 3D par IA pour gravure bois CNC et lithophanies imprimées en 3D.',
+    h1En: 'Generate AI Depth Maps for CNC Carving and 3D Printing',
+    h1Fr: 'Générer des Cartes de Profondeur IA pour Gravure CNC & 3D',
+    tag: 'Depth Maps',
+    cardH2En: 'Generate AI Depth Maps & CNC Reliefs',
+    cardH2Fr: 'Générez des Cartes de Profondeur & Reliefs CNC',
+    cardPEn: 'Convert flat photos into 16-bit grayscale heightmaps and watertight 3D relief STL files.',
+    cardPFr: 'Convertissez des photos plates en cartes de hauteur 16 bits et fichiers STL de bas-relief.',
+    ref: 'depth',
+    sections: [
+      {
+        h2En: 'AI Monocular Depth Estimation',
+        h2Fr: 'Estimation Monoculaire de Profondeur par IA',
+        pEn: 'Upload any portrait, landscape, or emblem. The depth estimation engine separates foreground subjects from backgrounds to build smooth, high-contrast displacement maps.',
+        pFr: 'Importez un portrait, un paysage ou un emblème. Le moteur d\'estimation sépare automatiquement les plans pour construire une carte de profondeur fluide et contrastée.'
+      },
+      {
+        h2En: 'CNC Wood Carving & Backlit Lithophane Export',
+        h2Fr: 'Export Gravure Bois CNC & Lithophanie',
+        pEn: 'Download crisp grayscale depth maps for Vectric Aspire, Carveco, and Blender, or convert them directly into watertight STL relief meshes ready for 3D printing.',
+        pFr: 'Téléchargez des cartes de profondeur nettes pour Vectric Aspire, Carveco et Blender, ou exportez directement un maillage STL étanche prêt pour l\'impression 3D.'
+      }
+    ]
+  },
+  {
+    id: 'vector-cnc',
+    titleEn: 'Vector CNC — Image to SVG, DXF & G-Code Converter | Studios-Pro',
+    titleFr: 'Vector CNC — Convertisseur Image vers SVG, DXF & G-Code | Studios-Pro',
+    descEn: 'Trace PNG/JPG images to SVG and DXF vector paths and generate ready-to-run GRBL/Marlin G-Code toolpaths for laser cutters and CNC routers.',
+    descFr: 'Vectorisez vos images PNG/JPG en SVG et DXF et générez des parcours G-Code GRBL/Marlin prêts pour découpeuses laser et routeurs CNC.',
+    h1En: 'Online SVG to DXF Converter & CNC G-Code Generator',
+    h1Fr: 'Convertisseur SVG vers DXF & Générateur de G-Code CNC',
+    tag: 'Vector CNC',
+    cardH2En: 'Convert Images & SVG to DXF & G-Code',
+    cardH2Fr: 'Convertissez Images & SVG en DXF & G-Code',
+    cardPEn: 'Prepare clean vector paths and GRBL G-Code for laser engraving, diode cutting, and CNC milling.',
+    cardPFr: 'Préparez des tracés vectoriels propres et du G-Code GRBL pour gravure laser et fraisage CNC.',
+    ref: 'vcnc',
+    sections: [
+      {
+        h2En: 'Precision Bitmap Tracing & SVG/DXF Vectorization',
+        h2Fr: 'Vectorisation Précise & Conversion SVG/DXF',
+        pEn: 'Import PNG, JPG, or SVG artwork, adjust trace thresholds and path smoothing, and convert contours into scale-accurate CAD DXF files compatible with LightBurn, LaserGRBL, and CNC controllers.',
+        pFr: 'Importez un visuel PNG, JPG ou SVG, ajustez les seuils de détection et le lissage, puis exportez en DXF CAO à l\'échelle pour LightBurn, LaserGRBL et contrôleurs CNC.'
+      },
+      {
+        h2En: 'Automatic GRBL & Marlin G-Code Toolpaths',
+        h2Fr: 'Parcours G-Code GRBL & Marlin Automatiques',
+        pEn: 'Configure feed rate, spindle or laser power, pass depth, and work area dimensions to preview and download production G-Code directly from your browser.',
+        pFr: 'Réglez vitesse d\'avance, puissance laser ou broche, profondeur de passe et dimensions pour prévisualiser et télécharger votre G-Code directement depuis le navigateur.'
+      }
+    ]
+  },
+  {
+    id: 'maker-studio-7',
+    titleEn: 'Maker Studio 7 — Parametric Laser Boxes & Lithophanes | Studios-Pro',
+    titleFr: 'Maker Studio 7 — Boîtes Laser Paramétriques & Lithophanies | Studios-Pro',
+    descEn: 'Design parametric finger-joint laser boxes with kerf compensation, interlocking enclosures, and custom 3D lithophanes in DXF, SVG, and STL.',
+    descFr: 'Concevez des boîtes laser paramétriques à encoches avec compensation de trait (kerf) et des lithophanies 3D en DXF, SVG et STL.',
+    h1En: 'Parametric Laser Boxes & Maker Generators in Maker Studio 7',
+    h1Fr: 'Boîtes Laser Paramétriques & Générateurs dans Maker Studio 7',
+    tag: 'Maker Studio 7',
+    cardH2En: 'Parametric Box & Joint Designer',
+    cardH2Fr: 'Conception Paramétrique de Boîtes Laser',
+    cardPEn: 'Generate kerf-compensated finger-joint boxes, T-slot enclosures, and 3D lithophanes in DXF, SVG, and STL.',
+    cardPFr: 'Générez des boîtes à encoches avec compensation kerf, boîtiers et lithophanies en DXF, SVG et STL.',
+    ref: 'mkr7',
+    sections: [
+      {
+        h2En: 'Kerf-Compensated Finger-Joint Enclosures',
+        h2Fr: 'Boîtiers à Encoches avec Compensation Kerf',
+        pEn: 'Enter exact box dimensions, plywood or acrylic material thickness, tab width, and laser kerf offset. Maker Studio 7 automatically lays out flat press-fit panels ready for DXF or SVG cutting.',
+        pFr: 'Indiquez dimensions, épaisseur du contreplaqué ou de l\'acrylique, largeur des crans et compensation kerf. Maker Studio 7 génère instantanément les panneaux à plat en DXF ou SVG.'
+      },
+      {
+        h2En: '3D Printed Lithophanes & PBR Maker Utilities',
+        h2Fr: 'Lithophanies Imprimables 3D & Utilitaires Maker',
+        pEn: 'Transform photos into curved or flat backlit lithophanes with custom wall thickness and export watertight STL files ready for FDM or resin printers.',
+        pFr: 'Transformez vos photos en lithophanies plates ou courbes rétroéclairées et exportez des fichiers STL étanches pour imprimantes FDM ou résine.'
+      }
+    ]
+  },
+  {
+    id: 'jewelry-maker-pro',
+    titleEn: 'Jewelry Maker Pro — Custom 3D Ring & Jewelry CAD | Studios-Pro',
+    titleFr: 'Jewelry Maker Pro — CAO de Bagues & Bijoux 3D | Studios-Pro',
+    descEn: 'Design custom 3D printable rings, signet bands, gemstone bezels, and engraved jewelry with real US/EU millimeter sizes. Export castable STL.',
+    descFr: 'Concevez des bagues, alliances, chevalières et sertissages de pierres aux tailles réelles US/EU en millimètres. Exportez en STL pour fonderie.',
+    h1En: 'Interactive Custom Jewelry Design & 3D Print CAD',
+    h1Fr: 'CAO de Conception de Bijoux 3D Personnalisés',
+    tag: 'Jewelry Maker',
+    cardH2En: 'Design Custom 3D Printable Rings',
+    cardH2Fr: 'Concevez des Bagues & Alliances 3D',
+    cardPEn: 'Customize ring sizes (US/EU/UK), stone mounts, engravings, and export watertight STL for resin casting.',
+    cardPFr: 'Ajustez tailles de bague (US/EU/UK), sertissages, gravures et exportez en STL étanche pour coulée.',
+    ref: 'jwly',
+    sections: [
+      {
+        h2En: 'Parametric Ring Sizing & Gemstone Bezels',
+        h2Fr: 'Tailles de Bague Paramétriques & Sertissages',
+        pEn: 'Select standard US, EU, or UK ring sizes, customize band profile, width, thickness, engraved lettering, and gemstone settings with realistic gold, platinum, and silver rendering.',
+        pFr: 'Sélectionnez les tailles standards US, EU ou UK, personnalisez le profil d\'anneau, la largeur, la gravure et le sertissage de pierres avec rendu réaliste or, platine ou argent.'
+      },
+      {
+        h2En: 'Castable Resin & 3D Print STL Optimization',
+        h2Fr: 'Optimisation STL pour Résine Calcinable & Fonte',
+        pEn: 'Export high-resolution watertight STL geometry calibrated for castable wax resin 3D printing and lost-wax precious metal fabrication.',
+        pFr: 'Exportez une géométrie STL haute résolution étanche, calibrée pour l\'impression 3D en résine calcinable et la fonte à cire perdue.'
+      }
+    ]
+  },
+  {
+    id: 'mech-gen-pro',
+    titleEn: 'Mech Gen Pro — Parametric Involute Gear & Sprocket CAD | Studios-Pro',
+    titleFr: 'Mech Gen Pro — Générateur d\'Engrenages & Pignons CAO | Studios-Pro',
+    descEn: 'Calculate and generate involute spur gears, internal rings, planetary gearboxes, and sprockets. Export precision DXF, SVG, and 3D STL.',
+    descFr: 'Calculez et générez des engrenages à développante, couronnes internes, trains planétaires et pignons. Exportez en DXF, SVG et STL 3D.',
+    h1En: 'Parametric Mechanical Gear & Sprocket Generator',
+    h1Fr: 'Générateur d\'Engrenages Mécaniques & Pignons CAO',
+    tag: 'Mech Gen Pro',
+    cardH2En: 'Design Parametric Gears & Sprockets',
+    cardH2Fr: 'Concevez des Engrenages & Pignons',
+    cardPEn: 'Compute involute teeth, module, pressure angle, and bore shafts, then export to DXF, SVG, or 3D STL.',
+    cardPFr: 'Calculez dentures à développante, module, angle de pression et alésage, puis exportez en DXF, SVG ou STL.',
+    ref: 'mechgen',
+    sections: [
+      {
+        h2En: 'Accurate Involute Gear & Pitch Calculations',
+        h2Fr: 'Calculs Précis de Denture à Développante',
+        pEn: 'Set module, tooth count, pressure angle, backlash clearance, and shaft bore diameter. Mech Gen Pro computes mathematically accurate involute tooth curves and live meshing animations.',
+        pFr: 'Paramétrez le module, le nombre de dents, l\'angle de pression, le jeu et le diamètre d\'alésage. Mech Gen Pro trace des courbes à développante exactes avec aperçu d\'engrènement.'
+      },
+      {
+        h2En: 'DXF, SVG & 3D Printable STL Export',
+        h2Fr: 'Export DXF, SVG & STL Imprimable 3D',
+        pEn: 'Export 2D vector profiles in DXF or SVG for laser cutting and CNC milling, or extrude directly into 3D STL mechanical gears for functional prototyping.',
+        pFr: 'Exportez les profils 2D en DXF ou SVG pour découpe laser et fraisage CNC, ou extrudez directement en engrenages STL 3D pour le prototypage fonctionnel.'
       }
     ]
   },
   {
     id: 'best-free-online-3d-model-viewer-no-download',
-    titleEn: 'Best Free Online 3D Model Viewer — No Download Required | Studios-Pro',
+    titleEn: 'Best Free Online 3D Model Viewer — No Download | Studios-Pro',
     titleFr: 'Meilleur Visualiseur 3D Gratuit en Ligne — Sans Téléchargement | Studios-Pro',
-    descEn: 'Compare the best free online 3D model viewers for STL, OBJ, GLB, and GLTF files. No software download required — open and inspect 3D files instantly in your browser.',
-    descFr: 'Comparez les meilleurs visualiseurs 3D gratuits en ligne pour les fichiers STL, OBJ, GLB. Aucun téléchargement requis.',
-    h1En: 'Best Free Online 3D Model Viewer — No Download Required (2026)',
-    h1Fr: 'Meilleur Visualiseur 3D Gratuit en Ligne — Sans Téléchargement (2026)',
+    descEn: 'Open and inspect STL, OBJ, GLB, GLTF, PLY, and 3MF files instantly in your browser with zero software installation and 100% local privacy.',
+    descFr: 'Ouvrez et inspectez vos fichiers STL, OBJ, GLB, GLTF, PLY et 3MF instantanément dans le navigateur sans installation et avec confidentialité locale.',
+    h1En: 'Best Free Online 3D Model Viewer — No Download Required',
+    h1Fr: 'Meilleur Visualiseur 3D Gratuit en Ligne — Sans Téléchargement',
     tag: '3D Viewer',
     cardH2En: 'Instant Browser-Based 3D Viewing',
-    cardH2Fr: 'Visualisation 3D Instantanée dans le Navigateur',
-    cardPEn: 'Open STL, OBJ, GLB, GLTF, PLY, 3MF files instantly — no software install.',
-    cardPFr: 'Ouvrez STL, OBJ, GLB, GLTF, PLY, 3MF instantanément — sans logiciel.',
+    cardH2Fr: 'Visualisation 3D Instantanée en Ligne',
+    cardPEn: 'Open STL, OBJ, GLB, GLTF, PLY, and 3MF files instantly — no software download required.',
+    cardPFr: 'Ouvrez STL, OBJ, GLB, GLTF, PLY et 3MF instantanément sans installer de logiciel.',
     ref: 's3dviewer',
     sections: [
       {
         h2En: 'Why Use a Browser-Based 3D Viewer?',
         h2Fr: 'Pourquoi utiliser un visualiseur 3D dans le navigateur ?',
-        pEn: 'Installing heavy desktop software like Blender (700MB+) or MeshLab just to quickly view a single STL or OBJ file is overkill. Browser-based 3D viewers let you open, inspect, rotate, and measure 3D models in seconds — directly inside Chrome, Firefox, or Safari. No setup, no license, no admin rights required. Perfect for students, designers, and engineers who need to quickly verify 3D geometry on any device.',
-        pFr: "Installer un logiciel lourd comme Blender ou MeshLab juste pour visualiser un fichier STL est excessif. Les visualiseurs 3D basés sur navigateur permettent d'ouvrir, inspecter et mesurer des modèles 3D en quelques secondes — directement dans Chrome ou Firefox. Parfait pour les étudiants et ingénieurs."
+        pEn: 'Installing heavy desktop software like Blender or MeshLab just to verify an STL or 3MF file wastes time and disk space. A WebGL browser viewer lets you open, orbit, measure, and slice 3D models in seconds on Windows, Mac, Linux, iPad, or phone.',
+        pFr: 'Installer un logiciel lourd comme Blender ou MeshLab juste pour vérifier un fichier STL ou 3MF fait perdre du temps. Un visualiseur WebGL dans le navigateur permet d\'ouvrir, pivoter, mesurer et couper vos modèles en quelques secondes sur tout appareil.'
       },
       {
-        h2En: 'Studios-Pro 3D Viewer — Supported Formats',
-        h2Fr: 'Studios-Pro 3D Viewer — Formats Supportés',
-        pEn: 'The Studios-Pro free online 3D viewer supports all major 3D file formats: STL (binary and ASCII), OBJ with MTL materials, GLB binary, GLTF JSON, PLY point clouds, and 3MF manufacturing format. The viewer runs entirely client-side using WebGL — your files never leave your computer, making it completely private and secure. Features include: distance measurement tools, axis clipping planes, lighting controls, and standalone interactive HTML export.',
-        pFr: 'Le visualiseur 3D gratuit Studios-Pro supporte tous les formats majeurs : STL, OBJ, GLB, GLTF, PLY et 3MF. Il fonctionne entièrement côté client via WebGL — vos fichiers ne quittent jamais votre ordinateur. Fonctionnalités : outils de mesure, plans de coupe, contrôle de l\'éclairage et export HTML interactif.'
+        h2En: 'Studios-Pro 3D Viewer — All Major Formats Privately',
+        h2Fr: 'Studios-Pro 3D Viewer — Tous les Formats en Confidentialité',
+        pEn: 'Inspect binary/ASCII STL, OBJ+MTL, GLB, GLTF, PLY, and 3MF models entirely client-side — your files never leave your computer. Measure millimeter distances, inspect cross-sections, or send straight to WebAR.',
+        pFr: 'Inspectez STL, OBJ+MTL, GLB, GLTF, PLY et 3MF entièrement côté client : vos fichiers ne quittent jamais votre ordinateur. Mesurez en millimètres, coupez en section ou lancez en WebAR.'
       }
     ]
   },
   {
     id: 'how-to-convert-stl-to-obj-online-free',
-    titleEn: 'How to Convert STL to OBJ Online Free — No Software Needed | Studios-Pro',
-    titleFr: 'Convertir STL en OBJ Gratuitement en Ligne — Sans Logiciel | Studios-Pro',
-    descEn: 'Step-by-step guide to convert STL 3D printing files to OBJ format online for free. No software download required. Works on Windows, Mac, and mobile.',
-    descFr: 'Guide étape par étape pour convertir des fichiers STL en OBJ gratuitement en ligne. Sans téléchargement. Fonctionne sur Windows, Mac et mobile.',
-    h1En: 'How to Convert STL to OBJ Online Free — Complete 2026 Guide',
-    h1Fr: 'Convertir STL en OBJ Gratuitement en Ligne — Guide Complet 2026',
+    titleEn: 'How to Convert STL to OBJ Online Free | Studios-Pro',
+    titleFr: 'Convertir STL en OBJ Gratuitement en Ligne | Studios-Pro',
+    descEn: 'Convert STL 3D printing files to Wavefront OBJ format online for free with vertex normals and 100% client-side privacy.',
+    descFr: 'Convertissez vos fichiers STL d\'impression 3D en format Wavefront OBJ gratuitement en ligne avec normales et traitement 100 % local.',
+    h1En: 'How to Convert STL to OBJ Online Free — Complete Guide',
+    h1Fr: 'Convertir STL en OBJ Gratuitement en Ligne — Guide Complet',
     tag: '3D Converter',
-    cardH2En: 'Instant STL → OBJ Conversion in Browser',
-    cardH2Fr: 'Conversion STL → OBJ Instantanée dans le Navigateur',
-    cardPEn: 'Convert STL to OBJ online with vertex normals and material support — no upload to server.',
-    cardPFr: 'Convertissez STL en OBJ en ligne avec normales de sommets — sans envoi sur serveur.',
+    cardH2En: 'Instant STL to OBJ Conversion in Browser',
+    cardH2Fr: 'Conversion STL vers OBJ dans le Navigateur',
+    cardPEn: 'Convert STL to OBJ online with vertex normals and material support — zero server uploads.',
+    cardPFr: 'Convertissez STL en OBJ en ligne avec normales de sommets — sans envoi serveur.',
     ref: 's3dviewer',
     sections: [
       {
         h2En: 'Why Convert STL to OBJ?',
         h2Fr: 'Pourquoi convertir STL en OBJ ?',
-        pEn: 'STL (Stereolithography) is the standard format for 3D printing slicers, but it lacks material color information and named surface groups. OBJ (Wavefront) supports vertex colors, multiple material assignments via .MTL files, and named object groups — making it essential for game engines, rendering software like Blender, and augmented reality workflows. Converting STL to OBJ online gives you more flexibility without losing any geometry data.',
-        pFr: "Le format STL est standard pour l'impression 3D mais manque d'informations sur les couleurs et matériaux. OBJ supporte les couleurs de sommets, les matériaux multiples via .MTL et les groupes nommés — essentiel pour les moteurs de jeux, Blender et la réalité augmentée."
+        pEn: 'STL is universal for 3D printing slicers but omits material groups and UV/color metadata. Wavefront OBJ preserves normals, material slots (.MTL), and named geometry groups required by Blender, Unity, and Unreal Engine.',
+        pFr: 'Le format STL est standard pour l\'impression 3D mais ne gère pas les groupes de matériaux ni les couleurs. Wavefront OBJ conserve les normales, les matériaux (.MTL) et les groupes requis par Blender, Unity et Unreal Engine.'
       },
       {
-        h2En: 'Convert STL to OBJ in 3 Steps with Studios-Pro',
-        h2Fr: 'Convertir STL en OBJ en 3 Étapes avec Studios-Pro',
-        pEn: 'Step 1: Open the Studios-Pro 3D Viewer at studios-pro.com. Step 2: Drag and drop your .STL file directly onto the viewer canvas — it will load instantly with full 3D preview. Step 3: Click the Export button and choose OBJ format. Your .OBJ and .MTL files download immediately to your computer. The entire conversion happens locally in your browser — no file upload, no waiting, no size limits.',
-        pFr: 'Étape 1 : Ouvrez Studios-Pro. Étape 2 : Glissez votre fichier .STL sur le canvas — il se charge instantanément. Étape 3 : Cliquez sur Exporter et choisissez OBJ. Vos fichiers .OBJ et .MTL se téléchargent immédiatement. Tout se passe localement dans votre navigateur — pas de téléversement, pas d\'attente.'
+        h2En: 'Convert STL to OBJ in 3 Steps',
+        h2Fr: 'Convertir STL en OBJ en 3 Étapes',
+        pEn: 'Open Studios-Pro 3D Viewer or PolyMorph 3D, drag and drop your .STL file onto the viewport, verify dimensions, and click Export OBJ. Conversion completes locally in milliseconds with no upload queue.',
+        pFr: 'Ouvrez Studios-Pro 3D Viewer ou PolyMorph 3D, glissez-déposez votre fichier .STL, vérifiez les dimensions et cliquez sur Exporter OBJ. La conversion s\'effectue localement en quelques millisecondes.'
       }
     ]
   },
   {
     id: 'free-laser-cut-svg-generator-online',
-    titleEn: 'Free Laser Cut SVG File Generator Online — CNC & Engraving Ready | Studios-Pro',
-    titleFr: 'Générateur de Fichiers SVG pour Découpe Laser Gratuit en Ligne | Studios-Pro',
-    descEn: 'Generate clean SVG vector files for laser cutting machines, CNC routers, and vinyl cutters online free. Export DXF, G-Code, and SVG paths instantly.',
-    descFr: 'Générez des fichiers SVG propres pour découpe laser, routeurs CNC et traceurs en ligne gratuitement. Exportez DXF, G-Code et tracés SVG instantanément.',
-    h1En: 'Free Online Laser Cut SVG Generator for CNC & Engraving (2026)',
-    h1Fr: 'Générateur SVG Gratuit pour Découpe Laser CNC (2026)',
+    titleEn: 'Free Laser Cut SVG File Generator Online — CNC Ready | Studios-Pro',
+    titleFr: 'Générateur de Fichiers SVG Découpe Laser Gratuit en Ligne | Studios-Pro',
+    descEn: 'Create clean SVG, DXF, and G-Code vector files for laser cutters (xTool, Sculpfun, LightBurn) and CNC routers online for free.',
+    descFr: 'Créez des fichiers vectoriels SVG, DXF et G-Code propres pour découpeuses laser (xTool, Sculpfun, LightBurn) et CNC gratuitement en ligne.',
+    h1En: 'Free Online Laser Cut SVG Generator for CNC & Engraving',
+    h1Fr: 'Générateur SVG Gratuit pour Découpe Laser & CNC',
     tag: 'Vector CNC',
-    cardH2En: 'Generate CNC-Ready SVG Paths Online',
-    cardH2Fr: 'Générez des Tracés SVG Prêts pour CNC',
-    cardPEn: 'Create SVG, DXF, and G-Code vector paths for laser cutters — works with Lightburn, LaserGRBL.',
-    cardPFr: 'Créez des tracés SVG, DXF et G-Code pour découpeuses laser — compatible Lightburn, LaserGRBL.',
+    cardH2En: 'Generate CNC-Ready SVG & Laser Paths',
+    cardH2Fr: 'Générez des Tracés SVG pour Découpe Laser',
+    cardPEn: 'Trace images and export SVG, DXF, and G-Code paths compatible with LightBurn and LaserGRBL.',
+    cardPFr: 'Vectorisez vos images et exportez en SVG, DXF et G-Code compatibles LightBurn et LaserGRBL.',
     ref: 'vcnc',
     sections: [
       {
-        h2En: 'What File Format Do Laser Cutters Use?',
-        h2Fr: 'Quel format de fichier les découpeuses laser utilisent-elles ?',
-        pEn: 'Most laser cutters (like the xTool D1, Sculpfun S30, or Ortur Laser Master) accept SVG vector files or DXF CAD files as input. They read the vector paths and trace them with the laser beam for cutting or engraving. SVG is preferred for simpler workflows (compatible with LightBurn, K40 Whisperer), while DXF is used for professional CNC machines and CAD workflows. G-Code files contain the precise machine movement instructions and are used for the most precise control.',
-        pFr: 'La plupart des découpeuses laser (xTool D1, Sculpfun S30, Ortur) acceptent des fichiers SVG ou DXF. SVG est préféré pour les workflows simples (LightBurn, K40 Whisperer), DXF pour les machines CNC professionnelles.'
+        h2En: 'Choosing Between SVG, DXF & G-Code for Lasers',
+        h2Fr: 'Choisir entre SVG, DXF et G-Code pour Laser',
+        pEn: 'Diode and CO2 laser cutters (xTool, Ortur, Sculpfun, Omtech) accept SVG for quick LightBurn projects, DXF for precision CAD assemblies, and GRBL G-Code for direct machine execution.',
+        pFr: 'Les découpeuses laser diode et CO2 (xTool, Ortur, Sculpfun, Omtech) acceptent le SVG pour LightBurn, le DXF pour les assemblages CAO précis et le G-Code GRBL pour l\'exécution directe.'
       },
       {
-        h2En: 'Create Laser Cut Files with Studios-Pro Vector CNC Studio',
-        h2Fr: 'Créer des Fichiers pour Découpe Laser avec Studios-Pro',
-        pEn: 'Studios-Pro Vector CNC Studio lets you draw or import vector paths and export them as laser-ready SVG, DXF, or G-Code files — all for free in your browser. Upload a PNG or JPG image and automatically trace it to clean vector paths for laser engraving. Set your machine dimensions, cutting speed, and power settings directly in the interface. Compatible with LightBurn, LaserGRBL, Carbide Create, and all major CNC software.',
-        pFr: 'Studios-Pro Vector CNC Studio vous permet de dessiner ou importer des tracés vectoriels et de les exporter en SVG, DXF ou G-Code — gratuitement dans votre navigateur. Téléversez une image PNG/JPG et tracez-la automatiquement en vecteurs. Compatible avec LightBurn, LaserGRBL et tous les logiciels CNC majeurs.'
+        h2En: 'Build Laser Cut Paths in Vector CNC Studio',
+        h2Fr: 'Créer vos Tracés dans Vector CNC Studio',
+        pEn: 'Upload a PNG or JPG graphic, auto-trace crisp cut and engrave contours, set exact millimeter scale, and export SVG, DXF, or G-Code directly from your browser.',
+        pFr: 'Importez une image PNG ou JPG, vectorisez automatiquement des contours nets, définissez l\'échelle en millimètres et exportez en SVG, DXF ou G-Code depuis le navigateur.'
       }
     ]
   },
   {
     id: 'free-ai-image-to-3d-model-generator-online',
     titleEn: 'Free AI Image to 3D Model Generator Online — Photo to STL | Studios-Pro',
-    titleFr: 'Générateur de Modèle 3D IA Gratuit — Photo en STL en Ligne | Studios-Pro',
-    descEn: 'Convert any 2D photo or image to a 3D printable STL model online free using AI depth estimation. No 3D modeling experience required. Export STL, OBJ, GLB.',
-    descFr: 'Convertissez n\'importe quelle photo en modèle STL 3D imprimable en ligne gratuitement. Aucune expérience en modélisation requise. Exportez STL, OBJ, GLB.',
-    h1En: 'Free AI Image to 3D Model Generator Online — Convert Photo to STL (2026)',
-    h1Fr: 'Générateur de Modèle 3D IA Gratuit — Convertir Photo en STL (2026)',
-    tag: 'ArtGen Studio',
+    titleFr: 'Générateur de Modèle 3D IA Gratuit — Photo en STL | Studios-Pro',
+    descEn: 'Convert any 2D photo or logo into a watertight 3D printable STL, OBJ, or GLB relief model online for free using browser-side AI depth estimation.',
+    descFr: 'Convertissez n\'importe quelle photo 2D ou logo en modèle 3D imprimable STL, OBJ ou GLB gratuitement en ligne grâce à l\'estimation de profondeur IA.',
+    h1En: 'Free AI Image to 3D Model Generator — Convert Photo to STL',
+    h1Fr: 'Générateur Photo vers Modèle 3D IA Gratuit — Photo en STL',
+    tag: 'Photo to 3D',
     cardH2En: 'Turn Any Photo into a 3D Printable Model',
-    cardH2Fr: 'Transformez n\'importe quelle Photo en Modèle 3D',
-    cardPEn: 'AI depth estimation converts 2D photos to 3D relief STL models for printing — free, in browser.',
-    cardPFr: 'L\'estimation de profondeur IA convertit des photos 2D en modèles STL 3D pour impression.',
-    ref: 'artgen',
+    cardH2Fr: 'Transformez une Photo en Modèle 3D Imprimable',
+    cardPEn: 'Convert 2D photos into watertight 3D relief STL, OBJ, and animated GLB models directly in your browser.',
+    cardPFr: 'Convertissez des photos 2D en bas-reliefs STL étanches, OBJ et GLB animés directement dans le navigateur.',
+    ref: 'n3d',
     sections: [
       {
-        h2En: 'How Does AI Convert a 2D Image to a 3D Model?',
-        h2Fr: 'Comment l\'IA convertit-elle une image 2D en modèle 3D ?',
-        pEn: 'AI-powered depth estimation analyzes a 2D photograph and predicts the relative depth (distance from camera) of each pixel. Bright pixels are interpreted as closer to the viewer (high elevation) and dark pixels as farther away (low elevation). This grayscale depth map is then converted into a 3D heightmap mesh: a surface with varying Z-height values that produce a 3D relief sculpture when 3D printed. The result is a tangible physical object that visually represents the original photograph in three dimensions.',
-        pFr: "L'estimation de profondeur IA analyse une photographie 2D et prédit la profondeur relative de chaque pixel. Les pixels clairs sont interprétés comme plus proches (haute élévation) et les pixels sombres comme plus éloignés. Cette carte de profondeur est convertie en maillage 3D heightmap."
+        h2En: 'How AI Converts a 2D Photograph into a 3D Mesh',
+        h2Fr: 'Comment l\'IA convertit une photo 2D en maillage 3D',
+        pEn: 'Depth estimation and multi-scale luminance decomposition transform flat image pixels into smooth 3D elevation fields. High-frequency noise is filtered while preserving crisp facial features, lettering, and logo silhouettes.',
+        pFr: 'L\'estimation de profondeur et la décomposition multi-échelle transforment les pixels d\'une image plate en relief 3D fluide, en filtrant le bruit tout en préservant les détails fins et contours.'
       },
       {
-        h2En: 'Convert Your Photo to 3D with Studios-Pro ArtGen Studio',
-        h2Fr: 'Convertir votre Photo en 3D avec Studios-Pro ArtGen Studio',
-        pEn: 'Upload any PNG or JPG image to Studios-Pro ArtGen Studio. The AI depth engine processes your photo in seconds and generates a full 3D relief mesh. Adjust the extrusion depth, base thickness, and resolution to optimize for your 3D printer. Export as watertight STL (ready for Cura, PrusaSlicer), OBJ with vertex colors, or GLB for AR viewing. Perfect for creating portrait lithophanes, logo plaques, map reliefs, and decorative art panels.',
-        pFr: 'Téléversez n\'importe quelle image PNG ou JPG dans Studios-Pro ArtGen Studio. Le moteur IA traite votre photo en secondes. Ajustez la profondeur et l\'épaisseur de base. Exportez en STL étanche (compatible Cura, PrusaSlicer), OBJ ou GLB. Parfait pour lithophanies, plaques de logo et reliefs cartographiques.'
+        h2En: 'Export Watertight STL, Colored OBJ & WebAR GLB',
+        h2Fr: 'Export STL Étanche, OBJ Coloré & GLB WebAR',
+        pEn: 'Tune relief thickness, base height, border frames, and smoothing in New 3D 4D or ArtGen Studio, then download print-ready STL meshes or full-color GLB models in seconds.',
+        pFr: 'Ajustez profondeur du relief, socle, cadre et lissage dans New 3D 4D ou ArtGen Studio, puis téléchargez des maillages STL prêts à imprimer ou des modèles GLB couleur.'
       }
     ]
   },
   {
     id: 'how-to-view-glb-file-online-free',
-    titleEn: 'How to View GLB Files Online Free — No Software Download | Studios-Pro',
+    titleEn: 'How to View GLB Files Online Free — No Download | Studios-Pro',
     titleFr: 'Comment Ouvrir un Fichier GLB Gratuitement en Ligne | Studios-Pro',
-    descEn: 'Open and view GLB (binary GLTF) 3D files online free in your browser. No Blender or Autodesk required. Inspect textures, animations, and geometry instantly.',
-    descFr: 'Ouvrez et visualisez des fichiers GLB (GLTF binaire) 3D gratuitement en ligne dans votre navigateur. Inspectez textures, animations et géométrie instantanément.',
-    h1En: 'How to Open and View GLB Files Online Free (No Software Required)',
-    h1Fr: 'Comment Ouvrir un Fichier GLB Gratuitement en Ligne (Sans Logiciel)',
+    descEn: 'Open and inspect binary GLB and GLTF 3D models with PBR textures and animations free in your browser — plus instant phone WebAR preview.',
+    descFr: 'Ouvrez et inspectez des fichiers 3D binaires GLB et GLTF avec textures PBR et animations gratuitement dans le navigateur, avec aperçu WebAR mobile.',
+    h1En: 'How to Open and View GLB Files Online Free',
+    h1Fr: 'Comment Ouvrir et Visualiser un Fichier GLB Gratuitement',
     tag: '3D Viewer',
     cardH2En: 'Open GLB Files Instantly in Your Browser',
-    cardH2Fr: 'Ouvrez des Fichiers GLB Instantanément dans le Navigateur',
-    cardPEn: 'View GLB binary 3D models with textures, lighting, and animation — directly online.',
-    cardPFr: 'Visualisez des modèles 3D GLB avec textures et animations — directement en ligne.',
+    cardH2Fr: 'Ouvrez des Fichiers GLB Instantanément',
+    cardPEn: 'View binary GLB 3D models with PBR textures, lighting presets, animations, and WebAR preview.',
+    cardPFr: 'Visualisez vos modèles GLB avec textures PBR, éclairages, animations et aperçu WebAR.',
     ref: 's3dviewer',
     sections: [
       {
-        h2En: 'What is a GLB File?',
-        h2Fr: 'Qu\'est-ce qu\'un fichier GLB ?',
-        pEn: 'GLB (GL Transmission Format Binary) is the binary version of the GLTF 3D format, developed by the Khronos Group. Unlike OBJ or STL, GLB packages the 3D geometry, textures, materials, animations, and scene hierarchy all into a single compact binary file. This makes it the preferred format for web 3D, augmented reality (AR), virtual reality (VR), and game engines like Unity and Unreal Engine. GLB files are also widely used by 3D scanning apps, product visualization platforms, and AR try-on experiences.',
-        pFr: 'GLB (GL Transmission Format Binary) est la version binaire du format GLTF 3D, développé par le groupe Khronos. Contrairement à OBJ ou STL, GLB regroupe la géométrie, les textures, les matériaux, les animations et la hiérarchie de scène dans un seul fichier binaire compact. C\'est le format préféré pour le 3D web, la réalité augmentée et les moteurs de jeux.'
+        h2En: 'What Makes GLB the Standard Format for Web & AR?',
+        h2Fr: 'Pourquoi GLB est le format standard du Web et de la RA ?',
+        pEn: 'Developed by the Khronos Group, GLB bundles 3D geometry, PBR textures, metallic/roughness maps, and animations into a single compact binary file — making it the gold standard for Three.js, WebAR, Unity, and e-commerce.',
+        pFr: 'Développé par le Khronos Group, le format GLB regroupe géométrie 3D, textures PBR, matériaux et animations en un seul fichier binaire compact, idéal pour Three.js, WebAR, Unity et le e-commerce.'
       },
       {
-        h2En: 'Open GLB Files with Studios-Pro 3D Viewer',
-        h2Fr: 'Ouvrir des Fichiers GLB avec Studios-Pro',
-        pEn: 'Studios-Pro 3D Viewer opens GLB files in seconds directly in your web browser. Simply drag and drop your .GLB file and the viewer renders the full 3D scene including textures, PBR materials, and skeletal animations. You can orbit, zoom, and inspect geometry without any registration or software download. Additional features include: animation playback controls, environment lighting presets, background color adjustment, mesh wireframe toggle, and standalone interactive HTML export for sharing your 3D model online.',
-        pFr: 'Studios-Pro ouvre les fichiers GLB en quelques secondes dans votre navigateur. Glissez-déposez votre fichier .GLB et le visualiseur rend la scène 3D complète incluant textures, matériaux PBR et animations squelettiques. Fonctionnalités : contrôles d\'animation, éclairage d\'environnement, export HTML interactif.'
+        h2En: 'Inspect GLB Models Locally in Studios-Pro',
+        h2Fr: 'Inspecter vos Modèles GLB Localement dans Studios-Pro',
+        pEn: 'Drag and drop your .GLB file into Studio 3D Viewer or AR Viewer to inspect PBR materials, measure real dimensions, toggle wireframes, export standalone HTML, or project into your room via QR code.',
+        pFr: 'Glissez votre fichier .GLB dans Studio 3D Viewer ou AR Viewer pour inspecter les matériaux PBR, mesurer les dimensions réelles, exporter en HTML autonome ou projeter dans votre pièce par QR code.'
       }
     ]
   },
   {
     id: 'free-dxf-viewer-online-autocad-alternative',
     titleEn: 'Free Online DXF Viewer — Open AutoCAD Files Without AutoCAD | Studios-Pro',
-    titleFr: 'Visualiseur DXF Gratuit en Ligne — Alternative AutoCAD Gratuite | Studios-Pro',
-    descEn: 'Open and view AutoCAD DXF CAD files online free without installing AutoCAD. Inspect layers, dimensions, and vector geometry. Export as SVG or HTML.',
-    descFr: 'Ouvrez des fichiers DXF AutoCAD en ligne gratuitement sans installer AutoCAD. Inspectez les calques, dimensions et géométrie vectorielle. Exportez en SVG ou HTML.',
-    h1En: 'Free Online DXF Viewer — Open AutoCAD Files Without Installing AutoCAD',
+    titleFr: 'Visualiseur DXF Gratuit en Ligne — Alternative AutoCAD | Studios-Pro',
+    descEn: 'Open and inspect AutoCAD DXF CAD blueprints online for free without installing AutoCAD. Toggle layers, zoom, measure, and export SVG.',
+    descFr: 'Ouvrez et inspectez des plans AutoCAD DXF gratuitement en ligne sans AutoCAD. Gérez les calques, zoomez, mesurez et exportez en SVG.',
+    h1En: 'Free Online DXF Viewer — Open AutoCAD Files Without AutoCAD',
     h1Fr: 'Visualiseur DXF Gratuit en Ligne — Alternative à AutoCAD',
     tag: 'DFX Studio',
-    cardH2En: 'Open DXF CAD Files Free in Browser',
-    cardH2Fr: 'Ouvrez des Fichiers DXF CAO Gratuitement dans le Navigateur',
-    cardPEn: 'View AutoCAD DXF blueprints online — layer toggles, zoom, measurement, and SVG export.',
-    cardPFr: 'Visualisez des plans DXF AutoCAD — calques, zoom, mesure et export SVG.',
+    cardH2En: 'Open AutoCAD DXF Files Free in Browser',
+    cardH2Fr: 'Ouvrez des Fichiers AutoCAD DXF Gratuitement',
+    cardPEn: 'View DXF blueprints with layer toggles, zoom, measurement, and clean SVG export.',
+    cardPFr: 'Visualisez vos plans DXF avec gestion des calques, zoom, mesure et export SVG.',
     ref: 'dfx',
     sections: [
       {
-        h2En: 'Why Do You Need a DXF Viewer Without AutoCAD?',
-        h2Fr: 'Pourquoi avoir besoin d\'un visualiseur DXF sans AutoCAD ?',
-        pEn: 'AutoCAD costs $220+/month, making it inaccessible for freelancers, students, and small workshops who simply need to view a DXF file sent by a client or engineer. DXF (Drawing Exchange Format) is the universal CAD interchange format — used by architects, mechanical engineers, laser cutter operators, and CNC machinists worldwide. A free online DXF viewer lets you open, inspect, measure, and verify CAD blueprints without spending thousands on software licenses.',
-        pFr: 'AutoCAD coûte plus de 220$/mois, le rendant inaccessible aux freelances, étudiants et petits ateliers qui ont simplement besoin de visualiser un fichier DXF. Le DXF est le format d\'échange CAO universel, utilisé par les architectes et ingénieurs mécaniques du monde entier.'
+        h2En: 'Why View DXF Drawings Without an Expensive AutoCAD License?',
+        h2Fr: 'Pourquoi ouvrir vos plans DXF sans licence AutoCAD ?',
+        pEn: 'Professional AutoCAD subscriptions exceed $200/month — unnecessary when you simply need to review client blueprints, laser cut paths, or architectural layouts. A browser DXF viewer opens drawings instantly on Mac, Windows, or Linux.',
+        pFr: 'Un abonnement AutoCAD dépasse 200 $/mois — inutile lorsqu\'il suffit de vérifier un plan client, une découpe laser ou un plan d\'architecte. Un visualiseur DXF en ligne ouvre vos fichiers en une seconde sur Mac, Windows ou Linux.'
       },
       {
-        h2En: 'View DXF Files Free with Studios-Pro DFX Studio',
-        h2Fr: 'Visualiser des Fichiers DXF avec Studios-Pro DFX Studio',
-        pEn: 'Studios-Pro DFX Studio is a completely free browser-based DXF viewer. Drag and drop any .DXF file (AutoCAD R12 through 2024) and it renders instantly with full layer support. Toggle individual layers on/off, zoom to precise regions, inspect entity coordinates, and measure distances between points. Export the rendered view as a clean SVG vector file or as an interactive standalone HTML page. Perfect for architects reviewing structural drawings, laser cut operators checking cut paths, and engineers verifying manufacturing tolerances.',
-        pFr: 'Studios-Pro DFX Studio est un visualiseur DXF entièrement gratuit basé sur navigateur. Glissez n\'importe quel fichier .DXF et il se rend instantanément avec support complet des calques. Basculez les calques, zoomez, inspectez et mesurez. Exportez en SVG ou HTML interactif. Parfait pour architectes, opérateurs laser et ingénieurs.'
+        h2En: 'Layer Inspection & SVG Export with DFX Studio',
+        h2Fr: 'Inspection des Calques & Export SVG avec DFX Studio',
+        pEn: 'Drop any .DXF file into Studios-Pro DFX Studio to toggle CAD layers, inspect coordinates, verify cut geometry, and export clean SVG vectors with zero server upload.',
+        pFr: 'Glissez n\'importe quel fichier .DXF dans DFX Studio pour activer/masquer les calques CAO, vérifier la géométrie de découpe et exporter en SVG propre sans envoi serveur.'
       }
     ]
   }
 ];
 
-const template = (tut) => `<!DOCTYPE html>
+// Manual standalone blog posts in public/blog/ that must be linked from /blog/ & /fr/blog/ (eliminates orphan pages!)
+const manualGuides = [
+  {
+    id: 'how-to-do-filament-painting-without-hueforge',
+    tag: 'Filament Art',
+    cardH2En: 'How to Do Filament Painting Without HueForge',
+    cardH2Fr: 'Faire du Filament Painting sans HueForge (Guide Gratuit)',
+    cardPEn: 'Step-by-step guide to Kubelka-Munk TD calibration, My Spool Rack, CMYW lithophanes, and Bambu AMS 3MF swaps.',
+    cardPFr: 'Guide étape par étape : calibration TD Kubelka-Munk, Mon Rack, lithophanies CMYW et 3MF auto-swap Bambu AMS.'
+  },
+  {
+    id: 'how-to-convert-2d-image-to-3d-model-online',
+    tag: '2D to 3D Guide',
+    cardH2En: 'How to Convert a 2D Image to a 3D Model Online',
+    cardH2Fr: 'Convertir une Image 2D en Modèle 3D en Ligne',
+    cardPEn: 'Complete tutorial with an embedded live converter to turn PNG, JPG, and sketches into 3D STL/OBJ meshes.',
+    cardPFr: 'Tutoriel complet avec outil intégré pour transformer PNG, JPG et dessins en maillages 3D STL/OBJ.'
+  },
+  {
+    id: 'how-to-open-dxf-file-on-mac-without-autocad',
+    tag: 'macOS CAD',
+    cardH2En: 'How to Open DXF Files on Mac Without AutoCAD',
+    cardH2Fr: 'Ouvrir un Fichier DXF sur Mac sans AutoCAD',
+    cardPEn: 'View AutoCAD DXF drawings instantly in Safari or Chrome on macOS with our interactive browser DXF widget.',
+    cardPFr: 'Ouvrez vos dessins DXF AutoCAD instantanément dans Safari ou Chrome sur macOS sans installer de logiciel.'
+  },
+  {
+    id: 'how-to-view-stl-files-on-ipad-online',
+    tag: 'iPad & iOS',
+    cardH2En: 'How to View STL Files on iPad & iPhone Online',
+    cardH2Fr: 'Visualiser des Fichiers STL sur iPad et iPhone',
+    cardPEn: 'Inspect 3D printing STL models right inside iOS Safari with touch controls and zero App Store bloat.',
+    cardPFr: 'Inspectez vos modèles 3D STL dans iOS Safari avec contrôles tactiles et sans installer d\'application.'
+  },
+  {
+    id: '3d-4d-studio',
+    tag: '3D / 4D Guide',
+    cardH2En: 'High-Fidelity 3D & 4D Models in Your Browser',
+    cardH2Fr: 'Modèles 3D et 4D Haute Fidélité dans le Navigateur',
+    cardPEn: 'Discover browser-based WebGL 3D & 4D sculpting, lighting refraction, and rapid exports for 3D printing & CNC.',
+    cardPFr: 'Découvrez la modélisation WebGL 3D & 4D et les exportations rapides pour impression 3D et CNC.'
+  },
+  {
+    id: 'aura-ai',
+    tag: 'Aura AI',
+    cardH2En: 'AI Web App Generation with Aura AI Studio',
+    cardH2Fr: 'Génération d\'Applications Web IA avec Aura AI',
+    cardPEn: 'Turn natural-language prompts into live interactive web prototypes and downloadable code.',
+    cardPFr: 'Transformez vos idées en langage naturel en prototypes web interactifs et code téléchargeable.'
+  },
+  {
+    id: 'ia-architecte',
+    tag: 'IA Architecte',
+    cardH2En: 'Rapid Architectural Ideation with IA Architecte',
+    cardH2Fr: 'Idéation Architecturale Rapide avec IA Architecte',
+    cardPEn: 'Generate architectural floorplan concepts and 3D structural layouts rapidly with AI assistance.',
+    cardPFr: 'Générez rapidement des concepts de plans architecturaux et maquettes 3D assistés par IA.'
+  }
+];
+
+function escapeJson(str) {
+  return String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+const sharedStyles = `    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; line-height: 1.8; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; font-size: 0.92rem; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 840px; margin: 40px auto 70px; padding: 0 20px; }
+        h1 { font-size: 2.6rem; margin-bottom: 18px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.65rem; margin-top: 38px; color: white; }
+        p { color: #cbd5e1; font-size: 1.08rem; margin-bottom: 18px; }
+        .badge-tag { display: inline-block; padding: 4px 12px; background: rgba(59,130,246,0.2); color: #38bdf8; border-radius: 999px; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px; }
+        .cta-container { text-align: center; margin: 52px 0 36px; padding: 38px 24px; background: rgba(59,130,246,0.1); border-radius: 20px; border: 1px solid rgba(59,130,246,0.3); }
+        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6); color: #020617; padding: 15px 40px; border-radius: 50px; font-size: 1.1rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(59,130,246,0.45); }
+        .footer-links { margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .footer-links a { color: #38bdf8; text-decoration: none; font-size: 0.9rem; padding: 6px 12px; border-radius: 8px; background: rgba(56,189,248,0.08); }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr div[data-fr] { display: block; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { background: none; border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; cursor: pointer; font-weight: 700; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+        .lang-btn.active { background: white; color: #020617; border-color: white; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } .logo { font-size: 1.15rem; } h1 { font-size: 1.9rem; } }
+    </style>`;
+
+const templateEn = (tut) => {
+  const ogImg = tut.ogImage || 'https://studios-pro.com/og_banner.jpg';
+  const urlEn = `https://studios-pro.com/blog/${tut.id}`;
+  const urlFr = `https://studios-pro.com/fr/blog/${tut.id}`;
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${tut.titleEn}</title>
     <meta name="description" content="${tut.descEn}">
-    <link rel="canonical" href="https://studios-pro.com/blog/${tut.id}">
+    <link rel="canonical" href="${urlEn}">
+    <link rel="alternate" hreflang="en" href="${urlEn}">
+    <link rel="alternate" hreflang="fr" href="${urlFr}">
+    <link rel="alternate" hreflang="x-default" href="${urlEn}">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="fr_FR">
+    <meta property="og:title" content="${tut.titleEn}">
+    <meta property="og:description" content="${tut.descEn}">
+    <meta property="og:image" content="${ogImg}">
+    <meta property="og:url" content="${urlEn}">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="/logo_studios_pro.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
-        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
-        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
-        .btn-back:hover { background: var(--accent); }
-        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-        h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        h2 { font-size: 1.8rem; margin-top: 40px; color: white; }
-        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
-        ul { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 30px; padding-left: 20px; }
-        li { margin-bottom: 10px; }
-        strong { color: #fff; }
-        .cta-container { text-align: center; margin: 60px 0; padding: 40px; background: rgba(59,130,246,0.1); border-radius: 20px; border: 1px solid rgba(59,130,246,0.3); }
-        .cta-btn { display: inline-block; background: linear-gradient(135deg, #00f3ff, #3b82f6); color: #000; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
-        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59,130,246,0.5); }
-        
-        [data-fr] { display: none; }
-        body.lang-fr [data-fr] { display: inline; }
-        body.lang-fr [data-en] { display: none; }
-        .lang-switch { display: flex; gap: 10px; }
-        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        .lang-btn.active { background: white; color: black; border-color: white; }
-    </style>
-    <!-- Structured Data Schema.org JSON-LD -->
+${sharedStyles}
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "${tut.titleEn}",
-      "operatingSystem": "Web",
-      "applicationCategory": "DesignApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0.00",
-        "priceCurrency": "USD"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "${escapeJson(tut.h1En)}",
+        "description": "${escapeJson(tut.descEn)}",
+        "image": "${ogImg}",
+        "url": "${urlEn}",
+        "inLanguage": "en",
+        "author": { "@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com" },
+        "publisher": { "@type": "Organization", "name": "Studios-Pro", "logo": { "@type": "ImageObject", "url": "https://studios-pro.com/logo_studios_pro.png" } }
       },
-      "description": "${tut.descEn}"
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://studios-pro.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Tutorials", "item": "https://studios-pro.com/blog/" },
+          { "@type": "ListItem", "position": 3, "name": "${escapeJson(tut.tag)}", "item": "${urlEn}" }
+        ]
+      }
+    ]
     </script>
 </head>
 <body class="lang-en">
     <nav class="nav">
         <a href="/blog/" class="logo">
-            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Studios-Pro Logo">
             Studios-Pro
         </a>
-        <div style="display:flex; gap: 20px; align-items:center;">
+        <div style="display:flex; gap: 14px; align-items:center;">
             <div class="lang-switch">
-                <button class="lang-btn active" onclick="setLang('en')">EN</button>
-                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+                <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button type="button" class="lang-btn" onclick="setLang('fr')">FR</button>
             </div>
             <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
         </div>
     </nav>
 
-    <div class="container">
+    <main class="container">
+        <span class="badge-tag">${tut.tag}</span>
         <h1>
             <span data-en>${tut.h1En}</span>
             <span data-fr>${tut.h1Fr}</span>
         </h1>
-        
         <p>
             <span data-en>${tut.descEn}</span>
             <span data-fr>${tut.descFr}</span>
@@ -802,161 +1069,316 @@ const template = (tut) => `<!DOCTYPE html>
                 <span data-fr>Ouvrir l'application</span>
             </a>
         </div>
-    </div>
+
+        <nav class="footer-links" aria-label="Related links">
+            <a href="/"><span data-en>All 24+ Studios</span><span data-fr>Tous les 24+ Studios</span></a>
+            <a href="/blog/"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
+            <a href="/fr/blog/${tut.id}" hreflang="fr">Version Française</a>
+            <a href="/faq.html">FAQ</a>
+        </nav>
+    </main>
 
     <script>
         function setLang(l) {
-            document.body.className = 'lang-' + l;
-            localStorage.setItem('sp_lang', l);
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            if(event && event.target) {
-                event.target.classList.add('active');
-            } else {
-                document.querySelectorAll('.lang-btn').forEach(b => {
-                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
-                });
-            }
+            const lang = l === 'fr' ? 'fr' : 'en';
+            document.documentElement.lang = lang;
+            document.body.className = 'lang-' + lang;
+            try { localStorage.setItem('sp_lang', lang); } catch (_) {}
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+            });
         }
-        const saved = localStorage.getItem('sp_lang') || 'en';
-        setLang(saved);
+        setLang(new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('sp_lang') || 'en');
     </script>
 </body>
 </html>`;
+};
 
-const blogIndexTemplate = (cardsHtml) => `<!DOCTYPE html>
+const templateFr = (tut) => {
+  const ogImg = tut.ogImage || 'https://studios-pro.com/og_banner.jpg';
+  const urlEn = `https://studios-pro.com/blog/${tut.id}`;
+  const urlFr = `https://studios-pro.com/fr/blog/${tut.id}`;
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${tut.titleFr}</title>
+    <meta name="description" content="${tut.descFr}">
+    <link rel="canonical" href="${urlFr}">
+    <link rel="alternate" hreflang="fr" href="${urlFr}">
+    <link rel="alternate" hreflang="en" href="${urlEn}">
+    <link rel="alternate" hreflang="x-default" href="${urlEn}">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:title" content="${tut.titleFr}">
+    <meta property="og:description" content="${tut.descFr}">
+    <meta property="og:image" content="${ogImg}">
+    <meta property="og:url" content="${urlFr}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+${sharedStyles}
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "${escapeJson(tut.h1Fr)}",
+        "description": "${escapeJson(tut.descFr)}",
+        "image": "${ogImg}",
+        "url": "${urlFr}",
+        "inLanguage": "fr",
+        "author": { "@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com/fr/" },
+        "publisher": { "@type": "Organization", "name": "Studios-Pro", "logo": { "@type": "ImageObject", "url": "https://studios-pro.com/logo_studios_pro.png" } }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://studios-pro.com/fr/" },
+          { "@type": "ListItem", "position": 2, "name": "Tutoriels", "item": "https://studios-pro.com/fr/blog/" },
+          { "@type": "ListItem", "position": 3, "name": "${escapeJson(tut.tag)}", "item": "${urlFr}" }
+        ]
+      }
+    ]
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/blog/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo Studios-Pro">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 14px; align-items:center;">
+            <div class="lang-switch">
+                <a href="/blog/${tut.id}" hreflang="en" class="lang-btn">EN</a>
+                <a href="/fr/blog/${tut.id}" hreflang="fr" class="lang-btn active">FR</a>
+            </div>
+            <a href="/fr/blog/" class="btn-back">Tous les Tutoriels</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <span class="badge-tag">${tut.tag}</span>
+        <h1>${tut.h1Fr}</h1>
+        <p>${tut.descFr}</p>
+
+        <h2>${tut.sections[0].h2Fr}</h2>
+        <p>${tut.sections[0].pFr}</p>
+
+        <h2>${tut.sections[1].h2Fr}</h2>
+        <p>${tut.sections[1].pFr}</p>
+
+        <div class="cta-container">
+            <a href="/?ref=${tut.ref}" class="cta-btn" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Ouvrir l'application</a>
+        </div>
+
+        <nav class="footer-links" aria-label="Liens associés">
+            <a href="/fr/">Accueil Français</a>
+            <a href="/fr/blog/">Tous les Tutoriels FR</a>
+            <a href="/blog/${tut.id}" hreflang="en">English Version</a>
+            <a href="/fr/faq">FAQ</a>
+        </nav>
+    </main>
+</body>
+</html>`;
+};
+
+const blogIndexStyles = `    <style>
+        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; font-size: 0.92rem; }
+        .btn-back:hover { background: var(--accent); }
+        .container { max-width: 1120px; margin: 48px auto 70px; padding: 0 20px; }
+        h1 { font-size: 2.9rem; margin: 0 0 14px 0; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--muted); font-size: 1.15rem; margin: 0 0 38px 0; }
+        .section-heading { font-size: 1.45rem; color: #38bdf8; margin: 46px 0 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 26px; transition: 0.25s; text-decoration: none; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(59,130,246,0.2); }
+        .card h2 { color: white; font-size: 1.3rem; margin: 0 0 12px 0; line-height: 1.3; }
+        .card p { color: var(--muted); line-height: 1.6; margin: 0 0 18px 0; flex: 1; font-size: 0.96rem; }
+        .tag { display: inline-block; align-self: flex-start; padding: 4px 12px; background: rgba(59,130,246,0.2); color: #38bdf8; border-radius: 20px; font-size: 0.78rem; font-weight: 700; margin-bottom: 12px; }
+        [data-fr] { display: none; }
+        body.lang-fr [data-fr] { display: inline; }
+        body.lang-fr [data-en] { display: none; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { background: none; border: 1px solid rgba(255,255,255,0.25); color: var(--muted); padding: 5px 11px; border-radius: 6px; cursor: pointer; font-weight: 700; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+        .lang-btn.active { background: white; color: #020617; border-color: white; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 2rem; } .grid { grid-template-columns: 1fr; } }
+    </style>`;
+
+const blogDir = path.join(__dirname, 'public/blog');
+const frBlogDir = path.join(__dirname, 'public/fr/blog');
+if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
+if (!fs.existsSync(frBlogDir)) fs.mkdirSync(frBlogDir, { recursive: true });
+
+// 1. Write EN and FR tutorial pages
+tutorials.forEach(tut => {
+  fs.writeFileSync(path.join(blogDir, `${tut.id}.html`), templateEn(tut), 'utf8');
+  fs.writeFileSync(path.join(frBlogDir, `${tut.id}.html`), templateFr(tut), 'utf8');
+});
+console.log(`Generated ${tutorials.length} EN tutorials in public/blog/ and ${tutorials.length} FR tutorials in public/fr/blog/`);
+
+// 2. Write EN /blog/index.html linking ALL generated tutorials + ALL 7 manual guides (zero extension .html in links!)
+const enStudioCards = tutorials.map(tut => `            <a href="/blog/${tut.id}" class="card">
+                <span class="tag">${tut.tag}</span>
+                <h2><span data-en>${tut.cardH2En}</span><span data-fr>${tut.cardH2Fr}</span></h2>
+                <p><span data-en>${tut.cardPEn}</span><span data-fr>${tut.cardPFr}</span></p>
+                <span style="color:#38bdf8; font-weight:600;"><span data-en>Read Tutorial →</span><span data-fr>Lire le Tutoriel →</span></span>
+            </a>`).join('\n');
+
+const enGuideCards = manualGuides.map(g => `            <a href="/blog/${g.id}" class="card">
+                <span class="tag">${g.tag}</span>
+                <h2><span data-en>${g.cardH2En}</span><span data-fr>${g.cardH2Fr}</span></h2>
+                <p><span data-en>${g.cardPEn}</span><span data-fr>${g.cardPFr}</span></p>
+                <span style="color:#38bdf8; font-weight:600;"><span data-en>Read Guide →</span><span data-fr>Lire le Guide →</span></span>
+            </a>`).join('\n');
+
+const blogIndexEn = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studios-Pro | Blog & Tutorials</title>
-    <meta name="description" content="Discover tutorials and guides for Studios-Pro: Convert images to CNC vectors, generate AI depth maps, and render 3D/4D models in your browser.">
+    <title>Studios-Pro | 3D, 4D, Multi-Color 3MF &amp; CNC Tutorials</title>
+    <meta name="description" content="Complete tutorials and step-by-step guides for Studios-Pro's 24+ studios: Filament Painting, Bambu AMS 3MF Painter, QR Coasters, 3D/4D Relief, WebAR, and CNC CAD.">
     <link rel="canonical" href="https://studios-pro.com/blog/">
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/blog/">
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/blog/">
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/blog/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="fr_FR">
+    <meta property="og:title" content="Studios-Pro | 3D, 4D, Multi-Color 3MF &amp; CNC Tutorials">
+    <meta property="og:description" content="Complete tutorials and step-by-step guides for Studios-Pro's 24+ studios: Filament Painting, Bambu AMS 3MF Painter, QR Coasters, 3D/4D Relief, WebAR, and CNC CAD.">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/blog/">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="/logo_studios_pro.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
-        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; }
-        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
-        .btn-back:hover { background: var(--accent); }
-        .container { max-width: 1000px; margin: 60px auto; padding: 0 20px; }
-        h1 { font-size: 3rem; margin-bottom: 20px; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { color: var(--muted); font-size: 1.2rem; margin-bottom: 40px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-        .card { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; transition: 0.3s; text-decoration: none; display: block; }
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(59,130,246,0.2); }
-        .card h2 { color: white; font-size: 1.4rem; margin-top: 0; margin-bottom: 15px; }
-        .card p { color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
-        .tag { display: inline-block; padding: 4px 12px; background: rgba(59,130,246,0.2); color: var(--accent); border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 10px; }
-        [data-fr] { display: none; }
-        body.lang-fr [data-fr] { display: inline; }
-        body.lang-fr [data-en] { display: none; }
-        .lang-switch { display: flex; gap: 10px; }
-        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        .lang-btn.active { background: white; color: black; border-color: white; }
-    </style>
-    <meta property="og:title" content="Studios-Pro | Professional 3D & AI Design Generator">
-    <meta property="og:description" content="A complete tutorial and guide on using Studios-Pro's suite of creative tools ranging from CNC Vector paths to AI Depth maps and 4D Music Visualization.">
-    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-    <meta property="og:url" content="https://studios-pro.com/">
-    <meta name="twitter:card" content="summary_large_image">
+${blogIndexStyles}
 </head>
 <body class="lang-en">
     <nav class="nav">
         <a href="/" class="logo">
-            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Studios-Pro Logo">
             Studios-Pro
         </a>
-        <div style="display:flex; gap: 20px; align-items:center;">
+        <div style="display:flex; gap: 14px; align-items:center;">
             <div class="lang-switch">
-                <button class="lang-btn active" onclick="setLang('en')">EN</button>
-                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+                <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button type="button" class="lang-btn" onclick="setLang('fr')">FR</button>
             </div>
             <a href="/" class="btn-back"><span data-en>Launch App</span><span data-fr>Lancer l'App</span></a>
         </div>
     </nav>
 
-    <div class="container">
-        <h1><span data-en>Tutorials & Guides</span><span data-fr>Tutoriels et Guides</span></h1>
-        <p class="subtitle"><span data-en>Learn how to master our creative tools and optimize your models for 3D printing and CNC routers.</span><span data-fr>Apprenez à maîtriser nos outils créatifs et à optimiser vos modèles pour l'impression 3D et les routeurs CNC.</span></p>
+    <main class="container">
+        <h1><span data-en>Tutorials &amp; Guides</span><span data-fr>Tutoriels et Guides</span></h1>
+        <p class="subtitle"><span data-en>Master all 24+ browser-based 3D, 4D, Multi-Color 3MF, WebAR, and CNC/Laser CAD studios.</span><span data-fr>Maîtrisez l'ensemble de nos 24+ studios 3D, 4D, 3MF Multi-Couleurs, WebAR et CAO CNC/Laser.</span></p>
 
+        <h2 class="section-heading"><span data-en>Studio Tutorials &amp; Format Guides</span><span data-fr>Tutoriels des Studios &amp; Formats</span></h2>
         <div class="grid">
-            ${cardsHtml}
+${enStudioCards}
         </div>
-    </div>
+
+        <h2 class="section-heading"><span data-en>In-Depth Practical Guides</span><span data-fr>Guides Pratiques Approfondis</span></h2>
+        <div class="grid">
+${enGuideCards}
+        </div>
+    </main>
 
     <script>
         function setLang(l) {
-            document.body.className = 'lang-' + l;
-            localStorage.setItem('sp_lang', l);
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            if(event && event.target) {
-                event.target.classList.add('active');
-            } else {
-                document.querySelectorAll('.lang-btn').forEach(b => {
-                    if(b.innerText.toLowerCase() === l) b.classList.add('active');
-                });
-            }
+            const lang = l === 'fr' ? 'fr' : 'en';
+            document.documentElement.lang = lang;
+            document.body.className = 'lang-' + lang;
+            try { localStorage.setItem('sp_lang', lang); } catch (_) {}
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+            });
         }
-        const saved = localStorage.getItem('sp_lang') || 'en';
-        setLang(saved);
+        setLang(new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('sp_lang') || 'en');
     </script>
 </body>
 </html>`;
 
-// 1. Create tutorial sub-pages
-tutorials.forEach(tut => {
-  fs.writeFileSync(path.join(__dirname, 'public/blog', `${tut.id}.html`), template(tut));
-  console.log(`Generated ${tut.id}.html`);
-});
+fs.writeFileSync(path.join(blogDir, 'index.html'), blogIndexEn, 'utf8');
 
-// 2. Generate clean index.html cards list
-const cardsHtml = tutorials.map(tut => `
-            <a href="/blog/${tut.id}.html" class="card">
+// 3. Write native French /fr/blog/index.html
+const frStudioCards = tutorials.map(tut => `            <a href="/fr/blog/${tut.id}" class="card">
                 <span class="tag">${tut.tag}</span>
-                <h2><span data-en>${tut.cardH2En}</span><span data-fr>${tut.cardH2Fr}</span></h2>
-                <p><span data-en>${tut.cardPEn}</span><span data-fr>${tut.cardPFr}</span></p>
-                <span style="color:var(--accent); font-weight:600;"><span data-en>Read Tutorial →</span><span data-fr>Lire le Tutoriel →</span></span>
+                <h2>${tut.cardH2Fr}</h2>
+                <p>${tut.cardPFr}</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Tutoriel →</span>
             </a>`).join('\n');
 
-// Write clean public/blog/index.html (no duplication)
-fs.writeFileSync(path.join(__dirname, 'public/blog/index.html'), blogIndexTemplate(cardsHtml));
-console.log('Regenerated public/blog/index.html');
+const frGuideCards = manualGuides.map(g => `            <a href="/blog/${g.id}?lang=fr" class="card">
+                <span class="tag">${g.tag}</span>
+                <h2>${g.cardH2Fr}</h2>
+                <p>${g.cardPFr}</p>
+                <span style="color:#38bdf8; font-weight:600;">Lire le Guide →</span>
+            </a>`).join('\n');
 
-// 3. Generate clean sitemap.xml
-const date = new Date().toISOString().split('T')[0];
-let sitemapUrls = tutorials.map(tut => `  <url>
-    <loc>https://studios-pro.com/blog/${tut.id}.html</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>\n`).join('');
+const blogIndexFr = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studios-Pro | Tutoriels 3D, 4D, 3MF Multi-Couleurs &amp; CNC</title>
+    <meta name="description" content="Tutoriels complets et guides pratiques en français pour les 24+ studios Studios-Pro : Filament Painting, 3MF Painter Bambu AMS, Sous-verres QR 3D, WebAR et CNC.">
+    <link rel="canonical" href="https://studios-pro.com/fr/blog/">
+    <link rel="alternate" hreflang="fr" href="https://studios-pro.com/fr/blog/">
+    <link rel="alternate" hreflang="en" href="https://studios-pro.com/blog/">
+    <link rel="alternate" hreflang="x-default" href="https://studios-pro.com/blog/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:title" content="Studios-Pro | Tutoriels 3D, 4D, 3MF Multi-Couleurs &amp; CNC">
+    <meta property="og:description" content="Tutoriels complets et guides pratiques en français pour les 24+ studios Studios-Pro : Filament Painting, 3MF Painter Bambu AMS, Sous-verres QR 3D, WebAR et CNC.">
+    <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
+    <meta property="og:url" content="https://studios-pro.com/fr/blog/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+${blogIndexStyles}
+</head>
+<body>
+    <nav class="nav">
+        <a href="/fr/" class="logo">
+            <img src="/logo_studios_pro.png" width="30" height="30" style="border-radius:6px;" alt="Logo Studios-Pro">
+            Studios-Pro
+        </a>
+        <div style="display:flex; gap: 14px; align-items:center;">
+            <div class="lang-switch">
+                <a href="/blog/?lang=en" hreflang="en" class="lang-btn">EN</a>
+                <a href="/fr/blog/" hreflang="fr" class="lang-btn active">FR</a>
+            </div>
+            <a href="/" class="btn-back" onclick="try{localStorage.setItem('sp_lang','fr');}catch(_){}">Lancer l'App</a>
+        </div>
+    </nav>
 
-// Include main links in sitemap as well
-const baseUrls = `  <url>
-    <loc>https://studios-pro.com/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/blog/</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://studios-pro.com/faq.html</loc>
-    <lastmod>${date}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`;
+    <main class="container">
+        <h1>Tutoriels &amp; Guides en Français</h1>
+        <p class="subtitle">Maîtrisez nos 24+ studios 3D, 4D, 3MF Multi-Couleurs, WebAR et CAO CNC/Laser directement dans le navigateur.</p>
 
-const newSitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${baseUrls}${sitemapUrls}</urlset>
-`;
+        <h2 class="section-heading">Tutoriels des Studios &amp; Formats</h2>
+        <div class="grid">
+${frStudioCards}
+        </div>
 
-fs.writeFileSync(path.join(__dirname, 'public/sitemap.xml'), newSitemap);
-console.log('Regenerated public/sitemap.xml');
+        <h2 class="section-heading">Guides Pratiques Approfondis</h2>
+        <div class="grid">
+${frGuideCards}
+        </div>
+    </main>
+</body>
+</html>`;
+
+fs.writeFileSync(path.join(frBlogDir, 'index.html'), blogIndexFr, 'utf8');
+console.log('Regenerated public/blog/index.html & public/fr/blog/index.html (all 24 tutorials + 7 manual guides linked)');

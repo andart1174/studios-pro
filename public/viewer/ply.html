@@ -9,6 +9,7 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://studios-pro.com/viewer/ply" />
     <meta property="og:title" content="Free Online PLY Viewer & Exporter | Studios-Pro" />
     <meta property="og:description" content="Open PLY polygon files, inspect vertex colors, measure point coordinates, and export." />
@@ -23,6 +24,7 @@
     
     <!-- Canonical -->
     <link rel="canonical" href="https://studios-pro.com/viewer/ply" />
+
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -409,14 +411,24 @@
                     <span data-fr>Oui, nos outils sont 100% gratuits pour la modélisation de base, la visualisation et la création de mises en page. Les fonctions premium sont proposées pour des exports avancés.</span>
                 </p>
             </div>
-            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-bottom: 16px;">
                 <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
-                    <span data-en>Are my files uploaded to a remote server?</span>
-                    <span data-fr>Mes fichiers sont-ils téléchargés sur un serveur distant ?</span>
+                    <span data-en>Are my design files uploaded to a remote server?</span>
+                    <span data-fr>Mes fichiers sont-ils envoyés sur un serveur distant ?</span>
                 </h4>
                 <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
-                    <span data-en>No. All 3D rendering, drawing extrusion, and vector conversions are performed 100% locally on your computer client-side. Your private design data never leaves your device.</span>
-                    <span data-fr>Non. Tout le rendu 3D, l'extrusion de dessin et la conversion vectorielle sont exécutés à 100% localement sur votre ordinateur. Vos données privées ne quittent jamais votre appareil.</span>
+                    <span data-en>No. All 3D rendering, mesh parsing, and CAD vector algorithms run locally on your device via client-side WebAssembly and WebGL, guaranteeing complete file privacy.</span>
+                    <span data-fr>Non. Tout le rendu 3D, l'analyse de maillage et les conversions vectorielles s'exécutent à 100 % localement sur votre appareil via WebAssembly et WebGL, garantissant une confidentialité totale.</span>
+                </p>
+            </div>
+            <div class="faq-card" style="background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.15rem; color: white;">
+                    <span data-en>What export features are supported?</span>
+                    <span data-fr>Quelles fonctionnalités d'exportation sont prises en charge ?</span>
+                </h4>
+                <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
+                    <span data-en>Point cloud and mesh support, distance calculation, clipping, and interactive HTML export.</span>
+                    <span data-fr>Support nuage de points et maillage, calcul de distance, coupe et export HTML.</span>
                 </p>
             </div>
         </div>

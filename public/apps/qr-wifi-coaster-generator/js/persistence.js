@@ -422,6 +422,7 @@ function initStudiosProBridge() {
         channel.onmessage = (e) => { if (e && e.data) handleHostMessage(e.data); };
     }
     window.addEventListener('message', (e) => {
+    if (e.origin !== window.location.origin) return;
         if (e && e.data) handleHostMessage(e.data);
     });
 

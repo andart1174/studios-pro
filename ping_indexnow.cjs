@@ -5,75 +5,70 @@ const https = require('https');
 const key = 'f89ae7b4f1094014a700fcd8d747035b';
 const keyFile = path.join(__dirname, 'public', `${key}.txt`);
 
-// 1. Ensure the key file exists in public/
+// 1. Ensure the single official IndexNow key file exists in public/
 if (!fs.existsSync(keyFile)) {
   fs.writeFileSync(keyFile, key.trim(), 'utf8');
   console.log(`Generated IndexNow key file: public/${key}.txt`);
 }
 
-// 2. Read all URLs from sitemap.xml
+// 2. Read all canonical <loc> URLs from sitemap.xml (including homepage https://studios-pro.com/)
 const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
 if (!fs.existsSync(sitemapPath)) {
-  console.error("Sitemap file not found, skipping IndexNow ping.");
+  console.error('Sitemap file not found, skipping IndexNow ping.');
   process.exit(0);
 }
 
 const sitemapContent = fs.readFileSync(sitemapPath, 'utf8');
-const urlRegex = /https:\/\/studios-pro\.com\/[^\s<"]+/g;
-const urlList = Array.from(new Set(sitemapContent.match(urlRegex) || []));
+const locRegex = /<loc>(https:\/\/studios-pro\.com\/[^<]*)<\/loc>/g;
+const urlSet = new Set();
+let match;
+while ((match = locRegex.exec(sitemapContent)) !== null) {
+  urlSet.add(match[1].trim());
+}
+const urlList = Array.from(urlSet);
 
 if (urlList.length === 0) {
-  console.log("No URLs found in sitemap, skipping IndexNow ping.");
+  console.log('No URLs found in sitemap, skipping IndexNow ping.');
   process.exit(0);
 }
 
-console.log(`Extracted ${urlList.length} URLs for IndexNow ping.`);
+console.log(`Extracted ${urlList.length} canonical URLs (homepage included: ${urlSet.has('https://studios-pro.com/')}) for IndexNow ping.`);
 
-// 3. Construct IndexNow payload
+// 3. Submit ONCE to the official central IndexNow hub (automatically fans out to Bing, Yandex, Seznam, Naver)
 const payload = JSON.stringify({
   host: 'studios-pro.com',
-  key: key,
+  key,
   keyLocation: `https://studios-pro.com/${key}.txt`,
-  urlList: urlList
+  urlList
 });
 
-// 4. Send POST request to official IndexNow central gateway & partners
-const endpoints = [
-  { hostname: 'api.indexnow.org', path: '/indexnow' },
-  { hostname: 'www.bing.com', path: '/indexnow' },
-  { hostname: 'yandex.com', path: '/indexnow' }
-];
+const options = {
+  hostname: 'api.indexnow.org',
+  port: 443,
+  path: '/indexnow',
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(payload)
+  }
+};
 
-endpoints.forEach((ep) => {
-  const options = {
-    hostname: ep.hostname,
-    port: 443,
-    path: ep.path,
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Content-Length': Buffer.byteLength(payload)
+const req = https.request(options, (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => {
+    const bodyPreview = data.trim().slice(0, 300);
+    if (res.statusCode === 200 || res.statusCode === 202) {
+      console.log(`SUCCESS: IndexNow (api.indexnow.org) accepted ${urlList.length} URLs (HTTP ${res.statusCode}).`);
+    } else {
+      console.log(`IndexNow (api.indexnow.org) returned HTTP ${res.statusCode}${bodyPreview ? `: ${bodyPreview}` : ''}`);
     }
-  };
-
-  const req = https.request(options, (res) => {
-    let data = '';
-    res.on('data', (chunk) => data += chunk);
-    res.on('end', () => {
-      if (res.statusCode === 200 || res.statusCode === 202) {
-        console.log(`SUCCESS: IndexNow (${ep.hostname}) accepted ${urlList.length} URLs (${res.statusCode})!`);
-      } else if (res.statusCode === 403) {
-        console.log(`IndexNow (${ep.hostname}) notice: Key verification pending domain sync (403)`);
-      } else {
-        console.log(`IndexNow (${ep.hostname}) returned ${res.statusCode}`);
-      }
-    });
   });
-
-  req.on('error', (e) => {
-    console.warn(`IndexNow (${ep.hostname}) ping notice: ${e.message}`);
-  });
-
-  req.write(payload);
-  req.end();
 });
+
+req.on('error', (e) => {
+  console.warn(`IndexNow ping error: ${e.message}`);
+});
+
+req.write(payload);
+req.end();

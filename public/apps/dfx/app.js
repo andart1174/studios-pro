@@ -1250,7 +1250,7 @@
     }
   }
 
-  window.addEventListener('message', (e) => handleHostMessage(e.data));
+  window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; handleHostMessage(e.data); });
   if (broadcastCh) {
     broadcastCh.onmessage = (e) => handleHostMessage(e.data);
     broadcastCh.postMessage({ type: 'GET_USER_STATUS' });

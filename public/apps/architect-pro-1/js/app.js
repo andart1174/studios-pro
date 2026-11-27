@@ -428,7 +428,7 @@
     }
   }
 
-  window.addEventListener('message', e => handleHostMsg(e.data));
+  window.addEventListener('message', e => { if (e.origin !== window.location.origin) return; handleHostMsg(e.data); });
   if (broadcastCh) {
     broadcastCh.onmessage = e => handleHostMsg(e.data);
     broadcastCh.postMessage({ type: 'GET_USER_STATUS' });

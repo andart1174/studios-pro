@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Page Not Found | Studios-Pro</title>
+  <meta name="robots" content="noindex, follow">
+  <link rel="icon" type="image/png" href="/logo_studios_pro.png">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #020617; --surface: rgba(15, 23, 42, 0.8); --accent: #38bdf8; --text: #f8fafc; --muted: #94a3b8; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 45%),
+                  radial-gradient(circle at 80% 80%, rgba(168,85,247,0.12), transparent 45%), var(--bg);
+      color: var(--text); font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .nav {
+      padding: 18px 32px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.85); backdrop-filter: blur(12px);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 800; font-size: 1.35rem; }
+    .lang-switch { display: flex; gap: 8px; }
+    .lang-btn {
+      background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--muted);
+      padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s;
+    }
+    .lang-btn.active { background: #fff; color: #020617; border-color: #fff; }
+    main {
+      flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;
+    }
+    .card {
+      max-width: 680px; width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px; padding: 48px 36px; box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+    }
+    .code {
+      font-size: 5.5rem; font-weight: 800; line-height: 1; margin: 0 0 12px 0;
+      background: linear-gradient(135deg, #00f3ff, #3b82f6, #a855f7);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    h1 { font-size: 1.9rem; margin: 0 0 14px 0; }
+    p { color: var(--muted); font-size: 1.05rem; line-height: 1.6; margin: 0 0 28px 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 28px; }
+    .btn-primary {
+      background: linear-gradient(135deg, #00f3ff, #3b82f6); color: #020617; font-weight: 800;
+      padding: 13px 28px; border-radius: 999px; text-decoration: none; transition: 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(56,189,248,0.35); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff;
+      font-weight: 600; padding: 13px 22px; border-radius: 999px; text-decoration: none; transition: 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .quick-links {
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+      padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem;
+    }
+    .quick-links a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 8px; background: rgba(56,189,248,0.08); }
+    .quick-links a:hover { background: rgba(56,189,248,0.18); }
+    [data-fr] { display: none; }
+    body.lang-fr [data-fr] { display: inline; }
+    body.lang-fr [data-en] { display: none; }
+  </style>
+</head>
+<body class="lang-en">
+  <nav class="nav">
+    <a href="/" class="logo">
+      <img src="/logo_studios_pro.png" width="32" height="32" style="border-radius:8px;" alt="Studios-Pro Logo">
+      Studios-Pro
+    </a>
+    <div class="lang-switch">
+      <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button type="button" class="lang-btn" onclick="setLang('fr')">FR</button>
+    </div>
+  </nav>
+  <main>
+    <div class="card">
+      <div class="code">404</div>
+      <h1>
+        <span data-en>Page Not Found</span>
+        <span data-fr>Page introuvable</span>
+      </h1>
+      <p>
+        <span data-en>The studio, tutorial, or link you requested may have moved or no longer exists. Jump back into our 24+ browser-based 3D, 4D, Multi-Color 3MF &amp; CNC studios below.</span>
+        <span data-fr>Le studio, tutoriel ou lien demandé a peut-être été déplacé ou n'existe plus. Revenez vers nos 24+ studios 3D, 4D, 3MF Multi-Couleurs et CNC dans le navigateur ci-dessous.</span>
+      </p>
+      <div class="actions">
+        <a href="/" class="btn-primary"><span data-en>Launch Studios-Pro</span><span data-fr>Ouvrir Studios-Pro</span></a>
+        <a href="/blog/" class="btn-ghost"><span data-en>Tutorials &amp; Guides</span><span data-fr>Tutoriels &amp; Guides</span></a>
+        <a href="/faq.html" class="btn-ghost">FAQ</a>
+        <a href="/fr/" class="btn-ghost">Version FR</a>
+      </div>
+      <div class="quick-links">
+        <a href="/tools/filament-painting-studio-online">Filament Painting</a>
+        <a href="/tools/multicolor-3mf-painter">3MF Painter</a>
+        <a href="/tools/3d-qr-wifi-coaster-generator">3D QR Coaster</a>
+        <a href="/tools/photo-to-3d-4d-relief-glb-stl">Photo to 3D/4D</a>
+        <a href="/viewer/stl">STL Viewer</a>
+        <a href="/apps/ar-viewer/">AR Viewer 3D</a>
+      </div>
+    </div>
+  </main>
+  <script>
+    function setLang(l) {
+      const lang = l === 'fr' ? 'fr' : 'en';
+      document.documentElement.lang = lang;
+      document.body.className = 'lang-' + lang;
+      try { localStorage.setItem('sp_lang', lang); } catch (_) {}
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+      });
+    }
+    const saved = (localStorage.getItem('sp_lang') || (navigator.language || '').slice(0, 2)).toLowerCase();
+    setLang(saved === 'fr' ? 'fr' : 'en');
+  </script>
+</body>
+</html>

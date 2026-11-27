@@ -1004,6 +1004,7 @@ ${clockworkAnimateCode}
                 pf.style.display = 'block'; ta.style.display = 'none';
                 pf.innerHTML = '';
                 const iframe = document.createElement('iframe');
+                iframe.setAttribute('sandbox', 'allow-scripts');
                 iframe.style.cssText = 'width:100%;height:100%;border:none;';
                 iframe.srcdoc = code;
                 pf.appendChild(iframe);

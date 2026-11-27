@@ -124,7 +124,7 @@
   if (channel) {
     channel.onmessage = (e) => handleHostMessage(e.data);
   }
-  window.addEventListener('message', (e) => handleHostMessage(e.data));
+  window.addEventListener('message', (e) => { if (e.origin !== window.location.origin) return; handleHostMessage(e.data); });
 
   postToHost({ type: 'GET_USER_STATUS' });
 

@@ -10,33 +10,30 @@
     <style>
         :root { --bg: #05070a; --surface: #0f172a; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
         body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 0; line-height: 1.8; }
-        .nav { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 800; font-size: 1.5rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .nav { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; }
         .btn-back { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: 0.2s; }
         .btn-back:hover { background: var(--accent); }
         .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
         h1 { font-size: 2.5rem; margin-bottom: 20px; line-height: 1.2; background: linear-gradient(135deg, #00f3ff, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         h2 { font-size: 1.6rem; margin-top: 40px; color: white; }
-        p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 20px; }
-        
-        .steps-container { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 24px; margin: 30px 0; }
+        p { color: #cbd5e1; font-size: 1.08rem; margin-bottom: 20px; }
+        .steps-container { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 24px; margin: 30px 0; }
         .step-item { display: flex; gap: 16px; margin-bottom: 20px; }
         .step-item:last-child { margin-bottom: 0; }
         .step-number { background: var(--accent); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; }
         .step-text h3 { margin: 0 0 6px 0; font-size: 1.15rem; color: white; }
         .step-text p { margin: 0; font-size: 0.95rem; color: var(--muted); }
-
         .viewer-frame-container { width: 100%; height: 600px; border-radius: 18px; border: 1px solid rgba(59,130,246,0.3); overflow: hidden; margin: 40px 0; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .viewer-iframe { width: 100%; height: 100%; border: none; }
-
         [data-fr] { display: none; }
         body.lang-fr [data-fr] { display: inline; }
         body.lang-fr [data-en] { display: none; }
-        .lang-switch { display: flex; gap: 10px; }
-        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-btn { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: 600; }
         .lang-btn.active { background: white; color: black; border-color: white; }
+        @media (max-width: 640px) { .nav { padding: 14px 16px; } h1 { font-size: 1.85rem; } .viewer-frame-container { height: 420px; } }
     </style>
-    <!-- Structured Data HowTo JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -49,98 +46,103 @@
           "position": 1,
           "name": "Upload your 2D Image",
           "text": "Select any PNG, JPG, or drawing file in the converter window below.",
-          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html#converter"
+          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online#converter"
         },
         {
           "@type": "HowToStep",
           "position": 2,
           "name": "Generate 3D Geometry",
           "text": "Adjust extrusion height, bevel, and depth map settings to extrude your image in 3D.",
-          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html#converter"
+          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online#converter"
         },
         {
           "@type": "HowToStep",
           "position": 3,
           "name": "Export 3D Model",
-          "text": "Export as STL for 3D printing, standalone HTML, or OBJ mesh.",
-          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html#converter"
+          "text": "Export as STL for 3D printing, standalone HTML, or OBJ/GLB mesh.",
+          "url": "https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online#converter"
         }
       ]
     }
     </script>
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <meta property="og:title" content="How to Convert 2D Image to 3D Model Online Free | Studios-Pro">
+    <link rel="canonical" href="https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="How to Convert 2D Image to 3D Model Online Free | Studios-Pro">
     <meta property="og:description" content="Convert 2D images, drawings, PNGs, and sketches into 3D models online for free. Instant 2D to 3D WebGL relief generator and exporter.">
     <meta property="og:image" content="https://studios-pro.com/og_banner.jpg">
-    <meta property="og:url" content="https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online.html">
+    <meta property="og:url" content="https://studios-pro.com/blog/how-to-convert-2d-image-to-3d-model-online">
     <meta name="twitter:card" content="summary_large_image">
 </head>
-<body>
+<body class="lang-en">
     <nav class="nav">
         <a href="/" class="logo">
-            <img src="/logo_studios_pro.png" alt="Studios-Pro Logo" width="32" height="32">
+            <img src="/logo_studios_pro.png" alt="Studios-Pro Logo" width="32" height="32" style="border-radius:6px;">
             Studios-Pro
         </a>
-        <div style="display: flex; gap: 15px; align-items: center;">
+        <div style="display: flex; gap: 14px; align-items: center;">
             <div class="lang-switch">
-                <button class="lang-btn active" onclick="setLang('en')">EN</button>
-                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+                <button type="button" class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button type="button" class="lang-btn" onclick="setLang('fr')">FR</button>
             </div>
-            <a href="/blog/" class="btn-back"><span data-en="← Back to Blog">← Back to Blog</span><span data-fr="← Retour au Blog">← Retour au Blog</span></a>
+            <a href="/blog/" class="btn-back"><span data-en>All Tutorials</span><span data-fr>Tous les Tutoriels</span></a>
         </div>
     </nav>
 
     <div class="container">
         <h1>
-            <span data-en="How to Convert 2D Image to 3D Model Online">How to Convert 2D Image to 3D Model Online</span>
-            <span data-fr="Comment Convertir une Image 2D en Modèle 3D en Ligne">Comment Convertir une Image 2D en Modèle 3D en Ligne</span>
+            <span data-en>How to Convert 2D Image to 3D Model Online</span>
+            <span data-fr>Comment Convertir une Image 2D en Modèle 3D en Ligne</span>
         </h1>
         <p>
-            <span data-en="Transform flat images, logos, drawings, and sketches into interactive 3D WebGL models directly in your browser without software installation.">Transform flat images, logos, drawings, and sketches into interactive 3D WebGL models directly in your browser without software installation.</span>
-            <span data-fr="Transformez vos images 2D, logos, dessins et croquis en modèles 3D interactifs directement dans votre navigateur sans logiciel.">Transformez vos images 2D, logos, dessins et croquis en modèles 3D interactifs directement dans votre navigateur sans logiciel.</span>
+            <span data-en>Transform flat images, logos, drawings, and sketches into interactive 3D WebGL models directly in your browser without software installation.</span>
+            <span data-fr>Transformez vos images 2D, logos, dessins et croquis en modèles 3D interactifs directement dans votre navigateur sans logiciel.</span>
         </p>
 
         <div class="steps-container">
             <div class="step-item">
                 <div class="step-number">1</div>
                 <div class="step-text">
-                    <h3><span data-en="Choose a 2D Image File">Choose a 2D Image File</span><span data-fr="Choisissez un Fichier Image 2D">Choisissez un Fichier Image 2D</span></h3>
-                    <p><span data-en="Upload any PNG, JPG, SVG or sketch into the converter widget below.">Upload any PNG, JPG, SVG or sketch into the converter widget below.</span><span data-fr="Déposez n'importe quelle image PNG, JPG ou SVG dans l'outil ci-dessous.">Déposez n'importe quelle image PNG, JPG ou SVG dans l'outil ci-dessous.</span></p>
+    <h3><span data-en>Choose a 2D Image File</span><span data-fr>Choisissez un Fichier Image 2D</span></h3>
+    <p><span data-en>Upload any PNG, JPG, SVG or sketch into the converter widget below.</span><span data-fr>Déposez n'importe quelle image PNG, JPG ou SVG dans l'outil ci-dessous.</span></p>
                 </div>
             </div>
             <div class="step-item">
                 <div class="step-number">2</div>
                 <div class="step-text">
-                    <h3><span data-en="Extrude & Adjust Depth">Extrude & Adjust Depth</span><span data-fr="Extrudez & Ajustez la Profondeur">Extrudez & Ajustez la Profondeur</span></h3>
-                    <p><span data-en="Use intuitive sliders to control extrusion thickness, bevel, lighting, and materials.">Use intuitive sliders to control extrusion thickness, bevel, lighting, and materials.</span><span data-fr="Ajustez l'épaisseur d'extrusion, le biseau, les lumières et matériaux.">Ajustez l'épaisseur d'extrusion, le biseau, les lumières et matériaux.</span></p>
+    <h3><span data-en>Extrude &amp; Adjust Depth</span><span data-fr>Extrudez &amp; Ajustez la Profondeur</span></h3>
+    <p><span data-en>Use intuitive sliders to control extrusion thickness, smoothing, lighting, and materials.</span><span data-fr>Ajustez l'épaisseur d'extrusion, le lissage, les lumières et les matériaux.</span></p>
                 </div>
             </div>
             <div class="step-item">
                 <div class="step-number">3</div>
                 <div class="step-text">
-                    <h3><span data-en="Export Production-Ready 3D Files">Export Production-Ready 3D Files</span><span data-fr="Exportez vos Fichiers 3D">Exportez vos Fichiers 3D</span></h3>
-                    <p><span data-en="Download watertight STL for 3D printing, CNC heightmaps, or standalone interactive HTML.">Download watertight STL for 3D printing, CNC heightmaps, or standalone interactive HTML.</span><span data-fr="Téléchargez des fichiers STL étanches pour impression 3D, bas-reliefs CNC ou HTML interactif autonome.">Téléchargez des fichiers STL étanches pour impression 3D, bas-reliefs CNC ou HTML interactif autonome.</span></p>
+    <h3><span data-en>Export Production-Ready 3D Files</span><span data-fr>Exportez vos Fichiers 3D</span></h3>
+    <p><span data-en>Download watertight STL for 3D printing, CNC heightmaps, or animated 4D GLB &amp; OBJ files.</span><span data-fr>Téléchargez des fichiers STL étanches pour impression 3D, bas-reliefs CNC ou GLB 4D &amp; OBJ.</span></p>
                 </div>
             </div>
         </div>
 
         <div class="viewer-frame-container" id="converter">
-            <iframe src="/convert/2d-sketch-to-3d" class="viewer-iframe" title="2D Image to 3D Converter"></iframe>
+            <iframe src="/?ref=n3d&amp;embed=true" class="viewer-iframe" title="2D Image to 3D Converter"></iframe>
         </div>
 
         <div class="cta-container" style="text-align:center; margin:40px 0;">
-            <a href="/?ref=depth-maps" class="cta-btn" style="display:inline-block; background:linear-gradient(135deg,#00f3ff,#3b82f6); color:#000; padding:16px 40px; border-radius:50px; font-size:1.15rem; font-weight:800; text-decoration:none; text-transform:uppercase; letter-spacing:1px; box-shadow:0 8px 25px rgba(59,130,246,0.4); transition:0.3s;">
-                <span data-en="🚀 Open Free 2D to 3D Converter in Fullscreen">🚀 Open Free 2D to 3D Converter in Fullscreen</span>
-                <span data-fr="🚀 Ouvrir le Convertisseur 2D en 3D en Plein Écran">🚀 Ouvrir le Convertisseur 2D en 3D en Plein Écran</span>
+            <a href="/?ref=n3d" class="cta-btn" style="display:inline-block; background:linear-gradient(135deg,#00f3ff,#3b82f6); color:#000; padding:16px 40px; border-radius:50px; font-size:1.1rem; font-weight:800; text-decoration:none; text-transform:uppercase; letter-spacing:1px; box-shadow:0 8px 25px rgba(59,130,246,0.4);">
+                <span data-en>Open Free 2D to 3D Converter in Fullscreen</span>
+                <span data-fr>Ouvrir le Convertisseur 2D en 3D en Plein Écran</span>
             </a>
         </div>
     </div>
 
     <script>
         function setLang(l) {
-            document.body.className = l === 'fr' ? 'lang-fr' : '';
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === l));
+            const lang = l === 'fr' ? 'fr' : 'en';
+            document.documentElement.lang = lang;
+            document.body.className = 'lang-' + lang;
+            try { localStorage.setItem('sp_lang', lang); } catch (_) {}
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang));
         }
+        setLang(new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('sp_lang') || 'en');
     </script>
 </body>
 </html>
