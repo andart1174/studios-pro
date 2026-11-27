@@ -85,7 +85,7 @@ window.ChemReaction3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${molData.name} - 3D</title>
 <style>*{margin:0;padding:0;}body{background:#030e18;overflow:hidden;font-family:sans-serif;}#lbl{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);color:#34d399;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;border:1px solid rgba(52,211,153,0.3);}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><div id="lbl">${molData.name}</div><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x030e18);
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,500);camera.position.set(0,0,80);

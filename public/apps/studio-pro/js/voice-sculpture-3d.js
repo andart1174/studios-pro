@@ -22,7 +22,7 @@ window.VoiceSculpture3D = (() => {
           <span id="vs3d-rec-icon" style="width:12px;height:12px;background:#ff4d4d;border-radius:50%;"></span>
           <span id="vs3d-rec-text">${isEN ? 'Record Voice' : 'Enregistrer'}</span>
         </button>
-        <div id="vs3d-status" style="font-size:10px;color:#94a3b8;text-align:center;">${isEN ? 'Press to start recording (3s)' : 'Appuyez pentru a înregistra'}</div>
+        <div id="vs3d-status" style="font-size:10px;color:#94a3b8;text-align:center;">${isEN ? 'Press to start recording (3s)' : 'Appuyez pour enregistrer (3s)'}</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
         <div class="vs3d-row"><span style="font-size:10px;color:#94a3b8;">${isEN ? 'Style' : 'Style'}</span><select id="vs3d-style" style="width:100%;padding:5px;background:#1e293b;border:1px solid #333;border-radius:4px;color:#fff;font-size:10px;"><option value="organic">Organic</option><option value="spiky">Spiky</option><option value="vortex">Vortex</option></select></div>
@@ -43,11 +43,13 @@ window.VoiceSculpture3D = (() => {
     recBtn.onclick = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (window._studio4dStreams) window._studio4dStreams.push(stream);
         mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
         mediaRecorder.onstop = () => {
-          _audioBlob = new Blob(chunks, { type: 'audio/wav' });
+          stream.getTracks().forEach(t => t.stop());
+          _audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
           addBtn.disabled = false;
           addBtn.style.opacity = '1';
           recText.textContent = window.currentLang==='fr'?'Prêt !':'Ready!';
@@ -55,23 +57,26 @@ window.VoiceSculpture3D = (() => {
         mediaRecorder.start();
         recBtn.style.borderColor = '#10b981';
         recText.textContent = window.currentLang==='fr'?'Écoute...':'Listening...';
-        setTimeout(() => mediaRecorder.stop(), 3000);
-      } catch (e) { alert(e.message); }
+        setTimeout(() => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); }, 3000);
+      } catch (e) { if (window.toast) window.toast('❌ Mic: ' + e.message); }
     };
 
     addBtn.onclick = async () => {
       if(!_audioBlob) return;
       const style = _panel.querySelector('#vs3d-style').value;
       const color = _panel.querySelector('#vs3d-color').value;
-      
-      // Simulate frequency data from blob (or just random for mockup if needed)
-      const buffer = await _audioBlob.arrayBuffer();
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await ctx.decodeAudioData(buffer);
-      const data = audioBuffer.getChannelData(0);
       const samples = [];
-      const step = Math.floor(data.length / 128);
-      for(let i=0; i<128; i++) samples.push(Math.abs(data[i*step] || 0));
+      try {
+        const buffer = await _audioBlob.arrayBuffer();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (window._studio4dAudioCtxs) window._studio4dAudioCtxs.push(ctx);
+        const audioBuffer = await ctx.decodeAudioData(buffer);
+        const data = audioBuffer.getChannelData(0);
+        const step = Math.max(1, Math.floor(data.length / 128));
+        for(let i=0; i<128; i++) samples.push(Math.abs(data[i*step] || 0));
+      } catch (_) {
+        for(let i=0; i<128; i++) samples.push(0.25 + 0.65 * Math.abs(Math.sin(i * 0.22)));
+      }
 
       if(window.SketchExtruder && window.SketchExtruder.addExtraModule) {
         window.SketchExtruder.addExtraModule('voice-sculpture', { samples, style, color });

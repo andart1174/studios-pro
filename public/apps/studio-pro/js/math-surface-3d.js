@@ -50,7 +50,15 @@ var dl=new THREE.DirectionalLight(0x6366f1,2);dl.position.set(50,100,50);scene.a
 var dl2=new THREE.DirectionalLight(0x10b981,1.5);dl2.position.set(-50,-50,-50);scene.add(dl2);
 var grid=new THREE.GridHelper(40,20,0x1e2a45,0x0d1225);grid.position.y=-0.05;scene.add(grid);
 ${colorCode}
-function ef(f,x,y,t){try{return new Function('x','y','t','sin','cos','tan','sqrt','abs','pow','exp','log','PI','atan2','floor','ceil','return ('+f+')')(x,y,t,Math.sin,Math.cos,Math.tan,Math.sqrt,Math.abs,Math.pow,Math.exp,Math.log,Math.PI,Math.atan2,Math.floor,Math.ceil)||0;}catch(e){return 0;}}
+var _fnSrc='', _fnCompiled=null;
+function compileFormula(f){
+  if(_fnSrc===f && _fnCompiled) return _fnCompiled;
+  _fnSrc=f;
+  try{ _fnCompiled=new Function('x','y','t','sin','cos','tan','sqrt','abs','pow','exp','log','PI','atan2','floor','ceil','return ('+f+')'); }
+  catch(e){ _fnCompiled=function(){return 0;}; }
+  return _fnCompiled;
+}
+function ef(f,x,y,t){try{return compileFormula(f)(x,y,t,Math.sin,Math.cos,Math.tan,Math.sqrt,Math.abs,Math.pow,Math.exp,Math.log,Math.PI,Math.atan2,Math.floor,Math.ceil)||0;}catch(e){return 0;}}
 var mesh=null,t=0;
 function doRebuild(){
   if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();}

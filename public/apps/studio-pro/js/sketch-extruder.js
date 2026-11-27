@@ -113,7 +113,7 @@ const SketchExtruder = (() => {
       const fallbackFetch = () => {
           const lat = 48.8566;
           const lon = 2.3522;
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=\${lat}&longitude=\${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code`;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code`;
           fetch(url)
               .then(res => res.json())
               .then(data => processData(lat, lon, data))
@@ -128,7 +128,7 @@ const SketchExtruder = (() => {
               (pos) => {
                   const lat = pos.coords.latitude;
                   const lon = pos.coords.longitude;
-                  const url = `https://api.open-meteo.com/v1/forecast?latitude=\${lat}&longitude=\${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code`;
+                  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code`;
                   fetch(url)
                       .then(res => res.json())
                       .then(data => processData(lat, lon, data))
@@ -941,163 +941,14 @@ const SketchExtruder = (() => {
 
     wrapElement.appendChild(container);
 
-    const scriptsToLoad = [
-        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js",
-        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
-        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js",
-        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"
-    ];
-    let loadedScripts = 0;
-    const checkStart = () => {
-        loadedScripts++;
-        if(loadedScripts === scriptsToLoad.length) { 
-            init3D(); setupEvents(); 
-            // Initialize extra modules
-            const sidebar = document.getElementById('se-tools-sidebar');
-            if(window.MathSurface3D) MathSurface3D.init(sidebar, document.getElementById('btn-math-scene'));
-            if(window.DataChart3D) DataChart3D.init(sidebar, document.getElementById('btn-chart-scene'));
-            if(window.WebcamAvatar3D) WebcamAvatar3D.init(sidebar, document.getElementById('btn-webcam-scene'));
-            if(window.ShaderEditor3D) ShaderEditor3D.init(sidebar, document.getElementById('btn-shader-scene'));
-            if(window.Starmap3D) Starmap3D.init(sidebar, document.getElementById('btn-star-scene'));
-            if(window.KeyframeAnimator3D) KeyframeAnimator3D.init(sidebar, document.getElementById('btn-kf-scene'));
-            if(window.VoiceSculpture3D) VoiceSculpture3D.init(sidebar, document.getElementById('btn-voice-scene'));
-            if(window.QRLabyrinth3D) QRLabyrinth3D.init(sidebar, document.getElementById('btn-qr-labyrinth-scene'));
-            if(window.LocationTerrain3D) LocationTerrain3D.init(sidebar, document.getElementById('btn-terrain-scene'));
-            if(window.DocGallery3D) DocGallery3D.init(sidebar, document.getElementById('btn-gallery-scene'));
-            if(window.PdfGallery3D) PdfGallery3D.init(sidebar, document.getElementById('btn-pdf-scene'));
-            if(window.LogicTree3D) LogicTree3D.init(sidebar, document.getElementById('btn-tree-scene'));
-            if(window.NeonHandwriting3D) NeonHandwriting3D.init(sidebar, document.getElementById('btn-neon-scene'));
-            if(window.CsvChart3D) CsvChart3D.init(sidebar, document.getElementById('btn-csv-scene'));
-            if(window.WebNetwork3D) WebNetwork3D.init(sidebar, document.getElementById('btn-webnet-scene'));
-            if(window.PixelArtVoxel3D) PixelArtVoxel3D.init(sidebar, document.getElementById('btn-pixel-scene'));
-            if(window.JsonDashboard3D) JsonDashboard3D.init(sidebar, document.getElementById('btn-jsonlive-scene'));
-            if(window.DnaHelix3D) DnaHelix3D.init(sidebar, document.getElementById('btn-dna-scene'));
-            if(window.GeoGlobe3D) GeoGlobe3D.init(sidebar, document.getElementById('btn-geo-scene'));
-            if(window.PaletteWorld3D) PaletteWorld3D.init(sidebar, document.getElementById('btn-palette-scene'));
-            if(window.SentimentLandscape3D) SentimentLandscape3D.init(sidebar, document.getElementById('btn-sentiment-scene'));
-            if(window.FractalGenerator3D) FractalGenerator3D.init(sidebar, document.getElementById('btn-fractal-scene'));
-            if(window.MidiArch3D) MidiArch3D.init(sidebar, document.getElementById('btn-midi-scene'));
-            if(window.NeuralNet3D) NeuralNet3D.init(sidebar, document.getElementById('btn-neural-scene'));
-            if(window.TimelineRiver3D) TimelineRiver3D.init(sidebar, document.getElementById('btn-timeline-scene'));
-            if(window.ChessBoard3D) ChessBoard3D.init(sidebar, document.getElementById('btn-chess-scene'));
-            if(window.BiometricAvatar3D) BiometricAvatar3D.init(sidebar, document.getElementById('btn-bio-scene'));
-            if(window.MoodboardWorld3D) MoodboardWorld3D.init(sidebar, document.getElementById('btn-mood-scene'));
-            if(window.Molecule3D) Molecule3D.init(sidebar, document.getElementById('btn-molecule-scene'));
-            if(window.WebSocketLive3D) WebSocketLive3D.init(sidebar, document.getElementById('btn-wslive-scene'));
-            if(window.Story3D) Story3D.init(sidebar, document.getElementById('btn-story-scene'));
-            if(window.CrystalGen3D) CrystalGen3D.init(sidebar, document.getElementById('btn-crystal-scene'));
-            if(window.BotanyLSystem3D) BotanyLSystem3D.init(sidebar, document.getElementById('btn-botany-scene'));
-            if(window.CellularAutomata3D) CellularAutomata3D.init(sidebar, document.getElementById('btn-automata-scene'));
-            if(window.KineticTypography3D) KineticTypography3D.init(sidebar, document.getElementById('btn-kintypo-scene'));
-            if(window.GalaxyBuilder3D) GalaxyBuilder3D.init(sidebar, document.getElementById('btn-galaxy-scene'));
-            if(window.SciFiSpaceship3D) SciFiSpaceship3D.init(sidebar, document.getElementById('btn-spaceship-scene'));
-            if(window.RpgDungeon3D) RpgDungeon3D.init(sidebar, document.getElementById('btn-dungeon-scene'));
-            if(window.WeatherEvent3D) WeatherEvent3D.init(sidebar, document.getElementById('btn-weather-scene'));
-            if(window.ImpossibleGeometry3D) ImpossibleGeometry3D.init(sidebar, document.getElementById('btn-impossible-scene'));
-            if(window.PapercraftWorld3D) PapercraftWorld3D.init(sidebar, document.getElementById('btn-papercraft-scene'));
-            if(window.ForceShield3D) ForceShield3D.init(sidebar, document.getElementById('btn-shield-scene'));
-            if(window.CyberCity3D) CyberCity3D.init(sidebar, document.getElementById('btn-cybercity-scene'));
-            if(window.QuantumFluids3D) QuantumFluids3D.init(sidebar, document.getElementById('btn-fluid-scene'));
-            if(window.TimeLapse4D) TimeLapse4D.init(sidebar, document.getElementById('btn-timelapse-scene'));
-            if(window.ProductShowcase3D) ProductShowcase3D.init(sidebar, document.getElementById('btn-product-scene'));
-            if(window.SocialMediaRoom3D) SocialMediaRoom3D.init(sidebar, document.getElementById('btn-social-scene'));
-            if(window.GitRepoCity3D) GitRepoCity3D.init(sidebar, document.getElementById('btn-gitrepo-scene'));
-            if(window.WebARPortal3D) WebARPortal3D.init(sidebar, document.getElementById('btn-webar-scene'));
-            if(window.TextToScene3D) TextToScene3D.init(sidebar, document.getElementById('btn-text2scene-scene'));
-            
-            // Ultra Modules
-            if(window.IceTerrain3D) IceTerrain3D.init(sidebar, document.getElementById('btn-iceterrain-scene'));
-            if(window.LavaWorld3D) LavaWorld3D.init(sidebar, document.getElementById('btn-lavaworld-scene'));
-            if(window.OceanWave3D) OceanWave3D.init(sidebar, document.getElementById('btn-oceanwave-scene'));
-            if(window.MechRobot3D) MechRobot3D.init(sidebar, document.getElementById('btn-mechrobot-scene'));
-            if(window.AncientArch3D) AncientArch3D.init(sidebar, document.getElementById('btn-ancientarch-scene'));
-            if(window.LegoCity3D) LegoCity3D.init(sidebar, document.getElementById('btn-legocity-scene'));
-            if(window.DataGlobe3D) DataGlobe3D.init(sidebar, document.getElementById('btn-dataglobe-scene'));
-            if(window.HoloHUD3D) HoloHUD3D.init(sidebar, document.getElementById('btn-holohud-scene'));
-            if(window.MaskSculptor3D) MaskSculptor3D.init(sidebar, document.getElementById('btn-masksculptor-scene'));
-            if(window.Instrument3D) Instrument3D.init(sidebar, document.getElementById('btn-instrument-scene'));
-            if(window.ChemReaction3D) ChemReaction3D.init(sidebar, document.getElementById('btn-chemreaction-scene'));
-            if(window.Anatomy3D) Anatomy3D.init(sidebar, document.getElementById('btn-anatomy-scene'));
-            if(window.HeroForge3D) HeroForge3D.init(sidebar, document.getElementById('btn-heroforge-scene'));
-            if(window.SteampunkChrono3D) SteampunkChrono3D.init(sidebar, document.getElementById('btn-steampunk-scene'));
-            if(window.SteampunkChronoPro3D) SteampunkChronoPro3D.init(sidebar, document.getElementById('btn-steampunk-pro-scene'));
-            if(window.ClockUltra3D) ClockUltra3D.init(sidebar, document.getElementById('btn-clockultra-scene'));
-        }
-    };
-    if(!window.THREE || !window.THREE.TransformControls || !window.THREE.GLTFLoader) {
-        const loadScript = (url, cb) => { const s = document.createElement('script'); s.src = url; s.onload = cb; document.head.appendChild(s); };
-        scriptsToLoad.forEach(src => loadScript(src, checkStart));
-    } else {
-        init3D(); setupEvents();
-        const sidebar = document.getElementById('se-tools-sidebar');
-        if(window.MathSurface3D) MathSurface3D.init(sidebar, document.getElementById('btn-math-scene'));
-        if(window.DataChart3D) DataChart3D.init(sidebar, document.getElementById('btn-chart-scene'));
-        if(window.WebcamAvatar3D) WebcamAvatar3D.init(sidebar, document.getElementById('btn-webcam-scene'));
-        if(window.ShaderEditor3D) ShaderEditor3D.init(sidebar, document.getElementById('btn-shader-scene'));
-        if(window.Starmap3D) Starmap3D.init(sidebar, document.getElementById('btn-star-scene'));
-        if(window.KeyframeAnimator3D) KeyframeAnimator3D.init(sidebar, document.getElementById('btn-kf-scene'));
-        if(window.VoiceSculpture3D) VoiceSculpture3D.init(sidebar, document.getElementById('btn-voice-scene'));
-        if(window.QRLabyrinth3D) QRLabyrinth3D.init(sidebar, document.getElementById('btn-qr-labyrinth-scene'));
-        if(window.LocationTerrain3D) LocationTerrain3D.init(sidebar, document.getElementById('btn-terrain-scene'));
-        if(window.DocGallery3D) DocGallery3D.init(sidebar, document.getElementById('btn-gallery-scene'));
-        if(window.PdfGallery3D) PdfGallery3D.init(sidebar, document.getElementById('btn-pdf-scene'));
-        if(window.LogicTree3D) LogicTree3D.init(sidebar, document.getElementById('btn-tree-scene'));
-        if(window.NeonHandwriting3D) NeonHandwriting3D.init(sidebar, document.getElementById('btn-neon-scene'));
-        if(window.CsvChart3D) CsvChart3D.init(sidebar, document.getElementById('btn-csv-scene'));
-        if(window.WebNetwork3D) WebNetwork3D.init(sidebar, document.getElementById('btn-webnet-scene'));
-        if(window.PixelArtVoxel3D) PixelArtVoxel3D.init(sidebar, document.getElementById('btn-pixel-scene'));
-        if(window.JsonDashboard3D) JsonDashboard3D.init(sidebar, document.getElementById('btn-jsonlive-scene'));
-        if(window.DnaHelix3D) DnaHelix3D.init(sidebar, document.getElementById('btn-dna-scene'));
-        if(window.GeoGlobe3D) GeoGlobe3D.init(sidebar, document.getElementById('btn-geo-scene'));
-        if(window.PaletteWorld3D) PaletteWorld3D.init(sidebar, document.getElementById('btn-palette-scene'));
-        if(window.SentimentLandscape3D) SentimentLandscape3D.init(sidebar, document.getElementById('btn-sentiment-scene'));
-        if(window.FractalGenerator3D) FractalGenerator3D.init(sidebar, document.getElementById('btn-fractal-scene'));
-        if(window.MidiArch3D) MidiArch3D.init(sidebar, document.getElementById('btn-midi-scene'));
-        if(window.NeuralNet3D) NeuralNet3D.init(sidebar, document.getElementById('btn-neural-scene'));
-        if(window.TimelineRiver3D) TimelineRiver3D.init(sidebar, document.getElementById('btn-timeline-scene'));
-        if(window.ChessBoard3D) ChessBoard3D.init(sidebar, document.getElementById('btn-chess-scene'));
-        if(window.BiometricAvatar3D) BiometricAvatar3D.init(sidebar, document.getElementById('btn-bio-scene'));
-        if(window.MoodboardWorld3D) MoodboardWorld3D.init(sidebar, document.getElementById('btn-mood-scene'));
-        if(window.Molecule3D) Molecule3D.init(sidebar, document.getElementById('btn-molecule-scene'));
-        if(window.WebSocketLive3D) WebSocketLive3D.init(sidebar, document.getElementById('btn-wslive-scene'));
-        if(window.Story3D) Story3D.init(sidebar, document.getElementById('btn-story-scene'));
-        if(window.CrystalGen3D) CrystalGen3D.init(sidebar, document.getElementById('btn-crystal-scene'));
-        if(window.BotanyLSystem3D) BotanyLSystem3D.init(sidebar, document.getElementById('btn-botany-scene'));
-        if(window.CellularAutomata3D) CellularAutomata3D.init(sidebar, document.getElementById('btn-automata-scene'));
-        if(window.KineticTypography3D) KineticTypography3D.init(sidebar, document.getElementById('btn-kintypo-scene'));
-        if(window.GalaxyBuilder3D) GalaxyBuilder3D.init(sidebar, document.getElementById('btn-galaxy-scene'));
-        if(window.SciFiSpaceship3D) SciFiSpaceship3D.init(sidebar, document.getElementById('btn-spaceship-scene'));
-        if(window.RpgDungeon3D) RpgDungeon3D.init(sidebar, document.getElementById('btn-dungeon-scene'));
-        if(window.WeatherEvent3D) WeatherEvent3D.init(sidebar, document.getElementById('btn-weather-scene'));
-        if(window.ImpossibleGeometry3D) ImpossibleGeometry3D.init(sidebar, document.getElementById('btn-impossible-scene'));
-        if(window.PapercraftWorld3D) PapercraftWorld3D.init(sidebar, document.getElementById('btn-papercraft-scene'));
-        if(window.ForceShield3D) ForceShield3D.init(sidebar, document.getElementById('btn-shield-scene'));
-        if(window.CyberCity3D) CyberCity3D.init(sidebar, document.getElementById('btn-cybercity-scene'));
-        if(window.QuantumFluids3D) QuantumFluids3D.init(sidebar, document.getElementById('btn-fluid-scene'));
-        if(window.TimeLapse4D) TimeLapse4D.init(sidebar, document.getElementById('btn-timelapse-scene'));
-        if(window.ProductShowcase3D) ProductShowcase3D.init(sidebar, document.getElementById('btn-product-scene'));
-        if(window.SocialMediaRoom3D) SocialMediaRoom3D.init(sidebar, document.getElementById('btn-social-scene'));
-        if(window.GitRepoCity3D) GitRepoCity3D.init(sidebar, document.getElementById('btn-gitrepo-scene'));
-        if(window.WebARPortal3D) WebARPortal3D.init(sidebar, document.getElementById('btn-webar-scene'));
-        if(window.TextToScene3D) TextToScene3D.init(sidebar, document.getElementById('btn-text2scene-scene'));
-        
-        // Ultra Modules
-        if(window.IceTerrain3D) IceTerrain3D.init(sidebar, document.getElementById('btn-iceterrain-scene'));
-        if(window.LavaWorld3D) LavaWorld3D.init(sidebar, document.getElementById('btn-lavaworld-scene'));
-        if(window.OceanWave3D) OceanWave3D.init(sidebar, document.getElementById('btn-oceanwave-scene'));
-        if(window.MechRobot3D) MechRobot3D.init(sidebar, document.getElementById('btn-mechrobot-scene'));
-        if(window.AncientArch3D) AncientArch3D.init(sidebar, document.getElementById('btn-ancientarch-scene'));
-        if(window.LegoCity3D) LegoCity3D.init(sidebar, document.getElementById('btn-legocity-scene'));
-        if(window.DataGlobe3D) DataGlobe3D.init(sidebar, document.getElementById('btn-dataglobe-scene'));
-        if(window.HoloHUD3D) HoloHUD3D.init(sidebar, document.getElementById('btn-holohud-scene'));
-        if(window.MaskSculptor3D) MaskSculptor3D.init(sidebar, document.getElementById('btn-masksculptor-scene'));
-        if(window.Instrument3D) Instrument3D.init(sidebar, document.getElementById('btn-instrument-scene'));
-        if(window.ChemReaction3D) ChemReaction3D.init(sidebar, document.getElementById('btn-chemreaction-scene'));
-        if(window.Anatomy3D) Anatomy3D.init(sidebar, document.getElementById('btn-anatomy-scene'));
-        if(window.HeroForge3D) HeroForge3D.init(sidebar, document.getElementById('btn-heroforge-scene'));
-        if(window.SteampunkChrono3D) SteampunkChrono3D.init(sidebar, document.getElementById('btn-steampunk-scene'));
-        if(window.SteampunkChronoPro3D) SteampunkChronoPro3D.init(sidebar, document.getElementById('btn-steampunk-pro-scene'));
-        if(window.ClockUltra3D) ClockUltra3D.init(sidebar, document.getElementById('btn-clockultra-scene'));
+    // INSTANT BOOT: zero blocking 4-CDN cascade & zero 65 eager DOM panel flood!
+    // All 66 sub-modules & heavy CDNs load seamlessly on first click via Studio4DCore!
+    init3D();
+    setupEvents();
+    const sidebar = document.getElementById('se-tools-sidebar');
+    if (window.Studio4DCore) {
+      window.Studio4DCore.bindLazySidebarModules(sidebar);
+      window.Studio4DCore.mountSidebarSearchAndTabs(sidebar);
     }
 
     const resize = () => {
@@ -1511,7 +1362,7 @@ const SketchExtruder = (() => {
               }
               bubbles.geometry.attributes.position.needsUpdate = true;
           });
-      } else if(type === 'matrix') {
+      } else if(type === 'matrix' || type === 'cyber') {
           const geo = new THREE.BufferGeometry(); const pos = [];
           for(let i=0; i<2000; i++) pos.push((Math.random()-0.5)*1000, (Math.random()-0.5)*1000, (Math.random()-0.5)*1000);
           geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -2127,10 +1978,31 @@ const SketchExtruder = (() => {
           }
       }, { passive: false });
 
+      let _rafId = null;
+      let _cameraMode = 'off';
       function animate() {
-          requestAnimationFrame(animate);
+          _rafId = requestAnimationFrame(animate);
+          if (document.hidden) return;
           controls.update();
-          
+
+          // 4D Director Cinematic Camera Modes
+          if (_cameraMode === 'turntable') {
+              const ang = Date.now() * 0.00055;
+              const rad = Math.max(90, Math.hypot(camera.position.x, camera.position.z));
+              camera.position.x = Math.sin(ang) * rad;
+              camera.position.z = Math.cos(ang) * rad;
+              camera.lookAt(0, 0, 0);
+          } else if (_cameraMode === 'flyby') {
+              const t = Date.now() * 0.0007;
+              camera.position.set(Math.sin(t) * 195, 55 + Math.sin(t * 1.6) * 40, Math.cos(t) * 195);
+              camera.lookAt(0, 0, 0);
+          } else if (_cameraMode === 'zoom') {
+              const t = Date.now() * 0.0009;
+              const dist = 165 + Math.sin(t) * 55;
+              camera.position.set(Math.sin(t * 0.6) * dist, 42 + Math.cos(t * 0.8) * 20, Math.cos(t * 0.6) * dist);
+              camera.lookAt(0, 0, 0);
+          }
+
           let w = window.__SPEED__ || 1;
           
           cuParallaxX += (targetCuParallaxX - cuParallaxX) * 0.05;
@@ -2182,6 +2054,12 @@ const SketchExtruder = (() => {
           renderer.render(scene, camera);
       }
       animate();
+      window._seStopLoop = () => { if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; } };
+      window._seSetCameraMode = (mode) => {
+          _cameraMode = mode || 'off';
+          if (mode === 'top') { _cameraMode = 'off'; camera.position.set(0, 260, 0.1); camera.lookAt(0, 0, 0); controls.update(); }
+          else if (mode === 'reset') { _cameraMode = 'off'; camera.position.set(0, 50, 200); camera.lookAt(0, 0, 0); controls.target.set(0, 0, 0); controls.update(); }
+      };
   }
 
   function generateShapePoints(type, p1, p2) {
@@ -2424,12 +2302,21 @@ const SketchExtruder = (() => {
           reader.readAsDataURL(f); e.target.value = '';
       });
 
-      // Import
+      // Import (lazy-loads SVGLoader / dxf-parser / GLTFLoader / OBJLoader / STLLoader on demand!)
       const fileInput = document.getElementById('se-file');
       const fileInput3D = document.getElementById('se-file-3d');
-      document.getElementById('btn-svg').onclick = () => { fileInput.accept = '.svg'; fileInput.click(); };
-      document.getElementById('btn-dxf').onclick = () => { fileInput.accept = '.dxf'; fileInput.click(); };
-      document.getElementById('btn-3d-import').onclick = () => { fileInput3D.click(); };
+      document.getElementById('btn-svg').onclick = async () => {
+          if (window.Studio4DCore) await window.Studio4DCore.ensureCDN('svg');
+          fileInput.accept = '.svg'; fileInput.click();
+      };
+      document.getElementById('btn-dxf').onclick = async () => {
+          if (window.Studio4DCore) await window.Studio4DCore.ensureCDN('dxf');
+          fileInput.accept = '.dxf'; fileInput.click();
+      };
+      document.getElementById('btn-3d-import').onclick = async () => {
+          if (window.Studio4DCore) await window.Studio4DCore.ensureCDN('loaders3d');
+          fileInput3D.click();
+      };
 
       // ── Image→3D in Scene ──
       let _sceneImgData = null, _sceneImgB64 = null;
@@ -2470,7 +2357,7 @@ const SketchExtruder = (() => {
         for(let i=0;i<pos.count;i++) pos.setY(i, heights[i]*hs);
         pos.needsUpdate = true; geo.computeVertexNormals();
         let mat;
-        if(cm === 'Texture' && _sceneImgB64) {
+        if(String(cm || '').toLowerCase() === 'texture' && _sceneImgB64) {
           const tex = new THREE.TextureLoader().load(_sceneImgB64);
           mat = new THREE.MeshPhongMaterial({map:tex,shininess:40});
         } else {
@@ -2499,7 +2386,7 @@ const SketchExtruder = (() => {
           meshGroup: null, importedMesh: grp,
           // Extra: heightmap data for export
           heightData: heightArr, heightRes: res, heightScale: hs, colorMode: cm,
-          imgB64: cm === 'Texture' ? _sceneImgB64 : null
+          imgB64: String(cm || '').toLowerCase() === 'texture' ? _sceneImgB64 : null
         };
         models.push(newModel); activeModelId = newModel.id; buildModels();
         document.getElementById('btn-mode-3d').click();
@@ -2515,29 +2402,31 @@ const SketchExtruder = (() => {
         p.style.display = p.style.display === 'block' ? 'none' : 'block';
         document.getElementById('se-img3d-cfg').style.display = 'none';
       };
-      const _initSceneAudio = () => {
+      const _initSceneAudio = (connectSpeakers = false) => {
         if(!_sceneAudioCtx){
           _sceneAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+          if (window._studio4dAudioCtxs) window._studio4dAudioCtxs.push(_sceneAudioCtx);
           _sceneAnalyser=_sceneAudioCtx.createAnalyser();
           _sceneAnalyser.fftSize=256;
-          _sceneAnalyser.connect(_sceneAudioCtx.destination); // so audio plays
         }
-        // Resume suspended context (browser autoplay policy)
+        try { _sceneAnalyser.disconnect(); } catch (_) {}
+        if (connectSpeakers) _sceneAnalyser.connect(_sceneAudioCtx.destination);
         if(_sceneAudioCtx.state==='suspended') _sceneAudioCtx.resume();
       };
       document.getElementById('se-mic-btn').onclick = async () => {
-        _initSceneAudio();
+        _initSceneAudio(false); // NEVER route live microphone to speakers (eliminates acoustic screech!)
         if(_sceneAudioSrc){try{_sceneAudioSrc.disconnect();}catch(e){}}
         if(_sceneMicStream){_sceneMicStream.getTracks().forEach(t=>t.stop());}
         _sceneMicStream = await navigator.mediaDevices.getUserMedia({audio:true}).catch(()=>null);
         if(!_sceneMicStream){if(window.toast)toast(isEN ? '❌ Microphone denied' : '❌ Microphone refusé');return;}
+        if (window._studio4dStreams) window._studio4dStreams.push(_sceneMicStream);
         _sceneAudioSrc = _sceneAudioCtx.createMediaStreamSource(_sceneMicStream);
         _sceneAudioSrc.connect(_sceneAnalyser);
         document.getElementById('se-audio-status').textContent = isEN ? '🔴 Microphone active' : '🔴 Microphone actif';
         document.getElementById('se-audio-status').style.color = '#10b981';
       };
       document.getElementById('se-audio-file2').onchange = (e) => {
-        const f=e.target.files[0]; if(!f)return; _initSceneAudio();
+        const f=e.target.files[0]; if(!f)return; _initSceneAudio(true);
         if(_sceneAudioSrc){try{_sceneAudioSrc.disconnect();if(_sceneAudioSrc.stop)_sceneAudioSrc.stop();}catch(ex){}}
         const r=new FileReader();
         r.onload=ev=>{_sceneAudioCtx.decodeAudioData(ev.target.result).then(buf=>{_sceneAudioSrc=_sceneAudioCtx.createBufferSource();_sceneAudioSrc.buffer=buf;_sceneAudioSrc.connect(_sceneAnalyser);_sceneAudioSrc.loop=true;_sceneAudioSrc.start();document.getElementById('se-audio-status').textContent='🎵 '+f.name;document.getElementById('se-audio-status').style.color='#10b981';});};
@@ -2699,16 +2588,16 @@ const SketchExtruder = (() => {
               };
               try {
                   if (ext === 'glb' || ext === 'gltf') {
-                      new THREE.GLTFLoader().parse(result, '', (gltf) => addModel(gltf.scene));
+                      new THREE.GLTFLoader().parse(result, '', (gltf) => addModel(gltf.scene), (err) => { console.error("GLTF Load Error", err); if(window.toast) toast('❌ GLTF/GLB parse failed'); });
                   } else if (ext === 'obj') {
                       addModel(new THREE.OBJLoader().parse(result));
                   } else if (ext === 'stl') {
                       const geo = new THREE.STLLoader().parse(result);
-                      const mesh = new THREE.Mesh(geo);
+                      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.25, roughness: 0.45 }));
                       const group = new THREE.Group(); group.add(mesh);
                       addModel(group);
                   }
-              } catch (err) { console.error("3D Load Error", err); }
+              } catch (err) { console.error("3D Load Error", err); if(window.toast) toast('❌ 3D Import error: ' + err.message); }
           };
           if(isBinary) reader.readAsArrayBuffer(file);
           else reader.readAsText(file);
@@ -2740,7 +2629,8 @@ const SketchExtruder = (() => {
       // Text 3D
       let loadedFontsCache = {};
       
-      document.getElementById('btn-text').onclick = () => {
+      document.getElementById('btn-text').onclick = async () => {
+          if (window.Studio4DCore) await window.Studio4DCore.ensureCDN('font');
           const p = document.getElementById('se-text-cfg');
           p.style.display = p.style.display === 'block' ? 'none' : 'block';
           if(document.getElementById('se-qr-cfg')) document.getElementById('se-qr-cfg').style.display = 'none';
@@ -2786,25 +2676,33 @@ const SketchExtruder = (() => {
           if(loadedFontsCache[fontName]) {
               addTextModel(loadedFontsCache[fontName]);
           } else {
-              const loader = new THREE.FontLoader();
-              let fontUrl = '';
-              if(fontName === 'helvetiker') fontUrl = 'https://unpkg.com/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json';
-              else if(fontName === 'optimer') fontUrl = 'https://unpkg.com/three@0.128.0/examples/fonts/optimer_regular.typeface.json';
-              else if(fontName === 'gentilis') fontUrl = 'https://unpkg.com/three@0.128.0/examples/fonts/gentilis_regular.typeface.json';
-              else if(fontName === 'droid') fontUrl = 'https://unpkg.com/three@0.128.0/examples/fonts/droid/droid_sans_bold.typeface.json';
-              
-              if(window.toast) toast('Loading font...');
-              loader.load(fontUrl, (font) => {
-                  loadedFontsCache[fontName] = font;
-                  addTextModel(font);
-              });
+              const runFontLoad = async () => {
+                if (!THREE.FontLoader && window.Studio4DCore) await window.Studio4DCore.ensureCDN('font');
+                const loader = new THREE.FontLoader();
+                let fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json';
+                if(fontName === 'optimer') fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/optimer_regular.typeface.json';
+                else if(fontName === 'gentilis') fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/gentilis_regular.typeface.json';
+                else if(fontName === 'droid') fontUrl = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/droid/droid_sans_bold.typeface.json';
+                if(window.toast) toast('Loading 3D font...');
+                loader.load(fontUrl, (font) => {
+                    loadedFontsCache[fontName] = font;
+                    if (!loadedFont) loadedFont = font;
+                    addTextModel(font);
+                }, undefined, (err) => {
+                    console.warn('Font load error:', err);
+                    if (loadedFont) addTextModel(loadedFont);
+                    else if (window.toast) toast('❌ Font failed to load');
+                });
+              };
+              runFontLoad();
           }
       };
 
-      // QR Code 3D
+      // QR Code 3D (lazy-loads QRious on first click!)
       let _sceneQrLogoB64 = null;
-      document.getElementById('btn-qrcode').onclick = () => {
-          if(!window.QRious) { alert("QR Library still loading..."); return; }
+      document.getElementById('btn-qrcode').onclick = async () => {
+          if (!window.QRious && window.Studio4DCore) await window.Studio4DCore.ensureCDN('qr');
+          if(!window.QRious) { if(window.toast) toast('❌ QR Library failed to load'); return; }
           const p = document.getElementById('se-qr-cfg');
           p.style.display = p.style.display === 'block' ? 'none' : 'block';
           document.getElementById('se-img3d-cfg').style.display = 'none';
@@ -3069,10 +2967,26 @@ const SketchExtruder = (() => {
       
       document.getElementById('btn-clone-obj').addEventListener('click', () => {
           const act = getActiveModel(); if(!act) return;
-          const clone = JSON.parse(JSON.stringify(act));
-          clone.id = Date.now(); clone.name = clone.name + ' (Copy)';
-          clone.meshGroup = null; clone.position.x += 20;
-          if(act.importedMesh) clone.importedMesh = act.importedMesh.clone(true);
+          const skipKeys = new Set(['meshGroup', 'importedMesh', '_fontObj', '_videoEl']);
+          const clone = {};
+          Object.keys(act).forEach(k => {
+              if (skipKeys.has(k)) return;
+              const v = act[k];
+              if (v && v.isVector3) clone[k] = v.clone();
+              else if (v && v.isEuler) clone[k] = v.clone();
+              else {
+                  try { clone[k] = JSON.parse(JSON.stringify(v)); } catch (_) { clone[k] = v; }
+              }
+          });
+          clone.id = Date.now();
+          clone.name = (act.name || 'Object') + ' (Copy)';
+          clone.meshGroup = null;
+          clone.position = (act.position && act.position.isVector3) ? act.position.clone() : new THREE.Vector3(0, 0, 0);
+          clone.position.x += 22;
+          clone.rotation = (act.rotation && act.rotation.isEuler) ? act.rotation.clone() : new THREE.Euler(0, 0, 0);
+          clone.groupScale = (act.groupScale && act.groupScale.isVector3) ? act.groupScale.clone() : new THREE.Vector3(1, 1, 1);
+          if (act._fontObj) clone._fontObj = act._fontObj;
+          if (act.importedMesh) clone.importedMesh = act.importedMesh.clone(true);
           models.push(clone); activeModelId = clone.id; buildModels(); syncUI();
           if(window.toast) window.toast('🔵 Object cloned!');
       });
@@ -3306,16 +3220,21 @@ const SketchExtruder = (() => {
           paths.forEach(processPoints);
       } 
       else if(m.type === 'svg') {
-          const loader = new THREE.SVGLoader();
-          const data = loader.parse(m.rawText);
-          data.paths.forEach(path => {
-              const svgs = THREE.SVGLoader.createShapes(path);
-              svgs.forEach(s => shapes.push(s));
-          });
+          try {
+              const loader = new THREE.SVGLoader();
+              const data = loader.parse(m.rawText);
+              data.paths.forEach(path => {
+                  const svgs = THREE.SVGLoader.createShapes(path);
+                  svgs.forEach(s => shapes.push(s));
+              });
+          } catch (svgErr) { console.warn('[SVG parse error]', svgErr); }
       }
       else if(m.type === 'dxf') {
-          const parser = new window.DxfParser();
-          const dxf = parser.parseSync(m.rawText);
+          let dxf = null;
+          try {
+              const parser = new window.DxfParser();
+              dxf = parser.parseSync(m.rawText);
+          } catch (dxfErr) { console.warn('[DXF parse error]', dxfErr); }
           const allSegments = [];
           function parseEntities(entities, offsetX = 0, offsetY = 0, scaleX = 1, scaleY = 1) {
              entities.forEach(e => {
@@ -3339,11 +3258,11 @@ const SketchExtruder = (() => {
                } else if(e.type === 'SPLINE' && e.controlPoints && e.controlPoints.length > 0) {
                   for(let i=0; i<e.controlPoints.length-1; i++) allSegments.push({p1: {x: e.controlPoints[i].x * scaleX + offsetX, y: e.controlPoints[i].y * scaleY + offsetY}, p2: {x: e.controlPoints[i+1].x * scaleX + offsetX, y: e.controlPoints[i+1].y * scaleY + offsetY}});
                   if((e.shape || e.closed) && e.controlPoints.length > 2) allSegments.push({p1: {x: e.controlPoints[e.controlPoints.length-1].x * scaleX + offsetX, y: e.controlPoints[e.controlPoints.length-1].y * scaleY + offsetY}, p2: {x: e.controlPoints[0].x * scaleX + offsetX, y: e.controlPoints[0].y * scaleY + offsetY}});
+               } else if(e.type === 'LINE' && e.vertices && e.vertices.length >= 2) {
+                  allSegments.push({p1: {x: e.vertices[0].x * scaleX + offsetX, y: e.vertices[0].y * scaleY + offsetY}, p2: {x: e.vertices[1].x * scaleX + offsetX, y: e.vertices[1].y * scaleY + offsetY}});
                } else if(e.vertices && e.vertices.length > 0) {
                   for(let i=0; i<e.vertices.length-1; i++) allSegments.push({p1: {x: e.vertices[i].x * scaleX + offsetX, y: e.vertices[i].y * scaleY + offsetY}, p2: {x: e.vertices[i+1].x * scaleX + offsetX, y: e.vertices[i+1].y * scaleY + offsetY}});
                   if((e.shape || e.closed) && e.vertices.length > 2) allSegments.push({p1: {x: e.vertices[e.vertices.length-1].x * scaleX + offsetX, y: e.vertices[e.vertices.length-1].y * scaleY + offsetY}, p2: {x: e.vertices[0].x * scaleX + offsetX, y: e.vertices[0].y * scaleY + offsetY}});
-               } else if(e.type === 'LINE') {
-                  allSegments.push({p1: {x: e.vertices[0].x * scaleX + offsetX, y: e.vertices[0].y * scaleY + offsetY}, p2: {x: e.vertices[1].x * scaleX + offsetX, y: e.vertices[1].y * scaleY + offsetY}});
                }
              });
           }
@@ -3420,7 +3339,7 @@ const SketchExtruder = (() => {
           });
           lines = openLines;
       }
-      else if(m.type === 'text' && loadedFont) {
+      else if(m.type === 'text' && (m._fontObj || loadedFont)) {
           isText = true;
       }
       else if(m.type === 'qrcode') {
@@ -3856,10 +3775,12 @@ const SketchExtruder = (() => {
           const R = m.surfaceRange || 8, N = m.surfaceRes || 40;
           const geo = new THREE.PlaneGeometry(R*2, R*2, N, N); geo.rotateX(-Math.PI/2);
           const pos = geo.attributes.position;
-          const ef = (f,x,y,t) => { try{ return new Function('x','y','t','sin','cos','tan','sqrt','abs','pow','exp','log','PI','atan2','floor','ceil','return ('+f+')')(x,y,t,Math.sin,Math.cos,Math.tan,Math.sqrt,Math.abs,Math.pow,Math.exp,Math.log,Math.PI,Math.atan2,Math.floor,Math.ceil)||0; } catch(e){return 0;} };
+          let compiledFn = () => 0;
+          try { compiledFn = new Function('x','y','t','sin','cos','tan','sqrt','abs','pow','exp','log','PI','atan2','floor','ceil','return ('+(m.formula||'0')+')'); } catch (_) {}
+          const ef = (x,y,t) => { try{ return compiledFn(x,y,t,Math.sin,Math.cos,Math.tan,Math.sqrt,Math.abs,Math.pow,Math.exp,Math.log,Math.PI,Math.atan2,Math.floor,Math.ceil)||0; } catch(e){return 0;} };
           let mn=1e9, mx=-1e9; const hs=new Float32Array(pos.count);
           for(let i=0;i<pos.count;i++){ 
-            const v=ef(m.formula, pos.getX(i), pos.getZ(i), 0); hs[i]=isFinite(v)?v:0;
+            const v=ef(pos.getX(i), pos.getZ(i), 0); hs[i]=isFinite(v)?v:0;
             if(hs[i]<mn)mn=hs[i]; if(hs[i]>mx)mx=hs[i];
           }
           const range = mx-mn||1; const cols=[];
@@ -3878,7 +3799,7 @@ const SketchExtruder = (() => {
             scene.animCbs.push((w) => {
               const t = Date.now()*0.001;
               for(let i=0;i<pos.count;i++){ 
-                const v=ef(m.formula, pos.getX(i), pos.getZ(i), t); pos.setY(i, isFinite(v)?v:0);
+                const v=ef(pos.getX(i), pos.getZ(i), t); pos.setY(i, isFinite(v)?v:0);
               }
               pos.needsUpdate = true; geo.computeVertexNormals();
             });
@@ -4091,21 +4012,36 @@ const SketchExtruder = (() => {
             meshGroup.add(new THREE.Line(geo, linkMat));
           });
       } else if(m.format === 'pixel-voxel') {
+          // GPU-optimized InstancedMesh (1 draw call instead of 4,096 separate BoxGeometries!)
           const { pixels, width, height } = m.pxImgData;
           const vSize = m.pxVoxelSize || 3, hScale = m.pxHeightScale || 1;
+          const items = [];
           for(let y=0; y<height; y++) {
             for(let x=0; x<width; x++) {
               const idx=(y*width+x)*4;
-              const a=pixels[idx+3];
-              if(m.pxSkipAlpha && a<128) continue;
+              if(m.pxSkipAlpha && pixels[idx+3]<128) continue;
               const r=pixels[idx]/255, g=pixels[idx+1]/255, b=pixels[idx+2]/255;
-              const brightness=(r+g+b)/3;
-              const boxH=vSize*hScale*(0.5+brightness);
-              const mat=new THREE.MeshPhongMaterial({color:new THREE.Color(r,g,b)});
-              const mesh=new THREE.Mesh(new THREE.BoxGeometry(vSize,boxH,vSize),mat);
-              mesh.position.set((x-width/2)*vSize, boxH/2, (y-height/2)*vSize);
-              meshGroup.add(mesh);
+              const boxH = vSize * hScale * (0.5 + (r+g+b)/3);
+              items.push({ x: (x-width/2)*vSize, h: boxH, z: (y-height/2)*vSize, r, g, b });
             }
+          }
+          if (items.length > 0) {
+            const boxGeo = new THREE.BoxGeometry(vSize, 1, vSize);
+            const mat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const inst = new THREE.InstancedMesh(boxGeo, mat, items.length);
+            const dummy = new THREE.Object3D();
+            const c = new THREE.Color();
+            items.forEach((it, k) => {
+              dummy.position.set(it.x, it.h * 0.5, it.z);
+              dummy.scale.set(1, it.h, 1);
+              dummy.updateMatrix();
+              inst.setMatrixAt(k, dummy.matrix);
+              c.setRGB(it.r, it.g, it.b);
+              inst.setColorAt(k, c);
+            });
+            inst.instanceMatrix.needsUpdate = true;
+            if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+            meshGroup.add(inst);
           }
       } else if(m.format === 'json-dashboard') {
           const entries = Object.entries(m.jsnData).filter(([k,v]) => typeof v === 'number');
@@ -5280,8 +5216,12 @@ const SketchExtruder = (() => {
             });
           }
       } else if(m.format === 'video-mesh') {
-          const v = document.createElement('video'); v.src = m.rawText;
-          v.loop = true; v.muted = true; v.playsInline = true; v.play();
+          let v = m._videoEl;
+          if (!v) {
+            v = document.createElement('video'); v.src = m.rawText;
+            v.loop = true; v.muted = true; v.playsInline = true; v.play().catch(()=>{});
+            m._videoEl = v;
+          }
           const tex = new THREE.VideoTexture(v);
           let geo;
           if(m.videoShape === 'curved') geo = new THREE.CylinderGeometry(100, 100, 60, 32, 1, true, -Math.PI/4, Math.PI/2);
@@ -5403,7 +5343,7 @@ const SketchExtruder = (() => {
           const colors = new Float32Array(pCount * 3);
           const initial = new Float32Array(pCount * 3);
           const colorMap = {quantum:[0,0.5,1], plasma:[0.8,0.1,1], fire:[1,0.5,0], toxic:[0.2,1,0.1]};
-          const baseCol = colorMap[m.qfColor||'quantum'];
+          const baseCol = colorMap[m.qfColor||'quantum'] || colorMap.quantum;
           
           for(let i=0;i<pCount;i++){
             const r=Math.random()*80, theta=Math.random()*Math.PI*2, phi=Math.acos(Math.random()*2-1);
@@ -6292,8 +6232,30 @@ const SketchExtruder = (() => {
       return meshGroup;
   }
 
+  function _disposeObject3D(obj) {
+      if (!obj) return;
+      obj.traverse(ch => {
+          if (ch.geometry && typeof ch.geometry.dispose === 'function') {
+              try { ch.geometry.dispose(); } catch (_) {}
+          }
+          if (ch.material) {
+              const mats = Array.isArray(ch.material) ? ch.material : [ch.material];
+              mats.forEach(mt => {
+                  try {
+                      if (mt.map && mt.map.dispose) mt.map.dispose();
+                      if (mt.dispose) mt.dispose();
+                  } catch (_) {}
+              });
+          }
+      });
+  }
+
   function buildModels() {
       if(!globalGroup) return;
+      // Preserve ONLY environment callbacks (clear stale rebuilt model callbacks so animCbs NEVER leaks!)
+      if (scene && Array.isArray(scene.animCbs)) {
+          scene.animCbs = scene.animCbs.filter(cb => cb && (cb._isEnv || cb._isEnvCb));
+      }
       const activeModel = getActiveModel();
       const hasSteampunkActive = activeModel && (activeModel.format === 'steampunk-chrono' || activeModel.format === 'steampunk-chrono-pro');
       
@@ -6305,7 +6267,11 @@ const SketchExtruder = (() => {
               m.meshGroup.rotation.copy(m.rotation);
               m.meshGroup.scale.copy(m.groupScale);
           }
-          while(m.meshGroup.children.length > 0){ m.meshGroup.remove(m.meshGroup.children[0]); }
+          while(m.meshGroup.children.length > 0){
+              const child = m.meshGroup.children[0];
+              m.meshGroup.remove(child);
+              if (child !== m.importedMesh) _disposeObject3D(child);
+          }
           // Audio-viz / imported-mesh / hero-forge (live): add directly
           if((m.format === 'audio-viz' || m.format === 'imported-mesh' || m.format === 'hero-forge' || m.format === 'steampunk-chrono' || m.format === 'steampunk-chrono-pro' || m.format === 'clock-ultra') && m.importedMesh) {
               m.meshGroup.add(m.importedMesh);
@@ -6367,6 +6333,9 @@ const SketchExtruder = (() => {
           }
       });
       syncUI();
+      if (typeof window.onStudio4DSceneChanged === 'function') {
+          try { window.onStudio4DSceneChanged(models); } catch (_) {}
+      }
   }
 
   // ── Hero Forge geometry builder (used by createGeometryFromModel) ─────────
@@ -12474,10 +12443,18 @@ const SketchExtruder = (() => {
   }
 
   function exportScene() {
-      if(models.length === 0) { alert("Please create or load at least one model."); return; }
-      const btn = document.getElementById('btn-export'); btn.innerHTML = '✅ Exporting...';
+      if(models.length === 0) { if (window.toast) window.toast(window.currentLang === 'fr' ? '⚠️ Créez ou ajoutez au moins un modèle 3D !' : '⚠️ Please create or add at least one 3D model first!'); return false; }
+      const btn = document.getElementById('btn-export');
+      if (btn) btn.innerHTML = '✅ Exporting...';
       
       const hasClockUltraModel = models.find(m => m.format === 'clock-ultra');
+      const hasHeroModel = models.some(m => m.format === 'hero-forge');
+      const hasSteampunkModel = models.some(m => m.format === 'steampunk-chrono' || m.format === 'steampunk-chrono-pro');
+      const needsFonts = models.some(m => m.type === 'text' || m.format === 'kinetic-typo' || m.format === 'timeline-river' || m.format === 'story-3d');
+      const needsSVG = models.some(m => m.type === 'svg');
+      const needsDXF = models.some(m => m.type === 'dxf');
+      const needsQR  = models.some(m => m.type === 'qrcode');
+      const needs3DLoaders = models.some(m => m.type === '3d-model' && ['glb', 'gltf', 'obj', 'stl'].includes(m.format));
       const sp = (hasClockUltraModel && hasClockUltraModel.clockParts && hasClockUltraModel.clockParts[0]) || {};
       
       const exportedData = models.map(m => {
@@ -12573,26 +12550,38 @@ const SketchExtruder = (() => {
               sys: m.sys, view: m.view, pulse: m.pulse,
               ultraConfig: m.ultraConfig,
               // Hero Forge
-              heroparts: m.heroparts, herostyle: m.herostyle,
+              heroparts: m.heroparts, herostyle: m.herostyle, heroAnim: m.heroAnim,
               // Steampunk Chrono-Engine
-              clockParts: m.clockParts, clockStyle: m.clockStyle
+              clockParts: m.clockParts, clockStyle: m.clockStyle,
+              // Additional serialized properties for Draw, 3D Text, Automata & all 8 Mega Modules Pro!
+              drawStyle: m.drawStyle,
+              txtFont: m.txtFont, txtLayout: m.txtLayout, txtMat: m.txtMat, txtAnim: m.txtAnim,
+              isWire: m.isWire,
+              ccDens: m.ccDens, ccHeight: m.ccHeight, ccStyle: m.ccStyle, ccWire: m.ccWire, ccAnim: m.ccAnim,
+              qfCount: m.qfCount, qfSpeed: m.qfSpeed, qfColor: m.qfColor, qfWire: m.qfWire,
+              tlComp: m.tlComp, tlSpeed: m.tlSpeed, tlStyle: m.tlStyle,
+              psHotspots: m.psHotspots, psAnim: m.psAnim,
+              smUser: m.smUser, smText: m.smText, smLikes: m.smLikes, smAnim: m.smAnim,
+              grJson: m.grJson, grTheme: m.grTheme,
+              arColor: m.arColor, arParticles: m.arParticles,
+              tsPrompt: m.tsPrompt
           };
       });
 
       const configJSON = JSON.stringify(exportedData, null, 2);
-      
+      const optCdnTags = [
+        needsFonts ? `<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></${'script'}>\n<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></${'script'}>` : '',
+        needsSVG ? `<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></${'script'}>` : '',
+        needsDXF ? `<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></${'script'}>` : '',
+        needs3DLoaders ? `<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></${'script'}>\n<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></${'script'}>\n<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></${'script'}>` : '',
+        needsQR ? `<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></${'script'}>` : ''
+      ].filter(Boolean).join('\n');
+
       const code = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"/><title>3D Composer Scene</title>
+<html><head><meta charset="UTF-8"/><title>Studio Pro 4D — Interactive 3D Scene</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></${'script'}>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></${'script'}>
-<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></${'script'}>
+${optCdnTags}
 <style>body{margin:0;overflow:hidden;background:#050815;}</style>
 </head><body><script>
   let w = window.__SPEED__ || 1;
@@ -12658,15 +12647,15 @@ const SketchExtruder = (() => {
   ${getDxfSilhouette.toString()}
   ${getRayHullIntersection.toString()}
   ${buildEnv.toString()}
-  ${buildHeroForgeGeo.toString()}
-  ${addHeroAnimCb.toString()}
-  ${buildSteampunkChronoGeo.toString()}
-  ${addSteampunkAnimCb.toString()}
-  ${buildSteampunkChronoProGeo.toString()}
-  ${addSteampunkProAnimCb.toString()}
-  ${createProceduralDialTexture.toString()}
-  ${buildClockUltraGeo.toString()}
-  ${addClockUltraAnimCb.toString()}
+  ${hasHeroModel ? buildHeroForgeGeo.toString() : 'function buildHeroForgeGeo(){return new THREE.Group();}'}
+  ${hasHeroModel ? addHeroAnimCb.toString() : 'function addHeroAnimCb(){}'}
+  ${hasSteampunkModel ? buildSteampunkChronoGeo.toString() : 'function buildSteampunkChronoGeo(){return new THREE.Group();}'}
+  ${hasSteampunkModel ? addSteampunkAnimCb.toString() : 'function addSteampunkAnimCb(){}'}
+  ${hasSteampunkModel ? buildSteampunkChronoProGeo.toString() : 'function buildSteampunkChronoProGeo(){return new THREE.Group();}'}
+  ${hasSteampunkModel ? addSteampunkProAnimCb.toString() : 'function addSteampunkProAnimCb(){}'}
+  ${hasClockUltraModel ? createProceduralDialTexture.toString() : ''}
+  ${hasClockUltraModel ? buildClockUltraGeo.toString() : 'function buildClockUltraGeo(){return new THREE.Group();}'}
+  ${hasClockUltraModel ? addClockUltraAnimCb.toString() : 'function addClockUltraAnimCb(){}'}
   ${createGeometryFromModel.toString()}
 
   buildEnv(envType, scene);
@@ -12758,7 +12747,7 @@ const SketchExtruder = (() => {
                       for(let i=0;i<pos2.count;i++) pos2.setY(i, hd[i]*hs);
                       pos2.needsUpdate = true; geo.computeVertexNormals();
                       let mat2;
-                      if(cm === 'Texture' && m.imgB64) {
+                      if(String(cm || '').toLowerCase() === 'texture' && m.imgB64) {
                           const tex = new THREE.TextureLoader().load(m.imgB64);
                           mat2 = new THREE.MeshPhongMaterial({map:tex,shininess:40});
                       } else {
@@ -17946,10 +17935,11 @@ const SketchExtruder = (() => {
       if (editor) {
           if(window.pushUndo) window.pushUndo();
           editor.value = code.trim(); editor.dispatchEvent(new Event('input', { bubbles: true }));
-          if (container) container.dispatchEvent(new Event('hide'));
-          setTimeout(() => { btn.innerHTML = '⚡ Generate 3D Scene'; }, 1000);
-          if(window.toast) window.toast('ðŸŒŸ Ultimate 3D Scene Generated!');
+          // NEVER hide the 3D composer when exporting/copying!
+          if (btn) setTimeout(() => { btn.innerHTML = '⚡ Generate 3D Scene'; }, 900);
+          if(window.toast) window.toast('🌟 3D Scene HTML Generated!');
       }
+      return true;
   }
 
   function addExtraModule(type, config) {
@@ -18158,6 +18148,9 @@ const SketchExtruder = (() => {
       models.splice(idx, 1);
       if (activeModelId === m.id) activeModelId = models.length ? models[models.length-1].id : null;
       syncUI();
+      if (typeof window.onStudio4DSceneChanged === 'function') {
+          try { window.onStudio4DSceneChanged(models); } catch (_) {}
+      }
   }
   window._hf3RemoveModel = removeHeroForgeModel;
 
@@ -18175,7 +18168,99 @@ const SketchExtruder = (() => {
   }
   window._nn3UpdateModel = updateNeuralNetModel;
 
-  return { init, addExtraModule, getScene: () => scene, getCamera: () => camera, getRenderer: () => renderer, getGroup: () => globalGroup, addMeshToScene, getActiveModel: () => getActiveModel(), getModels: () => models, buildSteampunkChronoProGeo, buildClockUltraGeo, exportScene };
+  function clearScene() {
+      if (transformControl) transformControl.detach();
+      models.forEach(m => {
+          if (m._videoEl) { try { m._videoEl.pause(); m._videoEl.src = ''; } catch (_) {} }
+          if (m.meshGroup && globalGroup) {
+              globalGroup.remove(m.meshGroup);
+              _disposeObject3D(m.meshGroup);
+          }
+      });
+      models.length = 0;
+      activeModelId = null;
+      if (scene && Array.isArray(scene.animCbs)) {
+          scene.animCbs = scene.animCbs.filter(cb => cb && (cb._isEnv || cb._isEnvCb));
+      }
+      syncUI();
+      if (typeof window.onStudio4DSceneChanged === 'function') {
+          try { window.onStudio4DSceneChanged(models); } catch (_) {}
+      }
+  }
+
+  function applyLightingPreset(presetId) {
+      if (!scene || !renderer) return;
+      const presets = {
+          studio:   { bg: 0x050815, amb: 0xffffff, ambI: 0.60, hemiSky: 0xffffff, hemiGnd: 0x444444, hemiI: 0.80, dir: 0xffffff, dirI: 1.2 },
+          cyber:    { bg: 0x040514, amb: 0x6366f1, ambI: 0.70, hemiSky: 0x22d3ee, hemiGnd: 0xec4899, hemiI: 0.95, dir: 0x38bdf8, dirI: 1.4 },
+          museum:   { bg: 0x0f141e, amb: 0xfff8eb, ambI: 0.75, hemiSky: 0xfffbeb, hemiGnd: 0x334155, hemiI: 0.85, dir: 0xfffbeb, dirI: 1.35 },
+          golden:   { bg: 0x160a06, amb: 0xf59e0b, ambI: 0.65, hemiSky: 0xfbbf24, hemiGnd: 0x7c2d12, hemiI: 0.90, dir: 0xf97316, dirI: 1.5 },
+          arch:     { bg: 0xdce4f0, amb: 0xffffff, ambI: 0.95, hemiSky: 0xffffff, hemiGnd: 0x94a3b8, hemiI: 0.90, dir: 0xffffff, dirI: 1.15 },
+          hologram: { bg: 0x010913, amb: 0x06b6d4, ambI: 0.80, hemiSky: 0x22d3ee, hemiGnd: 0x0e7490, hemiI: 1.00, dir: 0x67e8f9, dirI: 1.4 }
+      };
+      const p = presets[presetId] || presets.studio;
+      renderer.setClearColor(p.bg, 1);
+      if (mainAmbientLight) { mainAmbientLight.color.setHex(p.amb); mainAmbientLight.intensity = p.ambI; }
+      if (mainHemiLight) { mainHemiLight.color.setHex(p.hemiSky); mainHemiLight.groundColor.setHex(p.hemiGnd); mainHemiLight.intensity = p.hemiI; }
+      if (mainDirLight) { mainDirLight.color.setHex(p.dir); mainDirLight.intensity = p.dirI; }
+  }
+
+  function setCameraMode(mode) {
+      if (typeof window._seSetCameraMode === 'function') window._seSetCameraMode(mode);
+  }
+
+  function getSerializableState() {
+      const skip = new Set(['meshGroup', 'importedMesh', '_fontObj', '_videoEl']);
+      return {
+          format: 'studios-pro-sp4d-v45',
+          env: currentEnv,
+          models: models.map(m => {
+              const o = {};
+              Object.keys(m).forEach(k => {
+                  if (skip.has(k)) return;
+                  const v = m[k];
+                  if (v && v.isVector3) o[k] = { _v3: [v.x, v.y, v.z] };
+                  else if (v && v.isEuler) o[k] = { _eu: [v.x, v.y, v.z] };
+                  else { try { o[k] = JSON.parse(JSON.stringify(v)); } catch (_) {} }
+              });
+              return o;
+          })
+      };
+  }
+
+  function loadSerializableState(data) {
+      if (!data || !Array.isArray(data.models)) return false;
+      clearScene();
+      data.models.forEach(raw => {
+          const m = Object.assign({}, raw);
+          m.position = (raw.position && raw.position._v3) ? new THREE.Vector3(...raw.position._v3) : new THREE.Vector3(0, 0, 0);
+          m.rotation = (raw.rotation && raw.rotation._eu) ? new THREE.Euler(...raw.rotation._eu) : new THREE.Euler(0, 0, 0);
+          m.groupScale = (raw.groupScale && raw.groupScale._v3) ? new THREE.Vector3(...raw.groupScale._v3) : new THREE.Vector3(1, 1, 1);
+          m.meshGroup = null;
+          m.importedMesh = null;
+          models.push(m);
+      });
+      if (models.length) activeModelId = models[models.length - 1].id;
+      buildModels();
+      return true;
+  }
+
+  function destroy() {
+      if (typeof window._seStopLoop === 'function') window._seStopLoop();
+      clearScene();
+      if (renderer) {
+          try { renderer.dispose(); } catch (_) {}
+      }
+  }
+
+  return {
+      init, addExtraModule, getScene: () => scene, getCamera: () => camera, getControls: () => controls,
+      getRenderer: () => renderer, getGroup: () => globalGroup, addMeshToScene,
+      getActiveModel: () => getActiveModel(), getModels: () => models,
+      buildSteampunkChronoProGeo, buildClockUltraGeo, exportScene,
+      clearScene, applyLightingPreset, setCameraMode,
+      getSerializableState, loadSerializableState, destroy
+  };
 })();
 
 window.SketchExtruder = SketchExtruder;

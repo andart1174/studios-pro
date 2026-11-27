@@ -19,8 +19,8 @@ var res=${res}, depth=${depth};
 var s=new THREE.Scene();
 var c=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,2000);
 c.position.set(0,0,res*1.2);
-var r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
-r.setSize(innerWidth,innerHeight);document.body.appendChild(r.domElement);
+var rnd=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+rnd.setSize(innerWidth,innerHeight);document.body.appendChild(rnd.domElement);
 var video=document.getElementById('v');
 var canvas=document.createElement('canvas');canvas.width=res;canvas.height=res;
 var ctx=canvas.getContext('2d');
@@ -29,6 +29,8 @@ var points, geometry, material;
 navigator.mediaDevices.getUserMedia({video:{width:res,height:res}}).then(stream=>{
   video.srcObject=stream;
   init();
+}).catch(err=>{
+  document.getElementById('ui').innerHTML+='<div style="color:#f87171;font-size:10px;margin-top:4px;">Camera error: '+err.message+'</div>';
 });
 
 function init(){
@@ -56,18 +58,18 @@ function animate(){
     var pos=geometry.attributes.position.array;
     var col=geometry.attributes.color.array;
     for(let i=0;i<res*res;i++){
-      var r=img[i*4], g=img[i*4+1], b=img[i*4+2];
-      var br=(r+g+b)/3;
+      var cr=img[i*4], g=img[i*4+1], b=img[i*4+2];
+      var br=(cr+g+b)/3;
       pos[i*3+2]=br/255*depth;
-      col[i*3]=r/255; col[i*3+1]=g/255; col[i*3+2]=b/255;
+      col[i*3]=cr/255; col[i*3+1]=g/255; col[i*3+2]=b/255;
     }
     geometry.attributes.position.needsUpdate=true;
     geometry.attributes.color.needsUpdate=true;
   }
   points.rotation.y+=0.005;
-  r.render(s,c);
+  rnd.render(s,c);
 }
-window.addEventListener('resize',()=>{c.aspect=innerWidth/innerHeight;c.updateProjectionMatrix();r.setSize(innerWidth,innerHeight);});
+window.addEventListener('resize',()=>{c.aspect=innerWidth/innerHeight;c.updateProjectionMatrix();rnd.setSize(innerWidth,innerHeight);});
 }());<\/script></body></html>`;
   }
 

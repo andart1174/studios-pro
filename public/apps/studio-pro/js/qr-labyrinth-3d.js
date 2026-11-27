@@ -48,7 +48,7 @@ window.QRLabyrinth3D = (() => {
           addBtn.disabled = false;
           addBtn.style.opacity = '1';
           drop.style.borderColor = '#10b981';
-          drop.querySelector('span:last-child').textContent = '✅ QR Loaded';
+          drop.querySelector('span:last-of-type').textContent = '✅ QR Loaded';
         };
         img.src = ev.target.result;
       };

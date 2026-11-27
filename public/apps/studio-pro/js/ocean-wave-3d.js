@@ -80,7 +80,7 @@ window.OceanWave3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ocean Wave 3D</title>
 <style>*{margin:0;padding:0;}body{background:#001a33;overflow:hidden;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x001a33);scene.fog=new THREE.FogExp2(0x001a33,0.002);
 const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,2000);camera.position.set(0,60,200);

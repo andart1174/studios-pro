@@ -105,7 +105,7 @@ window.QuantumFluids3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quantum Fluids 3D</title>
 <style>*{margin:0;padding:0;}body{background:#000;overflow:hidden;font-family:sans-serif;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 <div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(10,14,30,0.8);border:1px solid rgba(16,185,129,0.3);padding:6px 14px;border-radius:20px;font-size:11px;color:#94a3b8;z-index:9;">✨ Quantum Particle Simulation &nbsp;|&nbsp; Rotate & Zoom</div>
 <script>(function(){

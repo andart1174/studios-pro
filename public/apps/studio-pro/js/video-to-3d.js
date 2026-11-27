@@ -195,7 +195,10 @@ const env='${currentConfig.environment}';
 if(env!=='none'){
 const eg=new THREE.Group();scene.add(eg);const c=2000;const pg=new THREE.BufferGeometry();const pp=new Float32Array(c*3);
 if(env==='cosmos'){for(let i=0;i<c*3;i++)pp[i]=(Math.random()-0.5)*2000;pg.setAttribute('position',new THREE.BufferAttribute(pp,3));eg.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xffffff,size:2})));}
-else if(env==='cyberpunk')eg.add(new THREE.GridHelper(2000,50,0x6366f1,0x1e1b4b));
+else if(env==='cyberpunk'){eg.add(new THREE.GridHelper(2000,50,0x6366f1,0x1e1b4b));}
+else if(env==='ocean'){for(let i=0;i<c*3;i+=3){pp[i]=(Math.random()-0.5)*1400;pp[i+1]=(Math.random()-0.5)*900;pp[i+2]=(Math.random()-0.5)*1400;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));eg.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x38bdf8,size:3.5,transparent:true,opacity:0.75})));scene.fog=new THREE.FogExp2(0x03182b,0.0014);scene.background=new THREE.Color(0x03182b);}
+else if(env==='storm'){for(let i=0;i<c*3;i+=3){pp[i]=(Math.random()-0.5)*1200;pp[i+1]=(Math.random()-0.5)*1200;pp[i+2]=(Math.random()-0.5)*1200;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));eg.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xa855f7,size:3})));eg.add(new THREE.GridHelper(1600,40,0xec4899,0x1e1038));}
+else if(env==='snow'){for(let i=0;i<c*3;i+=3){pp[i]=(Math.random()-0.5)*1400;pp[i+1]=(Math.random()-0.5)*1000;pp[i+2]=(Math.random()-0.5)*1400;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));eg.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xe0f2fe,size:3.2,transparent:true,opacity:0.85})));scene.background=new THREE.Color(0x071224);}
 window.eg=eg;
 }
 animate();}

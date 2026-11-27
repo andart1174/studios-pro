@@ -78,7 +78,7 @@ window.Instrument3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Instrument 3D</title>
 <style>*{margin:0;padding:0;}body{background:#000;overflow:hidden;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(${bg});scene.fog=new THREE.Fog(${bg},200,600);
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000);camera.position.set(0,60,180);
@@ -91,48 +91,49 @@ const bMat=new THREE.MeshStandardMaterial({color:'${col}',roughness:0.3,metalnes
 const sMat=new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:0.1,metalness:0.9});
 const wMat=new THREE.MeshStandardMaterial({color:0x3d1c02,roughness:0.8});
 const g=new THREE.Group();scene.add(g);
+const _p=(m,p,r)=>{if(p)m.position.set(p.x||0,p.y||0,p.z||0);if(r)m.rotation.set(r.x||0,r.y||0,r.z||0);return m;};
 
 ${type === 'guitar' ? `
 // Guitar body
-const bodyGeo=new THREE.CylinderGeometry(22,22,8,32);g.add(Object.assign(new THREE.Mesh(bodyGeo,bMat),{position:{x:0,y:0,z:0}}));
-const waistGeo=new THREE.CylinderGeometry(14,14,8,32);g.add(Object.assign(new THREE.Mesh(waistGeo,bMat),{position:{x:0,y:0,z:0}}));
+const bodyGeo=new THREE.CylinderGeometry(22,22,8,32);g.add(_p(new THREE.Mesh(bodyGeo,bMat),{x:0,y:0,z:0}));
+const waistGeo=new THREE.CylinderGeometry(14,14,8,32);g.add(_p(new THREE.Mesh(waistGeo,bMat),{x:0,y:0,z:0}));
 // Neck
-g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(6,70,5),wMat),{position:{x:0,y:55,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(6,70,5),wMat),{x:0,y:55,z:0}));
 // Headstock
-g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10,15,4),wMat),{position:{x:0,y:94,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(10,15,4),wMat),{x:0,y:94,z:0}));
 // Strings
 for(let i=-2;i<=2;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,75,4),sMat);s.position.set(i*1.5,55,3.5);g.add(s);}
 // Pickups
-[-5,5].forEach(y=>g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(15,4,2),new THREE.MeshStandardMaterial({color:0x111111})),{position:{x:0,y,z:4.5}})));` : ''}
+[-5,5].forEach(y=>g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(15,4,2),new THREE.MeshStandardMaterial({color:0x111111})),{x:0,y,z:4.5})));` : ''}
 
 ${type === 'piano' ? `
 // Grand piano body (simplified)
-g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(100,20,60),bMat),{position:{x:0,y:0,z:0}}));
-g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(100,3,60),new THREE.MeshStandardMaterial({color:0x111111})),{position:{x:0,y:11.5,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(100,20,60),bMat),{x:0,y:0,z:0}));
+g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(100,3,60),new THREE.MeshStandardMaterial({color:0x111111})),{x:0,y:11.5,z:0}));
 // Keys
 for(let i=0;i<28;i++){const wk=new THREE.Mesh(new THREE.BoxGeometry(3,2,18),new THREE.MeshStandardMaterial({color:i%7===2||i%7===5?0x111111:0xf5f5f5}));wk.position.set(-42+i*3.1,12,-5);g.add(wk);}
 // Legs
-[[-40,-30,-20],[40,-30,-20],[-40,-30,20],[40,-30,20]].forEach(([x,y,z])=>g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(2,2,30,8),wMat),{position:{x,y,z}})));` : ''}
+[[-40,-30,-20],[40,-30,-20],[-40,-30,20],[40,-30,20]].forEach(([x,y,z])=>g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(2,2,30,8),wMat),{x,y,z})));` : ''}
 
 ${type === 'drums' ? `
 // Kick drum
-g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(25,25,18,32),new THREE.MeshStandardMaterial({color:'${col}',roughness:0.4})),{position:{x:0,y:-15,z:0},rotation:{x:Math.PI/2}}));
+g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(25,25,18,32),new THREE.MeshStandardMaterial({color:'${col}',roughness:0.4})),{x:0,y:-15,z:0},{x:Math.PI/2}));
 // Snare
-g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(13,13,8,32),bMat),{position:{x:-30,y:0,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(13,13,8,32),bMat),{x:-30,y:0,z:0}));
 // Hi-hat
-g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(12,12,1,32),sMat),{position:{x:-45,y:20,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(12,12,1,32),sMat),{x:-45,y:20,z:0}));
 // Toms
-[[-15,30,10],[15,30,10]].forEach(([x,y,z])=>g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(10,10,8,32),bMat),{position:{x,y,z}})));
+[[-15,30,10],[15,30,10]].forEach(([x,y,z])=>g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(10,10,8,32),bMat),{x,y,z})));
 // Cymbals
-[[30,25,-10],[30,25,10]].forEach(([x,y,z])=>g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(16,16,1,32),sMat),{position:{x,y,z}})));` : ''}
+[[30,25,-10],[30,25,10]].forEach(([x,y,z])=>g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(16,16,1,32),sMat),{x,y,z})));` : ''}
 
 ${type === 'violin' ? `
 // Violin body
-g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(12,12,5,32),bMat),{position:{x:0,y:0,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(12,12,5,32),bMat),{x:0,y:0,z:0}));
 // Neck
-g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(3,45,3),wMat),{position:{x:0,y:30,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.BoxGeometry(3,45,3),wMat),{x:0,y:30,z:0}));
 // Scroll
-g.add(Object.assign(new THREE.Mesh(new THREE.TorusGeometry(4,1.5,8,12,Math.PI),wMat),{position:{x:0,y:55,z:0}}));
+g.add(_p(new THREE.Mesh(new THREE.TorusGeometry(4,1.5,8,12,Math.PI),wMat),{x:0,y:55,z:0}));
 // Strings
 for(let i=-1.5;i<=1.5;i+=1){const s=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,50,4),sMat);s.position.set(i,27,2);g.add(s);}` : ''}
 
@@ -142,12 +143,12 @@ const bell=new THREE.Mesh(new THREE.CylinderGeometry(15,5,30,32,1,true),bMat);be
 // Tubes
 const tube1=new THREE.Mesh(new THREE.CylinderGeometry(2,2,60,12),bMat);tube1.rotation.z=Math.PI/2;tube1.position.set(0,10,0);g.add(tube1);
 // Valves
-[-10,0,10].forEach(x=>g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(3,3,12,12),sMat),{position:{x,y:10,z:0}})));
+[-10,0,10].forEach(x=>g.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(3,3,12,12),sMat),{x,y:10,z:0})));
 // Mouthpiece
-g.add(Object.assign(new THREE.Mesh(new THREE.ConeGeometry(3,8,12),sMat),{position:{x:-35,y:0,z:0},rotation:{x:0,y:0,z:Math.PI/2}}));` : ''}
+g.add(_p(new THREE.Mesh(new THREE.ConeGeometry(3,8,12),sMat),{x:-35,y:0,z:0},{x:0,y:0,z:Math.PI/2}));` : ''}
 
 // Stage floor
-scene.add(Object.assign(new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.9})),{rotation:{x:-Math.PI/2}})).position.y=-50;
+const floorM=_p(new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.9})),{x:0,y:-50,z:0},{x:-Math.PI/2});scene.add(floorM);
 
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 function anim(){requestAnimationFrame(anim);controls.update();renderer.render(scene,camera);}anim();

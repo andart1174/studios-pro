@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <script>
-    // Native Canvas getContext wrapper to force preserveDrawingBuffer: true on main page
-    (function() {
+    // Ensure WebGL canvases preserve drawing buffer for crisp 4K PNG & MP4/WebM Video capture
+    (function () {
       try {
         const orig = HTMLCanvasElement.prototype.getContext;
-        HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+        HTMLCanvasElement.prototype.getContext = function (type, attributes) {
           if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
             attributes = attributes || {};
             attributes.preserveDrawingBuffer = true;
           }
           return orig.call(this, type, attributes);
         };
-      } catch(e) {}
+      } catch (_) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studio Pro 4D — Professional 2D to 3D/4D Composer & DXF Viewer | Studios-Pro</title>
-  <meta name="description" content="Studio Pro 4D is a professional browser-based 2D-to-3D composer. Import DXF, SVG, STL, OBJ, and GLB files. Build and render 4D abstract scenes. Export to HTML. Free online 3D design tool." />
+  <title>Studio Pro 4D v4.5 — Professional 2D to 3D/4D Composer, 66+ Modules & AR | Studios-Pro</title>
+  <meta name="description" content="Studio Pro 4D is a fast browser-based 2D-to-3D/4D composer with 66+ interactive modules. Import DXF, SVG, STL, OBJ, and GLB files. Export PNG, MP4, HTML, ZIP, STL, OBJ, GLB, and 1:1 AR." />
   <meta name="keywords" content="Studio Pro 4D, 2D to 3D converter, DXF viewer, STL viewer online, 3D composer browser, 4D graphics, GLB viewer, OBJ viewer, Studios-Pro" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="author" content="Studios-Pro" />
@@ -28,12 +28,12 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://studios-pro.com/apps/studio-pro/" />
   <meta property="og:title" content="Studio Pro 4D — 2D to 3D/4D Scene Composer" />
-  <meta property="og:description" content="Professional browser-based 3D/4D scene composer. Import DXF, SVG, STL, OBJ, GLB. Export HTML. No download needed." />
+  <meta property="og:description" content="Professional browser-based 3D/4D scene composer with 66+ modules. Import DXF, SVG, STL, OBJ, GLB. Export STL, GLB, OBJ, HTML, ZIP & AR." />
   <meta property="og:image" content="https://studios-pro.com/og_banner.jpg" />
   <meta property="og:site_name" content="Studios-Pro" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Studio Pro 4D | Studios-Pro" />
-  <meta name="twitter:description" content="Professional 2D to 3D/4D browser composer. Import DXF, STL, OBJ, GLB. Export HTML." />
+  <meta name="twitter:description" content="Professional 2D to 3D/4D browser composer with 66+ interactive modules." />
   <meta name="twitter:image" content="https://studios-pro.com/og_banner.jpg" />
   <script type="application/ld+json">
   {
@@ -43,1165 +43,1112 @@
     "url": "https://studios-pro.com/apps/studio-pro/",
     "applicationCategory": "DesignApplication",
     "operatingSystem": "Web",
-    "description": "Professional browser-based 2D to 3D composer for DXF, SVG, STL, OBJ, GLB files with 4D abstract rendering.",
+    "description": "Professional browser-based 2D to 3D/4D composer with 66+ modules for DXF, SVG, STL, OBJ, GLB, Video/Image/Audio 3D, Neural Brain & AR.",
     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
     "publisher": {"@type": "Organization", "name": "Studios-Pro", "url": "https://studios-pro.com"}
   }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- ULTRA-FAST BOOT: ONLY 4 core scripts instead of 90! Heavy CDNs & all 66 modules load lazily on demand! -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
   <script src="../ar-viewer/ar-bridge.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-  
+
   <style>
     :root {
       --bg-base:     #050815;
-      --bg-panel:    #0d1225;
-      --bg-deep:     #080e1e;
-      --bg-card:     #111827;
-      --bg-hover:    #1e2a45;
-      --border:      rgba(99,102,241,0.2);
-      --border-glow: rgba(99,102,241,0.5);
+      --bg-panel:    #0b1022;
+      --bg-deep:     #070c1b;
+      --bg-card:     #111931;
+      --bg-hover:    #1b2748;
+      --border:      rgba(129, 140, 248, 0.20);
+      --border-hi:   rgba(56, 189, 248, 0.50);
       --accent:      #6366f1;
       --accent2:     #10b981;
-      --accent3:     #f59e0b;
+      --cyan:        #22d3ee;
+      --gold:        #f5c542;
+      --pink:        #ec4899;
       --danger:      #ef4444;
       --text-1:      #f1f5f9;
       --text-2:      #94a3b8;
       --text-3:      #64748b;
-      --radius:      10px;
-      --radius-sm:   6px;
-      --shadow:      0 4px 24px rgba(0,0,0,0.5);
-      --glow:        0 0 20px rgba(99,102,241,0.3);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      height: 100%;
-      font-family: 'Inter', sans-serif;
-      background: var(--bg-base);
-      color: var(--text-1);
-      overflow: hidden;
+      height: 100%; width: 100%; overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-base); color: var(--text-1); font-size: 12px;
+    }
+    .hidden { display: none !important; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ==================== CLEAN TOPBAR (ZERO OVERLAP!) ==================== */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      height: 50px; padding: 0 10px;
+      background: linear-gradient(180deg, #0e152c 0%, #080d1d 100%);
+      border-bottom: 1px solid var(--border);
+      position: relative; z-index: 120;
+    }
+    .tb-left, .tb-modes, .tb-right { display: flex; align-items: center; gap: 5px; min-width: 0; }
+    .tb-left { flex: 1; }
+    .tb-modes, .tb-right { flex-shrink: 0; }
+
+    .brand { display: flex; align-items: center; gap: 6px; text-decoration: none; white-space: nowrap; }
+    .brand-icon {
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+    }
+    .brand-name {
+      font-size: 13.5px; font-weight: 800; letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #a5b4fc, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-badge {
+      font-size: 9.5px; font-weight: 700; padding: 2px 5px; border-radius: 99px;
+      background: rgba(34, 211, 238, 0.14); color: var(--cyan); border: 1px solid rgba(34, 211, 238, 0.32);
     }
 
-    /* TOPBAR */
-    .topbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 52px;
-      padding: 0 14px;
-      background: linear-gradient(135deg, #0d1225 0%, #111827 50%, #0d1225 100%);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
-      position: relative;
-      z-index: 100;
+    .ai-prompt-wrap { display: flex; align-items: center; gap: 4px; flex: 1; max-width: 230px; min-width: 100px; }
+    .ai-prompt-input {
+      width: 100%; padding: 5px 8px; border-radius: 7px; font-size: 11px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      color: var(--text-1); outline: none;
     }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-    .brand-icon {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 15px rgba(99,102,241,0.4);
-    }
-    .brand-icon::after { content: '✏️'; font-size: 18px; }
-    .brand-name {
-      font-size: 16px;
-      font-weight: 800;
-      background: linear-gradient(90deg, #a5b4fc, #34d399);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: -0.5px;
+    .ai-prompt-input:focus { border-color: var(--cyan); }
+    .btn-ai-go {
+      width: 27px; height: 27px; flex-shrink: 0; border-radius: 7px; border: none;
+      background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff; font-size: 12px;
     }
 
     .tbtn {
-      display: flex; align-items: center; gap: 5px;
-      padding: 5px 12px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-2);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 8px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg-card); color: var(--text-1);
+      font-size: 11px; font-weight: 600; white-space: nowrap; transition: all 0.15s;
     }
-    .tbtn:hover { background: var(--bg-hover); color: var(--text-1); border-color: var(--border-glow); box-shadow: var(--glow); }
-    .tbtn.green { border-color: rgba(16,185,129,0.3); color: #34d399; }
-    .tbtn.green:hover { border-color: var(--accent2); box-shadow: 0 0 15px rgba(16,185,129,0.3); }
-    .tbtn.purple { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2)); border-color: rgba(99,102,241,0.4); color: #a5b4fc; }
+    .tbtn:hover { background: var(--bg-hover); border-color: var(--border-hi); }
+    .tbtn.active { background: rgba(99, 102, 241, 0.22); border-color: var(--accent); color: #fff; }
+    .tbtn.back { border-color: rgba(239, 68, 68, 0.42); color: #fca5a5; }
+    .tbtn.green { border-color: rgba(16, 185, 129, 0.38); color: #34d399; }
+    .tbtn.purple { border-color: rgba(139, 92, 246, 0.42); color: #c4b5fd; }
+    .tbtn.amber { border-color: rgba(245, 197, 66, 0.42); color: #fde68a; }
+    .tbtn.ar { background: linear-gradient(135deg, #0ea5e9, #6366f1); border-color: transparent; color: #fff; font-weight: 700; }
+    .tbtn.export-cta { background: linear-gradient(135deg, #f59e0b, #ec4899); border-color: transparent; color: #fff; font-weight: 700; }
+    .tbtn.recording { background: #dc2626 !important; border-color: #ef4444 !important; color: #fff !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
 
-    .lang-toggle { display: flex; gap: 2px; background: var(--bg-deep); padding: 3px; border-radius: var(--radius-sm); }
-    .lang-btn { padding: 3px 10px; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; color: var(--text-3); background: transparent; }
-    .lang-btn.active { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.4); }
+    .lang-toggle { display: inline-flex; gap: 2px; background: var(--bg-deep); padding: 2px; border-radius: 6px; border: 1px solid var(--border); }
+    .lang-btn { padding: 3px 7px; border: none; border-radius: 4px; font-size: 10px; font-weight: 700; color: var(--text-3); background: transparent; }
+    .lang-btn.active { background: var(--accent); color: #fff; }
 
-    /* LAYOUT MODES */
+    /* ==================== WORKSPACE LAYOUT ==================== */
     .studio-body {
       display: grid;
-      grid-template-columns: 1fr 0px 380px; /* Default: Design Mode */
-      height: calc(100vh - 52px);
-      transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      grid-template-columns: 1fr 336px;
+      height: calc(100vh - 50px);
       overflow: hidden;
     }
+    .studio-body.full-3d { grid-template-columns: 1fr 0px; }
 
-    .studio-body.code-mode {
-      grid-template-columns: 320px 1fr 380px;
-    }
-
-    /* LEFT PANEL (COMPOSER) */
     .left-panel {
-      background: var(--bg-panel);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
+      position: relative; display: flex; flex-direction: column;
+      background: var(--bg-base); border-right: 1px solid var(--border);
+      overflow: hidden; min-width: 0;
     }
-    .composer-wrap {
-      flex: 1;
-      position: relative;
-    }
+    .composer-wrap { flex: 1; position: relative; min-height: 0; overflow: hidden; }
 
-    /* CENTER AREA (CODE EDITOR) */
-    .center-panel {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      background: #050815;
-      overflow: hidden;
-      border-right: 1px solid var(--border);
+    /* FLOATING STICKY MODULE DRAWER (FIXES 62 SCROLL-OFFSCREEN + NO-CLOSE BUGS!) */
+    .s4d-drawer-host {
+      position: absolute; top: 10px; left: 264px; bottom: 10px; width: 300px; max-width: calc(100% - 274px);
+      z-index: 95; display: flex; flex-direction: column;
+      background: rgba(11, 16, 34, 0.97); backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75); overflow: hidden;
     }
-    
-    .editor-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: transparent;
+    .s4d-drawer-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 11px; background: rgba(15, 23, 48, 0.96); border-bottom: 1px solid var(--border);
+      font-size: 11.5px; font-weight: 700; color: var(--cyan);
     }
-    #code-editor {
-      flex: 1;
-      width: 100%;
-      background: transparent;
-      color: #34d399;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      border: none;
-      outline: none;
-      padding: 15px;
-      resize: none;
-      white-space: pre;
-      tab-size: 2;
-      line-height: 1.5;
+    .s4d-drawer-head button {
+      width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 13px;
     }
+    .s4d-drawer-head button:hover { background: rgba(239, 68, 68, 0.25); border-color: #ef4444; }
+    .s4d-drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; }
+    .s4d-drawer-body::-webkit-scrollbar, .rp-body::-webkit-scrollbar { width: 5px; }
+    .s4d-drawer-body::-webkit-scrollbar-thumb, .rp-body::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.28); border-radius: 4px; }
 
-    /* RIGHT PANEL (PREVIEW & STATS) */
+    /* SIDEBAR SEARCH & CATEGORY FILTER PILLS */
+    .s4d-search-box {
+      background: rgba(15, 23, 48, 0.85); border: 1px solid rgba(56, 189, 248, 0.30);
+      border-radius: 8px; padding: 7px; margin: 6px 0 8px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .s4d-search-input {
+      width: 100%; padding: 6px 8px; border-radius: 6px; font-size: 11px;
+      background: #070b18; border: 1px solid rgba(148, 163, 184, 0.24); color: #f1f5f9; outline: none;
+    }
+    .s4d-search-input:focus { border-color: var(--cyan); }
+    .s4d-cat-pills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .s4d-cat {
+      padding: 4px 2px; border-radius: 5px; font-size: 9.5px; font-weight: 700;
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-2);
+    }
+    .s4d-cat.active { background: rgba(34, 211, 238, 0.20); border-color: var(--cyan); color: #fff; }
+
+    /* FLOATING QUICK-START BAR ON EMPTY VIEWPORT */
+    .s4d-welcome {
+      position: absolute; bottom: 18px; left: calc(50% + 120px); transform: translateX(-50%);
+      z-index: 30; max-width: calc(100% - 275px);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 11px 15px; border-radius: 13px;
+      background: rgba(9, 14, 32, 0.88); backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+    }
+    .s4d-welcome strong { font-size: 12.5px; color: #e0f2fe; }
+    .s4d-welcome span { font-size: 10.5px; color: var(--text-2); text-align: center; }
+    .s4d-welcome-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .w-pill {
+      padding: 6px 10px; border-radius: 7px; font-size: 11px; font-weight: 700;
+      background: rgba(255, 255, 255, 0.07); border: 1px solid var(--border); color: #fff;
+    }
+    .w-pill:hover { border-color: var(--cyan); background: rgba(56, 189, 248, 0.16); }
+    .w-pill.primary { background: linear-gradient(135deg, #6366f1, #22d3ee); border-color: transparent; }
+
+    /* ==================== RIGHT STUDIO 4D INSPECTOR / LIVE HTML / CODE PANEL ==================== */
     .right-panel {
-      background: var(--bg-panel);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      background: var(--bg-panel); display: flex; flex-direction: column;
+      overflow: hidden; min-width: 0;
     }
-    
-    .panel-header {
-      padding: 12px 14px;
-      background: var(--bg-deep);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .rp-tabs {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+      padding: 7px 8px; background: var(--bg-deep); border-bottom: 1px solid var(--border);
     }
-    .panel-header h3 { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
+    .rp-tab {
+      padding: 6px 4px; border-radius: 7px; font-size: 10.5px; font-weight: 700;
+      background: transparent; border: 1px solid transparent; color: var(--text-2);
+    }
+    .rp-tab.active { background: rgba(99, 102, 241, 0.22); border-color: rgba(99, 102, 241, 0.45); color: #fff; }
 
-    .preview-box {
-      flex: 1;
-      background: #000;
-      position: relative;
-    }
-    #preview-iframe { width: 100%; height: 100%; border: none; }
+    .rp-pane { display: none; flex: 1; min-height: 0; flex-direction: column; overflow: hidden; }
+    .rp-pane.active { display: flex; }
+    .rp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 9px; display: flex; flex-direction: column; gap: 9px; }
 
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 9px; display: flex; flex-direction: column; gap: 7px;
+    }
+    .card-head { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #a5b4fc; }
+    .badge-cnt { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: rgba(34, 211, 238, 0.14); color: var(--cyan); }
+
+    .scene-list { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
+    .scene-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      padding: 5px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(148, 163, 184, 0.14); font-size: 11px; color: #e2e8f0;
+    }
+    .scene-item small { color: var(--text-3); font-size: 9.5px; text-transform: uppercase; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+    .chip-btn {
+      padding: 6px 4px; border-radius: 7px; font-size: 10px; font-weight: 600;
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-1);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chip-btn:hover { background: var(--bg-hover); border-color: var(--cyan); }
+    .chip-btn.active { background: rgba(34, 211, 238, 0.20); border-color: var(--cyan); color: #fff; }
+    .chip-btn.gold { border-color: rgba(245, 197, 66, 0.42); color: #fde68a; }
+    .chip-btn.emerald { border-color: rgba(16, 185, 129, 0.42); color: #6ee7b7; }
+    .chip-btn.danger { border-color: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+
+    /* LIVE HTML PREVIEW TAB (NEVER BLACK!) */
+    .preview-toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      padding: 7px 9px; background: var(--bg-deep); border-bottom: 1px solid var(--border);
+    }
+    .preview-box { flex: 1; position: relative; background: #050815; overflow: hidden; }
+    #preview-iframe { width: 100%; height: 100%; border: none; display: block; }
+    .preview-empty {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center;
+      background: radial-gradient(circle at center, #0e1633 0%, #050815 100%);
+    }
+    .preview-empty p { font-size: 11.5px; color: var(--text-2); line-height: 1.45; max-width: 260px; }
+
+    /* CODE EDITOR TAB */
+    #code-editor {
+      flex: 1; width: 100%; background: #050815; color: #34d399;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      border: none; outline: none; padding: 10px; resize: none;
+      white-space: pre; tab-size: 2; line-height: 1.45;
+    }
     .statusbar {
-      padding: 8px 14px;
-      background: var(--bg-deep);
-      border-top: 1px solid var(--border);
-      font-size: 10px;
-      color: var(--text-3);
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
+      padding: 6px 10px; background: var(--bg-deep); border-top: 1px solid var(--border);
+      font-size: 10px; color: var(--text-3); display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* Loading shimmer */
-    .loading-overlay {
-      position: fixed; inset: 0; background: var(--bg-base);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 2000; transition: opacity 0.5s;
+    /* EXPORT SUITE MODAL */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(3, 6, 16, 0.82); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
     }
-    .loader {
-      width: 40px; height: 40px; border: 3px solid var(--border);
-      border-top: 3px solid var(--accent); border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .modal-card {
+      width: 100%; max-width: 680px; max-height: 88vh; overflow-y: auto;
+      background: #0c1226; border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 16px;
+      padding: 18px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .modal-head h2 { font-size: 15.5px; font-weight: 800; }
+    .modal-close { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 14px; }
+    .exp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .exp-card {
+      display: flex; align-items: center; gap: 10px; text-align: left;
+      padding: 11px; border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-1);
+    }
+    .exp-card:hover { background: rgba(255, 255, 255, 0.09); border-color: var(--cyan); }
+    .exp-card.featured { border-color: rgba(245, 197, 66, 0.42); background: rgba(245, 197, 66, 0.06); }
+    .exp-ico { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; background: rgba(99, 102, 241, 0.16); }
+    .exp-body strong { display: block; font-size: 12px; }
+    .exp-body span { display: block; font-size: 10px; color: var(--text-2); margin-top: 2px; }
 
     .toast {
-      position: fixed; bottom: 20px; left: 20px;
-      background: var(--bg-card); border: 1px solid var(--accent);
-      padding: 10px 16px; border-radius: 8px; font-size: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      z-index: 3000; display: none; color: white;
+      position: fixed; bottom: 18px; right: 18px; z-index: 9500;
+      background: rgba(11, 16, 34, 0.96); border: 1px solid var(--cyan);
+      padding: 9px 14px; border-radius: 9px; font-size: 12px; font-weight: 600;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); color: #fff; display: none;
     }
 
-    .btn-run {
-      padding: 6px 12px; background: var(--accent2); color: white; border: none;
-      border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 0 10px rgba(16,185,129,0.3);
-    }
-    .btn-run:hover { transform: scale(1.05); }
-
-    .fullscreen-preview {
-      position: fixed !important;
-      top: 52px !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: calc(100vh - 52px) !important;
-      z-index: 9999 !important;
-      background: #000;
-    }
-
-    #local-payment-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(2, 6, 23, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
-
-    .local-modal-content {
-      background: #0f172a;
-      padding: 40px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .local-modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-    }
-
-    .local-modal-content p {
-      color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 25px;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .premium-btn {
-      background: #d97706;
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .premium-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
-
-    .close-local-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 20px;
+    @media (max-width: 1120px) {
+      .ai-prompt-wrap { display: none; }
+      .studio-body { grid-template-columns: 1fr 290px; }
     }
   </style>
 </head>
 <body>
-
-  <div class="loading-overlay" id="loading-overlay">
-    <div class="loader"></div>
-    <p style="margin-top:20px; font-size:12px; font-weight:700; color:var(--text-3);">INITIALIZING 3D STUDIO...</p>
-  </div>
-
+  <!-- ==================== CLEAN TOPBAR ==================== -->
   <header class="topbar">
-    <button class="tbtn" id="btn-back-to-studio" style="border-color:rgba(239,68,68,0.4);color:#f87171;margin-right:10px;">
-      ⬅ <span id="lbl-back-to-studio">Back to Studio</span>
-    </button>
-    <a class="brand" href="#">
-      <div class="brand-icon"></div>
-      <div class="brand-name" id="lbl-title">Studio 3D/4D — 2D TO 3D</div>
-    </a>
-    <div style="flex:1"></div>
-    
-    <button class="tbtn green" id="btn-design-mode"> <span id="lbl-design">3D Design</span></button>
-    <button class="tbtn purple" id="btn-video-mode"> 🎥 <span id="lbl-video">Video to 3D</span></button>
-    <button class="tbtn" id="btn-image-mode" style="border-color:rgba(99,102,241,0.4);color:#a5b4fc;"> 🖼️ <span id="lbl-image">Image→3D</span></button>
-    <button class="tbtn" id="btn-audio-mode" style="border-color:rgba(16,185,129,0.4);color:#34d399;"> 🎵 <span id="lbl-audio">Audio 3D</span></button>
-    <button class="tbtn" id="btn-neural-mode" style="border-color:rgba(6,182,212,0.4);color:#22d3ee;background:linear-gradient(135deg, rgba(6,182,212,0.1), rgba(139,92,246,0.1));"> 🧠 <span id="lbl-neural-mode">Neural Brain</span></button>
+    <div class="tb-left">
+      <button class="tbtn back" id="btn-back-to-studio" type="button">
+        <span>←</span><span id="lbl-back-to-studio">Back</span>
+      </button>
+      <div class="brand">
+        <div class="brand-icon">🧊</div>
+        <div class="brand-name" id="lbl-title">Studio Pro 4D</div>
+        <span class="brand-badge">v4.5</span>
+      </div>
+      <div class="ai-prompt-wrap">
+        <input id="ai-4d-input" class="ai-prompt-input" type="text" placeholder='AI 4D: e.g. "cyber city neon dna"' />
+        <button id="btn-ai-4d-go" class="btn-ai-go" type="button" title="Compose Multi-Module AI 4D Scene">🔮</button>
+      </div>
+    </div>
 
-    <div style="width:1px; height:20px; background:var(--border); margin:0 8px;"></div>
-    
-    <button class="tbtn" id="btn-screenshot" style="border-color:rgba(245,158,11,0.4);color:#fbbf24;"> 📸 PNG</button>
-    <button class="tbtn" id="btn-export-video" style="border-color:rgba(239,68,68,0.4);color:#f87171;"> 🎥 <span id="lbl-video-btn">Video</span></button>
-    <button class="tbtn" id="btn-copy-code"> <span id="lbl-copy">Copy</span></button>
-    <button class="tbtn green" id="btn-dl-html"> <span id="lbl-dl">HTML</span></button>
-    <button class="tbtn purple" id="btn-export-zip"> <span id="lbl-zip">ZIP Pack</span></button>
-    <button class="tbtn purple" id="btn-export-obj" style="border-color:rgba(139,92,246,0.4);color:#c084fc;">📐 <span id="lbl-obj">OBJ</span></button>
-    <button class="tbtn green" id="btn-ar-viewer" style="border-color:rgba(6,182,212,0.4);color:#22d3ee;background:linear-gradient(135deg, rgba(6,182,212,0.1), rgba(139,92,246,0.1));">🕶️ <span id="lbl-ar">AR Viewer</span></button>
-    
-    <div class="lang-toggle">
-      <button class="lang-btn active" data-lang="en">EN</button>
-      <button class="lang-btn" data-lang="fr">FR</button>
+    <div class="tb-modes">
+      <button class="tbtn green active" id="btn-design-mode" type="button">🧊 <span id="lbl-design">Design 3D</span></button>
+      <button class="tbtn purple" id="btn-video-mode" type="button">🎥 <span id="lbl-video">Video→3D</span></button>
+      <button class="tbtn" id="btn-image-mode" type="button">🖼 <span id="lbl-image">Image→3D</span></button>
+      <button class="tbtn green" id="btn-audio-mode" type="button">🎵 <span id="lbl-audio">Audio 3D</span></button>
+      <button class="tbtn" id="btn-neural-mode" type="button">🧠 <span id="lbl-neural-mode">Neural</span></button>
+    </div>
+
+    <div class="tb-right">
+      <button class="tbtn amber" id="btn-screenshot" type="button" title="Capture HD PNG">📸 PNG</button>
+      <button class="tbtn" id="btn-export-video" type="button" title="Record Live 3D Video">🎬 <span id="lbl-video-btn">Video</span></button>
+      <button class="tbtn" id="btn-toggle-full3d" type="button" title="Toggle Full 3D Viewport">⛶</button>
+      <button class="tbtn export-cta" id="btn-export-modal" type="button">📤 <span id="lbl-export-btn">Export Pro</span></button>
+      <button class="tbtn ar" id="btn-ar-viewer" type="button">🕶️ <span id="lbl-ar">AR 3D</span></button>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="en" type="button">EN</button>
+        <button class="lang-btn" data-lang="fr" type="button">FR</button>
+      </div>
     </div>
   </header>
 
+  <!-- ==================== MAIN WORKSPACE ==================== -->
   <main class="studio-body" id="main-body">
-    <!-- LEFT PANEL (COMPOSER) -->
-    <aside class="left-panel">
-      <div class="panel-header">
-        <h3 id="lbl-composer-title">3D Composer</h3>
-      </div>
-      <div class="composer-wrap" id="composer-container">
-        <!-- SketchExtruder UI will be here -->
-      </div>
-    </aside>
+    <!-- LEFT: FULL 3D/4D COMPOSER VIEWPORT (66+ LAZY-LOADED MODULES!) -->
+    <section class="left-panel">
+      <div class="composer-wrap" id="composer-container"></div>
 
-    <section class="center-panel">
-      <div class="panel-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="tbtn green" id="btn-back-design" style="padding: 4px 8px; font-size: 10px;"> ⬅ <span id="lbl-back">Design</span></button>
-          <h3 id="lbl-code-title">Generated HTML Code</h3>
+      <!-- CLEAN QUICK-START BAR ON EMPTY SCENE -->
+      <div id="s4d-welcome" class="s4d-welcome">
+        <strong id="lbl-welcome-title">Studio Pro 4D — 66+ Interactive 3D &amp; 4D Modules Ready</strong>
+        <span id="lbl-welcome-sub">Instant boot — launch a 4D showcase, import GLB/OBJ/STL/DXF/SVG, or pick any module on the left</span>
+        <div class="s4d-welcome-btns">
+          <button id="w-demo" class="w-pill primary" type="button">✨ 4D Quantum Demo</button>
+          <button id="w-cyber" class="w-pill" type="button">🏙️ Cyber City + DNA</button>
+          <button id="w-neural" class="w-pill" type="button">🧠 Neural Brain</button>
+          <button id="w-clock" class="w-pill" type="button">🕒 Clock Ultra</button>
+          <button id="w-import" class="w-pill" type="button">📥 Import 3D / DXF</button>
         </div>
-        <button class="btn-run" id="btn-run-code">RUN / UPDATE PREVIEW</button>
-      </div>
-      <div class="editor-container">
-        <textarea id="code-editor" spellcheck="false" placeholder="Generate a model to see the code here..."></textarea>
-      </div>
-      <div class="statusbar" style="flex-direction: row; justify-content: space-between;">
-        <span id="lbl-status">Ready</span>
-        <span id="code-stats">0 lines | 0.0 KB</span>
       </div>
     </section>
 
-    <!-- RIGHT PANEL (PREVIEW) -->
-    <aside class="right-panel">
-      <div class="panel-header">
-        <h3 id="lbl-preview-title">Live Preview</h3>
-      </div>
-      
-      <div class="preview-box">
-        <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+    <!-- RIGHT: STUDIO 4D LIVE DIRECTOR + LIVE HTML PREVIEW + CODE EDITOR (NEVER BLACK!) -->
+    <aside class="right-panel" id="s4d-inspector">
+      <div class="rp-tabs" role="tablist">
+        <button class="rp-tab active" data-rptab="studio" type="button">🎛️ <span id="lbl-tab-studio">Studio 4D</span></button>
+        <button class="rp-tab" data-rptab="preview" type="button">👁️ <span id="lbl-preview-title">Live HTML</span></button>
+        <button class="rp-tab" data-rptab="code" type="button">💻 <span id="lbl-code-title">Code</span></button>
       </div>
 
-      <div class="statusbar">
-        <div style="display:flex; justify-content: space-between;">
-           <span>Engine: Three.js r128</span>
-           <span>Format: Standalone HTML</span>
+      <!-- TAB 1: STUDIO 4D LIVE INSPECTOR, 4D DIRECTOR & 1-CLICK EXPORTS -->
+      <div class="rp-pane active" id="rp-studio">
+        <div class="rp-body">
+          <!-- SCENE OBJECTS -->
+          <div class="card">
+            <div class="card-head">
+              <span id="lbl-scene-objs">Scene Objects</span>
+              <span id="scene-obj-count" class="badge-cnt">0 models</span>
+            </div>
+            <div id="scene-obj-list" class="scene-list">
+              <div class="scene-item" style="color:var(--text-3);justify-content:center;">Empty scene — click a module or 4D Demo</div>
+            </div>
+            <div class="grid-2">
+              <button id="btn-quick-demo" class="chip-btn gold" type="button">✨ Add 4D Demo</button>
+              <button id="btn-clear-scene" class="chip-btn danger" type="button">🧹 Clear Scene</button>
+            </div>
+          </div>
+
+          <!-- 4D DIRECTOR CAMERA MOTION -->
+          <div class="card">
+            <div class="card-head"><span>🎥 <span id="lbl-cam-dir">4D Camera Director</span></span></div>
+            <div class="grid-3">
+              <button class="chip-btn cam-btn active" data-cam="off" type="button">✋ Manual</button>
+              <button class="chip-btn cam-btn" data-cam="turntable" type="button">🔄 360° Orbit</button>
+              <button class="chip-btn cam-btn" data-cam="flyby" type="button">✈️ Flyby</button>
+              <button class="chip-btn cam-btn" data-cam="zoom" type="button">🔭 Zoom</button>
+              <button class="chip-btn cam-btn" data-cam="top" type="button">⬇ Top CAD</button>
+              <button class="chip-btn cam-btn" data-cam="reset" type="button">↺ Reset</button>
+            </div>
+          </div>
+
+          <!-- CINEMA LIGHTING PRESETS -->
+          <div class="card">
+            <div class="card-head"><span>💡 <span id="lbl-light-dir">Cinema Lighting &amp; Mood</span></span></div>
+            <div class="grid-3">
+              <button class="chip-btn light-btn active" data-light="studio" type="button">🌑 Studio</button>
+              <button class="chip-btn light-btn" data-light="cyber" type="button">⚡ Cyber Neon</button>
+              <button class="chip-btn light-btn" data-light="museum" type="button">🏛 Museum</button>
+              <button class="chip-btn light-btn" data-light="golden" type="button">🌅 Golden</button>
+              <button class="chip-btn light-btn" data-light="arch" type="button">⬜ Arch White</button>
+              <button class="chip-btn light-btn" data-light="hologram" type="button">💠 Hologram</button>
+            </div>
+          </div>
+
+          <!-- QUICK AI 4D COMPOSITIONS -->
+          <div class="card">
+            <div class="card-head"><span>✨ <span id="lbl-ai-presets">1-Click Multi-Module 4D Scenes</span></span></div>
+            <div class="grid-2">
+              <button class="chip-btn ai-quick" data-prompt="cyber city neon dna" type="button">🏙️ Cyber City + DNA</button>
+              <button class="chip-btn ai-quick" data-prompt="lava volcano crystal" type="button">🌋 Lava + Crystal</button>
+              <button class="chip-btn ai-quick" data-prompt="galaxy spaceship" type="button">🌌 Galaxy + Ship</button>
+              <button class="chip-btn ai-quick" data-prompt="neural brain quantum fluids" type="button">🧠 Neural + Fluids</button>
+            </div>
+          </div>
+
+          <!-- DIRECT 1-CLICK EXPORTS & FREE PROJECT SAVE/LOAD -->
+          <div class="card">
+            <div class="card-head"><span>📦 <span id="lbl-quick-exp">Pro Exports &amp; Project Save</span></span></div>
+            <div class="grid-3">
+              <button id="btn-dl-html" class="chip-btn emerald" type="button">🌐 <span id="lbl-dl">HTML</span></button>
+              <button id="btn-export-zip" class="chip-btn" type="button">📦 <span id="lbl-zip">ZIP</span></button>
+              <button id="btn-copy-code" class="chip-btn" type="button">📋 <span id="lbl-copy">Copy</span></button>
+              <button id="btn-export-stl" class="chip-btn gold" type="button">🧊 STL 3D</button>
+              <button id="btn-export-glb" class="chip-btn emerald" type="button">🗿 GLB 3D</button>
+              <button id="btn-export-obj" class="chip-btn" type="button">📐 <span id="lbl-obj">OBJ</span></button>
+            </div>
+            <div class="grid-2">
+              <button id="btn-save-sp4d" class="chip-btn emerald" type="button">💾 Save .sp4d FREE</button>
+              <button id="btn-load-sp4d" class="chip-btn" type="button">📂 Load .sp4d</button>
+              <input id="file-load-sp4d" type="file" accept=".sp4d,.json" class="hidden" />
+            </div>
+          </div>
         </div>
-        <p style="font-size:9px; color:var(--text-3); margin-top:5px; line-height:1.3;">
-           Le code généré est prêt à l'emploi. Vous pouvez le modifier ici et voir les changements en direct.
-        </p>
+      </div>
+
+      <!-- TAB 2: LIVE STANDALONE HTML PREVIEW (ZERO BLACK SCREEN!) -->
+      <div class="rp-pane" id="rp-preview">
+        <div class="preview-toolbar">
+          <button id="btn-sync-preview" class="tbtn green" type="button">⚡ Generate &amp; Preview HTML</button>
+          <span id="preview-size-badge" class="badge-cnt">Slim HTML</span>
+        </div>
+        <div class="preview-box">
+          <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div id="preview-empty" class="preview-empty">
+            <div style="font-size:32px;">👁️</div>
+            <strong style="font-size:13px;color:#e0f2fe;">Live Standalone HTML Preview</strong>
+            <p>Build your 3D/4D scene on the left, then click below to preview the exact self-contained WebGL HTML export!</p>
+            <button id="btn-empty-preview-go" class="w-pill primary" type="button">⚡ Generate Live Preview</button>
+          </div>
+        </div>
+        <div class="statusbar">
+          <span>Engine: Three.js r128</span>
+          <span>Format: Slim Standalone HTML</span>
+        </div>
+      </div>
+
+      <!-- TAB 3: LIVE HTML CODE INSPECTOR (DEBOUNCED 400MS!) -->
+      <div class="rp-pane" id="rp-code">
+        <div class="preview-toolbar">
+          <button id="btn-back-design" class="tbtn" type="button">← <span id="lbl-back">Studio</span></button>
+          <button id="btn-run-code" class="tbtn green" type="button">▶ RUN PREVIEW</button>
+        </div>
+        <textarea id="code-editor" spellcheck="false" placeholder="Click Generate Live Preview or HTML export to inspect/edit standalone Three.js code..."></textarea>
+        <div class="statusbar">
+          <span id="lbl-status">Ready</span>
+          <span id="code-stats">0 lines | 0.0 KB</span>
+        </div>
       </div>
     </aside>
   </main>
 
-
-
-  <div class="toast" id="toast"></div>
-
-  <!-- Copied Modules -->
-  <script src="js/dxf-to-3d.js" defer></script>
-  <script src="js/svg-extruder.js" defer></script>
-  <script src="js/video-to-3d.js" defer></script>
-  <script src="js/image-to-3d.js" defer></script>
-  <script src="js/audio-visualizer-3d.js" defer></script>
-  <script src="js/export-zip-pro.js" defer></script>
-  <script src="js/math-surface-3d.js" defer></script>
-  <script src="js/data-chart-3d.js" defer></script>
-  <script src="js/webcam-avatar-3d.js" defer></script>
-  <script src="js/shader-editor-3d.js" defer></script>
-  <script src="js/starmap-3d.js" defer></script>
-  <script src="js/keyframe-animator-3d.js" defer></script>
-  <script src="js/voice-sculpture-3d.js" defer></script>
-  <script src="js/qr-labyrinth-3d.js" defer></script>
-  <script src="js/location-terrain-3d.js" defer></script>
-  <script src="js/doc-gallery-3d.js" defer></script>
-  <script src="js/logic-tree-3d.js" defer></script>
-  <script src="js/neon-handwriting-3d.js" defer></script>
-  <script src="js/pdf-gallery-3d.js" defer></script>
-  <script src="js/csv-chart-3d.js" defer></script>
-  <script src="js/web-network-3d.js" defer></script>
-  <script src="js/pixelart-voxel-3d.js" defer></script>
-  <script src="js/json-dashboard-3d.js" defer></script>
-  <script src="js/dna-helix-3d.js" defer></script>
-  <script src="js/geo-globe-3d.js" defer></script>
-  <script src="js/palette-world-3d.js" defer></script>
-  <script src="js/sentiment-landscape-3d.js" defer></script>
-  <script src="js/fractal-generator-3d.js" defer></script>
-  <script src="js/midi-arch-3d.js" defer></script>
-  <script src="js/neural-net-3d.js" defer></script>
-  <script src="js/timeline-river-3d.js" defer></script>
-  <script src="js/chess-board-3d.js" defer></script>
-  <script src="js/biometric-avatar-3d.js" defer></script>
-  <script src="js/moodboard-world-3d.js" defer></script>
-  <script src="js/molecule-3d.js" defer></script>
-  <script src="js/websocket-live-3d.js" defer></script>
-  <script src="js/story-3d.js" defer></script>
-  <script src="js/crystal-gen-3d.js" defer></script>
-  <script src="js/botany-lsystem-3d.js" defer></script>
-  <script src="js/cellular-automata-3d.js" defer></script>
-  <script src="js/kinetic-typography-3d.js" defer></script>
-  <script src="js/galaxy-builder-3d.js" defer></script>
-  <script src="js/sci-fi-spaceship-3d.js" defer></script>
-  <script src="js/rpg-dungeon-3d.js" defer></script>
-  <script src="js/weather-event-3d.js" defer></script>
-  <script src="js/impossible-geometry-3d.js" defer></script>
-  <script src="js/papercraft-world-3d.js" defer></script>
-  <script src="js/force-shield-3d.js" defer></script>
-  
-  <!-- Mega Modules Pro -->
-  <script src="js/cyber-city-3d.js" defer></script>
-  <script src="js/quantum-fluids-3d.js" defer></script>
-  <script src="js/time-lapse-4d.js" defer></script>
-  <script src="js/product-showcase-3d.js" defer></script>
-  <script src="js/social-media-room-3d.js" defer></script>
-  <script src="js/git-repo-city-3d.js" defer></script>
-  <script src="js/web-ar-portal-3d.js" defer></script>
-  <script src="js/text-to-scene-3d.js" defer></script>
-
-  <!-- Ultra Modules — New Series -->
-  <script src="js/ice-terrain-3d.js" defer></script>
-  <script src="js/lava-world-3d.js" defer></script>
-  <script src="js/ocean-wave-3d.js" defer></script>
-  <script src="js/mech-robot-3d.js" defer></script>
-  <script src="js/ancient-arch-3d.js" defer></script>
-  <script src="js/lego-city-3d.js" defer></script>
-  <script src="js/data-globe-3d.js" defer></script>
-  <script src="js/holo-hud-3d.js" defer></script>
-  <script src="js/mask-sculptor-3d.js" defer></script>
-  <script src="js/instrument-3d.js" defer></script>
-  <script src="js/chem-reaction-3d.js" defer></script>
-  <script src="js/anatomy-3d.js" defer></script>
-  <script src="js/hero-forge-3d.js" defer></script>
-  <script src="js/steampunk-chrono-3d.js" defer></script>
-  <script src="js/steampunk-chrono-pro-3d.js" defer></script>
-  <script src="js/clock-ultra-3d.js?v=3" defer></script>
-
-  <!-- sketch-extruder loaded LAST so all module globals are ready -->
-  <script src="js/sketch-extruder.js?v=3" defer></script>
-  <script>
-    // i18n
-    const i18n = {
-      en: {
-        title: "Studio 3D/4D Pro — 2D TO 3D",
-        design: "3D Design",
-        video: "Video to 3D",
-        back: "Design View",
-        copy: "Copy",
-        dl: "HTML",
-        zip: "ZIP Pack",
-        preview: "Live Preview",
-        code: "Generated HTML Code",
-        composer: "3D Composer",
-        run: "RUN / UPDATE PREVIEW",
-        status: "Ready",
-        copied: "✅ Code copied!",
-        welcome: "Welcome to 3D Studio",
-        bgEffect: "Scene Background",
-        levitate: "Levitate",
-        voxelQR: "3D Voxel Mode",
-        qrFrame: "Add 3D Frame",
-        videoBtn: "Video",
-        videoRec: "🔴 Rec (Stop)",
-        videoStart: "🎥 Recording started...",
-        videoSaved: "✅ Video saved!",
-        neuralMode: "Neural Brain",
-        obj: "OBJ",
-        ar: "AR Viewer",
-        backToStudio: "Back to Studio"
-      },
-      fr: {
-        title: "Studio 3D/4D Pro — 2D VERS 3D",
-        design: "Design 3D",
-        video: "Vidéo vers 3D",
-        back: "Retour au Design",
-        copy: "Copier",
-        dl: "HTML",
-        zip: "Pack ZIP",
-        preview: "Aperçu Live",
-        code: "Code HTML Généré",
-        composer: "Composeur 3D",
-        run: "LANCER / APPLIQUER",
-        status: "Prêt",
-        copied: "✅ Code copié !",
-        welcome: "Bienvenue dans Studio 3D",
-        bgEffect: "Fond de Scène",
-        levitate: "Lévitation",
-        voxelQR: "Mode Voxel 3D",
-        qrFrame: "Ajouter Cadre 3D",
-        videoBtn: "Vidéo",
-        videoRec: "🔴 Rec (Stop)",
-        videoStart: "🎥 Enregistrement en cours...",
-        videoSaved: "✅ Vidéo sauvegardée !",
-        neuralMode: "Cerveau Neural",
-        obj: "OBJ",
-        ar: "AR Viewer",
-        backToStudio: "Retour au Studio"
-      }
-    };
-
-    let currentLang = 'fr';
-
-    function updateUI(lang) {
-      currentLang = lang;
-      window.currentLang = lang;
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-      
-      const t = i18n[lang];
-      document.getElementById('lbl-title').textContent = t.title;
-      document.getElementById('lbl-design').textContent = t.design;
-      document.getElementById('lbl-video').textContent = t.video;
-      document.getElementById('lbl-back').textContent = t.back;
-      document.getElementById('lbl-copy').textContent = t.copy;
-      document.getElementById('lbl-dl').textContent = t.dl;
-      document.getElementById('lbl-zip').textContent = t.zip;
-      document.getElementById('lbl-preview-title').textContent = t.preview;
-      document.getElementById('lbl-code-title').textContent = t.code;
-      document.getElementById('lbl-composer-title').textContent = t.composer;
-      document.getElementById('btn-run-code').textContent = t.run;
-      document.getElementById('lbl-status').textContent = t.status;
-      document.getElementById('lbl-obj').textContent = t.obj || 'OBJ';
-      document.getElementById('lbl-ar').textContent = t.ar || 'AR Viewer';
-      document.getElementById('lbl-back-to-studio').textContent = t.backToStudio || 'Back to Studio';
-      
-      // Localize local modal
-      const isFR = lang === 'fr';
-      const mTitle = document.getElementById('modal-title');
-      const mDesc = document.getElementById('modal-desc');
-      const mBtn = document.getElementById('pay-premium-btn');
-      if (mTitle) mTitle.textContent = isFR ? "Paiement requis" : "Premium Required";
-      if (mDesc) mDesc.textContent = isFR 
-        ? "La copie, l'exportation et la réalité augmentée sont réservées aux membres Premium de Studios-Pro." 
-        : "Copying, exporting, and augmented reality are reserved for Premium members of Studios-Pro.";
-      if (mBtn) mBtn.textContent = isFR ? "Devenir Premium (10$/mois)" : "Go Premium ($10/month)";
-      
-      const lblBg = document.getElementById('lbl-bg-effect'); if(lblBg) lblBg.innerHTML = '✨ ' + t.bgEffect;
-      const lblVideoBtn = document.getElementById('lbl-video-btn'); if(lblVideoBtn) lblVideoBtn.textContent = t.videoBtn;
-      const lblNeuralMode = document.getElementById('lbl-neural-mode'); if(lblNeuralMode) lblNeuralMode.textContent = t.neuralMode;
-    }
-
-    function toggleMode(mode) {
-      const body = document.getElementById('main-body');
-      const container = document.getElementById('composer-container');
-      const se = container.querySelector('div');
-
-      if (mode === 'code') {
-        body.classList.add('code-mode');
-      } else {
-        body.classList.remove('code-mode');
-        // Ensure the composer is visible if it was hidden by the internal module logic
-        if (se) {
-          se.style.display = 'flex';
-        }
-      }
-    }
-
-    function toast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 3000);
-    }
-    window.toast = toast;
-
-    // Initialization
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.getElementById('loading-overlay').style.opacity = '0';
-        setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
-      }, 800);
-
-      const container = document.getElementById('composer-container');
-      const dummyBtn = document.createElement('button');
-      
-      if (window.SketchExtruder) {
-        SketchExtruder.init(container, dummyBtn);
-        // Direct hack to make it permanent and visible
-        setTimeout(() => {
-          const se = container.querySelector('div');
-          if (se) {
-            se.style.display = 'flex';
-            se.style.position = 'relative';
-            se.style.inset = 'auto';
-            se.style.width = '100%';
-            se.style.height = '100%';
-            se.style.zIndex = '1';
-          }
-          
-          // Hook into the Generate button inside SketchExtruder
-          const genBtn = container.querySelector('#btn-export');
-          if (genBtn) {
-            genBtn.addEventListener('click', () => {
-              setTimeout(() => toggleMode('code'), 500);
-            });
-          }
-        }, 200);
-      }
-
-      if (window.VideoTo3D) {
-        VideoTo3D.init(container, document.getElementById('btn-video-mode'));
-      }
-
-      if (window.ImageTo3D) {
-        ImageTo3D.init(container, document.getElementById('btn-image-mode'));
-      }
-
-      if (window.AudioVisualizer3D) {
-        AudioVisualizer3D.init(container, document.getElementById('btn-audio-mode'));
-      }
-
-      updateUI('fr');
-    });
-
-    // Design Mode Buttons
-    document.getElementById('btn-design-mode').addEventListener('click', () => toggleMode('design'));
-    document.getElementById('btn-back-design').addEventListener('click', () => toggleMode('design'));
-
-    // Neural Net Mode Button in topbar
-    document.getElementById('btn-neural-mode').addEventListener('click', () => {
-      toggleMode('design');
-      setTimeout(() => {
-        const btn = document.getElementById('btn-neural-scene');
-        if (btn) {
-          btn.click();
-          toast(currentLang === 'fr' ? '🧠 Mode Cerveau Neural activé !' : '🧠 Neural Net Brain mode activated!');
-        } else {
-          toast(currentLang === 'fr' ? '❌ Erreur : Module Neural introuvable' : '❌ Error: Neural module not found');
-        }
-      }, 150);
-    });
-
-    // Capture listener — injected into every preview blob
-    const PRE_SCRIPT = `<script>
-    // Native Canvas getContext wrapper to force preserveDrawingBuffer: true
-    (function() {
-      try {
-        const orig = HTMLCanvasElement.prototype.getContext;
-        HTMLCanvasElement.prototype.getContext = function(type, attributes) {
-          if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
-            attributes = attributes || {};
-            attributes.preserveDrawingBuffer = true;
-          }
-          return orig.call(this, type, attributes);
-        };
-      } catch(e) {}
-    })();
-    <\/script>`;
-
-    const CAPTURE_SCRIPT = `<script>
-    window.mediaRecorder = null;
-    window.recordedChunks = [];
-    window.addEventListener('message', function(e) {
-      var c = document.querySelector('canvas');
-      if (!c) {
-        if(e.data === 'capture3d' || e.data === 'startVideoRecording') {
-           window.parent.postMessage({type:'captureERR', msg:'No canvas in scene'}, '*');
-        }
-        return;
-      }
-      
-      if (e.data === 'capture3d') {
-        try { window.parent.postMessage({type:'captureOK', url: c.toDataURL('image/png')}, '*'); }
-        catch(err) { window.parent.postMessage({type:'captureERR', msg: err.message}, '*'); }
-      }
-      else if (e.data === 'startVideoRecording') {
-        try {
-          var stream = c.captureStream(30);
-          window.recordedChunks = [];
-          
-          var options = { mimeType: 'video/webm; codecs=vp9' };
-          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-              options = { mimeType: 'video/webm; codecs=vp8' };
-              if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                  options = { mimeType: 'video/webm' };
-              }
-          }
-          
-          window.mediaRecorder = new MediaRecorder(stream, options);
-          window.mediaRecorder.ondataavailable = function(ev) { if (ev.data.size > 0) window.recordedChunks.push(ev.data); };
-          window.mediaRecorder.onstop = function() {
-            var blob = new Blob(window.recordedChunks, { type: 'video/webm' });
-            window.parent.postMessage({type:'videoOK', blob: blob}, '*');
-          };
-          window.mediaRecorder.start(100);
-        } catch(err) {
-          window.parent.postMessage({type:'captureERR', msg: 'MediaRecorder Error: ' + err.message}, '*');
-        }
-      }
-      else if (e.data === 'stopVideoRecording') {
-        if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
-          window.mediaRecorder.stop();
-        }
-      }
-    });
-    <\/script>`;
-
-    // Code Execution — injects capture listener into preview
-    function runPreview() {
-      const code = document.getElementById('code-editor').value;
-      if (!code) return;
-      const iframe = document.getElementById('preview-iframe');
-      
-      // Inject PRE_SCRIPT right after <head> or at start, and CAPTURE_SCRIPT at end
-      let injected = code;
-      if (injected.indexOf('<head>') > -1) {
-        injected = injected.replace('<head>', '<head>' + PRE_SCRIPT);
-      } else {
-        injected = PRE_SCRIPT + injected;
-      }
-      injected = injected.replace('</body>', CAPTURE_SCRIPT + '</body>');
-      
-      const blob = new Blob([injected], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      iframe.src = url;
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-    window.runPreview = runPreview;
-
-    document.getElementById('btn-run-code').addEventListener('click', runPreview);
-
-    // Code Stats
-    document.getElementById('code-editor').addEventListener('input', () => {
-      const editor = document.getElementById('code-editor');
-      const val = editor.value;
-      const sizeKB = (val.length / 1024);
-      const lines = val.split('\n').length;
-      document.getElementById('code-stats').textContent = `${lines} lines | ${sizeKB.toFixed(1)} KB`;
-      runPreview();
-    });
-
-    let isRecordingVideo = false;
-
-    // Screenshot & Video — uses postMessage to bypass cross-origin iframe restriction
-    window.addEventListener('message', (e) => {
-      if (!e.data || !e.data.type) return;
-      if (e.data.type === 'captureOK') {
-        const a = document.createElement('a');
-        a.href = e.data.url; a.download = 'capture-3d.png'; 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        toast('📸 Screenshot saved!');
-      } else if (e.data.type === 'captureERR') {
-        toast('❌ Capture failed: ' + e.data.msg);
-      } else if (e.data.type === 'videoOK') {
-        const blobUrl = URL.createObjectURL(e.data.blob);
-        const a = document.createElement('a');
-        a.href = blobUrl; 
-        a.download = 'capture-3d.webm'; 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-        toast(i18n[currentLang].videoSaved);
-        isRecordingVideo = false;
-        const btn = document.getElementById('btn-export-video');
-        if(btn) {
-            btn.style.borderColor = 'rgba(239,68,68,0.4)';
-            btn.style.boxShadow = 'none';
-            document.getElementById('lbl-video-btn').textContent = i18n[currentLang].videoBtn;
-        }
-      }
-    });
-
-    document.getElementById('btn-screenshot').addEventListener('click', () => {
-      const iframe = document.getElementById('preview-iframe');
-      if (!iframe.src || iframe.src === 'about:blank') { toast('❌ No preview loaded'); return; }
-      iframe.contentWindow.postMessage('capture3d', '*');
-    });
-
-    document.getElementById('btn-export-video').addEventListener('click', () => {
-      const iframe = document.getElementById('preview-iframe');
-      const btn = document.getElementById('btn-export-video');
-      
-      if (!isRecordingVideo) {
-        if (!iframe || !iframe.src || iframe.src === 'about:blank') { toast('❌ No canvas to capture'); return; }
-        
-        iframe.classList.add('fullscreen-preview');
-        setTimeout(() => {
-            iframe.contentWindow.postMessage('startVideoRecording', '*');
-        }, 400);
-
-        isRecordingVideo = true;
-        btn.style.borderColor = 'rgba(239,68,68,1)';
-        btn.style.boxShadow = '0 0 10px rgba(239,68,68,0.8)';
-        document.getElementById('lbl-video-btn').textContent = i18n[currentLang].videoRec;
-        toast(i18n[currentLang].videoStart);
-      } else {
-        if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage('stopVideoRecording', '*');
-            setTimeout(() => iframe.classList.remove('fullscreen-preview'), 500);
-        }
-      }
-    });
-
-    document.getElementById('btn-copy-code').addEventListener('click', () => {
-      if (window.SketchExtruder && typeof window.SketchExtruder.exportScene === 'function') {
-        window.SketchExtruder.exportScene();
-      }
-      const code = document.getElementById('code-editor').value;
-      if (!code) return;
-      navigator.clipboard.writeText(code);
-      toast(i18n[currentLang].copied);
-    });
-
-    document.getElementById('btn-dl-html').addEventListener('click', () => {
-      if (window.SketchExtruder && typeof window.SketchExtruder.exportScene === 'function') {
-        window.SketchExtruder.exportScene();
-      }
-      const code = document.getElementById('code-editor').value;
-      if (!code) return;
-      
-      const blob = new Blob([code], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'export-3d-hologram.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    document.getElementById('btn-export-obj').addEventListener('click', () => {
-      if (typeof THREE.OBJExporter === 'undefined') {
-        toast('❌ OBJExporter not loaded');
-        return;
-      }
-      const group = window.SketchExtruder ? window.SketchExtruder.getGroup() : null;
-      if (!group || group.children.length === 0) {
-        toast(currentLang === 'fr' ? '❌ Aucun modèle à exporter' : '❌ No models to export');
-        return;
-      }
-      const exporter = new THREE.OBJExporter();
-      const result = exporter.parse(group);
-      const blob = new Blob([result], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'export-3d-model.obj';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast(currentLang === 'fr' ? '✅ Modèle exporté en OBJ !' : '✅ Model exported as OBJ!');
-    });
-
-    document.getElementById('btn-ar-viewer').addEventListener('click', () => {
-      const group = window.SketchExtruder ? window.SketchExtruder.getGroup() : null;
-      const scn = window.SketchExtruder && typeof window.SketchExtruder.getScene === 'function' ? window.SketchExtruder.getScene() : null;
-
-      const exportGroup = new THREE.Group();
-      const collectMeshes = (root) => {
-        if (!root) return;
-        root.updateMatrixWorld(true);
-        root.traverse((child) => {
-          if (!child.isMesh || !child.visible || !child.geometry) return;
-          let p = child;
-          while (p) {
-            if (p.visible === false) return;
-            if (p.isTransformControls || p.isGridHelper || p.isAxesHelper || (p.name && p.name.includes('Helper'))) return;
-            p = p.parent;
-          }
-          try {
-            const geo = child.geometry.clone();
-            geo.applyMatrix4(child.matrixWorld);
-            if (!geo.attributes.normal) geo.computeVertexNormals();
-
-            const srcMat = Array.isArray(child.material) ? child.material[0] : child.material;
-            let matParams = {
-              color: 0xcccccc,
-              metalness: 0.25,
-              roughness: 0.45,
-              side: THREE.DoubleSide
-            };
-            if (srcMat) {
-              if (srcMat.color) matParams.color = srcMat.color.clone();
-              if (srcMat.isMeshBasicMaterial && srcMat.color) {
-                matParams.emissive = srcMat.color.clone();
-                matParams.emissiveIntensity = 0.35;
-                matParams.metalness = 0.1;
-                matParams.roughness = 0.25;
-              } else {
-                if (srcMat.emissive) matParams.emissive = srcMat.emissive.clone();
-                if (typeof srcMat.emissiveIntensity === 'number') matParams.emissiveIntensity = srcMat.emissiveIntensity;
-                if (typeof srcMat.metalness === 'number') matParams.metalness = srcMat.metalness;
-                if (typeof srcMat.roughness === 'number') matParams.roughness = srcMat.roughness;
-              }
-              if (srcMat.map) matParams.map = srcMat.map;
-              if (srcMat.vertexColors) matParams.vertexColors = true;
-              if (srcMat.transparent && typeof srcMat.opacity === 'number' && srcMat.opacity < 1) {
-                matParams.transparent = true;
-                matParams.opacity = Math.max(0.25, srcMat.opacity);
-              }
-            }
-            const cleanMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial(matParams));
-            cleanMesh.name = child.name || 'part';
-            exportGroup.add(cleanMesh);
-          } catch (err) {
-            console.warn('AR mesh clone skipped:', err);
-          }
-        });
-      };
-
-      collectMeshes(group);
-      if (exportGroup.children.length === 0 && scn) {
-        collectMeshes(scn);
-      }
-
-      if (exportGroup.children.length === 0) {
-        toast(currentLang === 'fr' ? '❌ Aucun modèle à visualiser' : '❌ No models to view');
-        return;
-      }
-
-      const rawDimsMm = (window.StudiosProAR && typeof window.StudiosProAR.measureObjectMm === 'function') ? window.StudiosProAR.measureObjectMm(exportGroup) : null;
-      // Normalize bounding box to tabletop AR scale (~0.28m) and center on floor
-      const box = new THREE.Box3().setFromObject(exportGroup);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-      const maxDim = Math.max(size.x, size.y, size.z, 0.0001);
-      const scale = 0.28 / maxDim;
-      exportGroup.children.forEach((m) => {
-        m.geometry.translate(-center.x, -box.min.y, -center.z);
-        m.geometry.scale(scale, scale, scale);
-      });
-
-      const sendToArViewer = (data, name, extension, isBinary) => {
-        window.lastGeneratedModel = data;
-        window.lastGeneratedArPayload = { transferId: ('spro_' + Date.now().toString(36)), name, extension, data, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' };
-        window.parent.postMessage({
-          type: 'OPEN_AR_VIEWER',
-          payload: { transferId: ('spro_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6)), modelData: data, name, extension, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' }
-        }, '*');
-        toast(currentLang === 'fr' ? '📱 Modèle envoyé à l\'AR Viewer !' : '📱 Model sent to AR Viewer!');
-        if (window.parent === window && window.StudiosProAR) { window.StudiosProAR.sendModel({ modelData: data, name, extension, isBinary, placement: 'floor', dimensionsMm: rawDimsMm, sourceStudio: 'studio-pro' }); }
-      };
-
-      if (typeof THREE.GLTFExporter !== 'undefined') {
-        try {
-          const gltfExporter = new THREE.GLTFExporter();
-          gltfExporter.parse(exportGroup, (result) => {
-            if (result instanceof ArrayBuffer && result.byteLength > 0) {
-              sendToArViewer(result, 'studio_pro_model.glb', 'glb', true);
-            } else if (result && typeof result === 'object') {
-              const jsonStr = JSON.stringify(result);
-              sendToArViewer(jsonStr, 'studio_pro_model.gltf', 'gltf', false);
-            } else if (typeof THREE.OBJExporter !== 'undefined') {
-              const objStr = new THREE.OBJExporter().parse(exportGroup);
-              sendToArViewer(objStr, 'studio_pro_model.obj', 'obj', false);
-            }
-          }, { binary: true });
-          return;
-        } catch (e) {
-          console.warn('GLTFExporter fallback to OBJExporter:', e);
-        }
-      }
-
-      if (typeof THREE.OBJExporter !== 'undefined') {
-        const objStr = new THREE.OBJExporter().parse(exportGroup);
-        sendToArViewer(objStr, 'studio_pro_model.obj', 'obj', false);
-      } else {
-        toast('❌ Exporter not loaded');
-      }
-    });
-
-    document.querySelectorAll('.lang-btn').forEach(b => {
-      b.addEventListener('click', () => updateUI(b.dataset.lang));
-    });
-
-    // BroadcastChannel for parent site communication
-    const channel = new BroadcastChannel('studios_pro_channel');
-    let isAllowed = false;
-    let pendingTarget = null;
-    let isPremiumUser = false;
-
-    // Request initial user status
-    channel.postMessage({ type: 'GET_USER_STATUS' });
-
-    channel.onmessage = (e) => {
-      if (e.data.type === 'EXPORT_ALLOWED') {
-        isAllowed = true;
-        isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-        window.isPremiumUser = isPremiumUser;
-        const localModal = document.getElementById('local-payment-modal');
-        if (localModal) localModal.style.display = 'none';
-        if (pendingTarget) {
-          pendingTarget.click();
-        }
-      } else if (e.data.type === 'USER_STATUS_RESPONSE' || e.data.type === 'USER_STATUS_CHANGED') {
-        isPremiumUser = !!(e.data.payload && e.data.payload.isPremium);
-        window.isPremiumUser = isPremiumUser;
-      } else if (e.data.type === 'AR_VIEWER_READY' && window.parent === window) {
-        if (window.lastGeneratedArPayload) {
-          channel.postMessage({
-            type: 'LOAD_EXTERNAL_FILE',
-            payload: window.lastGeneratedArPayload
-          });
-        } else if (window.lastGeneratedModel) {
-          channel.postMessage({
-            type: 'LOAD_EXTERNAL_FILE',
-            payload: {
-              name: 'studio_pro_model.obj',
-              extension: 'obj',
-              data: window.lastGeneratedModel,
-              isBinary: false
-            }
-          });
-        }
-      }
-    };
-
-    // Intercept click on protected buttons
-    document.addEventListener('click', function(e) {
-      if (isAllowed || isPremiumUser || window.isPremiumUser) {
-        isAllowed = false;
-        channel.postMessage({ type: 'EXPORT_COMPLETED' });
-        return;
-      }
-
-      const target = e.target.closest('#btn-screenshot, #btn-export-video, #btn-copy-code, #btn-dl-html, #btn-export-zip, #btn-export-obj');
-      if (target) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        pendingTarget = target;
-        
-        // Notify parent
-        channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro' } });
-        
-        // Standalone fallback modal
-        if (window.parent === window) {
-          let used = parseInt(localStorage.getItem('freeExportsUsed') || '0', 10);
-          if (used < 5) {
-            used++;
-            localStorage.setItem('freeExportsUsed', String(used));
-            isAllowed = true;
-            const t = pendingTarget;
-            pendingTarget = null;
-            if (t) t.click();
-            return;
-          }
-          const localModal = document.getElementById('local-payment-modal');
-          if (localModal) {
-            localModal.style.display = 'flex';
-          }
-        }
-      }
-    }, true); // capturing phase
-
-    // Keyboard shortcut protections (Copy/Cut)
-    ['copy', 'cut'].forEach(evt => {
-      document.addEventListener(evt, function(e) {
-        if (!isPremiumUser && !window.isPremiumUser) {
-          e.preventDefault();
-          e.stopPropagation();
-          channel.postMessage({ type: 'TRIGGER_PAYMENT_MODAL', payload: { ref: 'spro' } });
-        }
-      });
-    });
-
-    // Close button for local modal
-    const closeBtn = document.getElementById('modal-close-btn');
-    if (closeBtn) {
-      closeBtn.onclick = () => {
-        const localModal = document.getElementById('local-payment-modal');
-        if (localModal) localModal.style.display = 'none';
-        pendingTarget = null;
-      };
-    }
-
-    // Pay button inside local modal (Stripe)
-    const payBtn = document.getElementById('pay-premium-btn');
-    if (payBtn) {
-      payBtn.onclick = () => {
-        channel.postMessage({ type: 'START_STRIPE_PAYMENT', payload: { type: 'premium', ref: 'spro' } });
-        const localModal = document.getElementById('local-payment-modal');
-        if (localModal) localModal.style.display = 'none';
-      };
-    }
-
-    // Back to Studio click listener
-    document.getElementById('btn-back-to-studio').addEventListener('click', (e) => {
-      e.preventDefault();
-      channel.postMessage({ type: 'CLOSE_STUDIO' });
-      window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
-      // Only navigate if we are NOT in an iframe (standalone mode)
-      if (window.self === window.top) {
-        window.location.href = '/';
-      }
-      // If in iframe, the parent handles the close via postMessage above
-    });
-
-    // Hook for SketchExtruder 'Generate' completion
-    // The module dispatches 'input' on the editor.
-  </script>
-
-  <div id="local-payment-modal">
-    <div class="local-modal-content">
-      <button class="close-local-modal" id="modal-close-btn">&times;</button>
-      <div style="font-size: 40px; margin-bottom: 20px;">💎</div>
-      <h2 id="modal-title">Paiement requis</h2>
-      <p id="modal-desc">Vous n'avez pas de compte Premium. Voulez-vous devenir Premium ?</p>
-      <div class="btn-group">
-        <button class="premium-btn" id="pay-premium-btn">Devenir Premium (10$/mois)</button>
+  <!-- ==================== EXPORT SUITE MODAL ==================== -->
+  <div id="modal-export" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>📤 Studio Pro 4D — Complete Export Suite</h2>
+        <button id="btn-export-close" class="modal-close" type="button">✕</button>
+      </div>
+      <div class="exp-grid">
+        <button class="exp-card featured" data-trigger="btn-export-stl" type="button">
+          <div class="exp-ico">🧊</div>
+          <div class="exp-body"><strong>3D Print Mesh (.STL)</strong><span>Watertight binary STL ready for Prusa/Bambu/Cura</span></div>
+        </button>
+        <button class="exp-card featured" data-trigger="btn-export-glb" type="button">
+          <div class="exp-ico">🗿</div>
+          <div class="exp-body"><strong>Colored 3D Scene (.GLB)</strong><span>glTF 2.0 binary with materials for Blender / Web / AR</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-export-obj" type="button">
+          <div class="exp-ico">📐</div>
+          <div class="exp-body"><strong>Wavefront CAD (.OBJ)</strong><span>Universal 3D mesh export</span></div>
+        </button>
+        <button class="exp-card featured" data-trigger="btn-dl-html" type="button">
+          <div class="exp-ico">🌐</div>
+          <div class="exp-body"><strong>Slim Interactive 4D Web (.HTML)</strong><span>Self-contained animated WebGL scene</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-export-zip" type="button">
+          <div class="exp-ico">📦</div>
+          <div class="exp-body"><strong>Pro Web Package (.ZIP)</strong><span>Standalone + split HTML/CSS/JS + README</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-screenshot" type="button">
+          <div class="exp-ico">📸</div>
+          <div class="exp-body"><strong>HD Studio Snapshot (.PNG)</strong><span>Captures live 3D Composer or Preview directly</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-export-video" type="button">
+          <div class="exp-ico">🎬</div>
+          <div class="exp-body"><strong>Live 4D Turntable Video (.MP4/.WebM)</strong><span>Records real-time 4D motion cleanly</span></div>
+        </button>
+        <button class="exp-card featured" data-trigger="btn-ar-viewer" type="button">
+          <div class="exp-ico">🕶️</div>
+          <div class="exp-body"><strong>Direct 1:1 AR Viewer</strong><span>Preview your 3D/4D creation in Augmented Reality</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-save-sp4d" type="button">
+          <div class="exp-ico">💾</div>
+          <div class="exp-body"><strong>Save Project (.sp4d FREE)</strong><span>Keep your multi-module 4D scene backup</span></div>
+        </button>
+        <button class="exp-card" data-trigger="btn-copy-code" type="button">
+          <div class="exp-ico">📋</div>
+          <div class="exp-body"><strong>Copy Standalone HTML Code</strong><span>Copy WebGL embed snippet to clipboard</span></div>
+        </button>
       </div>
     </div>
   </div>
 
-  </body>
+  <div class="toast" id="toast"></div>
+
+  <!-- ONLY 2 LOCAL SCRIPTS ON BOOT (all 66+ sub-modules lazy-load on click!) -->
+  <script src="js/studio4d-core.js"></script>
+  <script src="js/sketch-extruder.js?v=4"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const $ = id => document.getElementById(id);
+    const Core = window.Studio4DCore;
+
+    // =========================================================================
+    // 1. BILINGUAL I18N (INITIALIZED BEFORE SKETCHEXTRUDER.INIT — ZERO MIXED LANG!)
+    // =========================================================================
+    const params = new URLSearchParams(window.location.search);
+    let currentLang = params.get('lang') === 'fr' ? 'fr' : 'en';
+    window.currentLang = currentLang;
+
+    const I18N = {
+      en: {
+        back: 'Back', title: 'Studio Pro 4D', design: 'Design 3D', video: 'Video→3D', image: 'Image→3D',
+        audio: 'Audio 3D', neural: 'Neural', videoBtn: 'Video', videoRec: 'Stop Rec', exportBtn: 'Export Pro',
+        ar: 'AR 3D', tabStudio: 'Studio 4D', preview: 'Live HTML', code: 'Code', sceneObjs: 'Scene Objects',
+        camDir: '4D Camera Director', lightDir: 'Cinema Lighting & Mood', aiPresets: '1-Click Multi-Module 4D Scenes',
+        quickExp: 'Pro Exports & Project Save', copy: 'Copy', dl: 'HTML', zip: 'ZIP', obj: 'OBJ', backTab: 'Studio',
+        welcomeTitle: 'Studio Pro 4D — 66+ Interactive 3D & 4D Modules Ready',
+        welcomeSub: 'Instant boot — launch a 4D showcase, import GLB/OBJ/STL/DXF/SVG, or pick any module on the left',
+        aiPh: 'AI 4D: e.g. "cyber city neon dna"', copied: '✅ Code copied!'
+      },
+      fr: {
+        back: 'Retour', title: 'Studio Pro 4D', design: 'Design 3D', video: 'Vidéo→3D', image: 'Image→3D',
+        audio: 'Audio 3D', neural: 'Neural', videoBtn: 'Vidéo', videoRec: 'Stop Rec', exportBtn: 'Export Pro',
+        ar: 'AR 3D', tabStudio: 'Studio 4D', preview: 'Aperçu HTML', code: 'Code', sceneObjs: 'Objets de la Scène',
+        camDir: 'Caméra Directeur 4D', lightDir: 'Éclairage & Ambiance Cinéma', aiPresets: 'Scènes 4D Multi-Modules IA',
+        quickExp: 'Exports Pro & Projet', copy: 'Copier', dl: 'HTML', zip: 'ZIP', obj: 'OBJ', backTab: 'Studio',
+        welcomeTitle: 'Studio Pro 4D — 66+ Modules 3D & 4D Interactifs Prêts',
+        welcomeSub: 'Démarrage instantané — lancez une démo 4D, importez GLB/OBJ/STL/DXF/SVG ou choisissez un module',
+        aiPh: 'IA 4D : ex "cyber city neon dna"', copied: '✅ Code copié !'
+      }
+    };
+
+    let _toastTimer = null;
+    function toast(msg) {
+      const t = $('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.style.display = 'block';
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2800);
+    }
+    window.toast = toast;
+
+    function updateUI(lang) {
+      currentLang = lang === 'fr' ? 'fr' : 'en';
+      window.currentLang = currentLang;
+      const t = I18N[currentLang];
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+      const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+      set('lbl-back-to-studio', t.back);
+      set('lbl-title', t.title);
+      set('lbl-design', t.design);
+      set('lbl-video', t.video);
+      set('lbl-image', t.image);
+      set('lbl-audio', t.audio);
+      set('lbl-neural-mode', t.neural);
+      set('lbl-video-btn', isRecordingVideo ? t.videoRec : t.videoBtn);
+      set('lbl-export-btn', t.exportBtn);
+      set('lbl-ar', t.ar);
+      set('lbl-tab-studio', t.tabStudio);
+      set('lbl-preview-title', t.preview);
+      set('lbl-code-title', t.code);
+      set('lbl-scene-objs', t.sceneObjs);
+      set('lbl-cam-dir', t.camDir);
+      set('lbl-light-dir', t.lightDir);
+      set('lbl-ai-presets', t.aiPresets);
+      set('lbl-quick-exp', t.quickExp);
+      set('lbl-copy', t.copy);
+      set('lbl-dl', t.dl);
+      set('lbl-zip', t.zip);
+      set('lbl-obj', t.obj);
+      set('lbl-back', t.backTab);
+      set('lbl-welcome-title', t.welcomeTitle);
+      set('lbl-welcome-sub', t.welcomeSub);
+      const aiIn = $('ai-4d-input');
+      if (aiIn) aiIn.placeholder = t.aiPh;
+    }
+
+    // =========================================================================
+    // 2. RIGHT PANEL TABS & MODE SWITCHING
+    // =========================================================================
+    let activeRightTab = 'studio';
+    function switchRightTab(tab) {
+      activeRightTab = tab;
+      $('main-body').classList.remove('full-3d');
+      document.querySelectorAll('.rp-tab').forEach(b => b.classList.toggle('active', b.dataset.rptab === tab));
+      document.querySelectorAll('.rp-pane').forEach(p => p.classList.toggle('active', p.id === `rp-${tab}`));
+    }
+    window.toggleMode = (mode) => {
+      if (mode === 'code') {
+        switchRightTab('preview');
+      } else {
+        Core.closeAllModuleDrawers();
+        const se = $('composer-container').querySelector('div');
+        if (se) se.style.display = 'flex';
+        switchRightTab('studio');
+      }
+    };
+
+    document.querySelectorAll('.rp-tab').forEach(b => {
+      b.addEventListener('click', () => switchRightTab(b.dataset.rptab));
+    });
+
+    $('btn-toggle-full3d').addEventListener('click', () => {
+      $('main-body').classList.toggle('full-3d');
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    // Update Scene Objects Inspector & Welcome Pill whenever models change!
+    window.onStudio4DSceneChanged = function (modelsList) {
+      const list = Array.isArray(modelsList) ? modelsList : [];
+      const welcome = $('s4d-welcome');
+      if (welcome) welcome.classList.toggle('hidden', list.length > 0);
+      $('scene-obj-count').textContent = `${list.length} ${list.length === 1 ? 'model' : 'models'}`;
+      const wrap = $('scene-obj-list');
+      if (!wrap) return;
+      if (list.length === 0) {
+        wrap.innerHTML = `<div class="scene-item" style="color:var(--text-3);justify-content:center;">${currentLang === 'fr' ? 'Scène vide — choisissez un module ou Démo 4D' : 'Empty scene — pick a module or 4D Demo'}</div>`;
+        return;
+      }
+      wrap.innerHTML = list.map(m => `<div class="scene-item"><span>🧊 ${String(m.name || m.format || m.type || '3D Object').slice(0, 24)}</span><small>${m.format || m.type || '3d'}</small></div>`).join('');
+    };
+
+    // =========================================================================
+    // 3. LIVE STANDALONE HTML PREVIEW (DEBOUNCED 400MS — ZERO KEYSTROKE LAG!)
+    // =========================================================================
+    const PRE_SCRIPT = `<script>(function(){try{const o=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(t==='webgl'||t==='webgl2'||t==='experimental-webgl'){a=a||{};a.preserveDrawingBuffer=true;}return o.call(this,t,a);};}catch(e){}})();<\/script>`;
+    let _previewUrl = null;
+    function runPreview() {
+      const code = $('code-editor').value;
+      if (!code || !code.trim()) return;
+      const iframe = $('preview-iframe');
+      const injected = code.indexOf('<head>') > -1 ? code.replace('<head>', '<head>' + PRE_SCRIPT) : (PRE_SCRIPT + code);
+      if (_previewUrl) URL.revokeObjectURL(_previewUrl);
+      _previewUrl = URL.createObjectURL(new Blob([injected], { type: 'text/html' }));
+      iframe.src = _previewUrl;
+      $('preview-empty').classList.add('hidden');
+      $('preview-size-badge').textContent = `${(code.length / 1024).toFixed(0)} KB`;
+    }
+    window.runPreview = runPreview;
+
+    let _codeDebounce = null;
+    $('code-editor').addEventListener('input', () => {
+      const val = $('code-editor').value;
+      $('code-stats').textContent = `${val.split('\n').length} lines | ${(val.length / 1024).toFixed(1)} KB`;
+      clearTimeout(_codeDebounce);
+      _codeDebounce = setTimeout(runPreview, 400);
+    });
+    $('btn-run-code').addEventListener('click', () => { runPreview(); switchRightTab('preview'); });
+
+    function generateAndPreviewHTML() {
+      if (!window.SketchExtruder) return false;
+      const ok = window.SketchExtruder.exportScene();
+      if (ok) { runPreview(); switchRightTab('preview'); }
+      return ok;
+    }
+    $('btn-sync-preview').addEventListener('click', generateAndPreviewHTML);
+    $('btn-empty-preview-go').addEventListener('click', () => {
+      const models = window.SketchExtruder ? window.SketchExtruder.getModels() : [];
+      if (models.length === 0) Core.composeAIScene('quantum crystal', false);
+      generateAndPreviewHTML();
+    });
+
+    // =========================================================================
+    // 4. CLEAN STUDIOS-PRO HOST BROADCASTCHANNEL EXPORT PERMISSION GATE
+    //    (ZERO FALSE CREDIT BURN, ZERO VIDEO STOP LOCKOUT, ZERO CLICK SPAM!)
+    // =========================================================================
+    const hostChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('studios_pro_channel') : null;
+    let isPro = false;
+    let pendingExport = null;
+
+    function executePendingExport() {
+      if (!pendingExport) return;
+      const { format, fn } = pendingExport;
+      pendingExport = null;
+      Promise.resolve(fn()).then(ok => {
+        if (ok !== false && hostChannel) {
+          try { hostChannel.postMessage({ type: 'EXPORT_COMPLETED', payload: { format, app: 'studio-pro' }, _msgId: 'sp4d_done_' + Date.now() }); } catch (_) {}
+        }
+      }).catch(err => toast('❌ ' + (err?.message || String(err))));
+    }
+
+    function requestExportPermission(format, hasContentFn, fn) {
+      // ALWAYS validate scene content BEFORE asking for or burning any credit!
+      if (hasContentFn && !hasContentFn()) {
+        toast(currentLang === 'fr' ? '⚠️ Ajoutez d’abord un objet 3D à la scène !' : '⚠️ Add a 3D object to the scene first!');
+        return;
+      }
+      if (window.parent === window || isPro) {
+        Promise.resolve(fn()).catch(err => toast('❌ ' + (err?.message || String(err))));
+        return;
+      }
+      pendingExport = { format, fn };
+      const msg = { type: 'TRIGGER_PAYMENT_MODAL', payload: { format, app: 'studio-pro', ref: 'spro' }, _msgId: 'sp4d_' + Date.now() };
+      if (hostChannel) hostChannel.postMessage(msg);
+      else window.parent.postMessage(msg, '*');
+    }
+
+    function handleHostMsg(d) {
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'SET_LANG' && d.lang) updateUI(d.lang);
+      else if (d.type === 'USER_TIER_STATUS') isPro = !!(d.isPro || d.tier === 'pro' || d.tier === 'vip');
+      else if ((d.type === 'USER_STATUS_RESPONSE' || d.type === 'USER_STATUS_CHANGED') && d.payload) isPro = !!d.payload.isPremium;
+      else if (d.type === 'EXPORT_ALLOWED') {
+        if (d.payload && d.payload.isPremium) isPro = true;
+        executePendingExport();
+      } else if (d.type === 'SHOW_PAYWALL_MODAL' || d.type === 'EXPORT_BLOCKED') {
+        pendingExport = null;
+      }
+    }
+    window.addEventListener('message', e => handleHostMsg(e.data));
+    if (hostChannel) {
+      hostChannel.onmessage = e => handleHostMsg(e.data);
+      try { hostChannel.postMessage({ type: 'GET_USER_STATUS' }); } catch (_) {}
+    }
+
+    const hasSceneOrCode = () => {
+      const m = window.SketchExtruder ? window.SketchExtruder.getModels() : [];
+      return m.length > 0 || Boolean(($('code-editor').value || '').trim());
+    };
+    const has3DModels = () => Boolean(window.SketchExtruder && window.SketchExtruder.getModels().length > 0);
+
+    // =========================================================================
+    // 5. ALL EXPORTS (PNG, MP4/WEBM VIDEO, HTML, ZIP, OBJ, STL, GLB, AR, .SP4D)
+    // =========================================================================
+
+    // PNG Snapshot — captures active 3D Composer canvas directly (works in Design Mode!)
+    $('btn-screenshot').addEventListener('click', () => requestExportPermission('png', hasSceneOrCode, () => {
+      const rdr = window.SketchExtruder && window.SketchExtruder.getRenderer ? window.SketchExtruder.getRenderer() : null;
+      if (!rdr || !rdr.domElement) { toast('❌ WebGL canvas not ready'); return false; }
+      const url = rdr.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url; a.download = 'studio-pro-4d-snapshot.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast('📸 HD PNG Snapshot saved!');
+    }));
+
+    // Video Recording — direct captureStream on Composer WebGL canvas; STOP NEVER GATED BY PAYWALL!
+    let isRecordingVideo = false;
+    let activeRecorder = null;
+    let recChunks = [];
+    function stopVideoRecording() {
+      if (activeRecorder && activeRecorder.state !== 'inactive') activeRecorder.stop();
+      isRecordingVideo = false;
+      $('btn-export-video').classList.remove('recording');
+      $('lbl-video-btn').textContent = I18N[currentLang].videoBtn;
+    }
+
+    $('btn-export-video').addEventListener('click', () => {
+      if (isRecordingVideo) { stopVideoRecording(); return; }
+      requestExportPermission('mp4', has3DModels, () => {
+        const rdr = window.SketchExtruder && window.SketchExtruder.getRenderer ? window.SketchExtruder.getRenderer() : null;
+        if (!rdr || !rdr.domElement || typeof MediaRecorder === 'undefined') { toast('❌ Video capture unsupported'); return false; }
+        const stream = rdr.domElement.captureStream(30);
+        const candidates = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+        const mime = candidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
+        const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+        recChunks = [];
+        activeRecorder = mime ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 }) : new MediaRecorder(stream);
+        activeRecorder.ondataavailable = ev => { if (ev.data && ev.data.size > 0) recChunks.push(ev.data); };
+        activeRecorder.onstop = () => {
+          const blob = new Blob(recChunks, { type: mime || 'video/webm' });
+          Core.downloadBlob(blob, `studio-pro-4d-video.${ext}`);
+          toast(`🎬 Video saved (.${ext.toUpperCase()})!`);
+        };
+        activeRecorder.start(200);
+        isRecordingVideo = true;
+        $('btn-export-video').classList.add('recording');
+        $('lbl-video-btn').textContent = I18N[currentLang].videoRec;
+        toast('🔴 Recording live 4D canvas — click again to stop!');
+      });
+    });
+
+    // Copy Standalone HTML
+    $('btn-copy-code').addEventListener('click', () => requestExportPermission('html', hasSceneOrCode, async () => {
+      if (has3DModels()) window.SketchExtruder.exportScene();
+      const code = $('code-editor').value;
+      if (!code) return false;
+      try {
+        await navigator.clipboard.writeText(code);
+        toast(I18N[currentLang].copied);
+      } catch (_) {
+        $('code-editor').select();
+        document.execCommand('copy');
+        toast(I18N[currentLang].copied);
+      }
+    }));
+
+    // Download Slim Standalone HTML
+    $('btn-dl-html').addEventListener('click', () => requestExportPermission('html', hasSceneOrCode, () => {
+      if (has3DModels()) window.SketchExtruder.exportScene();
+      const code = $('code-editor').value;
+      if (!code) return false;
+      Core.downloadBlob(new Blob([code], { type: 'text/html' }), 'studio-pro-4d-scene.html');
+      toast(`🌐 HTML exported (${(code.length / 1024).toFixed(0)} KB)!`);
+    }));
+
+    // Pro ZIP Package (lazy-loads JSZip + export-zip-pro.js!)
+    $('btn-export-zip').addEventListener('click', () => requestExportPermission('zip', hasSceneOrCode, async () => {
+      await Core.ensureCDN('jszip');
+      if (has3DModels()) window.SketchExtruder.exportScene();
+      if (typeof window.exportZIP === 'function') await window.exportZIP();
+    }));
+
+    // Watertight Binary STL Export (Zero CDN — instant offline 3D print mesh!)
+    $('btn-export-stl').addEventListener('click', () => requestExportPermission('stl', has3DModels, () => {
+      const collected = Core.collectExportableGroup(window.SketchExtruder.getGroup(), window.SketchExtruder.getScene());
+      try {
+        if (collected.group.children.length === 0) { toast('❌ No mesh geometry found'); return false; }
+        const { buffer, triCount } = Core.buildBinarySTLBuffer(collected.group);
+        Core.downloadBlob(new Blob([buffer], { type: 'model/stl' }), 'studio-pro-4d-print.stl');
+        toast(`🧊 STL exported (${triCount.toLocaleString('en-US')} tris)!`);
+      } finally { collected.dispose(); }
+    }));
+
+    // Colored GLB Export (Three.js r128 3-arg parse(group, onDone, { binary: true })!)
+    $('btn-export-glb').addEventListener('click', () => requestExportPermission('glb', has3DModels, async () => {
+      await Core.ensureCDN('gltfExport');
+      const collected = Core.collectExportableGroup(window.SketchExtruder.getGroup(), window.SketchExtruder.getScene());
+      if (collected.group.children.length === 0) { collected.dispose(); toast('❌ No mesh geometry'); return false; }
+      return new Promise((resolve, reject) => {
+        try {
+          new THREE.GLTFExporter().parse(collected.group, res => {
+            collected.dispose();
+            if (res instanceof ArrayBuffer && res.byteLength > 0) {
+              Core.downloadBlob(new Blob([res], { type: 'model/gltf-binary' }), 'studio-pro-4d-model.glb');
+              toast(`🗿 GLB exported (${(res.byteLength / 1024).toFixed(0)} KB)!`);
+              resolve(true);
+            } else { reject(new Error('GLB binary empty')); }
+          }, { binary: true });
+        } catch (err) { collected.dispose(); reject(err); }
+      });
+    }));
+
+    // OBJ Export (lazy-loads OBJExporter cleanly!)
+    $('btn-export-obj').addEventListener('click', () => requestExportPermission('obj', has3DModels, async () => {
+      await Core.ensureCDN('objExport');
+      const collected = Core.collectExportableGroup(window.SketchExtruder.getGroup(), window.SketchExtruder.getScene());
+      try {
+        if (collected.group.children.length === 0) { toast('❌ No mesh geometry'); return false; }
+        const objStr = new THREE.OBJExporter().parse(collected.group);
+        Core.downloadBlob(new Blob([objStr], { type: 'text/plain' }), 'studio-pro-4d-model.obj');
+        toast('📐 OBJ exported!');
+      } finally { collected.dispose(); }
+    }));
+
+    // Direct 1:1 AR Viewer (Unified StudiosProAR.sendModel, accurate scaled dims, Points support, zero duplicate delivery!)
+    $('btn-ar-viewer').addEventListener('click', async () => {
+      if (!has3DModels()) {
+        toast(currentLang === 'fr' ? '⚠️ Ajoutez un modèle 3D avant d’ouvrir AR Viewer' : '⚠️ Add a 3D model before opening AR Viewer');
+        return;
+      }
+      const collected = Core.collectExportableGroup(window.SketchExtruder.getGroup(), window.SketchExtruder.getScene());
+      if (collected.group.children.length === 0) { collected.dispose(); toast('❌ No exportable 3D geometry'); return; }
+
+      // Normalize to centered tabletop AR scale (~0.28 m) resting on y=0
+      const box = new THREE.Box3().setFromObject(collected.group);
+      const size = new THREE.Vector3(), center = new THREE.Vector3();
+      box.getSize(size); box.getCenter(center);
+      const maxDim = Math.max(size.x, size.y, size.z, 0.0001);
+      const scale = 0.28 / maxDim;
+      collected.group.children.forEach(m => {
+        m.geometry.translate(-center.x, -box.min.y, -center.z);
+        m.geometry.scale(scale, scale, scale);
+      });
+      const dimsMm = {
+        x: Math.round(size.x * scale * 10000) / 10,
+        y: Math.round(size.y * scale * 10000) / 10,
+        z: Math.round(size.z * scale * 10000) / 10
+      };
+
+      const deliverAR = (data, name, extension, isBinary) => {
+        if (window.StudiosProAR && typeof window.StudiosProAR.sendModel === 'function') {
+          window.StudiosProAR.sendModel({
+            modelData: data, name, extension, isBinary,
+            placement: 'floor', dimensionsMm: dimsMm, sourceStudio: 'studio-pro'
+          });
+        } else {
+          window.parent.postMessage({
+            type: 'OPEN_AR_VIEWER',
+            payload: { transferId: 'spro_' + Date.now().toString(36), modelData: data, name, extension, isBinary, placement: 'floor', dimensionsMm: dimsMm, sourceStudio: 'studio-pro' }
+          }, '*');
+        }
+        toast(currentLang === 'fr' ? '🕶️ Modèle envoyé à AR Viewer 3D !' : '🕶️ Model sent to AR Viewer 3D!');
+      };
+
+      try {
+        await Core.ensureCDN('gltfExport');
+        new THREE.GLTFExporter().parse(collected.group, res => {
+          if (res instanceof ArrayBuffer && res.byteLength > 0) {
+            collected.dispose();
+            deliverAR(res, 'studio_pro_4d_model.glb', 'glb', true);
+          } else {
+            const stl = Core.buildBinarySTLBuffer(collected.group);
+            collected.dispose();
+            deliverAR(stl.buffer, 'studio_pro_4d_model.stl', 'stl', true);
+          }
+        }, { binary: true });
+      } catch (_) {
+        const stl = Core.buildBinarySTLBuffer(collected.group);
+        collected.dispose();
+        deliverAR(stl.buffer, 'studio_pro_4d_model.stl', 'stl', true);
+      }
+    });
+
+    // FREE .sp4d Project Save / Load
+    $('btn-save-sp4d').addEventListener('click', () => {
+      if (!has3DModels()) { toast('⚠️ Nothing to save yet'); return; }
+      const state = window.SketchExtruder.getSerializableState();
+      Core.downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), 'studio-pro-4d-project.sp4d');
+      toast('💾 Project saved (.sp4d FREE)!');
+    });
+    $('btn-load-sp4d').addEventListener('click', () => $('file-load-sp4d').click());
+    $('file-load-sp4d').addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const parsed = JSON.parse(String(r.result));
+          if (window.SketchExtruder.loadSerializableState(parsed)) toast(`📂 Loaded ${f.name}!`);
+          else toast('❌ Invalid .sp4d project');
+        } catch (_) { toast('❌ Failed to parse .sp4d'); }
+      };
+      r.readAsText(f); e.target.value = '';
+    });
+
+    // =========================================================================
+    // 6. WIRE TOPBAR, DIRECTOR, AI COMPOSER, WELCOME PILLS & LIFECYCLE
+    // =========================================================================
+    $('btn-design-mode').addEventListener('click', () => {
+      Core.closeAllModuleDrawers();
+      window.toggleMode('design');
+    });
+    $('btn-back-design').addEventListener('click', () => switchRightTab('studio'));
+    $('btn-video-mode').addEventListener('click', () => Core.openTopbarOverlay('video'));
+    $('btn-image-mode').addEventListener('click', () => Core.openTopbarOverlay('image'));
+    $('btn-audio-mode').addEventListener('click', () => Core.openTopbarOverlay('audio'));
+    $('btn-neural-mode').addEventListener('click', () => {
+      Core.closeAllModuleDrawers();
+      const btn = document.getElementById('btn-neural-scene');
+      if (btn) btn.click();
+    });
+
+    // Export Suite Modal
+    $('btn-export-modal').addEventListener('click', () => $('modal-export').classList.remove('hidden'));
+    $('btn-export-close').addEventListener('click', () => $('modal-export').classList.add('hidden'));
+    $('modal-export').addEventListener('click', e => { if (e.target === $('modal-export')) $('modal-export').classList.add('hidden'); });
+    document.querySelectorAll('.exp-card[data-trigger]').forEach(card => {
+      card.addEventListener('click', () => {
+        $('modal-export').classList.add('hidden');
+        const target = $(card.dataset.trigger);
+        if (target) target.click();
+      });
+    });
+
+    // AI 4D Multi-Module Prompt Composer
+    const runAIPrompt = () => {
+      const txt = ($('ai-4d-input').value || '').trim() || 'quantum crystal';
+      const cnt = Core.composeAIScene(txt, true);
+      toast(`🔮 Composed ${cnt}-module AI 4D Scene!`);
+    };
+    $('btn-ai-4d-go').addEventListener('click', runAIPrompt);
+    $('ai-4d-input').addEventListener('keydown', e => { if (e.key === 'Enter') runAIPrompt(); });
+
+    // Quick AI Presets & Director Controls
+    document.querySelectorAll('.ai-quick').forEach(b => {
+      b.addEventListener('click', () => {
+        const cnt = Core.composeAIScene(b.dataset.prompt, true);
+        toast(`✨ Loaded ${b.textContent.trim()} (${cnt} modules)`);
+      });
+    });
+    document.querySelectorAll('.cam-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.cam-btn').forEach(x => x.classList.toggle('active', x === b));
+        if (window.SketchExtruder) window.SketchExtruder.setCameraMode(b.dataset.cam);
+      });
+    });
+    document.querySelectorAll('.light-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.light-btn').forEach(x => x.classList.toggle('active', x === b));
+        if (window.SketchExtruder) window.SketchExtruder.applyLightingPreset(b.dataset.light);
+      });
+    });
+
+    $('btn-quick-demo').addEventListener('click', () => { Core.composeAIScene('quantum crystal', false); toast('✨ 4D Quantum Demo added!'); });
+    $('btn-clear-scene').addEventListener('click', () => { if (window.SketchExtruder) window.SketchExtruder.clearScene(); toast('🧹 Scene cleared'); });
+
+    // Welcome Quick-Launch Pills
+    $('w-demo').addEventListener('click', () => { Core.composeAIScene('quantum crystal', true); toast('✨ 4D Quantum Demo ready!'); });
+    $('w-cyber').addEventListener('click', () => { Core.composeAIScene('cyber city neon dna', true); toast('🏙️ Cyber City + DNA 4D ready!'); });
+    $('w-neural').addEventListener('click', () => { const b = $('btn-neural-scene'); if (b) b.click(); });
+    $('w-clock').addEventListener('click', () => { const b = $('btn-clockultra-scene'); if (b) b.click(); });
+    $('w-import').addEventListener('click', () => { const b = $('btn-3d-import'); if (b) b.click(); });
+
+    // Language toggle
+    document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => updateUI(b.dataset.lang)));
+
+    // Escape closes modals & module drawers cleanly
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        $('modal-export').classList.add('hidden');
+        Core.closeAllModuleDrawers();
+      }
+    });
+
+    // Clean single-fire CLOSE_STUDIO + complete WebGL/rAF/Audio/Mic teardown!
+    const shutdownAll = () => {
+      if (isRecordingVideo) stopVideoRecording();
+      Core.teardownAllResources();
+      if (hostChannel) { try { hostChannel.close(); } catch (_) {} }
+    };
+    window.addEventListener('pagehide', shutdownAll);
+
+    $('btn-back-to-studio').addEventListener('click', e => {
+      e.preventDefault();
+      if (isRecordingVideo) stopVideoRecording();
+      Core.teardownAllResources();
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'CLOSE_STUDIO' }, '*');
+      } else {
+        window.location.href = '/';
+      }
+    });
+
+    // Studios-Pro Nexus State & Remix Contracts
+    window.getAppState = () => window.SketchExtruder ? window.SketchExtruder.getSerializableState() : null;
+    window.getAppTags = () => ['studio-pro-4d', '3d-composer', '4d-art'];
+
+    // =========================================================================
+    // 7. INSTANT BOOT (ZERO 800MS ARTIFICIAL SPLASH DELAY!)
+    // =========================================================================
+    function boot() {
+      updateUI(currentLang);
+      const container = $('composer-container');
+      const dummyBtn = document.createElement('button');
+      if (window.SketchExtruder) {
+        window.SketchExtruder.init(container, dummyBtn);
+        const se = container.querySelector('div');
+        if (se) {
+          se.style.display = 'flex';
+          se.style.position = 'relative';
+          se.style.inset = 'auto';
+          se.style.width = '100%';
+          se.style.height = '100%';
+          se.style.zIndex = '1';
+        }
+        const genBtn = container.querySelector('#btn-export');
+        if (genBtn) {
+          genBtn.addEventListener('click', () => {
+            setTimeout(() => { runPreview(); switchRightTab('preview'); }, 120);
+          });
+        }
+      }
+
+      // Restore Remix state if launched from Studios-Pro Nexus
+      try {
+        const raw = localStorage.getItem('sp_remix_state');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.format === 'studios-pro-sp4d-v45' && window.SketchExtruder) {
+            window.SketchExtruder.loadSerializableState(parsed);
+            localStorage.removeItem('sp_remix_state');
+          }
+        }
+      } catch (_) {}
+
+      window.onStudio4DSceneChanged(window.SketchExtruder ? window.SketchExtruder.getModels() : []);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else boot();
+  })();
+  </script>
+</body>
 </html>

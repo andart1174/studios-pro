@@ -16,7 +16,9 @@ window.exportZIP = async function() {
   }
 
   const lang = window.currentLang || 'en';
-  const model = window.currentModel || null;
+  const activeModels = (window.SketchExtruder && typeof window.SketchExtruder.getModels === 'function') ? window.SketchExtruder.getModels() : [];
+  const firstModel = activeModels[0] || null;
+  const model = window.currentModel || (firstModel ? { id: firstModel.id, en: firstModel.name || 'Studio Pro 4D Scene', fr: firstModel.name || 'Scène Studio Pro 4D', icon: '🧊' } : null);
 
   const modelNameEN = model ? model.en   : 'My 3D Model';
   const modelNameFR = model ? model.fr   : 'Mon Modèle 3D';
@@ -236,20 +238,5 @@ Crédit apprécié : "Modèle 3D par Studio 3D/4D Pro" (non obligatoire)
   if (window.toast) window.toast(msg);
 };
 
-// Override binding
-setTimeout(() => {
-  const ids = ['btn-export-zip', 'exp-zip', 'btn-export-all-formats'];
-  ids.forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      const n = btn.cloneNode(true);
-      btn.parentNode.replaceChild(n, btn);
-      n.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await window.exportZIP();
-      });
-    }
-  });
-}, 1000);
-
-console.log('%c ✅ exportZIP Refined (v4)', 'color:#10b981;font-weight:bold;');
+// Clean export hook (no 1-second cloneNode race condition — bound directly by Studio Pro 4D shell!)
+console.log('%c ✅ exportZIP Refined (v4.5)', 'color:#10b981;font-weight:bold;');

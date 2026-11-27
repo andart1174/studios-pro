@@ -27,7 +27,7 @@ window.TimeLapse4D = (() => {
 #progress-bar{height:100%;background:#10b981;width:0%;border-radius:4px;transition:0.1s;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 <div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(10,14,30,0.8);border:1px solid rgba(16,185,129,0.3);padding:6px 14px;border-radius:20px;font-size:11px;color:#94a3b8;z-index:9;">⏳ 4D Construction Progress</div>
 <div id="progress"><div id="progress-bar"></div></div>

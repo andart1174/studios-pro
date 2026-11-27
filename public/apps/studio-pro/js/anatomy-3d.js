@@ -76,7 +76,7 @@ window.Anatomy3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Anatomy 3D - ${sys}</title>
 <style>*{margin:0;padding:0;}body{background:#040a14;overflow:hidden;font-family:sans-serif;}#lbl{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);color:#fca5a5;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid rgba(239,68,68,0.4);}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><div id="lbl">🔬 ${sys.toUpperCase()} SYSTEM</div><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x040a14);
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,500);camera.position.set(0,80,200);
@@ -86,35 +86,36 @@ const controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enab
 scene.add(new THREE.AmbientLight(0xffffff,0.3));const dl=new THREE.DirectionalLight(0xffffff,0.8);dl.position.set(50,100,50);scene.add(dl);
 const mat=new THREE.MeshStandardMaterial({color:${col},roughness:0.4,metalness:0.1,${trans}wireframe:${wire}});
 const body=new THREE.Group();scene.add(body);
+const _p=(m,p,r)=>{if(p)m.position.set(p.x||0,p.y||0,p.z||0);if(r)m.rotation.set(r.x||0,r.y||0,r.z||0);return m;};
 
 // Skull / Head
-body.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(15,16,16),mat),{position:{x:0,y:105,z:0}}));
+body.add(_p(new THREE.Mesh(new THREE.SphereGeometry(15,16,16),mat),{x:0,y:105,z:0}));
 // Jaw
-body.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(20,8,15),mat),{position:{x:0,y:88,z:2}}));
+body.add(_p(new THREE.Mesh(new THREE.BoxGeometry(20,8,15),mat),{x:0,y:88,z:2}));
 // Spine (vertebrae)
 for(let i=0;i<12;i++){
-  body.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(6,6,8),mat),{position:{x:0,y:80-i*7,z:-4}}));
+  body.add(_p(new THREE.Mesh(new THREE.BoxGeometry(6,6,8),mat),{x:0,y:80-i*7,z:-4}));
 }
 // Ribcage
 for(let i=0;i<7;i++){
   const y=65-i*6;const w=12+i*2,closed=i<5;
-  body.add(Object.assign(new THREE.Mesh(new THREE.TorusGeometry(w,2,6,18,closed?Math.PI*1.8:Math.PI*1.4),mat.clone()),{position:{x:0,y,z:0},rotation:{x:Math.PI/2,y:0,z:0}}));
+  body.add(_p(new THREE.Mesh(new THREE.TorusGeometry(w,2,6,18,closed?Math.PI*1.8:Math.PI*1.4),mat.clone()),{x:0,y,z:0},{x:Math.PI/2,y:0,z:0}));
 }
 // Pelvis
-body.add(Object.assign(new THREE.Mesh(new THREE.TorusGeometry(18,5,8,24,Math.PI),mat),{position:{x:0,y:10,z:0},rotation:{x:-Math.PI/6}}));
+body.add(_p(new THREE.Mesh(new THREE.TorusGeometry(18,5,8,24,Math.PI),mat),{x:0,y:10,z:0},{x:-Math.PI/6}));
 // Upper arms
 [-20,20].forEach(x=>{
-  body.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(3,3,28,8),mat),{position:{x:x*1.3,y:55,z:0}}));
-  body.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,24,8),mat),{position:{x:x*1.6,y:30,z:0}}));
+  body.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(3,3,28,8),mat),{x:x*1.3,y:55,z:0}));
+  body.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,24,8),mat),{x:x*1.6,y:30,z:0}));
 });
 // Legs
 [-10,10].forEach(x=>{
-  body.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(5,4,40,8),mat),{position:{x,y:-15,z:0}}));
-  body.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(4,3,35,8),mat),{position:{x,y:-52,z:0}}));
-  body.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10,5,18),mat),{position:{x,y:-73,z:5}}));
+  body.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(5,4,40,8),mat),{x,y:-15,z:0}));
+  body.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(4,3,35,8),mat),{x,y:-52,z:0}));
+  body.add(_p(new THREE.Mesh(new THREE.BoxGeometry(10,5,18),mat),{x,y:-73,z:5}));
 });
 // Clavicles
-[-1,1].forEach(s=>body.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(2,2,22,8),mat),{position:{x:s*11,y:72,z:0},rotation:{x:0,y:0,z:s*Math.PI/5}})));
+[-1,1].forEach(s=>body.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(2,2,22,8),mat),{x:s*11,y:72,z:0},{x:0,y:0,z:s*Math.PI/5})));
 
 ${glow ? `const pl=new THREE.PointLight(${col},1.5,150);pl.position.set(0,40,20);body.add(pl);` : ''}
 

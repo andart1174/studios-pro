@@ -6,7 +6,7 @@ window.SocialMediaRoom3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>3D Social Room</title>
 <style>*{margin:0;padding:0;}body{background:#f1f5f9;overflow:hidden;font-family:sans-serif;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 <div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);border:1px solid rgba(226,232,240,1);padding:6px 14px;border-radius:20px;font-size:11px;color:#475569;z-index:9;box-shadow:0 4px 15px rgba(0,0,0,0.05);">💬 3D Social Media Museum</div>
 <script>(function(){

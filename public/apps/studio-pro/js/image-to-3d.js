@@ -153,6 +153,7 @@ let t=0;function animate(){requestAnimationFrame(animate);t+=0.01;${rot?'rotY+=0
     if(ed) {
       ed.value = html;
       ed.dispatchEvent(new Event('input', {bubbles:true}));
+      if (window.toggleMode) window.toggleMode('code');
       if (window.toast) window.toast('✨ 3D Heightmap generated!');
     }
   }

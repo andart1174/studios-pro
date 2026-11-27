@@ -25,7 +25,7 @@ window.GitRepoCity3D = (() => {
 #tooltip{position:absolute;background:rgba(15,23,42,0.9);color:white;padding:8px 12px;border-radius:4px;font-size:12px;pointer-events:none;opacity:0;border:1px solid #334155;transform:translate(-50%,-100%);margin-top:-10px;transition:opacity 0.1s;z-index:20;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 <div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.3);padding:6px 14px;border-radius:20px;font-size:11px;color:#94a3b8;z-index:9;">📂 Hover over buildings to see files</div>
 <div id="tooltip"></div>

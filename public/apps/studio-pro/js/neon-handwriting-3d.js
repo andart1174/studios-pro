@@ -48,7 +48,7 @@ window.NeonHandwriting3D = (() => {
           addBtn.disabled = false;
           addBtn.style.opacity = '1';
           drop.style.borderColor = '#10b981';
-          drop.querySelector('span:last-child').textContent = '✅ Sketch Loaded';
+          drop.querySelector('span:last-of-type').textContent = '✅ Sketch Loaded';
         };
         img.src = ev.target.result;
       };

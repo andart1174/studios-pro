@@ -83,7 +83,7 @@ window.LegoCity3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lego City 3D</title>
 <style>*{margin:0;padding:0;}body{background:#0f0f0f;overflow:hidden;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0f0f0f);
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000);camera.position.set(60,80,120);

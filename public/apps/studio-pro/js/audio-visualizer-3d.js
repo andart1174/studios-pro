@@ -1,7 +1,7 @@
-// Audio Visualizer → 3D Generator
-window.AudioVisualizer = (() => {
+// Audio Visualizer → 3D Generator (Fixed global export + real MP3/Audio file playback + Add to 3D Scene!)
+window.AudioVisualizer = window.AudioVisualizer3D = (() => {
   'use strict';
-  let _container, _panel, _audioData = null, _micStream = null, _audioCtx = null, _analyser = null;
+  let _container, _panel, _audioData = null, _audioDataUrl = null, _micStream = null;
   const cfg = { bars: 32, barStyle: 'box', colorScheme: 'spectrum' };
 
   function buildUI() {
@@ -34,7 +34,10 @@ window.AudioVisualizer = (() => {
         <div class="av3d-row"><span style="font-size:10px;color:#94a3b8;">Style</span><select id="av3d-style" style="width:100%;padding:4px;background:#1e293b;border:1px solid #333;border-radius:4px;color:#fff;font-size:10px;"><option value="box">Box</option><option value="cylinder">Cylinder</option><option value="cone">Cone</option></select></div>
         <div class="av3d-row"><span style="font-size:10px;color:#94a3b8;">Colors</span><select id="av3d-colors" style="width:100%;padding:4px;background:#1e293b;border:1px solid #333;border-radius:4px;color:#fff;font-size:10px;"><option value="spectrum">Spectrum</option><option value="fire">Fire</option><option value="ocean">Ocean</option><option value="neon">Neon</option></select></div>
       </div>
-      <button id="av3d-gen-btn" style="width:100%;padding:12px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);border-radius:10px;color:#6ee7b7;font-size:12px;font-weight:700;cursor:pointer;transition:0.3s;">${isEN ? '⚡ GENERATE 3D VISUALIZER' : '⚡ GÉNÉRER LE VISUALISEUR 3D'}</button>
+      <div style="display:flex;gap:8px;">
+        <button id="av3d-add-scene" style="flex:1;padding:12px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📐 ${isEN ? 'ADD TO 3D SCENE' : 'AJOUTER À LA SCÈNE'}</button>
+        <button id="av3d-gen-btn" style="flex:1;padding:12px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);border-radius:10px;color:#6ee7b7;font-size:12px;font-weight:700;cursor:pointer;transition:0.3s;">${isEN ? '⚡ GENERATE HTML' : '⚡ GÉNÉRER HTML'}</button>
+      </div>
     `;
     _container.appendChild(_panel);
     _bindUI();
@@ -51,6 +54,7 @@ window.AudioVisualizer = (() => {
     micBtn.onclick = () => {
       navigator.mediaDevices.getUserMedia({audio:true}).then(s => {
         _micStream = s;
+        if (window._studio4dStreams) window._studio4dStreams.push(s);
         micBtn.style.background = 'rgba(16,185,129,0.2)';
         micBtn.style.borderColor = '#10b981';
         _setStatus(window.currentLang==='fr'?'Microphone activé':'Microphone active');
@@ -60,6 +64,9 @@ window.AudioVisualizer = (() => {
     _panel.querySelector('#av3d-file').onchange = e => {
       const f = e.target.files[0]; if(!f) return;
       _audioData = f;
+      const rdr = new FileReader();
+      rdr.onload = () => { _audioDataUrl = String(rdr.result || ''); };
+      rdr.readAsDataURL(f);
       _panel.querySelector('#av3d-file-btn').style.background = 'rgba(16,185,129,0.2)';
       _panel.querySelector('#av3d-file-btn').style.borderColor = '#10b981';
       _setStatus(f.name);
@@ -69,8 +76,17 @@ window.AudioVisualizer = (() => {
     _panel.querySelector('#av3d-style').onchange = e => cfg.barStyle = e.target.value;
     _panel.querySelector('#av3d-colors').onchange = e => cfg.colorScheme = e.target.value;
 
+    const addSceneBtn = _panel.querySelector('#av3d-add-scene');
+    if (addSceneBtn) {
+      addSceneBtn.onclick = () => {
+        if (window.SketchExtruder && typeof window.SketchExtruder.addExtraModule === 'function') {
+          window.SketchExtruder.addExtraModule('audio-viz', { bars: cfg.bars, barStyle: cfg.barStyle, colorScheme: cfg.colorScheme });
+          _panel.style.display = 'none';
+        }
+      };
+    }
+
     _panel.querySelector('#av3d-gen-btn').onclick = () => {
-      if(!_micStream && !_audioData) { _setStatus(window.currentLang==='fr'?'Choisissez une source':'Choose a source', true); return; }
       _generate();
     };
   }
@@ -107,7 +123,11 @@ document.getElementById('start').onclick=async()=>{
   document.getElementById('ui').style.display='none';
   actx=new (window.AudioContext||window.webkitAudioContext)();
   anl=actx.createAnalyser();anl.fftSize=256;data=new Uint8Array(anl.frequencyBinCount);
-  ${_micStream ? 'const s=await navigator.mediaDevices.getUserMedia({audio:true});actx.createMediaStreamSource(s).connect(anl);' : '/* File logic here if needed */'}
+  ${_micStream
+    ? 'const s=await navigator.mediaDevices.getUserMedia({audio:true});actx.createMediaStreamSource(s).connect(anl);'
+    : (_audioDataUrl
+        ? `const aud=new Audio('${_audioDataUrl}');aud.crossOrigin='anonymous';aud.loop=true;const src=actx.createMediaElementSource(aud);src.connect(anl);anl.connect(actx.destination);await aud.play();`
+        : 'const osc=actx.createOscillator(),g=actx.createGain();osc.type="sawtooth";osc.frequency.value=110;g.gain.value=0.12;osc.connect(g);g.connect(anl);g.connect(actx.destination);osc.start();')}
   animate();
 };
 function animate(){

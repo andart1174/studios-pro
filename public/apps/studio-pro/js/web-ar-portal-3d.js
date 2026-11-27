@@ -9,7 +9,7 @@ window.WebARPortal3D = (() => {
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
 <!-- Note: In a real environment, we'd load AR.js or WebXR polyfills. For this standalone preview, we simulate a 3D environment with an AR button. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 <button id="ar-button">👁️ ENTER AR (Simulated)</button>
 <div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);padding:6px 14px;border-radius:20px;font-size:11px;color:#fff;z-index:9;">📱 Open on mobile to view in AR (Uses WebXR)</div>

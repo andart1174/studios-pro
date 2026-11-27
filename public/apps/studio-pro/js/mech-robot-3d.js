@@ -82,7 +82,7 @@ window.MechRobot3D = (() => {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mech Robot 3D</title>
 <style>*{margin:0;padding:0;}body{background:#0a0f1e;overflow:hidden;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body><script>(function(){
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0f1e);
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000);camera.position.set(0,80,200);
@@ -92,13 +92,14 @@ const controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enab
 scene.add(new THREE.AmbientLight(0x223344,0.5));scene.add(new THREE.DirectionalLight(0xffffff,0.8)).position.set(100,200,100);
 const mat=new THREE.MeshStandardMaterial({color:${gc},metalness:0.8,roughness:0.2});
 const mech=new THREE.Group();scene.add(mech);
+const _p=(m,p)=>{if(p)m.position.set(p.x||0,p.y||0,p.z||0);return m;};
 // Torso
-mech.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(30,35,18),mat),{position:{x:0,y:25,z:0}}));
+mech.add(_p(new THREE.Mesh(new THREE.BoxGeometry(30,35,18),mat),{x:0,y:25,z:0}));
 // Legs
 [-12,12].forEach(x=>{
   const leg=new THREE.Group();leg.position.set(x,0,0);
-  leg.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10,30,12),mat),{position:{x:0,y:5,z:0}}));
-  leg.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(12,6,18),mat),{position:{x:0,-13,3}}));
+  leg.add(_p(new THREE.Mesh(new THREE.BoxGeometry(10,30,12),mat),{x:0,y:5,z:0}));
+  leg.add(_p(new THREE.Mesh(new THREE.BoxGeometry(12,6,18),mat),{x:0,y:-13,z:3}));
   mech.add(leg);
 });
 // Head
@@ -107,18 +108,18 @@ const headMesh=new THREE.Mesh(headGeo,mat);headMesh.position.set(0,55,0);mech.ad
 // Eyes
 ${glow ? `
 const eyeMat=new THREE.MeshBasicMaterial({color:0x00ffff});
-[-5,5].forEach(x=>{mech.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(2,8,8),eyeMat),{position:{x,y:57,z:8}}));});
+[-5,5].forEach(x=>{mech.add(_p(new THREE.Mesh(new THREE.SphereGeometry(2,8,8),eyeMat),{x,y:57,z:8}));});
 const pl=new THREE.PointLight(0x00ffff,1,60);pl.position.set(0,57,10);mech.add(pl);
 // Chest reactor
 const reactorMat=new THREE.MeshBasicMaterial({color:0x00ffff});
-mech.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(4,4,3,16),reactorMat),{position:{x:0,y:28,z:10}}));` : ''}
+mech.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(4,4,3,16),reactorMat),{x:0,y:28,z:10}));` : ''}
 // Arms
 [-20,20].forEach((x,i)=>{
   const arm=new THREE.Group();arm.position.set(x,35,0);
-  arm.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(8,25,8),mat),{position:{x:0,-12,0}}));
-  if('${arm}'==='cannon'){arm.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(3,3,20,12),mat),{position:{x:0,-25,0}}));}
-  else if('${arm}'==='claw'){[-3,3].forEach(cx=>{arm.add(Object.assign(new THREE.Mesh(new THREE.ConeGeometry(2,10,6),mat),{position:{x:cx,-30,0}}));});}
-  else{arm.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(14,3,18),mat),{position:{x:0,-28,0}}));}
+  arm.add(_p(new THREE.Mesh(new THREE.BoxGeometry(8,25,8),mat),{x:0,y:-12,z:0}));
+  if('${arm}'==='cannon'){arm.add(_p(new THREE.Mesh(new THREE.CylinderGeometry(3,3,20,12),mat),{x:0,y:-25,z:0}));}
+  else if('${arm}'==='claw'){[-3,3].forEach(cx=>{arm.add(_p(new THREE.Mesh(new THREE.ConeGeometry(2,10,6),mat),{x:cx,y:-30,z:0}));});}
+  else{arm.add(_p(new THREE.Mesh(new THREE.BoxGeometry(14,3,18),mat),{x:0,y:-28,z:0}));}
   mech.add(arm);
 });
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});

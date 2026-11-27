@@ -15,7 +15,7 @@ window.ProductShowcase3D = (() => {
 .color-btn.active{border-color:#3b82f6;box-shadow:0 0 0 2px white, 0 0 0 4px #3b82f6;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
 </head><body>
 
 <div id="ui-panel">
