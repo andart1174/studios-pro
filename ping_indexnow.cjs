@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const key = 'f89ae7b4f1094014a700fcd8d747035b';
+const key = '7d4e9b2a8f1c6035a4e7b8d2c9f1063e';
 const keyFile = path.join(__dirname, 'public', `${key}.txt`);
 
 // 1. Ensure the single official IndexNow key file exists in public/

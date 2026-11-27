@@ -21,7 +21,7 @@ const {
 
 const SITE_HOST = 'studios-pro.com';
 const SITE_ORIGIN = `https://${SITE_HOST}`;
-const INDEXNOW_KEY = process.env.INDEXNOW_KEY || 'f89ae7b4f1094014a700fcd8d747035b';
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '7d4e9b2a8f1c6035a4e7b8d2c9f1063e';
 const INDEXNOW_KEY_URL = `${SITE_ORIGIN}/${INDEXNOW_KEY}.txt`;
 
 function sanitizeSiteUrls(rawList) {
@@ -138,6 +138,23 @@ exports.handler = async (event) => {
       if (urlList.length === 0) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'No valid studios-pro.com URLs provided' }) };
       }
+
+      // Guard: verify the live key file serves 200 OK with exact key BEFORE pinging Bing/IndexNow (prevents negative key caching!)
+      const keyCheck = await fetch(INDEXNOW_KEY_URL, { headers: { 'User-Agent': 'StudiosPro-SEO-Center/2.0' } });
+      const liveKeyText = keyCheck.ok ? (await keyCheck.text()).trim() : '';
+      if (!keyCheck.ok || liveKeyText !== INDEXNOW_KEY) {
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            ok: false,
+            httpStatus: keyCheck.status,
+            submitted: 0,
+            summary: `Key file ${INDEXNOW_KEY_URL} is not yet live (HTTP ${keyCheck.status}). Wait ~30s for Netlify deploy to finish and retry.`,
+          }),
+        };
+      }
+
       // IndexNow allows up to 10,000 URLs per POST; syndicates automatically to Bing, Yandex, Seznam, Naver, Yep
       urlList = urlList.slice(0, 10000);
       const payload = {
